@@ -27,6 +27,7 @@
  * @uses bugnote_api.php
  * @uses category_api.php
  * @uses columns_api.php
+ * @uses columns_dwg_api.php
  * @uses config_api.php
  * @uses constant_inc.php
  * @uses custom_field_api.php
@@ -37,6 +38,7 @@
  * @uses lang_api.php
  * @uses prepare_api.php
  * @uses print_api.php
+ * @uses print_dwg_api.php
  * @uses string_api.php
  * @uses utility_api.php
  * @uses version_api.php
@@ -46,6 +48,9 @@ require_api( 'bug_api.php' );
 require_api( 'bugnote_api.php' );
 require_api( 'category_api.php' );
 require_api( 'columns_api.php' );
+
+require_api( 'columns_dwg_api.php' );
+
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
 require_api( 'custom_field_api.php' );
@@ -56,6 +61,9 @@ require_api( 'icon_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'prepare_api.php' );
 require_api( 'print_api.php' );
+
+require_api( 'print_dwg_api.php' );
+
 require_api( 'string_api.php' );
 require_api( 'utility_api.php' );
 require_api( 'version_api.php' );
@@ -306,6 +314,8 @@ function custom_function_default_get_columns_to_view( $p_columns_target = COLUMN
 		$t_columns = config_get( 'excel_columns', '', $p_user_id, $t_project_id );
 	} else if( $p_columns_target == COLUMNS_TARGET_VIEW_PAGE ) {
 		$t_columns = config_get( 'view_issues_page_columns', '', $p_user_id, $t_project_id );
+	} else if( $p_columns_target == COLUMNS_TARGET_DWG_PAGE ) {
+		$t_columns = config_get( 'view_dwg_page_columns', '', $p_user_id, $t_project_id );
 	} else {
 		$t_columns = config_get( 'print_issues_page_columns', '', $p_user_id, $t_project_id );
 	}
@@ -314,6 +324,22 @@ function custom_function_default_get_columns_to_view( $p_columns_target = COLUMN
 
 	return $t_columns;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// BEGIN doctis developmental section
+function custom_function_default_get_dwg_columns_to_view( $p_columns_target = COLUMNS_TARGET_DWG_PAGE, $p_user_id = null ) {
+	$t_project_id = helper_get_current_project();
+
+	if( $p_columns_target == COLUMNS_TARGET_DWG_PAGE ) {
+		$t_columns = config_get( 'view_dwg_page_columns', '', $p_user_id, $t_project_id );
+	}
+
+//	$t_columns = columns_remove_invalid( $t_columns, columns_get_all( $t_project_id ) );
+
+	return $t_columns;
+}
+// END doctis developmental section
+////////////////////////////////////////////////////////////////////////////////
 
 /**
  * Print the title of a column given its name.
@@ -384,6 +410,69 @@ function custom_function_default_print_column_title( $p_column, $p_columns_targe
 		}
 	}
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// BEGIN doctis developmental section
+function custom_function_default_print_dwg_column_title( $p_column, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE, array $p_sort_properties = [] ) {
+	global $t_sort, $t_dir;
+
+	# if no sort properties are provided, resort to deprecated golbal vars, to keep compatibility
+	if( empty( $p_sort_properties ) ) {
+		$t_main_sort_column = $t_sort;
+		$t_main_sort_dir = $t_dir;
+	} else {
+		# we use only the first ordered column
+		$t_main_sort_column = reset( $p_sort_properties[FILTER_PROPERTY_SORT_FIELD_NAME] );
+		$t_main_sort_dir = reset( $p_sort_properties[FILTER_PROPERTY_SORT_DIRECTION] );
+	}
+
+	$t_custom_field = column_get_custom_field_name( $p_column );
+	if( $t_custom_field !== null ) {
+		if( COLUMNS_TARGET_CSV_PAGE != $p_columns_target ) {
+			echo '<th class="column-' . custom_field_css_name( $t_custom_field ) . '">';
+		}
+
+		$t_field_id = custom_field_get_id_from_name( $t_custom_field );
+		if( $t_field_id === false ) {
+			echo '@', $t_custom_field, '@';
+		} else {
+			$t_def = custom_field_get_definition( $t_field_id );
+			$t_custom_field = lang_get_defaulted( $t_def['name'] );
+
+			if( COLUMNS_TARGET_CSV_PAGE != $p_columns_target ) {
+				print_view_dwg_sort_link( $t_custom_field, $p_column, $t_main_sort_column, $t_main_sort_dir, $p_columns_target );
+				if( $p_column == $t_main_sort_column ) {
+					print_sort_icon( $t_main_sort_dir, $t_main_sort_column, $p_column );
+				}
+			} else {
+				echo $t_custom_field;
+			}
+		}
+
+		if( COLUMNS_TARGET_CSV_PAGE != $p_columns_target ) {
+			echo '</th>';
+		}
+	} else {
+		$t_plugin_columns = columns_get_plugin_columns();
+
+		$t_function = 'print_dwg_column_title_' . $p_column;
+		if( function_exists( $t_function ) ) {
+			$t_function( $t_main_sort_column, $t_main_sort_dir, $p_columns_target );
+
+		} else if( isset( $t_plugin_columns[$p_column] ) ) {
+			$t_column_object = $t_plugin_columns[$p_column];
+			print_column_title_plugin( $p_column, $t_column_object, $t_main_sort_column, $t_main_sort_dir, $p_columns_target );
+
+		} else {
+			echo '<th>';
+			print_view_dwg_sort_link( column_dwg_get_title( $p_column ), $p_column, $t_main_sort_column, $t_main_sort_dir, $p_columns_target );
+			print_sort_icon( $t_main_sort_dir, $t_main_sort_column, $p_column );
+			echo '</th>';
+		}
+	}
+}
+// END doctis developmental section
+////////////////////////////////////////////////////////////////////////////////
 
 /**
  * Print the value of the custom field (if the field is applicable to the project of

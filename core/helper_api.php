@@ -557,6 +557,59 @@ function helper_get_columns_to_view( $p_columns_target = COLUMNS_TARGET_VIEW_PAG
 	return array_values( $t_columns );
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// BEGIN doctis developmental section
+function helper_get_dwg_columns_to_view( $p_columns_target = COLUMNS_TARGET_VIEW_PAGE, $p_viewable_only = true, $p_user_id = null ) {
+	$t_columns = helper_call_custom_function( 'get_dwg_columns_to_view', array( $p_columns_target, $p_user_id ) );
+
+	# Fix column names for custom field columns that may be stored as lowercase in configuration. See issue #17367
+	# If the system was working fine with lowercase names, then database is case-insensitive, eg: mysql
+	# Fix by forcing a search with current name to get the id, then get the actual name by looking up this id
+	foreach( $t_columns as &$t_column_name ) {
+		$t_cf_name = column_get_custom_field_name( $t_column_name );
+		if( $t_cf_name ) {
+			$t_cf_id = custom_field_get_id_from_name( $t_cf_name );
+			$t_column_name = column_get_custom_field_column_name( $t_cf_id );
+		}
+	}
+
+	if( !$p_viewable_only ) {
+		return $t_columns;
+	}
+
+	$t_keys_to_remove = array();
+
+	if( $p_columns_target == COLUMNS_TARGET_CSV_PAGE || $p_columns_target == COLUMNS_TARGET_EXCEL_PAGE ) {
+		$t_keys_to_remove[] = 'selection';
+		$t_keys_to_remove[] = 'edit';
+		$t_keys_to_remove[] = 'overdue';
+	}
+
+	$t_current_project_id = helper_get_current_project();
+
+	if( $t_current_project_id != ALL_PROJECTS && !access_has_project_level( config_get( 'view_handler_threshold' ), $t_current_project_id ) ) {
+		$t_keys_to_remove[] = 'handler_id';
+	}
+
+	if( $t_current_project_id != ALL_PROJECTS && !access_has_project_level( config_get( 'roadmap_view_threshold' ), $t_current_project_id ) ) {
+		$t_keys_to_remove[] = 'target_version';
+	}
+
+	foreach( $t_keys_to_remove as $t_key_to_remove ) {
+		$t_keys = array_keys( $t_columns, $t_key_to_remove );
+
+		foreach( $t_keys as $t_key ) {
+			unset( $t_columns[$t_key] );
+		}
+	}
+
+	# get the array values to remove gaps in the array which causes issue
+	# if the array is accessed using an index.
+	return array_values( $t_columns );
+}
+// END doctis developmental section
+////////////////////////////////////////////////////////////////////////////////
+
 /**
  * if all projects selected, default to <prefix><username><suffix><extension>, otherwise default to
  * <prefix><projectname><suffix><extension>.

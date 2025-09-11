@@ -724,6 +724,13 @@ function layout_print_sidebar( $p_active_sidebar_page = null ) {
 			'icon' => 'fa-dashboard'
 		);
 
+		# View Documents
+		$t_sidebar_items[] = array(
+			'url' => 'view_dwg_page.php',
+			'title' => 'view_dwg_link',
+			'icon' => 'fa-list-alt'
+		);
+
 		# View Bugs
 		$t_sidebar_items[] = array(
 			'url' => 'view_all_bug_page.php',
@@ -1161,8 +1168,8 @@ function layout_footer() {
 	}
 	echo '<div class="col-md-6 col-xs-12 no-padding">' . "\n";
 	echo '<address>' . "\n";
-	echo '<strong>Powered by <a href="https://www.mantisbt.org" title="bug tracking software">MantisBT ' . $t_version_suffix . '</a></strong> <br>' . "\n";
-	echo "<small>Copyright &copy;$t_copyright_years MantisBT Team</small>" . '<br>';
+	echo '<strong><a href="https://github.com/Inspirati/mantisbt" title="document issue tracking software">Doctis</a> is forked from <a href="https://www.mantisbt.org" title="bug tracking software">MantisBT ' . $t_version_suffix . '</a></strong> <br>' . "\n";
+	echo "<small>Copyright &copy; 2025 <a href='https://github.com/Inspirati'>Inspirati</a> & $t_copyright_years MantisBT Team</small>" . '<br>';
 
 	# Show optional user-specified custom copyright statement
 	$t_copyright_statement = config_get_global( 'copyright_statement' );

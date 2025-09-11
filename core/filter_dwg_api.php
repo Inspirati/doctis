@@ -94,10 +94,12 @@ use Mantis\Exceptions\ClientException;
  * the one in use for view_all_bug_page. For example: manage and edit stored filters.
  *
  * @TODO cproensa We should move towards not relying on this variable, as we reuse filter logic.
+ * @TODO RobD This would be nice as i attempt to reuse filter logic.
  *
- * @global array $g_filter
+ * @global array $g_dwg_filter
  */
-$g_filter = null;
+#!$g_filter = null;
+$g_dwg_filter = null;
 
 
 # ==========================================================================
@@ -121,9 +123,9 @@ $g_cache_filter_subquery = array();
  * Initialize the filter API with the current filter.
  * @param array $p_filter The filter to set as the current filter.
  */
-function filter_init( $p_filter ) {
-	global $g_filter;
-	$g_filter = $p_filter;
+function filter_dwg_init( $p_filter ) {
+	global $g_dwg_filter;
+	$g_dwg_filter = $p_filter;
 }
 
 /**
@@ -131,7 +133,7 @@ function filter_init( $p_filter ) {
  * them here to be used by the rest of filter_api.
  * @return array Mapping of field name to filter object
  */
-function filter_get_plugin_filters() {
+function filter_dwg_get_plugin_filters() {
 	static $s_field_array = null;
 
 	if( is_null( $s_field_array ) ) {
@@ -167,7 +169,7 @@ function filter_get_plugin_filters() {
  * @param array $p_custom_filter Array containing a custom filter definition.
  * @return string the search.php?xxxx or an empty string if no criteria applied.
  */
-function filter_get_url( array $p_custom_filter ) {
+function filter_dwg_get_url( array $p_custom_filter ) {
 	$t_query = array();
 
 	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_PROJECT_ID] ) ) {
@@ -179,210 +181,210 @@ function filter_get_url( array $p_custom_filter ) {
 			);
 		}
 
-		$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_PROJECT_ID, $t_project_id );
+		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_PROJECT_ID, $t_project_id );
 	}
 
 	if( ! filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_PROJECTION] ) ) {
-		$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_PROJECTION, $p_custom_filter[FILTER_PROPERTY_PROJECTION] );
+		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_PROJECTION, $p_custom_filter[FILTER_PROPERTY_PROJECTION] );
 	}
 
 	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_SEARCH] ) ) {
-		$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_SEARCH, $p_custom_filter[FILTER_PROPERTY_SEARCH] );
+		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_SEARCH, $p_custom_filter[FILTER_PROPERTY_SEARCH] );
 	}
 
 	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_CATEGORY_ID] ) ) {
-		$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_CATEGORY_ID, $p_custom_filter[FILTER_PROPERTY_CATEGORY_ID] );
+		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_CATEGORY_ID, $p_custom_filter[FILTER_PROPERTY_CATEGORY_ID] );
 	}
 
 	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_REPORTER_ID] ) ) {
-		$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_REPORTER_ID, $p_custom_filter[FILTER_PROPERTY_REPORTER_ID] );
+		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_REPORTER_ID, $p_custom_filter[FILTER_PROPERTY_REPORTER_ID] );
 	}
 
 	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_STATUS] ) ) {
-		$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_STATUS, $p_custom_filter[FILTER_PROPERTY_STATUS] );
+		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_STATUS, $p_custom_filter[FILTER_PROPERTY_STATUS] );
 	}
 
 	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_MONITOR_USER_ID] ) ) {
-		$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_MONITOR_USER_ID, $p_custom_filter[FILTER_PROPERTY_MONITOR_USER_ID] );
+		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_MONITOR_USER_ID, $p_custom_filter[FILTER_PROPERTY_MONITOR_USER_ID] );
 	}
 
 	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_HANDLER_ID] ) ) {
-		$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_HANDLER_ID, $p_custom_filter[FILTER_PROPERTY_HANDLER_ID] );
+		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_HANDLER_ID, $p_custom_filter[FILTER_PROPERTY_HANDLER_ID] );
 	}
 
 	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_NOTE_USER_ID] ) ) {
-		$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_NOTE_USER_ID, $p_custom_filter[FILTER_PROPERTY_NOTE_USER_ID] );
+		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_NOTE_USER_ID, $p_custom_filter[FILTER_PROPERTY_NOTE_USER_ID] );
 	}
 
 	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_SEVERITY] ) ) {
-		$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_SEVERITY, $p_custom_filter[FILTER_PROPERTY_SEVERITY] );
+		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_SEVERITY, $p_custom_filter[FILTER_PROPERTY_SEVERITY] );
 	}
 
 	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_RESOLUTION] ) ) {
-		$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_RESOLUTION, $p_custom_filter[FILTER_PROPERTY_RESOLUTION] );
+		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_RESOLUTION, $p_custom_filter[FILTER_PROPERTY_RESOLUTION] );
 	}
 
 	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_PRIORITY] ) ) {
-		$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_PRIORITY, $p_custom_filter[FILTER_PROPERTY_PRIORITY] );
+		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_PRIORITY, $p_custom_filter[FILTER_PROPERTY_PRIORITY] );
 	}
 
 	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_VIEW_STATE] ) ) {
-		$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_VIEW_STATE, $p_custom_filter[FILTER_PROPERTY_VIEW_STATE] );
+		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_VIEW_STATE, $p_custom_filter[FILTER_PROPERTY_VIEW_STATE] );
 	}
 
 	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_STICKY] ) ) {
-		$t_query[] = filter_encode_field_and_value(
+		$t_query[] = filter_dwg_encode_field_and_value(
 			FILTER_PROPERTY_STICKY,
 			$p_custom_filter[FILTER_PROPERTY_STICKY] ? 'on' : 'off' );
 	}
 
 	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_VERSION] ) ) {
-		$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_VERSION, $p_custom_filter[FILTER_PROPERTY_VERSION] );
+		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_VERSION, $p_custom_filter[FILTER_PROPERTY_VERSION] );
 	}
 
 	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_BUILD] ) ) {
-		$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_BUILD, $p_custom_filter[FILTER_PROPERTY_BUILD] );
+		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_BUILD, $p_custom_filter[FILTER_PROPERTY_BUILD] );
 	}
 
 	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_FIXED_IN_VERSION] ) ) {
-		$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_FIXED_IN_VERSION, $p_custom_filter[FILTER_PROPERTY_FIXED_IN_VERSION] );
+		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_FIXED_IN_VERSION, $p_custom_filter[FILTER_PROPERTY_FIXED_IN_VERSION] );
 	}
 
 	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_TARGET_VERSION] ) ) {
-		$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_TARGET_VERSION, $p_custom_filter[FILTER_PROPERTY_TARGET_VERSION] );
+		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_TARGET_VERSION, $p_custom_filter[FILTER_PROPERTY_TARGET_VERSION] );
 	}
 
 	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_SORT_FIELD_NAME] ) ) {
-		$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_SORT_FIELD_NAME, $p_custom_filter[FILTER_PROPERTY_SORT_FIELD_NAME] );
+		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_SORT_FIELD_NAME, $p_custom_filter[FILTER_PROPERTY_SORT_FIELD_NAME] );
 	}
 
 	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_SORT_DIRECTION] ) ) {
-		$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_SORT_DIRECTION, $p_custom_filter[FILTER_PROPERTY_SORT_DIRECTION] );
+		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_SORT_DIRECTION, $p_custom_filter[FILTER_PROPERTY_SORT_DIRECTION] );
 	}
 
 	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_ISSUES_PER_PAGE] ) ) {
 		if( $p_custom_filter[FILTER_PROPERTY_ISSUES_PER_PAGE] != config_get( 'default_limit_view' ) ) {
-			$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_ISSUES_PER_PAGE, $p_custom_filter[FILTER_PROPERTY_ISSUES_PER_PAGE] );
+			$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_ISSUES_PER_PAGE, $p_custom_filter[FILTER_PROPERTY_ISSUES_PER_PAGE] );
 		}
 	}
 
 	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_HIGHLIGHT_CHANGED] ) ) {
 		if( $p_custom_filter[FILTER_PROPERTY_HIGHLIGHT_CHANGED] != config_get( 'default_show_changed' ) ) {
-			$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_HIGHLIGHT_CHANGED, $p_custom_filter[FILTER_PROPERTY_HIGHLIGHT_CHANGED] );
+			$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_HIGHLIGHT_CHANGED, $p_custom_filter[FILTER_PROPERTY_HIGHLIGHT_CHANGED] );
 		}
 	}
 
 	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_HIDE_STATUS] ) ) {
-		$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_HIDE_STATUS, $p_custom_filter[FILTER_PROPERTY_HIDE_STATUS] );
+		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_HIDE_STATUS, $p_custom_filter[FILTER_PROPERTY_HIDE_STATUS] );
 	}
 
 	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_FILTER_BY_DATE_SUBMITTED] ) ) {
-		$t_query[] = filter_encode_field_and_value(
+		$t_query[] = filter_dwg_encode_field_and_value(
 			FILTER_PROPERTY_FILTER_BY_DATE_SUBMITTED,
 			$p_custom_filter[FILTER_PROPERTY_FILTER_BY_DATE_SUBMITTED] ? 'on' : 'off' );
 
 		# The start and end dates are only applicable if filter by date is set.
 		if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_START_DAY] ) ) {
-			$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_DATE_SUBMITTED_START_DAY, $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_START_DAY] );
+			$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_DATE_SUBMITTED_START_DAY, $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_START_DAY] );
 		}
 
 		if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_END_DAY] ) ) {
-			$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_DATE_SUBMITTED_END_DAY, $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_END_DAY] );
+			$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_DATE_SUBMITTED_END_DAY, $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_END_DAY] );
 		}
 
 		if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_START_MONTH] ) ) {
-			$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_DATE_SUBMITTED_START_MONTH, $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_START_MONTH] );
+			$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_DATE_SUBMITTED_START_MONTH, $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_START_MONTH] );
 		}
 
 		if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_END_MONTH] ) ) {
-			$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_DATE_SUBMITTED_END_MONTH, $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_END_MONTH] );
+			$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_DATE_SUBMITTED_END_MONTH, $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_END_MONTH] );
 		}
 
 		if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_START_YEAR] ) ) {
-			$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_DATE_SUBMITTED_START_YEAR, $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_START_YEAR] );
+			$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_DATE_SUBMITTED_START_YEAR, $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_START_YEAR] );
 		}
 
 		if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_END_YEAR] ) ) {
-			$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_DATE_SUBMITTED_END_YEAR, $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_END_YEAR] );
+			$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_DATE_SUBMITTED_END_YEAR, $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_END_YEAR] );
 		}
 	}
 
 	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_FILTER_BY_LAST_UPDATED_DATE] ) ) {
-		$t_query[] = filter_encode_field_and_value(
+		$t_query[] = filter_dwg_encode_field_and_value(
 			FILTER_PROPERTY_FILTER_BY_LAST_UPDATED_DATE,
 			$p_custom_filter[FILTER_PROPERTY_FILTER_BY_LAST_UPDATED_DATE] ? 'on' : 'off' );
 
 		# The start and end dates are only applicable if filter by date is set.
 		if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_START_DAY] ) ) {
-			$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_LAST_UPDATED_START_DAY, $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_START_DAY] );
+			$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_LAST_UPDATED_START_DAY, $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_START_DAY] );
 		}
 
 		if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_END_DAY] ) ) {
-			$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_LAST_UPDATED_END_DAY, $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_END_DAY] );
+			$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_LAST_UPDATED_END_DAY, $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_END_DAY] );
 		}
 
 		if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_START_MONTH] ) ) {
-			$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_LAST_UPDATED_START_MONTH, $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_START_MONTH] );
+			$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_LAST_UPDATED_START_MONTH, $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_START_MONTH] );
 		}
 
 		if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_END_MONTH] ) ) {
-			$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_LAST_UPDATED_END_MONTH, $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_END_MONTH] );
+			$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_LAST_UPDATED_END_MONTH, $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_END_MONTH] );
 		}
 
 		if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_START_YEAR] ) ) {
-			$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_LAST_UPDATED_START_YEAR, $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_START_YEAR] );
+			$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_LAST_UPDATED_START_YEAR, $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_START_YEAR] );
 		}
 
 		if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_END_YEAR] ) ) {
-			$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_LAST_UPDATED_END_YEAR, $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_END_YEAR] );
+			$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_LAST_UPDATED_END_YEAR, $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_END_YEAR] );
 		}
 	}
 
 	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_RELATIONSHIP_TYPE] ) ) {
 		if( $p_custom_filter[FILTER_PROPERTY_RELATIONSHIP_TYPE] != -1 ) {
-			$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_RELATIONSHIP_TYPE, $p_custom_filter[FILTER_PROPERTY_RELATIONSHIP_TYPE] );
+			$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_RELATIONSHIP_TYPE, $p_custom_filter[FILTER_PROPERTY_RELATIONSHIP_TYPE] );
 		}
 	}
 
 	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_RELATIONSHIP_BUG] ) ) {
-		$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_RELATIONSHIP_BUG, $p_custom_filter[FILTER_PROPERTY_RELATIONSHIP_BUG] );
+		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_RELATIONSHIP_BUG, $p_custom_filter[FILTER_PROPERTY_RELATIONSHIP_BUG] );
 	}
 
 	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_PLATFORM] ) ) {
-		$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_PLATFORM, $p_custom_filter[FILTER_PROPERTY_PLATFORM] );
+		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_PLATFORM, $p_custom_filter[FILTER_PROPERTY_PLATFORM] );
 	}
 
 	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_OS] ) ) {
-		$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_OS, $p_custom_filter[FILTER_PROPERTY_OS] );
+		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_OS, $p_custom_filter[FILTER_PROPERTY_OS] );
 	}
 
 	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_OS_BUILD] ) ) {
-		$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_OS_BUILD, $p_custom_filter[FILTER_PROPERTY_OS_BUILD] );
+		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_OS_BUILD, $p_custom_filter[FILTER_PROPERTY_OS_BUILD] );
 	}
 
 	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_TAG_STRING] ) ) {
-		$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_TAG_STRING, $p_custom_filter[FILTER_PROPERTY_TAG_STRING] );
+		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_TAG_STRING, $p_custom_filter[FILTER_PROPERTY_TAG_STRING] );
 	}
 
 	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_TAG_SELECT] ) ) {
-		$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_TAG_SELECT, $p_custom_filter[FILTER_PROPERTY_TAG_SELECT] );
+		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_TAG_SELECT, $p_custom_filter[FILTER_PROPERTY_TAG_SELECT] );
 	}
 
-	$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_MATCH_TYPE, $p_custom_filter[FILTER_PROPERTY_MATCH_TYPE] );
+	$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_MATCH_TYPE, $p_custom_filter[FILTER_PROPERTY_MATCH_TYPE] );
 
 	if( isset( $p_custom_filter['custom_fields'] ) ) {
 		foreach( $p_custom_filter['custom_fields'] as $t_custom_field_id => $t_custom_field_values ) {
 			if( !filter_field_is_any( $t_custom_field_values ) ) {
-				$t_query[] = filter_encode_field_and_value( 'custom_field_' . $t_custom_field_id, $t_custom_field_values );
+				$t_query[] = filter_dwg_encode_field_and_value( 'custom_field_' . $t_custom_field_id, $t_custom_field_values );
 			}
 		}
 	}
 
 	# Allow plugins to add filter fields
-	$t_plugin_filter_array = filter_get_plugin_filters();
+	$t_plugin_filter_array = filter_dwg_get_plugin_filters();
 	foreach( $t_plugin_filter_array as $t_field_name => $t_filter_object ) {
 		if( !filter_field_is_any( $p_custom_filter[$t_field_name] ) ) {
-			$t_query[] = filter_encode_field_and_value( $t_field_name, $p_custom_filter[$t_field_name], $t_filter_object->type );
+			$t_query[] = filter_dwg_encode_field_and_value( $t_field_name, $p_custom_filter[$t_field_name], $t_filter_object->type );
 		}
 	}
 
@@ -403,7 +405,7 @@ function filter_get_url( array $p_custom_filter ) {
  * @param integer $p_field_type  Field Type e.g. FILTER_TYPE_MULTI_STRING.
  * @return string url encoded string
  */
-function filter_encode_field_and_value( $p_field_name, $p_field_value, $p_field_type = null ) {
+function filter_dwg_encode_field_and_value( $p_field_name, $p_field_value, $p_field_type = null ) {
 	$t_query_array = array();
 	if( is_array( $p_field_value ) ) {
 		$t_count = count( $p_field_value );
@@ -426,7 +428,7 @@ function filter_encode_field_and_value( $p_field_name, $p_field_value, $p_field_
  * @param string $p_field_value The value to check.
  * @return boolean true for "ANY" values and false for others.  "ANY" means filter criteria not active.
  */
-function filter_field_is_any( $p_field_value ) {
+function filter_dwg_field_is_any( $p_field_value ) {
 	if( is_array( $p_field_value ) ) {
 		if( count( $p_field_value ) == 0 ) {
 			return true;
@@ -460,7 +462,7 @@ function filter_field_is_any( $p_field_value ) {
  * @return boolean true for "NONE" values and false for others.
  * @todo is a check for these necessary?  if( ( $t_filter_value === 'none' ) || ( $t_filter_value === '[none]' ) )
  */
-function filter_field_is_none( $p_field_value ) {
+function filter_dwg_field_is_none( $p_field_value ) {
 	if( is_array( $p_field_value ) ) {
 		foreach( $p_field_value as $t_value ) {
 			if( ( META_FILTER_NONE == $t_value ) && ( is_numeric( $t_value ) ) ) {
@@ -485,7 +487,7 @@ function filter_field_is_none( $p_field_value ) {
  * @param string $p_field_value The value to check.
  * @return boolean true for "MYSELF" values and false for others.
  */
-function filter_field_is_myself( $p_field_value ) {
+function filter_dwg_field_is_myself( $p_field_value ) {
 	return( META_FILTER_MYSELF == $p_field_value ? true : false );
 }
 
@@ -496,7 +498,7 @@ function filter_field_is_myself( $p_field_value ) {
  * @param integer $p_per_page Per page.
  * @return integer
  */
-function filter_per_page( array $p_filter, $p_count, $p_per_page ) {
+function filter_dwg_per_page( array $p_filter, $p_count, $p_per_page ) {
 	$p_per_page = (( null == $p_per_page ) ? (int)$p_filter[FILTER_PROPERTY_ISSUES_PER_PAGE] : $p_per_page );
 	$p_per_page = (( 0 == $p_per_page || -1 == $p_per_page ) ? $p_count : $p_per_page );
 
@@ -510,7 +512,7 @@ function filter_per_page( array $p_filter, $p_count, $p_per_page ) {
  * @param integer $p_per_page Per page.
  * @return integer page count
  */
-function filter_page_count( $p_count, $p_per_page ) {
+function filter_dwg_page_count( $p_count, $p_per_page ) {
 	$t_page_count = ceil( $p_count / $p_per_page );
 	if( $t_page_count < 1 ) {
 		$t_page_count = 1;
@@ -525,7 +527,7 @@ function filter_page_count( $p_count, $p_per_page ) {
  * @param integer $p_page_count  Page count.
  * @return integer
  */
-function filter_valid_page_number( $p_page_number, $p_page_count ) {
+function filter_dwg_valid_page_number( $p_page_number, $p_page_count ) {
 	if( $p_page_number > $p_page_count ) {
 		$p_page_number = $p_page_count;
 	}
@@ -542,7 +544,7 @@ function filter_valid_page_number( $p_page_number, $p_page_count ) {
  * @param integer $p_per_page    Per page.
  * @return integer
  */
-function filter_offset( $p_page_number, $p_per_page ) {
+function filter_dwg_offset( $p_page_number, $p_per_page ) {
 	return(( (int)$p_page_number -1 ) * (int)$p_per_page );
 }
 
@@ -552,12 +554,12 @@ function filter_offset( $p_page_number, $p_per_page ) {
  * @param array $p_filter_arr Input filter array
  * @return array Processed filter array
  */
-function filter_ensure_fields( array $p_filter_arr ) {
+function filter_dwg_ensure_fields( array $p_filter_arr ) {
 	# Fill missing filter properties with defaults
 	if( isset( $p_filter_arr['_view_type'] ) ) {
-		$t_filter_default = filter_get_default_array( $p_filter_arr['_view_type'] );
+		$t_filter_default = filter_dwg_get_default_array( $p_filter_arr['_view_type'] );
 	} else {
-		$t_filter_default = filter_get_default_array();
+		$t_filter_default = filter_dwg_get_default_array();
 	}
 
 	foreach( $t_filter_default as $t_key => $t_default_value ) {
@@ -584,7 +586,7 @@ function filter_ensure_fields( array $p_filter_arr ) {
  * @param string $p_operator    Comparison test, if provided. As expected by version_compare()
  * @return mixed	As returned by version_compare()
  */
-function filter_version_compare( $p_version1, $p_version2, $p_operator = null ) {
+function filter_dwg_version_compare( $p_version1, $p_version2, $p_operator = null ) {
 	return version_compare( $p_version1, $p_version2, $p_operator );
 }
 
@@ -594,7 +596,7 @@ function filter_version_compare( $p_version1, $p_version2, $p_operator = null ) 
  * @param array $p_filter	Filter array to upgrade
  * @return array	Updgraded filter array
  */
-function filter_version_upgrade( array $p_filter ) {
+function filter_dwg_version_upgrade( array $p_filter ) {
 	# This is a stub for future version upgrades
 
 	# After conversions are made, update filter value to current version
@@ -608,16 +610,16 @@ function filter_version_upgrade( array $p_filter ) {
  * @param array $p_filter_arr	A filter array
  * @return array	Validated filter array
  */
-function filter_ensure_valid_filter( array $p_filter_arr ) {
+function filter_dwg_ensure_valid_filter( array $p_filter_arr ) {
 	if( !isset( $p_filter_arr['_version'] ) ) {
 		$p_filter_arr['_version'] = FILTER_VERSION;
 	}
 
 	if( filter_version_compare( $p_filter_arr['_version'], FILTER_VERSION, '<' ) ) {
-		$p_filter_arr = filter_version_upgrade( $p_filter_arr );
+		$p_filter_arr = filter_dwg_version_upgrade( $p_filter_arr );
 	}
 
-	$p_filter_arr = filter_ensure_fields( $p_filter_arr );
+	$p_filter_arr = filter_dwg_ensure_fields( $p_filter_arr );
 
 	$t_config_view_filters = config_get( 'view_filters' );
 	$t_view_type = $p_filter_arr['_view_type'];
@@ -628,7 +630,7 @@ function filter_ensure_valid_filter( array $p_filter_arr ) {
 		$t_view_type = FILTER_VIEW_TYPE_SIMPLE;
 	}
 	if( !in_array( $t_view_type, array( FILTER_VIEW_TYPE_SIMPLE, FILTER_VIEW_TYPE_ADVANCED ) ) ) {
-		$t_view_type = filter_get_default_view_type();
+		$t_view_type = filter_dwg_get_default_view_type();
 	}
 	$p_filter_arr['_view_type'] = $t_view_type;
 
@@ -653,7 +655,7 @@ function filter_ensure_valid_filter( array $p_filter_arr ) {
 				continue;
 			}
 			# check that it is sortable
-			if( !column_is_sortable( $t_column ) ) {
+			if( !column_dwg_is_sortable( $t_column ) ) {
 				continue;
 			}
 			$t_new_sort_array[] = $t_column;
@@ -674,8 +676,8 @@ function filter_ensure_valid_filter( array $p_filter_arr ) {
 		$p_filter_arr[FILTER_PROPERTY_SORT_FIELD_NAME] = implode( ',', $t_new_sort_array );
 		$p_filter_arr[FILTER_PROPERTY_SORT_DIRECTION] = implode( ',', $t_new_dir_array );
 	} else {
-		$p_filter_arr[FILTER_PROPERTY_SORT_FIELD_NAME] = filter_get_default_property( FILTER_PROPERTY_SORT_FIELD_NAME, $t_view_type );
-		$p_filter_arr[FILTER_PROPERTY_SORT_DIRECTION] = filter_get_default_property( FILTER_PROPERTY_SORT_DIRECTION, $t_view_type );
+		$p_filter_arr[FILTER_PROPERTY_SORT_FIELD_NAME] = filter_dwg_get_default_property( FILTER_PROPERTY_SORT_FIELD_NAME, $t_view_type );
+		$p_filter_arr[FILTER_PROPERTY_SORT_DIRECTION] = filter_dwg_get_default_property( FILTER_PROPERTY_SORT_DIRECTION, $t_view_type );
 	}
 
 	# Validate types for values.
@@ -711,7 +713,7 @@ function filter_ensure_valid_filter( array $p_filter_arr ) {
 			if( count( $t_value ) > 0 ) {
 				$p_filter_arr[$t_field_name] = reset( $t_value );
 			} else {
-				$p_filter_arr[$t_field_name] = filter_get_default_property( $t_field_name, $t_view_type );
+				$p_filter_arr[$t_field_name] = filter_dwg_get_default_property( $t_field_name, $t_view_type );
 			}
 		}
 		$p_filter_arr[$t_field_name] = $t_function_validate_type( $p_filter_arr[$t_field_name], $t_field_type );
@@ -840,7 +842,7 @@ function filter_ensure_valid_filter( array $p_filter_arr ) {
 		|| $p_filter_arr[FILTER_PROPERTY_RELATIONSHIP_BUG] == META_FILTER_ANY
 		|| $p_filter_arr[FILTER_PROPERTY_RELATIONSHIP_BUG] == META_FILTER_NONE
 		) ) {
-		$p_filter_arr[FILTER_PROPERTY_RELATIONSHIP_BUG] = filter_get_default_property( FILTER_PROPERTY_RELATIONSHIP_BUG, $t_view_type );
+		$p_filter_arr[FILTER_PROPERTY_RELATIONSHIP_BUG] = filter_dwg_get_default_property( FILTER_PROPERTY_RELATIONSHIP_BUG, $t_view_type );
 	}
 
 	# all of our filter values are now guaranteed to be there, and correct.
@@ -854,10 +856,10 @@ function filter_ensure_valid_filter( array $p_filter_arr ) {
  * @param string $p_view_type	FILTER_VIEW_TYPE_SIMPLE or FILTER_VIEW_TYPE_ADVANCED
  * @return array Filter array with default values
  */
-function filter_get_default_array( $p_view_type = null ) {
+function filter_dwg_get_default_array( $p_view_type = null ) {
 	static $t_cache_default_array = array();
 
-	$t_default_view_type = filter_get_default_view_type();
+	$t_default_view_type = filter_dwg_get_default_view_type();
 	if( !in_array( $p_view_type, array( FILTER_VIEW_TYPE_SIMPLE, FILTER_VIEW_TYPE_ADVANCED ) ) ) {
 		$p_view_type = $t_default_view_type;
 	}
@@ -937,7 +939,7 @@ function filter_get_default_array( $p_view_type = null ) {
 	);
 
 	# initialize plugin filters
-	$t_plugin_filters = filter_get_plugin_filters();
+	$t_plugin_filters = filter_dwg_get_plugin_filters();
 	foreach( $t_plugin_filters as $t_field_name => $t_filter_object ) {
 			switch( $t_filter_object->type ) {
 				case FILTER_TYPE_STRING:
@@ -982,7 +984,7 @@ function filter_get_default_array( $p_view_type = null ) {
  * Returns the default view type for filters
  * @return string Default view type
  */
-function filter_get_default_view_type() {
+function filter_dwg_get_default_view_type() {
 	if( ADVANCED_DEFAULT == config_get( 'view_filters' ) ) {
 		return FILTER_VIEW_TYPE_ADVANCED;
 	} else {
@@ -992,13 +994,13 @@ function filter_get_default_view_type() {
 
 /**
  * Returns the default value for a filter property.
- * Relies on filter_get_default_array() to get a defaulted filter.
+ * Relies on filter_dwg_get_default_array() to get a defaulted filter.
  * @param string $p_filter_property The requested filter property name
  * @param string $p_view_type Optional, view type for the defaulted filter (simple/advanced)
  * @return mixed The property default value, or null if it doesn't exist
  */
-function filter_get_default_property( $p_filter_property, $p_view_type = null ) {
-	$t_default_array = filter_get_default_array( $p_view_type );
+function filter_dwg_get_default_property( $p_filter_property, $p_view_type = null ) {
+	$t_default_array = filter_dwg_get_default_array( $p_view_type );
 	if( isset( $t_default_array[$p_filter_property] ) ) {
 		return $t_default_array[$p_filter_property];
 	} else {
@@ -1014,10 +1016,10 @@ function filter_get_default_property( $p_filter_property, $p_view_type = null ) 
  *
  * @return array
  */
-function filter_get_default() {
+function filter_dwg_get_default() {
 	# Create empty array, validation will fill it with defaults
 	$t_filter = array();
-	return filter_ensure_valid_filter( $t_filter );
+	return filter_dwg_ensure_valid_filter( $t_filter );
 }
 
 /**
@@ -1031,9 +1033,9 @@ function filter_get_default() {
  * @param string $p_serialized_filter Serialized filter string.
  *
  * @return array|false $t_filter array
- * @see filter_ensure_valid_filter
+ * @see filter_dwg_ensure_valid_filter
  */
-function filter_deserialize( $p_serialized_filter ) {
+function filter_dwg_deserialize( $p_serialized_filter ) {
 	if( is_blank( $p_serialized_filter ) ) {
 		return false;
 	}
@@ -1064,8 +1066,8 @@ function filter_deserialize( $p_serialized_filter ) {
 	# Set the filter version that was loaded in the array
 	$t_filter_array['_version'] = $t_setting_arr[0];
 
-	# If upgrade in filter content is needed, it will be done in filter_ensure_valid_filter()
-	return filter_ensure_valid_filter( $t_filter_array );
+	# If upgrade in filter content is needed, it will be done in filter_dwg_ensure_valid_filter()
+	return filter_dwg_ensure_valid_filter( $t_filter_array );
 }
 
 /**
@@ -1073,9 +1075,9 @@ function filter_deserialize( $p_serialized_filter ) {
  * @param array $p_filter_array Filter array to be serialized
  * @return string Serialized filter string
  */
-function filter_serialize( $p_filter_array ) {
+function filter_dwg_serialize( $p_filter_array ) {
 	$t_cookie_version = FILTER_VERSION;
-	$p_filter_array = filter_clean_runtime_properties( $p_filter_array );
+	$p_filter_array = filter_dwg_clean_runtime_properties( $p_filter_array );
 	$t_settings_serialized = json_encode( $p_filter_array );
 	$t_settings_string = $t_cookie_version . '#' . $t_settings_serialized;
 	return $t_settings_string;
@@ -1088,7 +1090,7 @@ function filter_serialize( $p_filter_array ) {
  * @param integer $p_filter_id      A filter identifier to look up in the database.
  * @return array|boolean	The row of filter data as stored in db table, or false if does not exist
  */
-function filter_get_row( $p_filter_id ) {
+function filter_dwg_get_row( $p_filter_id ) {
 	global $g_cache_filter_db_rows;
 
 	if( !isset( $g_cache_filter_db_rows[$p_filter_id] ) ) {
@@ -1105,8 +1107,8 @@ function filter_get_row( $p_filter_id ) {
  * @param string  $p_field_name Name of the filter field to retrieve.
  * @return string
  */
-function filter_get_field( $p_filter_id, $p_field_name ) {
-	$t_row = filter_get_row( $p_filter_id );
+function filter_dwg_get_field( $p_filter_id, $p_field_name ) {
+	$t_row = filter_dwg_get_row( $p_filter_id );
 
 	if( isset( $t_row[$p_field_name] ) ) {
 		return $t_row[$p_field_name];
@@ -1128,20 +1130,20 @@ function filter_get_field( $p_filter_id, $p_field_name ) {
  *                                 -1   indicates you want to see all bugs
  *                                 null indicates you want to use the value specified in the filter.
  * @param integer &$p_page_count   You don't need to give a value here, the number of pages will be stored here on return.
- * @param integer &$p_bug_count    You don't need to give a value here, the number of bugs will be stored here on return.
+ * @param integer &$p_dwg_count    You don't need to give a value here, the number of bugs will be stored here on return.
  * @param mixed   $p_custom_filter Custom Filter to use.
  * @param integer $p_project_id    Project id to use in filtering.
  * @param integer $p_user_id       User id to use as current user when filtering.
  * @param boolean $p_show_sticky   True/false - get sticky issues only.
  * @return boolean|array
  */
-function filter_get_bug_rows( &$p_page_number, &$p_per_page, &$p_page_count, &$p_bug_count, $p_custom_filter = null, $p_project_id = null, $p_user_id = null, $p_show_sticky = null ) {
+function filter_dwg_get_bug_rows( &$p_page_number, &$p_per_page, &$p_page_count, &$p_dwg_count, $p_custom_filter = null, $p_project_id = null, $p_user_id = null, $p_show_sticky = null ) {
 	# assigning to $p_* for this function writes the values back in case the caller wants to know
 
 	if( $p_custom_filter === null ) {
-		$t_filter = filter_get_bug_rows_filter( $p_project_id, $p_user_id );
+		$t_filter = filter_dwg_get_bug_rows_filter( $p_project_id, $p_user_id );
 	} else {
-		$t_filter = filter_ensure_valid_filter( $p_custom_filter );
+		$t_filter = filter_dwg_ensure_valid_filter( $p_custom_filter );
 	}
 
 	# build a filter query, here for counting results
@@ -1154,26 +1156,101 @@ function filter_get_bug_rows( &$p_page_number, &$p_per_page, &$p_page_count, &$p
 				'use_sticky' => $p_show_sticky
 				)
 			);
-	$p_bug_count = $t_filter_query->get_bug_count();
-	if( 0 == $p_bug_count ) {
+	$p_dwg_count = $t_filter_query->get_bug_count();
+	if( 0 == $p_dwg_count ) {
 		return array();
 	}
 
 	# Calculate pagination
-	$p_per_page = filter_per_page( $t_filter, $p_bug_count, $p_per_page );
-	$p_page_count = filter_page_count( $p_bug_count, $p_per_page );
-	$p_page_number = filter_valid_page_number( $p_page_number, $p_page_count );
-	$t_offset = filter_offset( $p_page_number, $p_per_page );
+	$p_per_page = filter_dwg_per_page( $t_filter, $p_dwg_count, $p_per_page );
+	$p_page_count = filter_dwg_page_count( $p_dwg_count, $p_per_page );
+	$p_page_number = filter_dwg_valid_page_number( $p_page_number, $p_page_count );
+	$t_offset = filter_dwg_offset( $p_page_number, $p_per_page );
 
 	$t_filter_query->set_limit( $p_per_page );
 	$t_filter_query->set_offset( $t_offset );
 	# Execute query
 	$t_rows = $t_filter_query->fetch_all();
-	$t_bug_id_array = array_column( $t_rows, 'id' );
+	$t_dwg_id_array = array_column( $t_rows, 'id' );
 
 	# Return the processed rows: cache data, convert to bug objects
-	return filter_cache_result( $t_rows, $t_bug_id_array );
+#!	return filter_cache_result( $t_rows, $t_dwg_id_array );
+	return filter_dwg_cache_result( $t_rows, $t_dwg_id_array );
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// BEGIN doctis developmental section
+function filter_dwg_get_rows( &$p_page_number, &$p_per_page, &$p_page_count, &$p_dwg_count, $p_custom_filter = null, $p_project_id = null, $p_user_id = null, $p_show_sticky = null ) {
+	# assigning to $p_* for this function writes the values back in case the caller wants to know
+
+	if( $p_custom_filter === null ) {
+		$t_filter = filter_dwg_get_rows_filter( $p_project_id, $p_user_id );
+	} else {
+		$t_filter = filter_dwg_ensure_valid_filter( $p_custom_filter );
+	}
+
+	# build a filter query, here for counting results
+#!	$t_filter_query = new BugFilterQuery(
+	$t_filter_query = new DwgFilterQuery(
+			$t_filter,
+			array(
+				'query_type' => DwgFilterQuery::QUERY_TYPE_LIST,
+				'project_id' => $p_project_id,
+				'user_id' => $p_user_id,
+				'use_sticky' => $p_show_sticky
+				)
+			);
+/*
+$p_query_string = "SELECT DISTINCT {bug}.* FROM {bug} JOIN {project} ON {project}.id = {bug}.project_id WHERE {project}.enabled = $0 AND ({bug}.project_id = $1 AND {bug}.view_state = $2 OR {bug}.project_id = $3 AND {bug}.view_state <> $4 AND {bug}.reporter_id = $5) ORDER BY {bug}.sticky DESC, {bug}.last_updated DESC, {bug}.date_submitted DESC"
+ */
+// @TODO RobD - this is a temporary call path which hard-codes a database read of the document table
+// @TODO RobD - for some reason we are still dependent of this ?
+
+//	$p_dwg_count = $t_filter_query->dwg_filter_query_test();  // --> dwg_query_test()
+
+/*
+APPLICATION ERROR #401
+
+Database query failed. Error received from database was #1064: You have an error in your SQL syntax;
+ check the manual that corresponds to your MariaDB server version for the right syntax to use near 'LIMIT 0,48' at line 1 for the query:
+	
+	SELECT DISTINCT mantis_document_table.* FROM mantis_document_table 
+	JOIN mantis_project_table ON mantis_project_table.id = mantis_document_table.project_id 
+	WHERE mantis_project_table.enabled = ? ORDER BY .
+
+Previous non-fatal errors occurred. Page contents follow.
+SQL Statement failed on preparation: 
+	SELECT DISTINCT mantis_document_table.* FROM mantis_document_table
+	JOIN mantis_project_table ON mantis_project_table.id = mantis_document_table.project_id
+	WHERE mantis_project_table.enabled = ? ORDER BY LIMIT 0,48'
+
+ */
+
+	$p_dwg_count = $t_filter_query->get_dwg_count();
+	error_log("get_dwg_count() p_dwg_count = " . print_r($p_dwg_count, true));
+
+	if( 0 == $p_dwg_count ) {
+		return array();
+	}
+
+	# Calculate pagination
+	$p_per_page = filter_dwg_per_page( $t_filter, $p_dwg_count, $p_per_page );
+	$p_page_count = filter_dwg_page_count( $p_dwg_count, $p_per_page );
+	$p_page_number = filter_dwg_valid_page_number( $p_page_number, $p_page_count );
+	$t_offset = filter_dwg_offset( $p_page_number, $p_per_page );
+
+	$t_filter_query->set_limit( $p_per_page );
+	$t_filter_query->set_offset( $t_offset );
+	# Execute query
+	$t_rows = $t_filter_query->fetch_all();
+	$t_dwg_id_array = array_column( $t_rows, 'id' );
+
+	# Return the processed rows: cache data, convert to bug objects
+#!	return filter_cache_result( $t_rows, $t_dwg_id_array );
+	return filter_dwg_cache_result( $t_rows, $t_dwg_id_array );
+}
+// END doctis developmental section
+////////////////////////////////////////////////////////////////////////////////
 
 /**
  * Get the filter defined by user and project.
@@ -1181,7 +1258,7 @@ function filter_get_bug_rows( &$p_page_number, &$p_per_page, &$p_page_count, &$p
  * @param integer $p_user_id       User id to use as current user when filtering.
  * @return array
  */
-function filter_get_bug_rows_filter( $p_project_id = null, $p_user_id = null ) {
+function filter_dwg_get_bug_rows_filter( $p_project_id = null, $p_user_id = null ) {
 	$t_current_user_id = auth_get_current_user_id();
 
 	if( $p_user_id === null || $p_user_id === 0 ) {
@@ -1198,9 +1275,9 @@ function filter_get_bug_rows_filter( $p_project_id = null, $p_user_id = null ) {
 	}
 
 	if( $t_user_id == $t_current_user_id ) {
-		$t_filter = current_user_get_bug_filter();
+		$t_filter = current_user_get_dwg_filter();
 	} else {
-		$t_filter = user_get_bug_filter( $t_user_id, $t_project_id );
+		$t_filter = user_get_dwg_filter( $t_user_id, $t_project_id );
 	}
 
 	# if filter isn't return above, create a new filter from an empty array.
@@ -1210,13 +1287,52 @@ function filter_get_bug_rows_filter( $p_project_id = null, $p_user_id = null ) {
 	return $t_filter;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// BEGIN doctis developmental section
+function filter_dwg_get_rows_filter( $p_project_id = null, $p_user_id = null ) {
+	$t_current_user_id = auth_get_current_user_id();
+
+	if( $p_user_id === null || $p_user_id === 0 ) {
+		$t_user_id = $t_current_user_id;
+	} else {
+		$t_user_id = $p_user_id;
+	}
+
+	if( null === $p_project_id ) {
+		# @@@ If project_id is not specified, then use the project id(s) in the filter if set, otherwise, use current project.
+		$t_project_id = helper_get_current_project();
+	} else {
+		$t_project_id = $p_project_id;
+	}
+
+
+	// @TODO RobD - temporarily disable fetching of filters and just return an empty array
+/*
+	if( $t_user_id == $t_current_user_id ) {
+		$t_filter = current_user_get_dwg_filter();
+	} else {
+		$t_filter = user_get_dwg_filter( $t_user_id, $t_project_id );
+	}
+
+	# if filter isn't return above, create a new filter from an empty array.
+	if( false === $t_filter ) {
+		$t_filter = array();  // @TODO RobD: does this work? or results in a php internal error being thrown (as demonstrated below)
+	}
+*/		
+	$t_filter = array();
+
+	return $t_filter;
+}
+// END doctis developmental section
+////////////////////////////////////////////////////////////////////////////////
+
 /**
  * Cache the filter results with bugnote stats for later use
  * @param array $p_rows             Results of the filter query.
  * @param array $p_id_array_lastmod Array of bug ids.
  * @return array
  */
-function filter_cache_result( array $p_rows, array $p_id_array_lastmod ) {
+function filter_dwg_cache_result( array $p_rows, array $p_id_array_lastmod ) {
 	$t_stats = bug_get_bugnote_stats_array( $p_id_array_lastmod );
 	$t_rows = array();
 	foreach( $p_rows as $t_row ) {
@@ -1235,11 +1351,11 @@ function filter_cache_result( array $p_rows, array $p_id_array_lastmod ) {
  * add new filters and rearrange them on screen for both pages.
  * @return void
  */
-function filter_draw_selection_area() {
+function filter_dwg_draw_selection_area() {
 	$t_form_name_suffix = '_open';
 
-	$t_filter = current_user_get_bug_filter();
-	$t_filter = filter_ensure_valid_filter( $t_filter === false ? array() : $t_filter );
+	$t_filter = current_user_get_dwg_filter();
+	$t_filter = filter_dwg_ensure_valid_filter( $t_filter === false ? array() : $t_filter );
 
 	$t_view_type = $t_filter['_view_type'];
 
@@ -1248,10 +1364,10 @@ function filter_draw_selection_area() {
 	<div class="filter-box">
 
 	<?php
-	$t_stored_queries_arr = filter_db_get_available_queries();
-	$t_is_temporary = filter_is_temporary( $t_filter );
-	$t_tmp_filter_param = $t_is_temporary ? '&filter=' . filter_get_temporary_key( $t_filter ) : '';
-	$t_can_persist = filter_user_can_use_persistent( auth_get_current_user_id() );
+	$t_stored_queries_arr = filter_dwg_db_get_available_queries();
+	$t_is_temporary = filter_dwg_is_temporary( $t_filter );
+	$t_tmp_filter_param = $t_is_temporary ? '&filter=' . filter_dwg_get_temporary_key( $t_filter ) : '';
+	$t_can_persist = filter_dwg_user_can_use_persistent( auth_get_current_user_id() );
 
 	$t_collapse_block = is_collapsed( 'filter' );
 	$t_block_css = $t_collapse_block ? 'collapsed' : '';
@@ -1261,8 +1377,10 @@ function filter_draw_selection_area() {
 	$t_temporary_icon_html = ( $t_is_temporary && $t_can_persist ) ?
 		icon_get( 'fa-clock-o', 'fa-xs-top' )
 		: '';
-	$t_url_reset_filter = 'view_all_set.php?type=' . FILTER_ACTION_RESET;
-	$t_url_persist_filter = 'view_all_set.php?temporary=n' . $t_tmp_filter_param . '&set_project_id=' . helper_get_current_project();
+#!	$t_url_reset_filter = 'view_all_set.php?type=' . FILTER_ACTION_RESET;
+#!	$t_url_persist_filter = 'view_all_set.php?temporary=n' . $t_tmp_filter_param . '&set_project_id=' . helper_get_current_project();
+	$t_url_reset_filter = 'view_dwg_set.php?type=' . FILTER_ACTION_RESET;
+	$t_url_persist_filter = 'view_dwg_set.php?temporary=n' . $t_tmp_filter_param . '&set_project_id=' . helper_get_current_project();
 	?>
 
 		<div id="filter" class="widget-box widget-color-blue2 <?php echo $t_block_css ?>">
@@ -1292,9 +1410,14 @@ function filter_draw_selection_area() {
 						</a>
 						<ul class="dropdown-menu dropdown-menu-right dropdown-yellow dropdown-caret dropdown-closer">
 							<?php
+                            
+#							$t_url = config_get( 'use_dynamic_filters' )
+#								? 'view_all_set.php?type=' . FILTER_ACTION_PARSE_ADD . $t_tmp_filter_param . '&view_type='
+#								: 'view_filters_page.php?view_type=';
 							$t_url = config_get( 'use_dynamic_filters' )
-								? 'view_all_set.php?type=' . FILTER_ACTION_PARSE_ADD . $t_tmp_filter_param . '&view_type='
+								? 'view_dwg_set.php?type=' . FILTER_ACTION_PARSE_ADD . $t_tmp_filter_param . '&view_type='
 								: 'view_filters_page.php?view_type=';
+
 							filter_print_view_type_toggle( $t_url, $t_filter['_view_type'] );
 
 							if( access_has_project_level( config_get( 'create_permalink_threshold' ) ) ) {
@@ -1415,7 +1538,7 @@ function filter_draw_selection_area() {
 	if( access_has_project_level( config_get( 'stored_query_create_threshold' ) ) ) {
 		$t_url_save_filter = 'query_store_page.php';
 		if( filter_is_temporary( $t_filter ) ) {
-			$t_url_save_filter .= '?filter=' . filter_get_temporary_key( $t_filter );
+			$t_url_save_filter .= '?filter=' . filter_dwg_get_temporary_key( $t_filter );
 		}
 	?>
 							<a class="btn btn-sm btn-primary btn-white btn-round" href="<?php echo $t_url_save_filter ?>">
@@ -1458,7 +1581,7 @@ function filter_draw_selection_area() {
 				<input type="hidden" name="type" value="<?php echo FILTER_ACTION_PARSE_NEW ?>" />
 				<?php
 				if( filter_is_temporary( $t_filter ) ) {
-					echo '<input type="hidden" name="filter" value="' . filter_get_temporary_key( $t_filter ) . '" />';
+					echo '<input type="hidden" name="filter" value="' . filter_dwg_get_temporary_key( $t_filter ) . '" />';
 				}
 				?>
 				<input type="hidden" name="view_type" value="<?php echo $t_view_type?>" />
@@ -1490,7 +1613,7 @@ function filter_draw_selection_area() {
 <?php
 }
 
-function filter_cache_rows( array $p_filter_ids ) {
+function filter_dwg_cache_rows( array $p_filter_ids ) {
 	global $g_cache_filter_db_rows;
 
 	if( empty( $p_filter_ids ) ) {
@@ -1522,7 +1645,7 @@ function filter_cache_rows( array $p_filter_ids ) {
  * @param integer $p_filter_id Filter id.
  * @return boolean
  */
-function filter_clear_cache( $p_filter_id = null ) {
+function filter_dwg_clear_cache( $p_filter_id = null ) {
 	global $g_cache_filter_db_rows;
 
 	if( null === $p_filter_id ) {
@@ -1544,7 +1667,7 @@ function filter_clear_cache( $p_filter_id = null ) {
  * @param bool $p_is_public
  * @param string $p_name
  */
-function filter_db_update_filter( $p_filter_id, $p_filter_string, $p_project_id = null, $p_is_public = null, $p_name = null ) {
+function filter_dwg_db_update_filter( $p_filter_id, $p_filter_string, $p_project_id = null, $p_is_public = null, $p_name = null ) {
 	db_param_push();
 	$t_params = array();
 	$t_query = 'UPDATE {filters} SET filter_string=' . db_param();
@@ -1577,7 +1700,7 @@ function filter_db_update_filter( $p_filter_id, $p_filter_string, $p_project_id 
  * @param boolean $p_is_public    Boolean flag to set the filter public
  * @return integer	The id of the created row
  */
-function filter_db_create_filter( $p_filter_string, $p_user_id, $p_project_id, $p_name, $p_is_public ) {
+function filter_dwg_db_create_filter( $p_filter_string, $p_user_id, $p_project_id, $p_name, $p_is_public ) {
 	$c_project_id = (int)$p_project_id;
 	$c_user_id = $p_user_id;
 	$c_is_public = (bool)$p_is_public;
@@ -1610,7 +1733,7 @@ function filter_db_create_filter( $p_filter_string, $p_user_id, $p_project_id, $
  * @param integer $p_user_id     User id
  * @return integer	The filter id that was updated or created
  */
-function filter_set_project_filter( array $p_filter, $p_project_id = null, $p_user_id = null ) {
+function filter_dwg_set_project_filter( array $p_filter, $p_project_id = null, $p_user_id = null ) {
 	if( null === $p_project_id ) {
 		$t_project_id = helper_get_current_project();
 	} else {
@@ -1622,16 +1745,16 @@ function filter_set_project_filter( array $p_filter, $p_project_id = null, $p_us
 		$t_user_id = (int)$p_user_id;
 	}
 
-	$p_filter_string = filter_serialize( $p_filter );
+	$p_filter_string = filter_dwg_serialize( $p_filter );
 	# Check if a row already exists
-	$t_id = filter_db_get_project_current( $t_project_id, $p_user_id );
+	$t_id = filter_dwg_db_get_project_current( $t_project_id, $p_user_id );
 	if( $t_id ) {
 		# A row already esxists
 		filter_db_update_filter( $t_id, $p_filter_string );
 	} else {
 		# Must create a row
 		$t_db_project_id = -1 * $t_project_id;
-		$t_id = filter_db_create_filter( $p_filter_string, $t_user_id, $t_db_project_id, '', false );
+		$t_id = filter_dwg_db_create_filter( $p_filter_string, $t_user_id, $t_db_project_id, '', false );
 	}
 	return $t_id;
 }
@@ -1643,14 +1766,14 @@ function filter_set_project_filter( array $p_filter, $p_project_id = null, $p_us
  * @param integer $p_user_id   A valid user identifier.
  * @return mixed
  */
-function filter_db_get_filter_string( $p_filter_id, $p_user_id = null ) {
+function filter_dwg_db_get_filter_string( $p_filter_id, $p_user_id = null ) {
 	$c_filter_id = (int)$p_filter_id;
 
 	if( !filter_is_accessible( $c_filter_id, $p_user_id ) ) {
 		return null;
 	}
 
-	$t_filter_row = filter_get_row( $c_filter_id );
+	$t_filter_row = filter_dwg_get_row( $c_filter_id );
 	return $t_filter_row['filter_string'];
 }
 
@@ -1660,7 +1783,7 @@ function filter_db_get_filter_string( $p_filter_id, $p_user_id = null ) {
  * @param integer $p_user_id    A valid user identifier.
  * @return integer|null
  */
-function filter_db_get_project_current( $p_project_id = null, $p_user_id = null ) {
+function filter_dwg_db_get_project_current( $p_project_id = null, $p_user_id = null ) {
 	if( null === $p_project_id ) {
 		$c_project_id = helper_get_current_project();
 	} else {
@@ -1681,7 +1804,10 @@ function filter_db_get_project_current( $p_project_id = null, $p_user_id = null 
 	$t_result = db_query( $t_query, array( $c_user_id, $t_filter_project_id, '' ) );
 
 	if( $t_row = db_fetch_array( $t_result ) ) {
-		return $t_row['id'];
+		// return $t_row['id'];
+
+// @TODO RobD - since we don't have any facility to store Dwg filters in the {filters} table, anything returned here would be invalid, so don't
+
 	}
 
 	return null;
@@ -1692,10 +1818,10 @@ function filter_db_get_project_current( $p_project_id = null, $p_user_id = null 
  * @param integer $p_filter_id Filter id.
  * @return string
  */
-function filter_db_get_name( $p_filter_id ) {
+function filter_dwg_db_get_name( $p_filter_id ) {
 	$c_filter_id = (int)$p_filter_id;
 
-	$t_filter_row = filter_get_row( $c_filter_id );
+	$t_filter_row = filter_dwg_get_row( $c_filter_id );
 	if( !$t_filter_row ) {
 		return null;
 	}
@@ -1715,7 +1841,7 @@ function filter_db_get_name( $p_filter_id ) {
  * @param integer|null User id or null for logged in user.
  * @return boolean
  */
-function filter_db_can_delete_filter( $p_filter_id, $p_user_id = null ) {
+function filter_dwg_db_can_delete_filter( $p_filter_id, $p_user_id = null ) {
 	$c_filter_id = (int)$p_filter_id;
 	$t_user_id = $p_user_id != null ? $p_user_id : auth_get_current_user_id();
 
@@ -1724,7 +1850,7 @@ function filter_db_can_delete_filter( $p_filter_id, $p_user_id = null ) {
 		return true;
 	}
 
-	$t_filter_row = filter_get_row( $c_filter_id );
+	$t_filter_row = filter_dwg_get_row( $c_filter_id );
 	if( $t_filter_row
 		&& $t_filter_row['user_id'] == $t_user_id
 		&& $t_filter_row['project_id'] >= 0	) {
@@ -1739,7 +1865,7 @@ function filter_db_can_delete_filter( $p_filter_id, $p_user_id = null ) {
  * @param integer $p_filter_id Filter identifier.
  * @return boolean
  */
-function filter_db_delete_filter( $p_filter_id ) {
+function filter_dwg_db_delete_filter( $p_filter_id ) {
 	$c_filter_id = (int)$p_filter_id;
 
 	if( !filter_db_can_delete_filter( $c_filter_id ) ) {
@@ -1757,7 +1883,7 @@ function filter_db_delete_filter( $p_filter_id ) {
  * Delete all the unnamed filters
  * @return void
  */
-function filter_db_delete_current_filters() {
+function filter_dwg_db_delete_current_filters() {
 	$t_all_id = ALL_PROJECTS;
 
 	db_param_push();
@@ -1773,7 +1899,7 @@ function filter_db_delete_current_filters() {
  * @param boolean $p_public			Public flag for filter
  * @return array	Array of filter ids and names
  */
-function filter_db_get_named_filters( $p_project_id = null, $p_user_id = null, $p_public = null ) {
+function filter_dwg_db_get_named_filters( $p_project_id = null, $p_user_id = null, $p_public = null ) {
 	db_param_push();
 	$t_params = array();
 	$t_query = 'SELECT id, name FROM {filters} WHERE project_id >= ' . db_param();
@@ -1812,7 +1938,7 @@ function filter_db_get_named_filters( $p_project_id = null, $p_user_id = null, $
  * @param boolean $p_return_names_only true: return names of filters, false: return structures with filter header information.
  * @return array Array of filters.
  */
-function filter_db_get_available_queries( $p_project_id = null, $p_user_id = null, $p_filter_by_project = true, $p_return_names_only = true ) {
+function filter_dwg_db_get_available_queries( $p_project_id = null, $p_user_id = null, $p_filter_by_project = true, $p_return_names_only = true ) {
 	if( null === $p_project_id ) {
 		$t_project_id = helper_get_current_project();
 	} else {
@@ -1876,14 +2002,14 @@ function filter_db_get_available_queries( $p_project_id = null, $p_user_id = nul
 	$t_filter_data = array();
 	foreach( $t_filters as $t_filter_id => $t_filter_name ) {
 		$t_row = array();
-		$t_filter_obj = filter_get( $t_filter_id );
+		$t_filter_obj = filter_dwg_get( $t_filter_id );
 		if( !$t_filter_obj ) {
 			continue;
 		}
 
-		$t_row = filter_get_row( $t_filter_id );
+		$t_row = filter_dwg_get_row( $t_filter_id );
 		$t_row['criteria'] = $t_filter_obj;
-		$t_row['url'] = filter_get_url( $t_filter_obj );
+		$t_row['url'] = filter_dwg_get_url( $t_filter_obj );
 		$t_filter_data[$t_filter_name] = $t_row;
 	}
 	return $t_filter_data;
@@ -1894,7 +2020,7 @@ function filter_db_get_available_queries( $p_project_id = null, $p_user_id = nul
  * @param string $p_name Filter name.
  * @return boolean true when under max_length (64) and false when over
  */
-function filter_name_valid_length( $p_name ) {
+function filter_dwg_name_valid_length( $p_name ) {
 	if( mb_strlen( $p_name ) > 64 ) {
 		return false;
 	} else {
@@ -1908,9 +2034,9 @@ function filter_name_valid_length( $p_name ) {
  * @param array $p_filter Add the filter conditions over this filter array. Return a new one if null
  * @return array Filter array
  */
-function filter_create_recently_modified( $p_days, $p_filter = null ) {
+function filter_dwg_create_recently_modified( $p_days, $p_filter = null ) {
 	if( null === $p_filter ) {
-		$p_filter = filter_get_default();
+		$p_filter = filter_dwg_get_default();
 		# This filter overrides default "hide status" property
 		$p_filter[FILTER_PROPERTY_HIDE_STATUS] = META_FILTER_NONE;
 	}
@@ -1924,19 +2050,19 @@ function filter_create_recently_modified( $p_days, $p_filter = null ) {
 	$p_filter[FILTER_PROPERTY_LAST_UPDATED_START_DAY] = $t_date->format( 'j' );
 	$p_filter[FILTER_PROPERTY_LAST_UPDATED_START_MONTH] = $t_date->format( 'n' );
 	$p_filter[FILTER_PROPERTY_LAST_UPDATED_START_YEAR] = $t_date->format( 'Y' );
-	return filter_ensure_valid_filter( $p_filter );
+	return filter_dwg_ensure_valid_filter( $p_filter );
 }
 
 /**
  * Create a filter for getting any issues without restrictions
  * @return mixed A valid filter.
  */
-function filter_create_any() {
-	$t_filter = filter_get_default();
+function filter_dwg_create_any() {
+	$t_filter = filter_dwg_get_default();
 
 	$t_filter[FILTER_PROPERTY_HIDE_STATUS] = META_FILTER_NONE;
 
-	return filter_ensure_valid_filter( $t_filter );
+	return filter_dwg_ensure_valid_filter( $t_filter );
 }
 
 /**
@@ -1947,8 +2073,8 @@ function filter_create_any() {
  * @param integer $p_user_id    The user id or 0 to get unassigned issues.
  * @return mixed valid filter.
  */
-function filter_create_assigned_to_unresolved( $p_project_id, $p_user_id ) {
-	$t_filter = filter_get_default();
+function filter_dwg_create_assigned_to_unresolved( $p_project_id, $p_user_id ) {
+	$t_filter = filter_dwg_get_default();
 
 	if( $p_user_id == 0 ) {
 		$t_filter[FILTER_PROPERTY_HANDLER_ID] = array( '0' => META_FILTER_NONE );
@@ -1963,7 +2089,7 @@ function filter_create_assigned_to_unresolved( $p_project_id, $p_user_id ) {
 		$t_filter[FILTER_PROPERTY_PROJECT_ID] = array( '0' => $p_project_id );
 	}
 
-	return filter_ensure_valid_filter( $t_filter );
+	return filter_dwg_ensure_valid_filter( $t_filter );
 }
 
 /**
@@ -1972,15 +2098,15 @@ function filter_create_assigned_to_unresolved( $p_project_id, $p_user_id ) {
  * @param integer $p_user_id    A valid user identifier.
  * @return array a valid filter.
  */
-function filter_create_reported_by( $p_project_id, $p_user_id ) {
-	$t_filter = filter_get_default();
+function filter_dwg_create_reported_by( $p_project_id, $p_user_id ) {
+	$t_filter = filter_dwg_get_default();
 	$t_filter[FILTER_PROPERTY_REPORTER_ID] = array( '0' => $p_user_id );
 
 	if( $p_project_id != ALL_PROJECTS ) {
 		$t_filter[FILTER_PROPERTY_PROJECT_ID] = array( '0' => $p_project_id );
 	}
 
-	return filter_ensure_valid_filter( $t_filter );
+	return filter_dwg_ensure_valid_filter( $t_filter );
 }
 
 /**
@@ -1989,8 +2115,8 @@ function filter_create_reported_by( $p_project_id, $p_user_id ) {
  * @param integer $p_user_id    The user id.
  * @return array a valid filter.
  */
-function filter_create_monitored_by( $p_project_id, $p_user_id ) {
-	$t_filter = filter_get_default();
+function filter_dwg_create_monitored_by( $p_project_id, $p_user_id ) {
+	$t_filter = filter_dwg_get_default();
 
 	if( $p_user_id == 0 ) {
 		$t_filter[FILTER_PROPERTY_MONITOR_USER_ID] = array( '0' => META_FILTER_NONE );
@@ -2002,7 +2128,7 @@ function filter_create_monitored_by( $p_project_id, $p_user_id ) {
 		$t_filter[FILTER_PROPERTY_PROJECT_ID] = array( '0' => $p_project_id );
 	}
 
-	return filter_ensure_valid_filter( $t_filter );
+	return filter_dwg_ensure_valid_filter( $t_filter );
 }
 
 /**
@@ -2016,7 +2142,7 @@ function filter_create_monitored_by( $p_project_id, $p_user_id ) {
  *
  * @return array The resulting filter array.
  */
-function filter_gpc_get( ?array $p_filter = null ): array {
+function filter_dwg_gpc_get( ?array $p_filter = null ): array {
 	# Get or copy the view_type first as it's needed to get proper defaults
 	$f_view_type = gpc_get_string( 'view_type', null );
 	if( null === $f_view_type && is_array( $p_filter ) && isset( $p_filter['_view_type'] ) ) {
@@ -2024,13 +2150,13 @@ function filter_gpc_get( ?array $p_filter = null ): array {
 	}
 
 	if( null === $p_filter ) {
-		$t_filter = filter_get_default_array( $f_view_type );
+		$t_filter = filter_dwg_get_default_array( $f_view_type );
 	} else {
-		$t_filter = filter_ensure_fields( $p_filter );
+		$t_filter = filter_dwg_ensure_fields( $p_filter );
 	}
 
 	# these are all possibly multiple selections for advanced filtering
-	# If a single value is provided, it will be normalized to an array with 'filter_ensure_valid_filter()'
+	# If a single value is provided, it will be normalized to an array with 'filter_dwg_ensure_valid_filter()'
 
 	$f_show_category = gpc_get( FILTER_PROPERTY_CATEGORY_ID, $t_filter[FILTER_PROPERTY_CATEGORY_ID] );
 	$f_platform = gpc_get( FILTER_PROPERTY_PLATFORM, $t_filter[FILTER_PROPERTY_PLATFORM] );
@@ -2130,7 +2256,7 @@ function filter_gpc_get( ?array $p_filter = null ): array {
 	$f_tag_select			= gpc_get_int( FILTER_PROPERTY_TAG_SELECT, $t_filter[FILTER_PROPERTY_TAG_SELECT] );
 
 	# plugin filter updates
-	$t_plugin_filters = filter_get_plugin_filters();
+	$t_plugin_filters = filter_dwg_get_plugin_filters();
 	$t_filter_input = array();
 
 	foreach( $t_plugin_filters as $t_field_name => $t_filter_object ) {
@@ -2330,7 +2456,7 @@ function filter_gpc_get( ?array $p_filter = null ): array {
 	}
 	# Don't copy cached subquery '_subquery' property
 
-	return filter_ensure_valid_filter( $t_filter_input );
+	return filter_dwg_ensure_valid_filter( $t_filter_input );
 }
 
 /**
@@ -2343,11 +2469,12 @@ function filter_gpc_get( ?array $p_filter = null ): array {
  * @param integer $p_columns_target Target view for the columns.
  * @return array Array of filtered columns and order
  */
-function filter_get_visible_sort_properties_array( array $p_filter, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+#!function filter_dwg_get_visible_sort_properties_array( array $p_filter, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function filter_dwg_get_visible_sort_properties_array( array $p_filter, $p_columns_target = COLUMNS_TARGET_DWG_PAGE ) {
 	# get visible columns
-	$t_visible_columns = helper_get_columns_to_view( $p_columns_target );
+	$t_visible_columns = helper_get_dwg_columns_to_view( $p_columns_target );
 	# filter out those that are not sortable
-	$t_visible_columns = array_filter( $t_visible_columns, 'column_is_sortable' );
+	$t_visible_columns = array_filter( $t_visible_columns, 'column_dwg_is_sortable' );
 
 	# Special handling for overdue column, which is equivalent to sorting by due_date
 	if( in_array( 'overdue', $t_visible_columns ) & !in_array( 'due_date', $t_visible_columns ) ) {
@@ -2378,8 +2505,8 @@ function filter_get_visible_sort_properties_array( array $p_filter, $p_columns_t
  * @param integer $p_filter_id
  * @return boolean
  */
-function filter_is_named_filter( $p_filter_id ) {
-	$t_filter_row = filter_get_row( $p_filter_id );
+function filter_dwg_is_named_filter( $p_filter_id ) {
+	$t_filter_row = filter_dwg_get_row( $p_filter_id );
 	if( $t_filter_row ) {
 		return !empty( $t_filter_row['name'] ) && $t_filter_row['project_id'] >= 0;
 	}
@@ -2393,13 +2520,13 @@ function filter_is_named_filter( $p_filter_id ) {
  * @param integer $p_user_id	User id
  * @return boolean	true if the filter is accessible by the user
  */
-function filter_is_accessible( $p_filter_id, $p_user_id = null ) {
+function filter_dwg_is_accessible( $p_filter_id, $p_user_id = null ) {
 	if( null === $p_user_id ) {
 		$t_user_id = auth_get_current_user_id();
 	} else {
 		$t_user_id = $p_user_id;
 	}
-	$t_filter_row = filter_get_row( $p_filter_id );
+	$t_filter_row = filter_dwg_get_row( $p_filter_id );
 	if( $t_filter_row ) {
 		if( $t_filter_row['user_id'] == $t_user_id || $t_filter_row['is_public'] ) {
 			# If the filter is a named filter, check the config options
@@ -2420,7 +2547,7 @@ function filter_is_accessible( $p_filter_id, $p_user_id = null ) {
  * @param string $p_view_type Filter view type (FILTER_VIEW_TYPE_SIMPLE or
  *                            FILTER_VIEW_TYPE_ADVANCED)
  */
-function filter_print_view_type_toggle( $p_url, $p_view_type ) {
+function filter_dwg_print_view_type_toggle( $p_url, $p_view_type ) {
 	$t_view_filters = config_get( 'view_filters' );
 	if( $t_view_filters == SIMPLE_ONLY || $t_view_filters == ADVANCED_ONLY ) {
 		return;
@@ -2458,13 +2585,7 @@ function filter_print_view_type_toggle( $p_url, $p_view_type ) {
  *                                         expanding to individual project ids
  * @return array|integer	Array of project ids, or ALL_PROJECTS if applicable.
  */
-function filter_get_included_projects( array $p_filter, $p_project_id = null, $p_user_id = null, $p_return_all_projects = false ) {
-
-// @TODO RobD - still needed
-if (count( $p_filter ) == 0) {
-	return null;
-}
-
+function filter_dwg_get_included_projects( array $p_filter, $p_project_id = null, $p_user_id = null, $p_return_all_projects = false ) {
 	if( null === $p_project_id ) {
 		$t_project_id = helper_get_current_project();
 	} else {
@@ -2568,12 +2689,12 @@ if (count( $p_filter ) == 0) {
  * @return array|null A filter array
  * @throws ClientException
  */
-function filter_get( int $p_filter_id, ?array $p_default = null ) {
+function filter_dwg_get( int $p_filter_id, ?array $p_default = null ) {
 	# if no default was provided, we will trigger an error if not found
 	$t_trigger_error = func_num_args() == 1;
 
 	# This function checks for user access
-	$t_filter_string = filter_db_get_filter_string( $p_filter_id );
+	$t_filter_string = filter_dwg_db_get_filter_string( $p_filter_id );
 	# If value is false, it either doesn't exists or is not accessible
 	if( !$t_filter_string ) {
 		if( $t_trigger_error ) {
@@ -2586,16 +2707,16 @@ function filter_get( int $p_filter_id, ?array $p_default = null ) {
 			return $p_default;
 		}
 	}
-	$t_filter = filter_deserialize( $t_filter_string );
+	$t_filter = filter_dwg_deserialize( $t_filter_string );
 	# If the unserialized data is not an array, then some error happened, eg, invalid format
 	if( !is_array( $t_filter ) ) {
 		# Don't throw error, otherwise the user could not recover navigation easily
-		return filter_get_default();
+		return filter_dwg_get_default();
 	}
-	$t_filter = filter_clean_runtime_properties( $t_filter );
+	$t_filter = filter_dwg_clean_runtime_properties( $t_filter );
 	$t_filter['_filter_id'] = $p_filter_id;
 
-	$t_filter = filter_update_source_properties( $t_filter );
+	$t_filter = filter_dwg_update_source_properties( $t_filter );
 
 	return $t_filter;
 }
@@ -2607,7 +2728,7 @@ function filter_get( int $p_filter_id, ?array $p_default = null ) {
  * @param integer|null $p_project_id	 A project id to build this filter.  Null for current project
  * @return null|boolean|array       null filter not found, false invalid filter, otherwise the filter.
  */
-function filter_standard_get( $p_filter_name, $p_user_id = null, $p_project_id = null ) {
+function filter_dwg_standard_get( $p_filter_name, $p_user_id = null, $p_project_id = null ) {
 	$p_filter_name = strtolower( $p_filter_name );
 
 	if( null === $p_project_id ) {
@@ -2624,19 +2745,19 @@ function filter_standard_get( $p_filter_name, $p_user_id = null, $p_project_id =
 
 	switch( $p_filter_name ) {
 		case FILTER_STANDARD_ANY:
-			$t_filter = filter_create_any();
+			$t_filter = filter_dwg_create_any();
 			break;
 		case FILTER_STANDARD_ASSIGNED:
-			$t_filter = filter_create_assigned_to_unresolved( $t_project_id, $t_user_id );
+			$t_filter = filter_dwg_create_assigned_to_unresolved( $t_project_id, $t_user_id );
 			break;
 		case FILTER_STANDARD_UNASSIGNED:
-			$t_filter = filter_create_assigned_to_unresolved( $t_project_id, NO_USER );
+			$t_filter = filter_dwg_create_assigned_to_unresolved( $t_project_id, NO_USER );
 			break;
 		case FILTER_STANDARD_REPORTED:
-			$t_filter = filter_create_reported_by( $t_project_id, $t_user_id );
+			$t_filter = filter_dwg_create_reported_by( $t_project_id, $t_user_id );
 			break;
 		case FILTER_STANDARD_MONITORED:
-			$t_filter = filter_create_monitored_by( $t_project_id, $t_user_id );
+			$t_filter = filter_dwg_create_monitored_by( $t_project_id, $t_user_id );
 			break;
 		default:
 			return null;
@@ -2658,7 +2779,7 @@ function filter_standard_get( $p_filter_name, $p_user_id = null, $p_project_id =
  * @param array $p_filter	Original filter array
  * @return array	Updated filter array
  */
-function filter_update_source_properties( array $p_filter ) {
+function filter_dwg_update_source_properties( array $p_filter ) {
 	# Check if the filter references a named filter
 	# This property only makes sense, and should be available on unnamed filters
 	if( isset( $p_filter['_filter_id'] ) ) {
@@ -2671,11 +2792,11 @@ function filter_update_source_properties( array $p_filter ) {
 		# check if filter id is a proper named filter, and is accessible
 		if( filter_is_named_filter( $t_source_query_id ) && filter_is_accessible( $t_source_query_id ) ){
 			# replace filter with the referenced one
-			$t_new_filter = filter_deserialize( filter_db_get_filter_string( $t_source_query_id ) );
+			$t_new_filter = filter_dwg_deserialize( filter_db_get_filter_string( $t_source_query_id ) );
 			if( is_array( $t_new_filter ) ) {
 				# update the referenced stored filter id for the new loaded filter
 				$t_new_filter['_source_query_id'] = $t_source_query_id;
-				$p_filter = filter_copy_runtime_properties( $t_new_filter, $p_filter );
+				$p_filter = filter_dwg_copy_runtime_properties( $t_new_filter, $p_filter );
 			} else {
 				# If the unserialez data is not an array, the some error happened, eg, invalid format
 				unset( $p_filter['_source_query_id'] );
@@ -2700,7 +2821,7 @@ function filter_update_source_properties( array $p_filter ) {
  * @param mixed $p_default		A default value to return if key not found
  * @return array	A filter array.
  */
-function filter_temporary_get( $p_filter_key, $p_default = null ) {
+function filter_dwg_temporary_get( $p_filter_key, $p_default = null ) {
 	# if no default was provided, we will trigger an error if not found
 	$t_trigger_error = func_num_args() == 1;
 
@@ -2710,7 +2831,7 @@ function filter_temporary_get( $p_filter_key, $p_default = null ) {
 		# this validates against receiving garbage input as XSS attacks
 		$t_filter = $t_session_filters[$p_filter_key];
 		$t_filter['_temporary_key'] = $p_filter_key;
-		return filter_ensure_valid_filter( $t_filter );
+		return filter_dwg_ensure_valid_filter( $t_filter );
 	} else {
 		if( $t_trigger_error ) {
 			error_parameters( $p_filter_key );
@@ -2731,9 +2852,9 @@ function filter_temporary_get( $p_filter_key, $p_default = null ) {
  * @param string $p_filter_key  Key to update, or null
  * @return string	The key used for storing the filter.
  */
-function filter_temporary_set( array $p_filter, $p_filter_key = null ) {
+function filter_dwg_temporary_set( array $p_filter, $p_filter_key = null ) {
 	if( null === $p_filter_key ) {
-		$t_filter_key = filter_get_temporary_key( $p_filter );
+		$t_filter_key = filter_dwg_copy_runtime_properties( $p_filter );
 		if( !$t_filter_key ) {
 			$t_filter_key = uniqid();
 		}
@@ -2741,7 +2862,7 @@ function filter_temporary_set( array $p_filter, $p_filter_key = null ) {
 		$t_filter_key = $p_filter_key;
 	}
 
-	$p_filter = filter_clean_runtime_properties( $p_filter );
+	$p_filter = filter_dwg_clean_runtime_properties( $p_filter );
 	$t_session_filters = session_get( 'temporary_filters', array() );
 	$t_session_filters[$t_filter_key] = $p_filter;
 	session_set( 'temporary_filters', $t_session_filters );
@@ -2754,7 +2875,7 @@ function filter_temporary_set( array $p_filter, $p_filter_key = null ) {
  * @param array $p_filter	Filter array
  * @return string|null	Key associated with this filter, null if none
  */
-function filter_get_temporary_key( array $p_filter ) {
+function filter_dwg_get_temporary_key( array $p_filter ) {
 	if( isset( $p_filter['_temporary_key'] ) ) {
 		return $p_filter['_temporary_key'];
 	} else {
@@ -2767,7 +2888,7 @@ function filter_get_temporary_key( array $p_filter ) {
  * @param array $p_filter	Filter array
  * @return boolean	Whether this filter is temporary
  */
-function filter_is_temporary( array $p_filter ) {
+function filter_dwg_is_temporary( array $p_filter ) {
 	return isset( $p_filter['_temporary_key'] );
 }
 
@@ -2784,9 +2905,9 @@ function filter_is_temporary( array $p_filter ) {
  *
  * @return string|null	Formatted parameter string, or null
  */
-function filter_get_temporary_key_param( $p_key_or_filter ) {
+function filter_dwg_get_temporary_key_param( $p_key_or_filter ) {
 	if( is_array( $p_key_or_filter ) ) {
-		$t_key = filter_get_temporary_key( $p_key_or_filter );
+		$t_key = filter_dwg_get_temporary_key( $p_key_or_filter );
 	} else {
 		$t_key = $p_key_or_filter;
 	}
@@ -2803,7 +2924,7 @@ function filter_get_temporary_key_param( $p_key_or_filter ) {
  * @param array $p_filter	Filter array (passed as reference, it gets modified)
  * @return array	Modified filter array
  */
-function filter_clean_runtime_properties( array $p_filter ) {
+function filter_dwg_clean_runtime_properties( array $p_filter ) {
 	if( isset( $p_filter['_temporary_key'] ) ) {
 		unset( $p_filter['_temporary_key'] );
 	}
@@ -2822,7 +2943,7 @@ function filter_clean_runtime_properties( array $p_filter ) {
  * @param array $p_filter_from	Filter array from which properties are copied
  * @return array	Updated filter array
  */
-function filter_copy_runtime_properties( array $p_filter_to, array $p_filter_from ) {
+function filter_dwg_copy_runtime_properties( array $p_filter_to, array $p_filter_from ) {
 	if( isset( $p_filter_from['_temporary_key'] ) ) {
 		$p_filter_to['_temporary_key'] = $p_filter_from['_temporary_key'];
 	}
@@ -2851,7 +2972,7 @@ function filter_copy_runtime_properties( array $p_filter_to, array $p_filter_fro
  * @param array $p_filter	Filter array
  * @return BugFilterQuery	A query object for the filter
  */
-function filter_cache_subquery( array $p_filter ) {
+function filter_dwg_cache_subquery( array $p_filter ) {
 	global $g_cache_filter_subquery;
 
 	$t_hash = md5( json_encode( $p_filter ) );
@@ -2868,6 +2989,31 @@ function filter_cache_subquery( array $p_filter ) {
  * @param integer $p_user_id	A valid user identifier.
  * @return boolean true if the user can use persistent filters, false otherwise
  */
-function filter_user_can_use_persistent( $p_user_id = null ) {
+function filter_dwg_user_can_use_persistent( $p_user_id = null ) {
 	return !user_is_anonymous( $p_user_id );
 }
+
+/*
+what is the difference between === and == when testing (comparing) variables?
+ 
+ == (loose comparison / equality operator)
+Compares values after type juggling (automatic type conversion).
+PHP will try to convert the operands to a common type before comparing.
+
+	var_dump(5 == "5");      // true   (string "5" converted to int)
+	var_dump(0 == false);    // true   (false converted to 0)
+	var_dump("0" == false);  // true   (both considered 0)
+
+=== (strict comparison / identity operator)
+Compares both value and type. No type conversion happens.
+Both operands must be of the same type and have the same value.
+
+	var_dump(5 === "5");     // false  (int vs string)
+	var_dump(0 === false);   // false  (int vs boolean)
+	var_dump("0" === false); // false  (string vs boolean)
+	var_dump(5 === 5);       // true   (same type, same value)
+
+Rule of thumb:
+	Use == if you want to allow PHP to coerce types when comparing.
+	Use === if you want to be strict and avoid unexpected matches (which is usually the safer/better choice).
+ */
