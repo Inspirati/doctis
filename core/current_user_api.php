@@ -254,6 +254,27 @@ function current_user_get_bug_filter( $p_project_id = null ) {
 	return $t_filter;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// BEGIN doctis developmental section
+function current_user_get_dwg_filter( $p_project_id = null ) {
+	$f_tmp_key = gpc_get_string( 'filter', null );
+
+	if( null !== $f_tmp_key ) {
+		$t_filter = filter_temporary_get( $f_tmp_key, null );
+		# if filter doesn't exist or can't be loaded, return a default filter (doesn't throw error)
+		if( null === $t_filter ) {
+			$t_filter = filter_get_default();
+		}
+	} else {
+		$t_user_id = auth_get_current_user_id();
+		$t_filter = user_get_dwg_filter( $t_user_id, $p_project_id );
+	}
+
+	return $t_filter;
+}
+// END doctis developmental section
+////////////////////////////////////////////////////////////////////////////////
+
 /**
  * Returns true if the user has access to more that one project
  *

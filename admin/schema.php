@@ -904,6 +904,43 @@ $g_upgrade[213] = array( 'UpdateFunction', 'category_status_default' );
 
 # Release marker: 2.27.0
 
+
+# BEGIN Development marker: Inspirati - RobD
+
+// REFERENCE VERSION: this passes checks
+$g_upgrade[214] = array( 'CreateTableSQL',
+	array( db_get_table( 'document' ), "
+		id				I		NOTNULL UNSIGNED AUTOINCREMENT PRIMARY,
+		project_id		I		UNSIGNED NOTNULL DEFAULT '0',
+		status			I2		NOTNULL DEFAULT '10',
+		enabled			L		NOTNULL DEFAULT \" '1' \",
+		version			C(64)	NOTNULL DEFAULT \" '' \",
+		name			C(255)	NOTNULL,
+		number			C(64)	NOTNULL,
+		revision		C(64)	NOTNULL,
+		category		C(64)	NOTNULL,
+		reference		C(255)	NULL,
+		link_url		C(255)	NOTNULL DEFAULT \" '' \",
+		class			C(255)	NOTNULL DEFAULT \" '' \",
+		revision_date	I		NOTNULL UNSIGNED,
+		release_date	I		NULL UNSIGNED,
+		date_submitted	I		NOTNULL UNSIGNED,
+		last_updated	I		NOTNULL UNSIGNED
+	" )
+);
+$g_upgrade[215] = array( 'CreateIndexSQL', array( 'idx_document_number', db_get_table( 'document' ), 'number' ) );
+$g_upgrade[216] = array( 'CreateIndexSQL', array( 'idx_document_category', db_get_table( 'document' ), 'category' ) );
+
+$g_upgrade[217] = array( 'AddColumnSQL', array( db_get_table( 'bug' ), "
+	document_id			I		UNSIGNED NOTNULL DEFAULT '0' " ) );
+
+# @TODO RobD: add field for project classification
+$g_upgrade[218] = array( 'AddColumnSQL', array( db_get_table( 'project' ), "
+	class				C(255)	NOTNULL DEFAULT \" '' \" " ) );
+
+# END Development marker: Inspirati - RobD
+
+
 # ----------------------------------------------------------------------------
 # End of schema definition, clear local variables
 #

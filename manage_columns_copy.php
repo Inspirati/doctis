@@ -92,6 +92,8 @@ $t_default = null;
 
 $t_view_issues_page_columns = config_get( 'view_issues_page_columns', $t_default, $t_user_id, $t_src_project_id );
 $t_view_issues_page_columns = columns_remove_invalid( $t_view_issues_page_columns, $t_all_columns );
+$t_view_dwg_page_columns = config_get( 'view_dwg_page_columns', $t_default, $t_user_id, $t_src_project_id );
+$t_view_dwg_page_columns = columns_remove_invalid( $t_view_dwg_page_columns, $t_all_columns );
 
 $t_print_issues_page_columns = config_get( 'print_issues_page_columns', $t_default, $t_user_id, $t_src_project_id );
 $t_print_issues_page_columns = columns_remove_invalid( $t_print_issues_page_columns, $t_all_columns );
@@ -103,6 +105,7 @@ $t_excel_columns = config_get( 'excel_columns', $t_default, $t_user_id, $t_src_p
 $t_excel_columns = columns_remove_invalid( $t_excel_columns, $t_all_columns );
 
 config_set( 'view_issues_page_columns', $t_view_issues_page_columns, $t_user_id, $t_dst_project_id );
+config_set( 'view_dwg_page_columns', $t_view_dwg_page_columns, $t_user_id, $t_dst_project_id );
 config_set( 'print_issues_page_columns', $t_print_issues_page_columns, $t_user_id, $t_dst_project_id );
 config_set( 'csv_columns', $t_csv_columns, $t_user_id, $t_dst_project_id );
 config_set( 'excel_columns', $t_excel_columns, $t_user_id, $t_dst_project_id );

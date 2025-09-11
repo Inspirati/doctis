@@ -1397,6 +1397,18 @@ $g_view_issues_page_columns = array(
 );
 
 /**
+ * The default columns to be included in the View Documents Page.
+ *
+ * See {@see $g_view_issues_page_columns} for details.
+ *
+ * @global array $g_view_dwg_page_columns
+ */
+$g_view_dwg_page_columns = array(
+	'status', 'enabled', 'name', 'number', 'revision', 'reference',
+	'date', 'release date',
+);
+
+/**
  * The default columns to be included in the Print Issues Page.
  *
  * See {@see $g_view_issues_page_columns} for details.
@@ -3765,6 +3777,9 @@ $g_bugnote_link_tag = '~';
  */
 $g_bug_count_hyperlink_prefix = 'view_all_set.php?type=' . FILTER_ACTION_PARSE_NEW . '&amp;temporary=y';
 
+// @TODO RobD - possibly unused?
+$g_dwg_count_hyperlink_prefix = 'view_dwg_set.php?type=' . FILTER_ACTION_PARSE_NEW . '&amp;temporary=y';
+
 /**
  * The regular expression to use when validating new user login names.
  *
@@ -3988,6 +4003,12 @@ $g_logout_cookie = '%cookie_prefix%_LOGOUT_COOKIE';
  * @global string $g_bug_list_cookie
  */
 $g_bug_list_cookie = '%cookie_prefix%_BUG_LIST_COOKIE';
+
+/**
+ *
+ * @global string $g_dwg_list_cookie
+ */
+$g_dwg_list_cookie = '%cookie_prefix%_DWG_LIST_COOKIE';
 
 #############################
 # MantisBT Filter Variables #
@@ -5210,6 +5231,7 @@ $g_global_settings = array(
 	'anonymous_account',
 	'bottom_include_page',
 	'bug_list_cookie',
+	'dwg_list_cookie',
 	'cdn_enabled',
 	'class_path',
 	'collapse_settings_cookie',
@@ -5361,6 +5383,7 @@ $g_public_config_names = array(
 	'bug_feedback_status',
 	'bug_link_tag',
 	'bug_list_cookie',
+	'dwg_list_cookie',
 	'bug_readonly_status_threshold',
 	'bug_reminder_threshold',
 	'bug_reopen_resolution',
@@ -5680,6 +5703,7 @@ $g_public_config_names = array(
 	'view_handler_threshold',
 	'view_history_threshold',
 	'view_issues_page_columns',
+	'view_dwg_page_columns',
 	'view_proj_doc_threshold',
 	'view_sponsorship_details_threshold',
 	'view_sponsorship_total_threshold',

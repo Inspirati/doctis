@@ -109,6 +109,9 @@ columns_ensure_valid( 'excel', $t_excel_columns, $t_all_columns );
 if( json_encode( config_get( 'view_issues_page_columns', '', $t_user_id, $t_project_id ) ) !== json_encode( $t_view_issues_columns ) ) {
 	config_set( 'view_issues_page_columns', $t_view_issues_columns, $t_user_id, $t_project_id );
 }
+if( json_encode( config_get( 'view_dwg_page_columns', '', $t_user_id, $t_project_id ) ) !== json_encode( $t_view_dwg_columns ) ) {
+	config_set( 'view_dwg_page_columns', $t_view_dwg_columns, $t_user_id, $t_project_id );
+}
 if( json_encode( config_get( 'print_issues_page_columns', '', $t_user_id, $t_project_id ) ) !== json_encode( $t_print_issues_columns ) ) {
 	config_set( 'print_issues_page_columns', $t_print_issues_columns, $t_user_id, $t_project_id );
 }
