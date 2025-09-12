@@ -915,7 +915,7 @@ function print_filter_dwg_show_version( ?array $p_filter = null ) {
 	if( null === $p_filter ) {
 		$p_filter = $g_dwg_filter;
 	}
-	$t_projects = filter_get_included_projects( $p_filter );
+	$t_projects = filter_dwg_get_included_projects( $p_filter );
 	?><!-- Version -->
 		<select class="input-xs" <?php echo filter_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_VERSION;?>[]">
 			<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_VERSION], (string)META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
@@ -979,7 +979,7 @@ function print_filter_dwg_show_fixed_in_version( ?array $p_filter = null ) {
 	if( null === $p_filter ) {
 		$p_filter = $g_dwg_filter;
 	}
-	$t_projects = filter_get_included_projects( $p_filter );
+	$t_projects = filter_dwg_get_included_projects( $p_filter );
 	?><!-- Fixed in Version -->
 		<select class="input-xs" <?php echo filter_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_FIXED_IN_VERSION;?>[]">
 			<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_FIXED_IN_VERSION], (string)META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
@@ -1043,7 +1043,7 @@ function print_filter_dwg_show_target_version( ?array $p_filter = null ) {
 	if( null === $p_filter ) {
 		$p_filter = $g_dwg_filter;
 	}
-	$t_projects = filter_get_included_projects( $p_filter );
+	$t_projects = filter_dwg_get_included_projects( $p_filter );
 	?><!-- Fixed in Version -->
 		<select class="input-xs" <?php echo filter_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_TARGET_VERSION;?>[]">
 			<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_TARGET_VERSION], (string)META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
@@ -2098,7 +2098,7 @@ function print_filter_dwg_custom_field( $p_field_id, ?array $p_filter = null ) {
 				echo '>[' . lang_get( 'none' ) . ']</option>';
 			}
 			# Print possible values
-			$t_included_projects = filter_get_included_projects( $p_filter );
+			$t_included_projects = filter_dwg_get_included_projects( $p_filter );
 			$t_values = custom_field_distinct_values( $t_cfdef, $t_included_projects );
 			if( is_array( $t_values ) ){
 				$t_max_length = config_get( 'max_dropdown_length' );
@@ -2249,7 +2249,7 @@ function print_filter_dwg_custom_field_date( $p_field_id, ?array $p_filter = nul
 		$p_filter = $g_dwg_filter;
 	}
 	$t_cfdef = custom_field_get_definition( $p_field_id );
-	$t_included_projects = filter_get_included_projects( $p_filter );
+	$t_included_projects = filter_dwg_get_included_projects( $p_filter );
 	$t_values = custom_field_distinct_values( $t_cfdef, $t_included_projects );
 
 	$t_sel_start_year = null;
@@ -2595,7 +2595,7 @@ function filter_form_draw_inputs( $p_filter, $p_for_screen = true, $p_static = f
 		$t_project_id = helper_get_current_project();
 	}
 
-	$t_filter_projects = filter_get_included_projects( $t_filter, $t_project_id );
+	$t_filter_projects = filter_dwg_get_included_projects( $t_filter, $t_project_id );
 
 	if( null === $p_static_fallback_page ) {
 		$p_static_fallback_page = $_SERVER['SCRIPT_NAME'];
@@ -2880,7 +2880,7 @@ function filter_form_draw_inputs( $p_filter, $p_for_screen = true, $p_static = f
 	}
 
 	if( ON == config_get( 'filter_by_custom_fields' ) ) {
-		$t_filter_included_projects = filter_get_included_projects( $t_filter );
+		$t_filter_included_projects = filter_dwg_get_included_projects( $t_filter );
 		$t_custom_fields = custom_field_get_linked_ids( $t_filter_included_projects );
 		$t_accessible_custom_fields = array();
 		foreach( $t_custom_fields as $t_cfid ) {

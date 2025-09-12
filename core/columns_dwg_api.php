@@ -25,6 +25,7 @@
  *
  * @uses access_api.php
  * @uses bug_api.php
+ * @uses dwg_api.php
  * @uses category_api.php
  * @uses config_api.php
  * @uses constant_inc.php
@@ -56,6 +57,9 @@ columns_(?!dwg)
 
 require_api( 'access_api.php' );
 require_api( 'bug_api.php' );
+
+require_api( 'dwg_api.php' );
+
 require_api( 'category_api.php' );
 require_api( 'columns_api.php' );
 require_api( 'config_api.php' );
@@ -149,7 +153,7 @@ function columns_dwg_filter_disabled( array $p_columns ) {
  * @return array of column names
  */
 function columns_dwg_get_standard( $p_enabled_columns_only = true ) {
-	$t_reflection = new ReflectionClass( 'BugData' );
+	$t_reflection = new ReflectionClass( 'DwgData' );
 	$t_columns = $t_reflection->getDefaultProperties();
 
 	$t_columns['selection'] = null;
@@ -241,11 +245,19 @@ function columns_dwg_get_custom_fields() {
  * @return array Array of column names
  */
 function columns_dwg_get_all_active_columns() {
-	$t_columns = array_merge(
-			columns_dwg_get_standard(),
-			array_keys( columns_dwg_get_plugin_columns() ),
-			columns_dwg_get_custom_fields()
-			);
+	// $t_columns = array_merge(
+	// 		columns_dwg_get_standard(),
+	// 		array_keys( columns_dwg_get_plugin_columns() ),
+	// 		columns_dwg_get_custom_fields()
+	// 		);
+	// return columns_dwg_filter_disabled( $t_columns );
+
+	// $t_columns = array_merge(
+	// 		columns_dwg_get_standard()
+	// 		);
+    // return $t_columns();
+
+	$t_columns = columns_dwg_get_standard();
 	return columns_dwg_filter_disabled( $t_columns );
 }
 
@@ -1094,12 +1106,12 @@ function print_dwg_column_title_overdue( $p_sort, $p_dir, $p_columns_target = CO
 /**
  * Print table data for column selection
  *
- * @param BugData $p_bug            BugData object.
+ * @param DwgData $p_bug            DwgData object.
  * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
  * @return void
  * @access public
  */
-function print_dwg_column_selection( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function print_dwg_column_selection( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	global $g_checkboxes_exist;
 
 	echo '<td class="column-selection">';
@@ -1155,12 +1167,12 @@ function print_dwg_column_title_plugin( $p_column, $p_column_object, $p_sort, $p
 /**
  * Print custom column content for a specific bug.
  * @param object  $p_column_object  Column object.
- * @param BugData $p_bug            BugData object.
+ * @param DwgData $p_bug            DwgData object.
  * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
  * @return void
  * @access public
  */
-function print_dwg_column_plugin( $p_column_object, BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function print_dwg_column_plugin( $p_column_object, DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	if( $p_columns_target != COLUMNS_TARGET_CSV_PAGE ) {
 		echo '<td class="column-plugin">';
 		$p_column_object->display( $p_bug, $p_columns_target );
@@ -1173,12 +1185,12 @@ function print_dwg_column_plugin( $p_column_object, BugData $p_bug, $p_columns_t
 /**
  * Print column content for column edit
  *
- * @param BugData $p_bug            BugData object.
+ * @param DwgData $p_bug            DwgData object.
  * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
  * @return void
  * @access public
  */
-function print_dwg_column_edit( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function print_dwg_column_edit( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 
 	echo '<td class="column-edit">';
 	$t_can_update = !bug_is_readonly( $p_bug->id ) &&
@@ -1197,12 +1209,12 @@ function print_dwg_column_edit( BugData $p_bug, $p_columns_target = COLUMNS_TARG
 /**
  * Print column content for column priority
  *
- * @param BugData $p_bug            BugData object.
+ * @param DwgData $p_bug            DwgData object.
  * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
  * @return void
  * @access public
  */
-function print_dwg_column_priority( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function print_dwg_column_priority( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	echo '<td class="column-priority">';
 	if( ON == config_get( 'show_priority_text' ) ) {
 		print_formatted_priority_string( $p_bug );
@@ -1215,12 +1227,12 @@ function print_dwg_column_priority( BugData $p_bug, $p_columns_target = COLUMNS_
 /**
  * Print column content for column id
  *
- * @param BugData $p_bug            BugData object.
+ * @param DwgData $p_bug            DwgData object.
  * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
  * @return void
  * @access public
  */
-function print_dwg_column_id( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function print_dwg_column_id( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	echo '<td class="column-id">';
 	print_bug_link( $p_bug->id, false );
 	echo '</td>';
@@ -1229,12 +1241,12 @@ function print_dwg_column_id( BugData $p_bug, $p_columns_target = COLUMNS_TARGET
 /**
  * Print column content for column sponsorship total
  *
- * @param BugData $p_bug            BugData object.
+ * @param DwgData $p_bug            DwgData object.
  * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
  * @return void
  * @access public
  */
-function print_dwg_column_sponsorship_total( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function print_dwg_column_sponsorship_total( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	echo "\t<td class=\"right column-sponsorship\">";
 
 	if( $p_bug->sponsorship_total > 0 ) {
@@ -1248,13 +1260,13 @@ function print_dwg_column_sponsorship_total( BugData $p_bug, $p_columns_target =
 /**
  * Print column content for column bugnotes count
  *
- * @param BugData $p_bug            BugData object.
+ * @param DwgData $p_bug            DwgData object.
  * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
  * @return void
  * @access public
  */
-function print_dwg_column_bugnotes_count( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
-	global $g_filter;
+function print_dwg_column_bugnotes_count( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+	global $g_dwg_filter;
 
 	# grab the bugnote count
 	$t_bugnote_stats = bug_get_bugnote_stats( $p_bug->id );
@@ -1267,7 +1279,7 @@ function print_dwg_column_bugnotes_count( BugData $p_bug, $p_columns_target = CO
 
 	echo '<td class="column-bugnotes-count">';
 	if( $t_bugnote_count > 0 ) {
-		$t_show_in_bold = $t_bugnote_updated > strtotime( '-' . $g_filter[FILTER_PROPERTY_HIGHLIGHT_CHANGED] . ' hours' );
+		$t_show_in_bold = $t_bugnote_updated > strtotime( '-' . $g_dwg_filter[FILTER_PROPERTY_HIGHLIGHT_CHANGED] . ' hours' );
 		if( $t_show_in_bold ) {
 			echo '<span class="bold">';
 		}
@@ -1285,12 +1297,12 @@ function print_dwg_column_bugnotes_count( BugData $p_bug, $p_columns_target = CO
 /**
  * Print column content for column attachment count
  *
- * @param BugData $p_bug            BugData object.
+ * @param DwgData $p_bug            DwgData object.
  * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
  * @return void
  * @access public
  */
-function print_dwg_column_attachment_count( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function print_dwg_column_attachment_count( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 
 	# Check for attachments
 	$t_attachment_count = 0;
@@ -1314,12 +1326,12 @@ function print_dwg_column_attachment_count( BugData $p_bug, $p_columns_target = 
 /**
  * Print column content for column category id
  *
- * @param BugData $p_bug            BugData object.
+ * @param DwgData $p_bug            DwgData object.
  * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
  * @return void
  * @access public
  */
-function print_dwg_column_category_id( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function print_dwg_column_category_id( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	global $t_sort, $t_dir;
 
 	# grab the project name
@@ -1343,12 +1355,12 @@ function print_dwg_column_category_id( BugData $p_bug, $p_columns_target = COLUM
 /**
  * Print column content for column severity
  *
- * @param BugData $p_bug            BugData object.
+ * @param DwgData $p_bug            DwgData object.
  * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
  * @return void
  * @access public
  */
-function print_dwg_column_severity( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function print_dwg_column_severity( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	echo '<td class="column-severity">';
 	print_formatted_severity_string( $p_bug );
 	echo '</td>';
@@ -1357,48 +1369,48 @@ function print_dwg_column_severity( BugData $p_bug, $p_columns_target = COLUMNS_
 /**
  * Print column content for column eta
  *
- * @param BugData $p_bug            BugData object.
+ * @param DwgData $p_bug            DwgData object.
  * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
  * @return void
  * @access public
  */
-function print_dwg_column_eta( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function print_dwg_column_eta( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	echo '<td class="column-eta">', get_enum_element( 'eta', $p_bug->eta, auth_get_current_user_id(), $p_bug->project_id ), '</td>';
 }
 
 /**
  * Print column content for column projection
  *
- * @param BugData $p_bug            BugData object.
+ * @param DwgData $p_bug            DwgData object.
  * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
  * @return void
  * @access public
  */
-function print_dwg_column_projection( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function print_dwg_column_projection( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	echo '<td class="column-projection">', get_enum_element( 'projection', $p_bug->projection, auth_get_current_user_id(), $p_bug->project_id ), '</td>';
 }
 
 /**
  * Print column content for column reproducibility
  *
- * @param BugData $p_bug            BugData object.
+ * @param DwgData $p_bug            DwgData object.
  * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
  * @return void
  * @access public
  */
-function print_dwg_column_reproducibility( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function print_dwg_column_reproducibility( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	echo '<td class="column-reproducibility">', get_enum_element( 'reproducibility', $p_bug->reproducibility, auth_get_current_user_id(), $p_bug->project_id ), '</td>';
 }
 
 /**
  * Print column content for column resolution
  *
- * @param BugData $p_bug            BugData object.
+ * @param DwgData $p_bug            DwgData object.
  * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
  * @return void
  * @access public
  */
-function print_dwg_column_resolution( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function print_dwg_column_resolution( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	echo '<td class="column-resolution">',
 		get_enum_element( 'resolution', $p_bug->resolution, auth_get_current_user_id(), $p_bug->project_id ),
 		'</td>';
@@ -1407,12 +1419,12 @@ function print_dwg_column_resolution( BugData $p_bug, $p_columns_target = COLUMN
 /**
  * Print column content for column status
  *
- * @param BugData $p_bug            BugData object.
+ * @param DwgData $p_bug            DwgData object.
  * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
  * @return void
  * @access public
  */
-function print_dwg_column_status( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function print_dwg_column_status( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	$t_current_user = auth_get_current_user_id();
 	# choose color based on status
 	$t_status_css = html_get_status_css_fg( $p_bug->status, $t_current_user, $p_bug->project_id );
@@ -1436,12 +1448,12 @@ function print_dwg_column_status( BugData $p_bug, $p_columns_target = COLUMNS_TA
 /**
  * Print column content for column handler id
  *
- * @param BugData $p_bug            BugData object.
+ * @param DwgData $p_bug            DwgData object.
  * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
  * @return void
  * @access public
  */
-function print_dwg_column_handler_id( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function print_dwg_column_handler_id( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	echo '<td class="column-assigned-to">';
 
 	# In case of a specific project, if the current user has no access to the field, then it would have been excluded from the
@@ -1456,12 +1468,12 @@ function print_dwg_column_handler_id( BugData $p_bug, $p_columns_target = COLUMN
 /**
  * Print column content for column reporter id
  *
- * @param BugData $p_bug            BugData object.
+ * @param DwgData $p_bug            DwgData object.
  * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
  * @return void
  * @access public
  */
-function print_dwg_column_reporter_id( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function print_dwg_column_reporter_id( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	echo '<td class="column-reporter">';
 	echo prepare_user_name( $p_bug->reporter_id );
 	echo '</td>';
@@ -1470,12 +1482,12 @@ function print_dwg_column_reporter_id( BugData $p_bug, $p_columns_target = COLUM
 /**
  * Print column content for column project id
  *
- * @param BugData $p_bug            BugData object.
+ * @param DwgData $p_bug            DwgData object.
  * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
  * @return void
  * @access public
  */
-function print_dwg_column_project_id( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function print_dwg_column_project_id( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	echo '<td class="column-project-id">';
 	echo string_display_line( project_get_name( $p_bug->project_id ) );
 	echo '</td>';
@@ -1484,18 +1496,18 @@ function print_dwg_column_project_id( BugData $p_bug, $p_columns_target = COLUMN
 /**
  * Print column content for column last updated
  *
- * @param BugData $p_bug            BugData object.
+ * @param DwgData $p_bug            DwgData object.
  * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
  * @return void
  * @access public
  */
-function print_dwg_column_last_updated( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
-	global $g_filter;
+function print_dwg_column_last_updated( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+	global $g_dwg_filter;
 
 	$t_last_updated = string_display_line( date( config_get( 'short_date_format' ), $p_bug->last_updated ) );
 
 	echo '<td class="column-last-modified">';
-	if( $p_bug->last_updated > strtotime( '-' . $g_filter[FILTER_PROPERTY_HIGHLIGHT_CHANGED] . ' hours' ) ) {
+	if( $p_bug->last_updated > strtotime( '-' . $g_dwg_filter[FILTER_PROPERTY_HIGHLIGHT_CHANGED] . ' hours' ) ) {
 		printf( '<span class="bold">%s</span>', $t_last_updated );
 	} else {
 		echo $t_last_updated;
@@ -1506,12 +1518,12 @@ function print_dwg_column_last_updated( BugData $p_bug, $p_columns_target = COLU
 /**
  * Print column content for column date submitted
  *
- * @param BugData $p_bug            BugData object.
+ * @param DwgData $p_bug            DwgData object.
  * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
  * @return void
  * @access public
  */
-function print_dwg_column_date_submitted( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function print_dwg_column_date_submitted( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	$t_date_submitted = string_display_line( date( config_get( 'short_date_format' ), $p_bug->date_submitted ) );
 
 	echo '<td class="column-date-submitted">', $t_date_submitted, '</td>';
@@ -1520,12 +1532,12 @@ function print_dwg_column_date_submitted( BugData $p_bug, $p_columns_target = CO
 /**
  * Print column content for column summary
  *
- * @param BugData $p_bug            BugData object.
+ * @param DwgData $p_bug            DwgData object.
  * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
  * @return void
  * @access public
  */
-function print_dwg_column_summary( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function print_dwg_column_summary( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	if( $p_columns_target == COLUMNS_TARGET_CSV_PAGE ) {
 		$t_summary = string_attribute( $p_bug->summary );
 	} else {
@@ -1539,12 +1551,12 @@ function print_dwg_column_summary( BugData $p_bug, $p_columns_target = COLUMNS_T
 /**
  * Print column content for column description
  *
- * @param BugData $p_bug            BugData object.
+ * @param DwgData $p_bug            DwgData object.
  * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
  * @return void
  * @access public
  */
-function print_dwg_column_description( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function print_dwg_column_description( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	$t_description = string_display_links( $p_bug->description );
 
 	echo '<td class="column-description">', $t_description, '</td>';
@@ -1553,12 +1565,12 @@ function print_dwg_column_description( BugData $p_bug, $p_columns_target = COLUM
 /**
  * Print column content for notes column
  *
- * @param BugData $p_bug            BugData object.
+ * @param DwgData $p_bug            DwgData object.
  * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
  * @return void
  * @access public
  */
-function print_dwg_column_notes( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function print_dwg_column_notes( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	$t_notes = bugnote_get_all_visible_as_string( $p_bug->id, /* user_bugnote_order */ 'DESC', /* user_bugnote_limit */ 0 );
 
 	echo '<td class="column-notes">', string_display_links( $t_notes ), '</td>';
@@ -1567,12 +1579,12 @@ function print_dwg_column_notes( BugData $p_bug, $p_columns_target = COLUMNS_TAR
 /**
  * Print column content for column steps to reproduce
  *
- * @param BugData $p_bug            BugData object.
+ * @param DwgData $p_bug            DwgData object.
  * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
  * @return void
  * @access public
  */
-function print_dwg_column_steps_to_reproduce( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function print_dwg_column_steps_to_reproduce( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	$t_steps_to_reproduce = string_display_links( $p_bug->steps_to_reproduce );
 
 	echo '<td class="column-steps-to-reproduce">', $t_steps_to_reproduce, '</td>';
@@ -1581,12 +1593,12 @@ function print_dwg_column_steps_to_reproduce( BugData $p_bug, $p_columns_target 
 /**
  * Print column content for column additional information
  *
- * @param BugData $p_bug            BugData object.
+ * @param DwgData $p_bug            DwgData object.
  * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
  * @return void
  * @access public
  */
-function print_dwg_column_additional_information( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function print_dwg_column_additional_information( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	$t_additional_information = string_display_links( $p_bug->additional_information );
 
 	echo '<td class="column-additional-information">', $t_additional_information, '</td>';
@@ -1595,12 +1607,12 @@ function print_dwg_column_additional_information( BugData $p_bug, $p_columns_tar
 /**
  * Print column content for column target version
  *
- * @param BugData $p_bug            BugData object.
+ * @param DwgData $p_bug            DwgData object.
  * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
  * @return void
  * @access public
  */
-function print_dwg_column_target_version( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function print_dwg_column_target_version( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	echo '<td class="column-target-version">';
 
 	# In case of a specific project, if the current user has no access to the field, then it would have been excluded from the
@@ -1615,12 +1627,12 @@ function print_dwg_column_target_version( BugData $p_bug, $p_columns_target = CO
 /**
  * Print column content for view state column
  *
- * @param BugData $p_bug            BugData object.
+ * @param DwgData $p_bug            DwgData object.
  * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
  * @return void
  * @access public
  */
-function print_dwg_column_view_state( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function print_dwg_column_view_state( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 
 	echo '<td class="column-view-state">';
 
@@ -1637,12 +1649,12 @@ function print_dwg_column_view_state( BugData $p_bug, $p_columns_target = COLUMN
 /**
  * Print column content for column tags
  *
- * @param BugData $p_bug            BugData object.
+ * @param DwgData $p_bug            DwgData object.
  * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
  * @return void
  * @access public
  */
-function print_dwg_column_tags( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function print_dwg_column_tags( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	echo '<td class="column-tags">';
 
 	if( access_has_bug_level( config_get( 'tag_view_threshold' ), $p_bug->id ) ) {
@@ -1655,12 +1667,12 @@ function print_dwg_column_tags( BugData $p_bug, $p_columns_target = COLUMNS_TARG
 /**
  * Print column content for column due date
  *
- * @param BugData $p_bug            BugData object.
+ * @param DwgData $p_bug            DwgData object.
  * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
  * @return void
  * @access public
  */
-function print_dwg_column_due_date( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function print_dwg_column_due_date( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	if( !access_has_bug_level( config_get( 'due_date_view_threshold' ), $p_bug->id ) ||
 		date_is_null( $p_bug->due_date )
 	) {
@@ -1677,12 +1689,12 @@ function print_dwg_column_due_date( BugData $p_bug, $p_columns_target = COLUMNS_
 /**
  * Print column content for column overdue
  *
- * @param BugData $p_bug            BugData object.
+ * @param DwgData $p_bug            DwgData object.
  * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
  * @return void
  * @access public
  */
-function print_dwg_column_overdue( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function print_dwg_column_overdue( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 
 	echo '<td class="column-overdue">';
 

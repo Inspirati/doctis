@@ -1100,13 +1100,13 @@ function bug_view_relationship_view_box( $p_bug_id, $p_can_update ) {
  * This code is similar to print_status_option_list except
  * there is no masking, except for the current state
  *
- * @param BugData $p_bug A valid bug object.
+ * @param DwgData $p_bug A valid bug object.
  *
  * @return void
  *
  * @throws ClientException
  */
-function dwg_view_button_dwg_change_status( BugData $p_bug ) {
+function dwg_view_button_dwg_change_status( DwgData $p_bug ) {
 	$t_current_access = access_get_project_level( $p_bug->project_id );
 
 	$t_enum_list = print_dwg_get_status_option_list(
@@ -1154,13 +1154,13 @@ function dwg_view_button_dwg_change_status( BugData $p_bug ) {
 /**
  * Print Assign To: combo box of possible handlers.
  *
- * @param BugData $p_bug Bug object.
+ * @param DwgData $p_bug Bug object.
  *
  * @return void
  *
  * @throws ClientException
  */
-function dwg_view_button_dwg_assign_to( BugData $p_bug ) {
+function dwg_view_button_dwg_assign_to( DwgData $p_bug ) {
 	$t_current_user_id = auth_get_current_user_id();
 	$t_options = array();
 	$t_default_assign_to = null;

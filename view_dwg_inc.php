@@ -99,7 +99,7 @@ $t_filter_position = config_get( 'filter_position' );
 # -- ====================== FILTER FORM ========================= --
 
 if( ( $t_filter_position & FILTER_POSITION_TOP ) == FILTER_POSITION_TOP ) {
-	filter_draw_selection_area();
+	filter_dwg_draw_selection_area();
 }
 
 # -- ====================== end of FILTER FORM ================== --
@@ -297,7 +297,7 @@ if( ( $t_filter_position & FILTER_POSITION_TOP ) == FILTER_POSITION_TOP ) {
 
 # -- ====================== FILTER FORM ========================= --
 if( ( $t_filter_position & FILTER_POSITION_BOTTOM ) == FILTER_POSITION_BOTTOM ) {
-	filter_draw_selection_area();
+	filter_dwg_draw_selection_area();
 }
 # -- ====================== end of FILTER FORM ================== --
 

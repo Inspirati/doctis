@@ -532,10 +532,10 @@ class DwgFilterQuery extends DbQuery {
 		$t_project_id = $this->project_id;
 
 		$t_projects_query_required = true;
-		$t_included_project_ids = filter_get_included_projects( $this->filter, $t_project_id, $t_user_id, true /* return ALL_PROJECTS */ );
+		$t_included_project_ids = filter_dwg_get_included_projects( $this->filter, $t_project_id, $t_user_id, true /* return ALL_PROJECTS */ );
 		if( ALL_PROJECTS == $t_included_project_ids ) {
 			# The list of expanded projects is needed later even if project_query is not required
-			$t_included_project_ids = filter_get_included_projects( $this->filter, $t_project_id, $t_user_id, false /* return ALL_PROJECTS */ );
+			$t_included_project_ids = filter_dwg_get_included_projects( $this->filter, $t_project_id, $t_user_id, false /* return ALL_PROJECTS */ );
 			# this special case can skip the projects query clause:
 			if( user_is_administrator( $t_user_id ) ) {
 				log_event( LOG_FILTERING, 'all projects + administrator, hence no project filter.' );

@@ -65,7 +65,6 @@ require_api( 'current_user_api.php' );
 require_api( 'custom_field_api.php' );
 require_api( 'database_api.php' );
 require_api( 'date_api.php' );
-//require_api( 'dwg_api.php' );
 require_api( 'error_api.php' );
 require_api( 'event_api.php' );
 require_api( 'filter_constants_inc.php' );
@@ -2459,12 +2458,6 @@ function filter_print_view_type_toggle( $p_url, $p_view_type ) {
  * @return array|integer	Array of project ids, or ALL_PROJECTS if applicable.
  */
 function filter_get_included_projects( array $p_filter, $p_project_id = null, $p_user_id = null, $p_return_all_projects = false ) {
-
-// @TODO RobD - still needed
-if (count( $p_filter ) == 0) {
-	return null;
-}
-
 	if( null === $p_project_id ) {
 		$t_project_id = helper_get_current_project();
 	} else {

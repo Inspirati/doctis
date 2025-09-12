@@ -581,6 +581,12 @@ $s_back_to_issue = 'Back to Issue';
 $s_confirm_revision_drop = 'Are you sure you want to drop this issue revision?';
 $s_activities_title = 'Activities';
 
+# documents_view*
+$s_reference = 'Reference';
+$s_number = 'Number';
+$s_date = 'Date';
+$s_release_date = 'Release Date';
+
 # bugnote_add.php
 $s_bugnote_attached_files = 'Attached Files:';
 
@@ -984,6 +990,7 @@ $s_email_user_updated_msg = 'Your account has been updated by an administrator. 
 # menu_inc.php
 $s_main_link = 'Main';
 $s_view_bugs_link = 'View Issues';
+$s_view_dwg_link = 'View Documents';
 $s_report_bug_link = 'Report Issue';
 $s_changelog_link = 'Change Log';
 $s_roadmap_link = 'Roadmap';
@@ -1219,6 +1226,11 @@ $s_open_filters = 'Change Filter';
 $s_or_unassigned = 'Or Unassigned';
 $s_ok = 'OK';
 $s_select_all = 'Select All';
+
+# view_dwg_page.php
+$s_viewing_dwg_title = 'Viewing Documents';
+
+# view_dwg_inc.php
 
 # stored query strings
 $s_use_query = 'Use Filter';

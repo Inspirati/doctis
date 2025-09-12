@@ -59,6 +59,9 @@ require_api( 'authentication_api.php' );
 require_api( 'bug_api.php' );
 require_api( 'collapse_api.php' );
 require_api( 'columns_api.php' );
+
+require_api( 'columns_dwg_api.php' );
+
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
 require_api( 'current_user_api.php' );
@@ -600,7 +603,7 @@ function filter_dwg_version_upgrade( array $p_filter ) {
 	# This is a stub for future version upgrades
 
 	# After conversions are made, update filter value to current version
-	$p_filter['_version'] = FILTER_VERSION;
+	$p_filter['_version'] = DWG_FILTER_VERSION;
 	return $p_filter;
 }
 
@@ -612,10 +615,10 @@ function filter_dwg_version_upgrade( array $p_filter ) {
  */
 function filter_dwg_ensure_valid_filter( array $p_filter_arr ) {
 	if( !isset( $p_filter_arr['_version'] ) ) {
-		$p_filter_arr['_version'] = FILTER_VERSION;
+		$p_filter_arr['_version'] = DWG_FILTER_VERSION;
 	}
 
-	if( filter_version_compare( $p_filter_arr['_version'], FILTER_VERSION, '<' ) ) {
+	if( filter_version_compare( $p_filter_arr['_version'], DWG_FILTER_VERSION, '<' ) ) {
 		$p_filter_arr = filter_dwg_version_upgrade( $p_filter_arr );
 	}
 
@@ -642,7 +645,7 @@ function filter_dwg_ensure_valid_filter( array $p_filter_arr ) {
 	# clean up sort fields, remove invalid columns
 	$t_new_sort_array = array();
 	$t_new_dir_array = array();
-	$t_all_columns = columns_get_all_active_columns();
+	$t_all_columns = columns_dwg_get_all_active_columns();
 	for( $ix = 0; $ix < $t_sort_fields_count; $ix++ ) {
 		if( isset( $t_sort_fields[$ix] ) ) {
 			$t_column = $t_sort_fields[$ix];
@@ -888,54 +891,54 @@ function filter_dwg_get_default_array( $p_view_type = null ) {
 	}
 
 	$t_filter = array(
-		'_version' => FILTER_VERSION,
+		'_version' => DWG_FILTER_VERSION,
 		'_view_type' => $t_view_type,
 		FILTER_PROPERTY_CATEGORY_ID => $t_meta_filter_any_array,
-		FILTER_PROPERTY_SEVERITY => $t_meta_filter_any_array,
-		FILTER_PROPERTY_STATUS => $t_meta_filter_any_array,
-		FILTER_PROPERTY_HIGHLIGHT_CHANGED => $t_default_show_changed,
-		FILTER_PROPERTY_REPORTER_ID => $t_meta_filter_any_array,
-		FILTER_PROPERTY_HANDLER_ID => $t_meta_filter_any_array,
-		FILTER_PROPERTY_PROJECT_ID => array( META_FILTER_CURRENT ),
-		FILTER_PROPERTY_PROJECTION => $t_meta_filter_any_array,
-		FILTER_PROPERTY_RESOLUTION => $t_meta_filter_any_array,
-		FILTER_PROPERTY_BUILD => $t_meta_filter_any_array,
-		FILTER_PROPERTY_VERSION => $t_meta_filter_any_array,
-		FILTER_PROPERTY_HIDE_STATUS => array( $t_hide_status_default ),
-		FILTER_PROPERTY_MONITOR_USER_ID => $t_meta_filter_any_array,
-		FILTER_PROPERTY_SORT_FIELD_NAME => 'last_updated',
-		FILTER_PROPERTY_SORT_DIRECTION => 'DESC',
-		FILTER_PROPERTY_ISSUES_PER_PAGE => config_get( 'default_limit_view' ),
-		FILTER_PROPERTY_MATCH_TYPE => FILTER_MATCH_ALL,
-		FILTER_PROPERTY_PLATFORM => $t_meta_filter_any_array,
-		FILTER_PROPERTY_OS => $t_meta_filter_any_array,
-		FILTER_PROPERTY_OS_BUILD => $t_meta_filter_any_array,
-		FILTER_PROPERTY_FIXED_IN_VERSION => $t_meta_filter_any_array,
-		FILTER_PROPERTY_TARGET_VERSION => $t_meta_filter_any_array,
-		FILTER_PROPERTY_PROFILE_ID => $t_meta_filter_any_array,
-		FILTER_PROPERTY_PRIORITY => $t_meta_filter_any_array,
-		FILTER_PROPERTY_NOTE_USER_ID => $t_meta_filter_any_array,
-		FILTER_PROPERTY_STICKY => gpc_string_to_bool( config_get( 'show_sticky_issues' ) ),
-		FILTER_PROPERTY_FILTER_BY_DATE_SUBMITTED => false,
-		FILTER_PROPERTY_DATE_SUBMITTED_START_MONTH => date( 'm' ),
-		FILTER_PROPERTY_DATE_SUBMITTED_END_MONTH => date( 'm' ),
-		FILTER_PROPERTY_DATE_SUBMITTED_START_DAY => 1,
-		FILTER_PROPERTY_DATE_SUBMITTED_END_DAY => date( 'd' ),
-		FILTER_PROPERTY_DATE_SUBMITTED_START_YEAR => date( 'Y' ),
-		FILTER_PROPERTY_DATE_SUBMITTED_END_YEAR => date( 'Y' ),
-		FILTER_PROPERTY_FILTER_BY_LAST_UPDATED_DATE => false,
-		FILTER_PROPERTY_LAST_UPDATED_START_MONTH => date( 'm' ),
-		FILTER_PROPERTY_LAST_UPDATED_END_MONTH => date( 'm' ),
-		FILTER_PROPERTY_LAST_UPDATED_START_DAY => 1,
-		FILTER_PROPERTY_LAST_UPDATED_END_DAY => date( 'd' ),
-		FILTER_PROPERTY_LAST_UPDATED_START_YEAR => date( 'Y' ),
-		FILTER_PROPERTY_LAST_UPDATED_END_YEAR => date( 'Y' ),
-		FILTER_PROPERTY_SEARCH => '',
-		FILTER_PROPERTY_VIEW_STATE => META_FILTER_ANY,
-		FILTER_PROPERTY_TAG_STRING => '',
-		FILTER_PROPERTY_TAG_SELECT => 0,
-		FILTER_PROPERTY_RELATIONSHIP_TYPE => BUG_REL_ANY,
-		FILTER_PROPERTY_RELATIONSHIP_BUG => META_FILTER_ANY,
+		// FILTER_PROPERTY_SEVERITY => $t_meta_filter_any_array,
+		// FILTER_PROPERTY_STATUS => $t_meta_filter_any_array,
+		// FILTER_PROPERTY_HIGHLIGHT_CHANGED => $t_default_show_changed,
+		// FILTER_PROPERTY_REPORTER_ID => $t_meta_filter_any_array,
+		// FILTER_PROPERTY_HANDLER_ID => $t_meta_filter_any_array,
+		// FILTER_PROPERTY_PROJECT_ID => array( META_FILTER_CURRENT ),
+		// FILTER_PROPERTY_PROJECTION => $t_meta_filter_any_array,
+		// FILTER_PROPERTY_RESOLUTION => $t_meta_filter_any_array,
+		// FILTER_PROPERTY_BUILD => $t_meta_filter_any_array,
+		// FILTER_PROPERTY_VERSION => $t_meta_filter_any_array,
+		// FILTER_PROPERTY_HIDE_STATUS => array( $t_hide_status_default ),
+		// FILTER_PROPERTY_MONITOR_USER_ID => $t_meta_filter_any_array,
+		// FILTER_PROPERTY_SORT_FIELD_NAME => 'last_updated',
+		// FILTER_PROPERTY_SORT_DIRECTION => 'DESC',
+		// FILTER_PROPERTY_ISSUES_PER_PAGE => config_get( 'default_limit_view' ),
+		// FILTER_PROPERTY_MATCH_TYPE => FILTER_MATCH_ALL,
+		// FILTER_PROPERTY_PLATFORM => $t_meta_filter_any_array,
+		// FILTER_PROPERTY_OS => $t_meta_filter_any_array,
+		// FILTER_PROPERTY_OS_BUILD => $t_meta_filter_any_array,
+		// FILTER_PROPERTY_FIXED_IN_VERSION => $t_meta_filter_any_array,
+		// FILTER_PROPERTY_TARGET_VERSION => $t_meta_filter_any_array,
+		// FILTER_PROPERTY_PROFILE_ID => $t_meta_filter_any_array,
+		// FILTER_PROPERTY_PRIORITY => $t_meta_filter_any_array,
+		// FILTER_PROPERTY_NOTE_USER_ID => $t_meta_filter_any_array,
+		// FILTER_PROPERTY_STICKY => gpc_string_to_bool( config_get( 'show_sticky_issues' ) ),
+		// FILTER_PROPERTY_FILTER_BY_DATE_SUBMITTED => false,
+		// FILTER_PROPERTY_DATE_SUBMITTED_START_MONTH => date( 'm' ),
+		// FILTER_PROPERTY_DATE_SUBMITTED_END_MONTH => date( 'm' ),
+		// FILTER_PROPERTY_DATE_SUBMITTED_START_DAY => 1,
+		// FILTER_PROPERTY_DATE_SUBMITTED_END_DAY => date( 'd' ),
+		// FILTER_PROPERTY_DATE_SUBMITTED_START_YEAR => date( 'Y' ),
+		// FILTER_PROPERTY_DATE_SUBMITTED_END_YEAR => date( 'Y' ),
+		// FILTER_PROPERTY_FILTER_BY_LAST_UPDATED_DATE => false,
+		// FILTER_PROPERTY_LAST_UPDATED_START_MONTH => date( 'm' ),
+		// FILTER_PROPERTY_LAST_UPDATED_END_MONTH => date( 'm' ),
+		// FILTER_PROPERTY_LAST_UPDATED_START_DAY => 1,
+		// FILTER_PROPERTY_LAST_UPDATED_END_DAY => date( 'd' ),
+		// FILTER_PROPERTY_LAST_UPDATED_START_YEAR => date( 'Y' ),
+		// FILTER_PROPERTY_LAST_UPDATED_END_YEAR => date( 'Y' ),
+		// FILTER_PROPERTY_SEARCH => '',
+		// FILTER_PROPERTY_VIEW_STATE => META_FILTER_ANY,
+		// FILTER_PROPERTY_TAG_STRING => '',
+		// FILTER_PROPERTY_TAG_SELECT => 0,
+		// FILTER_PROPERTY_RELATIONSHIP_TYPE => BUG_REL_ANY,
+		// FILTER_PROPERTY_RELATIONSHIP_BUG => META_FILTER_ANY,
 	);
 
 	# initialize plugin filters
@@ -1026,7 +1029,7 @@ function filter_dwg_get_default() {
  * Deserialize filter string.
  *
  * Expected strings have this format: "<version>#<json string>" where:
- * - <version> is the version number of the filter structure used. See constant FILTER_VERSION
+ * - <version> is the version number of the filter structure used. See constant DWG_FILTER_VERSION
  * - # is a separator
  * - <json string> is the JSON-encoded filter array.
  *
@@ -1076,7 +1079,7 @@ function filter_dwg_deserialize( $p_serialized_filter ) {
  * @return string Serialized filter string
  */
 function filter_dwg_serialize( $p_filter_array ) {
-	$t_cookie_version = FILTER_VERSION;
+	$t_cookie_version = DWG_FILTER_VERSION;
 	$p_filter_array = filter_dwg_clean_runtime_properties( $p_filter_array );
 	$t_settings_serialized = json_encode( $p_filter_array );
 	$t_settings_string = $t_cookie_version . '#' . $t_settings_serialized;
@@ -1307,7 +1310,7 @@ function filter_dwg_get_rows_filter( $p_project_id = null, $p_user_id = null ) {
 
 
 	// @TODO RobD - temporarily disable fetching of filters and just return an empty array
-/*
+#/*
 	if( $t_user_id == $t_current_user_id ) {
 		$t_filter = current_user_get_dwg_filter();
 	} else {
@@ -1318,8 +1321,8 @@ function filter_dwg_get_rows_filter( $p_project_id = null, $p_user_id = null ) {
 	if( false === $t_filter ) {
 		$t_filter = array();  // @TODO RobD: does this work? or results in a php internal error being thrown (as demonstrated below)
 	}
-*/		
-	$t_filter = array();
+#*/		
+	// $t_filter = array();
 
 	return $t_filter;
 }
@@ -2397,7 +2400,7 @@ function filter_dwg_gpc_get( ?array $p_filter = null ): array {
 	$f_relationship_bug = gpc_get_int( FILTER_PROPERTY_RELATIONSHIP_BUG, $t_filter[FILTER_PROPERTY_RELATIONSHIP_BUG] );
 
 	log_event( LOG_FILTERING, 'filter_gpc_get: Update filters' );
-	$t_filter_input['_version'] 								= FILTER_VERSION;
+	$t_filter_input['_version'] 								= DWG_FILTER_VERSION;
 	$t_filter_input['_view_type'] 							= $f_view_type;
 	$t_filter_input[FILTER_PROPERTY_CATEGORY_ID] 			= $f_show_category;
 	$t_filter_input[FILTER_PROPERTY_SEVERITY] 				= $f_show_severity;
@@ -2586,6 +2589,12 @@ function filter_dwg_print_view_type_toggle( $p_url, $p_view_type ) {
  * @return array|integer	Array of project ids, or ALL_PROJECTS if applicable.
  */
 function filter_dwg_get_included_projects( array $p_filter, $p_project_id = null, $p_user_id = null, $p_return_all_projects = false ) {
+
+	// @TODO RobD - during development, i used a null filter (no filter), and this is then needed to avoid throwing an exception below
+	if (count( $p_filter ) == 0) {
+		return null;
+	}
+	
 	if( null === $p_project_id ) {
 		$t_project_id = helper_get_current_project();
 	} else {
