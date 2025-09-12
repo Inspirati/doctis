@@ -768,7 +768,9 @@ function helper_duration_to_minutes( $p_hhmm, $p_field = 'hhmm' ) {
  * @return void
  */
 function shutdown_functions_register() {
-	register_shutdown_function( 'email_shutdown_function' );
+
+// @TODO RobD - temporarily removed to expedite the debug trace process
+	// register_shutdown_function( 'email_shutdown_function' );
 }
 
 /**

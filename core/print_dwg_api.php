@@ -1295,10 +1295,10 @@ function print_dwg_bug_link( $p_bug_id, $p_detail_info = true ) {
 /**
  * formats the priority given the status
  * shows the priority in BOLD if the bug is NOT closed and is of significant priority
- * @param BugData $p_bug Bug Object.
+ * @param DwgData $p_bug Bug Object.
  * @return void
  */
-function print_dwg_formatted_priority_string( BugData $p_bug ) {
+function print_dwg_formatted_priority_string( DwgData $p_bug ) {
 	$t_pri_str = get_enum_element( 'priority', $p_bug->priority, auth_get_current_user_id(), $p_bug->project_id );
 	$t_priority_threshold = config_get( 'priority_significant_threshold' );
 
@@ -1314,10 +1314,10 @@ function print_dwg_formatted_priority_string( BugData $p_bug ) {
 /**
  * formats the severity given the status
  * shows the severity in BOLD if the bug is NOT closed and is of significant severity
- * @param BugData $p_bug Bug Object.
+ * @param DwgData $p_bug Bug Object.
  * @return void
  */
-function print_dwg_formatted_severity_string( BugData $p_bug ) {
+function print_dwg_formatted_severity_string( DwgData $p_bug ) {
 	$t_sev_str = get_enum_element( 'severity', $p_bug->severity, auth_get_current_user_id(), $p_bug->project_id );
 	$t_severity_threshold = config_get( 'severity_significant_threshold' );
 

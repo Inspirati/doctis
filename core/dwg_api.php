@@ -15,7 +15,7 @@
 # along with MantisBT.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Document API
+ * Dwg API
  *
  * @package CoreAPI
  * @subpackage BugAPI
@@ -115,43 +115,42 @@ use Mantis\Exceptions\ClientException;
  * @property string $additional_information
  */
 #[AllowDynamicProperties]
-// class BugData {
 class DwgData {
 	protected $id;
-	protected $project_id = null;
-	protected $reporter_id = 0;
-	protected $handler_id = 0;
-	protected $duplicate_id = 0;
-	protected $priority = NORMAL;
-	protected $severity = MINOR;
-	protected $reproducibility = 10;
-	protected $status = NEW_;
-	protected $resolution = OPEN;
-	protected $projection = 10;
-	protected $category_id = 1;
-	protected $date_submitted = '';
-	protected $last_updated = '';
-	protected $eta = 10;
-	protected $os = '';
-	protected $os_build = '';
-	protected $platform = '';
-	protected $version = '';
-	protected $fixed_in_version = '';
-	protected $target_version = '';
-	protected $build = '';
-	protected $view_state = VS_PUBLIC;
-	protected $summary = '';
-	protected $sponsorship_total = 0;
-	protected $sticky = 0;
-	protected $due_date = '';
-	protected $profile_id = 0;
-	protected $bug_text_id;
-	protected $description = '';
-	protected $steps_to_reproduce = '';
-	protected $additional_information = '';
-	private $_stats = null;
-	public $attachment_count = null;
-	public $bugnotes_count = null;
+	// protected $project_id = null;
+	// // protected $reporter_id = 0;
+	// // protected $handler_id = 0;
+	// // protected $duplicate_id = 0;
+	// protected $priority = NORMAL;
+	// // protected $severity = MINOR;
+	// // protected $reproducibility = 10;
+	// protected $status = NEW_;
+	// protected $resolution = OPEN;
+	// // protected $projection = 10;
+	// protected $category_id = 1;
+	// protected $date_submitted = '';
+	// protected $last_updated = '';
+	// // protected $eta = 10;
+	// // protected $os = '';
+	// // protected $os_build = '';
+	// // protected $platform = '';
+	// protected $version = '';
+	// protected $fixed_in_version = '';
+	// // protected $target_version = '';
+	// // protected $build = '';
+	// protected $view_state = VS_PUBLIC;
+	// protected $summary = '';
+	// // protected $sponsorship_total = 0;
+	// protected $sticky = 0;
+	// protected $due_date = '';
+	// protected $profile_id = 0;
+	// protected $bug_text_id;
+	// protected $description = '';
+	// // protected $steps_to_reproduce = '';
+	// protected $additional_information = '';
+	// private $_stats = null;
+	// public $attachment_count = null;
+	// public $bugnotes_count = null;
 
 	/**
 	 * Indicates if bug is currently being loaded from database
@@ -1504,7 +1503,7 @@ class DwgData {
 //  * @param int  $p_bug_id       Int representing bug identifier.
 //  * @param bool $p_get_extended Whether to include extended information (including bug_text).
 //  *
-//  * @return BugData BugData Object
+//  * @return DwgData DwgData Object
 //  * @throws ClientException
 //  *
 //  * @access public
@@ -1516,21 +1515,21 @@ class DwgData {
 // 		$t_row = bug_get_row( $p_bug_id );
 // 	}
 
-// 	$t_bug_data = new BugData;
+// 	$t_bug_data = new DwgData;
 // 	$t_bug_data->loadrow( $t_row );
 // 	return $t_bug_data;
 // }
 
 // /**
-//  * Convert mantis_bug_table row to BugData object.
+//  * Convert mantis_bug_table row to DwgData object.
 //  *
 //  * @param array $p_row Bug database row.
-//  * @return BugData
+//  * @return DwgData
 //  *
 //  * @throws ClientException
 //  */
 // function bug_row_to_object( array $p_row ) {
-// 	$t_bug_data = new BugData;
+// 	$t_bug_data = new DwgData;
 // 	$t_bug_data->loadrow( $p_row );
 // 	return $t_bug_data;
 // }
@@ -2320,7 +2319,7 @@ class DwgData {
 // /**
 //  * Populate the caches related to the selected columns.
 //  *
-//  * @param BugData[] $p_bugs         Array of BugData objects
+//  * @param DwgData[] $p_bugs         Array of DwgData objects
 //  * @param array $p_selected_columns Array of columns to show
 //  */
 // function bug_cache_columns_data( array $p_bugs, array $p_selected_columns ) {
@@ -2390,7 +2389,7 @@ class DwgData {
 /**
  * Populate the caches related to the selected columns.
  *
- * @param BugData[] $p_bugs         Array of BugData objects
+ * @param DwgData[] $p_bugs         Array of DwgData objects
  * @param array $p_selected_columns Array of columns to show
  */
 function dwg_cache_columns_data( array $p_bugs, array $p_selected_columns ) {

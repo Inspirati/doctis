@@ -23,6 +23,7 @@
  */
 define( 'MANTIS_VERSION', '2.28.0-dev' );
 define( 'FILTER_VERSION', 'v9' );
+define( 'DWG_FILTER_VERSION', 'v9' );
 
 # --- constants -------------------
 # magic numbers

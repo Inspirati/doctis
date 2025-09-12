@@ -1721,6 +1721,9 @@ function user_get_dwg_filter( $p_user_id, $p_project_id = null ) {
 	# Currently we use the filters saved in db as "current" special filters,
 	# to track the active settings for filters in use.
 
+# @TODO RobD - for development work, pretend we are an anonymous user who can't have persistent (saved) filters
+return filter_dwg_get_default();
+
 	# for anonymous user, we don't allow using persistent filter
 	# if this function is reached, we return a default filter for it.
 	if( user_is_anonymous( $p_user_id ) ) {
