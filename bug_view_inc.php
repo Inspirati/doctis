@@ -892,7 +892,7 @@ function bug_view_relationship_get_details( $p_bug_id, BugRelationshipData $p_re
 	}
 
 	# user can access to the related bug at least as a viewer
-	if( !access_has_bug_level( config_get( 'view_bug_threshold', null, null, $t_related_project_id ), $t_related_bug_id ) ) {
+	if( !access_has_bug_level( config_get( 'view_dwg_threshold', null, null, $t_related_project_id ), $t_related_bug_id ) ) {
 		return '';
 	}
 
@@ -1116,7 +1116,7 @@ function bug_view_button_bug_change_status( BugData $p_bug ) {
 		# (to prevent users downgraded to viewers from updating issues) and
 		# reporters are allowed to close their own issues
 		(  bug_is_user_reporter( $p_bug->id, auth_get_current_user_id() )
-		&& access_has_bug_level( config_get( 'report_bug_threshold' ), $p_bug->id )
+		&& access_has_bug_level( config_get( 'create_dwg_threshold' ), $p_bug->id )
 		&& ON == config_get( 'allow_reporter_close' )
 		),
 		$p_bug->project_id );

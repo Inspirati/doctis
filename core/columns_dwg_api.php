@@ -1116,8 +1116,8 @@ function print_dwg_column_selection( DwgData $p_bug, $p_columns_target = COLUMNS
 
 	echo '<td class="column-selection">';
 	if( COLUMNS_TARGET_PRINT_PAGE == $p_columns_target ||
-		# check report_bug_threshold for the actions "copy" or "move" into any other project
-		access_has_any_project_level( 'report_bug_threshold' ) ||
+		# check create_dwg_threshold for the actions "copy" or "move" into any other project
+		access_has_any_project_level( 'create_dwg_threshold' ) ||
 		# !TODO: check if any other projects actually exist for the bug to be moved to
 		access_has_project_level( config_get( 'move_bug_threshold', null, null, $p_bug->project_id ), $p_bug->project_id ) ||
 		# !TODO: factor in $g_auto_set_status_to_assigned == ON
@@ -1196,7 +1196,7 @@ function print_dwg_column_edit( DwgData $p_bug, $p_columns_target = COLUMNS_TARG
 	$t_can_update = !bug_is_readonly( $p_bug->id ) &&
 		access_has_bug_level( config_get( 'update_bug_threshold', null, auth_get_current_user_id(), $p_bug->project_id ), $p_bug->id );
 	if( $t_can_update ) {
-		echo '<a href="' . string_get_bug_update_url( $p_bug->id ) . '">';
+		echo '<a href="' . string_get_dwg_update_url( $p_bug->id ) . '">';
 		print_icon( 'fa-pencil', 'bigger-130 padding-2 grey', lang_get( 'edit' ) );
 		echo '</a>';
 	} else {
@@ -1234,7 +1234,7 @@ function print_dwg_column_priority( DwgData $p_bug, $p_columns_target = COLUMNS_
  */
 function print_dwg_column_id( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	echo '<td class="column-id">';
-	print_bug_link( $p_bug->id, false );
+	print_dwg_link( $p_bug->id, false );
 	echo '</td>';
 }
 
@@ -1283,7 +1283,7 @@ function print_dwg_column_bugnotes_count( DwgData $p_bug, $p_columns_target = CO
 		if( $t_show_in_bold ) {
 			echo '<span class="bold">';
 		}
-		print_link( string_get_bug_view_url( $p_bug->id ) . '&nbn=' . $t_bugnote_count . '#bugnotes', $t_bugnote_count );
+		print_link( string_get_dwg_view_url( $p_bug->id ) . '&nbn=' . $t_bugnote_count . '#bugnotes', $t_bugnote_count );
 		if( $t_show_in_bold ) {
 			echo '</span>';
 		}
@@ -1313,7 +1313,7 @@ function print_dwg_column_attachment_count( DwgData $p_bug, $p_columns_target = 
 	echo '<td class="column-attachments">';
 
 	if( $t_attachment_count > 0 ) {
-		$t_href = string_get_bug_view_url( $p_bug->id ) . '#attachments';
+		$t_href = string_get_dwg_view_url( $p_bug->id ) . '#attachments';
 		$t_href_title = sprintf( lang_get( 'view_attachments_for_issue' ), $t_attachment_count, $p_bug->id );
 		echo '<a href="' . $t_href . '" title="' . $t_href_title . '">' . $t_attachment_count . '</a>';
 	} else {
@@ -1341,7 +1341,7 @@ function print_dwg_column_category_id( DwgData $p_bug, $p_columns_target = COLUM
 	echo '<div class="align-left">';
 
 	# type project name if viewing 'all projects' or if issue is in a subproject
-	if( ON == config_get( 'show_bug_project_links' ) && helper_get_current_project() != $p_bug->project_id ) {
+	if( ON == config_get( 'show_dwg_project_links' ) && helper_get_current_project() != $p_bug->project_id ) {
 		echo '<span class="small project">[';
 		print_view_dwg_sort_link( string_display_line( $t_project_name ), 'project_id', $t_sort, $t_dir, $p_columns_target );
 		echo ']</span>&#160;&#160;';
@@ -1544,7 +1544,7 @@ function print_dwg_column_summary( DwgData $p_bug, $p_columns_target = COLUMNS_T
 		$t_summary = string_display_line_links( $p_bug->summary );
 	}
 	
-	$t_bug_url = string_get_bug_view_url( $p_bug->id );
+	$t_bug_url = string_get_dwg_view_url( $p_bug->id );
 	echo '<td class="column-summary"><a href="' . $t_bug_url . '">' . $t_summary . '</a></td>';
 }
 

@@ -65,7 +65,7 @@ require_api( 'user_api.php' );
 
 /**
  * @internal The following functions each print out filter field inputs.
- *      They are derived from view_filters_page.php
+ *      They are derived from view_dwg_filters_page.php
  *      The functions follow a strict naming convention:
  *
  *      print_filter_[filter_name]
@@ -78,7 +78,7 @@ require_api( 'user_api.php' );
  *      are virtually identical except for the property name.
  *      Perhaps this code could be made simpler by refactoring into a
  *      class to avoid all those calls to global (which are pretty ugly)
- *      These functions could also be shared by view_filters_page.php
+ *      These functions could also be shared by view_dwg_filters_page.php
  */
 
 /**
@@ -167,7 +167,7 @@ function print_filter_dwg_values_reporter_id( array $p_filter ) {
 			if( filter_field_is_any( $t_current ) ) {
 				$t_any_found = true;
 			} else if( filter_field_is_myself( $t_current ) ) {
-				if( access_has_project_level( config_get( 'report_bug_threshold' ) ) ) {
+				if( access_has_project_level( config_get( 'create_dwg_threshold' ) ) ) {
 					$t_this_name = '[' . lang_get( 'myself' ) . ']';
 				} else {
 					$t_any_found = true;
@@ -218,7 +218,7 @@ function print_filter_dwg_reporter_id( ?array $p_filter = null ) {
 		?>
 		<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_REPORTER_ID], META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
 		<?php
-			if( access_has_project_level( config_get( 'report_bug_threshold' ) ) ) {
+			if( access_has_project_level( config_get( 'create_dwg_threshold' ) ) ) {
 				echo '<option value="' . META_FILTER_MYSELF . '" ';
 				check_selected( $p_filter[FILTER_PROPERTY_REPORTER_ID], META_FILTER_MYSELF );
 				echo '>[' . lang_get( 'myself' ) . ']</option>';

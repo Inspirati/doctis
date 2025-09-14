@@ -549,9 +549,12 @@ function layout_navbar_button_bar() {
 	$t_show_report_bug_button = access_has_any_project_level( 'report_bug_threshold' ) &&
 		!is_page_name( string_get_bug_page( "report" ) ) &&
 		!is_page_name( string_get_bug_page( "update" ) );
+	$t_show_create_dwg_button = access_has_any_project_level( 'report_dwg_threshold' ) &&
+		!is_page_name( string_get_dwg_page( "create" ) ) &&
+		!is_page_name( string_get_dwg_page( "update" ) );
 	$t_show_invite_user_button = access_has_global_level( config_get( 'manage_user_threshold' ) );
 
-	if( !$t_show_report_bug_button && !$t_show_invite_user_button ) {
+	if( !$t_show_report_bug_button && !$t_show_invite_user_button && !$t_show_create_dwg_button) {
 		return;
 	}
 
@@ -563,6 +566,14 @@ function layout_navbar_button_bar() {
 		echo '<a class="btn btn-primary btn-sm" href="' . $t_bug_url . '">';
 		print_icon( 'fa-edit');
 		echo ' ' . lang_get( 'report_bug_link' );
+		echo '</a>';
+	}
+
+	if( $t_show_create_dwg_button )  {
+		$t_dwg_url = string_get_dwg_create_url();
+		echo '<a class="btn btn-primary btn-sm" href="' . $t_dwg_url . '">';
+		print_icon( 'fa-edit');
+		echo ' ' . lang_get( 'create_dwg_link' );
 		echo '</a>';
 	}
 
@@ -743,6 +754,15 @@ function layout_print_sidebar( $p_active_sidebar_page = null ) {
 			$t_sidebar_items[] = array(
 				'url' => string_get_bug_report_url(),
 				'title' => 'report_bug_link',
+				'icon' => 'fa-edit'
+			);
+		}
+
+		# Create Dwgs
+		if( access_has_any_project_level( 'create_dwg_threshold' ) ) {
+			$t_sidebar_items[] = array(
+				'url' => string_get_dwg_create_url(),
+				'title' => 'create_dwg_link',
 				'icon' => 'fa-edit'
 			);
 		}

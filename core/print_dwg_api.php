@@ -149,7 +149,7 @@ function print_dwg_header_redirect( $p_url, $p_die = true, $p_sanitize = false, 
  * @return void
  */
 function print_dwg_header_redirect_view( $p_bug_id ) {
-	print_header_redirect( string_get_bug_view_url( $p_bug_id ) );
+	print_dwg_header_redirect( string_get_dwg_view_url( $p_bug_id ) );
 }
 
 /**
@@ -158,14 +158,14 @@ function print_dwg_header_redirect_view( $p_bug_id ) {
  *
  * @param integer $p_bug_id A bug identifier.
  * @return void
- * @deprecated 2.26.0 Use print_header_redirect() instead.
+ * @deprecated 2.26.0 Use print_dwg_header_redirect() instead.
  */
 function print_dwg_successful_redirect_to_bug( $p_bug_id ) {
-	error_parameters( __FUNCTION__ . '()', 'print_header_redirect()' );
+	error_parameters( __FUNCTION__ . '()', 'print_dwg_header_redirect()' );
 	trigger_error( ERROR_DEPRECATED_SUPERSEDED, DEPRECATED );
 
-	$t_url = string_get_bug_view_url( $p_bug_id );
-	print_header_redirect( $t_url );
+	$t_url = string_get_dwg_view_url( $p_bug_id );
+	print_dwg_header_redirect( $t_url );
 }
 
 /**
@@ -175,13 +175,13 @@ function print_dwg_successful_redirect_to_bug( $p_bug_id ) {
  * @param string $p_redirect_to URI to redirect to.
  * @param bool $p_force_show Force showing operation successful
  * @return void
- * @deprecated 2.26.0 Use print_header_redirect() instead.
+ * @deprecated 2.26.0 Use print_dwg_header_redirect() instead.
  */
 function print_dwg_successful_redirect( $p_redirect_to, $p_force_show = false ) {
-	error_parameters( __FUNCTION__ . '()', 'print_header_redirect()' );
+	error_parameters( __FUNCTION__ . '()', 'print_dwg_header_redirect()' );
 	trigger_error( ERROR_DEPRECATED_SUPERSEDED, DEPRECATED );
 
-	print_header_redirect( $p_redirect_to );
+	print_dwg_header_redirect( $p_redirect_to );
 }
 
 /**
@@ -346,7 +346,7 @@ function print_dwg_user_option_list( $p_user_id, $p_project_id = null, $p_access
  * @return void
  */
 function print_dwg_reporter_option_list( $p_user_id, $p_project_id = null ) {
-	print_user_option_list( $p_user_id, $p_project_id, config_get( 'report_bug_threshold' ) );
+	print_user_option_list( $p_user_id, $p_project_id, config_get( 'create_dwg_threshold' ) );
 }
 
 /**
@@ -629,7 +629,7 @@ function print_dwg_project_option_list( $p_project_id = null, $p_include_all_pro
 
 	foreach( $t_project_ids as $t_id ) {
 		if( $p_can_report_only ) {
-			$t_report_bug_threshold = config_get( 'report_bug_threshold', null, $t_user_id, $t_id );
+			$t_report_bug_threshold = config_get( 'create_dwg_threshold', null, $t_user_id, $t_id );
 			$t_can_report = access_has_project_level( $t_report_bug_threshold, $t_id, $t_user_id );
 		}
 
@@ -664,7 +664,7 @@ function print_dwg_subproject_option_list( $p_parent_id, $p_project_id = null, $
 
 	foreach( $t_project_ids as $t_id ) {
 		if( $p_can_report_only ) {
-			$t_report_bug_threshold = config_get( 'report_bug_threshold', null, $t_user_id, $t_id );
+			$t_report_bug_threshold = config_get( 'create_dwg_threshold', null, $t_user_id, $t_id );
 			$t_can_report = access_has_project_level( $t_report_bug_threshold, $t_id, $t_user_id );
 		}
 
@@ -1288,8 +1288,8 @@ function print_dwg_plugin_priority_list( $p_priority ) {
  * @param boolean $p_detail_info Detail info to display with the link.
  * @return void
  */
-function print_dwg_bug_link( $p_bug_id, $p_detail_info = true ) {
-	echo string_get_bug_view_link( $p_bug_id, $p_detail_info );
+function print_dwg_link( $p_bug_id, $p_detail_info = true ) {
+	echo string_get_dwg_view_link( $p_bug_id, $p_detail_info );
 }
 
 /**
@@ -1577,28 +1577,29 @@ function print_dwg_bracket_link_prepared( $p_link ) {
  *
  * @return void
  */
-function print_dwg_link( $p_link, $p_url_text, $p_new_window = false, $p_class = '', $p_icon = '' ) {
-	if( $p_icon ) {
-		$t_url_text = icon_get( $p_icon, '', $p_url_text );
-	} else {
-		$t_url_text = string_attribute( $p_url_text );
-	}
+// @TODO RobD - already defined in print_api.php
+// function print_link( $p_link, $p_url_text, $p_new_window = false, $p_class = '', $p_icon = '' ) {
+// 	if( $p_icon ) {
+// 		$t_url_text = icon_get( $p_icon, '', $p_url_text );
+// 	} else {
+// 		$t_url_text = string_attribute( $p_url_text );
+// 	}
 
-	if( is_blank( $p_link ) ) {
-		echo $t_url_text;
-	} else {
-		$t_link = htmlspecialchars( $p_link );
-		if( $p_new_window === true ) {
-			echo '<a class="new-window ' . $p_class . '" href="' . $t_link . '" target="_blank">' . $t_url_text . '</a>';
-		} else {
-			if( $p_class !== '' ) {
-				echo '<a class="' . $p_class . '" href="' . $t_link . '">' . $t_url_text . '</a>';
-			} else {
-				echo '<a href="' . $t_link . '">' . $t_url_text . '</a>';
-			}
-		}
-	}
-}
+// 	if( is_blank( $p_link ) ) {
+// 		echo $t_url_text;
+// 	} else {
+// 		$t_link = htmlspecialchars( $p_link );
+// 		if( $p_new_window === true ) {
+// 			echo '<a class="new-window ' . $p_class . '" href="' . $t_link . '" target="_blank">' . $t_url_text . '</a>';
+// 		} else {
+// 			if( $p_class !== '' ) {
+// 				echo '<a class="' . $p_class . '" href="' . $t_link . '">' . $t_url_text . '</a>';
+// 			} else {
+// 				echo '<a href="' . $t_link . '">' . $t_url_text . '</a>';
+// 			}
+// 		}
+// 	}
+// }
 
 /**
  * print a HTML link with a button look
@@ -1918,7 +1919,7 @@ function print_dwg_recently_visited() {
 			$t_first = false;
 		}
 
-		echo string_get_bug_view_link( $t_id );
+		echo string_get_dwg_view_link( $t_id );
 	}
 	echo '</div>';
 }
@@ -1975,7 +1976,7 @@ function print_dwg_get_dropdown( array $p_control_array, $p_control_name, $p_mat
  * @param string $p_security_token The security token to use for deleting attachments.
  * @return void
  */
-function print_dwg_bug_attachment( array $p_attachment, $p_security_token ) {
+function print_dwg_attachment( array $p_attachment, $p_security_token ) {
 	echo '<div class="well well-xs">';
 
 	if( $p_attachment['preview'] || $p_attachment['type'] === 'audio' || $p_attachment['type'] === 'video' ) {
@@ -1989,7 +1990,7 @@ function print_dwg_bug_attachment( array $p_attachment, $p_security_token ) {
 		collapse_open( $t_collapse_id, '');
 	}
 
-	print_bug_attachment_header( $p_attachment, $p_security_token );
+	print_dwg_attachment_header( $p_attachment, $p_security_token );
 
 	if( $p_attachment['preview'] ) {
 		echo lang_get( 'word_separator' );
@@ -1997,21 +1998,21 @@ function print_dwg_bug_attachment( array $p_attachment, $p_security_token ) {
 
 		switch( $p_attachment['type'] ) {
 			case 'text':
-				print_bug_attachment_preview_text( $p_attachment );
+				print_dwg_attachment_preview_text( $p_attachment );
 				break;
 			case 'image':
-				print_bug_attachment_preview_image( $p_attachment );
+				print_dwg_attachment_preview_image( $p_attachment );
 				break;
 			case 'audio':
 			case 'video':
-				print_bug_attachment_preview_audio_video(
+				print_dwg_attachment_preview_audio_video(
 					$p_attachment, $p_attachment['file_type'], $p_attachment['preview'] );
 				break;
 		}
 
 		collapse_closed( $t_collapse_id, '' );
 
-		print_bug_attachment_header( $p_attachment, $p_security_token );
+		print_dwg_attachment_header( $p_attachment, $p_security_token );
 		echo lang_get( 'word_separator' );
 		collapse_icon( $t_collapse_id );
 		collapse_end( $t_collapse_id );
@@ -2021,13 +2022,13 @@ function print_dwg_bug_attachment( array $p_attachment, $p_security_token ) {
 			echo lang_get( 'word_separator' );
 			collapse_icon( $t_collapse_id );
 	
-			print_bug_attachment_preview_audio_video(
+			print_dwg_attachment_preview_audio_video(
 				$p_attachment,
 				$p_attachment['file_type'],
 				$p_attachment['preview'] );
 	
 			collapse_closed( $t_collapse_id );
-			print_bug_attachment_header( $p_attachment, $p_security_token );
+			print_dwg_attachment_header( $p_attachment, $p_security_token );
 			echo lang_get( 'word_separator' );
 			collapse_icon( $t_collapse_id );
 			collapse_end( $t_collapse_id );	
@@ -2052,7 +2053,7 @@ function print_dwg_bug_attachment( array $p_attachment, $p_security_token ) {
  * @param string $p_security_token The security token to use for deleting attachments.
  * @return void
  */
-function print_dwg_bug_attachment_header( array $p_attachment, $p_security_token ) {
+function print_dwg_attachment_header( array $p_attachment, $p_security_token ) {
 	if( $p_attachment['exists'] ) {
 		if( $p_attachment['can_download'] ) {
 			echo '<a href="' . string_attribute( $p_attachment['download_url'] ) . '"' . print_attachment_link_target() . '>';
@@ -2092,7 +2093,7 @@ function print_dwg_bug_attachment_header( array $p_attachment, $p_security_token
  *              the file_get_visible_attachments() function.
  * @return void
  */
-function print_dwg_bug_attachment_preview_text( array $p_attachment ) {
+function print_dwg_attachment_preview_text( array $p_attachment ) {
 	if( !$p_attachment['exists'] ) {
 		return;
 	}
@@ -2123,7 +2124,7 @@ function print_dwg_bug_attachment_preview_text( array $p_attachment ) {
  *              the file_get_visible_attachments() function.
  * @return void
  */
-function print_dwg_bug_attachment_preview_image( array $p_attachment ) {
+function print_dwg_attachment_preview_image( array $p_attachment ) {
 	$t_preview_style = 'border: 0;';
 	$t_max_width = config_get( 'preview_max_width' );
 	if( $t_max_width > 0 ) {
@@ -2152,7 +2153,7 @@ function print_dwg_bug_attachment_preview_image( array $p_attachment ) {
  * @param boolean $p_preload true to preload audio/video, false otherwise.
  * @return void
  */
-function print_dwg_bug_attachment_preview_audio_video( array $p_attachment, $p_file_type, $p_preload ) {
+function print_dwg_attachment_preview_audio_video( array $p_attachment, $p_file_type, $p_preload ) {
 	$t_file_url = $p_attachment['download_url'] . '&show_inline=1' . form_security_param( 'file_show_inline' );
 	$t_preload = $p_preload ? '' : ' preload="none"';
 

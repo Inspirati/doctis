@@ -31,8 +31,8 @@ Installing
    c. enable sudo: (where <username> is your login username)
          $ su -
          $ usermod -aG sudo <username>
-         $ shutdown
-      (a system restart seems to be required machine to ensure sudo is enabled)
+         $ shutdown now
+      (a system restart seems to be required to ensure sudo is enabled upon next login)
    
    d. create a clone (backup) of this virtual machine as a reference baseline (recommended)
    
@@ -41,13 +41,13 @@ Installing
    f. make a working directory, or just use the existing '~/Documents' directory
          $ cd Documents
    
-   g. copy the provided install script (below) into a file of your choosing, ie. install.sh
+   g. copy the provided install script (below) into a file of your choosing, ie. 'install.sh'
    
    h. enable the executable property on the script and run it:
          $ chmod +x install.sh
          $ ./install.sh
 
-5. Follow the getting-started tips which should eventually be displayed.
+3. Follow the getting-started tips which should eventually be displayed.
     
 NOTE: in order to create new users in mantisbt/doctis, the ability to send smtp emails is required and perhap the most-difficult way to achieve this is to create an App Password for a gmail account. However the system can still be used in single administrator mode without being able to send email. The default account is 'administrator' with password 'root'.
 

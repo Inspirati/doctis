@@ -249,16 +249,6 @@ class DwgFilterQuery extends DbQuery {
 		return parent::execute( $p_bind_array, $p_limit, $p_offset );
 	}
 
-////////////////////////////////////////////////////////////////////////////////
-// BEGIN doctis developmental section
-	public function dwg_filter_query_test() {
-
-		$this->dwg_query_test();
-
-	}
-// END doctis developmental section
-////////////////////////////////////////////////////////////////////////////////
-
 	/**
 	 * Shorthand method to get the total number of issues matched by the filter
 	 * It creates a copy of current object, set its type to a count query,
