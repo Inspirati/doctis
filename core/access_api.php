@@ -415,6 +415,12 @@ function access_project_array_filter( $p_access_level, ?array $p_project_ids = n
  * @access public
  */
 function access_has_any_project_level( $p_access_level, ?array $p_project_ids = null, ?int $p_user_id = null ): bool {
+
+	// @TODO RobD - we can work out when/if-or-not we display the Create Document button later..
+	if( 'report_dwg_threshold' == $p_access_level ) {
+		return true;
+	}
+
 	# We only need 1 matching project to return positive
 	$t_matches = access_project_array_filter( $p_access_level, $p_project_ids, $p_user_id, 1 );
 	return !empty( $t_matches );

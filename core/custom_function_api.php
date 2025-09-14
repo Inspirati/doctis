@@ -111,7 +111,7 @@ function custom_function_default_changelog_print_issue( $p_issue_id, $p_issue_le
 
 	# choose color based on status
 	$t_status_css = html_get_status_css_fg( $t_bug->status, $t_current_user, $t_bug->project_id );
-	$t_status_title = string_attribute( get_enum_element( 'status', bug_get_field( $t_bug->id, 'status' ), $t_bug->project_id ) );
+	$t_status_title = string_attribute( get_enum_element( 'status', dwg_get_field( $t_bug->id, 'status' ), $t_bug->project_id ) );
 
 	echo utf8_str_pad( '', $p_issue_level * 36, '&#160;' );
 	print_icon( 'fa-square', 'fa-status-box ' . $t_status_css, $t_status_title );
@@ -169,7 +169,7 @@ function custom_function_default_roadmap_print_issue( $p_issue_id, $p_issue_leve
 
 	# choose color based on status
 	$t_status_css = html_get_status_css_fg( $t_bug->status, $t_current_user, $t_bug->project_id );
-	$t_status_title = string_attribute( get_enum_element( 'status', bug_get_field( $t_bug->id, 'status' ), $t_bug->project_id ) );
+	$t_status_title = string_attribute( get_enum_element( 'status', dwg_get_field( $t_bug->id, 'status' ), $t_bug->project_id ) );
 
 	echo utf8_str_pad( '', $p_issue_level * 36, '&#160;' );
 	print_icon( 'fa-square', 'fa-status-box ' . $t_status_css, $t_status_title );
@@ -202,6 +202,24 @@ function custom_function_default_format_issue_summary( $p_issue_id, $p_context =
 			break;
 		default:
 			$t_string = string_attribute( bug_get_field( $p_issue_id, 'summary' ) );
+			break;
+	}
+	return $t_string;
+}
+
+function custom_function_default_format_dwg_summary( $p_issue_id, $p_context = 0 ) {
+	switch( $p_context ) {
+		case SUMMARY_CAPTION:
+			$t_string = dwg_format_id( $p_issue_id ) . ': ' . string_attribute( dwg_get_field( $p_issue_id, 'summary' ) );
+			break;
+		case SUMMARY_FIELD:
+			$t_string = dwg_format_id( $p_issue_id ) . ': ' . string_display_line_links( dwg_get_field( $p_issue_id, 'summary' ) );
+			break;
+		case SUMMARY_EMAIL:
+			$t_string = dwg_format_id( $p_issue_id ) . ': ' . string_attribute( dwg_get_field( $p_issue_id, 'summary' ) );
+			break;
+		default:
+			$t_string = string_attribute( dwg_get_field( $p_issue_id, 'summary' ) );
 			break;
 	}
 	return $t_string;
@@ -664,4 +682,7 @@ function custom_function_default_enum_categories() {
  * @return void
  */
 function custom_function_default_print_bug_view_page_custom_buttons( $p_bug_id ) {
+}
+
+function custom_function_default_print_dwg_view_page_custom_buttons( $p_bug_id ) {
 }

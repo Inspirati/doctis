@@ -27,6 +27,8 @@ use Mantis\Exceptions\ClientException;
 $g_app->group('/pages', function() use ( $g_app ) {
 	$g_app->get( '/issues/view/{id}/', 'rest_pages_issue_view' );
 	$g_app->get( '/issues/view/{id}', 'rest_pages_issue_view' );
+	$g_app->get( '/dwg/view/{id}/', 'rest_pages_dwg_view' );
+	$g_app->get( '/dwg/view/{id}', 'rest_pages_dwg_view' );
 });
 
 /**
@@ -42,6 +44,16 @@ function rest_pages_issue_view( \Slim\Http\Request $p_request, \Slim\Http\Respon
 
 	$t_data = array( 'query' => array( 'id' => $t_issue_id ) );
 	$t_command = new IssueViewPageCommand( $t_data );
+	$t_result = $t_command->execute();
+
+	return $p_response->withStatus( HTTP_STATUS_SUCCESS )->withJson( $t_result );
+}
+
+function rest_pages_dwg_view( \Slim\Http\Request $p_request, \Slim\Http\Response $p_response, array $p_args ) {
+	$t_issue_id = isset( $p_args['id'] ) ? $p_args['id'] : $p_request->getParam( 'id' );
+
+	$t_data = array( 'query' => array( 'id' => $t_issue_id ) );
+	$t_command = new DwgViewPageCommand( $t_data );
 	$t_result = $t_command->execute();
 
 	return $p_response->withStatus( HTTP_STATUS_SUCCESS )->withJson( $t_result );

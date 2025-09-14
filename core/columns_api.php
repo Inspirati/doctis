@@ -1215,6 +1215,12 @@ function print_column_id( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIE
 	echo '</td>';
 }
 
+function print_column_dwg_id( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+	echo '<td class="column-id">';
+	print_dwg_link( $p_bug->id, false );
+	echo '</td>';
+}
+
 /**
  * Print column content for column sponsorship total
  *

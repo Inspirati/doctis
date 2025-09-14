@@ -624,7 +624,7 @@ function filter_dwg_ensure_valid_filter( array $p_filter_arr ) {
 
 	$p_filter_arr = filter_dwg_ensure_fields( $p_filter_arr );
 
-	$t_config_view_filters = config_get( 'view_filters' );
+	$t_config_view_filters = config_get( 'view_dwg_filters' );
 	$t_view_type = $p_filter_arr['_view_type'];
 	if( ADVANCED_ONLY == $t_config_view_filters ) {
 		$t_view_type = FILTER_VIEW_TYPE_ADVANCED;
@@ -875,7 +875,7 @@ function filter_dwg_get_default_array( $p_view_type = null ) {
 	$t_default_show_changed = config_get( 'default_show_changed' );
 	$t_meta_filter_any_array = array( META_FILTER_ANY );
 
-	$t_config_view_filters = config_get( 'view_filters' );
+	$t_config_view_filters = config_get( 'view_dwg_filters' );
 	if( ADVANCED_ONLY == $t_config_view_filters ) {
 		$t_view_type = FILTER_VIEW_TYPE_ADVANCED;
 	} elseif( SIMPLE_ONLY == $t_config_view_filters ) {
@@ -988,7 +988,7 @@ function filter_dwg_get_default_array( $p_view_type = null ) {
  * @return string Default view type
  */
 function filter_dwg_get_default_view_type() {
-	if( ADVANCED_DEFAULT == config_get( 'view_filters' ) ) {
+	if( ADVANCED_DEFAULT == config_get( 'view_dwg_filters' ) ) {
 		return FILTER_VIEW_TYPE_ADVANCED;
 	} else {
 		return FILTER_VIEW_TYPE_SIMPLE;
@@ -1340,9 +1340,9 @@ function filter_dwg_cache_result( array $p_rows, array $p_id_array_lastmod ) {
 	$t_rows = array();
 	foreach( $p_rows as $t_row ) {
 		if( array_key_exists( $t_row['id'], $t_stats ) ) {
-			$t_rows[] = bug_row_to_object( bug_cache_database_result( $t_row, $t_stats[$t_row['id']] ) );
+			$t_rows[] = bug_row_to_object( dwg_cache_database_result( $t_row, $t_stats[$t_row['id']] ) );
 		} else {
-			$t_rows[] = bug_row_to_object( bug_cache_database_result( $t_row ) );
+			$t_rows[] = bug_row_to_object( dwg_cache_database_result( $t_row ) );
 		}
 	}
 	return $t_rows;
@@ -1402,7 +1402,7 @@ function filter_dwg_draw_selection_area() {
 
 			<div class="widget-toolbar">
 				<?php
-					$t_view_filters = config_get('view_filters');
+					$t_view_filters = config_get('view_dwg_filters');
 
 					if( ( ( SIMPLE_ONLY != $t_view_filters ) && ( ADVANCED_ONLY != $t_view_filters ) ) ||
 						access_has_project_level( config_get( 'create_permalink_threshold' ) ) ||
@@ -1413,13 +1413,13 @@ function filter_dwg_draw_selection_area() {
 						</a>
 						<ul class="dropdown-menu dropdown-menu-right dropdown-yellow dropdown-caret dropdown-closer">
 							<?php
-                            
+
 #							$t_url = config_get( 'use_dynamic_filters' )
 #								? 'view_all_set.php?type=' . FILTER_ACTION_PARSE_ADD . $t_tmp_filter_param . '&view_type='
-#								: 'view_filters_page.php?view_type=';
+#								: 'view_dwg_filters_page.php?view_type=';
 							$t_url = config_get( 'use_dynamic_filters' )
 								? 'view_dwg_set.php?type=' . FILTER_ACTION_PARSE_ADD . $t_tmp_filter_param . '&view_type='
-								: 'view_filters_page.php?view_type=';
+								: 'view_dwg_filters_page.php?view_type=';
 
 							filter_print_view_type_toggle( $t_url, $t_filter['_view_type'] );
 
@@ -1592,7 +1592,7 @@ function filter_dwg_draw_selection_area() {
 			<div class="widget-main no-padding">
 				<div class="table-responsive">
 					<?php
-					filter_form_draw_inputs( $t_filter, true, false, 'view_filters_page.php', false /* don't show search */ );
+					filter_form_draw_inputs( $t_filter, true, false, 'view_dwg_filters_page.php', false /* don't show search */ );
 					?>
 				</div>
 			</div>
@@ -2551,7 +2551,7 @@ function filter_dwg_is_accessible( $p_filter_id, $p_user_id = null ) {
  *                            FILTER_VIEW_TYPE_ADVANCED)
  */
 function filter_dwg_print_view_type_toggle( $p_url, $p_view_type ) {
-	$t_view_filters = config_get( 'view_filters' );
+	$t_view_filters = config_get( 'view_dwg_filters' );
 	if( $t_view_filters == SIMPLE_ONLY || $t_view_filters == ADVANCED_ONLY ) {
 		return;
 	}
@@ -2638,7 +2638,7 @@ function filter_dwg_get_included_projects( array $p_filter, $p_project_id = null
 		}
 
 		# filter out inaccessible projects.
-		if( !project_exists( $t_pid ) || !access_has_project_level( config_get( 'view_bug_threshold', null, $t_user_id, $t_pid ), $t_pid, $t_user_id ) ) {
+		if( !project_exists( $t_pid ) || !access_has_project_level( config_get( 'view_dwg_threshold', null, $t_user_id, $t_pid ), $t_pid, $t_user_id ) ) {
 			log_event( LOG_FILTERING, 'Invalid or inaccessible project: ' . $t_pid );
 			continue;
 		}

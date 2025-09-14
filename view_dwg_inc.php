@@ -73,7 +73,6 @@ require_api( 'dwg_api.php' );
  * @var int $t_bug_count
  */
 $t_filter = current_user_get_dwg_filter();
-
 filter_dwg_init( $t_filter );
 
 list( $t_sort, ) = explode( ',', $g_dwg_filter['sort'] );

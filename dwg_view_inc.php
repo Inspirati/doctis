@@ -25,6 +25,7 @@
  * @uses access_api.php
  * @uses authentication_api.php
  * @uses bug_api.php
+ * @uses dwg_api.php
  * @uses bug_activity_api.php
  * @uses category_api.php
  * @uses columns_api.php
@@ -41,6 +42,7 @@
  * @uses lang_api.php
  * @uses prepare_api.php
  * @uses print_api.php
+ * @uses print_dwg_api.php
  * @uses project_api.php
  * @uses string_api.php
  * @uses tag_api.php
@@ -58,13 +60,16 @@
 
 use Mantis\Exceptions\ClientException;
 
-if( !defined( 'BUG_VIEW_INC_ALLOW' ) ) {
+if( !defined( 'DWG_VIEW_INC_ALLOW' ) ) {
 	return;
 }
 
 require_api( 'access_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'bug_api.php' );
+
+require_api( 'dwg_api.php' );
+
 require_api( 'bug_activity_api.php' );
 require_api( 'category_api.php' );
 require_api( 'columns_api.php' );
@@ -81,6 +86,9 @@ require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'prepare_api.php' );
 require_api( 'print_api.php' );
+
+require_api( 'print_dwg_api.php' );
+
 require_api( 'project_api.php' );
 require_api( 'string_api.php' );
 require_api( 'tag_api.php' );
@@ -107,7 +115,7 @@ $t_data = array(
 	'query' => array( 'id' => $f_issue_id ),
 	'options' => array( 'force_readonly' => $t_force_readonly )
 );
-$t_cmd = new IssueViewPageCommand( $t_data );
+$t_cmd = new DwgViewPageCommand( $t_data );
 $t_result = $t_cmd->execute();
 
 $t_issue = $t_result['issue'];
@@ -117,8 +125,8 @@ $t_flags = $t_result['flags'];
 compress_enable();
 
 if( $t_show_page_header ) {
-	layout_page_header( bug_format_summary( $f_issue_id, SUMMARY_CAPTION ), null, 'view-issue-page', 'view.php?id=' . $f_issue_id );
-	layout_page_begin( 'view_all_bug_page.php' );
+	layout_page_header( bug_format_summary( $f_issue_id, SUMMARY_CAPTION ), null, 'view-issue-page', 'dwg_view.php?id=' . $f_issue_id );
+	layout_page_begin( 'view_dwg_page.php' );
 }
 
 $t_action_button_position = config_get( 'action_button_position' );
@@ -182,7 +190,7 @@ if( $t_flags['history_show'] ) {
 		$t_history_link = '#history';
 		$t_history_label = lang_get( 'jump_to_history' );
 	} else {
-		$t_history_link = 'view.php?id=' . $f_issue_id . '&history=1#history';
+		$t_history_link = 'dwg_view.php?id=' . $f_issue_id . '&history=1#history';
 		$t_history_label = lang_get( 'display_history' );
 	}
 	print_small_button( $t_history_link, $t_history_label );
@@ -197,11 +205,11 @@ if( $t_dwgslist ) {
 	$t_index = array_search( $f_issue_id, $t_dwgslist );
 	if( false !== $t_index ) {
 		if( isset( $t_dwgslist[$t_index-1] ) ) {
-			print_small_button( 'view.php?id='.$t_dwgslist[$t_index-1], '&lt;&lt;' );
+			print_small_button( 'dwg_view.php?id='.$t_dwgslist[$t_index-1], '&lt;&lt;' );
 		}
 
 		if( isset( $t_dwgslist[$t_index+1] ) ) {
-			print_small_button( 'view.php?id='.$t_dwgslist[$t_index+1], '&gt;&gt;' );
+			print_small_button( 'dwg_view.php?id='.$t_dwgslist[$t_index+1], '&gt;&gt;' );
 		}
 	}
 }
@@ -667,7 +675,7 @@ if( $t_flags['sponsorships_show'] ) {
 # Bug Relationships
 if( $t_flags['relationships_show'] ) {
 	/** @noinspection PhpUnhandledExceptionInspection */
-	bug_view_relationship_view_box( $f_issue_id, /* can_update */ $t_flags['relationships_can_update'] );
+	dwg_view_relationship_view_box( $f_issue_id, /* can_update */ $t_flags['relationships_can_update'] );
 }
 
 # User list monitoring the bug
@@ -872,7 +880,7 @@ layout_page_end();
  *
  * @throws ClientException
  */
-function bug_view_relationship_get_details( $p_bug_id, BugRelationshipData $p_relationship, $p_html_preview = false, $p_show_project = false ) {
+function dwg_view_relationship_get_details( $p_bug_id, BugRelationshipData $p_relationship, $p_html_preview = false, $p_show_project = false ) {
 	if( $p_bug_id == $p_relationship->src_bug_id ) {
 		# root bug is in the source side, related bug in the destination side
 		$t_related_project_id = $p_relationship->dest_bug_id;
@@ -893,7 +901,7 @@ function bug_view_relationship_get_details( $p_bug_id, BugRelationshipData $p_re
 	}
 
 	# user can access to the related bug at least as a viewer
-	if( !access_has_bug_level( config_get( 'view_bug_threshold', null, null, $t_related_project_id ), $t_related_bug_id ) ) {
+	if( !access_has_bug_level( config_get( 'view_dwg_threshold', null, null, $t_related_project_id ), $t_related_bug_id ) ) {
 		return '';
 	}
 
@@ -913,7 +921,7 @@ function bug_view_relationship_get_details( $p_bug_id, BugRelationshipData $p_re
 	if( !$p_html_preview ) {
 		# choose color based on status
 		$t_status_css = html_get_status_css_fg( $t_bug->status, $t_current_user_id, $t_bug->project_id );
-		$t_relationship_info_html .= '<td><a href="' . string_get_bug_view_url( $t_related_bug_id ) . '">' . string_display_line( bug_format_id( $t_related_bug_id ) ) . '</a></td>';
+		$t_relationship_info_html .= '<td><a href="' . string_get_dwg_view_url( $t_related_bug_id ) . '">' . string_display_line( bug_format_id( $t_related_bug_id ) ) . '</a></td>';
 		$t_relationship_info_html .= '<td>' . icon_get( 'fa-square', 'fa-status-box ' . $t_status_css );
 		$t_relationship_info_html .= ' <span class="issue-status" title="' . string_attribute( $t_resolution_string ) . '">' . string_display_line( $t_status_string ) . '</span></td>';
 	} else {
@@ -965,7 +973,7 @@ function bug_view_relationship_get_details( $p_bug_id, BugRelationshipData $p_re
  *
  * @throws ClientException
  */
-function bug_view_relationship_get_summary_html( $p_bug_id ) {
+function dwg_view_relationship_get_summary_html( $p_bug_id ) {
 	$t_summary = '';
 
 	# A variable that will be set by the following call to indicate if relationships belong
@@ -977,7 +985,7 @@ function bug_view_relationship_get_summary_html( $p_bug_id ) {
 
 	# prepare the relationships table
 	for( $i = 0; $i < $t_relationship_all_count; $i++ ) {
-		$t_summary .= bug_view_relationship_get_details( $p_bug_id, $t_relationship_all[$i], /* html_preview */ false, $t_show_project );
+		$t_summary .= dwg_view_relationship_get_details( $p_bug_id, $t_relationship_all[$i], /* html_preview */ false, $t_show_project );
 	}
 
 	if( !is_blank( $t_summary ) ) {
@@ -1000,8 +1008,8 @@ function bug_view_relationship_get_summary_html( $p_bug_id ) {
  *
  * @throws ClientException
  */
-function bug_view_relationship_view_box( $p_bug_id, $p_can_update ) {
-	$t_relationships_html = bug_view_relationship_get_summary_html( $p_bug_id );
+function dwg_view_relationship_view_box( $p_bug_id, $p_can_update ) {
+	$t_relationships_html = dwg_view_relationship_get_summary_html( $p_bug_id );
 
 	if( !$p_can_update && empty( $t_relationships_html ) ) {
 		return;
@@ -1117,7 +1125,7 @@ function dwg_view_button_dwg_change_status( DwgData $p_bug ) {
 		# (to prevent users downgraded to viewers from updating issues) and
 		# reporters are allowed to close their own issues
 		(  bug_is_user_reporter( $p_bug->id, auth_get_current_user_id() )
-		&& access_has_bug_level( config_get( 'report_bug_threshold' ), $p_bug->id )
+		&& access_has_bug_level( config_get( 'create_dwg_threshold' ), $p_bug->id )
 		&& ON == config_get( 'allow_reporter_close' )
 		),
 		$p_bug->project_id );
@@ -1304,7 +1312,7 @@ function dwg_view_action_buttons( $p_bug_id, $p_flags ) {
 	# CLONE button
 	if( $p_flags['can_clone'] ) {
 		echo '<div class="pull-left padding-right-2">';
-		html_button( string_get_bug_report_url(), lang_get( 'create_child_bug_button' ), array( 'm_id' => $p_bug_id ) );
+		html_button( string_get_dwg_create_url(), lang_get( 'create_child_bug_button' ), array( 'm_dwg_id' => $p_bug_id ) );
 		echo '</div>';
 	}
 
@@ -1344,7 +1352,7 @@ function dwg_view_action_buttons( $p_bug_id, $p_flags ) {
 		echo '</div>';
 	}
 
-	helper_call_custom_function( 'print_bug_view_page_custom_buttons', array( $p_bug_id ) );
+	helper_call_custom_function( 'print_dwg_view_page_custom_buttons', array( $p_bug_id ) );
 
 	echo '</div>';
 }

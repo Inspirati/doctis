@@ -117,40 +117,40 @@ use Mantis\Exceptions\ClientException;
 #[AllowDynamicProperties]
 class DwgData {
 	protected $id;
-	// protected $project_id = null;
-	// // protected $reporter_id = 0;
-	// // protected $handler_id = 0;
-	// // protected $duplicate_id = 0;
-	// protected $priority = NORMAL;
-	// // protected $severity = MINOR;
-	// // protected $reproducibility = 10;
-	// protected $status = NEW_;
-	// protected $resolution = OPEN;
-	// // protected $projection = 10;
-	// protected $category_id = 1;
-	// protected $date_submitted = '';
-	// protected $last_updated = '';
-	// // protected $eta = 10;
-	// // protected $os = '';
-	// // protected $os_build = '';
-	// // protected $platform = '';
-	// protected $version = '';
-	// protected $fixed_in_version = '';
-	// // protected $target_version = '';
-	// // protected $build = '';
-	// protected $view_state = VS_PUBLIC;
-	// protected $summary = '';
-	// // protected $sponsorship_total = 0;
-	// protected $sticky = 0;
-	// protected $due_date = '';
-	// protected $profile_id = 0;
-	// protected $bug_text_id;
-	// protected $description = '';
-	// // protected $steps_to_reproduce = '';
-	// protected $additional_information = '';
-	// private $_stats = null;
-	// public $attachment_count = null;
-	// public $bugnotes_count = null;
+	protected $project_id = null;
+	protected $reporter_id = 0;
+	protected $handler_id = 0;
+	protected $duplicate_id = 0;
+	protected $priority = NORMAL;
+	protected $severity = MINOR;
+	protected $reproducibility = 10;
+	protected $status = NEW_;
+	protected $resolution = OPEN;
+	protected $projection = 10;
+	protected $category_id = 1;
+	protected $date_submitted = '';
+	protected $last_updated = '';
+	protected $eta = 10;
+	protected $os = '';
+	protected $os_build = '';
+	protected $platform = '';
+	protected $version = '';
+	protected $fixed_in_version = '';
+	protected $target_version = '';
+	protected $build = '';
+	protected $view_state = VS_PUBLIC;
+	protected $summary = '';
+	protected $sponsorship_total = 0;
+	protected $sticky = 0;
+	protected $due_date = '';
+	protected $profile_id = 0;
+	protected $bug_text_id;
+	protected $description = '';
+	protected $steps_to_reproduce = '';
+	protected $additional_information = '';
+	private $_stats = null;
+	public $attachment_count = null;
+	public $bugnotes_count = null;
 
 	/**
 	 * Indicates if bug is currently being loaded from database
@@ -492,7 +492,7 @@ class DwgData {
 		}
 
 		$t_filtered_mentioned_user_ids = access_has_bug_level_filter(
-			config_get( 'view_bug_threshold' ),
+			config_get( 'view_dwg_threshold' ),
 			$this->id,
 			$t_all_mentioned_user_ids );
 
@@ -717,20 +717,20 @@ class DwgData {
 //  * @return array returns an array representing the bug row if bug exists
 //  * @access public
 //  */
-// function bug_cache_database_result( array $p_bug_database_result, $p_stats = null ) {
-// 	global $g_cache_bug;
+function dwg_cache_database_result( array $p_bug_database_result, $p_stats = null ) {
+	global $g_cache_bug;
 
-// 	if( isset( $g_cache_bug[(int)$p_bug_database_result['id']] ) ) {
-// 		if( !is_null($p_stats) ) {
-// 			# force store the bugnote statistics
-// 			return bug_add_to_cache( $p_bug_database_result, $p_stats );
-// 		} else {
-// 			return $g_cache_bug[(int)$p_bug_database_result['id']];
-// 		}
-// 	}
+	if( isset( $g_cache_bug[(int)$p_bug_database_result['id']] ) ) {
+		if( !is_null($p_stats) ) {
+			# force store the bugnote statistics
+			return dwg_add_to_cache( $p_bug_database_result, $p_stats );
+		} else {
+			return $g_cache_bug[(int)$p_bug_database_result['id']];
+		}
+	}
 
-// 	return bug_add_to_cache( $p_bug_database_result, $p_stats );
-// }
+	return dwg_add_to_cache( $p_bug_database_result, $p_stats );
+}
 
 // /**
 //  * Cache a bug row if necessary and return the cached copy.
@@ -743,33 +743,33 @@ class DwgData {
 //  *
 //  * @access public
 //  */
-// function bug_cache_row( $p_bug_id, $p_trigger_errors = true ) {
-// 	global $g_cache_bug;
+function dwg_cache_row( $p_bug_id, $p_trigger_errors = true ) {
+	global $g_cache_bug;
 
-// 	if( isset( $g_cache_bug[$p_bug_id] ) ) {
-// 		return $g_cache_bug[$p_bug_id];
-// 	}
+	if( isset( $g_cache_bug[$p_bug_id] ) ) {
+		return $g_cache_bug[$p_bug_id];
+	}
 
-// 	$c_bug_id = (int)$p_bug_id;
+	$c_bug_id = (int)$p_bug_id;
 
-// 	db_param_push();
-// 	$t_query = 'SELECT * FROM {bug} WHERE id=' . db_param();
-// 	$t_result = db_query( $t_query, array( $c_bug_id ) );
+	db_param_push();
+	$t_query = 'SELECT * FROM {bug} WHERE id=' . db_param();
+	$t_result = db_query( $t_query, array( $c_bug_id ) );
 
-// 	$t_row = db_fetch_array( $t_result );
+	$t_row = db_fetch_array( $t_result );
 
-// 	if( !$t_row ) {
-// 		$g_cache_bug[$c_bug_id] = false;
+	if( !$t_row ) {
+		$g_cache_bug[$c_bug_id] = false;
 
-// 		if( $p_trigger_errors ) {
-// 			throw new ClientException( "Issue #$c_bug_id not found", ERROR_BUG_NOT_FOUND, array( $p_bug_id ) );
-// 		}
+		if( $p_trigger_errors ) {
+			throw new ClientException( "Issue #$c_bug_id not found", ERROR_BUG_NOT_FOUND, array( $p_bug_id ) );
+		}
 
-// 		return false;
-// 	}
+		return false;
+	}
 
-// 	return bug_add_to_cache( $t_row );
-// }
+	return dwg_add_to_cache( $t_row );
+}
 
 // /**
 //  * Cache a set of bugs.
@@ -778,27 +778,27 @@ class DwgData {
 //  *
 //  * @access public
 //  */
-// function bug_cache_array_rows( array $p_bug_id_array ) {
-// 	global $g_cache_bug;
-// 	$c_bug_id_array = array();
+function dwg_cache_array_rows( array $p_bug_id_array ) {
+	global $g_cache_bug;
+	$c_bug_id_array = array();
 
-// 	foreach( $p_bug_id_array as $t_bug_id ) {
-// 		if( !isset( $g_cache_bug[(int)$t_bug_id] ) ) {
-// 			$c_bug_id_array[] = (int)$t_bug_id;
-// 		}
-// 	}
+	foreach( $p_bug_id_array as $t_bug_id ) {
+		if( !isset( $g_cache_bug[(int)$t_bug_id] ) ) {
+			$c_bug_id_array[] = (int)$t_bug_id;
+		}
+	}
 
-// 	if( empty( $c_bug_id_array ) ) {
-// 		return;
-// 	}
+	if( empty( $c_bug_id_array ) ) {
+		return;
+	}
 
-// 	$t_query = 'SELECT * FROM {bug} WHERE id IN (' . implode( ',', $c_bug_id_array ) . ')';
-// 	$t_result = db_query( $t_query );
+	$t_query = 'SELECT * FROM {bug} WHERE id IN (' . implode( ',', $c_bug_id_array ) . ')';
+	$t_result = db_query( $t_query );
 
-// 	while( $t_row = db_fetch_array( $t_result ) ) {
-// 		bug_add_to_cache( $t_row );
-// 	}
-// }
+	while( $t_row = db_fetch_array( $t_result ) ) {
+		dwg_add_to_cache( $t_row );
+	}
+}
 
 // /**
 //  * Inject a bug into the bug cache.
@@ -815,17 +815,17 @@ class DwgData {
 //  *
 //  * @access private
 //  */
-// function bug_add_to_cache( array $p_bug_row, $p_stats = null ) {
-// 	global $g_cache_bug;
+function dwg_add_to_cache( array $p_bug_row, $p_stats = null ) {
+	global $g_cache_bug;
 
-// 	$g_cache_bug[(int)$p_bug_row['id']] = $p_bug_row;
+	$g_cache_bug[(int)$p_bug_row['id']] = $p_bug_row;
 
-// 	if( !is_null( $p_stats ) ) {
-// 		$g_cache_bug[(int)$p_bug_row['id']]['_stats'] = $p_stats;
-// 	}
+	if( !is_null( $p_stats ) ) {
+		$g_cache_bug[(int)$p_bug_row['id']]['_stats'] = $p_stats;
+	}
 
-// 	return $g_cache_bug[(int)$p_bug_row['id']];
-// }
+	return $g_cache_bug[(int)$p_bug_row['id']];
+}
 
 // /**
 //  * Clear a bug from the cache or all bugs if no bug id specified.
@@ -942,22 +942,22 @@ class DwgData {
 //  * @access public
 //  * @noinspection PhpDocMissingThrowsInspection
 //  */
-// function bug_exists( $p_bug_id ) {
-// 	$c_bug_id = (int)$p_bug_id;
+function dwg_exists( $p_bug_id ) {
+	$c_bug_id = (int)$p_bug_id;
 
-// 	# Check for invalid id values
-// 	if( $c_bug_id <= 0 || $c_bug_id > DB_MAX_INT ) {
-// 		return false;
-// 	}
+	# Check for invalid id values
+	if( $c_bug_id <= 0 || $c_bug_id > DB_MAX_INT ) {
+		return false;
+	}
 
-// 	# bug exists if bug_cache_row returns any value
-// 	/** @noinspection PhpUnhandledExceptionInspection */
-// 	if( bug_cache_row( $c_bug_id, false ) ) {
-// 		return true;
-// 	} else {
-// 		return false;
-// 	}
-// }
+	# bug exists if dwg_cache_row returns any value
+	/** @noinspection PhpUnhandledExceptionInspection */
+	if( dwg_cache_row( $c_bug_id, false ) ) {
+		return true;
+	} else {
+		return false;
+	}
+}
 
 // /**
 //  * Check if a bug exists, trigger an error if it does not.
@@ -968,14 +968,14 @@ class DwgData {
 //  *
 //  * @access public
 //  */
-// function bug_ensure_exists( $p_bug_id ) {
-// 	if( !bug_exists( $p_bug_id ) ) {
-// 		throw new ClientException(
-// 			"Issue #$p_bug_id not found",
-// 			ERROR_BUG_NOT_FOUND,
-// 			array( $p_bug_id ) );
-// 	}
-// }
+function dwg_ensure_exists( $p_bug_id ) {
+	if( !dwg_exists( $p_bug_id ) ) {
+		throw new ClientException(
+			"Issue #$p_bug_id not found",
+			ERROR_DWG_NOT_FOUND,
+			array( $p_bug_id ) );
+	}
+}
 
 // /**
 //  * Check if the given user is the reporter of the bug.
@@ -1476,7 +1476,7 @@ class DwgData {
 //  * @access public
 //  */
 // function bug_get_extended_row( $p_bug_id ) {
-// 	$t_base = bug_cache_row( $p_bug_id );
+// 	$t_base = dwg_cache_row( $p_bug_id );
 // 	$t_text = bug_text_cache_row( $p_bug_id );
 
 // 	# merge $t_text first so that the 'id' key has the bug id not the bug text id
@@ -1493,9 +1493,9 @@ class DwgData {
 //  *
 //  * @access public
 //  */
-// function bug_get_row( $p_bug_id ) {
-// 	return bug_cache_row( $p_bug_id );
-// }
+function dwg_get_row( $p_bug_id ) {
+	return dwg_cache_row( $p_bug_id );
+}
 
 // /**
 //  * Returns an object representing the specified bug.
@@ -1512,7 +1512,7 @@ class DwgData {
 // 	if( $p_get_extended ) {
 // 		$t_row = bug_get_extended_row( $p_bug_id );
 // 	} else {
-// 		$t_row = bug_get_row( $p_bug_id );
+// 		$t_row = dwg_get_row( $p_bug_id );
 // 	}
 
 // 	$t_bug_data = new DwgData;
@@ -1520,19 +1520,19 @@ class DwgData {
 // 	return $t_bug_data;
 // }
 
-// /**
-//  * Convert mantis_bug_table row to DwgData object.
-//  *
-//  * @param array $p_row Bug database row.
-//  * @return DwgData
-//  *
-//  * @throws ClientException
-//  */
-// function bug_row_to_object( array $p_row ) {
-// 	$t_bug_data = new DwgData;
-// 	$t_bug_data->loadrow( $p_row );
-// 	return $t_bug_data;
-// }
+/**
+ * Convert mantis_bug_table row to DwgData object.
+ *
+ * @param array $p_row Bug database row.
+ * @return DwgData
+ *
+ * @throws ClientException
+ */
+function dwg_row_to_object( array $p_row ) {
+	$t_bug_data = new DwgData;
+	$t_bug_data->loadrow( $p_row );
+	return $t_bug_data;
+}
 
 // /**
 //  * Return the specified field of the given bug.
@@ -1547,17 +1547,17 @@ class DwgData {
 //  *
 //  * @access public
 //  */
-// function bug_get_field( $p_bug_id, $p_field_name ) {
-// 	$t_row = bug_get_row( $p_bug_id );
+function dwg_get_field( $p_bug_id, $p_field_name ) {
+	$t_row = dwg_get_row( $p_bug_id );
 
-// 	if( isset( $t_row[$p_field_name] ) ) {
-// 		return $t_row[$p_field_name];
-// 	} else {
-// 		error_parameters( $p_field_name );
-// 		trigger_error( ERROR_DB_FIELD_NOT_FOUND, WARNING );
-// 		return '';
-// 	}
-// }
+	if( isset( $t_row[$p_field_name] ) ) {
+		return $t_row[$p_field_name];
+	} else {
+		error_parameters( $p_field_name );
+		trigger_error( ERROR_DB_FIELD_NOT_FOUND, WARNING );
+		return '';
+	}
+}
 
 // /**
 //  * Return the specified text field of the given bug.
@@ -1596,9 +1596,9 @@ class DwgData {
 //  *
 //  * @access public
 //  */
-// function bug_format_summary( $p_bug_id, $p_context ) {
-// 	return helper_call_custom_function( 'format_issue_summary', array( $p_bug_id, $p_context ) );
-// }
+function dwg_format_summary( $p_bug_id, $p_context ) {
+	return helper_call_custom_function( 'format_dwg_summary', array( $p_bug_id, $p_context ) );
+}
 
 // /**
 //  * Return the timestamp for the most recent bugnote.
@@ -2252,12 +2252,12 @@ class DwgData {
 //  *
 //  * @access public
 //  */
-// function bug_format_id( $p_bug_id ) {
-// 	$t_padding = config_get( 'display_bug_padding' );
-// 	$t_string = sprintf( '%0' . (int)$t_padding . 'd', $p_bug_id );
+function dwg_format_id( $p_bug_id ) {
+	$t_padding = config_get( 'display_bug_padding' );
+	$t_string = sprintf( '%0' . (int)$t_padding . 'd', $p_bug_id );
 
-// 	return event_signal( 'EVENT_DISPLAY_BUG_ID', $t_string, array( $p_bug_id ) );
-// }
+	return event_signal( 'EVENT_DISPLAY_BUG_ID', $t_string, array( $p_bug_id ) );
+}
 
 // /**
 //  * Returns the resulting status for a bug after an assignment action is performed.

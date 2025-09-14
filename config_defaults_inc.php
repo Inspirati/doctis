@@ -1404,7 +1404,7 @@ $g_view_issues_page_columns = array(
  * @global array $g_view_dwg_page_columns
  */
 $g_view_dwg_page_columns = array(
-	'status', 'enabled', 'name', 'number', 'revision', 'reference',
+	'selection', 'edit', 'priority', 'dwg_id', 'status', 'name', 'number', 'revision', 'reference',
 	'date', 'release date',
 );
 
@@ -5606,6 +5606,7 @@ $g_public_config_names = array(
 	'reminder_recipients_monitor_bug',
 	'reopen_bug_threshold',
 	'report_bug_threshold',
+	'create_dwg_threshold',
 	'report_issues_for_unreleased_versions_threshold',
 	'reporter_summary_limit',
 	'reproducibility_enum_string',
@@ -5628,6 +5629,7 @@ $g_public_config_names = array(
 	'show_avatar_threshold',
 	'show_avatar',
 	'show_bug_project_links',
+	'show_dwg_project_links',
 	'show_changelog_dates',
 	'show_detailed_errors',
 	'show_log_threshold',
@@ -5697,9 +5699,11 @@ $g_public_config_names = array(
 	'view_all_cookie',
 	'view_attachments_threshold',
 	'view_bug_threshold',
+	'view_dwg_threshold',
 	'view_changelog_threshold',
 	'view_configuration_threshold',
 	'view_filters',
+	'view_dwg_filters',
 	'view_handler_threshold',
 	'view_history_threshold',
 	'view_issues_page_columns',
