@@ -37,17 +37,24 @@ Installing
    d. create a clone (backup) of this virtual machine as a reference baseline (recommended)
    
    e. restart the virtual machine
+
+3. Download and install the DocTIS project.
    
-   f. make a working directory, or just use the existing '~/Documents' directory
+   a. make a working directory, or just use the existing '~/Documents' directory
          $ cd Documents
    
-   g. copy the provided install script (below) into a file of your choosing, ie. 'install.sh'
+   b. copy the provided install script (below) into a file of your choosing, ie. 'install.sh'
+       - or fetch it online with:
+         $ wget -O- https://tinyurl.com/get-doctis > install.sh
    
-   h. enable the executable property on the script and run it:
+   c. customise the install.sh script as needed (optional):
+         $ pico install.sh
+   
+   d. enable the executable property on the script and run it:
          $ chmod +x install.sh
          $ ./install.sh
 
-3. Follow the getting-started tips which should eventually be displayed.
+4. Follow the getting-started tips which should eventually be displayed.
     
 NOTE: in order to create new users in mantisbt/doctis, the ability to send smtp emails is required and perhap the most-difficult way to achieve this is to create an App Password for a gmail account. However the system can still be used in single administrator mode without being able to send email. The default account is 'administrator' with password 'root'.
 
@@ -61,20 +68,19 @@ WARNING: this script should only be used inside your Debian Linux virtual machin
 ```sh
 #!/bin/bash
 
-# Customise the email settings and database credentials for the installer to use
+# Customise the email and database credentials for the project to use
 email_addr="my.email@gmail.com"
 email_hash="GmailAppPassword"
 mysql_pass="password"
 
 # Do we want a local machine only server (localhost)
-# or one available to a local network (via server ip address)
-# or using a Fully Qualified Domain Name (FQDN) aka: url for hosting on the internet - *advanced users only*
+# or one available to a Local Area Network (LAN) via ip address
+# or Fully Qualified Domain Name (FQDN), for public internet server - advanced user
 #domain="locahost"
 domain=$(ip -4 addr show dev "$(ip route show default | awk '{print $5}' | head -n1)" | awk '/inet / {print $2}' | cut -d/ -f1)
-#domain="mydomain.com"
+#domain="my.domain.com"
 
-# Fetch the installer and run
-wget https://gist.githubusercontent.com/Inspirati/8f17b0799fdaf0ab7b201a5cfd1775a1/raw/3ddc1099af4c9331ed9e214847d9adf8208152c0/install-doctis.sh
+wget https://gist.githubusercontent.com/Inspirati/8f17b0799fdaf0ab7b201a5cfd1775a1/raw/install-doctis.sh
 chmod +x install-doctis.sh
 ./install-doctis.sh ${domain} ${mysql_pass} ${email_addr} ${email_hash} | tee logfile.txt
 ```
@@ -82,14 +88,12 @@ chmod +x install-doctis.sh
 Documentation
 -------------
 
-For complete documentation, please read the administration guide included with
-this release in the `doc/<lang>` directory.  The guide is available in text, PDF,
-and HTML formats.
+For complete documentation, please read the administration guide included with this release in the `doc/<lang>` directory. The guide is available in text, PDF, and HTML formats.
 
 Limitations
 -----------
 
-Their is currently no built-in user interface support for adding documents to the database. Document data needs to be added to the database directly using other tools, such as phpMyAdmin or the CLI.
+There is currently no built-in user interface support for adding documents to the database. Document data needs to be added to the database directly using other tools, such as phpMyAdmin or the CLI.
 
 Feedback
 --------

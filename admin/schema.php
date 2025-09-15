@@ -931,12 +931,28 @@ $g_upgrade[214] = array( 'CreateTableSQL',
 $g_upgrade[215] = array( 'CreateIndexSQL', array( 'idx_document_number', db_get_table( 'document' ), 'number' ) );
 $g_upgrade[216] = array( 'CreateIndexSQL', array( 'idx_document_category', db_get_table( 'document' ), 'category' ) );
 
+# @TODO RobD: or we could rename the project_id field, as it should become unused
 $g_upgrade[217] = array( 'AddColumnSQL', array( db_get_table( 'bug' ), "
 	document_id			I		UNSIGNED NOTNULL DEFAULT '0' " ) );
 
 # @TODO RobD: add field for project classification
 $g_upgrade[218] = array( 'AddColumnSQL', array( db_get_table( 'project' ), "
 	class				C(255)	NOTNULL DEFAULT \" '' \" " ) );
+
+# Default user: doctis - password: doctis
+$g_upgrade[219] = array( 'InsertData', array( db_get_table( 'user' ), "(
+		username, realname, email, password,
+		date_created, last_visit, enabled, protected, access_level,
+		login_count, lost_password_request_count, failed_login_count,
+		cookie_string
+	)
+	VALUES (
+		'doctis', '', 'doctis.web@gmail.com', '63a9f0ea7bb98050796b649e85481845',
+		$t_timestamp, $t_timestamp, '1', '0', 90,
+		3, 0, 0, '"
+		. md5( mt_rand( 0, mt_getrandmax() ) + mt_rand( 0, mt_getrandmax() ) ) . md5( time() )
+		. "'
+	)" ) );
 
 # END Development marker: Inspirati - RobD
 
