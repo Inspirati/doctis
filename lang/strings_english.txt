@@ -992,6 +992,7 @@ $s_main_link = 'Main';
 $s_view_bugs_link = 'View Issues';
 $s_view_dwg_link = 'View Documents';
 $s_report_bug_link = 'Report Issue';
+$s_create_dwg_link = 'Create Document';
 $s_changelog_link = 'Change Log';
 $s_roadmap_link = 'Roadmap';
 $s_summary_link = 'Summary';
@@ -1120,8 +1121,19 @@ $s_additional_information = 'Additional Information';
 $s_submit_report_button = 'Submit Issue';
 $s_check_report_more_bugs = 'check to report more issues';
 
+
+# report_dwg_advanced_page.php
+$s_check_enter_more_dwgs = 'check to enter more documents';
+
+
+$s_enter_create_dwg_details_title = 'Enter Document Details';
+$s_submit_dwg_button = 'Submit Document';
+
 # report_bug_page.php
 $s_report_stay = 'Report Stay';
+
+# enter_dwg_page.php
+$s_dwg_entry_stay = 'Entry Stay';
 
 # set_project.php
 $s_selected_project = 'Selected project';
@@ -1275,6 +1287,14 @@ $s_bug_view_title = 'View Issue Details';
 $s_no_users_monitoring_bug = 'There are no users monitoring this issue.';
 $s_users_monitoring_bug = 'Users monitoring this issue';
 $s_monitoring_user_list = 'User List';
+
+# dwg_view.php
+$s_dwg_view_title = 'View Document Details';
+$s_no_users_monitoring_dwg = 'There are no users monitoring this document.';
+$s_users_monitoring_dwg = 'Users monitoring this document';
+$s_monitoring_dwg_user_list = 'User List';
+
+$s_dwg_id = 'ID';
 
 # bug_sponsorship_list_view_inc.php
 $s_no_users_sponsoring_bug = 'There are no users sponsoring this issue.';
