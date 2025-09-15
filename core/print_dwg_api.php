@@ -781,7 +781,7 @@ function print_dwg_category_option_list( $p_category_id = 0, $p_project_id = nul
 		$t_cat_arr[] = $t_category_row;
 	}
 
-	if( config_get( 'allow_no_category' ) ) {
+	if( config_get( 'allow_no_dwg_category' ) ) {
 		echo '<option value="0"';
 		check_selected( $p_category_id, 0 );
 		echo '>';

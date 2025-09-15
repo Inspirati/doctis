@@ -24,6 +24,7 @@
  * @link http://www.mantisbt.org
  *
  * @uses bug_api.php
+ * @uses dwg_api.php
  * @uses bugnote_api.php
  * @uses category_api.php
  * @uses columns_api.php
@@ -45,6 +46,9 @@
  */
 
 require_api( 'bug_api.php' );
+
+require_api( 'dwg_api.php' );
+
 require_api( 'bugnote_api.php' );
 require_api( 'category_api.php' );
 require_api( 'columns_api.php' );
@@ -260,6 +264,9 @@ function custom_function_default_issue_update_notify( $p_issue_id ) {
 function custom_function_default_issue_create_validate( BugData $p_new_issue_data ) {
 }
 
+function custom_function_default_document_create_validate( DwgData $p_new_document_data ) {
+}
+
 /**
  * Hook to notify after aa issue has been created.
  * In case of errors, this function should call trigger_error()
@@ -268,6 +275,9 @@ function custom_function_default_issue_create_validate( BugData $p_new_issue_dat
  * @return void
  */
 function custom_function_default_issue_create_notify( $p_issue_id ) {
+}
+
+function custom_function_default_document_create_notify( $p_document_id ) {
 }
 
 /**
@@ -281,6 +291,9 @@ function custom_function_default_issue_create_notify( $p_issue_id ) {
 function custom_function_default_issue_delete_validate( $p_issue_id ) {
 }
 
+function custom_function_default_document_delete_validate( $p_issue_id ) {
+}
+
 /**
  * Hook to notify after an issue has been deleted.
  *
@@ -291,6 +304,9 @@ function custom_function_default_issue_delete_validate( $p_issue_id ) {
  * @return void
  */
 function custom_function_default_issue_delete_notify( $p_issue_id ) {
+}
+
+function custom_function_default_document_delete_notify( $p_issue_id ) {
 }
 
 /**

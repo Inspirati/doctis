@@ -182,6 +182,7 @@ define( 'NO_USER', 0 );
 # history constants
 define( 'NORMAL_TYPE', 0 );
 define( 'NEW_BUG', 1 );
+define( 'NEW_DWG', 50 );
 define( 'BUGNOTE_ADDED', 2 );
 define( 'BUGNOTE_UPDATED', 3 );
 define( 'BUGNOTE_DELETED', 4 );
