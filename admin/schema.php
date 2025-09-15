@@ -939,19 +939,31 @@ $g_upgrade[217] = array( 'AddColumnSQL', array( db_get_table( 'bug' ), "
 $g_upgrade[218] = array( 'AddColumnSQL', array( db_get_table( 'project' ), "
 	class				C(255)	NOTNULL DEFAULT \" '' \" " ) );
 
-# Default user: doctis - password: doctis
+# IMPORTANT: keep these entries as the last indexes, as they will be deleted in release versions
+# Default user: doctis - password: doctis (note that last two fields here are fixed unixtimes, circa 15 Sept 2025)
+# NOTE: access level 25 = reporter
+# NOTE: access level 70 = manager
 $g_upgrade[219] = array( 'InsertData', array( db_get_table( 'user' ), "(
 		username, realname, email, password,
-		date_created, last_visit, enabled, protected, access_level,
+		enabled, protected, access_level,
 		login_count, lost_password_request_count, failed_login_count,
-		cookie_string
+		cookie_string,
+		last_visit, date_created
 	)
 	VALUES (
-		'doctis', '', 'doctis.web@gmail.com', '63a9f0ea7bb98050796b649e85481845',
-		$t_timestamp, $t_timestamp, '1', '0', 90,
-		3, 0, 0, '"
-		. md5( mt_rand( 0, mt_getrandmax() ) + mt_rand( 0, mt_getrandmax() ) ) . md5( time() )
-		. "'
+		'doctis', '', 'doctis.web@gmail.com', 'c20eaa6d3e0895df22eaf238291fdbcc',
+		'1', '0', 25,
+		3, 0, 0,
+		'" . md5( mt_rand( 0, mt_getrandmax() ) + mt_rand( 0, mt_getrandmax() ) ) . md5( time() ) . "',
+        '1757927188', '1757927188'
+	)" ) );
+		
+# name, status, enabled, view_state, access_min, file_path, description, category_id, inherit_global, class
+$g_upgrade[220] = array( 'InsertData', array( db_get_table( 'project' ), "(
+        name, file_path, description, class
+	)
+	VALUES (
+		'test-project', '', '', ''
 	)" ) );
 
 # END Development marker: Inspirati - RobD

@@ -312,7 +312,7 @@ if( $t_show_attachments ) {
 	event_signal( 'EVENT_CREATE_DWG_FORM_TOP', array( $t_project_id ) );
 
 	if( $t_show_category ) {
-		$t_allow_no_category = config_get( 'allow_no_category' );
+		$t_allow_no_category = config_get( 'allow_no_dwg_category' );
 ?>
 	<tr>
 		<th class="category width-30">
