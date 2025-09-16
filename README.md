@@ -7,15 +7,15 @@ Doctis - Document Issue Tracking System
 About
 -----
 
-Doctis aims to add support for tracking documents and the issues raised against them during a review process.
+The Doctis project aims to add support to MantisBT for tracking documents and the issues raised against them during a formal review process.
 
-Documents can be any set of electronic files or physical objects that can have configuration data to identify them.
+Documents can be any set of electronic files or physical objects that can have suitable configuration data to uniquely identify them.
 
 The documents themselves will not be contained within the system, but rather their leading particulars will include a reference number, and/or a URL to their location.
 
 The easiest way to try Doctis is to duplicate the developers test environment, hosted in a VirtualBox running Debian Linux.
 
-A script to automatically clone, install, and configure Doctis is under development and currently in beta tesing.
+A script to automatically clone, install, and configure Doctis is under development and is currently undergoing beta testing.
 
 Installing
 ----------
@@ -26,7 +26,7 @@ Installing
 
     1. select the VirtualBox default automated install option (results in a GNOME[^1] desktop environment)
 
-    2. upon initial login, open a terminal window (click top-left corner and then the black terminal icon)
+    2. upon initial login, open a terminal window (click top-left corner and then find the black terminal icon)
 
     3. enable sudo (where \<username\> is your login username) and shutdown[^2]
 
@@ -111,6 +111,11 @@ Limitations
 -----------
 
 There is currently no built-in user interface support for adding documents to the database. Document data needs to be added to the database directly using other tools, such as phpMyAdmin or the CLI.
+
+Contributing
+------------
+
+If you are interested in contributing to the development and/or testing of the project, raise a GitHub issue expressing your interest.
 
 Feedback
 --------
