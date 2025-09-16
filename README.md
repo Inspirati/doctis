@@ -23,42 +23,59 @@ Installing
 1. Install [VirtualBox](https://www.virtualbox.org/) on any system it is supported on.
 
 2. Create a Debian Linux virtual machine using the ISO image at [Debian-13.1.0-amd64-netinst.iso](https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-13.1.0-amd64-netinst.iso)
-   
-   a. select the VirtualBox default automated install option (results in a GNOME* desktop environment)
-   
-   b. upon initial login, open a terminal window (click top-left corner and then the black terminal icon)
-   
-   c. enable sudo: (where <username> is your login username)
+
+    1. select the VirtualBox default automated install option (results in a GNOME[^1] desktop environment)
+
+    2. upon initial login, open a terminal window (click top-left corner and then the black terminal icon)
+
+    3. enable sudo (where \<username\> is your login username) and shutdown[^2]
+
+    ```sh
          $ su -
-         $ usermod -aG sudo <username>
-         $ shutdown now
-      (a system restart seems to be required to ensure sudo is enabled upon next login)
-   
-   d. create a clone (backup) of this virtual machine as a reference baseline (recommended)
-   
-   e. restart the virtual machine
+
+         # usermod -aG sudo <username>
+
+         # shutdown now
+    ```
+
+    4. create a clone (backup) of this virtual machine as a reference baseline (recommended)
+
+    5. start the virtual machine
 
 3. Download and install the DocTIS project.
-   
-   a. make a working directory, or just use the existing '~/Documents' directory
+
+    1. make a working directory, or just use the existing '~/Documents' directory
+
+    ```sh
          $ cd Documents
-   
-   b. copy the provided install script (below) into a file of your choosing, ie. 'install.sh'
-       - or fetch it online with:
+    ```
+
+    2. copy the provided install script (below) into a file of your choosing, ie. 'install.sh'
+       or fetch it online with:
+    ```sh
          $ wget -O- https://tinyurl.com/get-doctis > install.sh
-   
-   c. customise the install.sh script as needed (optional):
+    ```
+
+    3. customise the install.sh script as needed (optional):
+
+    ```sh
          $ pico install.sh
-   
-   d. enable the executable property on the script and run it:
+    ```
+
+    4. enable the executable property on the script and run it:
+
+    ```sh
          $ chmod +x install.sh
+
          $ ./install.sh
+    ```
 
 4. Follow the getting-started tips which should eventually be displayed.
-    
+
 NOTE: in order to create new users in mantisbt/doctis, the ability to send smtp emails is required and perhap the most-difficult way to achieve this is to create an App Password for a gmail account. However the system can still be used in single administrator mode without being able to send email. The default account is 'administrator' with password 'root'.
 
-*for alternative desktop environments, perform a manual Debian setup process. (this has not been tested)
+[^1]: for alternative desktop environments, perform a manual Debian setup process. (this has undergone minimal testing)
+[^2]: a system restart seems to be required to ensure sudo is enabled upon next login
 
 Doctis Install Script
 ---------------------
