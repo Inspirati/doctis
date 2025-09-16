@@ -955,16 +955,16 @@ $g_upgrade[219] = array( 'InsertData', array( db_get_table( 'user' ), "(
 		'1', '0', 25,
 		3, 0, 0,
 		'" . md5( mt_rand( 0, mt_getrandmax() ) + mt_rand( 0, mt_getrandmax() ) ) . md5( time() ) . "',
-        '1757927188', '1757927188'
+		'1757927188', '1757927188'
 	)" ) );
-		
+
 # name, status, enabled, view_state, access_min, file_path, description, category_id, inherit_global, class
-$g_upgrade[220] = array( 'InsertData', array( db_get_table( 'project' ), "(
-        name, file_path, description, class
-	)
-	VALUES (
-		'test-project', '', '', ''
-	)" ) );
+#$g_upgrade[220] = array( 'InsertData', array( db_get_table( 'project' ), "(
+#        name, file_path, description, class
+#	)
+#	VALUES (
+#		'test-project', '', '', ''
+#	)" ) );
 
 # END Development marker: Inspirati - RobD
 
