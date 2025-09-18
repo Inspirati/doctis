@@ -1122,7 +1122,7 @@ function print_dwg_column_selection( DwgData $p_bug, $p_columns_target = COLUMNS
 		access_has_project_level( config_get( 'move_bug_threshold', null, null, $p_bug->project_id ), $p_bug->project_id ) ||
 		# !TODO: factor in $g_auto_set_status_to_assigned == ON
 		access_has_project_level( config_get( 'update_bug_assign_threshold', null, null, $p_bug->project_id ), $p_bug->project_id ) ||
-		access_has_project_level( config_get( 'update_bug_threshold', null, null, $p_bug->project_id ), $p_bug->project_id ) ||
+		access_has_project_level( config_get( 'update_dwg_threshold', null, null, $p_bug->project_id ), $p_bug->project_id ) ||
 		access_has_project_level( config_get( 'delete_bug_threshold', null, null, $p_bug->project_id ), $p_bug->project_id ) ||
 		# !TODO: check to see if the bug actually has any different selectable workflow states
 		access_has_project_level( config_get( 'update_bug_status_threshold', null, null, $p_bug->project_id ), $p_bug->project_id ) ||
@@ -1193,8 +1193,8 @@ function print_dwg_column_plugin( $p_column_object, DwgData $p_bug, $p_columns_t
 function print_dwg_column_edit( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 
 	echo '<td class="column-edit">';
-	$t_can_update = !bug_is_readonly( $p_bug->id ) &&
-		access_has_bug_level( config_get( 'update_bug_threshold', null, auth_get_current_user_id(), $p_bug->project_id ), $p_bug->id );
+	$t_can_update = !dwg_is_readonly( $p_bug->id ) &&
+		access_has_dwg_level( config_get( 'update_dwg_threshold', null, auth_get_current_user_id(), $p_bug->project_id ), $p_bug->id );
 	if( $t_can_update ) {
 		echo '<a href="' . string_get_dwg_update_url( $p_bug->id ) . '">';
 		print_icon( 'fa-pencil', 'bigger-130 padding-2 grey', lang_get( 'edit' ) );
@@ -1523,7 +1523,15 @@ function print_dwg_column_last_updated( DwgData $p_bug, $p_columns_target = COLU
  * @return void
  * @access public
  */
-function print_dwg_column_date_submitted( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+// function print_dwg_column_date_submitted( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function print_dwg_column_date_submitted( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+	$t_date_submitted = string_display_line( date( config_get( 'short_date_format' ), $p_bug->date_submitted ) );
+
+	echo '<td class="column-date-submitted">', $t_date_submitted, '</td>';
+}
+
+// function print_column_date( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function print_column_date( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	$t_date_submitted = string_display_line( date( config_get( 'short_date_format' ), $p_bug->date_submitted ) );
 
 	echo '<td class="column-date-submitted">', $t_date_submitted, '</td>';
@@ -1657,7 +1665,7 @@ function print_dwg_column_view_state( DwgData $p_bug, $p_columns_target = COLUMN
 function print_dwg_column_tags( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	echo '<td class="column-tags">';
 
-	if( access_has_bug_level( config_get( 'tag_view_threshold' ), $p_bug->id ) ) {
+	if( access_has_dwg_level( config_get( 'tag_view_threshold' ), $p_bug->id ) ) {
 		echo string_display_line( tag_bug_get_all( $p_bug->id ) );
 	}
 
@@ -1673,13 +1681,13 @@ function print_dwg_column_tags( DwgData $p_bug, $p_columns_target = COLUMNS_TARG
  * @access public
  */
 function print_dwg_column_due_date( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
-	if( !access_has_bug_level( config_get( 'due_date_view_threshold' ), $p_bug->id ) ||
+	if( !access_has_dwg_level( config_get( 'due_date_view_threshold' ), $p_bug->id ) ||
 		date_is_null( $p_bug->due_date )
 	) {
 		$t_css = '';
 		$t_value = '&#160;';
 	} else {
-		$t_css = " due-" . bug_overdue_level( $p_bug->id );
+		$t_css = " due-" . dwg_overdue_level( $p_bug->id );
 		$t_value = string_display_line( date( config_get( 'short_date_format' ), $p_bug->due_date ) );
 	}
 
@@ -1698,10 +1706,10 @@ function print_dwg_column_overdue( DwgData $p_bug, $p_columns_target = COLUMNS_T
 
 	echo '<td class="column-overdue">';
 
-	if( access_has_bug_level( config_get( 'due_date_view_threshold' ), $p_bug->id ) &&
+	if( access_has_dwg_level( config_get( 'due_date_view_threshold' ), $p_bug->id ) &&
 		!date_is_null( $p_bug->due_date )
 	) {
-		$t_level = bug_overdue_level( $p_bug->id );
+		$t_level = dwg_overdue_level( $p_bug->id );
 		if( $t_level === 0 ) {
 			$t_icon = 'fa-times-circle-o';
 			$t_overdue_text_hover = sprintf(

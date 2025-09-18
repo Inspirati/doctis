@@ -71,13 +71,13 @@ if( $f_master_bug_id > 0 ) {
 	bug_ensure_exists( $f_master_bug_id );
 
 	# User can view the master bug
-	access_ensure_bug_level( config_get( 'view_dwg_threshold' ), $f_master_bug_id );
+	access_ensure_dwg_level( config_get( 'view_dwg_threshold' ), $f_master_bug_id );
 
 	if( bug_is_readonly( $f_master_bug_id ) ) {
 		error_parameters( $f_master_bug_id );
 		trigger_error( ERROR_BUG_READ_ONLY_ACTION_DENIED, ERROR );
 	}
-	$t_master_bug = bug_get( $f_master_bug_id, true );
+	$t_master_bug = dwg_get( $f_master_bug_id, true );
 	$t_project_id = $t_master_bug->project_id;
 } else {
 	$f_project_id = gpc_get_int( 'project_id' );
@@ -85,44 +85,53 @@ if( $f_master_bug_id > 0 ) {
 }
 
 // @TODO RobD - if we don't include the summary and description fields here, the 'required' error gets trigger somewhere down the line
+// $t_issue = array(
+// 	'project' => array( 'id' => $t_project_id ),
+// 	'reporter' => array( 'id' => auth_get_current_user_id() ),
+// 	'summary' => gpc_get_string( 'summary' ),
+// 	'description' => gpc_get_string( 'description' ),
+// 	'name' => gpc_get_string( 'name' ),
+// 	'number' => gpc_get_string( 'number' ),
+// );
+
 $t_issue = array(
 	'project' => array( 'id' => $t_project_id ),
 	'reporter' => array( 'id' => auth_get_current_user_id() ),
-	'summary' => gpc_get_string( 'summary' ),
-	'description' => gpc_get_string( 'description' ),
-	'name' => gpc_get_string( 'name' ),
-	'number' => gpc_get_string( 'number' ),
+	'summary' => "sample summary",
+	'description' => "default description",
+	'name' => "document name",
+	'number' => "12345678",
 );
 // @TODO RobD - i have added the name and number fields to the above array, but not as yet done anything more to handle them
 
-$t_tag_string = '';
-$f_tag_select = gpc_get_int( 'tag_select', 0 );
-if( $f_tag_select != 0 ) {
-	$t_tag_string = tag_get_name( $f_tag_select );
-}
+// $t_tag_string = '';
+// $f_tag_select = gpc_get_int( 'tag_select', 0 );
+// if( $f_tag_select != 0 ) {
+// 	$t_tag_string = tag_get_name( $f_tag_select );
+// }
 
-$f_tag_string = gpc_get_string( 'tag_string', '' );
-if( !is_blank( $f_tag_string ) ) {
-	$t_tag_string = is_blank( $t_tag_string ) ? $f_tag_string : ',' . $f_tag_string;
-}
+// $f_tag_string = gpc_get_string( 'tag_string', '' );
+// if( !is_blank( $f_tag_string ) ) {
+// 	$t_tag_string = is_blank( $t_tag_string ) ? $f_tag_string : ',' . $f_tag_string;
+// }
 
-$t_tags = tag_parse_string( $t_tag_string );
-if( !empty( $t_tags ) ) {
-	$t_issue['tags'] = array();
-	foreach( $t_tags as $t_tag ) {
-		$t_issue['tags'][] = array( 'name' => $t_tag['name'] );
-	}
-}
+// $t_tags = tag_parse_string( $t_tag_string );
+// if( !empty( $t_tags ) ) {
+// 	$t_issue['tags'] = array();
+// 	foreach( $t_tags as $t_tag ) {
+// 		$t_issue['tags'][] = array( 'name' => $t_tag['name'] );
+// 	}
+// }
 
-$f_files = gpc_get_file( 'ufile', null );
-if( $f_files !== null && !empty( $f_files ) ) {
-	$t_issue['files'] = helper_array_transpose( $f_files );
-}
+// $f_files = gpc_get_file( 'ufile', null );
+// if( $f_files !== null && !empty( $f_files ) ) {
+// 	$t_issue['files'] = helper_array_transpose( $f_files );
+// }
 
-$t_build = gpc_get_string( 'build', '' );
-if( !is_blank( $t_build ) ) {
-	$t_issue['build'] = $t_build;
-}
+// $t_build = gpc_get_string( 'build', '' );
+// if( !is_blank( $t_build ) ) {
+// 	$t_issue['build'] = $t_build;
+// }
 
 // $t_platform = gpc_get_string( 'platform', '' );
 // if( !is_blank( $t_platform ) ) {
@@ -198,15 +207,15 @@ if( $t_priority != 0 ) {
 # According to PHPDoc for $g_dwg_create_page_fields, projection is not allowed
 # in the list; dwg_create_page.php does not display it, so it does not really
 # make sense to process it here.
-$t_projection = gpc_get_int( 'projection', 0 );
-if( $t_projection != 0 ) {
-	$t_issue['projection'] = array( 'id' => $t_projection );
-}
+// $t_projection = gpc_get_int( 'projection', 0 );
+// if( $t_projection != 0 ) {
+// 	$t_issue['projection'] = array( 'id' => $t_projection );
+// }
 
-$t_eta = gpc_get_int( 'eta', 0 );
-if( $t_eta != 0 ) {
-	$t_issue['eta'] = array( 'id' => $t_eta );
-}
+// $t_eta = gpc_get_int( 'eta', 0 );
+// if( $t_eta != 0 ) {
+// 	$t_issue['eta'] = array( 'id' => $t_eta );
+// }
 
 // $t_resolution = gpc_get_int( 'resolution', 0 );
 // if( $t_resolution != 0 ) {
@@ -223,42 +232,42 @@ if( $t_status != 0 ) {
 // 	$t_issue['steps_to_reproduce'] = $t_steps_to_reproduce;
 // }
 
-$t_additional_info = gpc_get_string( 'additional_info', null );
-if( $t_additional_info !== null ) {
-	$t_issue['additional_information'] = $t_additional_info;
-}
+// $t_additional_info = gpc_get_string( 'additional_info', null );
+// if( $t_additional_info !== null ) {
+// 	$t_issue['additional_information'] = $t_additional_info;
+// }
 
 $t_due_date = gpc_get_string( 'due_date', null );
 if( $t_due_date !== null ) {
 	$t_issue['due_date'] = $t_due_date;
 }
 
-# Validate the custom fields before adding the bug.
-$t_related_custom_field_ids = custom_field_get_linked_ids( $t_project_id );
-$t_custom_fields = array();
-foreach( $t_related_custom_field_ids as $t_id ) {
-	$t_def = custom_field_get_definition( $t_id );
+// # Validate the custom fields before adding the bug.
+// $t_related_custom_field_ids = custom_field_get_linked_ids( $t_project_id );
+// $t_custom_fields = array();
+// foreach( $t_related_custom_field_ids as $t_id ) {
+// 	$t_def = custom_field_get_definition( $t_id );
 
-	# Produce an error if the field is required but wasn't posted
-	if( gpc_isset_custom_field( $t_id, $t_def['type'] ) ) {
-		$t_custom_fields[] = array(
-			'field' => array( 'id' => $t_id ),
-			'value' => gpc_get_custom_field( 'custom_field_' . $t_id, $t_def['type'], null )
-		);
-	}
-}
+// 	# Produce an error if the field is required but wasn't posted
+// 	if( gpc_isset_custom_field( $t_id, $t_def['type'] ) ) {
+// 		$t_custom_fields[] = array(
+// 			'field' => array( 'id' => $t_id ),
+// 			'value' => gpc_get_custom_field( 'custom_field_' . $t_id, $t_def['type'], null )
+// 		);
+// 	}
+// }
 
-if( !empty( $t_custom_fields ) ) {
-	$t_issue['custom_fields'] = $t_custom_fields;
-}
+// if( !empty( $t_custom_fields ) ) {
+// 	$t_issue['custom_fields'] = $t_custom_fields;
+// }
 
 $t_data = array(
 	'payload' => array( 'issue' => $t_issue ),
 );
 
-if( $f_master_bug_id > 0 ) {
-	$t_data['options'] = array( 'clone_info' => $t_clone_info );
-}
+// if( $f_master_bug_id > 0 ) {
+// 	$t_data['options'] = array( 'clone_info' => $t_clone_info );
+// }
 
 #!$t_command = new IssueAddCommand( $t_data );
 $t_command = new DwgAddCommand( $t_data );
@@ -273,7 +282,7 @@ if( $f_dwg_entry_stay ) {
 		'os', 'os_build', 'target_version', 'build', 'view_state', 'due_date'
 	);
 
-	$t_issue = bug_get( $t_issue_id );
+	$t_issue = dwg_get( $t_issue_id );
 
 	$t_data = array();
 	foreach( $t_fields as $t_field ) {

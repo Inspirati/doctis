@@ -41,11 +41,11 @@ function mc_dwg_exists( $p_username, $p_password, $p_issue_id ) {
 		return mci_fault_login_failed();
 	}
 
-	if( !bug_exists( $p_issue_id ) ) {
+	if( !dwg_exists( $p_issue_id ) ) {
 		return false;
 	}
 
-	$t_project_id = bug_get_field( $p_issue_id, 'project_id' );
+	$t_project_id = dwg_get_field( $p_issue_id, 'project_id' );
 	if( !mci_has_readonly_access( $t_user_id, $t_project_id ) ) {
 
 		# if we return an error here, then we answered the question!
@@ -71,19 +71,19 @@ function mc_dwg_get( $p_username, $p_password, $p_issue_id, $p_fields = null ) {
 	}
 
 	$t_lang = mci_get_user_lang( $t_user_id );
-	$t_project_id = bug_get_field( $p_issue_id, 'project_id' );
+	$t_project_id = dwg_get_field( $p_issue_id, 'project_id' );
 
 	if( !mci_has_readonly_access( $t_user_id, $t_project_id ) ) {
 		return mci_fault_access_denied( $t_user_id );
 	}
 
-	if( !access_has_bug_level( config_get( 'view_bug_threshold', null, null, $t_project_id ), $p_issue_id, $t_user_id ) ) {
+	if( !access_has_dwg_level( config_get( 'view_dwg_threshold', null, null, $t_project_id ), $p_issue_id, $t_user_id ) ) {
 		return mci_fault_access_denied( $t_user_id );
 	}
 
 	log_event( LOG_WEBSERVICE, 'getting details for issue \'' . $p_issue_id . '\'' );
 
-	$t_bug = bug_get( $p_issue_id, true );
+	$t_bug = dwg_get( $p_issue_id, true );
 	$t_issue_data = mci_issue_data_as_array( $t_bug, $t_user_id, $t_lang, $p_fields );
 	return $t_issue_data;
 }
@@ -99,10 +99,10 @@ function mc_dwg_get( $p_username, $p_password, $p_issue_id, $p_fields = null ) {
  * @return array history entries or empty if user has no access to history.
  */
 function mci_dwg_get_history( $p_issue_id, $p_user_id, $p_lang ) {
-	$t_project_id = bug_get_field( $p_issue_id, 'project_id' );
+	$t_project_id = dwg_get_field( $p_issue_id, 'project_id' );
 
 	$t_view_history_threshold = config_get( 'view_history_threshold', null, null, $t_project_id );
-	if( !access_has_bug_level( $t_view_history_threshold, $p_issue_id, $p_user_id ) ) {
+	if( !access_has_dwg_level( $t_view_history_threshold, $p_issue_id, $p_user_id ) ) {
 		return array();
 	}
 
@@ -169,6 +169,7 @@ function mci_dwg_get_history( $p_issue_id, $p_user_id, $p_lang ) {
 
 		switch( $t_type ) {
 			case NEW_BUG:
+			case NEW_DWG:
 			case DESCRIPTION_UPDATED:
 			case ADDITIONAL_INFO_UPDATED:
 			case STEP_TO_REPRODUCE_UPDATED:
@@ -342,17 +343,17 @@ function mc_dwg_get_history( $p_username, $p_password, $p_issue_id ) {
 		return mci_fault_login_failed();
 	}
 
-	if( !bug_exists( $p_issue_id ) ) {
+	if( !dwg_exists( $p_issue_id ) ) {
 		return ApiObjectFactory::faultNotFound( "Issue '$p_issue_id' does not exist" );
 	}
 
-	$t_project_id = bug_get_field( $p_issue_id, 'project_id' );
+	$t_project_id = dwg_get_field( $p_issue_id, 'project_id' );
 	if( !mci_has_readonly_access( $t_user_id, $t_project_id ) ) {
 		return mci_fault_access_denied( $t_user_id );
 	}
 	$g_project_override = $t_project_id;
 
-	if( !access_has_bug_level( config_get( 'view_bug_threshold', null, null, $t_project_id ), $p_issue_id, $t_user_id ) ) {
+	if( !access_has_dwg_level( config_get( 'view_dwg_threshold', null, null, $t_project_id ), $p_issue_id, $t_user_id ) ) {
 		return mci_fault_access_denied( $t_user_id );
 	}
 
@@ -370,13 +371,13 @@ function mc_dwg_get_history( $p_username, $p_password, $p_issue_id ) {
 
 /**
  * Get due date for a given bug
- * @param BugData $p_bug A BugData object.
+ * @param DwgData $p_bug A DwgData object.
  * @return soapval the value to be encoded as the due date
  */
-function mci_dwg_get_due_date( BugData $p_bug ) {
+function mci_dwg_get_due_date( DwgData $p_bug ) {
 	$t_value = null;
 
-	if( access_has_bug_level( config_get( 'due_date_view_threshold' ), $p_bug->id )  && !date_is_null( $p_bug->due_date ) ) {
+	if( access_has_dwg_level( config_get( 'due_date_view_threshold' ), $p_bug->id )  && !date_is_null( $p_bug->due_date ) ) {
 		$t_value = $p_bug->due_date;
 	}
 
@@ -464,7 +465,7 @@ function mci_dwg_set_custom_fields( $p_issue_id, ?array &$p_custom_fields, $p_lo
  *              fields are accessible to the current user.
  */
 function mci_dwg_get_custom_fields( $p_issue_id ) {
-	$t_project_id = bug_get_field( $p_issue_id, 'project_id' );
+	$t_project_id = dwg_get_field( $p_issue_id, 'project_id' );
 
 	$t_custom_fields = array();
 	$t_related_custom_field_ids = custom_field_get_linked_ids( $t_project_id );
@@ -562,7 +563,7 @@ function mci_dwg_get_relationships( $p_issue_id, $p_user_id ) {
 
 	$t_src_relationships = relationship_get_all_src( $p_issue_id );
 	foreach( $t_src_relationships as $t_relship_row ) {
-		if( access_has_bug_level( config_get( 'webservice_readonly_access_level_threshold' ), $t_relship_row->dest_bug_id, $p_user_id ) ) {
+		if( access_has_dwg_level( config_get( 'webservice_readonly_access_level_threshold' ), $t_relship_row->dest_bug_id, $p_user_id ) ) {
 			$t_related_issue_id = (int)$t_relship_row->dest_bug_id;
 
 			$t_relationship = array();
@@ -591,7 +592,7 @@ function mci_dwg_get_relationships( $p_issue_id, $p_user_id ) {
 
 	$t_dest_relationships = relationship_get_all_dest( $p_issue_id );
 	foreach( $t_dest_relationships as $t_relship_row ) {
-		if( access_has_bug_level( config_get( 'webservice_readonly_access_level_threshold' ), $t_relship_row->src_bug_id, $p_user_id ) ) {
+		if( access_has_dwg_level( config_get( 'webservice_readonly_access_level_threshold' ), $t_relship_row->src_bug_id, $p_user_id ) ) {
 			$t_relationship = array();
 			$t_relationship['id'] = (int)$t_relship_row->id;
 			$t_reltype = array();
@@ -629,7 +630,7 @@ function mci_dwg_get_relationships( $p_issue_id, $p_user_id ) {
 function mci_dwg_note_data_as_array( $p_bugnote_row ) {
 	$t_user_id = auth_get_current_user_id();
 	$t_lang = mci_get_user_lang( $t_user_id );
-	$t_has_time_tracking_access = access_has_bug_level( config_get( 'time_tracking_view_threshold' ), $p_bugnote_row->bug_id );
+	$t_has_time_tracking_access = access_has_dwg_level( config_get( 'time_tracking_view_threshold' ), $p_bugnote_row->bug_id );
 
 	$t_bugnote = array();
 	$t_bugnote['id'] = (int)$p_bugnote_row->id;
@@ -715,12 +716,12 @@ function mci_dwg_get_notes( $p_issue_id ) {
  * @return mixed
  */
 function mci_dwg_set_monitors( $p_issue_id, $p_requesting_user_id, array $p_monitors ) {
-	if( bug_is_readonly( $p_issue_id ) ) {
+	if( dwg_is_readonly( $p_issue_id ) ) {
 		return mci_fault_access_denied( $p_requesting_user_id, 'Issue \'' . $p_issue_id . '\' is readonly' );
 	}
 
 	# 1. get existing monitor ids
-	$t_existing_monitor_ids = bug_get_monitors( $p_issue_id );
+	$t_existing_monitor_ids = dwg_get_monitors( $p_issue_id );
 
 	# 2. build new monitors ids
 	$t_new_monitor_ids = array();
@@ -732,11 +733,11 @@ function mci_dwg_set_monitors( $p_issue_id, $p_requesting_user_id, array $p_moni
 	# 3. for each of the new monitor ids, add it if it does not already exist
 	foreach( $t_new_monitor_ids as $t_user_id ) {
 		if( $p_requesting_user_id == $t_user_id ) {
-			if( ! access_has_bug_level( config_get( 'monitor_bug_threshold' ), $p_issue_id ) ) {
+			if( ! access_has_dwg_level( config_get( 'monitor_bug_threshold' ), $p_issue_id ) ) {
 				continue;
 			}
 		} else {
-			if( !access_has_bug_level( config_get( 'monitor_add_others_bug_threshold' ), $p_issue_id ) ) {
+			if( !access_has_dwg_level( config_get( 'monitor_add_others_bug_threshold' ), $p_issue_id ) ) {
 				continue;
 			}
 		}
@@ -745,17 +746,17 @@ function mci_dwg_set_monitors( $p_issue_id, $p_requesting_user_id, array $p_moni
 			continue;
 		}
 
-		bug_monitor( $p_issue_id, $t_user_id );
+		dwg_monitor( $p_issue_id, $t_user_id );
 	}
 
 	# 4. for each of the existing monitor ids, remove it if it is not found in the new monitor ids
 	foreach ( $t_existing_monitor_ids as $t_user_id ) {
 		if( $p_requesting_user_id == $t_user_id ) {
-			if( ! access_has_bug_level( config_get( 'monitor_bug_threshold' ), $p_issue_id ) ) {
+			if( ! access_has_dwg_level( config_get( 'monitor_bug_threshold' ), $p_issue_id ) ) {
 				continue;
 			}
 		} else {
-			if( !access_has_bug_level( config_get( 'monitor_delete_others_bug_threshold' ), $p_issue_id ) ) {
+			if( !access_has_dwg_level( config_get( 'monitor_delete_others_bug_threshold' ), $p_issue_id ) ) {
 				continue;
 			}
 		}
@@ -764,7 +765,7 @@ function mci_dwg_set_monitors( $p_issue_id, $p_requesting_user_id, array $p_moni
 			continue;
 		}
 
-		bug_unmonitor( $p_issue_id, $t_user_id );
+		dwg_unmonitor( $p_issue_id, $t_user_id );
 	}
 }
 
@@ -843,7 +844,7 @@ function mc_dwg_get_biggest_id( $p_username, $p_password, $p_project_id ) {
 		return mci_fault_access_denied( $t_user_id );
 	}
 
-	$t_rows = filter_get_bug_rows( $t_page_number, $t_per_page, $t_page_count, $t_bug_count, $t_filter, $t_project_id, $t_user_id );
+	$t_rows = filter_dwg_get_bug_rows( $t_page_number, $t_per_page, $t_page_count, $t_bug_count, $t_filter, $t_project_id, $t_user_id );
 	if( count( $t_rows ) == 0 ) {
 		return 0;
 	} else {
@@ -876,11 +877,11 @@ function mc_dwg_get_id_from_summary( $p_username, $p_password, $p_summary ) {
 	} else {
 		while( ( $t_row = db_fetch_array( $t_result ) ) !== false ) {
 			$t_issue_id = (int)$t_row['id'];
-			$t_project_id = bug_get_field( $t_issue_id, 'project_id' );
+			$t_project_id = dwg_get_field( $t_issue_id, 'project_id' );
 			$g_project_override = $t_project_id;
 
 			if( mci_has_readonly_access( $t_user_id, $t_project_id ) &&
-				access_has_bug_level( config_get( 'view_bug_threshold', null, null, $t_project_id ), $t_issue_id, $t_user_id ) ) {
+				access_has_dwg_level( config_get( 'view_dwg_threshold', null, null, $t_project_id ), $t_issue_id, $t_user_id ) ) {
 				return $t_issue_id;
 			}
 		}
@@ -976,15 +977,15 @@ function mc_dwg_update( $p_username, $p_password, $p_issue_id, stdClass $p_issue
 		return mci_fault_login_failed();
 	}
 
-	if( !bug_exists( $p_issue_id ) ) {
+	if( !dwg_exists( $p_issue_id ) ) {
 		return ApiObjectFactory::faultNotFound( 'Issue \'' . $p_issue_id . '\' does not exist.' );
 	}
 
-	if( bug_is_readonly( $p_issue_id ) ) {
+	if( dwg_is_readonly( $p_issue_id ) ) {
 		return ApiObjectFactory::faultForbidden( 'Issue \'' . $p_issue_id . '\' is readonly' );
 	}
 
-	$t_project_id = bug_get_field( $p_issue_id, 'project_id' );
+	$t_project_id = dwg_get_field( $p_issue_id, 'project_id' );
 
 	if( !mci_has_readwrite_access( $t_user_id, $t_project_id ) ) {
 		return mci_fault_access_denied( $t_user_id );
@@ -1009,7 +1010,7 @@ function mc_dwg_update( $p_username, $p_password, $p_issue_id, stdClass $p_issue
 	$t_summary = $p_issue['summary'] ?? '';
 	$t_description = $p_issue['description'] ?? '';
 
-	if( !access_has_bug_level( config_get( 'update_bug_threshold' ), $p_issue_id, $t_user_id ) ) {
+	if( !access_has_dwg_level( config_get( 'update_dwg_threshold' ), $p_issue_id, $t_user_id ) ) {
 		return mci_fault_access_denied( $t_user_id, 'Not enough rights to update issues' );
 	}
 
@@ -1048,7 +1049,7 @@ function mc_dwg_update( $p_username, $p_password, $p_issue_id, stdClass $p_issue
 	}
 
 	# fields which we expect to always be set
-	$t_bug_data = bug_get( $p_issue_id, true );
+	$t_bug_data = dwg_get( $p_issue_id, true );
 	$t_bug_data->project_id = $t_project_id;
 	$t_bug_data->reporter_id = $t_reporter_id;
 
@@ -1151,7 +1152,7 @@ function mc_dwg_update( $p_username, $p_password, $p_issue_id, stdClass $p_issue
 		$t_bug_data->target_version = $fn_set_version_field( $t_target_version_id );
 	}
 
-	if( isset( $p_issue['sticky'] ) && access_has_bug_level( config_get( 'set_bug_sticky_threshold' ), $t_bug_data->id ) ) {
+	if( isset( $p_issue['sticky'] ) && access_has_dwg_level( config_get( 'set_bug_sticky_threshold' ), $t_bug_data->id ) ) {
 		$t_bug_data->sticky = $p_issue['sticky'];
 	}
 
@@ -1216,7 +1217,7 @@ function mc_dwg_update( $p_username, $p_password, $p_issue_id, stdClass $p_issue
 			}
 		}
 
-		# The issue has been cached earlier in the bug_get() call.  Flush the cache since it is
+		# The issue has been cached earlier in the dwg_get() call.  Flush the cache since it is
 		# now stale.  Otherwise, the email notification will be based on the cached data.
 		bugnote_clear_bug_cache( $p_issue_id );
 	}
@@ -1246,18 +1247,18 @@ function mc_dwg_set_tags ( $p_username, $p_password, $p_issue_id, array $p_tags 
 		return mci_fault_login_failed();
 	}
 
-	if( !bug_exists( $p_issue_id ) ) {
+	if( !dwg_exists( $p_issue_id ) ) {
 		return ApiObjectFactory::faultNotFound( 'Issue \'' . $p_issue_id . '\' does not exist.' );
 	}
 
-	$t_project_id = bug_get_field( $p_issue_id, 'project_id' );
+	$t_project_id = dwg_get_field( $p_issue_id, 'project_id' );
 	$g_project_override = $t_project_id;
 
 	if( !mci_has_readwrite_access( $t_user_id, $t_project_id ) ) {
 		return mci_fault_access_denied( $t_user_id );
 	}
 
-	if( bug_is_readonly( $p_issue_id ) ) {
+	if( dwg_is_readonly( $p_issue_id ) ) {
 		return mci_fault_access_denied( $t_user_id, 'Issue \'' . $p_issue_id . '\' is readonly' );
 	}
 
@@ -1280,11 +1281,11 @@ function mc_dwg_delete( $p_username, $p_password, $p_issue_id ) {
 		return mci_fault_login_failed();
 	}
 
-	if( !bug_exists( $p_issue_id ) ) {
+	if( !dwg_exists( $p_issue_id ) ) {
 		return ApiObjectFactory::faultNotFound( "Issue '$p_issue_id' does not exist." );
 	}
 
-	$t_project_id = bug_get_field( $p_issue_id, 'project_id' );
+	$t_project_id = dwg_get_field( $p_issue_id, 'project_id' );
 	if( !mci_has_readwrite_access( $t_user_id, $t_project_id ) ) {
 		return mci_fault_access_denied( $t_user_id );
 	}
@@ -1309,7 +1310,7 @@ function mc_dwg_note_add( $p_username, $p_password, $p_issue_id, stdClass $p_not
 		return mci_fault_login_failed();
 	}
 
-	$t_project_id = bug_get_field( $p_issue_id, 'project_id' );
+	$t_project_id = dwg_get_field( $p_issue_id, 'project_id' );
 	if( !mci_has_readwrite_access( $t_user_id, $t_project_id ) ) {
 		return mci_fault_access_denied( $t_user_id );
 	}
@@ -1359,7 +1360,7 @@ function mc_dwg_note_add( $p_username, $p_password, $p_issue_id, stdClass $p_not
 		return ApiObjectFactory::faultBadRequest( 'Invalid issue id \'' . $p_issue_id . '\'' );
 	}
 
-	if( !bug_exists( $p_issue_id ) ) {
+	if( !dwg_exists( $p_issue_id ) ) {
 		return ApiObjectFactory::faultNotFound( 'Issue \'' . $p_issue_id . '\' does not exist.' );
 	}
 
@@ -1370,11 +1371,11 @@ function mc_dwg_note_add( $p_username, $p_password, $p_issue_id, stdClass $p_not
 	global $g_project_override;
 	$g_project_override = $t_project_id;
 
-	if( !access_has_bug_level( config_get( 'add_bugnote_threshold' ), $p_issue_id, $t_user_id ) ) {
+	if( !access_has_dwg_level( config_get( 'add_bugnote_threshold' ), $p_issue_id, $t_user_id ) ) {
 		return mci_fault_access_denied( $t_user_id, 'You do not have access rights to add notes to this issue' );
 	}
 
-	if( bug_is_readonly( $p_issue_id ) ) {
+	if( dwg_is_readonly( $p_issue_id ) ) {
 		return mci_fault_access_denied( $t_user_id, 'Issue \'' . $p_issue_id . '\' is readonly' );
 	}
 
@@ -1436,7 +1437,7 @@ function mc_dwg_note_delete( $p_username, $p_password, $p_issue_note_id ) {
 	}
 
 	$t_issue_id = bugnote_get_field( $p_issue_note_id, 'bug_id' );
-	$t_project_id = bug_get_field( $t_issue_id, 'project_id' );
+	$t_project_id = dwg_get_field( $t_issue_id, 'project_id' );
 	if( !mci_has_readwrite_access( $t_user_id, $t_project_id ) ) {
 		return mci_fault_access_denied( $t_user_id );
 	}
@@ -1484,7 +1485,7 @@ function mc_dwg_note_update( $p_username, $p_password, stdClass $p_note ) {
 	}
 
 	$t_issue_id = bugnote_get_field( $t_issue_note_id, 'bug_id' );
-	$t_project_id = bug_get_field( $t_issue_id, 'project_id' );
+	$t_project_id = dwg_get_field( $t_issue_id, 'project_id' );
 	$g_project_override = $t_project_id;
 
 	if( !mci_has_readwrite_access( $t_user_id, $t_project_id ) ) {
@@ -1507,7 +1508,7 @@ function mc_dwg_note_update( $p_username, $p_password, stdClass $p_note ) {
 	}
 
 	# Check if the bug is readonly
-	if( bug_is_readonly( $t_issue_id ) ) {
+	if( dwg_is_readonly( $t_issue_id ) ) {
 		return mci_fault_access_denied( $t_user_id, 'Issue \'' . $t_issue_id . '\' is readonly' );
 	}
 
@@ -1545,14 +1546,14 @@ function mc_dwg_relationship_add( $p_username, $p_password, $p_issue_id, stdClas
 		return mci_fault_login_failed();
 	}
 
-	$t_project_id = bug_get_field( $p_issue_id, 'project_id' );
+	$t_project_id = dwg_get_field( $p_issue_id, 'project_id' );
 	$g_project_override = $t_project_id;
 	if( !mci_has_readwrite_access( $t_user_id, $t_project_id ) ) {
 		return mci_fault_access_denied( $t_user_id );
 	}
 
 	# user has access to update the bug...
-	if( !access_has_bug_level( config_get( 'update_bug_threshold' ), $p_issue_id, $t_user_id ) ) {
+	if( !access_has_dwg_level( config_get( 'update_dwg_threshold' ), $p_issue_id, $t_user_id ) ) {
 		return mci_fault_access_denied( $t_user_id, 'Active user does not have access level required to add a relationship to this issue' );
 	}
 
@@ -1562,17 +1563,17 @@ function mc_dwg_relationship_add( $p_username, $p_password, $p_issue_id, stdClas
 	}
 
 	# the related bug exists...
-	if( !bug_exists( $t_dest_issue_id ) ) {
+	if( !dwg_exists( $t_dest_issue_id ) ) {
 		return ApiObjectFactory::faultNotFound( 'Issue \'' . $t_dest_issue_id . '\' not found.' );
 	}
 
 	# bug is not read-only...
-	if( bug_is_readonly( $p_issue_id ) ) {
+	if( dwg_is_readonly( $p_issue_id ) ) {
 		return mci_fault_access_denied( $t_user_id, 'Issue \'' . $p_issue_id . '\' is readonly' );
 	}
 
 	# user can access to the related bug at least as viewer...
-	if( !access_has_bug_level( config_get( 'view_bug_threshold', null, null, $t_project_id ), $t_dest_issue_id, $t_user_id ) ) {
+	if( !access_has_dwg_level( config_get( 'view_dwg_threshold', null, null, $t_project_id ), $t_dest_issue_id, $t_user_id ) ) {
 		return mci_fault_access_denied( $t_user_id, 'The issue \'' . $t_dest_issue_id . '\' requires higher access level' );
 	}
 
@@ -1601,19 +1602,19 @@ function mc_dwg_relationship_delete( $p_username, $p_password, $p_issue_id, $p_r
 		return mci_fault_login_failed();
 	}
 
-	$t_project_id = bug_get_field( $p_issue_id, 'project_id' );
+	$t_project_id = dwg_get_field( $p_issue_id, 'project_id' );
 	$g_project_override = $t_project_id;
 	if( !mci_has_readwrite_access( $t_user_id, $t_project_id ) ) {
 		return mci_fault_access_denied( $t_user_id );
 	}
 
 	# user has access to update the bug...
-	if( !access_has_bug_level( config_get( 'update_bug_threshold' ), $p_issue_id, $t_user_id ) ) {
+	if( !access_has_dwg_level( config_get( 'update_dwg_threshold' ), $p_issue_id, $t_user_id ) ) {
 		return mci_fault_access_denied( $t_user_id, 'Active user does not have access level required to remove a relationship from this issue.' );
 	}
 
 	# bug is not read-only...
-	if( bug_is_readonly( $p_issue_id ) ) {
+	if( dwg_is_readonly( $p_issue_id ) ) {
 		return mci_fault_access_denied( $t_user_id, 'Issue \'' . $p_issue_id . '\' is readonly.' );
 	}
 
@@ -1621,8 +1622,8 @@ function mc_dwg_relationship_delete( $p_username, $p_password, $p_issue_id, $p_r
 	$t_dest_issue_id = relationship_get_linked_bug_id( $p_relationship_id, $p_issue_id );
 
 	# user can access to the related bug at least as viewer, if it's exist...
-	if( bug_exists( $t_dest_issue_id ) ) {
-		if( !access_has_bug_level( config_get( 'view_bug_threshold', null, null, $t_project_id ), $t_dest_issue_id, $t_user_id ) ) {
+	if( dwg_exists( $t_dest_issue_id ) ) {
+		if( !access_has_dwg_level( config_get( 'view_dwg_threshold', null, null, $t_project_id ), $t_dest_issue_id, $t_user_id ) ) {
 			return mci_fault_access_denied( $t_user_id, 'The issue \'' . $t_dest_issue_id . '\' requires higher access level.' );
 		}
 	}
@@ -1635,18 +1636,18 @@ function mc_dwg_relationship_delete( $p_username, $p_password, $p_issue_id, $p_r
 }
 
 /**
- * Transforms a `BugData` object into a response for webservice API.
+ * Transforms a `DwgData` object into a response for webservice API.
  * This function assumes that user has access to the issue.
  * This function will filter out issue information that user doesn't have
  * access to.
  *
- * @param BugData $p_issue_data A BugData object to process.
+ * @param DwgData $p_issue_data A DwgData object to process.
  * @param integer $p_user_id    A valid user identifier.
  * @param string  $p_lang       A valid language string.
  * @param array|null $p_fields  The list of fields to include in the result.
  * @return array The issue as an array
  */
-function mci_dwg_data_as_array( BugData $p_issue_data, $p_user_id, $p_lang, $p_fields = null ) {
+function mci_dwg_data_as_array( DwgData $p_issue_data, $p_user_id, $p_lang, $p_fields = null ) {
 	global $g_project_override;
 	$t_project_id = $p_issue_data->project_id;
 	$g_project_override = $t_project_id;
@@ -1676,16 +1677,16 @@ function mci_dwg_data_as_array( BugData $p_issue_data, $p_user_id, $p_lang, $p_f
 	}
 
 	if( $t_fields === null || isset( $t_fields['description'] ) ) {
-		$t_issue['description'] = mci_sanitize_xml_string( bug_get_text_field( $t_id, 'description' ) );
+		$t_issue['description'] = mci_sanitize_xml_string( dwg_get_text_field( $t_id, 'description' ) );
 	}
 
 	if( $t_fields === null || isset( $t_fields['steps_to_reproduce'] ) ) {
-		$t_steps_to_reproduce = bug_get_text_field( $t_id, 'steps_to_reproduce' );
+		$t_steps_to_reproduce = dwg_get_text_field( $t_id, 'steps_to_reproduce' );
 		$t_issue['steps_to_reproduce'] = mci_null_if_empty( mci_sanitize_xml_string( $t_steps_to_reproduce ) );
 	}
 
 	if( $t_fields === null || isset( $t_fields['additional_information'] ) ) {
-		$t_additional_information = bug_get_text_field( $t_id, 'additional_information' );
+		$t_additional_information = dwg_get_text_field( $t_id, 'additional_information' );
 		$t_issue['additional_information'] = mci_null_if_empty( mci_sanitize_xml_string( $t_additional_information ) );
 	}
 
@@ -1706,7 +1707,7 @@ function mci_dwg_data_as_array( BugData $p_issue_data, $p_user_id, $p_lang, $p_f
 	}
 
 	if( $t_fields === null || isset( $t_fields['target_version'] ) ) {
-		if( access_has_bug_level( config_get( 'roadmap_view_threshold' ), $t_id ) ) {
+		if( access_has_dwg_level( config_get( 'roadmap_view_threshold' ), $t_id ) ) {
 			$t_issue['target_version'] = mci_get_version( $p_issue_data->target_version, $p_issue_data->project_id );
 		}
 	}
@@ -1717,7 +1718,7 @@ function mci_dwg_data_as_array( BugData $p_issue_data, $p_user_id, $p_lang, $p_f
 
 	if( $t_fields === null || isset( $t_fields['handler'] ) ) {
 		if( !empty( $p_issue_data->handler_id ) &&
-			access_has_bug_level( config_get( 'view_handler_threshold', null, null, $t_project_id ), $t_id, $p_user_id ) ) {
+			access_has_dwg_level( config_get( 'view_handler_threshold', null, null, $t_project_id ), $t_id, $p_user_id ) ) {
 			$t_issue['handler'] = mci_account_get_array_by_id($p_issue_data->handler_id);
 		}
 	}
@@ -1785,7 +1786,7 @@ function mci_dwg_data_as_array( BugData $p_issue_data, $p_user_id, $p_lang, $p_f
 	}
 
 	if( $t_fields === null || isset( $t_fields['due_date'] ) ) {
-		if( access_has_bug_level( config_get( 'due_date_view_threshold' ), $t_id ) ) {
+		if( access_has_dwg_level( config_get( 'due_date_view_threshold' ), $t_id ) ) {
 			$t_issue['due_date'] = ApiObjectFactory::datetime( $p_issue_data->due_date );
 		}
 	}
@@ -1799,7 +1800,7 @@ function mci_dwg_data_as_array( BugData $p_issue_data, $p_user_id, $p_lang, $p_f
 			$t_issue['profile_id'] = (int)$p_issue_data->profile_id;
 		}
 
-		if( access_has_bug_level( config_get( 'view_sponsorship_total_threshold' ), $t_id ) ) {
+		if( access_has_dwg_level( config_get( 'view_sponsorship_total_threshold' ), $t_id ) ) {
 			$t_issue['sponsorship_total'] = $p_issue_data->sponsorship_total;
 		} else {
 			$t_issue['sponsorship_total'] = 0;
@@ -1857,7 +1858,7 @@ function mci_dwg_data_as_array( BugData $p_issue_data, $p_user_id, $p_lang, $p_f
 
 	# Get users monitoring issue - access checked as part of returning user list.
 	if( $t_fields === null || isset( $t_fields['monitors'] ) ) {
-		$t_issue['monitors'] = mci_account_get_array_by_ids( bug_get_monitors( $p_issue_data->id ) );
+		$t_issue['monitors'] = mci_account_get_array_by_ids( dwg_get_monitors( $p_issue_data->id ) );
 	}
 
 	if( !ApiObjectFactory::$soap ) {
@@ -1882,11 +1883,11 @@ function mci_dwg_data_as_array( BugData $p_issue_data, $p_user_id, $p_lang, $p_f
  * @return array
  */
 function mci_dwg_get_tags_for_bug_id( $p_bug_id, $p_user_id ) {
-	if( !access_has_bug_level( config_get( 'tag_view_threshold' ), $p_bug_id, $p_user_id ) ) {
+	if( !access_has_dwg_level( config_get( 'tag_view_threshold' ), $p_bug_id, $p_user_id ) ) {
 		return array();
 	}
 
-	$t_tag_rows = tag_bug_get_attached( $p_bug_id );
+	$t_tag_rows = tag_dwg_get_attached( $p_bug_id );
 	$t_result = array();
 
 	foreach ( $t_tag_rows as $t_tag_row ) {
@@ -1900,12 +1901,12 @@ function mci_dwg_get_tags_for_bug_id( $p_bug_id, $p_user_id ) {
 }
 
 /**
- * Returns an array for SOAP encoding from a BugData object
+ * Returns an array for SOAP encoding from a DwgData object
  *
- * @param BugData $p_issue_data A BugData object to process.
+ * @param DwgData $p_issue_data A DwgData object to process.
  * @return array The issue header data as an array
  */
-function mci_dwg_data_as_header_array( BugData $p_issue_data ) {
+function mci_dwg_data_as_header_array( DwgData $p_issue_data ) {
 		$t_issue = array();
 
 		$t_id = $p_issue_data->id;
@@ -1947,17 +1948,17 @@ function mci_dwg_data_as_header_array( BugData $p_issue_data ) {
  */
 function mci_check_access_to_dwg( $p_user_id, $p_bug_id ) {
 
-    if( !bug_exists( $p_bug_id ) ) {
+    if( !dwg_exists( $p_bug_id ) ) {
         return false;
     }
 
-    $t_project_id = bug_get_field( $p_bug_id, 'project_id' );
+    $t_project_id = dwg_get_field( $p_bug_id, 'project_id' );
     $g_project_override = $t_project_id;
     if( !mci_has_readonly_access( $p_user_id, $t_project_id ) ) {
         return false;
     }
 
-    if( !access_has_bug_level( config_get( 'view_bug_threshold', null, null, $t_project_id ), $p_bug_id, $p_user_id ) ) {
+    if( !access_has_dwg_level( config_get( 'view_dwg_threshold', null, null, $t_project_id ), $p_bug_id, $p_user_id ) ) {
         return false;
     }
 
@@ -1988,7 +1989,7 @@ function mc_dwgs_get( $p_username, $p_password, $p_issue_ids ) {
 
         log_event( LOG_WEBSERVICE, 'getting details for issue \'' . $t_id . '\'' );
 
-        $t_issue_data = bug_get( $t_id, true );
+        $t_issue_data = dwg_get( $t_id, true );
         $t_result[] = mci_issue_data_as_array( $t_issue_data, $t_user_id, $t_lang );
     }
 
@@ -2017,7 +2018,7 @@ function mc_dwgs_get_header( $p_username, $p_password, $p_issue_ids ) {
 
         log_event( LOG_WEBSERVICE, 'getting details for issue \'' . $t_id . '\'' );
 
-        $t_issue_data = bug_get( $t_id, true );
+        $t_issue_data = dwg_get( $t_id, true );
         $t_result[] = mci_issue_data_as_header_array( $t_issue_data );
     }
 

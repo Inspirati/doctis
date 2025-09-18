@@ -537,6 +537,7 @@ $s_update_simple_link = 'Update Simple';
 $s_updating_bug_advanced_title = 'Updating Issue Information';
 $s_id = 'ID';
 $s_category = 'Category';
+$s_document = 'Document';
 $s_severity = 'Severity';
 $s_reproducibility = 'Reproducibility';
 $s_date_submitted = 'Date Submitted';
@@ -602,6 +603,12 @@ $s_no_bugnotes_msg = 'There are no notes attached to this issue.';
 $s_add_bugnote_title = 'Add Note';
 $s_add_bugnote_button = 'Add Note';
 $s_closed_bug_button = 'Close Issue';
+
+# dwgnote_inc.php
+$s_no_dwgnotes_msg = 'There are no notes attached to this document.';
+$s_add_dwgnote_title = 'Add Note';
+$s_add_dwgnote_button = 'Add Note';
+$s_closed_dwg_button = 'Close document';
 
 # bugnote_update.php
 $s_bugnote_updated_msg = 'Note has been successfully updated...';

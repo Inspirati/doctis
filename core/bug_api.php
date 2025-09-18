@@ -177,6 +177,12 @@ class BugData {
 	protected $category_id = 1;
 
 	/**
+	 * Category ID
+	 */
+	// protected $document_id = 0;
+	protected $document_id = 1;
+
+	/**
 	 * Date Submitted
 	 */
 	protected $date_submitted = '';

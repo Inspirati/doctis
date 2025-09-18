@@ -107,9 +107,9 @@ if( $f_master_bug_id > 0 ) {
 	}
 
 	# User can view the master bug
-	access_ensure_bug_level( config_get( 'view_dwg_threshold' ), $f_master_bug_id );
+	access_ensure_dwg_level( config_get( 'view_dwg_threshold' ), $f_master_bug_id );
 
-	$t_bug = bug_get( $f_master_bug_id, true );
+	$t_bug = dwg_get( $f_master_bug_id, true );
 
 	#@@@ (thraxisp) Note that the master bug is cloned into the same project as the master, independent of
 	#       what the current project is set to.
@@ -312,7 +312,7 @@ if( $t_show_attachments ) {
 	event_signal( 'EVENT_CREATE_DWG_FORM_TOP', array( $t_project_id ) );
 
 	if( $t_show_category ) {
-		$t_allow_no_category = config_get( 'allow_no_dwg_category' );
+		$t_allow_no_category = config_get( 'allow_no_document' );
 ?>
 	<tr>
 		<th class="category width-30">
@@ -421,20 +421,32 @@ if( $t_show_attachments ) {
 <?php event_signal( 'EVENT_CREATE_DWG_FORM', array( $t_project_id ) ) ?>
 	<tr>
 		<th class="category">
+<!--			<span class="required">*</span>  -->
 			<span class="required">*</span>
 			<label for="name"><?php print_documentation_link( 'name' ) ?></label>
 		</th>
 		<td>
-			<input <?php echo helper_get_tab_index() ?> type="text" id="name" name="name" size="105" maxlength="128" value="<?php echo string_attribute( $f_summary ) ?>" required />
+<!--			<input <?php echo helper_get_tab_index() ?> type="text" id="name" name="name" size="105" maxlength="128" value="<?php echo string_attribute( $f_summary ) ?>" required />  -->
+			<input <?php echo helper_get_tab_index() ?> type="text" id="name" name="name" size="105" maxlength="128" value="<?php echo string_attribute( $f_summary ) ?>" />
 		</td>
 	</tr>
 	<tr>
 		<th class="category">
+<!--			<span class="required">*</span>  -->
 			<span class="required">*</span>
 			<label for="number"><?php print_documentation_link( 'number' ) ?></label>
 		</th>
 		<td>
-			<input <?php echo helper_get_tab_index() ?> type="text" id="number" name="number" size="105" maxlength="128" value="<?php echo string_attribute( $f_summary ) ?>" required />
+<!--			<input <?php echo helper_get_tab_index() ?> type="text" id="number" name="number" size="105" maxlength="128" value="<?php echo string_attribute( $f_summary ) ?>" required />  -->
+			<input <?php echo helper_get_tab_index() ?> type="text" id="number" name="number" size="105" maxlength="128" value="<?php echo string_attribute( $f_summary ) ?>" />
+		</td>
+	</tr>
+	<tr>
+		<th class="category">
+			<label for="summary"><?php print_documentation_link( 'summary' ) ?></label>
+		</th>
+		<td>
+			<input <?php echo helper_get_tab_index() ?> type="text" id="summary" name="summary" size="105" maxlength="128" value="<?php echo string_attribute( $f_summary ) ?>" />
 		</td>
 	</tr>
 	<tr>
@@ -444,16 +456,8 @@ if( $t_show_attachments ) {
 		<td>
 			<?php # Newline after opening textarea tag is intentional, see #25839 ?>
 			<textarea class="form-control" <?php echo helper_get_tab_index() ?> id="description" name="description" cols="80" rows="10">
-<?php echo string_textarea( $f_description ) ?>
-</textarea>
-		</td>
-	</tr>
-	<tr>
-		<th class="category">
-			<label for="summary"><?php print_documentation_link( 'summary' ) ?></label>
-		</th>
-		<td>
-			<input <?php echo helper_get_tab_index() ?> type="text" id="summary" name="summary" size="105" maxlength="128" value="<?php echo string_attribute( $f_summary ) ?>" />
+				<?php echo string_textarea( $f_description ) ?>
+			</textarea>
 		</td>
 	</tr>
 

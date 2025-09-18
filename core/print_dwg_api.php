@@ -774,14 +774,14 @@ function print_dwg_category_option_list( $p_category_id = 0, $p_project_id = nul
 
 	# Add the current category if it is not in the list
 	if( $p_category_id != 0
-        && !in_array( $p_category_id, array_column( $t_cat_arr, 'id' ) )
-    ) {
+		&& !in_array( $p_category_id, array_column( $t_cat_arr, 'id' ) )
+	) {
 		$t_category_row = category_get_row( $p_category_id );
 		$t_category_row['project_name'] = project_get_name( $t_category_row['project_id'] );
 		$t_cat_arr[] = $t_category_row;
 	}
 
-	if( config_get( 'allow_no_dwg_category' ) ) {
+	if( config_get( 'allow_no_document' ) ) {
 		echo '<option value="0"';
 		check_selected( $p_category_id, 0 );
 		echo '>';

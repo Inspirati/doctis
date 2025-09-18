@@ -3191,6 +3191,7 @@ $g_bug_update_page_fields = array(
  * @global int $g_report_bug_threshold
  */
 $g_report_bug_threshold = REPORTER;
+$g_report_dwg_threshold = REPORTER;
 
 /**
  * Access level needed to update bugs (i.e., the update_bug_page).
@@ -3201,6 +3202,7 @@ $g_report_bug_threshold = REPORTER;
  * @global int $g_update_bug_threshold
  */
 $g_update_bug_threshold = UPDATER;
+$g_update_dwg_threshold = UPDATER;
 
 /**
  * Access level needed to view bugs.
@@ -3208,6 +3210,7 @@ $g_update_bug_threshold = UPDATER;
  * @global int $g_view_bug_threshold
  */
 $g_view_bug_threshold = VIEWER;
+$g_view_dwg_threshold = VIEWER;
 
 /**
  * Access level needed to monitor bugs.
@@ -3215,6 +3218,7 @@ $g_view_bug_threshold = VIEWER;
  * @global int $g_monitor_bug_threshold
  */
 $g_monitor_bug_threshold = REPORTER;
+$g_monitor_dwg_threshold = REPORTER;
 
 /**
  * Threshold needed to show the list of users monitoring a bug on the bug view pages.
@@ -3267,6 +3271,7 @@ $g_export_issues_threshold = VIEWER;
  * @global int $g_private_bug_threshold
  */
 $g_private_bug_threshold = DEVELOPER;
+$g_private_dwg_threshold = DEVELOPER;
 
 /**
  * Access level needed to be able to be listed in the assign to field.
@@ -3274,6 +3279,7 @@ $g_private_bug_threshold = DEVELOPER;
  * @global int $g_handle_bug_threshold
  */
 $g_handle_bug_threshold = DEVELOPER;
+$g_handle_dwg_threshold = DEVELOPER;
 
 /**
  * Access level needed to assign issues.
@@ -3287,6 +3293,7 @@ $g_handle_bug_threshold = DEVELOPER;
  * @global int $g_update_bug_assign_threshold
  */
 $g_update_bug_assign_threshold = '%handle_bug_threshold%';
+$g_update_dwg_assign_threshold = '%handle_dwg_threshold%';
 
 /**
  * Access level needed to view private bugnotes.
@@ -5361,7 +5368,7 @@ $g_public_config_names = array(
 	'allow_file_upload',
 	'allow_freetext_in_profile_fields',
 	'allow_no_category',
-	'allow_no_dwg_category',
+	'allow_no_document',
 	'allow_parent_of_unresolved_to_close',
 	'allow_permanent_cookie',
 	'allow_reporter_close',
@@ -5586,6 +5593,7 @@ $g_public_config_names = array(
 	'priority_enum_string',
 	'priority_significant_threshold',
 	'private_bug_threshold',
+	'private_dwg_threshold',
 	'private_bugnote_threshold',
 	'private_news_threshold',
 	'private_project_threshold',
@@ -5690,6 +5698,7 @@ $g_public_config_names = array(
 	'update_bug_assign_threshold',
 	'update_bug_status_threshold',
 	'update_bug_threshold',
+	'update_dwg_threshold',
 	'update_bugnote_threshold',
 	'update_readonly_bug_threshold',
 	'upload_bug_file_threshold',

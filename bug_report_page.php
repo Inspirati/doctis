@@ -115,6 +115,7 @@ if( $f_master_bug_id > 0 ) {
 	$f_handler_id			= $t_bug->handler_id;
 
 	$f_category_id			= $t_bug->category_id;
+	$f_document_id			= $t_bug->document_id;
 	$f_reproducibility		= $t_bug->reproducibility;
 	$f_eta					= $t_bug->eta;
 	$f_severity				= $t_bug->severity;
@@ -173,6 +174,7 @@ if( $f_master_bug_id > 0 ) {
 	$f_handler_id			= gpc_get_int( 'handler_id', 0 );
 
 	$f_category_id			= gpc_get_int( 'category_id', 0 );
+	$f_document_id			= gpc_get_int( 'document_id', 0 );
 	$f_reproducibility		= gpc_get_int( 'reproducibility', (int)config_get( 'default_bug_reproducibility' ) );
 	$f_eta					= gpc_get_int( 'eta', (int)config_get( 'default_bug_eta' ) );
 	$f_severity				= gpc_get_int( 'severity', (int)config_get( 'default_bug_severity' ) );
@@ -285,6 +287,28 @@ if( $t_show_attachments ) {
 			?>>
 				<?php
 					print_category_option_list( $f_category_id, null, true );
+				?>
+			</select>
+		</td>
+	</tr>
+	<tr>
+		<th class="category width-30">
+			<?php echo $t_allow_no_category ? '' : '<span class="required">*</span> '; ?>
+			<label for="document_id">
+				<?php print_documentation_link( 'document' ); ?>
+			</label>
+		</th>
+		<td>
+			<?php if( $t_changed_project ) {
+				/** @noinspection PhpUndefinedVariableInspection */
+				echo '[' . project_get_field( $t_bug->project_id, 'name' ) . '] ';
+			} ?>
+			<select id="document_id" name="document_id" class="autofocus input-sm" <?php
+				echo helper_get_tab_index();
+				echo $t_allow_no_category ? '' : ' required';
+			?>>
+				<?php
+					print_document_option_list( $f_document_id, null, true );
 				?>
 			</select>
 		</td>

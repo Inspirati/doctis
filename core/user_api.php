@@ -485,6 +485,20 @@ function user_is_monitoring_bug( $p_user_id, $p_bug_id ) {
 	}
 }
 
+function user_is_monitoring_dwg( $p_user_id, $p_bug_id ) {
+	// db_param_push();
+	// $t_query = 'SELECT COUNT(*) FROM {bug_monitor}
+	// 			  WHERE user_id=' . db_param() . ' AND bug_id=' . db_param();
+
+	// $t_result = db_query( $t_query, array( (int)$p_user_id, (int)$p_bug_id ) );
+
+	// if( 0 == db_result( $t_result ) ) {
+		return false;
+	// } else {
+	// 	return true;
+	// }
+}
+
 /**
  * Check if the specified user is an administrator.
  *
