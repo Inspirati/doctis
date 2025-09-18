@@ -624,12 +624,12 @@ function filter_dwg_ensure_valid_filter( array $p_filter_arr ) {
 
 	$p_filter_arr = filter_dwg_ensure_fields( $p_filter_arr );
 
-	$t_config_view_filters = config_get( 'view_dwg_filters' );
+	$t_config_view_dwg_filters = config_get( 'view_dwg_filters' );
 	$t_view_type = $p_filter_arr['_view_type'];
-	if( ADVANCED_ONLY == $t_config_view_filters ) {
+	if( ADVANCED_ONLY == $t_config_view_dwg_filters ) {
 		$t_view_type = FILTER_VIEW_TYPE_ADVANCED;
 	}
-	if( SIMPLE_ONLY == $t_config_view_filters ) {
+	if( SIMPLE_ONLY == $t_config_view_dwg_filters ) {
 		$t_view_type = FILTER_VIEW_TYPE_SIMPLE;
 	}
 	if( !in_array( $t_view_type, array( FILTER_VIEW_TYPE_SIMPLE, FILTER_VIEW_TYPE_ADVANCED ) ) ) {
@@ -875,10 +875,10 @@ function filter_dwg_get_default_array( $p_view_type = null ) {
 	$t_default_show_changed = config_get( 'default_show_changed' );
 	$t_meta_filter_any_array = array( META_FILTER_ANY );
 
-	$t_config_view_filters = config_get( 'view_dwg_filters' );
-	if( ADVANCED_ONLY == $t_config_view_filters ) {
+	$t_config_view_dwg_filters = config_get( 'view_dwg_filters' );
+	if( ADVANCED_ONLY == $t_config_view_dwg_filters ) {
 		$t_view_type = FILTER_VIEW_TYPE_ADVANCED;
-	} elseif( SIMPLE_ONLY == $t_config_view_filters ) {
+	} elseif( SIMPLE_ONLY == $t_config_view_dwg_filters ) {
 		$t_view_type = FILTER_VIEW_TYPE_SIMPLE;
 	} else {
 		$t_view_type = $p_view_type;
@@ -1402,9 +1402,9 @@ function filter_dwg_draw_selection_area() {
 
 			<div class="widget-toolbar">
 				<?php
-					$t_view_filters = config_get('view_dwg_filters');
+					$t_view_dwg_filters = config_get('view_dwg_filters');
 
-					if( ( ( SIMPLE_ONLY != $t_view_filters ) && ( ADVANCED_ONLY != $t_view_filters ) ) ||
+					if( ( ( SIMPLE_ONLY != $t_view_dwg_filters ) && ( ADVANCED_ONLY != $t_view_dwg_filters ) ) ||
 						access_has_project_level( config_get( 'create_permalink_threshold' ) ) ||
 						count( $t_stored_queries_arr ) > 0 ) { ?>
 					<div class="widget-menu">
@@ -2551,8 +2551,8 @@ function filter_dwg_is_accessible( $p_filter_id, $p_user_id = null ) {
  *                            FILTER_VIEW_TYPE_ADVANCED)
  */
 function filter_dwg_print_view_type_toggle( $p_url, $p_view_type ) {
-	$t_view_filters = config_get( 'view_dwg_filters' );
-	if( $t_view_filters == SIMPLE_ONLY || $t_view_filters == ADVANCED_ONLY ) {
+	$t_view_dwg_filters = config_get( 'view_dwg_filters' );
+	if( $t_view_dwg_filters == SIMPLE_ONLY || $t_view_dwg_filters == ADVANCED_ONLY ) {
 		return;
 	}
 

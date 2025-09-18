@@ -109,7 +109,7 @@ $f_history = gpc_get_bool( 'history', config_get( 'history_default_visible' ) );
 
 # compat variables for included pages
 $f_bug_id = $f_issue_id;
-$t_bug = bug_get( $f_bug_id, true );
+$t_bug = dwg_get( $f_bug_id, true );
 
 $t_data = array(
 	'query' => array( 'id' => $f_issue_id ),
@@ -121,6 +121,11 @@ $t_result = $t_cmd->execute();
 $t_issue = $t_result['issue'];
 $t_issue_view = $t_result['issue_view'];
 $t_flags = $t_result['flags'];
+
+// @TODO RobD
+$t_issue = array();
+$t_issue_view = array();
+$t_flags = array();
 
 compress_enable();
 
@@ -146,7 +151,10 @@ echo '<div class="widget-box widget-color-blue2">';
 echo '<div class="widget-header widget-header-small">';
 echo '<h4 class="widget-title lighter">';
 print_icon( 'fa-bars', 'ace-icon' );
-echo string_display_line( $t_issue_view['form_title'] );
+
+echo string_display_line( $t_issue_view['dwg_form_title'] );
+//echo string_display_line( "dummy form_title" );
+
 echo '</h4>';
 echo '</div>';
 
@@ -447,7 +455,7 @@ if( $t_flags['projection_show'] || $t_flags['eta_show'] ) {
 
 if( ( $t_flags['profiles_platform_show'] && isset( $t_issue['platform'] ) && !is_blank( $t_issue['platform'] ) ) ||
 	( $t_flags['profiles_os_show'] && isset( $t_issue['os'] ) && !is_blank( $t_issue['os'] ) ) ||
-    ( $t_flags['profiles_os_build_show'] && isset( $t_issue['os_build'] ) && !is_blank( $t_issue['os_build'] ) ) ) {
+	( $t_flags['profiles_os_build_show'] && isset( $t_issue['os_build'] ) && !is_blank( $t_issue['os_build'] ) ) ) {
 	$t_spacer = 0;
 
 	echo '<tr>';
@@ -488,7 +496,7 @@ if( ( $t_flags['profiles_platform_show'] && isset( $t_issue['platform'] ) && !is
 #
 
 if( ( $t_flags['versions_product_version_show'] && isset( $t_issue['version'] ) ) ||
-    ( $t_flags['versions_product_build_show'] && isset( $t_issue['build'] ) ) ) {
+	( $t_flags['versions_product_build_show'] && isset( $t_issue['build'] ) ) ) {
 	$t_spacer = 2;
 
 	echo '<tr>';
@@ -556,59 +564,59 @@ event_signal( 'EVENT_VIEW_BUG_DETAILS', array( $f_issue_id ) );
 
 print_table_spacer( 6 );
 
-#
-# Bug Details (screen wide fields)
-#
+// #
+// # Bug Details (screen wide fields)
+// #
 
-# Summary
-if( $t_flags['summary_show'] && isset( $t_issue['summary'] ) ) {
-	echo '<tr>';
-	echo '<th class="bug-summary category">', lang_get( 'summary' ), '</th>';
-	echo '<td class="bug-summary" colspan="5">', bug_format_summary( $f_issue_id, SUMMARY_FIELD ), '</td>';
-	echo '</tr>';
-}
+// # Summary
+// if( $t_flags['summary_show'] && isset( $t_issue['summary'] ) ) {
+// 	echo '<tr>';
+// 	echo '<th class="bug-summary category">', lang_get( 'summary' ), '</th>';
+// 	echo '<td class="bug-summary" colspan="5">', bug_format_summary( $f_issue_id, SUMMARY_FIELD ), '</td>';
+// 	echo '</tr>';
+// }
 
-# Description
-if( $t_flags['description_show'] && isset( $t_issue['description'] ) ) {
-	echo '<tr>';
-	echo '<th class="bug-description category">', lang_get( 'description' ), '</th>';
-	echo '<td class="bug-description" colspan="5">', string_display_links( $t_issue['description'] ), '</td>';
-	echo '</tr>';
-}
+// # Description
+// if( $t_flags['description_show'] && isset( $t_issue['description'] ) ) {
+// 	echo '<tr>';
+// 	echo '<th class="bug-description category">', lang_get( 'description' ), '</th>';
+// 	echo '<td class="bug-description" colspan="5">', string_display_links( $t_issue['description'] ), '</td>';
+// 	echo '</tr>';
+// }
 
-# Steps to Reproduce
-if( $t_flags['steps_to_reproduce_show'] && isset( $t_issue['steps_to_reproduce'] ) ) {
-	echo '<tr>';
-	echo '<th class="bug-steps-to-reproduce category">', lang_get( 'steps_to_reproduce' ), '</th>';
-	echo '<td class="bug-steps-to-reproduce" colspan="5">', string_display_links( $t_issue['steps_to_reproduce'] ), '</td>';
-	echo '</tr>';
-}
+// # Steps to Reproduce
+// if( $t_flags['steps_to_reproduce_show'] && isset( $t_issue['steps_to_reproduce'] ) ) {
+// 	echo '<tr>';
+// 	echo '<th class="bug-steps-to-reproduce category">', lang_get( 'steps_to_reproduce' ), '</th>';
+// 	echo '<td class="bug-steps-to-reproduce" colspan="5">', string_display_links( $t_issue['steps_to_reproduce'] ), '</td>';
+// 	echo '</tr>';
+// }
 
-# Additional Information
-if( $t_flags['additional_information_show'] && isset( $t_issue['additional_information'] ) ) {
-	echo '<tr>';
-	echo '<th class="bug-additional-information category">', lang_get( 'additional_information' ), '</th>';
-	echo '<td class="bug-additional-information" colspan="5">', string_display_links( $t_issue['additional_information'] ), '</td>';
-	echo '</tr>';
-}
+// # Additional Information
+// if( $t_flags['additional_information_show'] && isset( $t_issue['additional_information'] ) ) {
+// 	echo '<tr>';
+// 	echo '<th class="bug-additional-information category">', lang_get( 'additional_information' ), '</th>';
+// 	echo '<td class="bug-additional-information" colspan="5">', string_display_links( $t_issue['additional_information'] ), '</td>';
+// 	echo '</tr>';
+// }
 
-# Tagging
-if( $t_flags['tags_show'] ) {
-	echo '<tr>';
-	echo '<th class="bug-tags category">', lang_get( 'tags' ), '</th>';
-	echo '<td class="bug-tags" colspan="5">';
-	tag_display_attached( $f_issue_id );
-	echo '</td></tr>';
-}
+// # Tagging
+// if( $t_flags['tags_show'] ) {
+// 	echo '<tr>';
+// 	echo '<th class="bug-tags category">', lang_get( 'tags' ), '</th>';
+// 	echo '<td class="bug-tags" colspan="5">';
+// 	tag_display_attached( $f_issue_id );
+// 	echo '</td></tr>';
+// }
 
-# Attach Tags
-if( $t_flags['tags_can_attach'] ) {
-	echo '<tr class="noprint">';
-	echo '<th class="bug-attach-tags category">', lang_get( 'tag_attach_long' ), '</th>';
-	echo '<td class="bug-attach-tags" colspan="5">';
-	print_tag_attach_form( $f_issue_id );
-	echo '</td></tr>';
-}
+// # Attach Tags
+// if( $t_flags['tags_can_attach'] ) {
+// 	echo '<tr class="noprint">';
+// 	echo '<th class="bug-attach-tags category">', lang_get( 'tag_attach_long' ), '</th>';
+// 	echo '<td class="bug-attach-tags" colspan="5">';
+// 	print_tag_attach_form( $f_issue_id );
+// 	echo '</td></tr>';
+// }
 
 # Attachments
 if( !empty( $t_result['issue']['attachments'] ) ) {
@@ -783,7 +791,7 @@ event_signal( 'EVENT_VIEW_BUG_EXTRA', array( $f_issue_id ) );
 
 # Time tracking statistics
 if( config_get( 'time_tracking_enabled' ) &&
-	access_has_bug_level( config_get( 'time_tracking_view_threshold' ), $f_issue_id ) ) {
+	access_has_dwg_level( config_get( 'time_tracking_view_threshold' ), $f_issue_id ) ) {
 	define( 'BUGNOTE_STATS_INC_ALLOW', true );
 	include( $t_mantis_dir . 'bugnote_stats_inc.php' );
 }
@@ -896,12 +904,12 @@ function dwg_view_relationship_get_details( $p_bug_id, BugRelationshipData $p_re
 	}
 
 	# related bug not existing...
-	if( !bug_exists( $t_related_bug_id ) ) {
+	if( !dwg_exists( $t_related_bug_id ) ) {
 		return '';
 	}
 
 	# user can access to the related bug at least as a viewer
-	if( !access_has_bug_level( config_get( 'view_dwg_threshold', null, null, $t_related_project_id ), $t_related_bug_id ) ) {
+	if( !access_has_dwg_level( config_get( 'view_dwg_threshold', null, null, $t_related_project_id ), $t_related_bug_id ) ) {
 		return '';
 	}
 
@@ -913,7 +921,7 @@ function dwg_view_relationship_get_details( $p_bug_id, BugRelationshipData $p_re
 
 	# get the information from the related bug and prepare the link
 	$t_current_user_id = auth_get_current_user_id();
-	$t_bug = bug_get( $t_related_bug_id );
+	$t_bug = dwg_get( $t_related_bug_id );
 	$t_status_string = get_enum_element( 'status', $t_bug->status, $t_current_user_id, $t_bug->project_id );
 	$t_resolution_string = get_enum_element( 'resolution', $t_bug->resolution, $t_current_user_id, $t_bug->project_id );
 
@@ -950,7 +958,7 @@ function dwg_view_relationship_get_details( $p_bug_id, BugRelationshipData $p_re
 
 	# add delete link if bug not read only and user has access level
 	if( !bug_is_readonly( $p_bug_id ) && !current_user_is_anonymous() && !$p_html_preview ) {
-		if( access_has_bug_level( config_get( 'update_bug_threshold' ), $p_bug_id ) ) {
+		if( access_has_dwg_level( config_get( 'update_bug_threshold' ), $p_bug_id ) ) {
 			$t_relationship_info_html .= ' <a class="red noprint zoom-130" '
 				. 'href="bug_relationship_delete.php?bug_id=' . $p_bug_id
 				. '&amp;rel_id=' . $p_relationship->id
@@ -1125,7 +1133,7 @@ function dwg_view_button_dwg_change_status( DwgData $p_bug ) {
 		# (to prevent users downgraded to viewers from updating issues) and
 		# reporters are allowed to close their own issues
 		(  bug_is_user_reporter( $p_bug->id, auth_get_current_user_id() )
-		&& access_has_bug_level( config_get( 'create_dwg_threshold' ), $p_bug->id )
+		&& access_has_dwg_level( config_get( 'create_dwg_threshold' ), $p_bug->id )
 		&& ON == config_get( 'allow_reporter_close' )
 		),
 		$p_bug->project_id );
@@ -1174,7 +1182,7 @@ function dwg_view_button_dwg_assign_to( DwgData $p_bug ) {
 	$t_default_assign_to = null;
 
 	if( ( $p_bug->handler_id != $t_current_user_id )
-		&& access_has_bug_level( config_get( 'handle_bug_threshold' ), $p_bug->id, $t_current_user_id )
+		&& access_has_dwg_level( config_get( 'handle_bug_threshold' ), $p_bug->id, $t_current_user_id )
 	) {
 		$t_options[] = array(
 			$t_current_user_id,
@@ -1185,7 +1193,7 @@ function dwg_view_button_dwg_assign_to( DwgData $p_bug ) {
 
 	if( ( $p_bug->handler_id != $p_bug->reporter_id )
 		&& user_exists( $p_bug->reporter_id )
-		&& access_has_bug_level( config_get( 'handle_bug_threshold' ), $p_bug->id, $p_bug->reporter_id )
+		&& access_has_dwg_level( config_get( 'handle_bug_threshold' ), $p_bug->id, $p_bug->reporter_id )
 	) {
 		$t_options[] = array(
 			$p_bug->reporter_id,
@@ -1257,7 +1265,7 @@ function dwg_view_button_dwg_assign_to( DwgData $p_bug ) {
  * @throws ClientException
  */
 function dwg_view_action_buttons( $p_bug_id, $p_flags ) {
-	$t_bug = bug_get( $p_bug_id );
+	$t_bug = dwg_get( $p_bug_id );
 
 	echo '<div class="btn-group">';
 	# UPDATE button

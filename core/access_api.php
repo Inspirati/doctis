@@ -558,6 +558,54 @@ function access_has_bug_level( $p_access_level, $p_bug_id, $p_user_id = null ) {
 	return true;
 }
 
+function access_has_dwg_level( $p_access_level, $p_bug_id, $p_user_id = null ) {
+	if( $p_user_id === null ) {
+		$p_user_id = auth_get_current_user_id();
+	}
+
+	# Deal with not logged in silently in this case
+	# @@@ we may be able to remove this and just error
+	#     and once we default to anon login, we can remove it for sure
+	if( empty( $p_user_id ) && !auth_is_user_authenticated() ) {
+		return false;
+	}
+
+	# Check the requested access level, shortcut to fail if not satisfied
+	$t_project_id = dwg_get_field( $p_bug_id, 'project_id' );
+	$t_access_level = access_get_project_level( $t_project_id, $p_user_id );
+	if( !access_compare_level( $t_access_level, $p_access_level ) ){
+		return false;
+	}
+
+	# If the level is met, we still need to verify that user has access to the issue
+
+	# Check if the bug is private
+	$t_bug_is_user_reporter = dwg_is_user_reporter( $p_bug_id, $p_user_id );
+	if( !$t_bug_is_user_reporter && dwg_get_field( $p_bug_id, 'view_state' ) == VS_PRIVATE ) {
+		$t_private_bug_threshold = config_get( 'private_dwg_threshold', null, $p_user_id, $t_project_id );
+		if( !access_compare_level( $t_access_level, $t_private_bug_threshold ) ) {
+			return false;
+		}
+	}
+
+	# Check special limits
+	# Limited view means this user can only view the issues they reported, is handling, or monitoring
+	if( access_has_limited_view( $t_project_id, $p_user_id ) ) {
+		$t_allowed = $t_bug_is_user_reporter;
+		if( !$t_allowed ) {
+			$t_allowed = dwg_is_user_handler( $p_bug_id, $p_user_id );
+		}
+		if( !$t_allowed ) {
+			$t_allowed = user_is_monitoring_dwg( $p_user_id, $p_bug_id );
+		}
+		if( !$t_allowed ) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 /**
  * Filter the provided array of user ids to those who has the specified access level for the
  * specified bug.
@@ -589,6 +637,12 @@ function access_has_bug_level_filter( $p_access_level, $p_bug_id, $p_user_ids ) 
  */
 function access_ensure_bug_level( $p_access_level, $p_bug_id, $p_user_id = null ) {
 	if( !access_has_bug_level( $p_access_level, $p_bug_id, $p_user_id ) ) {
+		access_denied();
+	}
+}
+
+function access_ensure_dwg_level( $p_access_level, $p_bug_id, $p_user_id = null ) {
+	if( !access_has_dwg_level( $p_access_level, $p_bug_id, $p_user_id ) ) {
 		access_denied();
 	}
 }

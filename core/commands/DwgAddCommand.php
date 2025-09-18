@@ -70,7 +70,7 @@ class DwgAddCommand extends Command {
 	/**
 	 * The issue to add.
 	 *
-	 * @var BugData
+	 * @var DwgData
 	 */
 	private $issue = null;
 
@@ -113,21 +113,25 @@ class DwgAddCommand extends Command {
 			}
 		}
 
-		if( !isset( $t_issue['summary'] ) || is_blank( $t_issue['summary'] ) )  {
-			throw new ClientException(
-				'Summary not specified',
-				ERROR_EMPTY_FIELD,
-				array( 'summary' ) );
-		}
+		// @TODO RobD - new fields specific to 'documents'
+		$t_name = $t_issue['name'];
+		$t_number = $t_issue['number'];
+
+		// if( !isset( $t_issue['summary'] ) || is_blank( $t_issue['summary'] ) )  {
+		// 	throw new ClientException(
+		// 		'Summary not specified',
+		// 		ERROR_EMPTY_FIELD,
+		// 		array( 'summary' ) );
+		// }
 
 		$t_summary = $t_issue['summary'];
 
-		if( !isset( $t_issue['description'] ) || is_blank( $t_issue['description'] ) )  {
-			throw new ClientException(
-				'Description not specified',
-				ERROR_EMPTY_FIELD,
-				array( 'description' ) );
-		}
+		// if( !isset( $t_issue['description'] ) || is_blank( $t_issue['description'] ) )  {
+		// 	throw new ClientException(
+		// 		'Description not specified',
+		// 		ERROR_EMPTY_FIELD,
+		// 		array( 'description' ) );
+		// }
 
 		$t_description = $t_issue['description'];
 
@@ -207,39 +211,44 @@ class DwgAddCommand extends Command {
 			}
 		}
 
-		if( $t_handler_id != NO_USER ) {
-			if( !user_exists( $t_handler_id ) ) {
-				throw new ClientException(
-					sprintf( "User '%d' not found.", $t_handler_id ),
-					ERROR_USER_BY_ID_NOT_FOUND,
-					array( $t_handler_id ) );
-			}
+		// if( $t_handler_id != NO_USER ) {
+		// 	if( !user_exists( $t_handler_id ) ) {
+		// 		throw new ClientException(
+		// 			sprintf( "User '%d' not found.", $t_handler_id ),
+		// 			ERROR_USER_BY_ID_NOT_FOUND,
+		// 			array( $t_handler_id ) );
+		// 	}
 
-			if( !access_has_project_level( config_get( 'handle_bug_threshold' ), $t_project_id, $t_handler_id ) ) {
-				throw new ClientException(
-					sprintf( "User '%d' can't be assigned issues.", $t_handler_id ),
-					ERROR_ACCESS_DENIED );
-			}
-		}
+		// 	if( !access_has_project_level( config_get( 'handle_bug_threshold' ), $t_project_id, $t_handler_id ) ) {
+		// 		throw new ClientException(
+		// 			sprintf( "User '%d' can't be assigned issues.", $t_handler_id ),
+		// 			ERROR_ACCESS_DENIED );
+		// 	}
+		// }
 
-		# Validate tags and make sure user is allowed to create them if needed
-		if( isset( $t_issue['tags'] ) && is_array( $t_issue['tags'] ) ) {
-			foreach( $t_issue['tags'] as $t_tag ) {
-				$t_tag_id = $this->get_tag_id( $t_tag );
-				if( $t_tag_id === false && !tag_can_create( $this->user_id ) ) {
-					throw new ClientException(
-						sprintf( "User '%d' can't create tag '%s'.", $this->user_id, $t_tag['name'] ),
-						ERROR_TAG_NOT_FOUND,
-						array( $t_tag['name'] )
-					);
-				}
-			}
-		}
+		// # Validate tags and make sure user is allowed to create them if needed
+		// if( isset( $t_issue['tags'] ) && is_array( $t_issue['tags'] ) ) {
+		// 	foreach( $t_issue['tags'] as $t_tag ) {
+		// 		$t_tag_id = $this->get_tag_id( $t_tag );
+		// 		if( $t_tag_id === false && !tag_can_create( $this->user_id ) ) {
+		// 			throw new ClientException(
+		// 				sprintf( "User '%d' can't create tag '%s'.", $this->user_id, $t_tag['name'] ),
+		// 				ERROR_TAG_NOT_FOUND,
+		// 				array( $t_tag['name'] )
+		// 			);
+		// 		}
+		// 	}
+		// }
 
 		$t_category = $t_issue['category'] ?? null;
 		$t_category_id = mci_get_category_id( $t_category, $t_project_id );
 
-		$this->issue = new BugData;
+#!		$this->issue = new BugData;
+		$this->issue = new DwgData;
+
+		$this->issue->name = $t_name;
+		$this->issue->number = $t_number;
+
 		$this->issue->project_id = $t_project_id;
 		$this->issue->reporter_id = $t_reporter_id;
 		$this->issue->summary = $t_summary;
@@ -340,8 +349,8 @@ class DwgAddCommand extends Command {
 		}
 
 		# Trigger extensibility events to pre-process data before creating issue
-		helper_call_custom_function( 'issue_create_validate', array( $this->issue ) );
-		$this->issue = event_signal( 'EVENT_REPORT_BUG_DATA', $this->issue );
+		helper_call_custom_function( 'document_create_validate', array( $this->issue ) );
+		$this->issue = event_signal( 'EVENT_REPORT_DWG_DATA', $this->issue );
 	}
 
 	/**
@@ -355,7 +364,7 @@ class DwgAddCommand extends Command {
 
 		# Create the bug
 		$t_issue_id = $this->issue->create();
-		log_event( LOG_WEBSERVICE, "created new issue id '$t_issue_id'" );
+		log_event( LOG_WEBSERVICE, "created new document id '$t_issue_id'" );
 
 		# Add Tags
 		if( isset( $t_issue['tags'] ) && is_array( $t_issue['tags'] ) ) {
@@ -465,8 +474,8 @@ class DwgAddCommand extends Command {
 		email_bug_added( $t_issue_id );
 
 		# Trigger extensibility events
-		helper_call_custom_function( 'issue_create_notify', array( $t_issue_id ) );
-		event_signal( 'EVENT_REPORT_BUG', array( $this->issue, $t_issue_id ) );
+		helper_call_custom_function( 'document_create_notify', array( $t_issue_id ) );  // looks like it calls a default null func
+		event_signal( 'EVENT_CREATE_DWG', array( $this->issue, $t_issue_id ) );  // seems to just be a notification, ie. to the UI
 
 		return array( 'issue_id' => $t_issue_id );
 	}

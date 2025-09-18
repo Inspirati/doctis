@@ -27,6 +27,7 @@
  * @uses authentication_api.php
  * @uses bug_group_action_api.php
  * @uses category_api.php
+ * @uses document_api.php
  * @uses config_api.php
  * @uses collapse_api.php
  * @uses constant_inc.php
@@ -57,6 +58,9 @@ require_api( 'access_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'bug_group_action_api.php' );
 require_api( 'category_api.php' );
+
+require_api( 'document_api.php' );
+
 require_api( 'config_api.php' );
 require_api( 'collapse_api.php' );
 require_api( 'constant_inc.php' );
@@ -814,6 +818,60 @@ function print_category_option_list( $p_category_id = 0, $p_project_id = null, $
 		check_disabled( $t_disabled );
 		echo '>';
 		echo string_attribute( $t_category_name ), '</option>', PHP_EOL;
+	}
+}
+
+function print_document_option_list( $p_document_id = 0, $p_project_id = null, $p_enabled_only = false ) {
+	if( null === $p_project_id ) {
+		$t_project_id = helper_get_current_project();
+	} else {
+		$t_project_id = $p_project_id;
+	}
+
+	$t_cat_arr = document_get_all_rows( $t_project_id, null, true, $p_enabled_only );
+
+	# Add the current document if it is not in the list
+	if( $p_document_id != 0
+        && !in_array( $p_document_id, array_column( $t_cat_arr, 'id' ) )
+    ) {
+		$t_document_row = document_get_row( $p_document_id );
+		$t_document_row['project_name'] = project_get_name( $t_document_row['project_id'] );
+		$t_cat_arr[] = $t_document_row;
+	}
+
+	if( config_get( 'allow_no_document' ) ) {
+		echo '<option value="0"';
+		check_selected( $p_document_id, 0 );
+		echo '>';
+		echo document_full_name( 0, false );
+		echo '</option>', PHP_EOL;
+	} else {
+		if( 0 == $p_document_id && count( $t_cat_arr ) == 1 ) {
+			# Single option are selected by default
+			$p_document_id = (int) $t_cat_arr[0]['id'];
+		}
+		echo '<option value="" disabled hidden';
+		check_selected( $p_document_id, 0 );
+		echo '>';
+		echo string_attribute( lang_get( 'select_option' ) );
+		echo '</option>', PHP_EOL;
+	}
+
+	foreach( $t_cat_arr as $t_document_row ) {
+		$t_document_id = (int)$t_document_row['id'];
+		$t_disabled = $t_document_row['status'] == DOCUMENT_STATUS_DISABLED;
+		$t_document_name = document_full_name(
+			$t_document_id,
+			$t_document_row['project_id'] != $t_project_id
+		);
+		if( $t_disabled ) {
+//			$t_document_name .= ' [' . lang_get( 'disabled' ) . ']';
+		}
+		echo '<option value="' . $t_document_id . '"';
+		check_selected( $p_document_id, $t_document_id );
+		check_disabled( $t_disabled );
+		echo '>';
+		echo string_attribute( $t_document_name ), '</option>', PHP_EOL;
 	}
 }
 

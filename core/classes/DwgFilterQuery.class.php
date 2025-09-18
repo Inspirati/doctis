@@ -587,7 +587,7 @@ class DwgFilterQuery extends DbQuery {
 			$t_old_limit_reporters = ( ON == config_get( 'limit_reporters', null, $t_user_id, ALL_PROJECTS ) );
 
 			foreach( $t_included_project_ids as $t_pid ) {
-				$t_access_required_to_view_private_bugs = config_get( 'private_bug_threshold', null, null, $t_pid );
+				$t_access_required_to_view_private_bugs = config_get( 'private_dwg_threshold', null, null, $t_pid );
 				$t_can_see_private = access_has_project_level( $t_access_required_to_view_private_bugs, $t_pid, $t_user_id );
 
 				if( access_has_limited_view( $t_pid, $t_user_id ) ) {

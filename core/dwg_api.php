@@ -118,23 +118,37 @@ use Mantis\Exceptions\ClientException;
 class DwgData {
 	protected $id;
 	protected $project_id = null;
+// #TODO RobD - and now all the new data fields for the documents table	
+	protected $status = NEW_;
+	protected $enabled = 1;
+	protected $version = '';
+	protected $name = '';
+	protected $number = '';
+	protected $revision = '';
+	protected $category = '';
+	protected $reference = '';
+	protected $revision_date = '';
+	protected $release_date = '';
+	protected $date_submitted = '';
+	protected $last_updated = '';
+// #TODO RobD - the legacy fields from the bug version
 	protected $reporter_id = 0;
 	protected $handler_id = 0;
 	protected $duplicate_id = 0;
 	protected $priority = NORMAL;
 	protected $severity = MINOR;
 	protected $reproducibility = 10;
-	protected $status = NEW_;
+//	protected $status = NEW_;
 	protected $resolution = OPEN;
 	protected $projection = 10;
 	protected $category_id = 1;
-	protected $date_submitted = '';
-	protected $last_updated = '';
+//	protected $date_submitted = '';
+//	protected $last_updated = '';
 	protected $eta = 10;
 	protected $os = '';
 	protected $os_build = '';
 	protected $platform = '';
-	protected $version = '';
+//	protected $version = '';
 	protected $fixed_in_version = '';
 	protected $target_version = '';
 	protected $build = '';
@@ -291,7 +305,7 @@ class DwgData {
 	private function fetch_extended_info() {
 		if( $this->description == '' ) {
 			/** @noinspection PhpUnhandledExceptionInspection */
-			$t_text = bug_text_cache_row( $this->id );
+			$t_text = dwg_text_cache_row( $this->id );
 
 			$this->description = $t_text['description'];
 			$this->steps_to_reproduce = $t_text['steps_to_reproduce'];
@@ -322,7 +336,7 @@ class DwgData {
 	 *
 	 * @return int Number of bugnotes
 	 */
-	private function bug_get_bugnote_count() {
+	private function dwg_get_bugnote_count() {
 		if( !access_has_project_level( config_get( 'private_bugnote_threshold' ), $this->project_id ) ) {
 			$t_restriction = 'AND view_state=' . VS_PUBLIC;
 		} else {
@@ -346,21 +360,22 @@ class DwgData {
 	 */
 	public function validate( $p_update_extended = true ) {
 		# Summary cannot be blank
-		if( is_blank( $this->summary ) ) {
+		if( is_blank( $this->summary ) ) {  // @TODO RobD:
 			error_parameters( lang_get( 'summary' ) );
 			trigger_error( ERROR_EMPTY_FIELD, ERROR );
 		}
 
 		if( $p_update_extended ) {
 			# Description field cannot be empty
-			if( is_blank( $this->description ) ) {
+			if( is_blank( $this->description ) ) {  // @TODO RobD:
 				error_parameters( lang_get( 'description' ) );
 				trigger_error( ERROR_EMPTY_FIELD, ERROR );
 			}
 		}
 
 		# Make sure a category is set
-		if( 0 == $this->category_id && !config_get( 'allow_no_category' ) ) {
+//		if( 0 == $this->category_id && !config_get( 'allow_no_category' ) ) {  // @TODO RobD:
+		if( 0 == $this->category_id && !config_get( 'allow_no_document' ) ) {
 			error_parameters( lang_get( 'category' ) );
 			trigger_error( ERROR_EMPTY_FIELD, ERROR );
 		}
@@ -400,23 +415,24 @@ class DwgData {
 		}
 
 		# Insert text information
-		db_param_push();
-		$t_query = 'INSERT INTO {bug_text}
-					    ( description, steps_to_reproduce, additional_information )
-					  VALUES
-					    ( ' . db_param() . ',' . db_param() . ',' . db_param() . ')';
-		db_query( $t_query, array( $this->description, $this->steps_to_reproduce, $this->additional_information ) );
+		// db_param_push();
+		// $t_query = 'INSERT INTO {bug_text}
+		// 			    ( description, steps_to_reproduce, additional_information )
+		// 			  VALUES
+		// 			    ( ' . db_param() . ',' . db_param() . ',' . db_param() . ')';
+		// db_query( $t_query, array( $this->description, $this->steps_to_reproduce, $this->additional_information ) );
 
 		# Get the id of the text information we just inserted
 		# NOTE: this is guaranteed to be the correct one.
 		# The value LAST_INSERT_ID is stored on a per-connection basis.
 
-		$t_text_id = db_insert_id( db_get_table( 'bug_text' ) );
+		// $t_text_id = db_insert_id( db_get_table( 'bug_text' ) );
 
 		# check to see if we want to assign this right off
 		$t_original_status = $this->status;
 
 		# if not assigned, check if it should auto-assigned.
+/*
 		if( 0 == $this->handler_id ) {
 			# If a default user is associated with the category and we know that
 			# the bug was not assigned to somebody, then assign it automatically.
@@ -429,39 +445,112 @@ class DwgData {
 				$this->handler_id = $t_handler;
 			}
 		}
-
+ */
 		# Check if bug was pre-assigned or auto-assigned.
-		$t_status = bug_get_status_for_assign( NO_USER, $this->handler_id, $this->status);
+		$t_status = dwg_get_status_for_assign( NO_USER, $this->handler_id, $this->status);
 
 		# Insert the rest of the data
-		db_param_push();
-		$t_query = 'INSERT INTO {bug}
-					    ( project_id,reporter_id, handler_id,duplicate_id,
-					      priority,severity, reproducibility,status,
-					      resolution,projection, category_id,date_submitted,
-					      last_updated,eta, bug_text_id,
-					      os, os_build,platform, version,build,
-					      profile_id, summary, view_state, sponsorship_total, sticky, fixed_in_version,
-					      target_version, due_date
-					    )
-					  VALUES
-					    ( ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
-					      ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
-					      ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
-					      ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
-					      ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
-					      ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
-					      ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ')';
-		db_query( $t_query, array( $this->project_id, $this->reporter_id, $this->handler_id, $this->duplicate_id, $this->priority, $this->severity, $this->reproducibility, $t_status, $this->resolution, $this->projection, $this->category_id, $this->date_submitted, $this->last_updated, $this->eta, $t_text_id, $this->os, $this->os_build, $this->platform, $this->version, $this->build, $this->profile_id, $this->summary, $this->view_state, $this->sponsorship_total, $this->sticky, $this->fixed_in_version, $this->target_version, $this->due_date ) );
+		// db_param_push();
+		// $t_query = 'INSERT INTO {document}
+		// 			    ( project_id,reporter_id, handler_id,duplicate_id,
+		// 			      priority,severity, reproducibility,status,
+		// 			      resolution,projection, category_id,date_submitted,
+		// 			      last_updated,eta, bug_text_id,
+		// 			      os, os_build,platform, version,build,
+		// 			      profile_id, summary, view_state, sponsorship_total, sticky, fixed_in_version,
+		// 			      target_version, due_date
+		// 			    )
+		// 			  VALUES
+		// 			    ( ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
+		// 			      ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
+		// 			      ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
+		// 			      ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
+		// 			      ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
+		// 			      ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
+		// 			      ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ')';
+		// db_query( $t_query, array( $this->project_id, $this->reporter_id, $this->handler_id, $this->duplicate_id,
+		//  $this->priority, $this->severity, $this->reproducibility, $t_status,
+		//  $this->resolution, $this->projection, $this->category_id, $this->date_submitted,
+		//  $this->last_updated, $this->eta, $t_text_id,
+		//  $this->os, $this->os_build, $this->platform, $this->version, $this->build,
+		//  $this->profile_id, $this->summary, $this->view_state, $this->sponsorship_total, $this->sticky, $this->fixed_in_version,
+		//  $this->target_version, $this->due_date ) );
 
-		$this->id = db_insert_id( db_get_table( 'bug' ) );
+/*
+#	array( db_get_table( 'document' ), "
+#		id				I		NOTNULL UNSIGNED AUTOINCREMENT PRIMARY,
+#		project_id		I		UNSIGNED NOTNULL DEFAULT '0',
+#		status			I2		NOTNULL DEFAULT '10',
+#		enabled			L		NOTNULL DEFAULT \" '1' \",
+#		version			C(64)	NOTNULL DEFAULT \" '' \",
+#		name			C(255)	NOTNULL,
+#		number			C(64)	NOTNULL,
+#		revision		C(64)	NOTNULL,
+#		category		C(64)	NOTNULL,
+#		reference		C(255)	NULL,
+#		revision_date	I		NOTNULL UNSIGNED,
+#		release_date	I		NULL UNSIGNED,
+#		date_submitted	I		NOTNULL UNSIGNED,
+#		last_updated	I		NOTNULL UNSIGNED
+ */
+/*
+		db_param_push();
+		$t_query = 'INSERT INTO {document}
+						( project_id, status, enabled, version,
+						  name, number, revision, category,
+						  reference,
+						  revision_date, release_date, date_submitted, last_updated
+						)
+					  VALUES
+						( ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
+						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
+						  ' . db_param() . ',
+						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ')';
+		db_query( $t_query, array( $this->project_id, $this->status, $this->enabled, $this->version,
+		  $this->name, $this->number, $this->revision, $this->category,
+		  $this->resolution, $this->projection, _id, $this->date_submitted,
+		  $this->reference,
+		  $this->revision_date, $this->release_date, $this->date_submitted, $this->last_updated ) );
+*/
+	// $this->revision_date = date_get_null();
+	// $this->release_date = date_get_null();
+	// $this->date_submitted = date_get_null();
+	// $this->last_updated = date_get_null();
+
+	$this->revision_date = db_now();
+	$this->release_date = db_now();
+	$this->date_submitted = db_now();
+	$this->last_updated = db_now();
+
+		db_param_push();
+		$t_query = 'INSERT INTO {document}
+						( project_id, status, enabled, version,
+						  name, number, revision, category,
+						  reference,
+						  revision_date, release_date, date_submitted, last_updated
+						)
+					  VALUES
+						( ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
+						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
+						  ' . db_param() . ',
+						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ')';
+		db_query( $t_query, array(
+		  $this->project_id, $this->status, $this->enabled, $this->version,
+		  $this->name, $this->number, $this->revision, $this->category,
+		  $this->reference,
+		  $this->revision_date, $this->release_date, $this->date_submitted, $this->last_updated ) );
+
+//  * Return the last inserted ID after a insert statement.
+//  * Warning: this function must be used immediately after the insert statement
+//		$this->id = db_insert_id( db_get_table( 'bug' ) );
+		$this->id = db_insert_id( db_get_table( 'document' ) );
 
 		# log new bug
-		history_log_event_special( $this->id, NEW_BUG );
+		history_log_event_special( $this->id, NEW_DWG );
 
 		# log changes, if any (compare happens in history_log_event_direct)
-		history_log_event_direct( $this->id, 'status', $t_original_status, $t_status );
-		history_log_event_direct( $this->id, 'handler_id', 0, $this->handler_id );
+		// history_log_event_direct( $this->id, 'status', $t_original_status, $t_status );
+		// history_log_event_direct( $this->id, 'handler_id', 0, $this->handler_id );
 
 		return $this->id;
 	}
@@ -491,7 +580,7 @@ class DwgData {
 			$t_all_mentioned_user_ids = array_merge( $t_all_mentioned_user_ids, $t_mentioned_user_ids );
 		}
 
-		$t_filtered_mentioned_user_ids = access_has_bug_level_filter(
+		$t_filtered_mentioned_user_ids = access_has_dwg_level_filter(
 			config_get( 'view_dwg_threshold' ),
 			$this->id,
 			$t_all_mentioned_user_ids );
@@ -540,14 +629,15 @@ class DwgData {
 			$this->due_date = date_get_null();
 		}
 
-		$t_old_data = bug_get( $this->id, true );
+		$t_old_data = dwg_get( $this->id, true );
 
 		# Update all fields
 		# Ignore date_submitted and last_updated, since they are pulled out as Unix
 		# timestamps which could confuse the history log. They shouldn't get updated
-		# like this anyway; if you really need to change them use bug_set_field().
+		# like this anyway; if you really need to change them use dwg_set_field().
 		db_param_push();
-		$t_query = 'UPDATE {bug}
+#!		$t_query = 'UPDATE {bug}
+		$t_query = 'UPDATE {document}
 					SET project_id=' . db_param() . ', reporter_id=' . db_param() . ',
 						handler_id=' . db_param() . ', duplicate_id=' . db_param() . ',
 						priority=' . db_param() . ', severity=' . db_param() . ',
@@ -593,7 +683,7 @@ class DwgData {
 
 		db_query( $t_query, $t_fields );
 
-		bug_clear_cache( $this->id );
+		dwg_clear_cache( $this->id );
 
 		# log changes
 		history_log_event_direct( $c_bug_id, 'project_id', $t_old_data->project_id, $this->project_id );
@@ -628,7 +718,7 @@ class DwgData {
 
 		# Update extended info if requested
 		if( $p_update_extended ) {
-			$t_bug_text_id = bug_get_field( $c_bug_id, 'bug_text_id' );
+			$t_bug_text_id = dwg_get_field( $c_bug_id, 'bug_text_id' );
 
 			db_param_push();
 			$t_query = 'UPDATE {bug_text}
@@ -650,7 +740,7 @@ class DwgData {
 				if( bug_revision_count( $c_bug_id, REV_DESCRIPTION ) < 1 ) {
 					bug_revision_add( $c_bug_id, $t_old_data->reporter_id, REV_DESCRIPTION, $t_old_data->description, 0, $t_old_data->date_submitted );
 				}
-				$t_revision_id = bug_revision_add( $c_bug_id, $t_current_user, REV_DESCRIPTION, $this->description );
+				$t_revision_id = dwg_revision_add( $c_bug_id, $t_current_user, REV_DESCRIPTION, $this->description );
 				history_log_event_special( $c_bug_id, DESCRIPTION_UPDATED, $t_revision_id );
 			}
 
@@ -658,7 +748,7 @@ class DwgData {
 				if( bug_revision_count( $c_bug_id, REV_STEPS_TO_REPRODUCE ) < 1 ) {
 					bug_revision_add( $c_bug_id, $t_old_data->reporter_id, REV_STEPS_TO_REPRODUCE, $t_old_data->steps_to_reproduce, 0, $t_old_data->date_submitted );
 				}
-				$t_revision_id = bug_revision_add( $c_bug_id, $t_current_user, REV_STEPS_TO_REPRODUCE, $this->steps_to_reproduce );
+				$t_revision_id = dwg_revision_add( $c_bug_id, $t_current_user, REV_STEPS_TO_REPRODUCE, $this->steps_to_reproduce );
 				history_log_event_special( $c_bug_id, STEP_TO_REPRODUCE_UPDATED, $t_revision_id );
 			}
 
@@ -666,13 +756,13 @@ class DwgData {
 				if( bug_revision_count( $c_bug_id, REV_ADDITIONAL_INFO ) < 1 ) {
 					bug_revision_add( $c_bug_id, $t_old_data->reporter_id, REV_ADDITIONAL_INFO, $t_old_data->additional_information, 0, $t_old_data->date_submitted );
 				}
-				$t_revision_id = bug_revision_add( $c_bug_id, $t_current_user, REV_ADDITIONAL_INFO, $this->additional_information );
+				$t_revision_id = dwg_revision_add( $c_bug_id, $t_current_user, REV_ADDITIONAL_INFO, $this->additional_information );
 				history_log_event_special( $c_bug_id, ADDITIONAL_INFO_UPDATED, $t_revision_id );
 			}
 		}
 
 		# Update the last update date
-		bug_update_date( $c_bug_id );
+		dwg_update_date( $c_bug_id );
 
 		# allow bypass if user is sending mail separately
 		if( !$p_bypass_mail ) {
@@ -702,21 +792,21 @@ class DwgData {
 // $g_cache_bug_text = array();
 // $g_cache_bug_attachments = array();
 
-// /**
-//  * Cache a database result-set containing full contents of bug_table row.
-//  *
-//  * $p_stats parameter is an optional array representing bugnote statistics.
-//  * This parameter can be "false" if the bug has no bugnotes, so the cache can
-//  * differentiate from a still not cached stats registry.
-//  *
-//  * @param array $p_bug_database_result Database row containing all columns
-//  *                                     from mantis_bug_table.
-//  * @param array|bool|null $p_stats     Optional: array representing bugnote statistics,
-//  *                                     or false to store empty cache value
-//  *
-//  * @return array returns an array representing the bug row if bug exists
-//  * @access public
-//  */
+/**
+ * Cache a database result-set containing full contents of bug_table row.
+ *
+ * $p_stats parameter is an optional array representing bugnote statistics.
+ * This parameter can be "false" if the bug has no bugnotes, so the cache can
+ * differentiate from a still not cached stats registry.
+ *
+ * @param array $p_bug_database_result Database row containing all columns
+ *                                     from mantis_bug_table.
+ * @param array|bool|null $p_stats     Optional: array representing bugnote statistics,
+ *                                     or false to store empty cache value
+ *
+ * @return array returns an array representing the bug row if bug exists
+ * @access public
+ */
 function dwg_cache_database_result( array $p_bug_database_result, $p_stats = null ) {
 	global $g_cache_bug;
 
@@ -732,17 +822,17 @@ function dwg_cache_database_result( array $p_bug_database_result, $p_stats = nul
 	return dwg_add_to_cache( $p_bug_database_result, $p_stats );
 }
 
-// /**
-//  * Cache a bug row if necessary and return the cached copy.
-//  *
-//  * @param int  $p_bug_id         Identifier of bug to cache from mantis_bug_table.
-//  * @param bool $p_trigger_errors Set to true to trigger an error if the bug does not exist.
-//  *
-//  * @return array|false Array representing the bug row if the bug exists, false if it does not.
-//  * @throws ClientException if the bug does not exist.
-//  *
-//  * @access public
-//  */
+/**
+ * Cache a bug row if necessary and return the cached copy.
+ *
+ * @param int  $p_bug_id         Identifier of bug to cache from mantis_bug_table.
+ * @param bool $p_trigger_errors Set to true to trigger an error if the bug does not exist.
+ *
+ * @return array|false Array representing the bug row if the bug exists, false if it does not.
+ * @throws ClientException if the bug does not exist.
+ *
+ * @access public
+ */
 function dwg_cache_row( $p_bug_id, $p_trigger_errors = true ) {
 	global $g_cache_bug;
 
@@ -753,7 +843,7 @@ function dwg_cache_row( $p_bug_id, $p_trigger_errors = true ) {
 	$c_bug_id = (int)$p_bug_id;
 
 	db_param_push();
-	$t_query = 'SELECT * FROM {bug} WHERE id=' . db_param();
+	$t_query = 'SELECT * FROM {document} WHERE id=' . db_param();
 	$t_result = db_query( $t_query, array( $c_bug_id ) );
 
 	$t_row = db_fetch_array( $t_result );
@@ -771,13 +861,13 @@ function dwg_cache_row( $p_bug_id, $p_trigger_errors = true ) {
 	return dwg_add_to_cache( $t_row );
 }
 
-// /**
-//  * Cache a set of bugs.
-//  *
-//  * @param array $p_bug_id_array List of bug identifiers to cache.
-//  *
-//  * @access public
-//  */
+/**
+ * Cache a set of bugs.
+ *
+ * @param array $p_bug_id_array List of bug identifiers to cache.
+ *
+ * @access public
+ */
 function dwg_cache_array_rows( array $p_bug_id_array ) {
 	global $g_cache_bug;
 	$c_bug_id_array = array();
@@ -792,7 +882,7 @@ function dwg_cache_array_rows( array $p_bug_id_array ) {
 		return;
 	}
 
-	$t_query = 'SELECT * FROM {bug} WHERE id IN (' . implode( ',', $c_bug_id_array ) . ')';
+	$t_query = 'SELECT * FROM {document} WHERE id IN (' . implode( ',', $c_bug_id_array ) . ')';
 	$t_result = db_query( $t_query );
 
 	while( $t_row = db_fetch_array( $t_result ) ) {
@@ -800,21 +890,21 @@ function dwg_cache_array_rows( array $p_bug_id_array ) {
 	}
 }
 
-// /**
-//  * Inject a bug into the bug cache.
-//  *
-//  * $p_stats parameter is an optional array representing bugnote statistics.
-//  * This parameter can be "false" if the bug has no bugnotes, so the cache can differentiate
-//  * from a still not cached stats registry.
-//  *
-//  * @param array $p_bug_row         A bug row to cache.
-//  * @param array|bool|null $p_stats Array of Bugnote stats to cache, false to
-//  *                                 store empty value, null to skip.
-//  *
-//  * @return array
-//  *
-//  * @access private
-//  */
+/**
+ * Inject a bug into the bug cache.
+ *
+ * $p_stats parameter is an optional array representing bugnote statistics.
+ * This parameter can be "false" if the bug has no bugnotes, so the cache can differentiate
+ * from a still not cached stats registry.
+ *
+ * @param array $p_bug_row         A bug row to cache.
+ * @param array|bool|null $p_stats Array of Bugnote stats to cache, false to
+ *                                 store empty value, null to skip.
+ *
+ * @return array
+ *
+ * @access private
+ */
 function dwg_add_to_cache( array $p_bug_row, $p_stats = null ) {
 	global $g_cache_bug;
 
@@ -827,121 +917,130 @@ function dwg_add_to_cache( array $p_bug_row, $p_stats = null ) {
 	return $g_cache_bug[(int)$p_bug_row['id']];
 }
 
-// /**
-//  * Clear a bug from the cache or all bugs if no bug id specified.
-//  *
-//  * @param int $p_bug_id A bug identifier to clear (optional).
-//  *
-//  * @return bool
-//  *
-//  * @access public
-//  */
-// function bug_clear_cache( $p_bug_id = null ) {
-// 	global $g_cache_bug;
+/**
+ * Clear a bug from the cache or all bugs if no bug id specified.
+ *
+ * @param int $p_bug_id A bug identifier to clear (optional).
+ *
+ * @return bool
+ *
+ * @access public
+ */
+function dwg_clear_cache( $p_bug_id = null ) {
+	global $g_cache_bug;
 
-// 	if( null === $p_bug_id ) {
-// 		$g_cache_bug = array();
-// 	} else {
-// 		unset( $g_cache_bug[(int)$p_bug_id] );
-// 	}
+	if( null === $p_bug_id ) {
+		$g_cache_bug = array();
+	} else {
+		unset( $g_cache_bug[(int)$p_bug_id] );
+	}
 
-// 	return true;
-// }
+	return true;
+}
 
-// /**
-//  * Cache a bug text row if necessary and return the cached copy.
-//  *
-//  * @param int $p_bug_id          Int bug id to retrieve text for.
-//  * @param bool $p_trigger_errors If the second parameter is true (default),
-//  *                               trigger an error if bug text not found.
-//  *
-//  * @return array|false Array of bug text data, false if not found.
-//  * @throws ClientException If bug text data not found
-//  *
-//  * @access public
-//  */
-// function bug_text_cache_row( $p_bug_id, $p_trigger_errors = true ) {
-// 	global $g_cache_bug_text;
+/**
+ * Cache a bug text row if necessary and return the cached copy.
+ *
+ * @param int $p_bug_id          Int bug id to retrieve text for.
+ * @param bool $p_trigger_errors If the second parameter is true (default),
+ *                               trigger an error if bug text not found.
+ *
+ * @return array|false Array of bug text data, false if not found.
+ * @throws ClientException If bug text data not found
+ *
+ * @access public
+ */
+function dwg_text_cache_row( $p_bug_id, $p_trigger_errors = true ) {
+	global $g_cache_bug_text;
 
-// 	$c_bug_id = (int)$p_bug_id;
+	$c_bug_id = (int)$p_bug_id;
 
-// 	if( isset( $g_cache_bug_text[$c_bug_id] ) ) {
-// 		return $g_cache_bug_text[$c_bug_id];
-// 	}
+	if( isset( $g_cache_bug_text[$c_bug_id] ) ) {
+		return $g_cache_bug_text[$c_bug_id];
+	}
 
-// 	db_param_push();
-// 	$t_query = 'SELECT bt.* FROM {bug_text} bt, {bug} b
-// 				  WHERE b.id=' . db_param() . ' AND b.bug_text_id = bt.id';
-// 	$t_result = db_query( $t_query, array( $c_bug_id ) );
+	db_param_push();
 
-// 	$t_row = db_fetch_array( $t_result );
 
-// 	if( !$t_row ) {
-// 		$g_cache_bug_text[$c_bug_id] = false;
 
-// 		if( $p_trigger_errors ) {
-// 			throw new ClientException(
-// 				"Issue '$p_bug_id' not found",
-// 				ERROR_BUG_NOT_FOUND,
-// 				array( $p_bug_id ) );
-// 		}
+// @TODO RobD - found it, we need to provide some dummy 'bug_text' results
+//$t_row = false;
+$t_row = array("foobar", "barfoo");
 
-// 		return false;
-// 	}
 
-// 	$g_cache_bug_text[$c_bug_id] = $t_row;
 
-// 	return $t_row;
-// }
+	// $t_query = 'SELECT bt.* FROM {bug_text} bt, {document} b
+	// 			  WHERE b.id=' . db_param() . ' AND b.bug_text_id = bt.id';
+	// $t_result = db_query( $t_query, array( $c_bug_id ) );
 
-// /**
-//  * Clear a bug's bug text from the cache or all bug text if no bug id specified.
-//  *
-//  * @param int $p_bug_id A bug identifier to clear (optional).
-//  *
-//  * @return bool
-//  *
-//  * @access public
-//  */
-// function bug_text_clear_cache( $p_bug_id = null ) {
-// 	global $g_cache_bug_text;
+	// $t_row = db_fetch_array( $t_result );
+	
+	if( !$t_row ) {
+		$g_cache_bug_text[$c_bug_id] = false;
 
-// 	if( null === $p_bug_id ) {
-// 		$g_cache_bug_text = array();
-// 	} else {
-// 		unset( $g_cache_bug_text[(int)$p_bug_id] );
-// 	}
+		if( $p_trigger_errors ) {
+			throw new ClientException(
+				"Issue '$p_bug_id' not found",
+				ERROR_BUG_NOT_FOUND,
+				array( $p_bug_id ) );
+		}
 
-// 	return true;
-// }
+		return false;
+	}
 
-// /**
-//  * Clear a bug's attachments from the cache.
-//  *
-//  * @param int $p_bug_id A bug identifier to clear all (optional).
-//  *
-//  * @access public
-//  */
-// function bug_attachments_clear_cache( $p_bug_id = null ) {
-// 	global $g_cache_bug_attachments;
+	$g_cache_bug_text[$c_bug_id] = $t_row;
 
-// 	if( null === $p_bug_id ) {
-// 		$g_cache_bug_attachments = array();
-// 	} else {
-// 		unset( $g_cache_bug_attachments[(int)$p_bug_id] );
-// 	}
-// }
+	return $t_row;
+}
 
-// /**
-//  * Check if a bug exists.
-//  *
-//  * @param int $p_bug_id Int representing bug identifier.
-//  *
-//  * @return bool true if bug exists, false otherwise
-//  *
-//  * @access public
-//  * @noinspection PhpDocMissingThrowsInspection
-//  */
+/**
+ * Clear a bug's bug text from the cache or all bug text if no bug id specified.
+ *
+ * @param int $p_bug_id A bug identifier to clear (optional).
+ *
+ * @return bool
+ *
+ * @access public
+ */
+function dwg_text_clear_cache( $p_bug_id = null ) {
+	global $g_cache_bug_text;
+
+	if( null === $p_bug_id ) {
+		$g_cache_bug_text = array();
+	} else {
+		unset( $g_cache_bug_text[(int)$p_bug_id] );
+	}
+
+	return true;
+}
+
+/**
+ * Clear a bug's attachments from the cache.
+ *
+ * @param int $p_bug_id A bug identifier to clear all (optional).
+ *
+ * @access public
+ */
+function dwg_attachments_clear_cache( $p_bug_id = null ) {
+	global $g_cache_bug_attachments;
+
+	if( null === $p_bug_id ) {
+		$g_cache_bug_attachments = array();
+	} else {
+		unset( $g_cache_bug_attachments[(int)$p_bug_id] );
+	}
+}
+
+/**
+ * Check if a bug exists.
+ *
+ * @param int $p_bug_id Int representing bug identifier.
+ *
+ * @return bool true if bug exists, false otherwise
+ *
+ * @access public
+ * @noinspection PhpDocMissingThrowsInspection
+ */
 function dwg_exists( $p_bug_id ) {
 	$c_bug_id = (int)$p_bug_id;
 
@@ -959,15 +1058,15 @@ function dwg_exists( $p_bug_id ) {
 	}
 }
 
-// /**
-//  * Check if a bug exists, trigger an error if it does not.
-//  *
-//  * @param int $p_bug_id Int representing bug identifier.
-//  *
-//  * @throws ClientException
-//  *
-//  * @access public
-//  */
+/**
+ * Check if a bug exists, trigger an error if it does not.
+ *
+ * @param int $p_bug_id Int representing bug identifier.
+ *
+ * @throws ClientException
+ *
+ * @access public
+ */
 function dwg_ensure_exists( $p_bug_id ) {
 	if( !dwg_exists( $p_bug_id ) ) {
 		throw new ClientException(
@@ -977,548 +1076,548 @@ function dwg_ensure_exists( $p_bug_id ) {
 	}
 }
 
-// /**
-//  * Check if the given user is the reporter of the bug.
-//  *
-//  * @param int $p_bug_id  Int representing bug identifier.
-//  * @param int $p_user_id Int representing a user identifier.
-//  *
-//  * @return bool True if the user is the reporter, false otherwise
-//  * @throws ClientException if the bug does not exist.
-//  *
-//  * @access public
-//  */
-// function bug_is_user_reporter( $p_bug_id, $p_user_id ) {
-// 	if( bug_get_field( $p_bug_id, 'reporter_id' ) == $p_user_id ) {
-// 		return true;
-// 	} else {
-// 		return false;
-// 	}
-// }
-
-// /**
-//  * Check if the given user is the handler of the bug.
-//  *
-//  * @param int $p_bug_id  Int representing bug identifier.
-//  * @param int $p_user_id Int representing a user identifier.
-//  *
-//  * @return bool True if the user is the handler, false otherwise.
-//  * @throws ClientException if the bug does not exist.
-//  *
-//  * @access public
-//  */
-// function bug_is_user_handler( $p_bug_id, $p_user_id ) {
-// 	if( bug_get_field( $p_bug_id, 'handler_id' ) == $p_user_id ) {
-// 		return true;
-// 	} else {
-// 		return false;
-// 	}
-// }
-
-// /**
-//  * Check if the bug is readonly and shouldn't be modified.
-//  *
-//  * For a bug to be readonly the status has to be >= bug_readonly_status_threshold and
-//  * current user access level < update_readonly_bug_threshold.
-//  *
-//  * @param int $p_bug_id Int representing bug identifier.
-//  *
-//  * @return bool
-//  * @throws ClientException if the bug does not exist.
-//  *
-//  * @access public
-//  */
-// function bug_is_readonly( $p_bug_id ) {
-// 	$t_status = bug_get_field( $p_bug_id, 'status' );
-// 	if( $t_status < config_get( 'bug_readonly_status_threshold', null, null, bug_get_field( $p_bug_id, 'project_id' ) ) ) {
-// 		return false;
-// 	}
-
-// 	if( access_has_bug_level( config_get( 'update_readonly_bug_threshold' ), $p_bug_id ) ) {
-// 		return false;
-// 	}
-
-// 	return true;
-// }
-
-// /**
-//  * Check if a given bug is resolved.
-//  *
-//  * @param int $p_bug_id Int representing bug identifier.
-//  *
-//  * @return bool true if bug is resolved, false otherwise
-//  * @throws ClientException if the bug does not exist.
-//  *
-//  * @access public
-//  */
-// function bug_is_resolved( $p_bug_id ) {
-// 	$t_bug = bug_get( $p_bug_id );
-// 	return( $t_bug->status >= config_get( 'bug_resolved_status_threshold', null, null, $t_bug->project_id ) );
-// }
-
-// /**
-//  * Check if a given bug is closed.
-//  *
-//  * @param int $p_bug_id Int representing bug identifier.
-//  *
-//  * @return bool true if bug is closed, false otherwise
-//  * @throws ClientException if the bug does not exist.
-//  *
-//  * @access public
-//  */
-// function bug_is_closed( $p_bug_id ) {
-// 	$t_bug = bug_get( $p_bug_id );
-// 	return( $t_bug->status >= config_get( 'bug_closed_status_threshold', null, null, $t_bug->project_id ) );
-// }
-
-// /**
-//  * Return a bug's overdue warning level.
-//  *
-//  * Determines the level based on the difference between the bug's due date
-//  * and the current date/time, based on the defined delays
-//  * @see $g_due_date_warning_levels
-//  *
-//  * @param $p_bug_id
-//  *
-//  * @return int|false Warning level (0 = overdue), false if N/A.
-//  * @throws ClientException if the bug does not exist.
-//  */
-// function bug_overdue_level( $p_bug_id ) {
-// 	if( bug_is_resolved( $p_bug_id ) ) {
-// 		return false;
-// 	}
-
-// 	$t_bug = bug_get( $p_bug_id );
-// 	$t_due_date = $t_bug->due_date;
-
-// 	if( date_is_null( $t_due_date ) ) {
-// 		return false;
-// 	}
-
-// 	$t_warning_levels = config_get( 'due_date_warning_levels', null, null, $t_bug->project_id );
-// 	if( !empty( $t_warning_levels ) && !is_array( $t_warning_levels ) ) {
-// 		trigger_error( ERROR_GENERIC );
-// 	}
-
-// 	$t_now = db_now();
-// 	foreach( $t_warning_levels as $t_level => $t_delay ) {
-// 		if( $t_now > $t_due_date - $t_delay ) {
-// 			return $t_level;
-// 		}
-// 	}
-// 	return false;
-// }
-
-// /**
-//  * Check if a given bug is overdue.
-//  *
-//  * @param int $p_bug_id Int representing bug identifier.
-//  *
-//  * @return bool true if bug is overdue, false otherwise
-//  * @throws ClientException if the bug does not exist.
-//  *
-//  * @access public
-//  */
-// function bug_is_overdue( $p_bug_id ) {
-// 	return bug_overdue_level( $p_bug_id ) === 0;
-// }
-
-// /**
-//  * Validate workflow state to see if bug can be moved to requested state.
-//  *
-//  * @param int $p_bug_status    Current bug status.
-//  * @param int $p_wanted_status New bug status.
-//  *
-//  * @return bool
-//  *
-//  * @access public
-//  */
-// function bug_check_workflow( $p_bug_status, $p_wanted_status ) {
-// 	$t_status_enum_workflow = config_get( 'status_enum_workflow' );
-
-// 	if( count( $t_status_enum_workflow ) < 1 ) {
-// 		# workflow not defined, use default enum
-// 		return true;
-// 	}
-
-// 	if( $p_bug_status == $p_wanted_status ) {
-// 		# no change in state, allow the transition
-// 		return true;
-// 	}
-
-// 	# There should always be a possible next status, if not defined, then allow all.
-// 	if( !isset( $t_status_enum_workflow[$p_bug_status] ) ) {
-// 		return true;
-// 	}
-
-// 	# workflow defined - find allowed states
-// 	$t_allowed_states = $t_status_enum_workflow[$p_bug_status];
-
-// 	return MantisEnum::hasValue( $t_allowed_states, $p_wanted_status );
-// }
-
-// /**
-//  * Copy a bug from one project to another.
-//  *
-//  * Also make copies of issue notes, attachments, history,
-//  * email notifications etc.
-//  *
-//  * @param int  $p_bug_id                A bug identifier.
-//  * @param int  $p_target_project_id     A target project identifier.
-//  * @param bool $p_copy_custom_fields    Whether to copy custom fields.
-//  * @param bool $p_copy_relationships    Whether to copy relationships.
-//  * @param bool $p_copy_history          Whether to copy history.
-//  * @param bool $p_copy_attachments      Whether to copy attachments.
-//  * @param bool $p_copy_bugnotes         Whether to copy bugnotes.
-//  * @param bool $p_copy_monitoring_users Whether to copy monitoring users.
-//  *
-//  * @return int New bug identifier
-//  * @throws ClientException if the bug does not exist.
-//  *
-//  * @access public
-//  */
-// function bug_copy( $p_bug_id, $p_target_project_id = null, $p_copy_custom_fields = false, $p_copy_relationships = false, $p_copy_history = false, $p_copy_attachments = false, $p_copy_bugnotes = false, $p_copy_monitoring_users = false ) {
-
-// 	$t_bug_id = (int)$p_bug_id;
-// 	$t_target_project_id = (int)$p_target_project_id;
-
-// 	$t_bug_data = bug_get( $t_bug_id, true );
-
-// 	# retrieve the project id associated with the bug
-// 	if( ( $p_target_project_id == null ) || is_blank( $p_target_project_id ) ) {
-// 		$t_target_project_id = $t_bug_data->project_id;
-// 	}
-
-// 	$t_bug_data->project_id = $t_target_project_id;
-// 	$t_bug_data->reporter_id = auth_get_current_user_id();
-// 	$t_bug_data->date_submitted = db_now();
-// 	$t_bug_data->last_updated = db_now();
-
-// 	$t_new_bug_id = $t_bug_data->create();
-
-// 	# MASC ATTENTION: IF THE SOURCE BUG HAS TO HANDLER THE bug_create FUNCTION CAN TRY TO AUTO-ASSIGN THE BUG
-// 	# WE FORCE HERE TO DUPLICATE THE SAME HANDLER OF THE SOURCE BUG
-// 	# @todo VB: Shouldn't we check if the handler in the source project is also a
-// 	#   handler in the destination project?
-// 	bug_set_field( $t_new_bug_id, 'handler_id', $t_bug_data->handler_id );
-
-// 	bug_set_field( $t_new_bug_id, 'duplicate_id', $t_bug_data->duplicate_id );
-// 	bug_set_field( $t_new_bug_id, 'status', $t_bug_data->status );
-// 	bug_set_field( $t_new_bug_id, 'resolution', $t_bug_data->resolution );
-// 	bug_set_field( $t_new_bug_id, 'projection', $t_bug_data->projection );
-// 	bug_set_field( $t_new_bug_id, 'eta', $t_bug_data->eta );
-// 	bug_set_field( $t_new_bug_id, 'fixed_in_version', $t_bug_data->fixed_in_version );
-// 	bug_set_field( $t_new_bug_id, 'target_version', $t_bug_data->target_version );
-// 	bug_set_field( $t_new_bug_id, 'sponsorship_total', 0 );
-// 	bug_set_field( $t_new_bug_id, 'sticky', 0 );
-// 	bug_set_field( $t_new_bug_id, 'due_date', $t_bug_data->due_date );
-
-// 	# COPY CUSTOM FIELDS
-// 	if( $p_copy_custom_fields ) {
-// 		db_param_push();
-// 		$t_query = 'SELECT field_id, bug_id, value, text FROM {custom_field_string} WHERE bug_id=' . db_param();
-// 		$t_result = db_query( $t_query, array( $t_bug_id ) );
-
-// 		while( $t_bug_custom = db_fetch_array( $t_result ) ) {
-// 			$c_field_id = (int)$t_bug_custom['field_id'];
-// 			$c_new_bug_id = $t_new_bug_id;
-// 			$c_value = $t_bug_custom['value'];
-// 			$c_text = $t_bug_custom['text'];
-
-// 			db_param_push();
-// 			$t_query = 'INSERT INTO {custom_field_string}
-// 						   ( field_id, bug_id, value, text )
-// 						   VALUES (' . db_param() . ', ' . db_param() . ', ' . db_param() . ', ' . db_param() . ')';
-// 			db_query( $t_query, array( $c_field_id, $c_new_bug_id, $c_value, $c_text ) );
-// 		}
-// 	}
-
-// 	# Copy Relationships
-// 	if( $p_copy_relationships ) {
-// 		relationship_copy_all( $t_bug_id, $t_new_bug_id );
-// 	}
-
-// 	# Copy bugnotes
-// 	if( $p_copy_bugnotes ) {
-// 		db_param_push();
-// 		$t_query = 'SELECT * FROM {bugnote} WHERE bug_id=' . db_param();
-// 		$t_result = db_query( $t_query, array( $t_bug_id ) );
-
-// 		while( $t_bug_note = db_fetch_array( $t_result ) ) {
-// 			$t_bugnote_text_id = $t_bug_note['bugnote_text_id'];
-
-// 			db_param_push();
-// 			$t_query2 = 'SELECT * FROM {bugnote_text} WHERE id=' . db_param();
-// 			$t_result2 = db_query( $t_query2, array( $t_bugnote_text_id ) );
-
-// 			$t_bugnote_text_insert_id = -1;
-// 			if( $t_bugnote_text = db_fetch_array( $t_result2 ) ) {
-// 				db_param_push();
-// 				$t_query2 = 'INSERT INTO {bugnote_text}
-// 							   ( note )
-// 							   VALUES ( ' . db_param() . ' )';
-// 				db_query( $t_query2, array( $t_bugnote_text['note'] ) );
-// 				$t_bugnote_text_insert_id = db_insert_id( db_get_table( 'bugnote_text' ) );
-// 			}
-
-// 			db_param_push();
-// 			$t_query2 = 'INSERT INTO {bugnote}
-// 						   ( bug_id, reporter_id, bugnote_text_id, view_state, date_submitted, last_modified )
-// 						   VALUES ( ' . db_param() . ',
-// 						   			' . db_param() . ',
-// 						   			' . db_param() . ',
-// 						   			' . db_param() . ',
-// 						   			' . db_param() . ',
-// 						   			' . db_param() . ')';
-// 			db_query( $t_query2, array( $t_new_bug_id, $t_bug_note['reporter_id'], $t_bugnote_text_insert_id, $t_bug_note['view_state'], $t_bug_note['date_submitted'], $t_bug_note['last_modified'] ) );
-// 		}
-// 	}
-
-// 	# Copy attachments
-// 	if( $p_copy_attachments ) {
-// 	    file_copy_attachments( $t_bug_id, $t_new_bug_id );
-// 	}
-
-// 	# Copy users monitoring bug
-// 	if( $p_copy_monitoring_users ) {
-// 		bug_monitor_copy( $t_bug_id, $t_new_bug_id );
-// 	}
-
-// 	# COPY HISTORY
-// 	history_delete( $t_new_bug_id );	# should history only be deleted inside the if statement below?
-// 	if( $p_copy_history ) {
-// 		# @todo problem with this code: the generated history trail is incorrect
-// 		#   because the note IDs are those of the original bug, not the copied ones
-// 		# @todo actually, does it even make sense to copy the history ?
-// 		db_param_push();
-// 		$t_query = 'SELECT * FROM {bug_history} WHERE bug_id = ' . db_param();
-// 		$t_result = db_query( $t_query, array( $t_bug_id ) );
-
-// 		while( $t_bug_history = db_fetch_array( $t_result ) ) {
-// 			db_param_push();
-// 			$t_query = 'INSERT INTO {bug_history}
-// 						  ( user_id, bug_id, date_modified, field_name, old_value, new_value, type )
-// 						  VALUES ( ' . db_param() . ',' . db_param() . ',' . db_param() . ',
-// 						  		   ' . db_param() . ',' . db_param() . ',' . db_param() . ',
-// 						  		   ' . db_param() . ' );';
-// 			db_query( $t_query, array( $t_bug_history['user_id'], $t_new_bug_id, $t_bug_history['date_modified'], $t_bug_history['field_name'], $t_bug_history['old_value'], $t_bug_history['new_value'], $t_bug_history['type'] ) );
-// 		}
-// 	} else {
-// 		# Create a "New Issue" history entry
-// 		history_log_event_special( $t_new_bug_id, NEW_BUG );
-// 	}
-
-// 	# Create history entries to reflect the copy operation
-// 	history_log_event_special( $t_new_bug_id, BUG_CREATED_FROM, '', $t_bug_id );
-// 	history_log_event_special( $t_bug_id, BUG_CLONED_TO, '', $t_new_bug_id );
-
-// 	return $t_new_bug_id;
-// }
-
-// /**
-//  * Moves an issue from a project to another.
-//  *
-//  * @todo Validate with sub-project / category inheritance scenarios.
-//  *
-//  * @param int $p_bug_id            The bug to be moved.
-//  * @param int $p_target_project_id The target project to move the bug to.
-//  *
-//  * @throws ClientException if the bug does not exist.
-//  *
-//  * @access public
-//  */
-// function bug_move( $p_bug_id, $p_target_project_id ) {
-// 	# Attempt to move disk based attachments to new project file directory.
-// 	file_move_bug_attachments( $p_bug_id, $p_target_project_id );
-
-// 	# Move the issue to the new project.
-// 	bug_set_field( $p_bug_id, 'project_id', $p_target_project_id );
-
-// 	# Update the category if needed
-// 	$t_category_id = bug_get_field( $p_bug_id, 'category_id' );
-
-// 	# Bug has no category
-// 	if( $t_category_id == 0 ) {
-// 		# Category is required in target project, set it to default
-// 		if( ON != config_get( 'allow_no_category', null, null, $p_target_project_id ) ) {
-// 			bug_set_field( $p_bug_id, 'category_id', config_get( 'default_category_for_moves', null, null, $p_target_project_id ) );
-// 		}
-// 	} else {
-// 		# Check if the category is global, and if not attempt mapping it to the new project
-// 		$t_category_project_id = category_get_field( $t_category_id, 'project_id' );
-
-// 		if( $t_category_project_id != ALL_PROJECTS
-// 		  && !in_array( $t_category_project_id, project_hierarchy_inheritance( $p_target_project_id ) )
-// 		) {
-// 			# Map by name
-// 			$t_category_name = category_get_field( $t_category_id, 'name' );
-// 			$t_target_project_category_id = category_get_id_by_name( $t_category_name, $p_target_project_id, false );
-// 			if( $t_target_project_category_id === false ) {
-// 				# Use target project's default category for moves, since there is no match by name.
-// 				$t_target_project_category_id = config_get( 'default_category_for_moves', null, null, $p_target_project_id );
-// 			}
-// 			bug_set_field( $p_bug_id, 'category_id', $t_target_project_category_id );
-// 		}
-// 	}
-// }
-
-// /**
-//  * Delete a bug.
-//  *
-//  * Delete the bug record including all related data (bugtext, bugnote, etc).
-//  *
-//  * @param int $p_bug_id Int representing bug identifier.
-//  *
-//  * @throws ClientException if the bug does not exist.
-//  *
-//  * @access public
-//  */
-// function bug_delete( $p_bug_id ) {
-// 	$c_bug_id = (int)$p_bug_id;
-
-// 	# call pre-deletion custom function
-// 	helper_call_custom_function( 'issue_delete_validate', array( $p_bug_id ) );
-
-// 	event_signal( 'EVENT_BUG_DELETED', array( $c_bug_id ) );
-
-// 	# log deletion of bug
-// 	history_log_event_special( $p_bug_id, BUG_DELETED, bug_format_id( $p_bug_id ) );
-
-// 	email_bug_deleted( $p_bug_id );
-// 	email_relationship_bug_deleted( $p_bug_id );
-
-// 	# Call post-deletion custom function.
-// 	# We do this here to allow the custom function to access the bug's details
-// 	# before they are deleted from the database given its id. The other option
-// 	# would be to move this to the end of the function and provide it with bug
-// 	# data rather than an id, but this would break backward compatibility.
-// 	helper_call_custom_function( 'issue_delete_notify', array( $p_bug_id ) );
-
-// 	# Unmonitor bug for all users
-// 	bug_unmonitor( $p_bug_id, null );
-
-// 	# Delete custom fields
-// 	custom_field_delete_all_values( $p_bug_id );
-
-// 	# Delete bugnotes
-// 	bugnote_delete_all( $p_bug_id );
-
-// 	# Delete all sponsorships
-// 	sponsorship_delete_all( $p_bug_id );
-
-// 	# Delete all relationships
-// 	relationship_delete_all( $p_bug_id );
-
-// 	# Delete files
-// 	file_delete_attachments( $p_bug_id );
-
-// 	# Detach tags
-// 	tag_bug_detach_all( $p_bug_id, false );
-
-// 	# Delete the bug history
-// 	history_delete( $p_bug_id );
-
-// 	# Delete bug info revisions
-// 	bug_revision_delete( $p_bug_id );
-
-// 	# Delete the bugnote text
-// 	$t_bug_text_id = bug_get_field( $p_bug_id, 'bug_text_id' );
-
-// 	db_param_push();
-// 	$t_query = 'DELETE FROM {bug_text} WHERE id=' . db_param();
-// 	db_query( $t_query, array( $t_bug_text_id ) );
-
-// 	# Delete the bug entry
-// 	db_param_push();
-// 	$t_query = 'DELETE FROM {bug} WHERE id=' . db_param();
-// 	db_query( $t_query, array( $c_bug_id ) );
-
-// 	bug_clear_cache_all( $p_bug_id );
-// }
-
-// /**
-//  * Delete all bugs associated with a project.
-//  *
-//  * @param int $p_project_id Int representing a project identifier.
-//  *
-//  * @access public
-//  * @noinspection PhpDocMissingThrowsInspection
-//  */
-// function bug_delete_all( $p_project_id ) {
-// 	$c_project_id = (int)$p_project_id;
-
-// 	db_param_push();
-// 	$t_query = 'SELECT id FROM {bug} WHERE project_id=' . db_param();
-// 	$t_result = db_query( $t_query, array( $c_project_id ) );
-
-// 	while( $t_row = db_fetch_array( $t_result ) ) {
-// 		/** @noinspection PhpUnhandledExceptionInspection */
-// 		bug_delete( $t_row['id'] );
-// 	}
-
-// 	# @todo should we check the return value of each bug_delete() and
-// 	#    return false if any of them return false? Presumable bug_delete()
-// 	#    will eventually trigger an error on failure so it won't matter...
-// }
-
-// /**
-//  * Returns the extended record of the specified bug, including bug text fields.
-//  *
-//  * @todo include reporter name and handler name, the problem is that
-//  *      handler can be 0, in this case no corresponding name will be
-//  *      found.  Use equivalent of (+) in Oracle.
-//  *
-//  * @param int $p_bug_id Int representing bug identifier.
-//  *
-//  * @return array
-//  * @throws ClientException
-//  *
-//  * @access public
-//  */
-// function bug_get_extended_row( $p_bug_id ) {
-// 	$t_base = dwg_cache_row( $p_bug_id );
-// 	$t_text = bug_text_cache_row( $p_bug_id );
-
-// 	# merge $t_text first so that the 'id' key has the bug id not the bug text id
-// 	return array_merge( $t_text, $t_base );
-// }
-
-// /**
-//  * Returns the record of the specified bug.
-//  *
-//  * @param int $p_bug_id Int representing bug identifier.
-//  *
-//  * @return array
-//  * @throws ClientException
-//  *
-//  * @access public
-//  */
+/**
+ * Check if the given user is the reporter of the bug.
+ *
+ * @param int $p_bug_id  Int representing bug identifier.
+ * @param int $p_user_id Int representing a user identifier.
+ *
+ * @return bool True if the user is the reporter, false otherwise
+ * @throws ClientException if the bug does not exist.
+ *
+ * @access public
+ */
+function dwg_is_user_reporter( $p_bug_id, $p_user_id ) {
+	if( bug_get_field( $p_bug_id, 'reporter_id' ) == $p_user_id ) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+/**
+ * Check if the given user is the handler of the bug.
+ *
+ * @param int $p_bug_id  Int representing bug identifier.
+ * @param int $p_user_id Int representing a user identifier.
+ *
+ * @return bool True if the user is the handler, false otherwise.
+ * @throws ClientException if the bug does not exist.
+ *
+ * @access public
+ */
+function dwg_is_user_handler( $p_bug_id, $p_user_id ) {
+	if( bug_get_field( $p_bug_id, 'handler_id' ) == $p_user_id ) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+/**
+ * Check if the bug is readonly and shouldn't be modified.
+ *
+ * For a bug to be readonly the status has to be >= bug_readonly_status_threshold and
+ * current user access level < update_readonly_bug_threshold.
+ *
+ * @param int $p_bug_id Int representing bug identifier.
+ *
+ * @return bool
+ * @throws ClientException if the bug does not exist.
+ *
+ * @access public
+ */
+function dwg_is_readonly( $p_bug_id ) {
+	$t_status = dwg_get_field( $p_bug_id, 'status' );
+	if( $t_status < config_get( 'bug_readonly_status_threshold', null, null, bug_get_field( $p_bug_id, 'project_id' ) ) ) {
+		return false;
+	}
+
+	if( access_has_dwg_level( config_get( 'update_readonly_bug_threshold' ), $p_bug_id ) ) {
+		return false;
+	}
+
+	return true;
+}
+
+/**
+ * Check if a given bug is resolved.
+ *
+ * @param int $p_bug_id Int representing bug identifier.
+ *
+ * @return bool true if bug is resolved, false otherwise
+ * @throws ClientException if the bug does not exist.
+ *
+ * @access public
+ */
+function dwg_is_resolved( $p_bug_id ) {
+	$t_bug = dwg_get( $p_bug_id );
+	return( $t_bug->status >= config_get( 'bug_resolved_status_threshold', null, null, $t_bug->project_id ) );
+}
+
+/**
+ * Check if a given bug is closed.
+ *
+ * @param int $p_bug_id Int representing bug identifier.
+ *
+ * @return bool true if bug is closed, false otherwise
+ * @throws ClientException if the bug does not exist.
+ *
+ * @access public
+ */
+function dwg_is_closed( $p_bug_id ) {
+	$t_bug = dwg_get( $p_bug_id );
+	return( $t_bug->status >= config_get( 'bug_closed_status_threshold', null, null, $t_bug->project_id ) );
+}
+
+/**
+ * Return a bug's overdue warning level.
+ *
+ * Determines the level based on the difference between the bug's due date
+ * and the current date/time, based on the defined delays
+ * @see $g_due_date_warning_levels
+ *
+ * @param $p_bug_id
+ *
+ * @return int|false Warning level (0 = overdue), false if N/A.
+ * @throws ClientException if the bug does not exist.
+ */
+function dwg_overdue_level( $p_bug_id ) {
+	if( bug_is_resolved( $p_bug_id ) ) {
+		return false;
+	}
+
+	$t_bug = dwg_get( $p_bug_id );
+	$t_due_date = $t_bug->due_date;
+
+	if( date_is_null( $t_due_date ) ) {
+		return false;
+	}
+
+	$t_warning_levels = config_get( 'due_date_warning_levels', null, null, $t_bug->project_id );
+	if( !empty( $t_warning_levels ) && !is_array( $t_warning_levels ) ) {
+		trigger_error( ERROR_GENERIC );
+	}
+
+	$t_now = db_now();
+	foreach( $t_warning_levels as $t_level => $t_delay ) {
+		if( $t_now > $t_due_date - $t_delay ) {
+			return $t_level;
+		}
+	}
+	return false;
+}
+
+/**
+ * Check if a given bug is overdue.
+ *
+ * @param int $p_bug_id Int representing bug identifier.
+ *
+ * @return bool true if bug is overdue, false otherwise
+ * @throws ClientException if the bug does not exist.
+ *
+ * @access public
+ */
+function dwg_is_overdue( $p_bug_id ) {
+	return dwg_overdue_level( $p_bug_id ) === 0;
+}
+
+/**
+ * Validate workflow state to see if bug can be moved to requested state.
+ *
+ * @param int $p_bug_status    Current bug status.
+ * @param int $p_wanted_status New bug status.
+ *
+ * @return bool
+ *
+ * @access public
+ */
+function dwg_check_workflow( $p_bug_status, $p_wanted_status ) {
+	$t_status_enum_workflow = config_get( 'status_enum_workflow' );
+
+	if( count( $t_status_enum_workflow ) < 1 ) {
+		# workflow not defined, use default enum
+		return true;
+	}
+
+	if( $p_bug_status == $p_wanted_status ) {
+		# no change in state, allow the transition
+		return true;
+	}
+
+	# There should always be a possible next status, if not defined, then allow all.
+	if( !isset( $t_status_enum_workflow[$p_bug_status] ) ) {
+		return true;
+	}
+
+	# workflow defined - find allowed states
+	$t_allowed_states = $t_status_enum_workflow[$p_bug_status];
+
+	return MantisEnum::hasValue( $t_allowed_states, $p_wanted_status );
+}
+
+/**
+ * Copy a bug from one project to another.
+ *
+ * Also make copies of issue notes, attachments, history,
+ * email notifications etc.
+ *
+ * @param int  $p_bug_id                A bug identifier.
+ * @param int  $p_target_project_id     A target project identifier.
+ * @param bool $p_copy_custom_fields    Whether to copy custom fields.
+ * @param bool $p_copy_relationships    Whether to copy relationships.
+ * @param bool $p_copy_history          Whether to copy history.
+ * @param bool $p_copy_attachments      Whether to copy attachments.
+ * @param bool $p_copy_bugnotes         Whether to copy bugnotes.
+ * @param bool $p_copy_monitoring_users Whether to copy monitoring users.
+ *
+ * @return int New bug identifier
+ * @throws ClientException if the bug does not exist.
+ *
+ * @access public
+ */
+function dwg_copy( $p_bug_id, $p_target_project_id = null, $p_copy_custom_fields = false, $p_copy_relationships = false, $p_copy_history = false, $p_copy_attachments = false, $p_copy_bugnotes = false, $p_copy_monitoring_users = false ) {
+
+	$t_bug_id = (int)$p_bug_id;
+	$t_target_project_id = (int)$p_target_project_id;
+
+	$t_bug_data = dwg_get( $t_bug_id, true );
+
+	# retrieve the project id associated with the bug
+	if( ( $p_target_project_id == null ) || is_blank( $p_target_project_id ) ) {
+		$t_target_project_id = $t_bug_data->project_id;
+	}
+
+	$t_bug_data->project_id = $t_target_project_id;
+	$t_bug_data->reporter_id = auth_get_current_user_id();
+	$t_bug_data->date_submitted = db_now();
+	$t_bug_data->last_updated = db_now();
+
+	$t_new_bug_id = $t_bug_data->create();
+
+	# MASC ATTENTION: IF THE SOURCE BUG HAS TO HANDLER THE bug_create FUNCTION CAN TRY TO AUTO-ASSIGN THE BUG
+	# WE FORCE HERE TO DUPLICATE THE SAME HANDLER OF THE SOURCE BUG
+	# @todo VB: Shouldn't we check if the handler in the source project is also a
+	#   handler in the destination project?
+	dwg_set_field( $t_new_bug_id, 'handler_id', $t_bug_data->handler_id );
+
+	dwg_set_field( $t_new_bug_id, 'duplicate_id', $t_bug_data->duplicate_id );
+	dwg_set_field( $t_new_bug_id, 'status', $t_bug_data->status );
+	dwg_set_field( $t_new_bug_id, 'resolution', $t_bug_data->resolution );
+	dwg_set_field( $t_new_bug_id, 'projection', $t_bug_data->projection );
+	dwg_set_field( $t_new_bug_id, 'eta', $t_bug_data->eta );
+	dwg_set_field( $t_new_bug_id, 'fixed_in_version', $t_bug_data->fixed_in_version );
+	dwg_set_field( $t_new_bug_id, 'target_version', $t_bug_data->target_version );
+	dwg_set_field( $t_new_bug_id, 'sponsorship_total', 0 );
+	dwg_set_field( $t_new_bug_id, 'sticky', 0 );
+	dwg_set_field( $t_new_bug_id, 'due_date', $t_bug_data->due_date );
+
+	# COPY CUSTOM FIELDS
+	if( $p_copy_custom_fields ) {
+		db_param_push();
+		$t_query = 'SELECT field_id, bug_id, value, text FROM {custom_field_string} WHERE bug_id=' . db_param();
+		$t_result = db_query( $t_query, array( $t_bug_id ) );
+
+		while( $t_bug_custom = db_fetch_array( $t_result ) ) {
+			$c_field_id = (int)$t_bug_custom['field_id'];
+			$c_new_bug_id = $t_new_bug_id;
+			$c_value = $t_bug_custom['value'];
+			$c_text = $t_bug_custom['text'];
+
+			db_param_push();
+			$t_query = 'INSERT INTO {custom_field_string}
+						   ( field_id, bug_id, value, text )
+						   VALUES (' . db_param() . ', ' . db_param() . ', ' . db_param() . ', ' . db_param() . ')';
+			db_query( $t_query, array( $c_field_id, $c_new_bug_id, $c_value, $c_text ) );
+		}
+	}
+
+	# Copy Relationships
+	if( $p_copy_relationships ) {
+		relationship_copy_all( $t_bug_id, $t_new_bug_id );
+	}
+
+	# Copy bugnotes
+	if( $p_copy_bugnotes ) {
+		db_param_push();
+		$t_query = 'SELECT * FROM {bugnote} WHERE bug_id=' . db_param();
+		$t_result = db_query( $t_query, array( $t_bug_id ) );
+
+		while( $t_bug_note = db_fetch_array( $t_result ) ) {
+			$t_bugnote_text_id = $t_bug_note['bugnote_text_id'];
+
+			db_param_push();
+			$t_query2 = 'SELECT * FROM {bugnote_text} WHERE id=' . db_param();
+			$t_result2 = db_query( $t_query2, array( $t_bugnote_text_id ) );
+
+			$t_bugnote_text_insert_id = -1;
+			if( $t_bugnote_text = db_fetch_array( $t_result2 ) ) {
+				db_param_push();
+				$t_query2 = 'INSERT INTO {bugnote_text}
+							   ( note )
+							   VALUES ( ' . db_param() . ' )';
+				db_query( $t_query2, array( $t_bugnote_text['note'] ) );
+				$t_bugnote_text_insert_id = db_insert_id( db_get_table( 'bugnote_text' ) );
+			}
+
+			db_param_push();
+			$t_query2 = 'INSERT INTO {bugnote}
+						   ( bug_id, reporter_id, bugnote_text_id, view_state, date_submitted, last_modified )
+						   VALUES ( ' . db_param() . ',
+						   			' . db_param() . ',
+						   			' . db_param() . ',
+						   			' . db_param() . ',
+						   			' . db_param() . ',
+						   			' . db_param() . ')';
+			db_query( $t_query2, array( $t_new_bug_id, $t_bug_note['reporter_id'], $t_bugnote_text_insert_id, $t_bug_note['view_state'], $t_bug_note['date_submitted'], $t_bug_note['last_modified'] ) );
+		}
+	}
+
+	# Copy attachments
+	if( $p_copy_attachments ) {
+	    file_copy_attachments( $t_bug_id, $t_new_bug_id );
+	}
+
+	# Copy users monitoring bug
+	if( $p_copy_monitoring_users ) {
+		bug_monitor_copy( $t_bug_id, $t_new_bug_id );
+	}
+
+	# COPY HISTORY
+	history_delete( $t_new_bug_id );	# should history only be deleted inside the if statement below?
+	if( $p_copy_history ) {
+		# @todo problem with this code: the generated history trail is incorrect
+		#   because the note IDs are those of the original bug, not the copied ones
+		# @todo actually, does it even make sense to copy the history ?
+		db_param_push();
+		$t_query = 'SELECT * FROM {bug_history} WHERE bug_id = ' . db_param();
+		$t_result = db_query( $t_query, array( $t_bug_id ) );
+
+		while( $t_bug_history = db_fetch_array( $t_result ) ) {
+			db_param_push();
+			$t_query = 'INSERT INTO {bug_history}
+						  ( user_id, bug_id, date_modified, field_name, old_value, new_value, type )
+						  VALUES ( ' . db_param() . ',' . db_param() . ',' . db_param() . ',
+						  		   ' . db_param() . ',' . db_param() . ',' . db_param() . ',
+						  		   ' . db_param() . ' );';
+			db_query( $t_query, array( $t_bug_history['user_id'], $t_new_bug_id, $t_bug_history['date_modified'], $t_bug_history['field_name'], $t_bug_history['old_value'], $t_bug_history['new_value'], $t_bug_history['type'] ) );
+		}
+	} else {
+		# Create a "New Issue" history entry
+		history_log_event_special( $t_new_bug_id, NEW_BUG );
+	}
+
+	# Create history entries to reflect the copy operation
+	history_log_event_special( $t_new_bug_id, BUG_CREATED_FROM, '', $t_bug_id );
+	history_log_event_special( $t_bug_id, BUG_CLONED_TO, '', $t_new_bug_id );
+
+	return $t_new_bug_id;
+}
+
+/**
+ * Moves an issue from a project to another.
+ *
+ * @todo Validate with sub-project / category inheritance scenarios.
+ *
+ * @param int $p_bug_id            The bug to be moved.
+ * @param int $p_target_project_id The target project to move the bug to.
+ *
+ * @throws ClientException if the bug does not exist.
+ *
+ * @access public
+ */
+function dwg_move( $p_bug_id, $p_target_project_id ) {
+	# Attempt to move disk based attachments to new project file directory.
+	file_move_bug_attachments( $p_bug_id, $p_target_project_id );
+
+	# Move the issue to the new project.
+	dwg_set_field( $p_bug_id, 'project_id', $p_target_project_id );
+
+	# Update the category if needed
+	$t_category_id = dwg_get_field( $p_bug_id, 'category_id' );
+
+	# Bug has no category
+	if( $t_category_id == 0 ) {
+		# Category is required in target project, set it to default
+		if( ON != config_get( 'allow_no_document', null, null, $p_target_project_id ) ) {
+			dwg_set_field( $p_bug_id, 'category_id', config_get( 'default_category_for_moves', null, null, $p_target_project_id ) );
+		}
+	} else {
+		# Check if the category is global, and if not attempt mapping it to the new project
+		$t_category_project_id = category_get_field( $t_category_id, 'project_id' );
+
+		if( $t_category_project_id != ALL_PROJECTS
+		  && !in_array( $t_category_project_id, project_hierarchy_inheritance( $p_target_project_id ) )
+		) {
+			# Map by name
+			$t_category_name = category_get_field( $t_category_id, 'name' );
+			$t_target_project_category_id = category_get_id_by_name( $t_category_name, $p_target_project_id, false );
+			if( $t_target_project_category_id === false ) {
+				# Use target project's default category for moves, since there is no match by name.
+				$t_target_project_category_id = config_get( 'default_category_for_moves', null, null, $p_target_project_id );
+			}
+			dwg_set_field( $p_bug_id, 'category_id', $t_target_project_category_id );
+		}
+	}
+}
+
+/**
+ * Delete a document.
+ *
+ * Delete the bug record including all related data (bugtext, bugnote, etc).
+ *
+ * @param int $p_bug_id Int representing bug identifier.
+ *
+ * @throws ClientException if the bug does not exist.
+ *
+ * @access public
+ */
+function dwg_delete( $p_bug_id ) {
+	$c_bug_id = (int)$p_bug_id;
+
+	# call pre-deletion custom function
+	helper_call_custom_function( 'document_delete_validate', array( $p_bug_id ) );
+
+	event_signal( 'EVENT_DWG_DELETED', array( $c_bug_id ) );
+
+	# log deletion of bug
+	history_log_event_special( $p_bug_id, DWG_DELETED, bug_format_id( $p_bug_id ) );
+
+	email_bug_deleted( $p_bug_id );
+	email_relationship_bug_deleted( $p_bug_id );
+
+	# Call post-deletion custom function.
+	# We do this here to allow the custom function to access the bug's details
+	# before they are deleted from the database given its id. The other option
+	# would be to move this to the end of the function and provide it with bug
+	# data rather than an id, but this would break backward compatibility.
+	helper_call_custom_function( 'document_delete_notify', array( $p_bug_id ) );
+
+	# Unmonitor bug for all users
+	bug_unmonitor( $p_bug_id, null );
+
+	// # Delete custom fields
+	// custom_field_delete_all_values( $p_bug_id );
+
+	// # Delete bugnotes
+	// bugnote_delete_all( $p_bug_id );
+
+	// # Delete all sponsorships
+	// sponsorship_delete_all( $p_bug_id );
+
+	// # Delete all relationships
+	// relationship_delete_all( $p_bug_id );
+
+	// # Delete files
+	// file_delete_attachments( $p_bug_id );
+
+	// # Detach tags
+	// tag_bug_detach_all( $p_bug_id, false );
+
+	// # Delete the bug history
+	// history_delete( $p_bug_id );
+
+	// # Delete bug info revisions
+	// bug_revision_delete( $p_bug_id );
+
+	// # Delete the bugnote text
+	// $t_bug_text_id = dwg_get_field( $p_bug_id, 'bug_text_id' );
+
+	// db_param_push();
+	// $t_query = 'DELETE FROM {bug_text} WHERE id=' . db_param();
+	// db_query( $t_query, array( $t_bug_text_id ) );
+
+	# Delete the bug entry
+	db_param_push();
+	$t_query = 'DELETE FROM {document} WHERE id=' . db_param();
+	db_query( $t_query, array( $c_bug_id ) );
+
+	dwg_clear_cache_all( $p_bug_id );
+}
+
+/**
+ * Delete all documents associated with a project.
+ *
+ * @param int $p_project_id Int representing a project identifier.
+ *
+ * @access public
+ * @noinspection PhpDocMissingThrowsInspection
+ */
+function dwg_delete_all( $p_project_id ) {
+	$c_project_id = (int)$p_project_id;
+
+	db_param_push();
+	$t_query = 'SELECT id FROM {document} WHERE project_id=' . db_param();
+	$t_result = db_query( $t_query, array( $c_project_id ) );
+
+	while( $t_row = db_fetch_array( $t_result ) ) {
+		/** @noinspection PhpUnhandledExceptionInspection */
+		dwg_delete( $t_row['id'] );
+	}
+
+	# @todo should we check the return value of each dwg_delete() and
+	#    return false if any of them return false? Presumable dwg_delete()
+	#    will eventually trigger an error on failure so it won't matter...
+}
+
+/**
+ * Returns the extended record of the specified bug, including bug text fields.
+ *
+ * @todo include reporter name and handler name, the problem is that
+ *      handler can be 0, in this case no corresponding name will be
+ *      found.  Use equivalent of (+) in Oracle.
+ *
+ * @param int $p_bug_id Int representing bug identifier.
+ *
+ * @return array
+ * @throws ClientException
+ *
+ * @access public
+ */
+function dwg_get_extended_row( $p_bug_id ) {
+	$t_base = dwg_cache_row( $p_bug_id );
+	$t_text = dwg_text_cache_row( $p_bug_id );
+
+	# merge $t_text first so that the 'id' key has the bug id not the bug text id
+	return array_merge( $t_text, $t_base );
+}
+
+/**
+ * Returns the record of the specified bug.
+ *
+ * @param int $p_bug_id Int representing bug identifier.
+ *
+ * @return array
+ * @throws ClientException
+ *
+ * @access public
+ */
 function dwg_get_row( $p_bug_id ) {
 	return dwg_cache_row( $p_bug_id );
 }
 
-// /**
-//  * Returns an object representing the specified bug.
-//  *
-//  * @param int  $p_bug_id       Int representing bug identifier.
-//  * @param bool $p_get_extended Whether to include extended information (including bug_text).
-//  *
-//  * @return DwgData DwgData Object
-//  * @throws ClientException
-//  *
-//  * @access public
-//  */
-// function bug_get( $p_bug_id, $p_get_extended = false ) {
-// 	if( $p_get_extended ) {
-// 		$t_row = bug_get_extended_row( $p_bug_id );
-// 	} else {
-// 		$t_row = dwg_get_row( $p_bug_id );
-// 	}
+/**
+ * Returns an object representing the specified bug.
+ *
+ * @param int  $p_bug_id       Int representing bug identifier.
+ * @param bool $p_get_extended Whether to include extended information (including bug_text).
+ *
+ * @return DwgData DwgData Object
+ * @throws ClientException
+ *
+ * @access public
+ */
+function dwg_get( $p_bug_id, $p_get_extended = false ) {
+	if( $p_get_extended ) {
+		$t_row = dwg_get_extended_row( $p_bug_id );
+	} else {
+		$t_row = dwg_get_row( $p_bug_id );
+	}
 
-// 	$t_bug_data = new DwgData;
-// 	$t_bug_data->loadrow( $t_row );
-// 	return $t_bug_data;
-// }
+	$t_bug_data = new DwgData;
+	$t_bug_data->loadrow( $t_row );
+	return $t_bug_data;
+}
 
 /**
  * Convert mantis_bug_table row to DwgData object.
@@ -1534,19 +1633,19 @@ function dwg_row_to_object( array $p_row ) {
 	return $t_bug_data;
 }
 
-// /**
-//  * Return the specified field of the given bug.
-//  *
-//  * If the field does not exist, display a warning and return ''
-//  *
-//  * @param int    $p_bug_id     Int representing bug identifier.
-//  * @param string $p_field_name Field name to retrieve.
-//  *
-//  * @return string
-//  * @throws ClientException if the bug does not exist.
-//  *
-//  * @access public
-//  */
+/**
+ * Return the specified field of the given bug.
+ *
+ * If the field does not exist, display a warning and return ''
+ *
+ * @param int    $p_bug_id     Int representing bug identifier.
+ * @param string $p_field_name Field name to retrieve.
+ *
+ * @return string
+ * @throws ClientException if the bug does not exist.
+ *
+ * @access public
+ */
 function dwg_get_field( $p_bug_id, $p_field_name ) {
 	$t_row = dwg_get_row( $p_bug_id );
 
@@ -1559,699 +1658,699 @@ function dwg_get_field( $p_bug_id, $p_field_name ) {
 	}
 }
 
-// /**
-//  * Return the specified text field of the given bug.
-//  *
-//  * If the field does not exist, display a warning and return ''
-//  *
-//  * @param int    $p_bug_id     Int representing bug identifier.
-//  * @param string $p_field_name Field name to retrieve.
-//  *
-//  * @return string
-//  * @throws ClientException if the bug does not exist.
-//  *
-//  * @access public
-//  */
-// function bug_get_text_field( $p_bug_id, $p_field_name ) {
-// 	$t_row = bug_text_cache_row( $p_bug_id );
+/**
+ * Return the specified text field of the given bug.
+ *
+ * If the field does not exist, display a warning and return ''
+ *
+ * @param int    $p_bug_id     Int representing bug identifier.
+ * @param string $p_field_name Field name to retrieve.
+ *
+ * @return string
+ * @throws ClientException if the bug does not exist.
+ *
+ * @access public
+ */
+function dwg_get_text_field( $p_bug_id, $p_field_name ) {
+	$t_row = dwg_text_cache_row( $p_bug_id );
 
-// 	if( isset( $t_row[$p_field_name] ) ) {
-// 		return $t_row[$p_field_name];
-// 	} else {
-// 		error_parameters( $p_field_name );
-// 		trigger_error( ERROR_DB_FIELD_NOT_FOUND, WARNING );
-// 		return '';
-// 	}
-// }
+	if( isset( $t_row[$p_field_name] ) ) {
+		return $t_row[$p_field_name];
+	} else {
+		error_parameters( $p_field_name );
+		trigger_error( ERROR_DB_FIELD_NOT_FOUND, WARNING );
+		return '';
+	}
+}
 
-// /**
-//  * Return the bug's summary.
-//  *
-//  * This is a wrapper for the custom function.
-//  *
-//  * @param int $p_bug_id  Bug identifier.
-//  * @param int $p_context Representing SUMMARY_CAPTION, SUMMARY_FIELD.
-//  *
-//  * @return string
-//  *
-//  * @access public
-//  */
+/**
+ * Return the bug's summary.
+ *
+ * This is a wrapper for the custom function.
+ *
+ * @param int $p_bug_id  Bug identifier.
+ * @param int $p_context Representing SUMMARY_CAPTION, SUMMARY_FIELD.
+ *
+ * @return string
+ *
+ * @access public
+ */
 function dwg_format_summary( $p_bug_id, $p_context ) {
 	return helper_call_custom_function( 'format_dwg_summary', array( $p_bug_id, $p_context ) );
 }
 
-// /**
-//  * Return the timestamp for the most recent bugnote.
-//  *
-//  * @param int $p_bug_id Bug identifier.
-//  *
-//  * @return int|false Unix Timestamp of the newest bugnote timestamp,
-//  *                   false if there are no bugnotes.
-//  *
-//  * @access public
-//  */
-// function bug_get_newest_bugnote_timestamp( $p_bug_id ) {
-// 	$c_bug_id = (int)$p_bug_id;
-
-// 	db_param_push();
-// 	$t_query = 'SELECT last_modified FROM {bugnote} WHERE bug_id=' . db_param() . ' ORDER BY last_modified DESC';
-// 	$t_result = db_query( $t_query, array( $c_bug_id ), 1 );
-// 	$t_row = db_result( $t_result );
-
-// 	if( false === $t_row ) {
-// 		return false;
-// 	} else {
-// 		return $t_row;
-// 	}
-// }
-
-// /**
-//  * For a list of bug ids, returns an array of bugnote stats.
-//  *
-//  * If a bug has no visible bugnotes, returns "false" as the stats item for that bug id.
-//  *
-//  * @param array    $p_bugs_id List of bug identifiers.
-//  * @param int|null $p_user_id User for checking access levels. null defaults to current user
-//  *
-//  * @return array Array of bugnote stats
-//  *
-//  * @access public
-//  */
-// function bug_get_bugnote_stats_array( array $p_bugs_id, $p_user_id = null ) {
-// 	if( empty( $p_bugs_id ) ) {
-// 		return array();
-// 	}
-
-// 	$t_id_array = array();
-// 	foreach( $p_bugs_id as $t_id ) {
-// 		$t_id_array[$t_id] = (int)$t_id;
-// 	}
-// 	if( db_is_mssql() ) {
-// 		# MSSQL is limited to 2100 parameters per query, see #24393
-// 		$t_chunks = array_chunk( $t_id_array, 2100, true );
-// 	} else {
-// 		$t_chunks = array( $t_id_array );
-// 	}
-
-// 	$t_user_id = $p_user_id ?? auth_get_current_user_id();
-
-// 	# We need to check for each bugnote if user has permissions to view in respective project.
-// 	# bugnotes are grouped by project_id and bug_id to save calls to config_get
-// 	$t_sql = 'SELECT n.id, n.bug_id, n.reporter_id, n.view_state, n.last_modified, n.date_submitted, b.project_id'
-// 		. ' FROM {bugnote} n JOIN {bug} b ON (n.bug_id = b.id)'
-// 		. ' WHERE %s'
-// 		. ' ORDER BY b.project_id, n.bug_id, n.last_modified';
-// 	$t_query = new DbQuery();
-// 	$t_query->sql( sprintf( $t_sql, $t_query->sql_in( 'n.bug_id', 'bug_ids' ) ) );
-
-// 	$t_counter = 0;
-// 	$t_stats = array();
-// 	foreach( $t_chunks as $t_chunk_ids ) {
-// 		$t_current_project_id = null;
-// 		$t_current_bug_id = null;
-
-// 		$t_query->bind( 'bug_ids', $t_chunk_ids );
-// 		$t_query->execute();
-// 		while( $t_query_row = $t_query->fetch() ) {
-// 			/**
-// 			 * Variables defined in the loop's first iteration
-// 			 * @var bool $t_private_bugnote_visible
-// 			 * @var int  $t_note_count
-// 			 * @var int  $t_last_submit_date
-// 			 */
-// 			$c_bug_id = (int)$t_query_row['bug_id'];
-// 			if( 0 == $t_counter || $t_current_project_id !== $t_query_row['project_id'] ) {
-// 				# evaluating a new project from the rowset
-// 				$t_current_project_id = $t_query_row['project_id'];
-// 				$t_user_access_level = access_get_project_level( $t_query_row['project_id'], $t_user_id );
-// 				$t_private_bugnote_visible = access_compare_level(
-// 					$t_user_access_level,
-// 					config_get( 'private_bugnote_threshold', null, $t_user_id, $t_query_row['project_id'] )
-// 				);
-// 			}
-// 			if( 0 == $t_counter || $t_current_bug_id !== $c_bug_id ) {
-// 				# evaluating a new bug from the rowset
-// 				$t_current_bug_id = $c_bug_id;
-// 				$t_note_count = 0;
-// 				$t_last_submit_date = 0;
-// 			}
-// 			$t_note_visible = $t_private_bugnote_visible
-// 				|| $t_query_row['reporter_id'] == $t_user_id
-// 				|| ( VS_PUBLIC == $t_query_row['view_state'] );
-// 			if( $t_note_visible ) {
-// 				# only count the bugnote if user has access
-// 				$t_stats[$c_bug_id]['bug_id'] = $c_bug_id;
-// 				$t_stats[$c_bug_id]['last_modified'] = $t_query_row['last_modified'];
-// 				$t_stats[$c_bug_id]['count'] = ++$t_note_count;
-// 				$t_stats[$c_bug_id]['last_modified_bugnote'] = $t_query_row['id'];
-// 				if( $t_query_row['date_submitted'] > $t_last_submit_date ) {
-// 					$t_last_submit_date = $t_query_row['date_submitted'];
-// 					$t_stats[$c_bug_id]['last_submitted_bugnote'] = $t_query_row['id'];
-// 				}
-// 				if( isset( $t_id_array[$c_bug_id] ) ) {
-// 					unset( $t_id_array[$c_bug_id] );
-// 				}
-// 			}
-// 			$t_counter++;
-// 		}
-// 	}
-
-// 	# The remaining bug ids, are those without visible notes. Save false as cached value
-// 	foreach( $t_id_array as $t_id ) {
-// 		$t_stats[$t_id] = false;
-// 	}
-// 	return $t_stats;
-// }
-
-// /**
-//  * Return the bug's bugnote statistics.
-//  *
-//  * - Timestamp for the bug's most recent bugnote
-//  * - Total bugnote count.
-//  *
-//  * @param int $p_bug_id Bug identifier.
-//  *
-//  * @return array|false Bugnote stats, false if no bugnotes
-//  *
-//  * @access public
-//  */
-// function bug_get_bugnote_stats( $p_bug_id ) {
-// 	global $g_cache_bug;
-// 	$c_bug_id = (int)$p_bug_id;
-
-// 	if( array_key_exists( '_stats', $g_cache_bug[$c_bug_id] ) ) {
-// 		return $g_cache_bug[$c_bug_id]['_stats'];
-// 	}
-// 	else {
-// 		$t_stats = bug_get_bugnote_stats_array( array( $p_bug_id ) );
-// 		return $t_stats[$p_bug_id];
-// 	}
-// }
-
-// /**
-//  * Get array of attachments associated with the specified bug id.
-//  *
-//  * The array will be sorted in terms of date added (ASC).
-//  * The array will include the following fields:
-//  * id, title, diskfile, filename, filesize, file_type, date_added, user_id.
-//  *
-//  * @param int $p_bug_id Bug identifier.
-//  *
-//  * @return array array of results or empty array
-//  *
-//  * @access public
-//  */
-// function bug_get_attachments( $p_bug_id ) {
-// 	$p_bug_id = (int)$p_bug_id;
-
-// 	global $g_cache_bug_attachments;
-// 	if( isset( $g_cache_bug_attachments[$p_bug_id] ) ) {
-// 		return $g_cache_bug_attachments[$p_bug_id];
-// 	}
-
-// 	db_param_push();
-
-// 	$t_query = 'SELECT id, title, diskfile, filename, filesize, file_type, date_added, user_id, bugnote_id
-// 		                FROM {bug_file}
-// 		                WHERE bug_id=' . db_param() . '
-// 		                ORDER BY date_added';
-// 	$t_db_result = db_query( $t_query, array( $p_bug_id ) );
-
-// 	$t_result = array();
-
-// 	while( $t_row = db_fetch_array( $t_db_result ) ) {
-// 		$t_result[] = $t_row;
-// 	}
-
-// 	$g_cache_bug_attachments[$p_bug_id] = $t_result;
-
-// 	return $t_result;
-// }
-
-// /**
-//  * Set the value of a bug field.
-//  *
-//  * @param int             $p_bug_id     Bug identifier.
-//  * @param string          $p_field_name Pre-defined field name.
-//  * @param bool|int|string $p_value      Value to set.
-//  *
-//  * @return true
-//  * @throws ClientException if the bug does not exist.
-//  *
-//  * @access public
-//  */
-// function bug_set_field( $p_bug_id, $p_field_name, $p_value ) {
-// 	$c_bug_id = (int)$p_bug_id;
-// 	$c_value = null;
-
-// 	switch( $p_field_name ) {
-// 		# integer
-// 		case 'project_id':
-// 		case 'reporter_id':
-// 		case 'handler_id':
-// 		case 'duplicate_id':
-// 		case 'priority':
-// 		case 'severity':
-// 		case 'reproducibility':
-// 		case 'status':
-// 		case 'resolution':
-// 		case 'projection':
-// 		case 'category_id':
-// 		case 'eta':
-// 		case 'view_state':
-// 		case 'profile_id':
-// 		case 'sponsorship_total':
-// 			$c_value = (int)$p_value;
-// 			break;
-
-// 		# boolean
-// 		case 'sticky':
-
-// 		# string
-// 		case 'os':
-// 		case 'os_build':
-// 		case 'platform':
-// 		case 'version':
-// 		case 'fixed_in_version':
-// 		case 'target_version':
-// 		case 'build':
-// 		case 'summary':
-// 			$c_value = $p_value;
-// 			break;
-
-// 		# dates
-// 		case 'last_updated':
-// 		case 'date_submitted':
-// 		case 'due_date':
-// 			if( !is_numeric( $p_value ) ) {
-// 				trigger_error( ERROR_GENERIC, ERROR );
-// 			}
-// 			$c_value = $p_value;
-// 			break;
-
-// 		default:
-// 			trigger_error( ERROR_DB_FIELD_NOT_FOUND, WARNING );
-// 			break;
-// 	}
-
-// 	$t_current_value = bug_get_field( $p_bug_id, $p_field_name );
-
-// 	# return if status is already set
-// 	if( $c_value == $t_current_value ) {
-// 		return true;
-// 	}
-
-// 	# Update fields
-// 	db_param_push();
-// 	$t_query = 'UPDATE {bug} SET ' . $p_field_name . '=' . db_param() . ' WHERE id=' . db_param();
-// 	db_query( $t_query, array( $c_value, $c_bug_id ) );
-
-// 	# updated the last_updated date
-// 	if( $p_field_name != 'last_updated' ) {
-// 		bug_update_date( $p_bug_id );
-// 	}
-
-// 	# log changes except for duplicate_id which is obsolete and should be removed in
-// 	# MantisBT 1.3.
-// 	switch( $p_field_name ) {
-// 		case 'duplicate_id':
-// 			break;
-
-// 		case 'category_id':
-// 			history_log_event_direct( $p_bug_id, 'category', category_full_name( $t_current_value, false ), category_full_name( $c_value, false ) );
-// 			break;
-
-// 		default:
-// 			history_log_event_direct( $p_bug_id, $p_field_name, $t_current_value, $c_value );
-// 	}
-
-// 	bug_clear_cache( $p_bug_id );
-
-// 	return true;
-// }
-
-// /**
-//  * Assign the bug to the given user.
-//  *
-//  * @param int    $p_bug_id          A bug identifier.
-//  * @param int    $p_user_id         A user identifier.
-//  * @param string $p_bugnote_text    The bugnote text.
-//  * @param bool   $p_bugnote_private Indicate whether bugnote is private.
-//  *
-//  * @return bool
-//  * @throws ClientException if the bug does not exist.
-//  *
-//  * @access public
-//  */
-// function bug_assign( $p_bug_id, $p_user_id, $p_bugnote_text = '', $p_bugnote_private = false ) {
-// 	if( $p_user_id != NO_USER ) {
-// 		$t_bug_sponsored = config_get( 'enable_sponsorship' )
-// 			&& sponsorship_get_amount( sponsorship_get_all_ids( $p_bug_id ) ) > 0;
-// 		# The new handler is checked at project level
-// 		$t_project_id = bug_get_field( $p_bug_id, 'project_id' );
-// 		if( !access_has_project_level( config_get( 'handle_bug_threshold' ), $t_project_id, $p_user_id ) ) {
-// 			trigger_error( ERROR_HANDLER_ACCESS_TOO_LOW, ERROR );
-// 		}
-// 		if( $t_bug_sponsored && !access_has_project_level( config_get( 'handle_sponsored_bugs_threshold' ), $t_project_id, $p_user_id ) ) {
-// 			trigger_error( ERROR_SPONSORSHIP_HANDLER_ACCESS_LEVEL_TOO_LOW, ERROR );
-// 		}
-// 	}
-
-// 	# extract current information into history variables
-// 	$h_status = bug_get_field( $p_bug_id, 'status' );
-// 	$h_handler_id = bug_get_field( $p_bug_id, 'handler_id' );
-
-// 	$t_ass_val = bug_get_status_for_assign( $h_handler_id, $p_user_id, $h_status );
-
-// 	if( ( $t_ass_val != $h_status ) || ( $p_user_id != $h_handler_id ) ) {
-
-// 		# get user id
-// 		db_param_push();
-// 		$t_query = 'UPDATE {bug}
-// 					  SET handler_id=' . db_param() . ', status=' . db_param() . '
-// 					  WHERE id=' . db_param();
-// 		db_query( $t_query, array( $p_user_id, $t_ass_val, $p_bug_id ) );
-
-// 		# log changes
-// 		history_log_event_direct( $p_bug_id, 'status', $h_status, $t_ass_val );
-// 		history_log_event_direct( $p_bug_id, 'handler_id', $h_handler_id, $p_user_id );
-
-// 		# Add bugnote if supplied ignore false return
-// 		if( !is_blank( $p_bugnote_text ) ) {
-// 			$t_bugnote_id = bugnote_add( $p_bug_id, $p_bugnote_text, 0, $p_bugnote_private, 0, '', null, false );
-// 			bugnote_process_mentions( $p_bug_id, $t_bugnote_id, $p_bugnote_text );
-// 		}
-
-// 		# updated the last_updated date
-// 		bug_update_date( $p_bug_id );
-
-// 		bug_clear_cache( $p_bug_id );
-
-// 		# Send email for change of handler
-// 		email_owner_changed( $p_bug_id, $h_handler_id, $p_user_id );
-// 	}
-
-// 	return true;
-// }
-
-// /**
-//  * Close the given bug.
-//  *
-//  * @param int     $p_bug_id          A bug identifier.
-//  * @param string  $p_bugnote_text    The bugnote text.
-//  * @param bool    $p_bugnote_private Whether the bugnote is private.
-//  * @param string  $p_time_tracking   Time tracking value.
-//  *
-//  * @return true
-//  * @throws ClientException if the bug does not exist.
-//  *
-//  * @access public
-//  */
-// function bug_close( $p_bug_id, $p_bugnote_text = '', $p_bugnote_private = false, $p_time_tracking = '0:00' ) {
-// 	$p_bugnote_text = trim( $p_bugnote_text );
-
-// 	# Add bugnote if supplied ignore a false return
-// 	# Moved bugnote_add before bug_set_field calls in case time_tracking_no_note is off.
-// 	# Error condition stopped execution but status had already been changed
-// 	if( !is_blank( $p_bugnote_text ) || $p_time_tracking != '0:00' ) {
-// 		$t_bugnote_id = bugnote_add( $p_bug_id, $p_bugnote_text, $p_time_tracking, $p_bugnote_private, 0, '', null, false );
-// 		bugnote_process_mentions( $p_bug_id, $t_bugnote_id, $p_bugnote_text );
-// 	}
-
-// 	bug_set_field( $p_bug_id, 'status', config_get( 'bug_closed_status_threshold' ) );
-
-// 	email_close( $p_bug_id );
-// 	email_relationship_child_closed( $p_bug_id );
-
-// 	return true;
-// }
-
-// /**
-//  * Resolve the given bug.
-//  *
-//  * @param int    $p_bug_id           A bug identifier.
-//  * @param int    $p_resolution       Resolution status.
-//  * @param string $p_fixed_in_version Fixed in version.
-//  * @param string $p_bugnote_text     The bugnote text.
-//  * @param int    $p_duplicate_id     A duplicate identifier.
-//  * @param int    $p_handler_id       A handler identifier.
-//  * @param bool   $p_bugnote_private  Whether this is a private bugnote.
-//  * @param string $p_time_tracking    Time tracking value.
-//  *
-//  * @return bool
-//  * @throws ClientException if the bug does not exist.
-//  *
-//  * @access public
-//  */
-// function bug_resolve( $p_bug_id, $p_resolution, $p_fixed_in_version = '', $p_bugnote_text = '', $p_duplicate_id = null, $p_handler_id = null, $p_bugnote_private = false, $p_time_tracking = '0:00' ) {
-// 	$c_resolution = (int)$p_resolution;
-// 	$p_bugnote_text = trim( $p_bugnote_text );
-
-// 	# Add bugnote if supplied
-// 	# Moved bugnote_add before bug_set_field calls in case time_tracking_no_note is off.
-// 	# Error condition stopped execution but status had already been changed
-// 	if( !is_blank( $p_bugnote_text ) || $p_time_tracking != '0:00' ) {
-// 		$t_bugnote_id = bugnote_add( $p_bug_id, $p_bugnote_text, $p_time_tracking, $p_bugnote_private, 0, '', null, false );
-// 		bugnote_process_mentions( $p_bug_id, $t_bugnote_id, $p_bugnote_text );
-// 	}
-
-// 	$t_duplicate = !is_blank( $p_duplicate_id ) && ( $p_duplicate_id != 0 );
-// 	if( $t_duplicate ) {
-// 		if( $p_bug_id == $p_duplicate_id ) {
-// 			trigger_error( ERROR_BUG_DUPLICATE_SELF, ERROR );
-
-// 			# never returns
-// 		}
-
-// 		# the related bug exists...
-// 		bug_ensure_exists( $p_duplicate_id );
-
-// 		relationship_upsert( $p_bug_id, $p_duplicate_id, BUG_DUPLICATE, /* email_for_source */ false );
-
-// 		# Copy list of users monitoring the duplicate bug to the original bug
-// 		$t_old_reporter_id = bug_get_field( $p_bug_id, 'reporter_id' );
-// 		$t_old_handler_id = bug_get_field( $p_bug_id, 'handler_id' );
-// 		if( user_exists( $t_old_reporter_id ) ) {
-// 			bug_monitor( $p_duplicate_id, $t_old_reporter_id );
-// 		}
-// 		if( user_exists( $t_old_handler_id ) ) {
-// 			bug_monitor( $p_duplicate_id, $t_old_handler_id );
-// 		}
-// 		bug_monitor_copy( $p_bug_id, $p_duplicate_id );
-
-// 		bug_set_field( $p_bug_id, 'duplicate_id', (int)$p_duplicate_id );
-// 	}
-
-// 	bug_set_field( $p_bug_id, 'status', config_get( 'bug_resolved_status_threshold' ) );
-// 	bug_set_field( $p_bug_id, 'fixed_in_version', $p_fixed_in_version );
-// 	bug_set_field( $p_bug_id, 'resolution', $c_resolution );
-
-// 	# only set handler if specified explicitly or if bug was not assigned to a handler
-// 	if( null == $p_handler_id ) {
-// 		if( bug_get_field( $p_bug_id, 'handler_id' ) == 0 ) {
-// 			$p_handler_id = auth_get_current_user_id();
-// 			bug_set_field( $p_bug_id, 'handler_id', $p_handler_id );
-// 		}
-// 	} else {
-// 		bug_set_field( $p_bug_id, 'handler_id', $p_handler_id );
-// 	}
-
-// 	email_resolved( $p_bug_id );
-// 	email_relationship_child_resolved( $p_bug_id );
-
-// 	return true;
-// }
-
-// /**
-//  * Reopen the given bug.
-//  *
-//  * @param int     $p_bug_id          A bug identifier.
-//  * @param string  $p_bugnote_text    The bugnote text.
-//  * @param string  $p_time_tracking   Time tracking value.
-//  * @param bool    $p_bugnote_private Whether this is a private bugnote.
-//  *
-//  * @return true
-//  * @throws ClientException if the bug does not exist.
-//  *
-//  * @access public
-//  */
-// function bug_reopen( $p_bug_id, $p_bugnote_text = '', $p_time_tracking = '0:00', $p_bugnote_private = false ) {
-// 	$p_bugnote_text = trim( $p_bugnote_text );
-
-// 	# Add bugnote if supplied
-// 	# Moved bugnote_add before bug_set_field calls in case time_tracking_no_note is off.
-// 	# Error condition stopped execution but status had already been changed
-// 	if( !is_blank( $p_bugnote_text ) || $p_time_tracking != '0:00' ) {
-// 		$t_bugnote_id = bugnote_add( $p_bug_id, $p_bugnote_text, $p_time_tracking, $p_bugnote_private, 0, '', null, false );
-// 		bugnote_process_mentions( $p_bug_id, $t_bugnote_id, $p_bugnote_text );
-// 	}
-
-// 	bug_set_field( $p_bug_id, 'status', config_get( 'bug_reopen_status' ) );
-// 	bug_set_field( $p_bug_id, 'resolution', config_get( 'bug_reopen_resolution' ) );
-
-// 	email_bug_reopened( $p_bug_id );
-
-// 	return true;
-// }
-
-// /**
-//  * Updates the last_updated field.
-//  *
-//  * @param int $p_bug_id Bug identifier.
-//  *
-//  * @return true
-//  *
-//  * @access public
-//  */
-// function bug_update_date( $p_bug_id ) {
-// 	db_param_push();
-// 	$t_query = 'UPDATE {bug} SET last_updated=' . db_param() . ' WHERE id=' . db_param();
-// 	db_query( $t_query, array( db_now(), $p_bug_id ) );
-
-// 	bug_clear_cache( $p_bug_id );
-
-// 	return true;
-// }
-
-// /**
-//  * Enable monitoring of this bug for the user.
-//  *
-//  * @param int $p_bug_id  Bug identifier.
-//  * @param int $p_user_id User identifier.
-//  *
-//  * @return bool true if successful, false if unsuccessful
-//  *
-//  * @access public
-//  */
-// function bug_monitor( $p_bug_id, $p_user_id ) {
-// 	$c_bug_id = (int)$p_bug_id;
-// 	$c_user_id = (int)$p_user_id;
-
-// 	# Make sure we aren't already monitoring this bug
-// 	if( user_is_monitoring_bug( $c_user_id, $c_bug_id ) ) {
-// 		return true;
-// 	}
-
-// 	# Don't let the anonymous user monitor bugs
-// 	if( user_is_anonymous( $c_user_id ) ) {
-// 		return false;
-// 	}
-
-// 	# Insert monitoring record
-// 	db_param_push();
-// 	$t_query = 'INSERT INTO {bug_monitor} ( user_id, bug_id ) VALUES (' . db_param() . ',' . db_param() . ')';
-// 	db_query( $t_query, array( $c_user_id, $c_bug_id ) );
-
-// 	# log new monitoring action
-// 	history_log_event_special( $c_bug_id, BUG_MONITOR, $c_user_id );
-
-// 	# updated the last_updated date
-// 	bug_update_date( $p_bug_id );
-
-// 	email_monitor_added( $p_bug_id, $p_user_id );
-
-// 	return true;
-// }
-
-// /**
-//  * Returns the list of users monitoring the specified bug.
-//  *
-//  * @param int $p_bug_id Bug identifier.
-//  *
-//  * @return array
-//  */
-// function bug_get_monitors( $p_bug_id ) {
-// 	if( ! access_has_bug_level( config_get( 'show_monitor_list_threshold' ), $p_bug_id ) ) {
-// 		return array();
-// 	}
-
-// 	# get the bugnote data
-// 	db_param_push();
-// 	$t_query = 'SELECT user_id, enabled
-// 			FROM {bug_monitor} m, {user} u
-// 			WHERE m.bug_id=' . db_param() . ' AND m.user_id = u.id
-// 			ORDER BY u.realname, u.username';
-// 	$t_result = db_query( $t_query, array( $p_bug_id ) );
-
-// 	$t_users = array();
-// 	while( $t_row = db_fetch_array( $t_result ) ) {
-// 		$t_users[] = $t_row['user_id'];
-// 	}
-
-// 	user_cache_array_rows( $t_users );
-
-// 	return $t_users;
-// }
-
-// /**
-//  * Copy list of users monitoring a bug to the monitor list of a second bug.
-//  *
-//  * @param int $p_source_bug_id Source bug identifier.
-//  * @param int $p_dest_bug_id   Destination bug identifier.
-//  *
-//  * @access public
-//  */
-// function bug_monitor_copy( $p_source_bug_id, $p_dest_bug_id ) {
-// 	$c_source_bug_id = (int)$p_source_bug_id;
-// 	$c_dest_bug_id = (int)$p_dest_bug_id;
-
-// 	db_param_push();
-// 	$t_query = 'SELECT user_id FROM {bug_monitor} WHERE bug_id = ' . db_param();
-// 	$t_result = db_query( $t_query, array( $c_source_bug_id ) );
-
-// 	while( $t_bug_monitor = db_fetch_array( $t_result ) ) {
-// 		if( user_exists( $t_bug_monitor['user_id'] ) &&
-// 			!user_is_monitoring_bug( $t_bug_monitor['user_id'], $c_dest_bug_id ) ) {
-// 			db_param_push();
-// 			$t_query = 'INSERT INTO {bug_monitor} ( user_id, bug_id )
-// 				VALUES ( ' . db_param() . ', ' . db_param() . ' )';
-// 			db_query( $t_query, array( $t_bug_monitor['user_id'], $c_dest_bug_id ) );
-// 			history_log_event_special( $c_dest_bug_id, BUG_MONITOR, $t_bug_monitor['user_id'] );
-// 		}
-// 	}
-// }
-
-// /**
-//  * Disable monitoring of this bug for the user.
-//  *
-//  * @param int      $p_bug_id  Bug identifier.
-//  * @param int|null $p_user_id User identifier, null for all users.
-//  *
-//  * @return true
-//  *
-//  * @access public
-//  */
-// function bug_unmonitor( $p_bug_id, $p_user_id ) {
-// 	# Delete monitoring record
-// 	db_param_push();
-// 	$t_query = 'DELETE FROM {bug_monitor} WHERE bug_id = ' . db_param();
-// 	$t_db_query_params[] = $p_bug_id;
-
-// 	if( $p_user_id !== null ) {
-// 		$t_query .= ' AND user_id = ' . db_param();
-// 		$t_db_query_params[] = $p_user_id;
-// 	}
-
-// 	db_query( $t_query, $t_db_query_params );
-
-// 	# log new un-monitor action
-// 	history_log_event_special( $p_bug_id, BUG_UNMONITOR, (int)$p_user_id );
-
-// 	# updated the last_updated date
-// 	bug_update_date( $p_bug_id );
-
-// 	return true;
-// }
-
-// /**
-//  * Pads the bug id with the appropriate number of zeros.
-//  *
-//  * @param int $p_bug_id Bug identifier.
-//  *
-//  * @return string
-//  *
-//  * @access public
-//  */
+/**
+ * Return the timestamp for the most recent bugnote.
+ *
+ * @param int $p_bug_id Bug identifier.
+ *
+ * @return int|false Unix Timestamp of the newest bugnote timestamp,
+ *                   false if there are no bugnotes.
+ *
+ * @access public
+ */
+function dwg_get_newest_bugnote_timestamp( $p_bug_id ) {
+	$c_bug_id = (int)$p_bug_id;
+
+	db_param_push();
+	$t_query = 'SELECT last_modified FROM {bugnote} WHERE bug_id=' . db_param() . ' ORDER BY last_modified DESC';
+	$t_result = db_query( $t_query, array( $c_bug_id ), 1 );
+	$t_row = db_result( $t_result );
+
+	if( false === $t_row ) {
+		return false;
+	} else {
+		return $t_row;
+	}
+}
+
+/**
+ * For a list of bug ids, returns an array of bugnote stats.
+ *
+ * If a bug has no visible bugnotes, returns "false" as the stats item for that bug id.
+ *
+ * @param array    $p_bugs_id List of bug identifiers.
+ * @param int|null $p_user_id User for checking access levels. null defaults to current user
+ *
+ * @return array Array of bugnote stats
+ *
+ * @access public
+ */
+function dwg_get_bugnote_stats_array( array $p_bugs_id, $p_user_id = null ) {
+	if( empty( $p_bugs_id ) ) {
+		return array();
+	}
+
+	$t_id_array = array();
+	foreach( $p_bugs_id as $t_id ) {
+		$t_id_array[$t_id] = (int)$t_id;
+	}
+	if( db_is_mssql() ) {
+		# MSSQL is limited to 2100 parameters per query, see #24393
+		$t_chunks = array_chunk( $t_id_array, 2100, true );
+	} else {
+		$t_chunks = array( $t_id_array );
+	}
+
+	$t_user_id = $p_user_id ?? auth_get_current_user_id();
+
+	# We need to check for each bugnote if user has permissions to view in respective project.
+	# bugnotes are grouped by project_id and bug_id to save calls to config_get
+	$t_sql = 'SELECT n.id, n.bug_id, n.reporter_id, n.view_state, n.last_modified, n.date_submitted, b.project_id'
+		. ' FROM {bugnote} n JOIN {document} b ON (n.bug_id = b.id)'
+		. ' WHERE %s'
+		. ' ORDER BY b.project_id, n.bug_id, n.last_modified';
+	$t_query = new DbQuery();
+	$t_query->sql( sprintf( $t_sql, $t_query->sql_in( 'n.bug_id', 'bug_ids' ) ) );
+
+	$t_counter = 0;
+	$t_stats = array();
+	foreach( $t_chunks as $t_chunk_ids ) {
+		$t_current_project_id = null;
+		$t_current_bug_id = null;
+
+		$t_query->bind( 'bug_ids', $t_chunk_ids );
+		$t_query->execute();
+		while( $t_query_row = $t_query->fetch() ) {
+			/**
+			 * Variables defined in the loop's first iteration
+			 * @var bool $t_private_bugnote_visible
+			 * @var int  $t_note_count
+			 * @var int  $t_last_submit_date
+			 */
+			$c_bug_id = (int)$t_query_row['bug_id'];
+			if( 0 == $t_counter || $t_current_project_id !== $t_query_row['project_id'] ) {
+				# evaluating a new project from the rowset
+				$t_current_project_id = $t_query_row['project_id'];
+				$t_user_access_level = access_get_project_level( $t_query_row['project_id'], $t_user_id );
+				$t_private_bugnote_visible = access_compare_level(
+					$t_user_access_level,
+					config_get( 'private_bugnote_threshold', null, $t_user_id, $t_query_row['project_id'] )
+				);
+			}
+			if( 0 == $t_counter || $t_current_bug_id !== $c_bug_id ) {
+				# evaluating a new bug from the rowset
+				$t_current_bug_id = $c_bug_id;
+				$t_note_count = 0;
+				$t_last_submit_date = 0;
+			}
+			$t_note_visible = $t_private_bugnote_visible
+				|| $t_query_row['reporter_id'] == $t_user_id
+				|| ( VS_PUBLIC == $t_query_row['view_state'] );
+			if( $t_note_visible ) {
+				# only count the bugnote if user has access
+				$t_stats[$c_bug_id]['bug_id'] = $c_bug_id;
+				$t_stats[$c_bug_id]['last_modified'] = $t_query_row['last_modified'];
+				$t_stats[$c_bug_id]['count'] = ++$t_note_count;
+				$t_stats[$c_bug_id]['last_modified_bugnote'] = $t_query_row['id'];
+				if( $t_query_row['date_submitted'] > $t_last_submit_date ) {
+					$t_last_submit_date = $t_query_row['date_submitted'];
+					$t_stats[$c_bug_id]['last_submitted_bugnote'] = $t_query_row['id'];
+				}
+				if( isset( $t_id_array[$c_bug_id] ) ) {
+					unset( $t_id_array[$c_bug_id] );
+				}
+			}
+			$t_counter++;
+		}
+	}
+
+	# The remaining bug ids, are those without visible notes. Save false as cached value
+	foreach( $t_id_array as $t_id ) {
+		$t_stats[$t_id] = false;
+	}
+	return $t_stats;
+}
+
+/**
+ * Return the bug's bugnote statistics.
+ *
+ * - Timestamp for the bug's most recent bugnote
+ * - Total bugnote count.
+ *
+ * @param int $p_bug_id Bug identifier.
+ *
+ * @return array|false Bugnote stats, false if no bugnotes
+ *
+ * @access public
+ */
+function dwg_get_bugnote_stats( $p_bug_id ) {
+	global $g_cache_bug;
+	$c_bug_id = (int)$p_bug_id;
+
+	if( array_key_exists( '_stats', $g_cache_bug[$c_bug_id] ) ) {
+		return $g_cache_bug[$c_bug_id]['_stats'];
+	}
+	else {
+		$t_stats = dwg_get_bugnote_stats_array( array( $p_bug_id ) );
+		return $t_stats[$p_bug_id];
+	}
+}
+
+/**
+ * Get array of attachments associated with the specified bug id.
+ *
+ * The array will be sorted in terms of date added (ASC).
+ * The array will include the following fields:
+ * id, title, diskfile, filename, filesize, file_type, date_added, user_id.
+ *
+ * @param int $p_bug_id Bug identifier.
+ *
+ * @return array array of results or empty array
+ *
+ * @access public
+ */
+function dwg_get_attachments( $p_bug_id ) {
+	$p_bug_id = (int)$p_bug_id;
+
+	global $g_cache_bug_attachments;
+	if( isset( $g_cache_bug_attachments[$p_bug_id] ) ) {
+		return $g_cache_bug_attachments[$p_bug_id];
+	}
+
+	db_param_push();
+
+	$t_query = 'SELECT id, title, diskfile, filename, filesize, file_type, date_added, user_id, bugnote_id
+		                FROM {bug_file}
+		                WHERE bug_id=' . db_param() . '
+		                ORDER BY date_added';
+	$t_db_result = db_query( $t_query, array( $p_bug_id ) );
+
+	$t_result = array();
+
+	while( $t_row = db_fetch_array( $t_db_result ) ) {
+		$t_result[] = $t_row;
+	}
+
+	$g_cache_bug_attachments[$p_bug_id] = $t_result;
+
+	return $t_result;
+}
+
+/**
+ * Set the value of a bug field.
+ *
+ * @param int             $p_bug_id     Bug identifier.
+ * @param string          $p_field_name Pre-defined field name.
+ * @param bool|int|string $p_value      Value to set.
+ *
+ * @return true
+ * @throws ClientException if the bug does not exist.
+ *
+ * @access public
+ */
+function dwg_set_field( $p_bug_id, $p_field_name, $p_value ) {
+	$c_bug_id = (int)$p_bug_id;
+	$c_value = null;
+
+	switch( $p_field_name ) {
+		# integer
+		case 'project_id':
+		case 'reporter_id':
+		case 'handler_id':
+		case 'duplicate_id':
+		case 'priority':
+		case 'severity':
+		case 'reproducibility':
+		case 'status':
+		case 'resolution':
+		case 'projection':
+		case 'category_id':
+		case 'eta':
+		case 'view_state':
+		case 'profile_id':
+		case 'sponsorship_total':
+			$c_value = (int)$p_value;
+			break;
+
+		# boolean
+		case 'sticky':
+
+		# string
+		case 'os':
+		case 'os_build':
+		case 'platform':
+		case 'version':
+		case 'fixed_in_version':
+		case 'target_version':
+		case 'build':
+		case 'summary':
+			$c_value = $p_value;
+			break;
+
+		# dates
+		case 'last_updated':
+		case 'date_submitted':
+		case 'due_date':
+			if( !is_numeric( $p_value ) ) {
+				trigger_error( ERROR_GENERIC, ERROR );
+			}
+			$c_value = $p_value;
+			break;
+
+		default:
+			trigger_error( ERROR_DB_FIELD_NOT_FOUND, WARNING );
+			break;
+	}
+
+	$t_current_value = dwg_get_field( $p_bug_id, $p_field_name );
+
+	# return if status is already set
+	if( $c_value == $t_current_value ) {
+		return true;
+	}
+
+	# Update fields
+	db_param_push();
+	$t_query = 'UPDATE {document} SET ' . $p_field_name . '=' . db_param() . ' WHERE id=' . db_param();
+	db_query( $t_query, array( $c_value, $c_bug_id ) );
+
+	# updated the last_updated date
+	if( $p_field_name != 'last_updated' ) {
+		dwg_update_date( $p_bug_id );
+	}
+
+	# log changes except for duplicate_id which is obsolete and should be removed in
+	# MantisBT 1.3.
+	switch( $p_field_name ) {
+		case 'duplicate_id':
+			break;
+
+		case 'category_id':
+			history_log_event_direct( $p_bug_id, 'category', category_full_name( $t_current_value, false ), category_full_name( $c_value, false ) );
+			break;
+
+		default:
+			history_log_event_direct( $p_bug_id, $p_field_name, $t_current_value, $c_value );
+	}
+
+	dwg_clear_cache( $p_bug_id );
+
+	return true;
+}
+
+/**
+ * Assign the bug to the given user.
+ *
+ * @param int    $p_bug_id          A bug identifier.
+ * @param int    $p_user_id         A user identifier.
+ * @param string $p_bugnote_text    The bugnote text.
+ * @param bool   $p_bugnote_private Indicate whether bugnote is private.
+ *
+ * @return bool
+ * @throws ClientException if the bug does not exist.
+ *
+ * @access public
+ */
+function dwg_assign( $p_bug_id, $p_user_id, $p_bugnote_text = '', $p_bugnote_private = false ) {
+	if( $p_user_id != NO_USER ) {
+		$t_bug_sponsored = config_get( 'enable_sponsorship' )
+			&& sponsorship_get_amount( sponsorship_get_all_ids( $p_bug_id ) ) > 0;
+		# The new handler is checked at project level
+		$t_project_id = dwg_get_field( $p_bug_id, 'project_id' );
+		if( !access_has_project_level( config_get( 'handle_bug_threshold' ), $t_project_id, $p_user_id ) ) {
+			trigger_error( ERROR_HANDLER_ACCESS_TOO_LOW, ERROR );
+		}
+		if( $t_bug_sponsored && !access_has_project_level( config_get( 'handle_sponsored_bugs_threshold' ), $t_project_id, $p_user_id ) ) {
+			trigger_error( ERROR_SPONSORSHIP_HANDLER_ACCESS_LEVEL_TOO_LOW, ERROR );
+		}
+	}
+
+	# extract current information into history variables
+	$h_status = dwg_get_field( $p_bug_id, 'status' );
+	$h_handler_id = dwg_get_field( $p_bug_id, 'handler_id' );
+
+	$t_ass_val = dwg_get_status_for_assign( $h_handler_id, $p_user_id, $h_status );
+
+	if( ( $t_ass_val != $h_status ) || ( $p_user_id != $h_handler_id ) ) {
+
+		# get user id
+		db_param_push();
+		$t_query = 'UPDATE {document}
+					  SET handler_id=' . db_param() . ', status=' . db_param() . '
+					  WHERE id=' . db_param();
+		db_query( $t_query, array( $p_user_id, $t_ass_val, $p_bug_id ) );
+
+		# log changes
+		history_log_event_direct( $p_bug_id, 'status', $h_status, $t_ass_val );
+		history_log_event_direct( $p_bug_id, 'handler_id', $h_handler_id, $p_user_id );
+
+		# Add bugnote if supplied ignore false return
+		if( !is_blank( $p_bugnote_text ) ) {
+			$t_bugnote_id = bugnote_add( $p_bug_id, $p_bugnote_text, 0, $p_bugnote_private, 0, '', null, false );
+			bugnote_process_mentions( $p_bug_id, $t_bugnote_id, $p_bugnote_text );
+		}
+
+		# updated the last_updated date
+		dwg_update_date( $p_bug_id );
+
+		dwg_clear_cache( $p_bug_id );
+
+		# Send email for change of handler
+		email_owner_changed( $p_bug_id, $h_handler_id, $p_user_id );
+	}
+
+	return true;
+}
+
+/**
+ * Close the given bug.
+ *
+ * @param int     $p_bug_id          A bug identifier.
+ * @param string  $p_bugnote_text    The bugnote text.
+ * @param bool    $p_bugnote_private Whether the bugnote is private.
+ * @param string  $p_time_tracking   Time tracking value.
+ *
+ * @return true
+ * @throws ClientException if the bug does not exist.
+ *
+ * @access public
+ */
+function dwg_close( $p_bug_id, $p_bugnote_text = '', $p_bugnote_private = false, $p_time_tracking = '0:00' ) {
+	$p_bugnote_text = trim( $p_bugnote_text );
+
+	# Add bugnote if supplied ignore a false return
+	# Moved bugnote_add before dwg_set_field calls in case time_tracking_no_note is off.
+	# Error condition stopped execution but status had already been changed
+	if( !is_blank( $p_bugnote_text ) || $p_time_tracking != '0:00' ) {
+		$t_bugnote_id = bugnote_add( $p_bug_id, $p_bugnote_text, $p_time_tracking, $p_bugnote_private, 0, '', null, false );
+		bugnote_process_mentions( $p_bug_id, $t_bugnote_id, $p_bugnote_text );
+	}
+
+	dwg_set_field( $p_bug_id, 'status', config_get( 'bug_closed_status_threshold' ) );
+
+	email_close( $p_bug_id );
+	email_relationship_child_closed( $p_bug_id );
+
+	return true;
+}
+
+/**
+ * Resolve the given bug.
+ *
+ * @param int    $p_bug_id           A bug identifier.
+ * @param int    $p_resolution       Resolution status.
+ * @param string $p_fixed_in_version Fixed in version.
+ * @param string $p_bugnote_text     The bugnote text.
+ * @param int    $p_duplicate_id     A duplicate identifier.
+ * @param int    $p_handler_id       A handler identifier.
+ * @param bool   $p_bugnote_private  Whether this is a private bugnote.
+ * @param string $p_time_tracking    Time tracking value.
+ *
+ * @return bool
+ * @throws ClientException if the bug does not exist.
+ *
+ * @access public
+ */
+function dwg_resolve( $p_bug_id, $p_resolution, $p_fixed_in_version = '', $p_bugnote_text = '', $p_duplicate_id = null, $p_handler_id = null, $p_bugnote_private = false, $p_time_tracking = '0:00' ) {
+	$c_resolution = (int)$p_resolution;
+	$p_bugnote_text = trim( $p_bugnote_text );
+
+	# Add bugnote if supplied
+	# Moved bugnote_add before dwg_set_field calls in case time_tracking_no_note is off.
+	# Error condition stopped execution but status had already been changed
+	if( !is_blank( $p_bugnote_text ) || $p_time_tracking != '0:00' ) {
+		$t_bugnote_id = bugnote_add( $p_bug_id, $p_bugnote_text, $p_time_tracking, $p_bugnote_private, 0, '', null, false );
+		bugnote_process_mentions( $p_bug_id, $t_bugnote_id, $p_bugnote_text );
+	}
+
+	$t_duplicate = !is_blank( $p_duplicate_id ) && ( $p_duplicate_id != 0 );
+	if( $t_duplicate ) {
+		if( $p_bug_id == $p_duplicate_id ) {
+			trigger_error( ERROR_BUG_DUPLICATE_SELF, ERROR );
+
+			# never returns
+		}
+
+		# the related bug exists...
+		bug_ensure_exists( $p_duplicate_id );
+
+		relationship_upsert( $p_bug_id, $p_duplicate_id, BUG_DUPLICATE, /* email_for_source */ false );
+
+		# Copy list of users monitoring the duplicate bug to the original bug
+		$t_old_reporter_id = dwg_get_field( $p_bug_id, 'reporter_id' );
+		$t_old_handler_id = dwg_get_field( $p_bug_id, 'handler_id' );
+		if( user_exists( $t_old_reporter_id ) ) {
+			bug_monitor( $p_duplicate_id, $t_old_reporter_id );
+		}
+		if( user_exists( $t_old_handler_id ) ) {
+			bug_monitor( $p_duplicate_id, $t_old_handler_id );
+		}
+		bug_monitor_copy( $p_bug_id, $p_duplicate_id );
+
+		dwg_set_field( $p_bug_id, 'duplicate_id', (int)$p_duplicate_id );
+	}
+
+	dwg_set_field( $p_bug_id, 'status', config_get( 'bug_resolved_status_threshold' ) );
+	dwg_set_field( $p_bug_id, 'fixed_in_version', $p_fixed_in_version );
+	dwg_set_field( $p_bug_id, 'resolution', $c_resolution );
+
+	# only set handler if specified explicitly or if bug was not assigned to a handler
+	if( null == $p_handler_id ) {
+		if( bug_get_field( $p_bug_id, 'handler_id' ) == 0 ) {
+			$p_handler_id = auth_get_current_user_id();
+			dwg_set_field( $p_bug_id, 'handler_id', $p_handler_id );
+		}
+	} else {
+		dwg_set_field( $p_bug_id, 'handler_id', $p_handler_id );
+	}
+
+	email_resolved( $p_bug_id );
+	email_relationship_child_resolved( $p_bug_id );
+
+	return true;
+}
+
+/**
+ * Reopen the given bug.
+ *
+ * @param int     $p_bug_id          A bug identifier.
+ * @param string  $p_bugnote_text    The bugnote text.
+ * @param string  $p_time_tracking   Time tracking value.
+ * @param bool    $p_bugnote_private Whether this is a private bugnote.
+ *
+ * @return true
+ * @throws ClientException if the bug does not exist.
+ *
+ * @access public
+ */
+function dwg_reopen( $p_bug_id, $p_bugnote_text = '', $p_time_tracking = '0:00', $p_bugnote_private = false ) {
+	$p_bugnote_text = trim( $p_bugnote_text );
+
+	# Add bugnote if supplied
+	# Moved bugnote_add before dwg_set_field calls in case time_tracking_no_note is off.
+	# Error condition stopped execution but status had already been changed
+	if( !is_blank( $p_bugnote_text ) || $p_time_tracking != '0:00' ) {
+		$t_bugnote_id = bugnote_add( $p_bug_id, $p_bugnote_text, $p_time_tracking, $p_bugnote_private, 0, '', null, false );
+		bugnote_process_mentions( $p_bug_id, $t_bugnote_id, $p_bugnote_text );
+	}
+
+	dwg_set_field( $p_bug_id, 'status', config_get( 'bug_reopen_status' ) );
+	dwg_set_field( $p_bug_id, 'resolution', config_get( 'bug_reopen_resolution' ) );
+
+	email_bug_reopened( $p_bug_id );
+
+	return true;
+}
+
+/**
+ * Updates the last_updated field.
+ *
+ * @param int $p_bug_id Bug identifier.
+ *
+ * @return true
+ *
+ * @access public
+ */
+function dwg_update_date( $p_bug_id ) {
+	db_param_push();
+	$t_query = 'UPDATE {document} SET last_updated=' . db_param() . ' WHERE id=' . db_param();
+	db_query( $t_query, array( db_now(), $p_bug_id ) );
+
+	dwg_clear_cache( $p_bug_id );
+
+	return true;
+}
+
+/**
+ * Enable monitoring of this bug for the user.
+ *
+ * @param int $p_bug_id  Bug identifier.
+ * @param int $p_user_id User identifier.
+ *
+ * @return bool true if successful, false if unsuccessful
+ *
+ * @access public
+ */
+function dwg_monitor( $p_bug_id, $p_user_id ) {
+	$c_bug_id = (int)$p_bug_id;
+	$c_user_id = (int)$p_user_id;
+
+	# Make sure we aren't already monitoring this bug
+	if( user_is_monitoring_dwg( $c_user_id, $c_bug_id ) ) {
+		return true;
+	}
+
+	# Don't let the anonymous user monitor bugs
+	if( user_is_anonymous( $c_user_id ) ) {
+		return false;
+	}
+
+	# Insert monitoring record
+	db_param_push();
+	$t_query = 'INSERT INTO {bug_monitor} ( user_id, bug_id ) VALUES (' . db_param() . ',' . db_param() . ')';
+	db_query( $t_query, array( $c_user_id, $c_bug_id ) );
+
+	# log new monitoring action
+	history_log_event_special( $c_bug_id, BUG_MONITOR, $c_user_id );
+
+	# updated the last_updated date
+	dwg_update_date( $p_bug_id );
+
+	email_monitor_added( $p_bug_id, $p_user_id );
+
+	return true;
+}
+
+/**
+ * Returns the list of users monitoring the specified bug.
+ *
+ * @param int $p_bug_id Bug identifier.
+ *
+ * @return array
+ */
+function dwg_get_monitors( $p_bug_id ) {
+	if( ! access_has_dwg_level( config_get( 'show_monitor_list_threshold' ), $p_bug_id ) ) {
+		return array();
+	}
+
+	# get the bugnote data
+	db_param_push();
+	$t_query = 'SELECT user_id, enabled
+			FROM {bug_monitor} m, {user} u
+			WHERE m.bug_id=' . db_param() . ' AND m.user_id = u.id
+			ORDER BY u.realname, u.username';
+	$t_result = db_query( $t_query, array( $p_bug_id ) );
+
+	$t_users = array();
+	while( $t_row = db_fetch_array( $t_result ) ) {
+		$t_users[] = $t_row['user_id'];
+	}
+
+	user_cache_array_rows( $t_users );
+
+	return $t_users;
+}
+
+/**
+ * Copy list of users monitoring a bug to the monitor list of a second bug.
+ *
+ * @param int $p_source_bug_id Source bug identifier.
+ * @param int $p_dest_bug_id   Destination bug identifier.
+ *
+ * @access public
+ */
+function dwg_monitor_copy( $p_source_bug_id, $p_dest_bug_id ) {
+	$c_source_bug_id = (int)$p_source_bug_id;
+	$c_dest_bug_id = (int)$p_dest_bug_id;
+
+	db_param_push();
+	$t_query = 'SELECT user_id FROM {bug_monitor} WHERE bug_id = ' . db_param();
+	$t_result = db_query( $t_query, array( $c_source_bug_id ) );
+
+	while( $t_bug_monitor = db_fetch_array( $t_result ) ) {
+		if( user_exists( $t_bug_monitor['user_id'] ) &&
+			!user_is_monitoring_dwg( $t_bug_monitor['user_id'], $c_dest_bug_id ) ) {
+			db_param_push();
+			$t_query = 'INSERT INTO {bug_monitor} ( user_id, bug_id )
+				VALUES ( ' . db_param() . ', ' . db_param() . ' )';
+			db_query( $t_query, array( $t_bug_monitor['user_id'], $c_dest_bug_id ) );
+			history_log_event_special( $c_dest_bug_id, BUG_MONITOR, $t_bug_monitor['user_id'] );
+		}
+	}
+}
+
+/**
+ * Disable monitoring of this bug for the user.
+ *
+ * @param int      $p_bug_id  Bug identifier.
+ * @param int|null $p_user_id User identifier, null for all users.
+ *
+ * @return true
+ *
+ * @access public
+ */
+function dwg_unmonitor( $p_bug_id, $p_user_id ) {
+	# Delete monitoring record
+	db_param_push();
+	$t_query = 'DELETE FROM {bug_monitor} WHERE bug_id = ' . db_param();
+	$t_db_query_params[] = $p_bug_id;
+
+	if( $p_user_id !== null ) {
+		$t_query .= ' AND user_id = ' . db_param();
+		$t_db_query_params[] = $p_user_id;
+	}
+
+	db_query( $t_query, $t_db_query_params );
+
+	# log new un-monitor action
+	history_log_event_special( $p_bug_id, BUG_UNMONITOR, (int)$p_user_id );
+
+	# updated the last_updated date
+	dwg_update_date( $p_bug_id );
+
+	return true;
+}
+
+/**
+ * Pads the bug id with the appropriate number of zeros.
+ *
+ * @param int $p_bug_id Bug identifier.
+ *
+ * @return string
+ *
+ * @access public
+ */
 function dwg_format_id( $p_bug_id ) {
 	$t_padding = config_get( 'display_bug_padding' );
 	$t_string = sprintf( '%0' . (int)$t_padding . 'd', $p_bug_id );
@@ -2272,49 +2371,49 @@ function dwg_format_id( $p_bug_id ) {
 //  *
 //  * @return int Calculated status after assignment
 //  */
-// function bug_get_status_for_assign( $p_current_handler, $p_new_handler, $p_current_status, $p_new_status = null ) {
-// 	if( null === $p_new_status ) {
-// 		$p_new_status = $p_current_status;
-// 	}
-// 	if( config_get( 'auto_set_status_to_assigned' ) ) {
-// 		$t_assigned_status = config_get( 'bug_assigned_status' );
+function dwg_get_status_for_assign( $p_current_handler, $p_new_handler, $p_current_status, $p_new_status = null ) {
+	if( null === $p_new_status ) {
+		$p_new_status = $p_current_status;
+	}
+	if( config_get( 'auto_set_status_to_assigned' ) ) {
+		$t_assigned_status = config_get( 'dwg_assigned_status' );
 
-// 		if(		$p_current_handler == NO_USER &&
-// 				$p_new_handler != NO_USER &&
-// 				$p_new_status == $p_current_status &&
-// 				$p_new_status < $t_assigned_status &&
-// 				bug_check_workflow( $p_current_status, $t_assigned_status ) ) {
+		if(		$p_current_handler == NO_USER &&
+				$p_new_handler != NO_USER &&
+				$p_new_status == $p_current_status &&
+				$p_new_status < $t_assigned_status &&
+				deg_check_workflow( $p_current_status, $t_assigned_status ) ) {
 
-// 			return $t_assigned_status;
-// 		}
-// 	}
-// 	return $p_new_status;
-// }
+			return $t_assigned_status;
+		}
+	}
+	return $p_new_status;
+}
 
-// /**
-//  * Clear a bug from all the related caches or all bugs if no bug id specified.
-//  *
-//  * @param int $p_bug_id A bug identifier to clear (optional).
-//  *
-//  * @return bool
-//  *
-//  * @access public
-//  */
-// function bug_clear_cache_all( $p_bug_id = null ) {
-// 	bug_clear_cache( $p_bug_id );
-// 	bug_text_clear_cache( $p_bug_id );
-// 	file_bug_attachment_count_clear_cache( $p_bug_id );
-// 	bugnote_clear_bug_cache( $p_bug_id );
-// 	tag_clear_cache_bug_tags( $p_bug_id );
-// 	custom_field_clear_cache_values( $p_bug_id );
-// 	bug_attachments_clear_cache( $p_bug_id );
+/**
+ * Clear a bug from all the related caches or all bugs if no bug id specified.
+ *
+ * @param int $p_bug_id A bug identifier to clear (optional).
+ *
+ * @return bool
+ *
+ * @access public
+ */
+function dwg_clear_cache_all( $p_bug_id = null ) {
+	dwg_clear_cache( $p_bug_id );
+	// bug_text_clear_cache( $p_bug_id );
+	file_bug_attachment_count_clear_cache( $p_bug_id );
+	bugnote_clear_bug_cache( $p_bug_id );
+	tag_clear_cache_bug_tags( $p_bug_id );
+	custom_field_clear_cache_values( $p_bug_id );
+	bug_attachments_clear_cache( $p_bug_id );
 
-// 	$t_plugin_objects = columns_get_plugin_columns();
-// 	foreach( $t_plugin_objects as $t_plugin_column ) {
-// 		$t_plugin_column->clear_cache();
-// 	}
-// 	return true;
-// }
+	$t_plugin_objects = columns_get_plugin_columns();
+	foreach( $t_plugin_objects as $t_plugin_column ) {
+		$t_plugin_column->clear_cache();
+	}
+	return true;
+}
 
 // /**
 //  * Populate the caches related to the selected columns.
@@ -2322,7 +2421,7 @@ function dwg_format_id( $p_bug_id ) {
 //  * @param DwgData[] $p_bugs         Array of DwgData objects
 //  * @param array $p_selected_columns Array of columns to show
 //  */
-// function bug_cache_columns_data( array $p_bugs, array $p_selected_columns ) {
+// function dwg_cache_columns_data( array $p_bugs, array $p_selected_columns ) {
 // 	$t_bug_ids = array();
 // 	$t_user_ids = array();
 // 	$t_project_ids = array();
