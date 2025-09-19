@@ -564,11 +564,13 @@ function document_get_all_rows( $p_project_id, $p_inherit = null, $p_sort_by_pro
 		$t_project_where = ' project_id=' . $p_project_id . ' ';
 	}
 
+	// @TODO RobD - beware, we have mixed up the use of the table status fields between re-use of the 'bug' table meaning and that of the 'category' table
 	if( $p_enabled_only ) {
-		$t_project_where .= ' and c.status = ' . CATEGORY_STATUS_ENABLED;
+		// $t_project_where .= ' and c.status = ' . DOCUMENT_STATUS_ENABLED;  // NOTE: not a valud STATUS flag for the projects table
 	}
 	
-	$t_query = 'SELECT c.*, p.name AS project_name FROM {category} c
+//	$t_query = 'SELECT c.*, p.name AS project_name FROM {category} c
+	$t_query = 'SELECT c.*, p.name AS project_name FROM {document} c
 				LEFT JOIN {project} p
 					ON c.project_id=p.id
 				WHERE ' . $t_project_where . ' ORDER BY c.name';
