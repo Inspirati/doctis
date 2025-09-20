@@ -467,11 +467,11 @@ class DwgAddCommand extends Command {
 		}
 
 		# Mark the added issue as visited so that it appears on the last visited list.
-		last_visited_issue( $t_issue_id );
+		// last_visited_issue( $t_issue_id );
 
 		# Trigger Email Notifications
-		$this->issue->process_mentions();
-		email_bug_added( $t_issue_id );
+		// $this->issue->process_mentions();
+		// email_dwg_added( $t_issue_id );
 
 		# Trigger extensibility events
 		helper_call_custom_function( 'document_create_notify', array( $t_issue_id ) );  // looks like it calls a default null func
