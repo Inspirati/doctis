@@ -27,7 +27,6 @@
  * @uses compress_api.php
  * @uses config_api.php
  * @uses current_user_api.php
- * @uses filter_api.php
  * @uses filter_dwg_api.php
  * @uses gpc_api.php
  * @uses html_api.php
@@ -47,7 +46,6 @@ require_api( 'authentication_api.php' );
 require_api( 'compress_api.php' );
 require_api( 'config_api.php' );
 require_api( 'current_user_api.php' );
-// require_api( 'filter_api.php' );
 require_api( 'filter_dwg_api.php' );
 require_api( 'gpc_api.php' );
 require_api( 'html_api.php' );
