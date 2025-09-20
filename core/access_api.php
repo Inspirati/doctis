@@ -625,6 +625,17 @@ function access_has_bug_level_filter( $p_access_level, $p_bug_id, $p_user_ids ) 
 	return $t_users_ids_with_access;
 }
 
+function access_has_dwg_level_filter( $p_access_level, $p_bug_id, $p_user_ids ) {
+	$t_users_ids_with_access = array();
+	foreach( $p_user_ids as $t_user_id ) {
+		if( access_has_dwg_level( $p_access_level, $p_bug_id, $t_user_id ) ) {
+			$t_users_ids_with_access[] = $t_user_id;
+		}
+	}
+
+	return $t_users_ids_with_access;
+}
+
 /**
  * Check if the user has the specified access level for the given bug
  * and deny access to the page if not
