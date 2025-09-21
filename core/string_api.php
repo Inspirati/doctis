@@ -700,7 +700,8 @@ function string_get_bug_view_link( $p_bug_id, $p_detail_info = true, $p_fqdn = f
 }
 
 function string_get_dwg_view_link( $p_bug_id, $p_detail_info = true, $p_fqdn = false ) {
-	if( bug_exists( $p_bug_id ) ) {
+
+	if( dwg_exists( $p_bug_id ) ) {
 		$t_link = '<a href="';
 		if( $p_fqdn ) {
 			$t_link .= config_get_global( 'path' );
@@ -709,19 +710,19 @@ function string_get_dwg_view_link( $p_bug_id, $p_detail_info = true, $p_fqdn = f
 		}
 		$t_link .= string_get_dwg_view_url( $p_bug_id ) . '"';
 		if( $p_detail_info ) {
-			$t_summary = string_attribute( bug_get_field( $p_bug_id, 'summary' ) );
-			$t_project_id = bug_get_field( $p_bug_id, 'project_id' );
-			$t_status = string_attribute( get_enum_element( 'status', bug_get_field( $p_bug_id, 'status' ), $t_project_id ) );
+			$t_summary = string_attribute( dwg_get_field( $p_bug_id, 'summary' ) );
+			$t_project_id = dwg_get_field( $p_bug_id, 'project_id' );
+			$t_status = string_attribute( get_enum_element( 'status', dwg_get_field( $p_bug_id, 'status' ), $t_project_id ) );
 			$t_link .= ' title="[' . $t_status . '] ' . $t_summary . '"';
 
-			$t_resolved = bug_get_field( $p_bug_id, 'status' ) >= config_get( 'bug_resolved_status_threshold', null, null, $t_project_id );
+			$t_resolved = dwg_get_field( $p_bug_id, 'status' ) >= config_get( 'dwg_resolved_status_threshold', null, null, $t_project_id );
 			if( $t_resolved ) {
 				$t_link .= ' class="resolved"';
 			}
 		}
-		$t_link .= '>' . bug_format_id( $p_bug_id ) . '</a>';
+		$t_link .= '>' . dwg_format_id( $p_bug_id ) . '</a>';
 	} else {
-		$t_link = bug_format_id( $p_bug_id );
+		$t_link = dwg_format_id( $p_bug_id );
 	}
 
 	return $t_link;
@@ -835,28 +836,16 @@ function string_get_bug_update_url( $p_bug_id ) {
 	return string_get_bug_update_page() . '?bug_id=' . $p_bug_id;
 }
 
+function string_get_dwg_update_url( $p_bug_id ) {
+	return string_get_dwg_update_page() . '?bug_id=' . $p_bug_id;
+}
+
 /**
  * return the name of a bug UPDATE page
  * @return string
  */
 function string_get_bug_update_page() {
 	return string_get_bug_page( 'update' );
-}
-
-/**
- * return an href anchor that links to a bug REPORT page
- * @return string
- */
-function string_get_bug_report_link() {
-	return '<a href="' . helper_mantis_url( string_get_bug_report_url() ) . '">' . lang_get( 'report_bug_link' ) . '</a>';
-}
-
-/**
- * return the name of a bug REPORT page
- * @return string
- */
-function string_get_bug_report_url() {
-	return string_get_bug_page( 'report' );
 }
 
 /**
@@ -868,11 +857,27 @@ function string_get_dwg_update_page() {
 }
 
 /**
+ * return an href anchor that links to a bug REPORT page
+ * @return string
+ */
+function string_get_bug_report_link() {
+	return '<a href="' . helper_mantis_url( string_get_bug_report_url() ) . '">' . lang_get( 'report_bug_link' ) . '</a>';
+}
+
+/**
  * return an href anchor that links to a dwg REPORT page
  * @return string
  */
 function string_get_dwg_report_link() {
 	return '<a href="' . helper_mantis_url( string_get_dwg_create_url() ) . '">' . lang_get( 'create_dwg_link' ) . '</a>';
+}
+
+/**
+ * return the name of a bug REPORT page
+ * @return string
+ */
+function string_get_bug_report_url() {
+	return string_get_bug_page( 'report' );
 }
 
 /**

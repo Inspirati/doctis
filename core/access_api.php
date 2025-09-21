@@ -416,11 +416,6 @@ function access_project_array_filter( $p_access_level, ?array $p_project_ids = n
  */
 function access_has_any_project_level( $p_access_level, ?array $p_project_ids = null, ?int $p_user_id = null ): bool {
 
-	// @TODO RobD - we can work out when/if-or-not we display the Create Document button later..
-	if( 'report_dwg_threshold' == $p_access_level ) {
-		return true;
-	}
-
 	# We only need 1 matching project to return positive
 	$t_matches = access_project_array_filter( $p_access_level, $p_project_ids, $p_user_id, 1 );
 	return !empty( $t_matches );
@@ -753,6 +748,30 @@ function access_can_close_bug( BugData $p_bug, $p_user_id = null ) {
 	return access_has_bug_level( $t_closed_status_threshold, $p_bug->id, $p_user_id );
 }
 
+function access_can_close_dwg( DwgData $p_bug, $p_user_id = null ) {
+	if( dwg_is_closed( $p_bug->id ) ) {
+		# Can't close a bug that's already closed
+		return false;
+	}
+
+	if( null === $p_user_id ) {
+		$p_user_id = auth_get_current_user_id();
+	}
+
+	# If allow_reporter_close is enabled, then reporters can close their own bugs
+	# if they are in resolved status
+	if( ON == config_get( 'allow_reporter_close', null, null, $p_bug->project_id )
+		&& dwg_is_user_reporter( $p_bug->id, $p_user_id )
+		&& dwg_is_resolved( $p_bug->id )
+	) {
+		return true;
+	}
+
+	$t_closed_status = config_get( 'dwg_closed_status_threshold', null, null, $p_bug->project_id );
+	$t_closed_status_threshold = access_get_status_threshold( $t_closed_status, $p_bug->project_id );
+	return access_has_dwg_level( $t_closed_status_threshold, $p_bug->id, $p_user_id );
+}
+
 /**
  * Make sure that the user can close the specified bug
  * @see access_can_close_bug
@@ -763,6 +782,12 @@ function access_can_close_bug( BugData $p_bug, $p_user_id = null ) {
  */
 function access_ensure_can_close_bug( BugData $p_bug, $p_user_id = null ) {
 	if( !access_can_close_bug( $p_bug, $p_user_id ) ) {
+		access_denied();
+	}
+}
+
+function access_ensure_can_close_dwg( DwgData $p_bug, $p_user_id = null ) {
+	if( !access_can_close_dwg( $p_bug, $p_user_id ) ) {
 		access_denied();
 	}
 }
@@ -787,26 +812,64 @@ function access_can_reopen_bug( BugData $p_bug, $p_user_id = null ) {
 	$t_reopen_status = config_get( 'bug_reopen_status', null, null, $p_bug->project_id );
 
 	# Reopen status must be reachable by workflow
-	if( !bug_check_workflow( $p_bug->status, $t_reopen_status ) ) {
+	if( !dwg_check_workflow( $p_bug->status, $t_reopen_status ) ) {
 		return false;
 	}
 
 	# If allow_reporter_reopen is enabled, then reporters can always reopen
 	# their own bugs as long as their access level is reporter or above
 	if( ON == config_get( 'allow_reporter_reopen', null, null, $p_bug->project_id )
-		&& bug_is_user_reporter( $p_bug->id, $p_user_id )
-		&& access_has_project_level( config_get( 'report_bug_threshold', null, $p_user_id, $p_bug->project_id ), $p_bug->project_id, $p_user_id )
+		&& dwg_is_user_reporter( $p_bug->id, $p_user_id )
+		&& access_has_project_level( config_get( 'create_dwg_threshold', null, $p_user_id, $p_bug->project_id ), $p_bug->project_id, $p_user_id )
 	) {
 		return true;
 	}
 
 	# Other users's access level must allow them to reopen bugs
-	$t_reopen_bug_threshold = config_get( 'reopen_bug_threshold', null, null, $p_bug->project_id );
+	$t_reopen_bug_threshold = config_get( 'reopen_dwg_threshold', null, null, $p_bug->project_id );
 	if( access_has_bug_level( $t_reopen_bug_threshold, $p_bug->id, $p_user_id ) ) {
 
 		# User must be allowed to change status to reopen status
 		$t_reopen_status_threshold = access_get_status_threshold( $t_reopen_status, $p_bug->project_id );
 		return access_has_bug_level( $t_reopen_status_threshold, $p_bug->id, $p_user_id );
+	}
+
+	return false;
+}
+
+function access_can_reopen_dwg( DwgData $p_bug, $p_user_id = null ) {
+	if( !dwg_is_resolved( $p_bug->id ) ) {
+		# Can't reopen a bug that's not resolved
+		return false;
+	}
+
+	if( $p_user_id === null ) {
+		$p_user_id = auth_get_current_user_id();
+	}
+
+	$t_reopen_status = config_get( 'dwg_reopen_status', null, null, $p_bug->project_id );
+
+	# Reopen status must be reachable by workflow
+	if( !dwg_check_workflow( $p_bug->status, $t_reopen_status ) ) {
+		return false;
+	}
+
+	# If allow_reporter_reopen is enabled, then reporters can always reopen
+	# their own bugs as long as their access level is reporter or above
+	if( ON == config_get( 'allow_reporter_reopen', null, null, $p_bug->project_id )
+		&& dwg_is_user_reporter( $p_bug->id, $p_user_id )
+		&& access_has_project_level( config_get( 'create_dwg_threshold', null, $p_user_id, $p_bug->project_id ), $p_bug->project_id, $p_user_id )
+	) {
+		return true;
+	}
+
+	# Other users's access level must allow them to reopen bugs
+	$t_reopen_bug_threshold = config_get( 'reopen_dwg_threshold', null, null, $p_bug->project_id );
+	if( access_has_dwg_level( $t_reopen_bug_threshold, $p_bug->id, $p_user_id ) ) {
+
+		# User must be allowed to change status to reopen status
+		$t_reopen_status_threshold = access_get_status_threshold( $t_reopen_status, $p_bug->project_id );
+		return access_has_dwg_level( $t_reopen_status_threshold, $p_bug->id, $p_user_id );
 	}
 
 	return false;

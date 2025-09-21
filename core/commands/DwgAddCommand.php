@@ -114,8 +114,19 @@ class DwgAddCommand extends Command {
 		}
 
 		// @TODO RobD - new fields specific to 'documents'
-		$t_name = $t_issue['name'];
-		$t_number = $t_issue['number'];
+
+		$t_version				= $t_issue['version'];
+		$t_title				= $t_issue['title'];
+		$t_number				= $t_issue['number'];
+		$t_revision				= $t_issue['revision'];
+		$t_category				= $t_issue['category'];
+		$t_reference			= $t_issue['reference'];
+		$t_link_url				= $t_issue['f_link_url'];
+		$t_class				= $t_issue['class'];
+		$t_revision_date		= $t_issue['revision_date'];
+		$t_release_date			= $t_issue['release_date'];
+		$t_date_submitted		= $t_issue['date_submitted'];
+		$t_last_updated			= $t_issue['last_updated'];
 
 		// if( !isset( $t_issue['summary'] ) || is_blank( $t_issue['summary'] ) )  {
 		// 	throw new ClientException(
@@ -243,11 +254,20 @@ class DwgAddCommand extends Command {
 		$t_category = $t_issue['category'] ?? null;
 		$t_category_id = mci_get_category_id( $t_category, $t_project_id );
 
-#!		$this->issue = new BugData;
 		$this->issue = new DwgData;
 
-		$this->issue->name = $t_name;
+		$this->issue->version = $t_version;
+		$this->issue->name = $t_title;
 		$this->issue->number = $t_number;
+		$this->issue->revision = $t_revision;
+		$this->issue->category = $t_category;
+		$this->issue->reference = $t_reference;
+		$this->issue->link_url = $t_link_url;
+		$this->issue->class = $t_class;
+		$this->issue->revision_date = $t_revision_date;
+		$this->issue->release_date = $t_release_date;
+		$this->issue->date_submitted = $t_date_submitted;
+		$this->issue->last_updated = $t_last_updated;
 
 		$this->issue->project_id = $t_project_id;
 		$this->issue->reporter_id = $t_reporter_id;

@@ -26,7 +26,7 @@
  * @uses authentication_api.php
  * @uses bug_api.php
  * @uses dwg_api.php
- * @uses bug_activity_api.php
+ * @uses dwg_activity_api.php
  * @uses category_api.php
  * @uses columns_api.php
  * @uses compress_api.php
@@ -70,7 +70,9 @@ require_api( 'bug_api.php' );
 
 require_api( 'dwg_api.php' );
 
-require_api( 'bug_activity_api.php' );
+// require_api( 'bug_activity_api.php' );
+require_api( 'dwg_activity_api.php' );
+
 require_api( 'category_api.php' );
 require_api( 'columns_api.php' );
 require_api( 'compress_api.php' );
@@ -107,9 +109,13 @@ require_css( 'status_config.php' );
 $f_issue_id = gpc_get_int( 'id' );
 $f_history = gpc_get_bool( 'history', config_get( 'history_default_visible' ) );
 
+// error_log("dwg_view_inc.php: " . print_r($f_issue_id, true));
+
 # compat variables for included pages
 $f_bug_id = $f_issue_id;
+
 $t_bug = dwg_get( $f_bug_id, true );
+// $t_bug = dwg_get( $f_bug_id, false );
 
 $t_data = array(
 	'query' => array( 'id' => $f_issue_id ),
@@ -122,22 +128,17 @@ $t_issue = $t_result['issue'];
 $t_issue_view = $t_result['issue_view'];
 $t_flags = $t_result['flags'];
 
-// @TODO RobD
-$t_issue = array();
-$t_issue_view = array();
-$t_flags = array();
-
 compress_enable();
 
 if( $t_show_page_header ) {
-	layout_page_header( bug_format_summary( $f_issue_id, SUMMARY_CAPTION ), null, 'view-issue-page', 'dwg_view.php?id=' . $f_issue_id );
+	layout_page_header( dwg_format_summary( $f_issue_id, SUMMARY_CAPTION ), null, 'view-issue-page', 'dwg_view.php?id=' . $f_issue_id );
 	layout_page_begin( 'view_dwg_page.php' );
 }
 
 $t_action_button_position = config_get( 'action_button_position' );
 
 #!$t_bugslist = gpc_get_cookie( config_get_global( 'bug_list_cookie' ), false );
-$t_dwgslist = gpc_get_cookie( config_get_global( 'bug_list_cookie' ), false );
+$t_dwgslist = gpc_get_cookie( config_get_global( 'dwg_list_cookie' ), false );
 
 $t_top_buttons_enabled = !$t_force_readonly && ( $t_action_button_position == POSITION_TOP || $t_action_button_position == POSITION_BOTH );
 $t_bottom_buttons_enabled = !$t_force_readonly && ( $t_action_button_position == POSITION_BOTTOM || $t_action_button_position == POSITION_BOTH );
@@ -153,7 +154,6 @@ echo '<h4 class="widget-title lighter">';
 print_icon( 'fa-bars', 'ace-icon' );
 
 echo string_display_line( $t_issue_view['dwg_form_title'] );
-//echo string_display_line( "dummy form_title" );
 
 echo '</h4>';
 echo '</div>';
@@ -289,6 +289,34 @@ if( $t_flags['id_show'] || $t_flags['project_show'] || $t_flags['category_show']
 	print_table_spacer( 6 );
 }
 
+if( true
+) {
+
+	# Labels
+	echo '<tr class="bug-header">';
+	echo '<th class="bug-project category width-15">', $t_flags['project_show'] ? lang_get( 'dwg_title' ) : '', '</th>';
+	echo '<th class="bug-project category width-20">', $t_flags['project_show'] ? lang_get( 'dwg_number' ) : '', '</th>';
+	echo '<th class="bug-project category width-15">', $t_flags['project_show'] ? lang_get( 'dwg_revision' ) : '', '</th>';
+	echo '<th class="bug-project category width-15">', $t_flags['project_show'] ? lang_get( 'dwg_reference' ) : '', '</th>';
+	echo '<th class="bug-project category width-15">', $t_flags['project_show'] ? lang_get( 'dwg_release_date' ) : '', '</th>';
+	echo '<th class="bug-project category width-15">', $t_flags['project_show'] ? lang_get( 'dwg_classification' ) : '', '</th>';
+	echo '</tr>';
+
+	echo '<tr class="bug-header-data">';
+
+	# Project
+	echo '<td class="bug-project">', $t_flags['project_show'] && isset( $t_issue['name'] ) ? string_display_line( $t_issue['name'] ) : '', '</td>';
+	echo '<td class="bug-project">', $t_flags['project_show'] && isset( $t_issue['number'] ) ? string_display_line( $t_issue['number'] ) : '', '</td>';
+	echo '<td class="bug-project">', $t_flags['project_show'] && isset( $t_issue['revision'] ) ? string_display_line( $t_issue['revision'] ) : '', '</td>';
+	echo '<td class="bug-project">', $t_flags['project_show'] && isset( $t_issue['reference'] ) ? string_display_line( $t_issue['reference'] ) : '', '</td>';
+	echo '<td class="bug-project">', $t_flags['project_show'] && isset( $t_issue['release_date'] ) ? string_display_line( $t_issue['release_date'] ) : '', '</td>';
+	// echo '<td class="bug-project">', $t_flags['project_show'] && isset( $t_issue['classification'] ) ? string_display_line( $t_issue['classification'] ) : '', '</td>';
+	echo '<td class="bug-project">', $t_flags['project_show'] && isset( $t_issue['class'] ) ? string_display_line( $t_issue['class'] ) : '', '</td>';
+
+	echo '</tr>';
+	print_table_spacer( 6 );
+}
+
 #
 # Reporter, Handler, Due Date
 #
@@ -300,7 +328,7 @@ if( $t_flags['reporter_show'] || $t_flags['handler_show'] || $t_flags['due_date_
 
 	# Reporter
 	if( $t_flags['reporter_show'] ) {
-		echo '<th class="bug-reporter category">', lang_get( 'reporter' ), '</th>';
+		echo '<th class="bug-reporter category">', lang_get( 'dwg_creator' ), '</th>';
 		echo '<td class="bug-reporter">';
 		print_user_with_subject( $t_issue['reporter']['id'], $f_issue_id );
 		echo '</td>';
@@ -572,7 +600,7 @@ print_table_spacer( 6 );
 // if( $t_flags['summary_show'] && isset( $t_issue['summary'] ) ) {
 // 	echo '<tr>';
 // 	echo '<th class="bug-summary category">', lang_get( 'summary' ), '</th>';
-// 	echo '<td class="bug-summary" colspan="5">', bug_format_summary( $f_issue_id, SUMMARY_FIELD ), '</td>';
+// 	echo '<td class="bug-summary" colspan="5">', dwg_format_summary( $f_issue_id, SUMMARY_FIELD ), '</td>';
 // 	echo '</tr>';
 // }
 
@@ -624,8 +652,8 @@ if( !empty( $t_result['issue']['attachments'] ) ) {
 	echo '<th class="bug-attach-tags category">', lang_get( 'attached_files' ), '</th>';
 	echo '<td class="bug-attach-tags" colspan="5">';
 
-	$t_bug_activity_get_all_result = bug_activity_get_all( $f_issue_id, /* include_attachments */ true );
-	$t_activities = $t_bug_activity_get_all_result['activities'];
+	$t_dwg_activity_get_all_result = dwg_activity_get_all( $f_issue_id, /* include_attachments */ true );
+	$t_activities = $t_dwg_activity_get_all_result['activities'];
 	$t_security_token_attachments_delete = form_security_token( 'bug_file_delete' );
 
 	foreach( $t_activities as $t_activity ) {
@@ -929,7 +957,7 @@ function dwg_view_relationship_get_details( $p_bug_id, BugRelationshipData $p_re
 	if( !$p_html_preview ) {
 		# choose color based on status
 		$t_status_css = html_get_status_css_fg( $t_bug->status, $t_current_user_id, $t_bug->project_id );
-		$t_relationship_info_html .= '<td><a href="' . string_get_dwg_view_url( $t_related_bug_id ) . '">' . string_display_line( bug_format_id( $t_related_bug_id ) ) . '</a></td>';
+		$t_relationship_info_html .= '<td><a href="' . string_get_dwg_view_url( $t_related_bug_id ) . '">' . string_display_line( dwg_format_id( $t_related_bug_id ) ) . '</a></td>';
 		$t_relationship_info_html .= '<td>' . icon_get( 'fa-square', 'fa-status-box ' . $t_status_css );
 		$t_relationship_info_html .= ' <span class="issue-status" title="' . string_attribute( $t_resolution_string ) . '">' . string_display_line( $t_status_string ) . '</span></td>';
 	} else {
@@ -957,7 +985,7 @@ function dwg_view_relationship_get_details( $p_bug_id, BugRelationshipData $p_re
 	}
 
 	# add delete link if bug not read only and user has access level
-	if( !bug_is_readonly( $p_bug_id ) && !current_user_is_anonymous() && !$p_html_preview ) {
+	if( !dwg_is_readonly( $p_bug_id ) && !current_user_is_anonymous() && !$p_html_preview ) {
 		if( access_has_dwg_level( config_get( 'update_bug_threshold' ), $p_bug_id ) ) {
 			$t_relationship_info_html .= ' <a class="red noprint zoom-130" '
 				. 'href="bug_relationship_delete.php?bug_id=' . $p_bug_id
@@ -1132,7 +1160,7 @@ function dwg_view_button_dwg_change_status( DwgData $p_bug ) {
 		# Add close if user is bug's reporter, still has rights to report issues
 		# (to prevent users downgraded to viewers from updating issues) and
 		# reporters are allowed to close their own issues
-		(  bug_is_user_reporter( $p_bug->id, auth_get_current_user_id() )
+		(  dwg_is_user_reporter( $p_bug->id, auth_get_current_user_id() )
 		&& access_has_dwg_level( config_get( 'create_dwg_threshold' ), $p_bug->id )
 		&& ON == config_get( 'allow_reporter_close' )
 		),

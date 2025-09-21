@@ -315,6 +315,7 @@ $s_email_notification_title_for_action_monitor = 'Issue %1$s is now monitored by
 $s_email_reporter = 'Reported By';
 $s_email_handler = 'Assigned To';
 $s_email_project = 'Project';
+$s_email_document = 'Document';
 $s_email_bug = 'Issue ID';
 $s_email_category = 'Category';
 $s_email_reproducibility = 'Reproducibility';
@@ -583,6 +584,17 @@ $s_confirm_revision_drop = 'Are you sure you want to drop this issue revision?';
 $s_activities_title = 'Activities';
 
 # documents_view*
+$s_dwg_title = 'Document Title';
+$s_dwg_revision = 'Revision';
+$s_dwg_reference = 'Reference';
+$s_dwg_number = 'Number';
+$s_dwg_date = 'Date';
+$s_dwg_release_date = 'Release Date';
+$s_dwg_classification = 'Classification';
+
+$s_dwg_creator = 'Created by';
+
+# @TODO RobD - these are still needed by the listview on view_dwg_page.php (and since some were inherited, probably someplace else too)
 $s_reference = 'Reference';
 $s_number = 'Number';
 $s_date = 'Date';
@@ -1690,6 +1702,7 @@ $MANTIS_ERROR[ERROR_GPC_ARRAY_EXPECTED] = 'An array was expected but a string wa
 $MANTIS_ERROR[ERROR_GPC_ARRAY_UNEXPECTED] = 'A string was expected but an array was received for %1$s.';
 $MANTIS_ERROR[ERROR_GPC_NOT_NUMBER] = 'A number was expected for %1$s.';
 $MANTIS_ERROR[ERROR_BUG_NOT_FOUND] = 'Issue %1$d not found.';
+$MANTIS_ERROR[ERROR_DWG_NOT_FOUND] = 'Document %1$d not found.';
 $MANTIS_ERROR[ERROR_FILTER_NOT_FOUND] = 'Filter %1$s not found.';
 $MANTIS_ERROR[ERROR_EMAIL_INVALID] = 'Invalid e-mail address.';
 $MANTIS_ERROR[ERROR_EMAIL_DISPOSABLE] = 'It is not allowed to use disposable e-mail addresses.';

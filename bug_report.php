@@ -175,6 +175,11 @@ if( $t_category_id != 0 ) {
 	$t_issue['category'] = array( 'id' => $t_category_id );
 }
 
+$t_document_id = gpc_get_int( 'document_id', 0 );
+if( $t_document_id != 0 ) {
+	$t_issue['document'] = array( 'id' => $t_document_id );
+}
+
 $t_reproducibility = gpc_get_int( 'reproducibility', 0 );
 if( $t_reproducibility != 0 ) {
 	$t_issue['reproducibility'] = array( 'id' => $t_reproducibility );

@@ -605,6 +605,106 @@ function custom_function_default_print_column_value( $p_column, BugData $p_bug, 
 	}
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// BEGIN doctis developmental section
+function custom_function_default_print_dwg_column_value( $p_column, DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+	if( COLUMNS_TARGET_CSV_PAGE == $p_columns_target ) {
+		$t_column_start = '';
+		$t_column_end = '';
+		$t_column_empty = '';
+	} else {
+		$t_column_start = '<td class="column-%s">';
+		$t_column_end = '</td>';
+		$t_column_empty = '&#160;';
+	}
+	// if ($p_column == "dwg_id") {
+	if ($p_column == "date") {
+		error_log("custom_function_default_print_dwg_column_value: " . $p_column);
+	}
+	if ($p_column == "release_date") {
+		error_log("custom_function_default_print_dwg_column_value: " . $p_column);
+	}
+	$t_custom_field = column_get_custom_field_name( $p_column );
+	if( $t_custom_field !== null ) {
+		$t_class = custom_field_css_name( $t_custom_field );
+		$t_field_id = custom_field_get_id_from_name( $t_custom_field );
+
+		if( $t_field_id === false ) {
+			$t_value = '@' . $t_custom_field . '@';
+			$t_is_linked = false;
+		} else {
+			$t_issue_id = $p_bug->id;
+			$t_project_id = $p_bug->project_id;
+			$t_is_linked = custom_field_is_linked( $t_field_id, $t_project_id );
+
+			if( $t_is_linked ) {
+				$t_value = false;
+				$t_def = custom_field_get_definition( $t_field_id );
+
+				# Build a map of CF types to corresponding label
+				static $s_cf_types;
+				if( $s_cf_types === null ) {
+					$s_cf_types = MantisEnum::getAssocArrayIndexedByValues(
+						config_get( 'custom_field_type_enum_string' )
+					);
+					# Make sure the type's label is a valid CSS identifier
+					array_walk( $s_cf_types,
+						function( &$t_val ) {
+							$t_val = preg_replace( '/[^a-zA-Z0-9_-]+/', '-', $t_val );
+						}
+					);
+				}
+				# Add CF type CSS class
+				$t_class .= ' cftype-' . $s_cf_types[$t_def['type']];
+			} else {
+				# field is not linked to project
+				$t_value = $t_column_empty;
+			}
+		}
+
+		printf( $t_column_start, $t_class );
+		if( $t_is_linked ) {
+			/** @noinspection PhpUndefinedVariableInspection */
+			print_custom_field_value( $t_def, $t_field_id, $t_issue_id );
+		} else {
+			echo $t_value;
+		}
+		echo $t_column_end;
+	} else {
+		$t_plugin_columns = columns_get_plugin_columns();
+
+		if( $p_columns_target != COLUMNS_TARGET_CSV_PAGE ) {
+			$t_function = 'print_dwg_column_' . $p_column;
+//			$t_function = 'print_column_' . $p_column;
+		} else {
+			$t_function = 'csv_format_' . $p_column;
+		}
+
+		if( function_exists( $t_function ) ) {
+			if( $p_columns_target != COLUMNS_TARGET_CSV_PAGE ) {
+				$t_function( $p_bug, $p_columns_target );
+			} else {
+				$t_function( $p_bug );
+			}
+
+		} else if( isset( $t_plugin_columns[$p_column] ) ) {
+			$t_column_object = $t_plugin_columns[$p_column];
+			print_column_plugin( $t_column_object, $p_bug, $p_columns_target );
+
+		} else {
+			printf( $t_column_start, $p_column );
+			if( isset( $p_bug->$p_column ) ) {
+				echo string_display_line( $p_bug->$p_column ) . $t_column_end;
+			} else {
+				echo '@' . $p_column . '@' . $t_column_end;
+			}
+		}
+	}
+}
+// END doctis developmental section
+////////////////////////////////////////////////////////////////////////////////
+
+
 /**
  * Construct an enumeration for all versions for the current project.
  * The enumeration will be empty if current project is ALL PROJECTS.

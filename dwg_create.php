@@ -90,17 +90,44 @@ if( $f_master_bug_id > 0 ) {
 // 	'reporter' => array( 'id' => auth_get_current_user_id() ),
 // 	'summary' => gpc_get_string( 'summary' ),
 // 	'description' => gpc_get_string( 'description' ),
-// 	'name' => gpc_get_string( 'name' ),
+// 	'title' => gpc_get_string( 'title' ),
 // 	'number' => gpc_get_string( 'number' ),
 // );
 
 $t_issue = array(
 	'project' => array( 'id' => $t_project_id ),
 	'reporter' => array( 'id' => auth_get_current_user_id() ),
+
+	// 'version'			=> gpc_get_string( 'dwg_version' ),
+	'title'				=> gpc_get_string( 'dwg_title' ),
+	'number'			=> gpc_get_string( 'dwg_number' ),
+	'revision'			=> gpc_get_string( 'dwg_revision' ),
+	// 'category'			=> gpc_get_string( 'dwg_category' ),
+	'reference'			=> gpc_get_string( 'dwg_reference' ),
+	// 'link_url'			=> gpc_get_string( 'dwg_link_url' ),
+	// 'class'				=> gpc_get_string( 'dwg_class' ),
+	// 'revision_date'		=> gpc_get_string( 'dwg_revision_date' ),
+	// 'release_date'		=> gpc_get_string( 'dwg_release_date' ),
+	// 'date_submitted'	=> gpc_get_string( 'dwg_date_submitted' ),
+	// 'last_updated'		=> gpc_get_string( 'dwg_last_upated' ),
+
+
+	'version'			=> 1,
+	'category'			=> "category",
+	'link_url'			=> "link_url",
+	'class'				=> "class",
+	'revision_date'		=> date_get_null(),
+	'release_date'		=> date_get_null(),
+	'date_submitted'	=> date_get_null(),
+	'last_updated'		=> date_get_null(),
+
+
+	// 'summary' => gpc_get_string( 'summary' ),
+	// 'description' => gpc_get_string( 'description' ),
 	'summary' => "sample summary",
 	'description' => "default description",
-	'name' => "document name",
-	'number' => "12345678",
+	// 'name' => "document name",
+	// 'number' => "12345678",
 );
 // @TODO RobD - i have added the name and number fields to the above array, but not as yet done anything more to handle them
 

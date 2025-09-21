@@ -93,8 +93,6 @@ for( $i=0; $i < $t_row_count; $i++ ) {
 #!gpc_set_cookie( config_get_global( 'bug_list_cookie' ), implode( ',', $t_bugslist ) );
 gpc_set_cookie( config_get_global( 'dwg_list_cookie' ), implode( ',', $t_dwgslist ) );
 
-#error_log("test console output: " . print_r($$t_row_count, true));
-
 compress_enable();
 
 # don't index view documents pages

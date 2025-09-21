@@ -143,9 +143,9 @@ function print_dwg_header_redirect( $p_url, $p_die = true, $p_sanitize = false, 
 }
 
 /**
- * Print a redirect header to view a bug
+ * Print a redirect header to view a document
  *
- * @param integer $p_bug_id A bug identifier.
+ * @param integer $p_bug_id A document identifier.
  * @return void
  */
 function print_dwg_header_redirect_view( $p_bug_id ) {
