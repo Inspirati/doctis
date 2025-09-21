@@ -1239,6 +1239,13 @@ function print_all_bug_action_option_list( array $p_project_ids = [] ) {
 	}
 }
 
+function print_all_dwg_action_option_list( array $p_project_ids = [] ) {
+	// $t_commands = bug_group_action_get_commands( $p_project_ids );
+	// foreach ( $t_commands as $t_action_id => $t_action_label) {
+	// 	echo '<option value="' . $t_action_id . '">' . $t_action_label . '</option>';
+	// }
+}
+
 /**
  * list of users that are NOT in the specified project and that are enabled
  * if no project is specified use the current project

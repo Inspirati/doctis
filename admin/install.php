@@ -498,8 +498,8 @@ if( 2 == $t_install_state ) {
 				$t_page_contents = url_get( $f_path );
 				if( !$t_page_contents ) {
 					$t_url_check = "Can't retrieve web page at '$f_path'.";
-				} elseif( false === strpos( $t_page_contents, 'MantisBT') ) {
-					$t_url_check = "Web page at '$f_path' does not appear to be a MantisBT site.";
+				} elseif( false === strpos( $t_page_contents, $g_window_title) ) {
+					$t_url_check = "Web page at '$f_path' does not appear to be a $g_window_title site.";
 				}
 				if( $t_url_check ) {
 					$t_url_check .= "<br>The system will not function properly if this URL is not accessible.";

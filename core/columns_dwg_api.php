@@ -56,10 +56,8 @@ columns_(?!dwg)
  */
 
 require_api( 'access_api.php' );
-require_api( 'bug_api.php' );
-
+// require_api( 'bug_api.php' );
 require_api( 'dwg_api.php' );
-
 require_api( 'category_api.php' );
 require_api( 'columns_api.php' );
 require_api( 'config_api.php' );
@@ -1268,30 +1266,29 @@ function print_dwg_column_sponsorship_total( DwgData $p_bug, $p_columns_target =
 function print_dwg_column_bugnotes_count( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	global $g_dwg_filter;
 
-	# grab the bugnote count
-	$t_bugnote_stats = bug_get_bugnote_stats( $p_bug->id );
-	if( is_array( $t_bugnote_stats ) ) {
-		$t_bugnote_count = $t_bugnote_stats['count'];
-		$t_bugnote_updated = $t_bugnote_stats['last_modified'];
-	} else {
-		$t_bugnote_count = 0;
-	}
+	// # grab the bugnote count
+	// $t_bugnote_stats = bug_get_bugnote_stats( $p_bug->id );
+	// if( is_array( $t_bugnote_stats ) ) {
+	// 	$t_bugnote_count = $t_bugnote_stats['count'];
+	// 	$t_bugnote_updated = $t_bugnote_stats['last_modified'];
+	// } else {
+	// 	$t_bugnote_count = 0;
+	// }
 
-	echo '<td class="column-bugnotes-count">';
-	if( $t_bugnote_count > 0 ) {
-		$t_show_in_bold = $t_bugnote_updated > strtotime( '-' . $g_dwg_filter[FILTER_PROPERTY_HIGHLIGHT_CHANGED] . ' hours' );
-		if( $t_show_in_bold ) {
-			echo '<span class="bold">';
-		}
-		print_link( string_get_dwg_view_url( $p_bug->id ) . '&nbn=' . $t_bugnote_count . '#bugnotes', $t_bugnote_count );
-		if( $t_show_in_bold ) {
-			echo '</span>';
-		}
-	} else {
-		echo '&#160;';
-	}
-
-	echo '</td>';
+	// echo '<td class="column-bugnotes-count">';
+	// if( $t_bugnote_count > 0 ) {
+	// 	$t_show_in_bold = $t_bugnote_updated > strtotime( '-' . $g_dwg_filter[FILTER_PROPERTY_HIGHLIGHT_CHANGED] . ' hours' );
+	// 	if( $t_show_in_bold ) {
+	// 		echo '<span class="bold">';
+	// 	}
+	// 	print_link( string_get_dwg_view_url( $p_bug->id ) . '&nbn=' . $t_bugnote_count . '#bugnotes', $t_bugnote_count );
+	// 	if( $t_show_in_bold ) {
+	// 		echo '</span>';
+	// 	}
+	// } else {
+	// 	echo '&#160;';
+	// }
+	// echo '</td>';
 }
 
 /**
@@ -1523,18 +1520,29 @@ function print_dwg_column_last_updated( DwgData $p_bug, $p_columns_target = COLU
  * @return void
  * @access public
  */
-// function print_dwg_column_date_submitted( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
-function print_dwg_column_date_submitted( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
-	$t_date_submitted = string_display_line( date( config_get( 'short_date_format' ), $p_bug->date_submitted ) );
+function print_dwg_column_date_submitted( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+	$t_date = string_display_line( date( config_get( 'short_date_format' ), $p_bug->date_submitted ) );
 
-	echo '<td class="column-date-submitted">', $t_date_submitted, '</td>';
+	echo '<td class="column-date-submitted">', $t_date, '</td>';
 }
 
 // function print_column_date( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 function print_column_date( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
-	$t_date_submitted = string_display_line( date( config_get( 'short_date_format' ), $p_bug->date_submitted ) );
+	$t_date = string_display_line( date( config_get( 'short_date_format' ), $p_bug->date_submitted ) );
 
-	echo '<td class="column-date-submitted">', $t_date_submitted, '</td>';
+	echo '<td class="column-date-submitted">', $t_date, '</td>';
+}
+
+function print_dwg_column_date( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+	$t_date = string_display_line( date( config_get( 'short_date_format' ), $p_bug->revision_date ) );
+
+	echo '<td class="column-revision_date">', $t_date, '</td>';
+}
+
+function print_dwg_column_release_date( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+	$t_date = string_display_line( date( config_get( 'short_date_format' ), $p_bug->release_date ) );
+
+	echo '<td class="column-release_date">', $t_date, '</td>';
 }
 
 /**

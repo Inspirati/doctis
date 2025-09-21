@@ -1405,7 +1405,7 @@ $g_view_issues_page_columns = array(
  */
 $g_view_dwg_page_columns = array(
 	'selection', 'edit', 'priority', 'dwg_id', 'status', 'name', 'number', 'revision', 'reference',
-	'date', 'release date',
+	'date', 'release_date',
 );
 
 /**
@@ -2683,6 +2683,7 @@ $g_ldap_simulation_file_path = '';
  * @global int $g_bug_submit_status
  */
 $g_bug_submit_status = NEW_;
+$g_dwg_submit_status = NEW_;
 
 /**
  * Status to assign to the bug when assigned.
@@ -2690,6 +2691,7 @@ $g_bug_submit_status = NEW_;
  * @global int $g_bug_assigned_status
  */
 $g_bug_assigned_status = ASSIGNED;
+$g_dwg_assigned_status = ASSIGNED;
 
 /**
  * Status to assign to the bug when reopened.
@@ -2697,6 +2699,7 @@ $g_bug_assigned_status = ASSIGNED;
  * @global int $g_bug_reopen_status
  */
 $g_bug_reopen_status = FEEDBACK;
+$g_dwg_reopen_status = FEEDBACK;
 
 /**
  * Status to assign to the bug when feedback is required from the issue reporter.
@@ -2707,6 +2710,7 @@ $g_bug_reopen_status = FEEDBACK;
  * @global int $g_bug_feedback_status
  */
 $g_bug_feedback_status = FEEDBACK;
+$g_dwg_feedback_status = FEEDBACK;
 
 /**
  * Automatically reassign issue when feedback has been provided.
@@ -2728,6 +2732,7 @@ $g_reassign_on_feedback = ON;
  * @global int $g_bug_reopen_resolution
  */
 $g_bug_reopen_resolution = REOPENED;
+$g_dwg_reopen_resolution = REOPENED;
 
 /**
  * Default resolution to assign to a bug when it is resolved as being a
@@ -2736,6 +2741,7 @@ $g_bug_reopen_resolution = REOPENED;
  * @global int $g_bug_duplicate_resolution
  */
 $g_bug_duplicate_resolution = DUPLICATE;
+$g_dwg_duplicate_resolution = DUPLICATE;
 
 /**
  * Bug becomes readonly if its status is >= this status.
@@ -2746,6 +2752,7 @@ $g_bug_duplicate_resolution = DUPLICATE;
  * @global int $g_bug_readonly_status_threshold
  */
 $g_bug_readonly_status_threshold = RESOLVED;
+$g_dwg_readonly_status_threshold = RESOLVED;
 
 /**
  * Bug is resolved, ready to be closed or reopened.
@@ -2756,6 +2763,7 @@ $g_bug_readonly_status_threshold = RESOLVED;
  * @global int $g_bug_resolved_status_threshold
  */
 $g_bug_resolved_status_threshold = RESOLVED;
+$g_dwg_resolved_status_threshold = RESOLVED;
 
 /**
  * Threshold resolution which denotes that a bug has been resolved and
@@ -2768,6 +2776,7 @@ $g_bug_resolved_status_threshold = RESOLVED;
  * @global int $g_bug_resolution_fixed_threshold
  */
 $g_bug_resolution_fixed_threshold = FIXED;
+$g_dwg_resolution_fixed_threshold = FIXED;
 
 /**
  * Threshold resolution which denotes that a bug has been resolved without
@@ -2779,6 +2788,7 @@ $g_bug_resolution_fixed_threshold = FIXED;
  * @global int $g_bug_resolution_not_fixed_threshold
  */
 $g_bug_resolution_not_fixed_threshold = UNABLE_TO_REPRODUCE;
+$g_dwg_resolution_not_fixed_threshold = UNABLE_TO_REPRODUCE;
 
 /**
  * Bug is closed.
@@ -2789,6 +2799,7 @@ $g_bug_resolution_not_fixed_threshold = UNABLE_TO_REPRODUCE;
  * @global int $g_bug_closed_status_threshold
  */
 $g_bug_closed_status_threshold = CLOSED;
+$g_dwg_closed_status_threshold = CLOSED;
 
 /**
  * Automatically set status to ASSIGNED whenever a bug is assigned to a person.
@@ -3019,6 +3030,7 @@ $g_bug_report_page_fields = array(
 	'additional_info',
 	'attachments',
 	'category_id',
+	'document_id',
 	'due_date',
 	'handler',
 	'os',
@@ -3079,6 +3091,38 @@ $g_bug_report_page_fields = array(
  * @global array $g_bug_view_page_fields
  */
 $g_bug_view_page_fields = array(
+	'additional_info',
+	'attachments',
+	'category_id',
+	'date_submitted',
+	'description',
+	'due_date',
+	'eta',
+	'fixed_in_version',
+	'handler',
+	'id',
+	'last_updated',
+	'os',
+	'os_build',
+	'platform',
+	'priority',
+	'product_build',
+	'product_version',
+	'project',
+	'projection',
+	'reporter',
+	'reproducibility',
+	'resolution',
+	'severity',
+	'status',
+	'steps_to_reproduce',
+	'summary',
+	'tags',
+	'target_version',
+	'view_state',
+);
+
+$g_dwg_view_page_fields = array(
 	'additional_info',
 	'attachments',
 	'category_id',
@@ -3181,6 +3225,36 @@ $g_bug_update_page_fields = array(
 	'view_state',
 );
 
+$g_dwg_update_page_fields = array(
+	'additional_info',
+	'category_id',
+	'date_submitted',
+	'description',
+	'due_date',
+	'eta',
+	'fixed_in_version',
+	'handler',
+	'id',
+	'last_updated',
+	'os',
+	'os_build',
+	'platform',
+	'priority',
+	'product_build',
+	'product_version',
+	'project',
+	'projection',
+	'reporter',
+	'reproducibility',
+	'resolution',
+	'severity',
+	'status',
+	'steps_to_reproduce',
+	'summary',
+	'target_version',
+	'view_state',
+);
+
 ##########################
 # MantisBT Misc Settings #
 ##########################
@@ -3191,7 +3265,7 @@ $g_bug_update_page_fields = array(
  * @global int $g_report_bug_threshold
  */
 $g_report_bug_threshold = REPORTER;
-$g_report_dwg_threshold = REPORTER;
+$g_create_dwg_threshold = REPORTER;
 
 /**
  * Access level needed to update bugs (i.e., the update_bug_page).
@@ -3235,6 +3309,7 @@ $g_show_monitor_list_threshold = DEVELOPER;
  * @global int $g_monitor_add_others_bug_threshold
  */
 $g_monitor_add_others_bug_threshold = DEVELOPER;
+$g_monitor_add_others_dwg_threshold = DEVELOPER;
 
 /**
  * Access level needed to delete other users from the list of users
@@ -3245,6 +3320,7 @@ $g_monitor_add_others_bug_threshold = DEVELOPER;
  * @global int $g_monitor_delete_others_bug_threshold
  */
 $g_monitor_delete_others_bug_threshold = DEVELOPER;
+$g_monitor_delete_others_dwg_threshold = DEVELOPER;
 
 /**
  * Access level required to print issue reports.
@@ -3324,6 +3400,7 @@ $g_view_history_threshold = VIEWER;
  * @global int $g_bug_reminder_threshold
  */
 $g_bug_reminder_threshold = DEVELOPER;
+$g_dwg_reminder_threshold = DEVELOPER;
 
 /**
  * Access level required to view bug history revisions.
@@ -3477,6 +3554,7 @@ $g_impersonate_user_threshold = ADMINISTRATOR;
  * @global int $g_delete_bug_threshold
  */
 $g_delete_bug_threshold = DEVELOPER;
+$g_delete_dwg_threshold = DEVELOPER;
 
 /**
  * Threshold at which a user can delete the bugnotes of other users.
@@ -3493,6 +3571,7 @@ $g_delete_bugnote_threshold = '%delete_bug_threshold%';
  * @global int $g_move_bug_threshold
  */
 $g_move_bug_threshold = DEVELOPER;
+$g_move_dwg_threshold = DEVELOPER;
 
 /**
  * Threshold needed to set the view status while reporting a bug or a bug note.
@@ -3539,6 +3618,7 @@ $g_stored_query_create_shared_threshold = MANAGER;
  * @global int $g_update_readonly_bug_threshold
  */
 $g_update_readonly_bug_threshold = MANAGER;
+$g_update_readonly_dwg_threshold = MANAGER;
 
 /**
  * Threshold for viewing Changelog.
@@ -3574,6 +3654,7 @@ $g_roadmap_update_threshold = DEVELOPER;
  * @global int $g_update_bug_status_threshold
  */
 $g_update_bug_status_threshold = DEVELOPER;
+$g_update_dwg_status_threshold = DEVELOPER;
 
 /**
  * Access level needed to re-open bugs.
@@ -3581,6 +3662,7 @@ $g_update_bug_status_threshold = DEVELOPER;
  * @global int $g_reopen_bug_threshold
  */
 $g_reopen_bug_threshold = DEVELOPER;
+$g_reopen_dwg_threshold = DEVELOPER;
 
 /**
  * Access level needed to assign bugs to unreleased product versions.
@@ -3595,6 +3677,7 @@ $g_report_issues_for_unreleased_versions_threshold = DEVELOPER;
  * @global int $g_set_bug_sticky_threshold
  */
 $g_set_bug_sticky_threshold = MANAGER;
+$g_set_dwg_sticky_threshold = MANAGER;
 
 /**
  * Define access thresholds needed to enter each status listed.
@@ -3647,6 +3730,13 @@ $g_bugnote_user_change_view_state_threshold = '%change_view_status_threshold%';
  * @global int $g_allow_no_category
  */
 $g_allow_no_category = OFF;
+
+/**
+ * Allow a bug to have no document.
+ *
+ * @global int $g_allow_no_document
+ */
+$g_allow_no_document = OFF;
 
 /**
  * Limit reporters.
@@ -3895,6 +3985,7 @@ $g_status_colors = array(
  * @global int $g_display_bug_padding
  */
 $g_display_bug_padding = 7;
+$g_display_dwg_padding = 7;
 
 /**
  * The padding level when displaying bugnote ids.
@@ -5387,25 +5478,38 @@ $g_public_config_names = array(
 	'bug_assigned_status',
 	'dwg_assigned_status',
 	'bug_closed_status_threshold',
+	'dwg_closed_status_threshold',
 	'bug_count_hyperlink_prefix',
 	'bug_duplicate_resolution',
+	'dwg_duplicate_resolution',
 	'bug_feedback_status',
+	'dwg_feedback_status',
 	'bug_link_tag',
 	'bug_list_cookie',
 	'dwg_list_cookie',
 	'bug_readonly_status_threshold',
+	'dwg_readonly_status_threshold',
 	'bug_reminder_threshold',
+	'dwg_reminder_threshold',
 	'bug_reopen_resolution',
+	'dwg_reopen_resolution',
 	'bug_reopen_status',
+	'dwg_reopen_status',
 	'bug_report_page_fields',
 	'bug_resolution_fixed_threshold',
+	'dwg_resolution_fixed_threshold',
 	'bug_resolution_not_fixed_threshold',
+	'dwg_resolution_not_fixed_threshold',
 	'bug_resolved_status_threshold',
+	'dwg_resolved_status_threshold',
 	'bug_revision_drop_threshold',
 	'bug_revision_view_threshold',
 	'bug_submit_status',
+	'dwg_submit_status',
 	'bug_update_page_fields',
+	'dwg_update_page_fields',
 	'bug_view_page_fields',
+	'dwg_view_page_fields',
 	'bugnote_link_tag',
 	'bugnote_order',
 	'bugnote_user_change_view_state_threshold',
@@ -5481,10 +5585,12 @@ $g_public_config_names = array(
 	'default_show_changed',
 	'default_timezone',
 	'delete_bug_threshold',
+	'delete_dwg_threshold',
 	'delete_bugnote_threshold',
 	'delete_project_threshold',
 	'disallowed_files',
 	'display_bug_padding',
+	'display_dwg_padding',
 	'display_bugnote_padding',
 	'display_errors',
 	'download_attachments_threshold',
@@ -5568,9 +5674,13 @@ $g_public_config_names = array(
 	'min_refresh_delay',
 	'minimum_sponsorship_amount',
 	'monitor_add_others_bug_threshold',
+	'monitor_add_others_dwg_threshold',
 	'monitor_bug_threshold',
+	'monitor_dwg_threshold',
 	'monitor_delete_others_bug_threshold',
+	'monitor_delete_others_dwg_threshold',
 	'move_bug_threshold',
+	'move_dwg_threshold',
 	'my_view_boxes',
 	'my_view_bug_count',
 	'news_enabled',
@@ -5615,6 +5725,7 @@ $g_public_config_names = array(
 	'reminder_receive_threshold',
 	'reminder_recipients_monitor_bug',
 	'reopen_bug_threshold',
+	'reopen_dwg_threshold',
 	'report_bug_threshold',
 	'create_dwg_threshold',
 	'report_issues_for_unreleased_versions_threshold',
@@ -5628,6 +5739,7 @@ $g_public_config_names = array(
 	'rss_enabled',
 	'search_title',
 	'set_bug_sticky_threshold',
+	'set_dwg_sticky_threshold',
 	'set_configuration_threshold',
 	'set_status_threshold',
 	'set_view_status_threshold',
@@ -5696,11 +5808,14 @@ $g_public_config_names = array(
 	'timeline_view_threshold',
 	'top_include_page',
 	'update_bug_assign_threshold',
+	'update_dwg_assign_threshold',
 	'update_bug_status_threshold',
+	'update_dwg_status_threshold',
 	'update_bug_threshold',
 	'update_dwg_threshold',
 	'update_bugnote_threshold',
 	'update_readonly_bug_threshold',
+	'update_readonly_dwg_threshold',
 	'upload_bug_file_threshold',
 	'upload_project_file_threshold',
 	'use_dynamic_filters',

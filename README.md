@@ -112,6 +112,51 @@ Limitations
 
 There is currently no built-in user interface support for adding documents to the database. Document data needs to be added to the database directly using other tools, such as phpMyAdmin or the CLI.
 
+Style Guide / Naming Convention
+-------------------------------
+
+Guidance on keeping DocTIS standarised with is origins, MantisBT.
+
+More detailed documentation can be found at https://www.mantisbt.org/docs/
+
+* `config_defaults_inc.php`
+  * this file contains the default values for all the site-wide variables.
+* `config/config_inc.php`
+  * You should use this file to change config variable values. Your
+    values from this file will be used instead of the defaults. This file
+    will not be overwritten when you upgrade, but config_defaults_inc.php will.
+    Look at `config/config_inc.php.sample` for an example.
+
+* `core/*_api.php` - these files contains all the API library functions.
+
+* global variables are prefixed by `g_`
+* parameters in functions are prefixed with `p_` -- parameters shouldn't be modified within the function.
+* form variables are prefixed with `f_`
+* variables that have been cleaned for db insertiong are prefixed with `c_`
+* temporary variables are prefixed with `t_`.
+* count variables have the word `count` in the variable name
+
+More detail can be seen in the coding guidelines at:
+https://www.mantisbt.org/guidelines.php
+
+* The files are split into three basic categories, viewable pages,
+  include files and pure scripts. Examining the viewable pages (suffix `_page`)
+  should make the basic file format fairly easy to see. The file names
+  themselves should make their purpose apparent. The approach used is to break the
+  work into many small files rather than have a small number of really
+  large files.
+
+* You can set `$g_top_include_page` and `$g_bottom_include_page`
+  to alter what should be visible at the top and bottom of each page.
+
+* For legacy and namespace reasons, there are a few naming anomolies.
+  In particular:
+	- 'bug' and 'issue' should (for the most part) be considered analogous
+	- 'dwg' and 'document' should be considered analogous
+		('doc' and 'document' are keywords which tend to be seriously overloaded)
+
+* All files are to be edited with TAB SPACES set to 4.
+
 Contributing
 ------------
 

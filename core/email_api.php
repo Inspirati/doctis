@@ -1061,6 +1061,11 @@ function email_bug_added( $p_bug_id ) {
 	email_generic( $p_bug_id, 'new', 'email_notification_title_for_action_bug_submitted' );
 }
 
+function email_dwg_added( $p_bug_id ) {
+	log_event( LOG_EMAIL, sprintf( 'Document #%d created', $p_bug_id ) );
+	email_generic( $p_bug_id, 'new', 'email_notification_title_for_action_bug_submitted' );
+}
+
 /**
  * Send notifications for bug update.
  *

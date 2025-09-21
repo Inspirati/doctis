@@ -86,7 +86,7 @@ function document_ensure_exists( $p_category_id ) {
  */
 function document_exists_in_project( $p_category_id, $p_project_id ) {
 	if( $p_category_id == 0
-		&& config_get( 'allow_no_category', null, null, $p_project_id )
+		&& config_get( 'allow_no_document', null, null, $p_project_id )
 	) {
 		return true;
 	}
@@ -105,7 +105,7 @@ function document_exists_in_project( $p_category_id, $p_project_id ) {
 function document_ensure_exists_in_project( $p_category_id, $p_project_id ) {
 	if( !document_exists_in_project( $p_category_id, $p_project_id ) ) {
 		throw new ClientException(
-			"Category '$p_category_id' not available in project '$p_project_id'.",
+			"Document '$p_category_id' not in project '$p_project_id'.",
 			ERROR_DOCUMENT_NOT_FOUND_FOR_PROJECT,
 			array( $p_category_id, $p_project_id )
 		);
@@ -121,7 +121,7 @@ function document_ensure_exists_in_project( $p_category_id, $p_project_id ) {
  */
 function document_is_unique( $p_project_id, $p_name ) {
 	db_param_push();
-	$t_query = 'SELECT COUNT(*) FROM {category}
+	$t_query = 'SELECT COUNT(*) FROM {document}
 					WHERE project_id=' . db_param() . ' AND ' . db_helper_like( 'name' );
 	$t_count = db_result( db_query( $t_query, array( $p_project_id, $p_name ) ) );
 
@@ -190,7 +190,7 @@ function document_add( $p_project_id, $p_name ) {
 	category_ensure_unique( $p_project_id, $p_name );
 
 	db_param_push();
-	$t_query = 'INSERT INTO {category} ( project_id, name )
+	$t_query = 'INSERT INTO {document} ( project_id, name )
 				  VALUES ( ' . db_param() . ', ' . db_param() . ' )';
 	db_query( $t_query, array( $p_project_id, $p_name ) );
 
@@ -247,7 +247,7 @@ function document_update( $p_category_id, $p_name, $p_assigned_to, $p_status = n
 	}
 
 	db_param_push();
-	$t_query = 'UPDATE {category} SET name=' . db_param() . ', user_id=' . db_param() . ', status=' . db_param() .'
+	$t_query = 'UPDATE {document} SET name=' . db_param() . ', user_id=' . db_param() . ', status=' . db_param() .'
 				  WHERE id=' . db_param();
 	db_query( $t_query, array( $p_name, $p_assigned_to , $p_status, $p_category_id ) );
 
@@ -280,7 +280,7 @@ function document_remove( $p_category_id, $p_new_category_id = 0 ) {
 	}
 
 	db_param_push();
-	$t_query = 'DELETE FROM {category} WHERE id=' . db_param();
+	$t_query = 'DELETE FROM {document} WHERE id=' . db_param();
 	db_query( $t_query, array( $p_category_id ) );
 
 	# update bug history entries
@@ -317,7 +317,7 @@ function document_remove_all( $p_project_id, $p_new_category_id = 0 ) {
 
 	# get a list of affected categories
 	db_param_push();
-	$t_query = 'SELECT id FROM {category} WHERE project_id=' . db_param();
+	$t_query = 'SELECT id FROM {document} WHERE project_id=' . db_param();
 	$t_result = db_query( $t_query, array( $p_project_id ) );
 
 	$t_document_ids = array();
@@ -351,7 +351,7 @@ function document_remove_all( $p_project_id, $p_new_category_id = 0 ) {
 
 	# delete categories
 	db_param_push();
-	$t_query = 'DELETE FROM {category} WHERE project_id=' . db_param();
+	$t_query = 'DELETE FROM {document} WHERE project_id=' . db_param();
 	db_query( $t_query, array( $p_project_id ) );
 
 	return true;
@@ -374,7 +374,7 @@ function document_get_row( $p_category_id, $p_error_if_not_exists = true ) {
 	}
 
 	db_param_push();
-	$t_query = 'SELECT * FROM {category} WHERE id=' . db_param();
+	$t_query = 'SELECT * FROM {document} WHERE id=' . db_param();
 	$t_result = db_query( $t_query, array( $p_category_id ) );
 	$t_row = db_fetch_array( $t_result );
 	if( !$t_row ) {
@@ -448,7 +448,7 @@ function document_cache_array_rows_by_project( array $p_project_id_array ) {
 		return;
 	}
 
-	$t_query = 'SELECT c.*, p.name AS project_name FROM {category} c
+	$t_query = 'SELECT c.*, p.name AS project_name FROM {document} c
 				LEFT JOIN {project} p
 					ON c.project_id=p.id
 				WHERE project_id IN ( ' . implode( ', ', $c_project_id_array ) . ' )
@@ -569,7 +569,6 @@ function document_get_all_rows( $p_project_id, $p_inherit = null, $p_sort_by_pro
 		// $t_project_where .= ' and c.status = ' . DOCUMENT_STATUS_ENABLED;  // NOTE: not a valud STATUS flag for the projects table
 	}
 	
-//	$t_query = 'SELECT c.*, p.name AS project_name FROM {category} c
 	$t_query = 'SELECT c.*, p.name AS project_name FROM {document} c
 				LEFT JOIN {project} p
 					ON c.project_id=p.id
@@ -612,7 +611,7 @@ function document_cache_array_rows( array $p_cat_id_array ) {
 		return;
 	}
 
-	$t_query = 'SELECT c.*, p.name AS project_name FROM {category} c
+	$t_query = 'SELECT c.*, p.name AS project_name FROM {document} c
 				LEFT JOIN {project} p
 					ON c.project_id=p.id
 				WHERE c.id IN (' . implode( ',', $c_cat_id_array ) . ')';
@@ -661,7 +660,7 @@ function document_get_id_by_name( $p_category_name, $p_project_id, $p_trigger_er
 	$t_project_name = project_get_name( $p_project_id );
 
 	db_param_push();
-	$t_query = 'SELECT id FROM {category} WHERE name=' . db_param() . ' AND project_id=' . db_param();
+	$t_query = 'SELECT id FROM {document} WHERE name=' . db_param() . ' AND project_id=' . db_param();
 	$t_result = db_query( $t_query, array( $p_category_name, (int)$p_project_id ) );
 	$t_id = db_result( $t_result );
 	if( $t_id === false ) {

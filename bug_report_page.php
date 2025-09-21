@@ -201,6 +201,7 @@ $t_fields = config_get( 'bug_report_page_fields' );
 $t_fields = columns_filter_disabled( $t_fields );
 
 $t_show_category = in_array( 'category_id', $t_fields );
+$t_show_document = in_array( 'document_id', $t_fields );
 $t_show_reproducibility = in_array( 'reproducibility', $t_fields );
 $t_show_eta = in_array( 'eta', $t_fields );
 $t_show_severity = in_array( 'severity', $t_fields );
@@ -291,9 +292,15 @@ if( $t_show_attachments ) {
 			</select>
 		</td>
 	</tr>
+<?php
+	}
+
+	if( $t_show_document ) {
+		$t_allow_no_document = config_get( 'allow_no_document' );
+?>
 	<tr>
 		<th class="category width-30">
-			<?php echo $t_allow_no_category ? '' : '<span class="required">*</span> '; ?>
+			<?php echo $t_allow_no_document ? '' : '<span class="required">*</span> '; ?>
 			<label for="document_id">
 				<?php print_documentation_link( 'document' ); ?>
 			</label>
@@ -305,7 +312,7 @@ if( $t_show_attachments ) {
 			} ?>
 			<select id="document_id" name="document_id" class="autofocus input-sm" <?php
 				echo helper_get_tab_index();
-				echo $t_allow_no_category ? '' : ' required';
+				echo $t_allow_no_document ? '' : ' required';
 			?>>
 				<?php
 					print_document_option_list( $f_document_id, null, true );

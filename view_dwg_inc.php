@@ -109,7 +109,7 @@ if( ( $t_filter_position & FILTER_POSITION_TOP ) == FILTER_POSITION_TOP ) {
 ?>
 <div class="col-md-12 col-xs-12">
 	<div class="space-10"></div>
-	<form id="bug_action" method="post" action="bug_actiongroup_page.php">
+	<form id="dwg_action" method="post" action="dwg_actiongroup_page.php">
 		<?php # CSRF protection not required here - form does not result in modifications ?>
 		<div class="widget-box widget-color-blue2">
 			<div class="widget-header widget-header-small">
@@ -272,7 +272,7 @@ if( ( $t_filter_position & FILTER_POSITION_TOP ) == FILTER_POSITION_TOP ) {
 ?>
 			<!--suppress HtmlFormInputWithoutLabel -->
 			<select name="action" class="input-sm">
-				<?php print_all_bug_action_option_list( $t_unique_project_ids ) ?>
+				<?php print_all_dwg_action_option_list( $t_unique_project_ids ) ?>
 			</select>
 			<input type="submit" class="btn btn-primary btn-white btn-sm btn-round" value="<?php echo lang_get('ok'); ?>"/>
 <?php
@@ -327,7 +327,7 @@ function write_dwg_rows( array $p_rows ) {
 
 		echo '<tr>';
 		foreach( $g_columns as $t_column ) {
-			helper_call_custom_function( 'print_column_value', array( $t_column, $t_row ) );
+			helper_call_custom_function( 'print_dwg_column_value', array( $t_column, $t_row ) );
 		}
 		echo '</tr>';
 	}

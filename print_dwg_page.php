@@ -224,7 +224,7 @@ if( filter_is_temporary( $t_filter ) ) {
 <tr>
 <?php
 			foreach( $t_columns as $t_column ) {
-				helper_call_custom_function( 'print_column_value', array( $t_column, $t_row, COLUMNS_TARGET_PRINT_PAGE ) );
+				helper_call_custom_function( 'print_dwg_column_value', array( $t_column, $t_row, COLUMNS_TARGET_PRINT_PAGE ) );
 			}
 ?>
 </tr>

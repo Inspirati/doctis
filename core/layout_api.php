@@ -549,7 +549,7 @@ function layout_navbar_button_bar() {
 	$t_show_report_bug_button = access_has_any_project_level( 'report_bug_threshold' ) &&
 		!is_page_name( string_get_bug_page( "report" ) ) &&
 		!is_page_name( string_get_bug_page( "update" ) );
-	$t_show_create_dwg_button = access_has_any_project_level( 'report_dwg_threshold' ) &&
+	$t_show_create_dwg_button = access_has_any_project_level( 'create_dwg_threshold' ) &&
 		!is_page_name( string_get_dwg_page( "create" ) ) &&
 		!is_page_name( string_get_dwg_page( "update" ) );
 	$t_show_invite_user_button = access_has_global_level( config_get( 'manage_user_threshold' ) );

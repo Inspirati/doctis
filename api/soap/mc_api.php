@@ -30,6 +30,7 @@
  */
 
 require_api( 'api_token_api.php' );
+require_api( 'document_api.php' );  // @TODO RobD - investigate why this is required whilst category_api.php is not?
 
 use Mantis\Exceptions\ClientException;
 use Mantis\Exceptions\LegacyApiFaultException;
@@ -972,6 +973,86 @@ function mci_get_category_id( $p_category, $p_project_id ) {
 	category_ensure_exists_in_project( $t_category_id, $p_project_id );
 
 	return $t_category_id;
+}
+
+function mci_get_document_id( $p_document, $p_project_id ) {
+	$t_allow_no_document = config_get( 'allow_no_document' );
+
+	/**
+	 * @param string|array|null $p_document
+	 * @param int               $p_project_id
+	 *
+	 * @return int|false Category Id (0 = no category) or false if unspecified.
+	 * @throws ClientException if Category does not exist.
+	 */
+	$fn_get_document_id_internal = function( $p_document, int $p_project_id ) use ( $t_allow_no_document ) {
+		if( $p_document === null ) {
+			return false;
+		}
+
+		if( is_array( $p_document ) ) {
+			if( isset( $p_document['id'] ) ) {
+				$t_id = $p_document['id'];
+				if( !is_int( $t_id ) ) {
+					throw new ClientException(
+						"Invalid document id '$t_id'.",
+						ERROR_INVALID_FIELD_VALUE,
+						['document_id']
+					);
+				}
+
+				if( document_exists( $t_id ) ) {
+					error_log("document_exists");
+				}
+
+				//settype( $t_id, 'int' );
+				if( $t_id === 0 && $t_allow_no_document ) {
+					return 0;
+				} elseif( document_exists( $t_id ) ) {
+					return $t_id;
+				} else {
+					throw new ClientException(
+						"Document Id '$t_id' not found.",
+						ERROR_DOCUMENT_NOT_FOUND
+					);
+				}
+			} elseif( isset( $p_document['name'] ) ) {
+				$t_document_name = $p_document['name'];
+			} else {
+				return false;
+			}
+		} else {
+			$t_document_name = $p_document;
+		}
+
+		# Retrieve Document Id from Name
+		$t_cat_array = category_get_all_rows( $p_project_id );
+		foreach( $t_cat_array as $t_category_row ) {
+			if( strcasecmp( $t_category_row['name'], $t_document_name ) == 0 ) {
+				return $t_category_row['id'];
+			}
+		}
+
+		throw new ClientException(
+			"Document '$t_document_name' not found.",
+			ERROR_DOCUMENT_NOT_FOUND
+		);
+	};
+
+	$t_document_id = $fn_get_document_id_internal( $p_document, $p_project_id );
+	if( !$t_allow_no_document && $t_document_id === false ) {
+		throw new ClientException(
+			'Document field must be supplied.',
+			ERROR_EMPTY_FIELD,
+			array( 'category' )
+		);
+	}
+
+	# Make sure the document belongs to the given project's hierarchy
+#!	category_ensure_exists_in_project( $t_document_id, $p_project_id );
+	document_ensure_exists_in_project( $t_document_id, $p_project_id );
+
+	return $t_document_id;
 }
 
 /**

@@ -940,9 +940,11 @@ $g_upgrade[218] = array( 'AddColumnSQL', array( db_get_table( 'project' ), "
 	class				C(255)	NOTNULL DEFAULT \" '' \" " ) );
 
 # IMPORTANT: keep these entries as the last indexes, as they will be deleted in release versions
-# Default user: doctis - password: doctis (note that last two fields here are fixed unixtimes, circa 15 Sept 2025)
-# NOTE: access level 25 = reporter
-# NOTE: access level 70 = manager
+             (so you will need to bump all the indexes when inserting tables database statements above here)
+
+// user access_level: '10:viewer,25:reporter,40:updater,55:developer,70:manager,90:administrator'
+// default password: 'pass' == 1a1dc91c907325c69271ddf0c944bc72
+
 $g_upgrade[219] = array( 'InsertData', array( db_get_table( 'user' ), "(
 		username, realname, email, password,
 		enabled, protected, access_level,
@@ -951,7 +953,83 @@ $g_upgrade[219] = array( 'InsertData', array( db_get_table( 'user' ), "(
 		last_visit, date_created
 	)
 	VALUES (
-		'doctis', '', 'doctis.web@gmail.com', 'c20eaa6d3e0895df22eaf238291fdbcc',
+		'viewer', '', 'doctis.web@gmail.com', '1a1dc91c907325c69271ddf0c944bc72',
+		'1', '0', 10,
+		3, 0, 0,
+		'" . md5( mt_rand( 0, mt_getrandmax() ) + mt_rand( 0, mt_getrandmax() ) ) . md5( time() ) . "',
+		'1757927188', '1757927188'
+	)" ) );
+
+$g_upgrade[220] = array( 'InsertData', array( db_get_table( 'user' ), "(
+		username, realname, email, password,
+		enabled, protected, access_level,
+		login_count, lost_password_request_count, failed_login_count,
+		cookie_string,
+		last_visit, date_created
+	)
+	VALUES (
+		'reporter', '', 'doctis.web@gmail.com', '1a1dc91c907325c69271ddf0c944bc72',
+		'1', '0', 25,
+		3, 0, 0,
+		'" . md5( mt_rand( 0, mt_getrandmax() ) + mt_rand( 0, mt_getrandmax() ) ) . md5( time() ) . "',
+		'1757927188', '1757927188'
+	)" ) );
+
+$g_upgrade[221] = array( 'InsertData', array( db_get_table( 'user' ), "(
+		username, realname, email, password,
+		enabled, protected, access_level,
+		login_count, lost_password_request_count, failed_login_count,
+		cookie_string,
+		last_visit, date_created
+	)
+	VALUES (
+		'updater', '', 'doctis.web@gmail.com', '1a1dc91c907325c69271ddf0c944bc72',
+		'1', '0', 55,
+		3, 0, 0,
+		'" . md5( mt_rand( 0, mt_getrandmax() ) + mt_rand( 0, mt_getrandmax() ) ) . md5( time() ) . "',
+		'1757927188', '1757927188'
+	)" ) );
+
+$g_upgrade[222] = array( 'InsertData', array( db_get_table( 'user' ), "(
+		username, realname, email, password,
+		enabled, protected, access_level,
+		login_count, lost_password_request_count, failed_login_count,
+		cookie_string,
+		last_visit, date_created
+	)
+	VALUES (
+		'developer', '', 'doctis.web@gmail.com', '1a1dc91c907325c69271ddf0c944bc72',
+		'1', '0', 70,
+		3, 0, 0,
+		'" . md5( mt_rand( 0, mt_getrandmax() ) + mt_rand( 0, mt_getrandmax() ) ) . md5( time() ) . "',
+		'1757927188', '1757927188'
+	)" ) );
+
+$g_upgrade[223] = array( 'InsertData', array( db_get_table( 'user' ), "(
+		username, realname, email, password,
+		enabled, protected, access_level,
+		login_count, lost_password_request_count, failed_login_count,
+		cookie_string,
+		last_visit, date_created
+	)
+	VALUES (
+		'manager', '', 'doctis.web@gmail.com', '1a1dc91c907325c69271ddf0c944bc72',
+		'1', '0', 90,
+		3, 0, 0,
+		'" . md5( mt_rand( 0, mt_getrandmax() ) + mt_rand( 0, mt_getrandmax() ) ) . md5( time() ) . "',
+		'1757927188', '1757927188'
+	)" ) );
+
+# Default user password: pass (note that last two fields here are fixed unixtimes, circa 15 Sept 2025)
+$g_upgrade[224] = array( 'InsertData', array( db_get_table( 'user' ), "(
+		username, realname, email, password,
+		enabled, protected, access_level,
+		login_count, lost_password_request_count, failed_login_count,
+		cookie_string,
+		last_visit, date_created
+	)
+	VALUES (
+		'user', '', 'doctis.web@gmail.com', '1a1dc91c907325c69271ddf0c944bc72',
 		'1', '0', 25,
 		3, 0, 0,
 		'" . md5( mt_rand( 0, mt_getrandmax() ) + mt_rand( 0, mt_getrandmax() ) ) . md5( time() ) . "',
