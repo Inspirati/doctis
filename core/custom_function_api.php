@@ -618,12 +618,14 @@ function custom_function_default_print_dwg_column_value( $p_column, DwgData $p_b
 		$t_column_empty = '&#160;';
 	}
 	// if ($p_column == "dwg_id") {
-	if ($p_column == "date") {
-		error_log("custom_function_default_print_dwg_column_value: " . $p_column);
-	}
-	if ($p_column == "release_date") {
-		error_log("custom_function_default_print_dwg_column_value: " . $p_column);
-	}
+	// 	error_log("custom_function_default_print_dwg_column_value: " . $p_column);
+	// }
+	// if ($p_column == "date") {
+	// 	error_log("custom_function_default_print_dwg_column_value: " . $p_column);
+	// }
+	// if ($p_column == "release_date") {
+	// 	error_log("custom_function_default_print_dwg_column_value: " . $p_column);
+	// }
 	$t_custom_field = column_get_custom_field_name( $p_column );
 	if( $t_custom_field !== null ) {
 		$t_class = custom_field_css_name( $t_custom_field );

@@ -54,24 +54,24 @@ $g_document_cache = array();
 /**
  * Check whether the category exists globally.
  *
- * @param integer $p_category_id A Category identifier.
+ * @param integer $p_document_id A Category identifier.
  * @return boolean Return true if the category exists, false otherwise
  * @access public
  */
-function document_exists( $p_category_id ) {
-	$t_document_row = document_get_row( $p_category_id, /* error_if_not_exists */ false );
+function document_exists( $p_document_id ) {
+	$t_document_row = document_get_row( $p_document_id, /* error_if_not_exists */ false );
 	return $t_document_row !== false;
 }
 
 /**
  * Trigger an error if category does not exist globally.
  *
- * @param integer $p_category_id A Category identifier.
+ * @param integer $p_document_id A Category identifier.
  * @return void
  * @access public
  */
-function document_ensure_exists( $p_category_id ) {
-	if( !document_exists( $p_category_id ) ) {
+function document_ensure_exists( $p_document_id ) {
+	if( !document_exists( $p_document_id ) ) {
 		trigger_error( ERROR_DOCUMENT_NOT_FOUND, ERROR );
 	}
 }
@@ -79,35 +79,35 @@ function document_ensure_exists( $p_category_id ) {
 /**
  * Check whether the category exists within the project hierarchy.
  *
- * @param int $p_category_id Category identifier.
+ * @param int $p_document_id Category identifier.
  * @param int $p_project_id  Project identifier.
  *
  * @return bool True if the category exists, false otherwise.
  */
-function document_exists_in_project( $p_category_id, $p_project_id ) {
-	if( $p_category_id == 0
+function document_exists_in_project( $p_document_id, $p_project_id ) {
+	if( $p_document_id == 0
 		&& config_get( 'allow_no_document', null, null, $p_project_id )
 	) {
 		return true;
 	}
 	$t_documents = array_column( document_get_all_rows( $p_project_id ), 'id' );
-	return in_array( $p_category_id, $t_documents );
+	return in_array( $p_document_id, $t_documents );
 }
 
 /**
  * Trigger an error if the category does not exist within the project hierarchy.
  *
- * @param int $p_category_id Category identifier.
+ * @param int $p_document_id Category identifier.
  * @param int $p_project_id  Project identifier.
  *
  * @throws ClientException
  */
-function document_ensure_exists_in_project( $p_category_id, $p_project_id ) {
-	if( !document_exists_in_project( $p_category_id, $p_project_id ) ) {
+function document_ensure_exists_in_project( $p_document_id, $p_project_id ) {
+	if( !document_exists_in_project( $p_document_id, $p_project_id ) ) {
 		throw new ClientException(
-			"Document '$p_category_id' not in project '$p_project_id'.",
+			"Document '$p_document_id' not in project '$p_project_id'.",
 			ERROR_DOCUMENT_NOT_FOUND_FOR_PROJECT,
-			array( $p_category_id, $p_project_id )
+			array( $p_document_id, $p_project_id )
 		);
 	}
 }
@@ -150,26 +150,26 @@ function document_ensure_unique( $p_project_id, $p_name ) {
  * Checks whether the category can be deleted.
  * It is not allowed to delete a category if it is defined as 'default for moves'
  * @see $g_default_document_for_moves
- * @param integer $p_category_id Category identifier.
+ * @param integer $p_document_id Category identifier.
  * @return boolean True if category can be deleted, false otherwise
  * @access public
  */
-function document_can_remove( $p_category_id ) {
+function document_can_remove( $p_document_id ) {
 	$t_default_document_id = config_get( 'default_document_for_moves', null, ALL_USERS, ALL_PROJECTS );
 
-	return $p_category_id != $t_default_document_id
-		&& !config_is_defined( 'default_document_for_moves', $p_category_id );
+	return $p_document_id != $t_default_document_id
+		&& !config_is_defined( 'default_document_for_moves', $p_document_id );
 }
 
 /**
  * Trigger an error if the category cannot be deleted.
- * @param integer $p_category_id Category identifier.
+ * @param integer $p_document_id Category identifier.
  * @return void
  * @access public
  */
-function document_ensure_can_remove( $p_category_id ) {
-	if( !document_can_remove( $p_category_id ) ) {
-		error_parameters( document_get_name( $p_category_id) );
+function document_ensure_can_remove( $p_document_id ) {
+	if( !document_can_remove( $p_document_id ) ) {
+		error_parameters( document_get_name( $p_document_id) );
 		trigger_error( ERROR_DOCUMENT_CANNOT_UPDATE_DEFAULT, ERROR );
 	}
 }
@@ -201,7 +201,7 @@ function document_add( $p_project_id, $p_name ) {
 /**
  * Update the name and user associated with the category.
  *
- * @param int      $p_category_id Category identifier.
+ * @param int      $p_document_id Category identifier.
  * @param string   $p_name        Category Name.
  * @param int      $p_assigned_to User ID that category is assigned to.
  * @param int|null $p_status      Optional category status (see CATEGORY_STATUS_* constants)
@@ -210,13 +210,13 @@ function document_add( $p_project_id, $p_name ) {
  * @return void
  * @access public
  */
-function document_update( $p_category_id, $p_name, $p_assigned_to, $p_status = null ) {
+function document_update( $p_document_id, $p_name, $p_assigned_to, $p_status = null ) {
 	if( is_blank( $p_name ) ) {
 		error_parameters( lang_get( 'category' ) );
 		trigger_error( ERROR_EMPTY_FIELD, ERROR );
 	}
 
-	$t_old_category = document_get_row( $p_category_id );
+	$t_old_category = document_get_row( $p_document_id );
 	$t_project_id = (int)$t_old_category['project_id'];
 
 	# Ensure target user exists and is allowed to handle bugs
@@ -234,8 +234,8 @@ function document_update( $p_category_id, $p_name, $p_assigned_to, $p_status = n
 
 	# Disabling category is not authorized if it is used as default
 	$t_default_document_id = config_get_global( 'default_document_for_moves', null );
-	if( $p_category_id == $t_default_document_id
-		|| config_is_defined( 'default_document_for_moves', $p_category_id )
+	if( $p_document_id == $t_default_document_id
+		|| config_is_defined( 'default_document_for_moves', $p_document_id )
 	) {
 		error_parameters( $t_old_category['name'] );
 		trigger_error( ERROR_DOCUMENT_CANNOT_UPDATE_DEFAULT, ERROR );
@@ -249,13 +249,13 @@ function document_update( $p_category_id, $p_name, $p_assigned_to, $p_status = n
 	db_param_push();
 	$t_query = 'UPDATE {document} SET name=' . db_param() . ', user_id=' . db_param() . ', status=' . db_param() .'
 				  WHERE id=' . db_param();
-	db_query( $t_query, array( $p_name, $p_assigned_to , $p_status, $p_category_id ) );
+	db_query( $t_query, array( $p_name, $p_assigned_to , $p_status, $p_document_id ) );
 
 	# Add bug history entries if we update the category's name
 	if( $t_old_category['name'] != $p_name ) {
 		db_param_push();
 		$t_query = 'SELECT id FROM {bug} WHERE category_id=' . db_param();
-		$t_result = db_query( $t_query, array( $p_category_id ) );
+		$t_result = db_query( $t_query, array( $p_document_id ) );
 
 		while( $t_bug_row = db_fetch_array( $t_result ) ) {
 			history_log_event_direct( $t_bug_row['id'], 'category', $t_old_category['name'], $p_name );
@@ -265,28 +265,28 @@ function document_update( $p_category_id, $p_name, $p_assigned_to, $p_status = n
 
 /**
  * Remove a category from the project
- * @param integer $p_category_id     Category identifier.
+ * @param integer $p_document_id     Category identifier.
  * @param integer $p_new_category_id New category id (to replace existing category).
  * @return void
  * @access public
  */
-function document_remove( $p_category_id, $p_new_category_id = 0 ) {
-	$t_document_row = document_get_row( $p_category_id );
+function document_remove( $p_document_id, $p_new_category_id = 0 ) {
+	$t_document_row = document_get_row( $p_document_id );
 
-	category_ensure_exists( $p_category_id );
-	category_ensure_can_remove( $p_category_id );
+	category_ensure_exists( $p_document_id );
+	category_ensure_can_remove( $p_document_id );
 	if( 0 != $p_new_category_id ) {
 		category_ensure_exists( $p_new_category_id );
 	}
 
 	db_param_push();
 	$t_query = 'DELETE FROM {document} WHERE id=' . db_param();
-	db_query( $t_query, array( $p_category_id ) );
+	db_query( $t_query, array( $p_document_id ) );
 
 	# update bug history entries
 	db_param_push();
 	$t_query = 'SELECT id FROM {bug} WHERE category_id=' . db_param();
-	$t_result = db_query( $t_query, array( $p_category_id ) );
+	$t_result = db_query( $t_query, array( $p_document_id ) );
 
 	while( $t_bug_row = db_fetch_array( $t_result ) ) {
 		history_log_event_direct( $t_bug_row['id'], 'category', $t_document_row['name'], category_full_name( $p_new_category_id, false ) );
@@ -295,7 +295,7 @@ function document_remove( $p_category_id, $p_new_category_id = 0 ) {
 	# update bug data
 	db_param_push();
 	$t_query = 'UPDATE {bug} SET category_id=' . db_param() . ' WHERE category_id=' . db_param();
-	db_query( $t_query, array( $p_new_category_id, $p_category_id ) );
+	db_query( $t_query, array( $p_new_category_id, $p_document_id ) );
 }
 
 /**
@@ -359,23 +359,23 @@ function document_remove_all( $p_project_id, $p_new_category_id = 0 ) {
 
 /**
  * Return the definition row for the category
- * @param integer $p_category_id Category identifier.
+ * @param integer $p_document_id Category identifier.
  * @param boolean $p_error_if_not_exists true: error if not exists, otherwise return false.
  * @return array|false An array containing category details.
  * @access public
  */
-function document_get_row( $p_category_id, $p_error_if_not_exists = true ) {
+function document_get_row( $p_document_id, $p_error_if_not_exists = true ) {
 	global $g_document_cache;
 
-	$p_category_id = (int)$p_category_id;
+	$p_document_id = (int)$p_document_id;
 
-	if( isset( $g_document_cache[$p_category_id] ) ) {
-		return $g_document_cache[$p_category_id];
+	if( isset( $g_document_cache[$p_document_id] ) ) {
+		return $g_document_cache[$p_document_id];
 	}
 
 	db_param_push();
 	$t_query = 'SELECT * FROM {document} WHERE id=' . db_param();
-	$t_result = db_query( $t_query, array( $p_category_id ) );
+	$t_result = db_query( $t_query, array( $p_document_id ) );
 	$t_row = db_fetch_array( $t_result );
 	if( !$t_row ) {
 		if( $p_error_if_not_exists ) {
@@ -385,7 +385,7 @@ function document_get_row( $p_category_id, $p_error_if_not_exists = true ) {
 		}
 	}
 
-	$g_document_cache[$p_category_id] = $t_row;
+	$g_document_cache[$p_document_id] = $t_row;
 	return $t_row;
 }
 
@@ -573,8 +573,12 @@ function document_get_all_rows( $p_project_id, $p_inherit = null, $p_sort_by_pro
 				LEFT JOIN {project} p
 					ON c.project_id=p.id
 				WHERE ' . $t_project_where . ' ORDER BY c.name';
+
+	error_log($t_query);
+
 	$t_result = db_query( $t_query );
 	$t_rows = array();
+
 	while( $t_row = db_fetch_array( $t_result ) ) {
 		$t_rows[] = $t_row;
 		$g_document_cache[(int)$t_row['id']] = $t_row;
@@ -623,49 +627,49 @@ function document_cache_array_rows( array $p_cat_id_array ) {
 }
 
 /**
- * Given a category id and a field name, this function returns the field value.
- * An error will be triggered for a non-existent category id or category id = 0.
- * @param integer $p_category_id A category identifier.
+ * Given a document id and a field name, this function returns the field value.
+ * An error will be triggered for a non-existent document id or document id = 0.
+ * @param integer $p_document_id A document identifier.
  * @param string  $p_field_name  Field name.
  * @return string field value
  * @access public
  */
-function document_get_field( $p_category_id, $p_field_name ) {
-	$t_row = document_get_row( $p_category_id );
+function document_get_field( $p_document_id, $p_field_name ) {
+	$t_row = document_get_row( $p_document_id );
 	return $t_row[$p_field_name];
 }
 
 /**
- * Given a category id, this function returns the category name.
- * An error will be triggered for a non-existent category id or category id = 0.
- * @param integer $p_category_id A category identifier.
- * @return string category name
+ * Given a document id, this function returns the document name.
+ * An error will be triggered for a non-existent document id or document id = 0.
+ * @param integer $p_document_id A document identifier.
+ * @return string document name
  * @access public
  */
-function document_get_name( $p_category_id ) {
-	return document_get_field( $p_category_id, 'name' );
+function document_get_name( $p_document_id ) {
+	return document_get_field( $p_document_id, 'name' );
 }
 
 /**
- * Given a category name and project, this function returns the category id.
+ * Given a document name and project, this function returns the document id.
  * An error will be triggered if the specified project does not have a
- * category with that name.
- * @param string  $p_category_name  Category name to retrieve.
+ * document with that name.
+ * @param string  $p_document_name  Document name to retrieve.
  * @param integer $p_project_id     A project identifier.
  * @param boolean $p_trigger_errors Whether to trigger error on failure.
  * @return boolean
  * @access public
  */
-function document_get_id_by_name( $p_category_name, $p_project_id, $p_trigger_errors = true ) {
+function document_get_id_by_name( $p_document_name, $p_project_id, $p_trigger_errors = true ) {
 	$t_project_name = project_get_name( $p_project_id );
 
 	db_param_push();
 	$t_query = 'SELECT id FROM {document} WHERE name=' . db_param() . ' AND project_id=' . db_param();
-	$t_result = db_query( $t_query, array( $p_category_name, (int)$p_project_id ) );
+	$t_result = db_query( $t_query, array( $p_document_name, (int)$p_project_id ) );
 	$t_id = db_result( $t_result );
 	if( $t_id === false ) {
 		if( $p_trigger_errors ) {
-			error_parameters( $p_category_name, $t_project_name );
+			error_parameters( $p_document_name, $t_project_name );
 			trigger_error( ERROR_DOCUMENT_NOT_FOUND_FOR_PROJECT, ERROR );
 		} else {
 			return false;
@@ -676,21 +680,21 @@ function document_get_id_by_name( $p_category_name, $p_project_id, $p_trigger_er
 }
 
 /**
- * Retrieves category name (including project name if required)
- * @param string  $p_category_id     Category identifier.
+ * Retrieves document name (including project name if required)
+ * @param string  $p_document_id     Document identifier.
  * @param boolean $p_show_project    Show project details.
  * @param integer $p_current_project Current project id override.
- * @return string category full name
+ * @return string document full name
  * @access public
  */
-function document_full_name( $p_category_id, $p_show_project = true, $p_current_project = null ) {
-	if( 0 == $p_category_id ) {
-		# No Category
-		return lang_get( 'no_category' );
-	} else if( !document_exists( $p_category_id ) ) {
-		return '@' . $p_category_id . '@';
+function document_full_name( $p_document_id, $p_show_project = true, $p_current_project = null ) {
+	if( 0 == $p_document_id ) {
+		# No Document
+		return lang_get( 'no_document' );
+	} else if( !document_exists( $p_document_id ) ) {
+		return '@' . $p_document_id . '@';
 	} else {
-		$t_row = document_get_row( $p_category_id );
+		$t_row = document_get_row( $p_document_id );
 		$t_project_id = $t_row['project_id'];
 
 		$t_current_project = is_null( $p_current_project ) ? helper_get_current_project() : $p_current_project;
@@ -705,26 +709,26 @@ function document_full_name( $p_category_id, $p_show_project = true, $p_current_
 
 /**
  * Check category can be deleted 
- * @param string $p_category_id Category identifier.
+ * @param string $p_document_id Category identifier.
  * @return boolean Return true if the category valid for delete, otherwise false
  * @access public
  */
-function document_can_delete( $p_category_id ) {
+function document_can_delete( $p_document_id ) {
 	db_param_push();
 	$t_query = 'SELECT COUNT(id) FROM {bug} WHERE category_id=' . db_param();
-	$t_bug_count = db_result( db_query( $t_query, array( $p_category_id ) ) );
+	$t_bug_count = db_result( db_query( $t_query, array( $p_document_id ) ) );
 	return $t_bug_count == 0;
 }
 
 /**
  * Ensure category can be deleted, otherwise raise an error.
- * @param string $p_category_id Category identifier.
+ * @param string $p_document_id Category identifier.
  * @return void
  * @access public
  */
-function document_ensure_can_delete( $p_category_id ) {
-	if( !document_can_delete( $p_category_id ) ) {
-		$t_document_name = document_get_name( $p_category_id );
+function document_ensure_can_delete( $p_document_id ) {
+	if( !document_can_delete( $p_document_id ) ) {
+		$t_document_name = document_get_name( $p_document_id );
 		error_parameters( $t_document_name );
 		trigger_error( ERROR_DOCUMENT_CANNOT_DELETE_HAS_ISSUES, ERROR );
 	}
@@ -735,11 +739,11 @@ function document_ensure_can_delete( $p_category_id ) {
  *
  * Category 0 (no category) is always considered as enabled.
  *
- * @param int $p_category_id Category identifier.
+ * @param int $p_document_id Category identifier.
  *
  * @return bool True if enabled, false otherwise
  */
-function document_is_enabled( $p_category_id ) {
-	return $p_category_id == 0
-		|| document_get_field( $p_category_id, 'status' ) == CATEGORY_STATUS_ENABLED;
+function document_is_enabled( $p_document_id ) {
+	return $p_document_id == 0
+		|| document_get_field( $p_document_id, 'status' ) == CATEGORY_STATUS_ENABLED;
 }

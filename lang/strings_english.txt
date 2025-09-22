@@ -139,6 +139,8 @@ $s_empty_password_button = 'Use Empty Password';
 $s_reauthenticate_title = 'Authenticate';
 $s_reauthenticate_message = 'You are visiting a secure page, and your secure session has expired. Please authenticate yourself to continue.';
 
+$s_no_document = '(No Document)';
+
 $s_no_category = '(No Category)';
 $s_global_categories = 'Global Categories';
 $s_inherit = 'Inherit Categories';
@@ -567,8 +569,11 @@ $s_update_information_button = 'Update Information';
 $s_sticky_issue = 'Sticky Issue';
 $s_profile = 'Profile';
 
-# bug_update_page.php
+# bug_update_page.php  TODO RobD - this appears to be unused?
 $s_updating_bug_simple_title = 'Updating Issue Information';
+
+# dwg_update_page.php
+$s_updating_dwg_advanced_title = 'Updating Document Information (WIP)';
 
 # bug_view*
 $s_view_revisions = 'View Revisions';
@@ -1414,6 +1419,7 @@ $s_bug = 'issue';
 $s_bugs = 'issues';
 $s_add_new_relationship = 'New relationship';
 $s_this_bug = 'Current issue';
+$s_this_dwg = 'Current document';
 $s_relationship_added = 'Relationship added';
 $s_relationship_deleted = 'Relationship deleted';
 $s_no_relationship = 'no relationship';

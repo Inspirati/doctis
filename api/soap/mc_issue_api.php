@@ -1700,6 +1700,15 @@ function mci_issue_data_as_array( BugData $p_issue_data, $p_user_id, $p_lang, $p
 		$t_issue['category'] = mci_get_category( $p_issue_data->category_id );
 	}
 
+	if( $t_fields === null || isset( $t_fields['document'] ) ) {
+		// @TODO RobD - this is probably not what we need, as it is just a copy of how categories are handled
+		// $t_issue['document'] = mci_get_document( $p_issue_data->document_id );
+		$t_issue['document_id'] = $p_issue_data->document_id;
+		$t_issue['document'] = "dummy document name";
+
+		// this is where we can return an array of documents which this issue relates to - in an array of structures with id, name, etc..
+	}
+
 	if( $t_fields === null || isset( $t_fields['version'] ) ) {
 		$t_issue['version'] = mci_get_version( $p_issue_data->version, $p_issue_data->project_id );
 	}
