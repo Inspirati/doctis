@@ -71,7 +71,7 @@ require_api( 'bug_api.php' );
 require_api( 'dwg_api.php' );
 
 // require_api( 'bug_activity_api.php' );
-require_api( 'dwg_activity_api.php' );
+//require_api( 'dwg_activity_api.php' );
 
 require_api( 'category_api.php' );
 require_api( 'columns_api.php' );

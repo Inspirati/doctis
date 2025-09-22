@@ -940,7 +940,7 @@ $g_upgrade[218] = array( 'AddColumnSQL', array( db_get_table( 'project' ), "
 	class				C(255)	NOTNULL DEFAULT \" '' \" " ) );
 
 # IMPORTANT: keep these entries as the last indexes, as they will be deleted in release versions
-             (so you will need to bump all the indexes when inserting tables database statements above here)
+#            (you will need to bump all the indexes when inserting tables database statements above here)
 
 // user access_level: '10:viewer,25:reporter,40:updater,55:developer,70:manager,90:administrator'
 // default password: 'pass' == 1a1dc91c907325c69271ddf0c944bc72
@@ -1020,7 +1020,7 @@ $g_upgrade[223] = array( 'InsertData', array( db_get_table( 'user' ), "(
 		'1757927188', '1757927188'
 	)" ) );
 
-# Default user password: pass (note that last two fields here are fixed unixtimes, circa 15 Sept 2025)
+# Default 'user' password: pass (note that last two fields here are fixed unixtimes, circa 15 Sept 2025)
 $g_upgrade[224] = array( 'InsertData', array( db_get_table( 'user' ), "(
 		username, realname, email, password,
 		enabled, protected, access_level,
