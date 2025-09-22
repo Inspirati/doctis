@@ -172,6 +172,12 @@ class DwgViewPageCommand extends Command {
 			$t_issue_view['created_at'] = date( $t_date_format, strtotime( $t_issue['created_at'] ) );
 		}
 
+		// @TODO RobD - WIP, is this the right approach?
+//		$t_flags['created_at_show'] = in_array( 'date_submitted', $t_fields );
+//		if( $t_flags['created_at_show'] ) {
+			$t_issue_view['release_date'] = date( $t_date_format, strtotime( $t_issue['release_date'] ) );
+//		}
+
 		$t_flags['updated_at_show'] = in_array( 'last_updated', $t_fields );
 		if( $t_flags['updated_at_show'] ) {
 			$t_issue_view['updated_at'] = date( $t_date_format, strtotime( $t_issue['updated_at'] ) );

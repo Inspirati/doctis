@@ -101,6 +101,9 @@ class IssueViewPageCommand extends Command {
 		$t_issue_id = (int)$t_issue['id'];
 		$t_project_id = (int)$t_issue['project']['id'];
 
+		// NOTE: we are not doing anything with the document_id here (for now), but it does get passed back in the t_issue array
+		$t_document_id = (int)$t_issue['document_id'];
+		
 		# in case the current project is not the same project of the bug we are
 		# viewing, override the current project. This to avoid problems with
 		# categories and handlers lists etc.
@@ -242,6 +245,7 @@ class IssueViewPageCommand extends Command {
 
 		$t_flags['attachments_show'] = in_array( 'attachments', $t_fields );
 		$t_flags['category_show'] = in_array( 'category_id', $t_fields );
+		$t_flags['document_show'] = in_array( 'document_id', $t_fields );
 		$t_flags['eta_show'] = in_array( 'eta', $t_fields );
 		$t_flags['handler_show'] = in_array( 'handler', $t_fields );
 		$t_flags['priority_show'] = in_array( 'priority', $t_fields ) && isset( $t_issue['priority'] );

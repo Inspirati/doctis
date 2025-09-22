@@ -165,11 +165,11 @@ function show_revision( array $p_revision ) {
 
 ?>
 	<tr class="spacer">
-		<td><a id="dwg_revision-<?php echo $v_id ?>"></a></td>
+		<td><a id="revision-<?php echo $v_id ?>"></a></td>
 	</tr>
 
 	<tr>
-		<th class="category"><?php echo lang_get( 'dwg_revision' ) ?></th>
+		<th class="category"><?php echo lang_get( 'revision' ) ?></th>
 		<td>
 <?php
 	echo $t_by_string;
