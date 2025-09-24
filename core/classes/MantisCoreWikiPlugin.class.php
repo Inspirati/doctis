@@ -101,6 +101,17 @@ class MantisCoreDokuwikiPlugin extends MantisCoreWikiPlugin {
 	function link_project( $p_event, $p_project_id ) {
 		return $this->base_url( $p_project_id ) . 'start';
 	}
+
+	/**
+	 * Wiki link to a document
+	 *
+	 * @param integer $p_event  Event.
+	 * @param integer $p_dwg_id A dwg (document) identifier.
+	 * @return string
+	 */
+	function link_document( $p_event, $p_dwg_id ) {
+		return $this->base_url( dwg_get_field( $p_dwg_id, 'project_id' ) ) .  'document:' . (int)$p_dwg_id;
+	}
 }
 
 /**
@@ -155,6 +166,17 @@ class MantisCoreMediaWikiPlugin extends MantisCoreWikiPlugin {
 	 */
 	function link_project( $p_event, $p_project_id ) {
 		return $this->base_url( $p_project_id ) . 'Main_Page';
+	}
+
+	/**
+	 * Wiki link to a document
+	 *
+	 * @param integer $p_event       Event.
+	 * @param integer $p_document_id A document identifier.
+	 * @return string
+	 */
+	function link_document( $p_event, $p_document_id ) {
+		return $this->base_url( $p_document_id ) . 'Main_Page';
 	}
 }
 
@@ -215,6 +237,17 @@ class MantisCoreTwikiPlugin extends MantisCoreWikiPlugin {
 	function link_project( $p_event, $p_project_id ) {
 		return $this->base_url( $p_project_id );
 	}
+
+	/**
+	 * Wiki link to a document
+	 *
+	 * @param integer $p_event       Event.
+	 * @param integer $p_document_id A document identifier.
+	 * @return string
+	 */
+	function link_document( $p_event, $p_document_id ) {
+		return $this->base_url( $p_document_id );
+	}
 }
 
 /**
@@ -273,6 +306,17 @@ class MantisCoreWackowikiPlugin extends MantisCoreWikiPlugin {
 	 */
 	function link_project( $p_event, $p_project_id ) {
 		return $this->base_url( $p_project_id ) . '';
+	}
+
+	/**
+	 * Wiki link to a document
+	 *
+	 * @param integer $p_event       Event.
+	 * @param integer $p_document_id A document identifier.
+	 * @return string
+	 */
+	function link_document( $p_event, $p_document_id ) {
+		return $this->base_url( $p_document_id ) . '';
 	}
 }
 
@@ -333,6 +377,17 @@ class MantisCoreWikkaWikiPlugin extends MantisCoreWikiPlugin {
 	function link_project( $p_event, $p_project_id ) {
 		return $this->base_url( $p_project_id ) . 'Start';
 	}
+
+	/**
+	 * Wiki link to a document
+	 *
+	 * @param integer $p_event       Event.
+	 * @param integer $p_document_id A document identifier.
+	 * @return string
+	 */
+	function link_document( $p_event, $p_document_id ) {
+		return $this->base_url( $p_document_id ) . 'Start';
+	}
 }
 
 /**
@@ -387,5 +442,16 @@ class MantisCoreXwikiPlugin extends MantisCoreWikiPlugin {
 	 */
 	function link_project( $p_event, $p_project_id ) {
 		return $this->base_url( $p_project_id ) . 'Main_Page';
+	}
+
+	/**
+	 * Wiki link to a document
+	 *
+	 * @param integer $p_event       Event.
+	 * @param integer $p_document_id A document identifier.
+	 * @return string
+	 */
+	function link_document( $p_event, $p_document_id ) {
+		return $this->base_url( $p_document_id ) . 'Main_Page';
 	}
 }

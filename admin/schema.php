@@ -905,39 +905,55 @@ $g_upgrade[213] = array( 'UpdateFunction', 'category_status_default' );
 # Release marker: 2.27.0
 
 
-# BEGIN Development marker: Inspirati - RobD
+# BEGIN Development marker: Inspirati (RobD)
+
+# WARNING: The following database upgrade statements are using an indexing system which
+#          is not suitable for release versions. It is intended for development convenience
+#          only and would likely lead to a loss of configuration control outside of a such
+#          an enviroment. It is currently being used under the assumption that all installs
+#          are to a fresh/clean database with the following being a totally new schema on
+#          every install. Use with caution even in a development environment.
+
+$t_idx = 214;  # the next upgrade sequence number from the released version when branched
 
 // REFERENCE VERSION: this passes checks
-$g_upgrade[214] = array( 'CreateTableSQL',
+$g_upgrade[$t_idx++] = array( 'CreateTableSQL',
 	array( db_get_table( 'document' ), "
 		id				I		NOTNULL UNSIGNED AUTOINCREMENT PRIMARY,
 		project_id		I		UNSIGNED NOTNULL DEFAULT '0',
+		creator_id		I		UNSIGNED NOTNULL DEFAULT '0',
+		handler_id		I		UNSIGNED NOTNULL DEFAULT '0',
+		duplicate_id	I		UNSIGNED NOTNULL DEFAULT '0',
+		category_id		I		UNSIGNED NOTNULL DEFAULT '1',
 		status			I2		NOTNULL DEFAULT '10',
 		enabled			L		NOTNULL DEFAULT \" '1' \",
+		title			C(255)	NOTNULL,
+		number			C(64)	NOTNULL DEFAULT \" '' \",
 		version			C(64)	NOTNULL DEFAULT \" '' \",
-		name			C(255)	NOTNULL,
-		number			C(64)	NOTNULL,
-		revision		C(64)	NOTNULL,
-		category		C(64)	NOTNULL,
-		reference		C(255)	NULL,
+		revision		C(64)	NOTNULL DEFAULT \" '' \",
+		discipline		C(64)	NOTNULL DEFAULT \" '' \",
+		reference		C(255)	NOTNULL DEFAULT \" '' \",
 		link_url		C(255)	NOTNULL DEFAULT \" '' \",
-		class			C(255)	NOTNULL DEFAULT \" '' \",
-		revision_date	I		NOTNULL UNSIGNED,
-		release_date	I		NULL UNSIGNED,
-		date_submitted	I		NOTNULL UNSIGNED,
-		last_updated	I		NOTNULL UNSIGNED
+		classification	C(255)	NOTNULL DEFAULT \" '' \",
+		revision_date	I		UNSIGNED NOTNULL DEFAULT '1',
+		release_date	I		UNSIGNED NOTNULL DEFAULT '1',
+		date_submitted	I		UNSIGNED NOTNULL DEFAULT '1',
+		last_updated	I		UNSIGNED NOTNULL DEFAULT '1'
 	" )
 );
 $g_upgrade[215] = array( 'CreateIndexSQL', array( 'idx_document_number', db_get_table( 'document' ), 'number' ) );
 $g_upgrade[216] = array( 'CreateIndexSQL', array( 'idx_document_category', db_get_table( 'document' ), 'category' ) );
 
+# @TODO RobD - extract from dwg_api.php ~line number 1982:
+	# log changes except for duplicate_id which is obsolete and should be removed in MantisBT 1.3
+
 # @TODO RobD: or we could rename the project_id field, as it should become unused
-$g_upgrade[217] = array( 'AddColumnSQL', array( db_get_table( 'bug' ), "
+$g_upgrade[$t_idx++] = array( 'AddColumnSQL', array( db_get_table( 'bug' ), "
 	document_id			I		UNSIGNED NOTNULL DEFAULT '0' " ) );
 
 # @TODO RobD: add field for project classification
-$g_upgrade[218] = array( 'AddColumnSQL', array( db_get_table( 'project' ), "
-	class				C(255)	NOTNULL DEFAULT \" '' \" " ) );
+$g_upgrade[$t_idx++] = array( 'AddColumnSQL', array( db_get_table( 'project' ), "
+	classification		C(255)	NOTNULL DEFAULT \" '' \" " ) );
 
 # IMPORTANT: keep these entries as the last indexes, as they will be deleted in release versions
 #			 (you will need to bump all the indexes when inserting tables database statements above here)
@@ -945,7 +961,7 @@ $g_upgrade[218] = array( 'AddColumnSQL', array( db_get_table( 'project' ), "
 # user access_level: '10:viewer,25:reporter,40:updater,55:developer,70:manager,90:administrator'
 # default password: 'pass' == 1a1dc91c907325c69271ddf0c944bc72
 
-$g_upgrade[219] = array( 'InsertData', array( db_get_table( 'user' ), "(
+$g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'user' ), "(
 		username, realname, email, password,
 		enabled, protected, access_level,
 		login_count, lost_password_request_count, failed_login_count,
@@ -960,7 +976,7 @@ $g_upgrade[219] = array( 'InsertData', array( db_get_table( 'user' ), "(
 		'1757927188', '1757927188'
 	)" ) );
 
-$g_upgrade[220] = array( 'InsertData', array( db_get_table( 'user' ), "(
+$g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'user' ), "(
 		username, realname, email, password,
 		enabled, protected, access_level,
 		login_count, lost_password_request_count, failed_login_count,
@@ -975,7 +991,7 @@ $g_upgrade[220] = array( 'InsertData', array( db_get_table( 'user' ), "(
 		'1757927188', '1757927188'
 	)" ) );
 
-$g_upgrade[221] = array( 'InsertData', array( db_get_table( 'user' ), "(
+$g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'user' ), "(
 		username, realname, email, password,
 		enabled, protected, access_level,
 		login_count, lost_password_request_count, failed_login_count,
@@ -990,7 +1006,7 @@ $g_upgrade[221] = array( 'InsertData', array( db_get_table( 'user' ), "(
 		'1757927188', '1757927188'
 	)" ) );
 
-$g_upgrade[222] = array( 'InsertData', array( db_get_table( 'user' ), "(
+$g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'user' ), "(
 		username, realname, email, password,
 		enabled, protected, access_level,
 		login_count, lost_password_request_count, failed_login_count,
@@ -1005,7 +1021,7 @@ $g_upgrade[222] = array( 'InsertData', array( db_get_table( 'user' ), "(
 		'1757927188', '1757927188'
 	)" ) );
 
-$g_upgrade[223] = array( 'InsertData', array( db_get_table( 'user' ), "(
+$g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'user' ), "(
 		username, realname, email, password,
 		enabled, protected, access_level,
 		login_count, lost_password_request_count, failed_login_count,
@@ -1021,7 +1037,7 @@ $g_upgrade[223] = array( 'InsertData', array( db_get_table( 'user' ), "(
 	)" ) );
 
 # Default 'user' password: pass (note that last two fields here are fixed unixtimes, circa 15 Sept 2025)
-$g_upgrade[224] = array( 'InsertData', array( db_get_table( 'user' ), "(
+$g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'user' ), "(
 		username, realname, email, password,
 		enabled, protected, access_level,
 		login_count, lost_password_request_count, failed_login_count,

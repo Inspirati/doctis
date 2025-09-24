@@ -53,14 +53,10 @@ require_once( 'core.php' );
 require_api( 'access_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'bug_api.php' );
-
 require_api( 'dwg_api.php' );
-
 require_api( 'collapse_api.php' );
 require_api( 'columns_api.php' );
-
 require_api( 'columns_dwg_api.php' );
-
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
 require_api( 'custom_field_api.php' );
@@ -74,9 +70,7 @@ require_api( 'helper_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'print_api.php' );
-
 require_api( 'print_dwg_api.php' );
-
 require_api( 'profile_api.php' );
 require_api( 'project_api.php' );
 require_api( 'relationship_api.php' );
@@ -98,54 +92,66 @@ $f_master_bug_id = gpc_get_int( 'm_dwg_id', 0 );
 
 if( $f_master_bug_id > 0 ) {
 	# master bug exists...
-	// bug_ensure_exists( $f_master_bug_id );
+	bug_ensure_exists( $f_master_bug_id );
 
-	// # master bug is not read-only...
-	// if( bug_is_readonly( $f_master_bug_id ) ) {
-	// 	error_parameters( $f_master_bug_id );
-	// 	trigger_error( ERROR_BUG_READ_ONLY_ACTION_DENIED, ERROR );
-	// }
+	# master bug is not read-only...
+	if( bug_is_readonly( $f_master_bug_id ) ) {
+		error_parameters( $f_master_bug_id );
+		trigger_error( ERROR_BUG_READ_ONLY_ACTION_DENIED, ERROR );
+	}
 
-	// # User can view the master bug
-	// access_ensure_dwg_level( config_get( 'view_dwg_threshold' ), $f_master_bug_id );
+	# User can view the master bug
+	access_ensure_dwg_level( config_get( 'view_dwg_threshold' ), $f_master_bug_id );
 
-	// $t_bug = dwg_get( $f_master_bug_id, true );
+	$t_bug = dwg_get( $f_master_bug_id, true );
 
-	// #@@@ (thraxisp) Note that the master bug is cloned into the same project as the master, independent of
-	// #       what the current project is set to.
-	// if( $t_bug->project_id != helper_get_current_project() ) {
-	// 	# in case the current project is not the same project of the bug we are viewing...
-	// 	# ... override the current project. This to avoid problems with categories and handlers lists etc.
-	// 	$g_project_override = $t_bug->project_id;
-	// 	$t_changed_project = true;
-	// } else {
-	// 	$t_changed_project = false;
-	// }
+	#@@@ (thraxisp) Note that the master bug is cloned into the same project as the master, independent of
+	#       what the current project is set to.
+	if( $t_bug->project_id != helper_get_current_project() ) {
+		# in case the current project is not the same project of the bug we are viewing...
+		# ... override the current project. This to avoid problems with categories and handlers lists etc.
+		$g_project_override = $t_bug->project_id;
+		$t_changed_project = true;
+	} else {
+		$t_changed_project = false;
+	}
 
-	// access_ensure_project_level( config_get( 'create_dwg_threshold' ) );
+	access_ensure_project_level( config_get( 'create_dwg_threshold' ) );
 
-	// $f_build				= $t_bug->build;
-	// $f_platform				= $t_bug->platform;
-	// $f_os					= $t_bug->os;
-	// $f_os_build				= $t_bug->os_build;
-	// $f_product_version		= $t_bug->version;
-	// $f_target_version		= $t_bug->target_version;
-	// $f_profile_id			= 0;
-	// $f_handler_id			= $t_bug->handler_id;
+	$f_dwg_version			= $t_bug->$t_dwg_version;
+	$f_dwg_title			= $t_bug->$t_dwg_title;
+	$f_dwg_number			= $t_bug->$t_dwg_number;
+	$f_dwg_revision			= $t_bug->$t_dwg_revision;
+	$f_dwg_discipline		= $t_bug->$t_dwg_discipline;
+	$f_dwg_reference		= $t_bug->$t_dwg_reference;
+	$f_dwg_link_url			= $t_bug->$t_dwg_link_url;
+	$f_dwg_class			= $t_bug->$t_dwg_classification;
+	$f_dwg_revision_date	= $t_bug->$f_dwg_revision_date;
+	$f_dwg_release_date		= $t_bug->$f_dwg_release_date;
 
-	// $f_category_id			= $t_bug->category_id;
-	// $f_reproducibility		= $t_bug->reproducibility;
-	// $f_eta					= $t_bug->eta;
-	// $f_severity				= $t_bug->severity;
-	// $f_priority				= $t_bug->priority;
-	// $f_summary				= $t_bug->summary;
-	// $f_description			= $t_bug->description;
-	// $f_steps_to_reproduce	= $t_bug->steps_to_reproduce;
-	// $f_additional_info		= $t_bug->additional_information;
-	// $f_view_state			= (int)$t_bug->view_state;
-	// $f_due_date				= $t_bug->due_date;
 
-	// $t_project_id			= $t_bug->project_id;
+	$f_build				= $t_bug->build;
+	$f_platform				= $t_bug->platform;
+	$f_os					= $t_bug->os;
+	$f_os_build				= $t_bug->os_build;
+	$f_product_version		= $t_bug->version;
+	$f_target_version		= $t_bug->target_version;
+	$f_profile_id			= 0;
+	$f_handler_id			= $t_bug->handler_id;
+
+	$f_category_id			= $t_bug->category_id;
+	$f_reproducibility		= $t_bug->reproducibility;
+	$f_eta					= $t_bug->eta;
+	$f_severity				= $t_bug->severity;
+	$f_priority				= $t_bug->priority;
+	$f_summary				= $t_bug->summary;
+	$f_description			= $t_bug->description;
+	$f_steps_to_reproduce	= $t_bug->steps_to_reproduce;
+	$f_additional_info		= $t_bug->additional_information;
+	$f_view_state			= (int)$t_bug->view_state;
+	$f_due_date				= $t_bug->due_date;
+
+	$t_project_id			= $t_bug->project_id;
 } else {
 	# Get Project Id and set it as current
 	$t_current_project = helper_get_current_project();
@@ -186,17 +192,15 @@ if( $f_master_bug_id > 0 ) {
 	// $f_isbn				= gpc_get_string( 'isbn', '9780008529543' );
 
 	$f_dwg_version			= gpc_get_string( 'dwg_version', '1.0' );
-	$f_dwg_name				= gpc_get_string( 'dwg_name', 'The Tao of Pooh' );
+	$f_dwg_title			= gpc_get_string( 'dwg_title', 'The Tao of Pooh' );
 	$f_dwg_number			= gpc_get_string( 'dwg_number', '2.7182' );
 	$f_dwg_revision			= gpc_get_string( 'dwg_revision', 'First Edition' );
-	$f_dwg_category			= gpc_get_string( 'dwg_category', 'Childrens Stories' );
+	$f_dwg_discipline		= gpc_get_string( 'dwg_discipline', 'Philopsophy' );
 	$f_dwg_reference		= gpc_get_string( 'dwg_reference', 'AB31415926' );
 	$f_dwg_link_url			= gpc_get_string( 'dwg_link_url', 'https://openlibrary.org/books/OL3504254M/The_Tao_of_Pooh' );
-	$f_dwg_class			= gpc_get_string( 'dwg_class', 'UNCLASSIFIED' );
-	$f_dwg_revision_date	= date_get_null();
-	$f_dwg_release_date		= date_get_null();
-	$f_dwg_date_submitted	= date_get_null();
-	$f_dwg_last_updated		= date_get_null();
+	$f_dwg_class			= gpc_get_string( 'dwg_classification', 'UNCLASSIFIED' );
+	$f_dwg_revision_date	= gpc_get_string( 'dwg_revision_date', 'nil' );
+	$f_dwg_release_date		= gpc_get_string( 'dwg_release_date', 'nil' );
 
 	$f_build				= gpc_get_string( 'build', '' );
 	$f_platform				= gpc_get_string( 'platform', '' );
@@ -289,8 +293,6 @@ $t_show_additional_info = false;
 $t_show_due_date = false;
 $t_show_attachments = false;
 $t_show_view_state = false;
-
-
 
 $t_has_profiles = count( profile_get_all_for_user( auth_get_current_user_id() ) ) > 0;
 
@@ -442,8 +444,8 @@ if( $t_show_attachments ) {
 			<label for="dwg_title"><?php print_documentation_link( 'dwg_title' ) ?></label>
 		</th>
 		<td>
-<!--			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_title" name="dwg_title" size="105" maxlength="128" value="<?php echo string_attribute( $f_dwg_name ) ?>" required />  -->
-			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_title" name="dwg_title" size="105" maxlength="128" value="<?php echo string_attribute( $f_dwg_name ) ?>" />
+<!--			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_title" name="dwg_title" size="105" maxlength="128" value="<?php echo string_attribute( $f_dwg_title ) ?>" required />  -->
+			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_title" name="dwg_title" size="105" maxlength="128" value="<?php echo string_attribute( $f_dwg_title ) ?>" />
 		</td>
 	</tr>
 	<tr>
@@ -480,6 +482,68 @@ if( $t_show_attachments ) {
 		</td>
 	</tr>
 
+	<tr>
+		<th class="category">
+			<label for="dwg_discipline"><?php print_documentation_link( 'dwg_discipline' ) ?></label>
+		</th>
+		<td>
+			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_discipline" name="dwg_discipline" size="105" maxlength="128" value="<?php echo string_attribute( $f_dwg_discipline ) ?>" />
+		</td>
+	</tr>
+
+	<tr>
+		<th class="category">
+			<label for="dwg_link_url"><?php print_documentation_link( 'dwg_link_url' ) ?></label>
+		</th>
+		<td>
+			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_link_url" name="dwg_link_url" size="105" maxlength="128" value="<?php echo string_attribute( $f_dwg_link_url ) ?>" />
+		</td>
+	</tr>
+
+	<!-- <tr>
+		<th class="category">
+			<label for="dwg_revision_date"><?php print_documentation_link( 'dwg_revision_date' ) ?></label>
+		</th>
+		<td>
+			<input <?php echo helper_get_tab_index() ?> type="date" id="dwg_revision_date" name="dwg_revision_date" size="105" maxlength="128" value="', date('Y-m-d\TH:i'), '" />
+		</td>
+	</tr> -->
+
+	<!-- <tr>
+		<th class="category">
+			<label for="dwg_release_date"><?php print_documentation_link( 'dwg_release_date' ) ?></label>
+		</th>
+		<td>
+			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_release_date" name="dwg_release_date" size="105" maxlength="128" value="<?php echo string_attribute( $f_dwg_release_date ) ?>" />
+		</td>
+	</tr> -->
+
+	<tr>
+		<th class="category">
+			<label for="dwg_revision_date"><?php print_documentation_link( 'dwg_revision_date' ) ?></label>
+		</th>
+		<td>
+			<?php echo '<input ' . helper_get_tab_index() . ' type="text" id="dwg_revision_date" name="dwg_revision_date" class="datetimepicker input-sm" ' .
+				'data-picker-locale="' . lang_get_current_datetime_locale() .
+				'" data-picker-format="' . config_get( 'dwg_date_picker_format' ) . '" ' .
+				'size="20" maxlength="16" value="' . $t_date_to_display . '" />' ?>
+			<?php print_icon( 'fa-calendar', 'fa-xlg datetimepicker' ); ?>
+		</td>
+	</tr>
+
+	<tr>
+		<th class="category">
+			<label for="dwg_release_date"><?php print_documentation_link( 'dwg_release_date' ) ?></label>
+		</th>
+		<td>
+			<?php echo '<input ' . helper_get_tab_index() . ' type="text" id="dwg_release_date" name="dwg_release_date" class="datetimepicker input-sm" ' .
+				'data-picker-locale="' . lang_get_current_datetime_locale() .
+				'" data-picker-format="' . config_get( 'dwg_date_picker_format' ) . '" ' .
+				'size="20" maxlength="16" value="' . $t_date_to_display . '" />' ?>
+			<?php print_icon( 'fa-calendar', 'fa-xlg datetimepicker' ); ?>
+		</td>
+	</tr>
+
 
 	<tr>
 		<th class="category">
@@ -489,7 +553,6 @@ if( $t_show_attachments ) {
 			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_classification" name="dwg_classification" size="105" maxlength="128" value="<?php echo string_attribute( $f_dwg_classification ) ?>" />
 		</td>
 	</tr>
-
 
 	<tr>
 		<th class="category">

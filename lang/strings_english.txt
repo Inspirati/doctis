@@ -120,6 +120,7 @@ $s_copy_versions_to = 'Copy Versions To';
 $s_copy_users_from = 'Copy Users From';
 $s_copy_users_to = 'Copy Users To';
 $s_bug_history = 'Issue History';
+$s_dwg_history = 'Document History';
 $s_field = 'Field';
 $s_old_value = 'Old Value';
 $s_new_value = 'New Value';
@@ -520,6 +521,14 @@ $s_reminder_explain = 'This note will be sent to the selected recipients, reques
 $s_reminder_monitor = 'These recipients will also begin monitoring the issue; they can unsubscribe using the "End Monitoring" button.';
 $s_reminder_store = 'The note will be stored with the issue.';
 
+# dwg_reminder_page.php
+$s_dwg_send_button = 'Send';
+$s_dwg_reminder = 'Send a Reminder';
+$s_dwg_reminder_mentions = 'You can now mention users to trigger notifications for them instead of using reminders feature.  For example, others can mention you by writing %1s in document and notes and you will get an email notification.';
+$s_dwg_reminder_explain = 'This note will be sent to the selected recipients, requesting feedback on this document.';
+$s_dwg_reminder_monitor = 'These recipients will also begin monitoring the document; they can unsubscribe using the "End Monitoring" button.';
+$s_dwg_reminder_store = 'The note will be stored with the document.';
+
 # mentions
 $s_mentioned_you = 'mentioned you on:';
 $s_mentioned_in = 'Mentioned in %1$s';
@@ -593,7 +602,10 @@ $s_dwg_title = 'Document Title';
 $s_dwg_revision = 'Revision';
 $s_dwg_reference = 'Reference';
 $s_dwg_number = 'Number';
+$s_dwg_discipline = 'Discipline';
 $s_dwg_date = 'Date';
+$s_dwg_link_url = 'Link URL';
+$s_dwg_revision_date = 'Revision Date';
 $s_dwg_release_date = 'Release Date';
 $s_dwg_classification = 'Classification';
 

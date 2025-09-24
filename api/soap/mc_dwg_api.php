@@ -1695,8 +1695,8 @@ function mci_dwg_data_as_array( DwgData $p_issue_data, $p_user_id, $p_lang, $p_f
 	if( $t_fields === null || isset( $t_fields['link_url'] ) ) {
 		$t_issue['link_url'] = mci_sanitize_xml_string( $p_issue_data->link_url);
 	}
-	if( $t_fields === null || isset( $t_fields['class'] ) ) {
-		$t_issue['class'] = mci_sanitize_xml_string( $p_issue_data->class );
+	if( $t_fields === null || isset( $t_fields['classification'] ) ) {
+		$t_issue['classification'] = mci_sanitize_xml_string( $p_issue_data->classification );
 	}
 	if( $t_fields === null || isset( $t_fields['revision_date'] ) ) {
 		$t_issue['revision_date'] = mci_sanitize_xml_string( $p_issue_data->revision_date );

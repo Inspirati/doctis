@@ -84,16 +84,6 @@ if( $f_master_bug_id > 0 ) {
 	$t_project_id = $f_project_id;
 }
 
-// @TODO RobD - if we don't include the summary and description fields here, the 'required' error gets trigger somewhere down the line
-// $t_issue = array(
-// 	'project' => array( 'id' => $t_project_id ),
-// 	'reporter' => array( 'id' => auth_get_current_user_id() ),
-// 	'summary' => gpc_get_string( 'summary' ),
-// 	'description' => gpc_get_string( 'description' ),
-// 	'title' => gpc_get_string( 'title' ),
-// 	'number' => gpc_get_string( 'number' ),
-// );
-
 $t_issue = array(
 	'project' => array( 'id' => $t_project_id ),
 	'reporter' => array( 'id' => auth_get_current_user_id() ),
@@ -102,58 +92,54 @@ $t_issue = array(
 	'title'				=> gpc_get_string( 'dwg_title' ),
 	'number'			=> gpc_get_string( 'dwg_number' ),
 	'revision'			=> gpc_get_string( 'dwg_revision' ),
-	// 'category'			=> gpc_get_string( 'dwg_category' ),
 	'reference'			=> gpc_get_string( 'dwg_reference' ),
-	// 'link_url'			=> gpc_get_string( 'dwg_link_url' ),
-	// 'class'				=> gpc_get_string( 'dwg_class' ),
-	// 'revision_date'		=> gpc_get_string( 'dwg_revision_date' ),
-	// 'release_date'		=> gpc_get_string( 'dwg_release_date' ),
-	// 'date_submitted'	=> gpc_get_string( 'dwg_date_submitted' ),
-	// 'last_updated'		=> gpc_get_string( 'dwg_last_upated' ),
-
+	'discipline'		=> gpc_get_string( 'dwg_discipline' ),
+	'link_url'			=> gpc_get_string( 'dwg_link_url' ),
+	'classification'	=> gpc_get_string( 'dwg_classification' ),
 
 	'version'			=> 1,
 	'category'			=> "category",
 	'link_url'			=> "link_url",
-	'class'				=> "class",
-	'revision_date'		=> date_get_null(),
-	'release_date'		=> date_get_null(),
-	'date_submitted'	=> date_get_null(),
-	'last_updated'		=> date_get_null(),
+	'classification'	=> "UNCLASSIFIED",
+	// 'revision_date'		=> date_get_null(),
+	// 'release_date'		=> date_get_null(),
 
-
-	// 'summary' => gpc_get_string( 'summary' ),
-	// 'description' => gpc_get_string( 'description' ),
 	'summary' => "sample summary",
 	'description' => "default description",
-	// 'name' => "document name",
-	// 'number' => "12345678",
 );
-// @TODO RobD - i have added the name and number fields to the above array, but not as yet done anything more to handle them
+$t_revision_date = gpc_get_string( 'dwg_revision_date', null );
+if( $t_revision_date !== null ) {
+	$t_issue['revision_date'] = $t_revision_date;
+}
+$t_release_date = gpc_get_string( 'dwg_release_date', null );
+if( $t_release_date !== null ) {
+	$t_issue['release_date'] = $t_release_date;
+}
 
-// $t_tag_string = '';
-// $f_tag_select = gpc_get_int( 'tag_select', 0 );
-// if( $f_tag_select != 0 ) {
-// 	$t_tag_string = tag_get_name( $f_tag_select );
-// }
 
-// $f_tag_string = gpc_get_string( 'tag_string', '' );
-// if( !is_blank( $f_tag_string ) ) {
-// 	$t_tag_string = is_blank( $t_tag_string ) ? $f_tag_string : ',' . $f_tag_string;
-// }
+$t_tag_string = '';
+$f_tag_select = gpc_get_int( 'tag_select', 0 );
+if( $f_tag_select != 0 ) {
+	$t_tag_string = tag_get_name( $f_tag_select );
+}
 
-// $t_tags = tag_parse_string( $t_tag_string );
-// if( !empty( $t_tags ) ) {
-// 	$t_issue['tags'] = array();
-// 	foreach( $t_tags as $t_tag ) {
-// 		$t_issue['tags'][] = array( 'name' => $t_tag['name'] );
-// 	}
-// }
+$f_tag_string = gpc_get_string( 'tag_string', '' );
+if( !is_blank( $f_tag_string ) ) {
+	$t_tag_string = is_blank( $t_tag_string ) ? $f_tag_string : ',' . $f_tag_string;
+}
 
-// $f_files = gpc_get_file( 'ufile', null );
-// if( $f_files !== null && !empty( $f_files ) ) {
-// 	$t_issue['files'] = helper_array_transpose( $f_files );
-// }
+$t_tags = tag_parse_string( $t_tag_string );
+if( !empty( $t_tags ) ) {
+	$t_issue['tags'] = array();
+	foreach( $t_tags as $t_tag ) {
+		$t_issue['tags'][] = array( 'name' => $t_tag['name'] );
+	}
+}
+
+$f_files = gpc_get_file( 'ufile', null );
+if( $f_files !== null && !empty( $f_files ) ) {
+	$t_issue['files'] = helper_array_transpose( $f_files );
+}
 
 // $t_build = gpc_get_string( 'build', '' );
 // if( !is_blank( $t_build ) ) {
@@ -269,7 +255,7 @@ if( $t_due_date !== null ) {
 	$t_issue['due_date'] = $t_due_date;
 }
 
-// # Validate the custom fields before adding the bug.
+# Validate the custom fields before adding the bug.
 // $t_related_custom_field_ids = custom_field_get_linked_ids( $t_project_id );
 // $t_custom_fields = array();
 // foreach( $t_related_custom_field_ids as $t_id ) {
@@ -296,7 +282,6 @@ $t_data = array(
 // 	$t_data['options'] = array( 'clone_info' => $t_clone_info );
 // }
 
-#!$t_command = new IssueAddCommand( $t_data );
 $t_command = new DwgAddCommand( $t_data );
 $t_result = $t_command->execute();
 $t_issue_id = (int)$t_result['issue_id'];

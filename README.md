@@ -47,27 +47,31 @@ Installing
     1. make a working directory, or just use the existing '~/Documents' directory
 
     ```sh
-         $ cd Documents
+         cd Documents
     ```
 
     2. copy the provided install script (below) into a file of your choosing, ie. 'install.sh'
        or fetch it online with:
     ```sh
-         $ wget -O- https://tinyurl.com/get-doctis > install.sh
+         wget -O- https://tinyurl.com/get-doctis > install.sh
     ```
 
     3. customise the install.sh script as needed (optional):
 
     ```sh
-         $ pico install.sh
+         pico install.sh
     ```
 
     4. enable the executable property on the script and run it:
 
     ```sh
-         $ chmod +x install.sh
+         chmod +x install.sh && ./install.sh
+    ```
 
-         $ ./install.sh
+Or, as a sinlge statement:
+
+    ```sh
+         cd Documents && wget -O- https://tinyurl.com/get-doctis | bash
     ```
 
 4. Follow the getting-started tips which should eventually be displayed.
@@ -94,7 +98,7 @@ mysql_pass="password"
 # or one available to a Local Area Network (LAN) via ip address
 # or Fully Qualified Domain Name (FQDN), for public internet server - advanced user
 #domain="locahost"
-domain=$(ip -4 addr show dev "$(ip route show default | awk '{print $5}' | head -n1)" | awk '/inet / {print $2}' | cut -d/ -f1)
+domain=$(ip r get 1 | grep -Eo 'src [^ ]+' | awk '{print $2}')
 #domain="my.domain.com"
 
 wget https://gist.githubusercontent.com/Inspirati/8f17b0799fdaf0ab7b201a5cfd1775a1/raw/install-doctis.sh

@@ -106,3 +106,12 @@ function wiki_link_project( $p_project_id ) {
 	return event_signal( 'EVENT_WIKI_LINK_PROJECT', $p_project_id );
 }
 
+/**
+ * Generate wiki link to a document
+ * @param integer $p_document_id A valid document identifier.
+ * @return string url
+ * @access public
+ */
+function wiki_link_document( $p_document_id ) {
+	return event_signal( 'EVENT_WIKI_LINK_DOCUMENT', $p_document_id );
+}
