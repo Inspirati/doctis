@@ -257,7 +257,7 @@ class DwgAddCommand extends Command {
 		$this->issue = new DwgData;
 
 		$this->issue->version = $t_version;
-		$this->issue->name = $t_title;
+		$this->issue->title = $t_title;
 		$this->issue->number = $t_number;
 		$this->issue->revision = $t_revision;
 		$this->issue->category = $t_category;

@@ -969,7 +969,7 @@ $g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'user' ), "(
 		last_visit, date_created
 	)
 	VALUES (
-		'viewer', '', 'doctis.web@gmail.com', '1a1dc91c907325c69271ddf0c944bc72',
+		'viewer', '', 'doctis.viewer@gmail.com', '1a1dc91c907325c69271ddf0c944bc72',
 		'1', '0', 10,
 		3, 0, 0,
 		'" . md5( mt_rand( 0, mt_getrandmax() ) + mt_rand( 0, mt_getrandmax() ) ) . md5( time() ) . "',
@@ -984,7 +984,7 @@ $g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'user' ), "(
 		last_visit, date_created
 	)
 	VALUES (
-		'reporter', '', 'doctis.web@gmail.com', '1a1dc91c907325c69271ddf0c944bc72',
+		'reporter', '', 'doctis.reporter@gmail.com', '1a1dc91c907325c69271ddf0c944bc72',
 		'1', '0', 25,
 		3, 0, 0,
 		'" . md5( mt_rand( 0, mt_getrandmax() ) + mt_rand( 0, mt_getrandmax() ) ) . md5( time() ) . "',
@@ -999,7 +999,22 @@ $g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'user' ), "(
 		last_visit, date_created
 	)
 	VALUES (
-		'updater', '', 'doctis.web@gmail.com', '1a1dc91c907325c69271ddf0c944bc72',
+		'updater', '', 'doctis.updater@gmail.com', '1a1dc91c907325c69271ddf0c944bc72',
+		'1', '0', 40,
+		3, 0, 0,
+		'" . md5( mt_rand( 0, mt_getrandmax() ) + mt_rand( 0, mt_getrandmax() ) ) . md5( time() ) . "',
+		'1757927188', '1757927188'
+	)" ) );
+
+$g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'user' ), "(
+		username, realname, email, password,
+		enabled, protected, access_level,
+		login_count, lost_password_request_count, failed_login_count,
+		cookie_string,
+		last_visit, date_created
+	)
+	VALUES (
+		'developer', '', 'doctis.developer@gmail.com', '1a1dc91c907325c69271ddf0c944bc72',
 		'1', '0', 55,
 		3, 0, 0,
 		'" . md5( mt_rand( 0, mt_getrandmax() ) + mt_rand( 0, mt_getrandmax() ) ) . md5( time() ) . "',
@@ -1014,7 +1029,7 @@ $g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'user' ), "(
 		last_visit, date_created
 	)
 	VALUES (
-		'developer', '', 'doctis.web@gmail.com', '1a1dc91c907325c69271ddf0c944bc72',
+		'manager', '', 'doctis.manager@gmail.com', '1a1dc91c907325c69271ddf0c944bc72',
 		'1', '0', 70,
 		3, 0, 0,
 		'" . md5( mt_rand( 0, mt_getrandmax() ) + mt_rand( 0, mt_getrandmax() ) ) . md5( time() ) . "',
@@ -1029,14 +1044,15 @@ $g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'user' ), "(
 		last_visit, date_created
 	)
 	VALUES (
-		'manager', '', 'doctis.web@gmail.com', '1a1dc91c907325c69271ddf0c944bc72',
+		'admin', '', 'doctis.admin@gmail.com', '1a1dc91c907325c69271ddf0c944bc72',
 		'1', '0', 90,
 		3, 0, 0,
 		'" . md5( mt_rand( 0, mt_getrandmax() ) + mt_rand( 0, mt_getrandmax() ) ) . md5( time() ) . "',
 		'1757927188', '1757927188'
 	)" ) );
 
-# Default 'user' password: pass (note that last two fields here are fixed unixtimes, circa 15 Sept 2025)
+# Default username: 'user' password: 'pass' (note that last two fields here are fixed unixtimes, circa 15 Sept 2025)
+// you can log in as administrator and change this account to your liking, including username
 $g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'user' ), "(
 		username, realname, email, password,
 		enabled, protected, access_level,
@@ -1045,7 +1061,7 @@ $g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'user' ), "(
 		last_visit, date_created
 	)
 	VALUES (
-		'user', '', 'doctis.web@gmail.com', '1a1dc91c907325c69271ddf0c944bc72',
+		'user', '', 'doctis.user@gmail.com', '1a1dc91c907325c69271ddf0c944bc72',
 		'1', '0', 25,
 		3, 0, 0,
 		'" . md5( mt_rand( 0, mt_getrandmax() ) + mt_rand( 0, mt_getrandmax() ) ) . md5( time() ) . "',

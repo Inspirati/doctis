@@ -1677,8 +1677,8 @@ function mci_dwg_data_as_array( DwgData $p_issue_data, $p_user_id, $p_lang, $p_f
 	if( $t_fields === null || isset( $t_fields['version'] ) ) {
 		$t_issue['version'] = mci_sanitize_xml_string( $p_issue_data->version );
 	}
-	if( $t_fields === null || isset( $t_fields['name'] ) ) {
-		$t_issue['name'] = mci_sanitize_xml_string( $p_issue_data->name );
+	if( $t_fields === null || isset( $t_fields['title'] ) ) {
+		$t_issue['title'] = mci_sanitize_xml_string( $p_issue_data->title );
 	}
 	if( $t_fields === null || isset( $t_fields['number'] ) ) {
 		$t_issue['number'] = mci_sanitize_xml_string( $p_issue_data->number );
