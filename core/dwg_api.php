@@ -127,7 +127,7 @@ class DwgData {
 	protected $version = '';
 // #TODO RobD - and now all the new data fields for the documents table	
 	protected $enabled = 1;
-	protected $name = '';
+	protected $title = '';
 	protected $number = '';
 	protected $revision = '';
 	protected $discipline = '';
@@ -480,7 +480,7 @@ class DwgData {
 		db_param_push();
 		$t_query = 'INSERT INTO {document}
 						( project_id, status, enabled, version,
-						  name, number, revision, discipline,
+						  title, number, revision, discipline,
 						  reference, link_url, classification,
 						  revision_date, release_date, date_submitted, last_updated
 						)
@@ -491,7 +491,7 @@ class DwgData {
 						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ')';
 		db_query( $t_query, array(
 		  $this->project_id, $this->status, $this->enabled, $this->version,
-		  $this->name, $this->number, $this->revision, $this->discipline,
+		  $this->title, $this->number, $this->revision, $this->discipline,
 		  $this->reference, $this->link_url, $this->classification,
 		  $this->revision_date, $this->release_date, $this->date_submitted, $this->last_updated ) );
 

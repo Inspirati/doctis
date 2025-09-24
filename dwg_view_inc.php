@@ -299,7 +299,7 @@ if( true
 
 	// $t_release_date = date( $t_date_format, strtotime( $t_issue['release_date'] ) );
 
-	echo '<td class="bug-project">', $t_flags['project_show'] && isset( $t_issue['name'] ) ? string_display_line( $t_issue['name'] ) : '', '</td>';
+	echo '<td class="bug-project">', $t_flags['project_show'] && isset( $t_issue['title'] ) ? string_display_line( $t_issue['title'] ) : '', '</td>';
 	echo '<td class="bug-project">', $t_flags['project_show'] && isset( $t_issue['number'] ) ? string_display_line( $t_issue['number'] ) : '', '</td>';
 	echo '<td class="bug-project">', $t_flags['project_show'] && isset( $t_issue['revision'] ) ? string_display_line( $t_issue['revision'] ) : '', '</td>';
 	echo '<td class="bug-project">', $t_flags['project_show'] && isset( $t_issue['reference'] ) ? string_display_line( $t_issue['reference'] ) : '', '</td>';

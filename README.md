@@ -65,7 +65,9 @@ Installing
     4. enable the executable property on the script and run it:
 
     ```sh
-         chmod +x install.sh && ./install.sh
+         chmod +x install.sh
+
+         ./install.sh
     ```
 
     Or, as a single statement:
@@ -119,7 +121,7 @@ There is currently no built-in user interface support for adding documents to th
 Style Guide / Naming Convention
 -------------------------------
 
-Guidance on keeping the fork standarised with is origins, MantisBT.
+Guidance on keeping this fork standarised with is origins, MantisBT.
 
 More detailed documentation can be found at https://www.mantisbt.org/docs/
 
