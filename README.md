@@ -42,7 +42,7 @@ Installing
 
     5. start the virtual machine
 
-3. Download and install the DocTIS project.
+3. Download and install the Doctis project.
 
     1. make a working directory, or just use the existing '~/Documents' directory
 
@@ -68,7 +68,7 @@ Installing
          chmod +x install.sh && ./install.sh
     ```
 
-Or, as a sinlge statement:
+    Or, as a single statement:
 
     ```sh
          cd Documents && wget -O- https://tinyurl.com/get-doctis | bash
@@ -119,7 +119,7 @@ There is currently no built-in user interface support for adding documents to th
 Style Guide / Naming Convention
 -------------------------------
 
-Guidance on keeping DocTIS standarised with is origins, MantisBT.
+Guidance on keeping the fork standarised with is origins, MantisBT.
 
 More detailed documentation can be found at https://www.mantisbt.org/docs/
 
