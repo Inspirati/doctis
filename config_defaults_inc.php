@@ -1404,7 +1404,7 @@ $g_view_issues_page_columns = array(
  * @global array $g_view_dwg_page_columns
  */
 $g_view_dwg_page_columns = array(
-	'selection', 'edit', 'priority', 'dwg_id', 'status', 'name', 'number', 'revision', 'reference',
+	'selection', 'edit', 'priority', 'dwg_id', 'status', 'title', 'number', 'revision', 'reference',
 	'date', 'release_date',
 );
 

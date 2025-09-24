@@ -359,7 +359,7 @@ if( $t_flags['reporter_show'] || $t_flags['handler_show'] || $t_flags['due_date_
 	if( $t_flags['due_date_show'] ) {
 		echo '<th class="bug-due-date category">', lang_get( 'due_date' ), '</th>';
 
-		$t_css = 'bug-due-date';
+		$t_css = 'dwg-due-date';
 		if( $t_issue_view['overdue'] !== false ) {
 			$t_css .= ' due-' . $t_issue_view['overdue'];
 		}
@@ -488,43 +488,43 @@ if( $t_flags['projection_show'] || $t_flags['eta_show'] ) {
 # Platform, OS, OS Version
 #
 
-if( ( $t_flags['profiles_platform_show'] && isset( $t_issue['platform'] ) && !is_blank( $t_issue['platform'] ) ) ||
-	( $t_flags['profiles_os_show'] && isset( $t_issue['os'] ) && !is_blank( $t_issue['os'] ) ) ||
-	( $t_flags['profiles_os_build_show'] && isset( $t_issue['os_build'] ) && !is_blank( $t_issue['os_build'] ) ) ) {
-	$t_spacer = 0;
+// if( ( $t_flags['profiles_platform_show'] && isset( $t_issue['platform'] ) && !is_blank( $t_issue['platform'] ) ) ||
+// 	( $t_flags['profiles_os_show'] && isset( $t_issue['os'] ) && !is_blank( $t_issue['os'] ) ) ||
+// 	( $t_flags['profiles_os_build_show'] && isset( $t_issue['os_build'] ) && !is_blank( $t_issue['os_build'] ) ) ) {
+// 	$t_spacer = 0;
 
-	echo '<tr>';
+// 	echo '<tr>';
 
-	# Platform
-	if( $t_flags['profiles_platform_show'] && isset( $t_issue['platform'] ) && !is_blank( $t_issue['platform'] ) ) {
-		echo '<th class="bug-platform category">', lang_get( 'platform' ), '</th>';
-		echo '<td class="bug-platform">', string_display_line( $t_issue['platform'] ), '</td>';
-	} else {
-		$t_spacer += 2;
-	}
+// 	# Platform
+// 	if( $t_flags['profiles_platform_show'] && isset( $t_issue['platform'] ) && !is_blank( $t_issue['platform'] ) ) {
+// 		echo '<th class="bug-platform category">', lang_get( 'platform' ), '</th>';
+// 		echo '<td class="bug-platform">', string_display_line( $t_issue['platform'] ), '</td>';
+// 	} else {
+// 		$t_spacer += 2;
+// 	}
 
-	# Operating System
-	if( $t_flags['profiles_os_show'] && isset( $t_issue['os'] ) && !is_blank( $t_issue['os'] ) ) {
-		echo '<th class="bug-os category">', lang_get( 'os' ), '</th>';
-		echo '<td class="bug-os">', string_display_line( $t_issue['os'] ), '</td>';
-	} else {
-		$t_spacer += 2;
-	}
+// 	# Operating System
+// 	if( $t_flags['profiles_os_show'] && isset( $t_issue['os'] ) && !is_blank( $t_issue['os'] ) ) {
+// 		echo '<th class="bug-os category">', lang_get( 'os' ), '</th>';
+// 		echo '<td class="bug-os">', string_display_line( $t_issue['os'] ), '</td>';
+// 	} else {
+// 		$t_spacer += 2;
+// 	}
 
-	# OS Version
-	if( $t_flags['profiles_os_build_show'] && isset( $t_issue['os_build'] ) && !is_blank( $t_issue['os_build'] ) ) {
-		echo '<th class="bug-os-build category">', lang_get( 'os_build' ), '</th>';
-		echo '<td class="bug-os-build">', string_display_line( $t_issue['os_build'] ), '</td>';
-	} else {
-		$t_spacer += 2;
-	}
+// 	# OS Version
+// 	if( $t_flags['profiles_os_build_show'] && isset( $t_issue['os_build'] ) && !is_blank( $t_issue['os_build'] ) ) {
+// 		echo '<th class="bug-os-build category">', lang_get( 'os_build' ), '</th>';
+// 		echo '<td class="bug-os-build">', string_display_line( $t_issue['os_build'] ), '</td>';
+// 	} else {
+// 		$t_spacer += 2;
+// 	}
 
-	if( $t_spacer > 0 ) {
-		echo '<td colspan="', $t_spacer, '">&#160;</td>';
-	}
+// 	if( $t_spacer > 0 ) {
+// 		echo '<td colspan="', $t_spacer, '">&#160;</td>';
+// 	}
 
-	echo '</tr>';
-}
+// 	echo '</tr>';
+// }
 
 #
 # Product Version, Product Build
@@ -1196,7 +1196,7 @@ function dwg_view_button_dwg_change_status( DwgData $p_bug ) {
 
 		$t_dwg_id = string_attribute( $p_bug->id );
 		echo '<input type="hidden" name="id" value="' . $t_dwg_id . '" />' . "\n";
-		echo '<input type="hidden" name="change_type" value="' . BUG_UPDATE_TYPE_CHANGE_STATUS . '" />' . "\n";
+		echo '<input type="hidden" name="change_type" value="' . DWG_UPDATE_TYPE_CHANGE_STATUS . '" />' . "\n";
 
 		echo '</form>' . "\n";
 	}
@@ -1240,10 +1240,10 @@ function dwg_view_button_dwg_assign_to( DwgData $p_bug ) {
 		}
 	}
 
-	echo '<form method="post" action="bug_update.php" class="form-inline">';
-	echo form_security_field( 'bug_update' );
+	echo '<form method="post" action="dwg_update.php" class="form-inline">';
+	echo form_security_field( 'dwg_update' );
 	echo '<input type="hidden" name="last_updated" value="' . $p_bug->last_updated . '" />';
-	echo '<input type="hidden" name="action_type" value="' . BUG_UPDATE_TYPE_ASSIGN . '" />';
+	echo '<input type="hidden" name="action_type" value="' . DWG_UPDATE_TYPE_ASSIGN . '" />';
 
 	$t_button_text = lang_get( 'bug_assign_to_button' );
 	echo '<input type="submit" class="btn btn-primary btn-sm btn-white btn-round" value="' . $t_button_text . '" />';
@@ -1290,7 +1290,7 @@ function dwg_view_button_dwg_assign_to( DwgData $p_bug ) {
 }
 
 /**
- * Print all buttons for view bug pages.
+ * Print all buttons for view pages.
  *
  * @param integer $p_bug_id A valid bug identifier.
  * @param array   $p_flags  Flags from issue view command
@@ -1306,7 +1306,7 @@ function dwg_view_action_buttons( $p_bug_id, $p_flags ) {
 	# UPDATE button
 	if( $p_flags['can_update'] ) {
 		echo '<div class="pull-left padding-right-8">';
-		html_button( string_get_bug_update_page(), lang_get( 'edit' ), array( 'bug_id' => $p_bug_id ) );
+		html_button( string_get_dwg_update_page(), lang_get( 'edit' ), array( 'bug_id' => $p_bug_id ) );
 		echo '</div>';
 	}
 
@@ -1366,7 +1366,7 @@ function dwg_view_action_buttons( $p_bug_id, $p_flags ) {
 		html_button(
 			'bug_change_status_page.php',
 			lang_get( 'reopen_bug_button' ),
-			array( 'id' => $t_dwg->id, 'new_status' => $t_reopen_status, 'change_type' => BUG_UPDATE_TYPE_REOPEN ) );
+			array( 'id' => $t_dwg->id, 'new_status' => $t_reopen_status, 'change_type' => DWG_UPDATE_TYPE_REOPEN ) );
 		echo '</div>';
 	}
 
@@ -1377,7 +1377,7 @@ function dwg_view_action_buttons( $p_bug_id, $p_flags ) {
 		html_button(
 			'bug_change_status_page.php',
 			lang_get( 'close' ),
-			array( 'id' => $t_dwg->id, 'new_status' => $t_closed_status, 'change_type' => BUG_UPDATE_TYPE_CLOSE ) );
+			array( 'id' => $t_dwg->id, 'new_status' => $t_closed_status, 'change_type' => DWG_UPDATE_TYPE_CLOSE ) );
 		echo '</div>';
 	}
 

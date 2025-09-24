@@ -573,7 +573,7 @@ function document_get_all_rows( $p_project_id, $p_inherit = null, $p_sort_by_pro
 	$t_query = 'SELECT c.*, p.name AS project_name FROM {document} c
 				LEFT JOIN {project} p
 					ON c.project_id=p.id
-				WHERE ' . $t_project_where . ' ORDER BY c.name';
+				WHERE ' . $t_project_where . ' ORDER BY c.title';
 
 	error_log($t_query);
 
@@ -701,10 +701,10 @@ function document_full_name( $p_document_id, $p_show_project = true, $p_current_
 		$t_current_project = is_null( $p_current_project ) ? helper_get_current_project() : $p_current_project;
 
 		if( $p_show_project && $t_project_id != $t_current_project ) {
-			return '[' . project_get_name( $t_project_id ) . '] ' . $t_row['name'];
+			return '[' . project_get_name( $t_project_id ) . '] ' . $t_row['title'];
 		}
 
-		return $t_row['name'];
+		return $t_row['title'];
 	}
 }
 

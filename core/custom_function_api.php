@@ -243,6 +243,9 @@ function custom_function_default_format_dwg_summary( $p_issue_id, $p_context = 0
 function custom_function_default_issue_update_validate( $p_issue_id, BugData $p_new_issue_data, $p_bugnote_text ) {
 }
 
+function custom_function_default_document_update_validate( $p_issue_id, DwgData $p_new_issue_data, $p_bugnote_text ) {
+}
+
 /**
  * Hook to notify after an issue has been updated.
  * In case of errors, this function should call trigger_error()
@@ -251,6 +254,9 @@ function custom_function_default_issue_update_validate( $p_issue_id, BugData $p_
  * @return void
  */
 function custom_function_default_issue_update_notify( $p_issue_id ) {
+}
+
+function custom_function_default_document_update_notify( $p_issue_id ) {
 }
 
 /**

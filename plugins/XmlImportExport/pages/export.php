@@ -244,7 +244,6 @@ foreach( $t_result as $t_row ) {
 	# Save memory by clearing cache
 	# bug_clear_cache();
 	# bug_text_clear_cache();
-	# dwg_clear_cache();
 }
 
 $t_writer->endElement(); # mantis

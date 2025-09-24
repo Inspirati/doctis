@@ -1063,7 +1063,7 @@ function email_bug_added( $p_bug_id ) {
 
 function email_dwg_added( $p_bug_id ) {
 	log_event( LOG_EMAIL, sprintf( 'Document #%d created', $p_bug_id ) );
-	email_generic( $p_bug_id, 'new', 'email_notification_title_for_action_bug_submitted' );
+	email_generic( $p_bug_id, 'new', 'email_notification_title_for_action_dwg_submitted' );
 }
 
 /**
@@ -1077,6 +1077,11 @@ function email_dwg_added( $p_bug_id ) {
 function email_bug_updated( $p_bug_id ) {
 	log_event( LOG_EMAIL, sprintf( 'Issue #%d updated', $p_bug_id ) );
 	email_generic( $p_bug_id, 'updated', 'email_notification_title_for_action_bug_updated' );
+}
+
+function email_dwg_updated( $p_bug_id ) {
+	log_event( LOG_EMAIL, sprintf( 'Document #%d updated', $p_bug_id ) );
+	email_generic( $p_bug_id, 'updated', 'email_notification_title_for_action_dwg_updated' );
 }
 
 /**
@@ -1201,6 +1206,11 @@ function email_resolved( $p_bug_id ) {
 	email_generic( $p_bug_id, 'resolved', 'email_notification_title_for_status_bug_resolved' );
 }
 
+function email__dwg_resolved( $p_bug_id ) {
+	log_event( LOG_EMAIL, sprintf( 'Document #%d resolved', $p_bug_id ) );
+	email_generic( $p_bug_id, 'resolved', 'email_notification_title_for_status_dwg_resolved' );
+}
+
 /**
  * Send notices when a bug is CLOSED.
  *
@@ -1214,6 +1224,11 @@ function email_close( $p_bug_id ) {
 	email_generic( $p_bug_id, 'closed', 'email_notification_title_for_status_bug_closed' );
 }
 
+function email_dwg_close( $p_bug_id ) {
+	log_event( LOG_EMAIL, sprintf( 'Document #%d closed', $p_bug_id ) );
+	email_generic( $p_bug_id, 'closed', 'email_notification_title_for_status_dwg_closed' );
+}
+
 /**
  * Send notices when a bug is REOPENED.
  *
@@ -1225,6 +1240,11 @@ function email_close( $p_bug_id ) {
 function email_bug_reopened( $p_bug_id ) {
 	log_event( LOG_EMAIL, sprintf( 'Issue #%d reopened', $p_bug_id ) );
 	email_generic( $p_bug_id, 'reopened', 'email_notification_title_for_action_bug_reopened' );
+}
+
+function email_dwg_reopened( $p_bug_id ) {
+	log_event( LOG_EMAIL, sprintf( 'Document #%d reopened', $p_bug_id ) );
+	email_generic( $p_bug_id, 'reopened', 'email_notification_title_for_action_dwg_reopened' );
 }
 
 /**
@@ -1281,6 +1301,11 @@ function email_bug_status_changed( $p_bug_id, $p_new_status_label ) {
 	email_generic( $p_bug_id, $p_new_status_label, 'email_notification_title_for_status_bug_' . $p_new_status_label );
 }
 
+function email_dwg_status_changed( $p_bug_id, $p_new_status_label ) {
+	log_event( LOG_EMAIL, sprintf( 'Document #%d status changed', $p_bug_id ) );
+	email_generic( $p_bug_id, $p_new_status_label, 'email_notification_title_for_status_dwg_' . $p_new_status_label );
+}
+
 /**
  * Send notices when a bug is DELETED.
  *
@@ -1292,6 +1317,11 @@ function email_bug_status_changed( $p_bug_id, $p_new_status_label ) {
 function email_bug_deleted( $p_bug_id ) {
 	log_event( LOG_EMAIL, sprintf( 'Issue #%d deleted', $p_bug_id ) );
 	email_generic( $p_bug_id, 'deleted', 'email_notification_title_for_action_bug_deleted' );
+}
+
+function email_dwg_deleted( $p_bug_id ) {
+	log_event( LOG_EMAIL, sprintf( 'Document #%d deleted', $p_bug_id ) );
+	email_generic( $p_bug_id, 'deleted', 'email_notification_title_for_action_dwg_deleted' );
 }
 
 /**

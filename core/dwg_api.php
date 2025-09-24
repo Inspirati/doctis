@@ -159,7 +159,7 @@ class DwgData {
 	protected $target_version = '';
 	protected $build = '';
 	protected $view_state = VS_PUBLIC;
-	protected $summary = '';
+	protected $summary = 'empty';
 	protected $sponsorship_total = 0;
 	protected $sticky = 0;
 	protected $due_date = '';
@@ -2340,7 +2340,7 @@ function dwg_get_status_for_assign( $p_current_handler, $p_new_handler, $p_curre
 				$p_new_handler != NO_USER &&
 				$p_new_status == $p_current_status &&
 				$p_new_status < $t_assigned_status &&
-				deg_check_workflow( $p_current_status, $t_assigned_status ) ) {
+				dwg_check_workflow( $p_current_status, $t_assigned_status ) ) {
 
 			return $t_assigned_status;
 		}
