@@ -794,3 +794,22 @@ function relationship_can_resolve_bug( $p_bug_id ) {
 
 	return true;
 }
+
+function relationship_can_resolve_dwg( $p_bug_id ) {
+	# retrieve all the relationships in which the bug is the source bug
+	$t_relationships = relationship_get_all_src( $p_bug_id );
+
+	foreach( $t_relationships as $t_relationship ) {
+		# verify if each bug in relation DWG_DEPENDANT is already marked as resolved
+		if( $t_relationship->type == DWG_DEPENDANT ) {
+			$t_status = dwg_get_field( $t_relationship->dest_bug_id, 'status' );
+
+			if( $t_status < config_get( 'dwg_resolved_status_threshold', null, null, $t_relationship->dest_project_id ) ) {
+				# the bug is NOT marked as resolved/closed
+				return false;
+			}
+		}
+	}
+
+	return true;
+}

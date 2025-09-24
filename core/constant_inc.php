@@ -231,12 +231,28 @@ define( 'BUG_DEPENDANT', 2 );
 define( 'BUG_BLOCKS', 3 );
 define( 'BUG_HAS_DUPLICATE', 4 );
 
+# bug relationship constants
+define( 'DWG_REL_NONE', -2 );
+define( 'DWG_REL_ANY', -1 );
+define( 'DWG_DUPLICATE', 0 );
+define( 'DWG_RELATED', 1 );
+define( 'DWG_DEPENDANT', 2 );
+define( 'DWG_BLOCKS', 3 );
+define( 'DWG_HAS_DUPLICATE', 4 );
+
 # bug update types
 define( 'BUG_UPDATE_TYPE_NORMAL', 'update' );
 define( 'BUG_UPDATE_TYPE_ASSIGN', 'assign' );
 define( 'BUG_UPDATE_TYPE_CLOSE', 'close' );
 define( 'BUG_UPDATE_TYPE_REOPEN', 'reopen' );
 define( 'BUG_UPDATE_TYPE_CHANGE_STATUS', 'change_status' );
+
+# dwg update types
+define( 'DWG_UPDATE_TYPE_NORMAL', 'update' );
+define( 'DWG_UPDATE_TYPE_ASSIGN', 'assign' );
+define( 'DWG_UPDATE_TYPE_CLOSE', 'close' );
+define( 'DWG_UPDATE_TYPE_REOPEN', 'reopen' );
+define( 'DWG_UPDATE_TYPE_CHANGE_STATUS', 'change_status' );
 
 # confirmation message types
 define( 'CONFIRMATION_TYPE_SUCCESS', 0 );

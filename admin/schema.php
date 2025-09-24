@@ -1052,7 +1052,7 @@ $g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'user' ), "(
 	)" ) );
 
 # Default username: 'user' password: 'pass' (note that last two fields here are fixed unixtimes, circa 15 Sept 2025)
-// you can log in as administrator and change this account to your liking, including username
+# You can log in as administrator and change this account to your liking, including username
 $g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'user' ), "(
 		username, realname, email, password,
 		enabled, protected, access_level,

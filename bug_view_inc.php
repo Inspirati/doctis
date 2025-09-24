@@ -307,7 +307,7 @@ if( true
 //	$t_release_date = ApiObjectFactory::datetime( $t_document['release_date'] );
 	$t_release_date = date( $t_date_format, strtotime( $t_document['release_date'] ) );
 
-	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['name'] ) ? string_display_line( $t_document['name'] ) : '', '</td>';
+	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['title'] ) ? string_display_line( $t_document['title'] ) : '', '</td>';
 	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['number'] ) ? string_display_line( $t_document['number'] ) : '', '</td>';
 	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['revision'] ) ? string_display_line( $t_document['revision'] ) : '', '</td>';
 	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['reference'] ) ? string_display_line( $t_document['reference'] ) : '', '</td>';

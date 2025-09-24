@@ -308,7 +308,7 @@ if( $t_show_attachments ) {
 		<td>
 			<?php if( $t_changed_project ) {
 				/** @noinspection PhpUndefinedVariableInspection */
-				echo '[' . project_get_field( $t_bug->project_id, 'name' ) . '] ';
+				echo '[' . project_get_field( $t_bug->project_id, 'title' ) . '] ';
 			} ?>
 			<select id="document_id" name="document_id" class="autofocus input-sm" <?php
 				echo helper_get_tab_index();

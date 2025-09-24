@@ -51,9 +51,7 @@ require_once( 'core.php' );
 require_api( 'access_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'bug_api.php' );
-
 require_api( 'dwg_api.php' );
-
 require_api( 'columns_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
@@ -68,9 +66,7 @@ require_api( 'lang_api.php' );
 require_api( 'last_visited_api.php' );
 require_api( 'prepare_api.php' );
 require_api( 'print_api.php' );
-
 require_api( 'print_dwg_api.php' );
-
 require_api( 'project_api.php' );
 require_api( 'string_api.php' );
 require_api( 'user_api.php' );
@@ -81,7 +77,7 @@ require_css( 'status_config.php' );
 $f_bug_id = gpc_get_int( 'bug_id' );
 $f_reporter_edit = gpc_get_bool( 'reporter_edit' );
 
-$t_bug = bug_get( $f_bug_id, true );
+$t_bug = dwg_get( $f_bug_id, true );
 
 if( $t_bug->project_id != helper_get_current_project() ) {
 	# in case the current project is not the same project of the bug we are viewing...
@@ -89,14 +85,14 @@ if( $t_bug->project_id != helper_get_current_project() ) {
 	$g_project_override = $t_bug->project_id;
 }
 
-if( bug_is_readonly( $f_bug_id ) ) {
+if( dwg_is_readonly( $f_bug_id ) ) {
 	error_parameters( $f_bug_id );
-	trigger_error( ERROR_BUG_READ_ONLY_ACTION_DENIED, ERROR );
+	trigger_error( ERROR_DWG_READ_ONLY_ACTION_DENIED, ERROR );
 }
 
-access_ensure_bug_level( config_get( 'update_bug_threshold' ), $f_bug_id );
+access_ensure_dwg_level( config_get( 'update_dwg_threshold' ), $f_bug_id );
 
-$t_fields = config_get( 'bug_update_page_fields' );
+$t_fields = config_get( 'dwg_update_page_fields' );
 $t_fields = columns_filter_disabled( $t_fields );
 
 $t_bug_id = $f_bug_id;
@@ -114,7 +110,7 @@ $t_view_state = $t_show_view_state ? string_display_line( get_enum_element( 'vie
 $t_show_date_submitted = in_array( 'date_submitted', $t_fields );
 $t_show_last_updated = in_array( 'last_updated', $t_fields );
 $t_show_reporter = in_array( 'reporter', $t_fields );
-$t_show_handler = in_array( 'handler', $t_fields ) && access_has_bug_level( config_get( 'view_handler_threshold' ), $t_bug_id );
+$t_show_handler = in_array( 'handler', $t_fields ) && access_has_dwg_level( config_get( 'view_handler_threshold' ), $t_bug_id );
 $t_show_priority = in_array( 'priority', $t_fields );
 $t_show_severity = in_array( 'severity', $t_fields );
 $t_show_reproducibility = in_array( 'reproducibility', $t_fields );
@@ -130,9 +126,9 @@ $t_show_versions = version_should_show_product_version( $t_bug->project_id );
 $t_show_product_version = $t_show_versions && in_array( 'product_version', $t_fields );
 $t_show_product_build = $t_show_versions && in_array( 'product_build', $t_fields ) && ( config_get( 'enable_product_build' ) == ON );
 $t_product_build_attribute = $t_show_product_build ? string_attribute( $t_bug->build ) : '';
-$t_show_target_version = $t_show_versions && in_array( 'target_version', $t_fields ) && access_has_bug_level( config_get( 'roadmap_update_threshold' ), $t_bug_id );
+$t_show_target_version = $t_show_versions && in_array( 'target_version', $t_fields ) && access_has_dwg_level( config_get( 'roadmap_update_threshold' ), $t_bug_id );
 $t_show_fixed_in_version = $t_show_versions && in_array( 'fixed_in_version', $t_fields );
-$t_show_due_date = in_array( 'due_date', $t_fields ) && access_has_bug_level( config_get( 'due_date_view_threshold' ), $t_bug_id );
+$t_show_due_date = in_array( 'due_date', $t_fields ) && access_has_dwg_level( config_get( 'due_date_view_threshold' ), $t_bug_id );
 $t_show_summary = in_array( 'summary', $t_fields );
 $t_summary_attribute = $t_show_summary ? string_attribute( $t_bug->summary ) : '';
 $t_show_description = in_array( 'description', $t_fields );
@@ -157,18 +153,18 @@ if( $t_show_product_version ) {
 	}
 }
 
-$t_formatted_bug_id = $t_show_id ? bug_format_id( $f_bug_id ) : '';
+$t_formatted_bug_id = $t_show_id ? dwg_format_id( $f_bug_id ) : '';
 $t_project_name = $t_show_project ? string_display_line( project_get_name( $t_bug->project_id ) ) : '';
 
-layout_page_header( bug_format_summary( $f_bug_id, SUMMARY_CAPTION ) );
+layout_page_header( dwg_format_summary( $f_bug_id, SUMMARY_CAPTION ) );
 
 layout_page_begin();
 
 ?>
 <div class="col-md-12 col-xs-12">
-<div id="bug-update" class="form-container">
-	<form id="update_bug_form" method="post" action="bug_update.php">
-		<?php echo form_security_field( 'bug_update' ); ?>
+<div id="dwg-update" class="form-container">
+	<form id="update_dwg_form" method="post" action="dwg_update.php">
+		<?php echo form_security_field( 'dwg_update' ); ?>
 		<input type="hidden" name="bug_id" value="<?php echo $t_bug_id ?>" />
         <input type="hidden" name="last_updated" value="<?php echo $t_bug->last_updated ?>" />
 
@@ -180,7 +176,7 @@ layout_page_begin();
 			</h4>
 			<div class="widget-toolbar no-border">
 				<div class="widget-menu">
-					<?php print_extra_small_button( string_get_bug_view_url( $t_bug_id ), lang_get( 'back_to_bug_link' ) ); ?>
+					<?php print_extra_small_button( string_get_dwg_view_url( $t_bug_id ), lang_get( 'back_to_dwg_link' ) ); ?>
 				</div>
 			</div>
 		</div>
@@ -202,7 +198,7 @@ if( $t_top_buttons_enabled ) {
 		<table class="table table-bordered table-condensed table-striped">
 			<tbody>
 <?php
-event_signal( 'EVENT_UPDATE_BUG_FORM_TOP', array( $t_bug_id ) );
+event_signal( 'EVENT_UPDATE_DWG_FORM_TOP', array( $t_bug_id ) );
 
 if( $t_show_id || $t_show_project || $t_show_category || $t_show_view_state || $t_show_date_submitted | $t_show_last_updated ) {
 	#
@@ -308,7 +304,7 @@ if( $t_show_reporter || $t_show_handler || $t_show_due_date ) {
 				echo '</select>';
 			} else {
 				echo string_attribute( user_get_name( $t_bug->reporter_id ) );
-				echo ' [<a href="#reporter_edit" class="click-url" data-url="' . string_get_bug_update_url( $f_bug_id ) . '&amp;reporter_edit=true">' . lang_get( 'edit' ) . '</a>]';
+				echo ' [<a href="#reporter_edit" class="click-url" data-url="' . string_get_dwg_update_url( $f_bug_id ) . '&amp;reporter_edit=true">' . lang_get( 'edit' ) . '</a>]';
 			}
 		}
 		echo '</td>';
@@ -321,7 +317,7 @@ if( $t_show_reporter || $t_show_handler || $t_show_due_date ) {
 		echo '<th class="category"><label for="handler_id">' . lang_get( 'assigned_to' ) . '</label></th>';
 		echo '<td>';
 
-		if( access_has_project_level( config_get( 'update_bug_assign_threshold', config_get( 'update_bug_threshold' ) ) ) ) {
+		if( access_has_project_level( config_get( 'update_dwg_assign_threshold', config_get( 'update_dwg_threshold' ) ) ) ) {
 			echo '<select ' . helper_get_tab_index() . ' id="handler_id" name="handler_id" class="input-sm">';
 			echo '<option value="0">&nbsp;</option>';
 			print_assign_to_option_list( $t_bug->handler_id, $t_bug->project_id );
@@ -339,14 +335,14 @@ if( $t_show_reporter || $t_show_handler || $t_show_due_date ) {
 		# Due Date
 		echo '<th class="category"><label for="due_date">' . lang_get( 'due_date' ) . '</label></th>';
 
-		$t_level = bug_overdue_level( $t_bug_id );
+		$t_level = dwg_overdue_level( $t_bug_id );
 		if( $t_level === false ) {
 			echo '<td>';
 		} else {
 			echo '<td class="due-', $t_level, '">';
 		}
 
-		if( access_has_bug_level( config_get( 'due_date_update_threshold' ), $t_bug_id ) ) {
+		if( access_has_dwg_level( config_get( 'due_date_update_threshold' ), $t_bug_id ) ) {
 			$t_date_to_display = '';
 
 			if( !date_is_null( $t_bug->due_date ) ) {
@@ -441,7 +437,7 @@ if( $t_show_status || $t_show_resolution ) {
 		print_icon( 'fa-square', 'fa-status-box ' . $t_status_css );
 		echo '&nbsp;';
 		print_status_option_list( 'status', $t_bug->status,
-			access_can_close_bug( $t_bug ),
+			access_can_close_dwg( $t_bug ),
 			$t_bug->project_id );
 		echo '</td>';
 	} else {
@@ -643,7 +639,7 @@ if( $t_show_projection || $t_show_eta ) {
 // 	echo '</tr>';
 // }
 
-event_signal( 'EVENT_UPDATE_BUG_FORM', array( $t_bug_id ) );
+event_signal( 'EVENT_UPDATE_DWG_FORM', array( $t_bug_id ) );
 
 print_table_spacer( 6 );
 
@@ -741,12 +737,12 @@ echo '<th class="category"><label for="bugnote_text">' . lang_get( 'add_bugnote_
 echo '<td colspan="5"><textarea ', helper_get_tab_index(), ' id="bugnote_text" name="bugnote_text" class="', $t_bugnote_class, '" cols="80" rows="7"></textarea></td></tr>';
 
 # Bugnote Private Checkbox (if permitted)
-if( access_has_bug_level( config_get( 'private_bugnote_threshold' ), $t_bug_id ) ) {
+if( access_has_dwg_level( config_get( 'private_bugnote_threshold' ), $t_bug_id ) ) {
 	echo '<tr>';
 	echo '<th class="category">' . lang_get( 'private' ) . '</th>';
 	echo '<td colspan="5">';
 
-	if( access_has_bug_level( config_get( 'set_view_status_threshold' ), $t_bug_id ) ) {
+	if( access_has_dwg_level( config_get( 'set_view_status_threshold' ), $t_bug_id ) ) {
 		echo '<label>';
 		echo '<input ', helper_get_tab_index(), ' type="checkbox" class="ace" id="private" name="private" ', check_checked( config_get( 'default_bugnote_view_status' ), VS_PRIVATE ), ' />';
 		echo '<span class="lbl"></span>';
@@ -760,7 +756,7 @@ if( access_has_bug_level( config_get( 'private_bugnote_threshold' ), $t_bug_id )
 
 # Time Tracking (if permitted)
 if( config_get( 'time_tracking_enabled' ) ) {
-	if( access_has_bug_level( config_get( 'time_tracking_edit_threshold' ), $t_bug_id ) ) {
+	if( access_has_dwg_level( config_get( 'time_tracking_edit_threshold' ), $t_bug_id ) ) {
 		echo '<tr>';
 		echo '<th class="category"><label for="time_tracking">' . lang_get( 'time_tracking' ) . '</label></th>';
 		echo '<td colspan="5"><input type="text" id="time_tracking" name="time_tracking" class="input-sm"',
@@ -768,7 +764,7 @@ if( config_get( 'time_tracking_enabled' ) ) {
 	}
 }
 
-event_signal( 'EVENT_BUGNOTE_ADD_FORM', array( $t_bug_id ) );
+event_signal( 'EVENT_DWGNOTE_ADD_FORM', array( $t_bug_id ) );
 ?>
 </tbody>
 </table>
