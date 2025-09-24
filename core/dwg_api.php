@@ -121,22 +121,21 @@ use Mantis\Exceptions\ClientException;
 class DwgData {
 	protected $id;
 	protected $project_id = null;
-// #TODO RobD - and now all the new data fields for the documents table	
 	protected $status = NEW_;
-	protected $enabled = 1;
-
+	protected $date_submitted = '';
+	protected $last_updated = '';
 	protected $version = '';
+// #TODO RobD - and now all the new data fields for the documents table	
+	protected $enabled = 1;
 	protected $name = '';
 	protected $number = '';
 	protected $revision = '';
-	protected $category = '';
+	protected $discipline = '';
 	protected $reference = '';
-	protected $link_url = 'http://';
-	protected $class = '';
+	protected $link_url = '';
+	protected $classification = '';
 	protected $revision_date = '';
 	protected $release_date = '';
-	protected $date_submitted = '';
-	protected $last_updated = '';
 
 // #TODO RobD - the legacy fields from the bug version
 	protected $reporter_id = 0;
@@ -237,6 +236,8 @@ class DwgData {
 					}
 				}
 				break;
+			case 'revision_date':
+			case 'release_date':
 			case 'due_date':
 				if( !is_numeric( $p_value ) ) {
 					$p_value = date_strtotime( $p_value );
@@ -456,86 +457,31 @@ class DwgData {
 		# Check if bug was pre-assigned or auto-assigned.
 		$t_status = dwg_get_status_for_assign( NO_USER, $this->handler_id, $this->status);
 
-		# Insert the rest of the data
-		// db_param_push();
-		// $t_query = 'INSERT INTO {document}
-		// 			    ( project_id,reporter_id, handler_id,duplicate_id,
-		// 			      priority,severity, reproducibility,status,
-		// 			      resolution,projection, category_id,date_submitted,
-		// 			      last_updated,eta, bug_text_id,
-		// 			      os, os_build,platform, version,build,
-		// 			      profile_id, summary, view_state, sponsorship_total, sticky, fixed_in_version,
-		// 			      target_version, due_date
-		// 			    )
-		// 			  VALUES
-		// 			    ( ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
-		// 			      ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
-		// 			      ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
-		// 			      ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
-		// 			      ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
-		// 			      ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
-		// 			      ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ')';
-		// db_query( $t_query, array( $this->project_id, $this->reporter_id, $this->handler_id, $this->duplicate_id,
-		//  $this->priority, $this->severity, $this->reproducibility, $t_status,
-		//  $this->resolution, $this->projection, $this->category_id, $this->date_submitted,
-		//  $this->last_updated, $this->eta, $t_text_id,
-		//  $this->os, $this->os_build, $this->platform, $this->version, $this->build,
-		//  $this->profile_id, $this->summary, $this->view_state, $this->sponsorship_total, $this->sticky, $this->fixed_in_version,
-		//  $this->target_version, $this->due_date ) );
+// $t_revision_date = $this->revision_date ? strtotime( $this->revision_date ) : 0;
+// $t_release_date = $this->release_date ? strtotime( $this->release_date ) : 0;
+// $this->revision_date = $t_revision_date;
+// $this->release_date = $t_release_date;
 
-/*
-#	array( db_get_table( 'document' ), "
-#		id				I		NOTNULL UNSIGNED AUTOINCREMENT PRIMARY,
-#		project_id		I		UNSIGNED NOTNULL DEFAULT '0',
-#		status			I2		NOTNULL DEFAULT '10',
-#		enabled			L		NOTNULL DEFAULT \" '1' \",
-#		version			C(64)	NOTNULL DEFAULT \" '' \",
-#		name			C(255)	NOTNULL,
-#		number			C(64)	NOTNULL,
-#		revision		C(64)	NOTNULL,
-#		category		C(64)	NOTNULL,
-#		reference		C(255)	NULL,
-#		revision_date	I		NOTNULL UNSIGNED,
-#		release_date	I		NULL UNSIGNED,
-#		date_submitted	I		NOTNULL UNSIGNED,
-#		last_updated	I		NOTNULL UNSIGNED
- */
-/*
-		db_param_push();
-		$t_query = 'INSERT INTO {document}
-						( project_id, status, enabled, version,
-						  name, number, revision, category,
-						  reference,
-						  revision_date, release_date, date_submitted, last_updated
-						)
-					  VALUES
-						( ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
-						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
-						  ' . db_param() . ',
-						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ')';
-		db_query( $t_query, array( $this->project_id, $this->status, $this->enabled, $this->version,
-		  $this->name, $this->number, $this->revision, $this->category,
-		  $this->resolution, $this->projection, _id, $this->date_submitted,
-		  $this->reference,
-		  $this->revision_date, $this->release_date, $this->date_submitted, $this->last_updated ) );
-*/
-	// $this->revision_date = date_get_null();
-	// $this->release_date = date_get_null();
-	// $this->date_submitted = date_get_null();
-	// $this->last_updated = date_get_null();
+// if( is_blank( $this->revision_date ) ) {
+// 	$this->revision_date = db_now();
+// }
+// if( is_blank( $this->release_date ) ) {
+// 	$this->release_date = db_now();
+// }
 
-	$this->revision_date = db_now();
-	$this->release_date = db_now();
+	// $this->revision_date = db_now();
+	// $this->release_date = db_now();
 	$this->date_submitted = db_now();
 	$this->last_updated = db_now();
-
+	$this->classification = "OFFICIAL";
 	$this->link_url = "http";
 
+		# Insert the rest of the data
 		db_param_push();
 		$t_query = 'INSERT INTO {document}
 						( project_id, status, enabled, version,
-						  name, number, revision, category,
-						  reference, link_url, class,
+						  name, number, revision, discipline,
+						  reference, link_url, classification,
 						  revision_date, release_date, date_submitted, last_updated
 						)
 					  VALUES
@@ -545,8 +491,8 @@ class DwgData {
 						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ')';
 		db_query( $t_query, array(
 		  $this->project_id, $this->status, $this->enabled, $this->version,
-		  $this->name, $this->number, $this->revision, $this->category,
-		  $this->reference, $this->link_url, $this->class,
+		  $this->name, $this->number, $this->revision, $this->discipline,
+		  $this->reference, $this->link_url, $this->classification,
 		  $this->revision_date, $this->release_date, $this->date_submitted, $this->last_updated ) );
 
 //  * Return the last inserted ID after a insert statement.
@@ -1643,20 +1589,20 @@ function dwg_row_to_object( array $p_row ) {
 }
 
 /**
- * Return the specified field of the given bug.
+ * Return the specified field of the given dwg (document).
  *
  * If the field does not exist, display a warning and return ''
  *
- * @param int    $p_bug_id     Int representing bug identifier.
+ * @param int    $p_dwg_id     Int representing dwg identifier.
  * @param string $p_field_name Field name to retrieve.
  *
  * @return string
- * @throws ClientException if the bug does not exist.
+ * @throws ClientException if the document does not exist.
  *
  * @access public
  */
-function dwg_get_field( $p_bug_id, $p_field_name ) {
-	$t_row = dwg_get_row( $p_bug_id );
+function dwg_get_field( $p_dwg_id, $p_field_name ) {
+	$t_row = dwg_get_row( $p_dwg_id );
 
 	if( isset( $t_row[$p_field_name] ) ) {
 		return $t_row[$p_field_name];

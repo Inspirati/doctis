@@ -73,14 +73,11 @@ $t_per_page = 0;
 $t_bug_count = 0;
 $t_page_count = 0;
 
-#!$t_rows = filter_get_bug_rows( $f_page_number, $t_per_page, $t_page_count, $t_bug_count, null, null, null, true );
 $t_rows = filter_dwg_get_rows( $f_page_number, $t_per_page, $t_page_count, $t_bug_count, null, null, null, true );
 if( $t_rows === false ) {
-#!	print_header_redirect( 'view_all_set.php?type=0' );
 	print_header_redirect( 'view_dwg_set.php?type=0' );
 }
 
-#!$t_bugslist = array();
 $t_dwgslist = array();
 $t_unique_user_ids = array();
 $t_unique_project_ids = array();
@@ -90,7 +87,6 @@ for( $i=0; $i < $t_row_count; $i++ ) {
 	$t_project_id = $t_rows[$i]->project_id;
 	$t_unique_project_ids[$t_project_id] = $t_project_id;
 }
-#!gpc_set_cookie( config_get_global( 'bug_list_cookie' ), implode( ',', $t_bugslist ) );
 gpc_set_cookie( config_get_global( 'dwg_list_cookie' ), implode( ',', $t_dwgslist ) );
 
 compress_enable();
@@ -98,7 +94,6 @@ compress_enable();
 # don't index view documents pages
 html_robots_noindex();
 
-#!layout_page_header_begin( lang_get( 'view_bugs_link' ) );
 layout_page_header_begin( lang_get( 'view_dwg_link' ) );
 
 $t_refresh_delay = current_user_get_pref( 'refresh_delay' );
@@ -111,7 +106,6 @@ if( $t_refresh_delay > 0 ) {
 
 	$t_query .= 'refresh=true';
 
-#!	html_meta_redirect( 'view_all_bug_page.php' . $t_query, $t_refresh_delay * 60 );
 	html_meta_redirect( 'view_dwg_page.php' . $t_query, $t_refresh_delay * 60 );
 }
 
@@ -119,8 +113,6 @@ layout_page_header_end();
 
 layout_page_begin( __FILE__ );
 
-#!define( 'VIEW_ALL_INC_ALLOW', true );
-#!include( __DIR__ . '/view_all_inc.php' );
 define( 'VIEW_DWG_INC_ALLOW', true );
 include( __DIR__ . '/view_dwg_inc.php' );
 

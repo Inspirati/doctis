@@ -117,12 +117,12 @@ $t_flags = $t_result['flags'];
 
 ////////////////////////////////////////////////////////////////////////////////
 $t_document_id = (int)$t_issue['document_id'];
-$t_dwgdata = array(
+$t_data = array(
 	'query' => array( 'id' => $t_document_id ),
 	'options' => array( 'force_readonly' => $t_force_readonly )
 );
-$t_dwgcmd = new DwgViewPageCommand( $t_dwgdata );
-$t_dwgresult = $t_dwgcmd->execute();
+$t_cmd = new DwgViewPageCommand( $t_data );
+$t_dwgresult = $t_cmd->execute();
 $t_document = $t_dwgresult['issue'];
 $t_document_view = $t_dwgresult['issue_view'];
 $t_document_flags = $t_dwgresult['flags'];
@@ -314,8 +314,7 @@ if( true
 	//echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['release_date'] ) ? string_display_line( $t_document['release_date'] ) : '', '</td>';
 	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['release_date'] ) ? $t_release_date : '', '</td>';
 	// echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['release_date'] ) ? string_display_line( date( $t_date_format, strtotime( $t_document['release_date'] ) ) ) : '', '</td>';
-	// echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['classification'] ) ? string_display_line( $t_document['classification'] ) : '', '</td>';
-	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['class'] ) ? string_display_line( $t_document['class'] ) : '', '</td>';
+	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['classification'] ) ? string_display_line( $t_document['classification'] ) : '', '</td>';
 	echo '</tr>';
 	print_table_spacer( 6 );
 }

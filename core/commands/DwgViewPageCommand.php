@@ -151,7 +151,7 @@ class DwgViewPageCommand extends Command {
 		$t_issue_view['dwg_form_title'] = lang_get( 'dwg_view_title' );
 
 		if( config_get_global( 'wiki_enable' ) == ON ) {
-			$t_issue_view['wiki_link'] = 'wiki.php?id=' . $t_issue_id;
+			$t_issue_view['wiki_link'] = 'wiki.php?type=document&id=' . $t_issue_id;
 		}
 
 		$t_flags['history_show'] =

@@ -31,7 +31,9 @@
  */
 
 require_once( 'core.php' );
+require_api( 'access_api.php' );  // @TODO RobD - why wasn't this already here, implied by core.php, or overlooked
 require_api( 'bug_api.php' );
+require_api( 'dwg_api.php' );
 require_api( 'gpc_api.php' );
 require_api( 'print_api.php' );
 require_api( 'project_api.php' );
@@ -47,6 +49,12 @@ if( $f_type == 'project' ) {
 	}
 
 	$t_url = wiki_link_project( $f_id );
+} else if( $f_type == 'document' ) {
+	if( $f_id !== 0 ) {
+		dwg_ensure_exists( $f_id );
+		access_ensure_dwg_level( VIEWER, $f_id );
+	}
+	$t_url = wiki_link_document( $f_id );
 } else {
 	bug_ensure_exists( $f_id );
 	access_ensure_bug_level( VIEWER, $f_id );

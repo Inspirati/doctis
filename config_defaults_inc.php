@@ -1624,6 +1624,7 @@ $g_complete_date_format = 'Y-m-d H:i T';
  * @global string $g_datetime_picker_format
  */
 $g_datetime_picker_format = 'Y-MM-DD HH:mm';
+$g_dwg_date_picker_format = 'Y-MM-DD';
 
 
 ##############################
@@ -2127,6 +2128,7 @@ $g_store_reminders = ON;
  * @global int $g_reminder_recipients_monitor_bug
  */
 $g_reminder_recipients_monitor_bug = ON;
+$g_reminder_recipients_monitor_dwg = ON;
 
 /**
  * Default Reminder View Status (VS_PUBLIC or VS_PRIVATE).
@@ -5538,6 +5540,7 @@ $g_public_config_names = array(
 	'custom_headers',
 	'date_partitions',
 	'datetime_picker_format',
+	'dwg_date_picker_format',
 	'default_bug_additional_info',
 	'default_bug_description',
 	'default_bug_eta',
@@ -5724,6 +5727,7 @@ $g_public_config_names = array(
 	'relationship_graph_view_on_click',
 	'reminder_receive_threshold',
 	'reminder_recipients_monitor_bug',
+	'reminder_recipients_monitor_dwg',
 	'reopen_bug_threshold',
 	'reopen_dwg_threshold',
 	'report_bug_threshold',

@@ -1629,6 +1629,50 @@ function email_bug_reminder( $p_recipients, $p_bug_id, $p_message ) {
 	return $t_result;
 }
 
+function email_dwg_reminder( $p_recipients, $p_bug_id, $p_message ) {
+	if( OFF == config_get( 'enable_email_notification' ) ) {
+		return array();
+	}
+
+	if( !is_array( $p_recipients ) ) {
+		$p_recipients = array(
+			$p_recipients,
+		);
+	}
+
+	$t_project_id = bug_get_field( $p_bug_id, 'project_id' );
+	$t_sender_id = auth_get_current_user_id();
+	$t_sender = user_get_name( $t_sender_id );
+
+	$t_subject = email_build_subject( $p_bug_id );
+	$t_date = date( config_get( 'normal_date_format' ) );
+
+	$t_result = array();
+	foreach( $p_recipients as $t_recipient ) {
+		lang_push( user_pref_get_language( $t_recipient, $t_project_id ) );
+
+		$t_email = user_get_email( $t_recipient );
+
+		if( access_has_project_level( config_get( 'show_user_email_threshold' ), $t_project_id, $t_recipient ) ) {
+			$t_sender_email = ' <' . user_get_email( $t_sender_id ) . '>';
+		} else {
+			$t_sender_email = '';
+		}
+		$t_header = "\n" . lang_get( 'on_date' ) . ' ' . $t_date . ', ' . $t_sender . ' ' . $t_sender_email . lang_get( 'sent_you_this_reminder_about' ) . ': ' . "\n\n";
+		$t_contents = $t_header . string_get_bug_view_url_with_fqdn( $p_bug_id ) . " \n\n" . $p_message;
+
+		$t_id = email_store( $t_email, $t_subject, $t_contents );
+		if( $t_id !== null ) {
+			$t_result[] = $t_recipient;
+		}
+		log_event( LOG_EMAIL_VERBOSE, 'queued reminder email ' . $t_id . ' for U' . $t_recipient );
+
+		lang_pop();
+	}
+
+	return $t_result;
+}
+
 /**
  * Send a notification to users that were mentioned in an issue.
  *

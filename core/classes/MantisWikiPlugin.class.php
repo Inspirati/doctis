@@ -36,6 +36,7 @@ abstract class MantisWikiPlugin extends MantisPlugin {
 			'EVENT_WIKI_INIT' => 'wiki_init',
 			'EVENT_WIKI_LINK_BUG' => 'link_bug',
 			'EVENT_WIKI_LINK_PROJECT' => 'link_project',
+			'EVENT_WIKI_LINK_DOCUMENT' => 'link_document',
 		);
 	}
 
@@ -62,5 +63,13 @@ abstract class MantisWikiPlugin extends MantisPlugin {
 	 * @return string
 	 */
 	abstract function link_project( $p_event, $p_project_id );
+
+	/**
+	 * Generate URL to Document entry in a wiki
+	 * @param integer $p_event      Event.
+	 * @param integer $p_document_id A project identifier.
+	 * @return string
+	 */
+	abstract function link_document( $p_event, $p_document_id );
 }
 

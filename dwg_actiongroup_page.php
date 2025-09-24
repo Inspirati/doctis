@@ -37,6 +37,7 @@
  * @uses helper_api.php
  * @uses lang_api.php
  * @uses print_api.php
+ * @uses print_dwg_api.php
  * @uses string_api.php
  * @uses utility_api.php
  * @uses version_api.php
@@ -46,13 +47,9 @@ require_once( 'core.php' );
 require_api( 'access_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'bug_api.php' );
-
 require_api( 'dwg_api.php' );
-
 require_api( 'bug_group_action_api.php' );
-
 // require_api( 'dwg_group_action_api.php' );
-
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
 require_api( 'custom_field_api.php' );
@@ -62,9 +59,7 @@ require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'print_api.php' );
-
 require_api( 'print_dwg_api.php' );
-
 require_api( 'string_api.php' );
 require_api( 'utility_api.php' );
 require_api( 'version_api.php' );

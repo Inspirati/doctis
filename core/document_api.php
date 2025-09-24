@@ -70,6 +70,7 @@ function document_exists( $p_document_id ) {
  * @return void
  * @access public
  */
+// @TODO RobD - note: if considering calling this, you probably want dwg_ensure_exists instead
 function document_ensure_exists( $p_document_id ) {
 	if( !document_exists( $p_document_id ) ) {
 		trigger_error( ERROR_DOCUMENT_NOT_FOUND, ERROR );
