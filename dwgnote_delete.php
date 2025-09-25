@@ -1,0 +1,1 @@
+bugnote_delete.php

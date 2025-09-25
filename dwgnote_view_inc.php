@@ -1,0 +1,1 @@
+bugnote_view_inc.php
