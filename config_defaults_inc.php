@@ -1726,6 +1726,7 @@ $g_default_project_view_status = VS_PUBLIC;
  * @global int $g_default_bug_view_status
  */
 $g_default_bug_view_status = VS_PUBLIC;
+$g_default_dwg_view_status = VS_PUBLIC;
 
 /**
  * Default value for bug description field used on bug report page.
@@ -1733,6 +1734,7 @@ $g_default_bug_view_status = VS_PUBLIC;
  * @global string $g_default_bug_description
  */
 $g_default_bug_description = '';
+$g_default_dwg_description = '';
 
 /**
  * Default value for steps to reproduce field.
@@ -1740,6 +1742,7 @@ $g_default_bug_description = '';
  * @global string $g_default_bug_steps_to_reproduce
  */
 $g_default_bug_steps_to_reproduce = '';
+$g_default_dwg_steps_to_reproduce = '';
 
 /**
  * Default value for addition information field.
@@ -1747,6 +1750,7 @@ $g_default_bug_steps_to_reproduce = '';
  * @global string $g_default_bug_additional_info
  */
 $g_default_bug_additional_info = '';
+$g_default_dwg_additional_info = '';
 
 /**
  * Default Bugnote View Status (VS_PUBLIC or VS_PRIVATE).
@@ -1754,6 +1758,7 @@ $g_default_bug_additional_info = '';
  * @global int $g_default_bugnote_view_status
  */
 $g_default_bugnote_view_status = VS_PUBLIC;
+$g_default_dwgnote_view_status = VS_PUBLIC;
 
 /**
  * Default bug resolution when reporting a new bug.
@@ -1761,6 +1766,7 @@ $g_default_bugnote_view_status = VS_PUBLIC;
  * @global int $g_default_bug_resolution
  */
 $g_default_bug_resolution = OPEN;
+$g_default_dwg_resolution = OPEN;
 
 /**
  * Default bug severity when reporting a new bug.
@@ -1768,6 +1774,7 @@ $g_default_bug_resolution = OPEN;
  * @global int $g_default_bug_severity
  */
 $g_default_bug_severity = MINOR;
+$g_default_dwg_severity = MINOR;
 
 /**
  * Default bug priority when reporting a new bug.
@@ -1775,6 +1782,7 @@ $g_default_bug_severity = MINOR;
  * @global int $g_default_bug_priority
  */
 $g_default_bug_priority = NORMAL;
+$g_default_dwg_priority = NORMAL;
 
 /**
  * Default bug reproducibility when reporting a new bug.
@@ -1782,6 +1790,7 @@ $g_default_bug_priority = NORMAL;
  * @global int $g_default_bug_reproducibility
  */
 $g_default_bug_reproducibility = REPRODUCIBILITY_HAVENOTTRIED;
+$g_default_dwg_reproducibility = REPRODUCIBILITY_HAVENOTTRIED;
 
 /**
  * Default bug projection when reporting a new bug.
@@ -1789,6 +1798,7 @@ $g_default_bug_reproducibility = REPRODUCIBILITY_HAVENOTTRIED;
  * @global int $g_default_bug_projection
  */
 $g_default_bug_projection = PROJECTION_NONE;
+$g_default_dwg_projection = PROJECTION_NONE;
 
 /**
  * Default bug ETA when reporting a new bug.
@@ -1796,6 +1806,7 @@ $g_default_bug_projection = PROJECTION_NONE;
  * @global int $g_default_bug_eta
  */
 $g_default_bug_eta = ETA_NONE;
+$g_default_dwg_eta = ETA_NONE;
 
 /**
  * Default relationship between a new bug and its parent when cloning it.
@@ -1803,6 +1814,7 @@ $g_default_bug_eta = ETA_NONE;
  * @global int $g_default_bug_relationship_clone
  */
 $g_default_bug_relationship_clone = BUG_REL_NONE;
+$g_default_dwg_relationship_clone = DWG_REL_NONE;
 
 /**
  * Allow parent bug to close regardless of child status.
@@ -1817,6 +1829,7 @@ $g_allow_parent_of_unresolved_to_close = OFF;
  * @global int $g_default_bug_relationship
  */
 $g_default_bug_relationship = BUG_RELATED;
+$g_default_dwg_relationship = BUG_RELATED;
 
 /**
  * Default category to use when moving issues.
@@ -1879,6 +1892,7 @@ $g_default_redirect_delay = 2;
  * @global string $g_default_bugnote_order
  */
 $g_default_bugnote_order = 'ASC';
+$g_default_dwgnote_order = 'ASC';
 
 /**
  *
@@ -2207,6 +2221,7 @@ $g_sponsor_threshold = REPORTER;
  * @global int $g_handle_sponsored_bugs_threshold
  */
 $g_handle_sponsored_bugs_threshold = DEVELOPER;
+$g_handle_sponsored_dwgs_threshold = DEVELOPER;
 
 /**
  * Access level required to be able to assign a sponsored issue.
@@ -2217,6 +2232,7 @@ $g_handle_sponsored_bugs_threshold = DEVELOPER;
  * @global int $g_assign_sponsored_bugs_threshold
  */
 $g_assign_sponsored_bugs_threshold = MANAGER;
+$g_assign_sponsored_dwgs_threshold = MANAGER;
 
 /**
  * Minimum sponsorship amount.
@@ -3379,6 +3395,7 @@ $g_update_dwg_assign_threshold = '%handle_dwg_threshold%';
  * @global int $g_private_bugnote_threshold
  */
 $g_private_bugnote_threshold = DEVELOPER;
+$g_private_dwgnote_threshold = DEVELOPER;
 
 /**
  * Access level needed to view handler.
@@ -3412,6 +3429,7 @@ $g_dwg_reminder_threshold = DEVELOPER;
  * @global int $g_bug_revision_view_threshold
  */
 $g_bug_revision_view_threshold = DEVELOPER;
+$g_dwg_revision_view_threshold = DEVELOPER;
 
 /**
  * Access level required to drop bug history revisions.
@@ -3419,6 +3437,7 @@ $g_bug_revision_view_threshold = DEVELOPER;
  * @global int $g_bug_revision_drop_threshold
  */
 $g_bug_revision_drop_threshold = MANAGER;
+$g_dwg_revision_drop_threshold = MANAGER;
 
 /**
  * Access level needed to upload files to the project documentation section.
@@ -3444,6 +3463,7 @@ $g_upload_project_file_threshold = MANAGER;
  * @global int $g_upload_bug_file_threshold
  */
 $g_upload_bug_file_threshold = REPORTER;
+$g_upload_dwg_file_threshold = REPORTER;
 
 /**
  * Add bugnote threshold.
@@ -3451,6 +3471,7 @@ $g_upload_bug_file_threshold = REPORTER;
  * @global int $g_add_bugnote_threshold
  */
 $g_add_bugnote_threshold = REPORTER;
+$g_add_dwgnote_threshold = REPORTER;
 
 /**
  * Threshold at which a user can edit the bugnotes of other users.
@@ -3458,6 +3479,7 @@ $g_add_bugnote_threshold = REPORTER;
  * @global int $g_update_bugnote_threshold
  */
 $g_update_bugnote_threshold = DEVELOPER;
+$g_update_dwgnote_threshold = DEVELOPER;
 
 /**
  * Threshold needed to view project documentation.
@@ -3566,6 +3588,7 @@ $g_delete_dwg_threshold = DEVELOPER;
  * @global string $g_delete_bugnote_threshold
  */
 $g_delete_bugnote_threshold = '%delete_bug_threshold%';
+$g_delete_dwgnote_threshold = '%delete_dwg_threshold%';
 
 /**
  * Move bug threshold.
@@ -3705,6 +3728,7 @@ $g_set_status_threshold = array( NEW_ => REPORTER );
  * @global int $g_bugnote_user_edit_threshold
  */
 $g_bugnote_user_edit_threshold = '%update_bugnote_threshold%';
+$g_dwgnote_user_edit_threshold = '%update_dwgnote_threshold%';
 
 /**
  * Threshold at which a user can delete his/her own bugnotes.
@@ -3715,6 +3739,7 @@ $g_bugnote_user_edit_threshold = '%update_bugnote_threshold%';
  * @global int $g_bugnote_user_delete_threshold
  */
 $g_bugnote_user_delete_threshold = '%delete_bugnote_threshold%';
+$g_dwgnote_user_delete_threshold = '%delete_dwgnote_threshold%';
 
 /**
  * Threshold at which a user can change the view state of his/her own bugnotes.
@@ -3725,6 +3750,7 @@ $g_bugnote_user_delete_threshold = '%delete_bugnote_threshold%';
  * @global int $g_bugnote_user_change_view_state_threshold
  */
 $g_bugnote_user_change_view_state_threshold = '%change_view_status_threshold%';
+$g_dwgnote_user_change_view_state_threshold = '%change_view_status_threshold%';
 
 /**
  * Allow a bug to have no category.
@@ -3844,6 +3870,7 @@ $g_anonymous_account = '';
  * @global string $g_bug_link_tag
  */
 $g_bug_link_tag = '#';
+$g_dwg_link_tag = '#';
 
 /**
  * Bugnote Linking.
@@ -3858,6 +3885,7 @@ $g_bug_link_tag = '#';
  * @global string $g_bugnote_link_tag
  */
 $g_bugnote_link_tag = '~';
+$g_dwgnote_link_tag = '~';
 
 /**
  * Bug Count Linking.
@@ -3875,7 +3903,6 @@ $g_bugnote_link_tag = '~';
  * @global string $g_bug_count_hyperlink_prefix
  */
 $g_bug_count_hyperlink_prefix = 'view_all_set.php?type=' . FILTER_ACTION_PARSE_NEW . '&amp;temporary=y';
-
 // @TODO RobD - possibly unused?
 $g_dwg_count_hyperlink_prefix = 'view_dwg_set.php?type=' . FILTER_ACTION_PARSE_NEW . '&amp;temporary=y';
 
@@ -5451,6 +5478,7 @@ $g_public_config_names = array(
 	'access_levels_enum_string',
 	'action_button_position',
 	'add_bugnote_threshold',
+	'add_dwgnote_threshold',
 	'add_profile_threshold',
 	'admin_site_threshold',
 	'allow_account_delete',
@@ -5473,6 +5501,7 @@ $g_public_config_names = array(
 	'antispam_max_event_count',
 	'antispam_time_window_in_seconds',
 	'assign_sponsored_bugs_threshold',
+	'assign_sponsored_dwgs_threshold',
 	'attachments_to_new_tab',
 	'auto_set_status_to_assigned',
 	'backward_year_count',
@@ -5505,7 +5534,9 @@ $g_public_config_names = array(
 	'bug_resolved_status_threshold',
 	'dwg_resolved_status_threshold',
 	'bug_revision_drop_threshold',
+	'dwg_revision_drop_threshold',
 	'bug_revision_view_threshold',
+	'dwg_revision_view_threshold',
 	'bug_submit_status',
 	'dwg_submit_status',
 	'bug_update_page_fields',
@@ -5513,10 +5544,15 @@ $g_public_config_names = array(
 	'bug_view_page_fields',
 	'dwg_view_page_fields',
 	'bugnote_link_tag',
+	'dwgnote_link_tag',
 	'bugnote_order',
+	'dwgnote_order',
 	'bugnote_user_change_view_state_threshold',
+	'dwgnote_user_change_view_state_threshold',
 	'bugnote_user_delete_threshold',
+	'dwgnote_user_delete_threshold',
 	'bugnote_user_edit_threshold',
+	'dwgnote_user_edit_threshold',
 	'cdn_enabled',
 	'change_view_status_threshold',
 	'check_mx_record',
@@ -5542,19 +5578,32 @@ $g_public_config_names = array(
 	'datetime_picker_format',
 	'dwg_date_picker_format',
 	'default_bug_additional_info',
+	'default_dwg_additional_info',
 	'default_bug_description',
+	'default_dwg_description',
 	'default_bug_eta',
+	'default_dwg_eta',
 	'default_bug_priority',
+	'default_dwg_priority',
 	'default_bug_projection',
+	'default_dwg_projection',
 	'default_bug_relationship_clone',
+	'default_dwg_relationship_clone',
 	'default_bug_relationship',
+	'default_dwg_relationship',
 	'default_bug_reproducibility',
 	'default_bug_resolution',
+	'default_dwg_resolution',
 	'default_bug_severity',
+	'default_dwg_severity',
 	'default_bug_steps_to_reproduce',
+	'default_dwg_steps_to_reproduce',
 	'default_bug_view_status',
+	'default_dwg_view_status',
 	'default_bugnote_order',
+	'default_dwgnote_order',
 	'default_bugnote_view_status',
+	'default_dwgnote_view_status',
 	'default_category_for_moves',
 	'default_email_bugnote_limit',
 	'default_email_on_assigned_minimum_severity',
@@ -5590,6 +5639,7 @@ $g_public_config_names = array(
 	'delete_bug_threshold',
 	'delete_dwg_threshold',
 	'delete_bugnote_threshold',
+	'delete_dwgnote_threshold',
 	'delete_project_threshold',
 	'disallowed_files',
 	'display_bug_padding',
@@ -5638,6 +5688,7 @@ $g_public_config_names = array(
 	'from_name',
 	'handle_bug_threshold',
 	'handle_sponsored_bugs_threshold',
+	'handle_sponsored_dwgs_threshold',
 	'hide_status_default',
 	'history_default_visible',
 	'history_order',
@@ -5708,6 +5759,7 @@ $g_public_config_names = array(
 	'private_bug_threshold',
 	'private_dwg_threshold',
 	'private_bugnote_threshold',
+	'private_dwgnote_threshold',
 	'private_news_threshold',
 	'private_project_threshold',
 	'project_cookie',
@@ -5818,9 +5870,11 @@ $g_public_config_names = array(
 	'update_bug_threshold',
 	'update_dwg_threshold',
 	'update_bugnote_threshold',
+	'update_dwgnote_threshold',
 	'update_readonly_bug_threshold',
 	'update_readonly_dwg_threshold',
 	'upload_bug_file_threshold',
+	'upload_dwg_file_threshold',
 	'upload_project_file_threshold',
 	'use_dynamic_filters',
 	'user_login_valid_regex',

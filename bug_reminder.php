@@ -28,7 +28,7 @@
  * @uses bugnote_api.php
  * @uses config_api.php
  * @uses constant_inc.php
- * @uses email_api.php
+ * @uses email_bug_api.php
  * @uses error_api.php
  * @uses form_api.php
  * @uses gpc_api.php
@@ -45,7 +45,7 @@ require_api( 'bug_api.php' );
 require_api( 'bugnote_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
-require_api( 'email_api.php' );
+require_api( 'email_bug_api.php' );
 require_api( 'error_api.php' );
 require_api( 'form_api.php' );
 require_api( 'gpc_api.php' );

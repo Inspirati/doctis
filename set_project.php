@@ -47,6 +47,7 @@ require_api( 'helper_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'print_api.php' );
+require_api( 'print_dwg_api.php' );
 require_api( 'project_api.php' );
 require_api( 'string_api.php' );
 require_api( 'utility_api.php' );
@@ -88,6 +89,7 @@ if( !is_blank( $c_ref ) ) {
 
 		switch( $t_referrer_page ) {
 			case 'view_all_bug_page.php':		
+			case 'view_all_dwg_page.php':		
 				$t_source_filter_id = filter_db_get_project_current( $t_bottom );
 				$t_redirect_url = helper_url_combine( 'view_all_set.php',
 					( $t_source_filter_id !== null )
@@ -108,6 +110,12 @@ if( !is_blank( $c_ref ) ) {
 			case 'bug_view_advanced_page.php':
 			case 'bug_update_page.php':
 			case 'bug_change_status_page.php':
+				break;
+
+			case 'dwg_view_page.php':
+			case 'dwg_view_advanced_page.php':
+			case 'dwg_update_page.php':
+			case 'dwg_change_status_page.php':
 				break;
 
 			default:

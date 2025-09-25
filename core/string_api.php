@@ -29,7 +29,7 @@
  * @uses bugnote_api.php
  * @uses config_api.php
  * @uses constant_inc.php
- * @uses email_api.php
+ * @uses email_bug_api.php
  * @uses event_api.php
  * @uses helper_api.php
  * @uses lang_api.php
@@ -43,7 +43,7 @@ require_api( 'bug_api.php' );
 require_api( 'bugnote_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
-require_api( 'email_api.php' );
+require_api( 'email_bug_api.php' );
 require_api( 'event_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'lang_api.php' );
@@ -483,6 +483,79 @@ function string_process_bugnote_link( $p_string, $p_include_anchor = true, $p_de
 	return $p_string;
 }
 
+function string_process_dwgnote_link( $p_string, $p_include_anchor = true, $p_detail_info = true, $p_fqdn = false ) {
+	static $s_bugnote_link_callback = array();
+
+	$t_tag = config_get( 'bugnote_link_tag' );
+
+	# bail if the link tag is blank
+	if( '' == $t_tag || $p_string == '' ) {
+		return $p_string;
+	}
+
+	if( !isset( $s_bugnote_link_callback[$p_include_anchor][$p_detail_info][$p_fqdn] ) ) {
+		if( $p_include_anchor ) {
+			$s_bugnote_link_callback[$p_include_anchor][$p_detail_info][$p_fqdn] =
+				function( $p_array ) use( $p_detail_info, $p_fqdn ) {
+					global $g_project_override;
+					$c_bugnote_id = (int)$p_array[2];
+					if( dwgnote_exists( $c_bugnote_id ) ) {
+						$t_bug_id = dwgnote_get_field( $c_bugnote_id, 'bug_id' );
+						if( dwg_exists( $t_bug_id ) ) {
+							$t_project_id = dwg_get_field( $t_bug_id, 'project_id' );
+							$t_user_id = auth_get_current_user_id();
+
+							$g_project_override = $t_project_id;
+
+							$t_can_view_issue = access_has_dwg_level( config_get( 'view_dwg_threshold' ), $t_bug_id, $t_user_id );
+							if( $t_can_view_issue ) {
+								$t_can_view_note = access_compare_level(
+									user_get_access_level( $t_user_id, $t_project_id ),
+									config_get( 'private_dwgnote_threshold' )
+									)
+									|| dwgnote_get_field( $c_bugnote_id, 'reporter_id' ) == $t_user_id
+									|| dwgnote_get_field( $c_bugnote_id, 'view_state' ) == VS_PUBLIC;
+
+								if( $t_can_view_note ) {
+									$g_project_override = null;
+									return $p_array[1] .
+										string_get_dwgnote_view_link(
+											$t_bug_id,
+											$c_bugnote_id,
+											(boolean)$p_detail_info,
+											(boolean)$p_fqdn
+										);
+								}
+							}
+
+							$g_project_override = null;
+						}
+					}
+					return $p_array[0];
+				}; # end of bugnote link callback closure
+		} else {
+			$s_bugnote_link_callback[$p_include_anchor][$p_detail_info][$p_fqdn] =
+				function( $p_array ) {
+					$c_bugnote_id = (int)$p_array[2];
+					if( dwgnote_exists( $c_bugnote_id ) ) {
+						$t_bug_id = dwgnote_get_field( $c_bugnote_id, 'bug_id' );
+						if( $t_bug_id && dwg_exists( $t_bug_id ) ) {
+							return $p_array[1] .
+								string_get_dwgnote_view_url_with_fqdn( $t_bug_id, $c_bugnote_id );
+						}
+					}
+					return $p_array[0];
+				}; # end of bugnote link callback closure
+		}
+	}
+	$p_string = preg_replace_callback(
+		'/(^|[^\w])' . preg_quote( $t_tag, '/' ) . '(\d+)\b/',
+		$s_bugnote_link_callback[$p_include_anchor][$p_detail_info][$p_fqdn],
+		$p_string
+	);
+	return $p_string;
+}
+
 /**
  * Search email addresses and URLs for a few common protocols in the given
  * string, and replace occurrences with href anchors.
@@ -672,6 +745,7 @@ function string_get_dwg_page( $p_action ) {
  * @return string
  */
 function string_get_bug_view_link( $p_bug_id, $p_detail_info = true, $p_fqdn = false ) {
+//	error_log("string_get_bug_view_link $p_bug_id = " . print_r($p_bug_id, true));
 	if( bug_exists( $p_bug_id ) ) {
 		$t_link = '<a href="';
 		if( $p_fqdn ) {
@@ -701,6 +775,7 @@ function string_get_bug_view_link( $p_bug_id, $p_detail_info = true, $p_fqdn = f
 
 function string_get_dwg_view_link( $p_bug_id, $p_detail_info = true, $p_fqdn = false ) {
 
+//	error_log("string_get_dwg_view_link $p_bug_id = " . print_r($p_bug_id, true));
 	if( dwg_exists( $p_bug_id ) ) {
 		$t_link = '<a href="';
 		if( $p_fqdn ) {
@@ -739,6 +814,7 @@ function string_get_dwg_view_link( $p_bug_id, $p_detail_info = true, $p_fqdn = f
 function string_get_bugnote_view_link( $p_bug_id, $p_bugnote_id, $p_detail_info = true, $p_fqdn = false ) {
 	$t_bug_id = (int)$p_bug_id;
 
+//	error_log("string_get_bugnote_view_link $p_bug_id = " . print_r($p_bug_id, true));
 	if( bug_exists( $t_bug_id ) && bugnote_exists( $p_bugnote_id ) ) {
 		$t_link = '<a href="';
 		if( $p_fqdn ) {
@@ -766,16 +842,54 @@ function string_get_bugnote_view_link( $p_bug_id, $p_bugnote_id, $p_detail_info 
 	return $t_link;
 }
 
+function string_get_dwgnote_view_link( $p_bug_id, $p_bugnote_id, $p_detail_info = true, $p_fqdn = false ) {
+	$t_bug_id = (int)$p_bug_id;
+
+//	error_log("string_dwt_bugnote_view_link $p_bug_id = " . print_r($p_bug_id, true));
+	if( dwg_exists( $t_bug_id ) && dwgnote_exists( $p_bugnote_id ) ) {
+		$t_link = '<a href="';
+		if( $p_fqdn ) {
+			$t_link .= config_get_global( 'path' );
+		} else {
+			$t_link .= config_get_global( 'short_path' );
+		}
+
+		$t_link .= string_get_dwgnote_view_url( $p_bug_id, $p_bugnote_id ) . '"';
+		if( $p_detail_info ) {
+			$t_reporter = string_attribute( user_get_name( dwgnote_get_field( $p_bugnote_id, 'reporter_id' ) ) );
+			$t_update_date = string_attribute( date( config_get( 'normal_date_format' ), ( dwgnote_get_field( $p_bugnote_id, 'last_modified' ) ) ) );
+			$t_link .= ' title="' . dwg_format_id( $t_bug_id ) . ': [' . $t_update_date . '] ' . $t_reporter . '"';
+		}
+
+		if( dwg_is_resolved( $t_bug_id ) ) {
+			$t_link .= ' class="resolved"';
+		}
+
+		$t_link .= '>' . dwg_format_id( $t_bug_id ) . ':' . dwgnote_format_id( $p_bugnote_id ) . '</a>';
+	} else {
+		$t_link = dwg_format_id( $t_bug_id ) . ':' . dwgnote_format_id( $p_bugnote_id );
+	}
+
+	return $t_link;
+}
+
 /**
  * return the name and GET parameters of a bug VIEW page for the given bug
  * @param integer $p_bug_id A bug identifier.
  * @return string
  */
 function string_get_bug_view_url( $p_bug_id ) {
+//	error_log("string_get_bug_view_url()");
 	return 'view.php?id=' . $p_bug_id;
 }
 
+/**
+ * return the name and GET parameters of a dwg VIEW page for the given dwg
+ * @param integer $p_bug_id A dwg identifier.
+ * @return string
+ */
 function string_get_dwg_view_url( $p_bug_id ) {
+//	error_log("string_get_dwg_view_url()");
 	return 'dwg_view.php?id=' . $p_bug_id;
 }
 
@@ -786,7 +900,13 @@ function string_get_dwg_view_url( $p_bug_id ) {
  * @return string
  */
 function string_get_bugnote_view_url( $p_bug_id, $p_bugnote_id ) {
+//	error_log("string_get_bugnote_view_url()");
 	return 'view.php?id=' . $p_bug_id . '#c' . $p_bugnote_id;
+}
+
+function string_get_dwgnote_view_url( $p_bug_id, $p_bugnote_id ) {
+//	error_log("string_get_dwgnote_view_url()");
+	return 'dwg_view.php?id=' . $p_bug_id . '#c' . $p_bugnote_id;
 }
 
 /**
@@ -799,7 +919,22 @@ function string_get_bugnote_view_url( $p_bug_id, $p_bugnote_id ) {
  * @return string
  */
 function string_get_bugnote_view_url_with_fqdn( $p_bug_id, $p_bugnote_id ) {
+//	error_log("string_get_bugnote_view_url_with_fqdn()");
 	return config_get_global( 'path' ) . string_get_bug_view_url( $p_bug_id ) . '#c' . $p_bugnote_id;
+}
+
+/**
+ * return the name and GET parameters of a dwg VIEW page for the given dwg
+ * account for the user preference and site override
+ * The returned url includes the fully qualified domain, hence it is suitable to be included
+ * in emails.
+ * @param integer $p_bug_id     A dwg identifier.
+ * @param integer $p_bugnote_id A dwg note identifier.
+ * @return string
+ */
+function string_get_dwgnote_view_url_with_fqdn( $p_bug_id, $p_bugnote_id ) {
+//	error_log("string_get_dwgnote_view_url_with_fqdn()");
+	return config_get_global( 'path' ) . string_get_dwg_view_url( $p_bug_id ) . '#c' . $p_bugnote_id;
 }
 
 /**
@@ -810,10 +945,19 @@ function string_get_bugnote_view_url_with_fqdn( $p_bug_id, $p_bugnote_id ) {
  * @return string
  */
 function string_get_bug_view_url_with_fqdn( $p_bug_id ) {
+//	error_log("string_get_bug_view_url_with_fqdn()");
 	return config_get_global( 'path' ) . string_get_bug_view_url( $p_bug_id );
 }
 
+/**
+ * return the name and GET parameters of a dwg VIEW page for the given dwg
+ * account for the user preference and site override
+ * The returned url includes the fully qualified domain, hence it is suitable to be included in emails.
+ * @param integer $p_bug_id  A dwg identifier.
+ * @return string
+ */
 function string_get_dwg_view_url_with_fqdn( $p_bug_id ) {
+//	error_log("string_get_dwg_view_url_with_fqdn()");
 	return config_get_global( 'path' ) . string_get_dwg_view_url( $p_bug_id );
 }
 
@@ -823,6 +967,7 @@ function string_get_dwg_view_url_with_fqdn( $p_bug_id ) {
  * @return string
  */
 function string_get_bug_update_link( $p_bug_id ) {
+//	error_log("string_get_bug_update_link()");
 	$t_summary = string_attribute( bug_get_field( $p_bug_id, 'summary' ) );
 	return '<a href="' . helper_mantis_url( string_get_bug_update_url( $p_bug_id ) ) . '" title="' . $t_summary . '">' . bug_format_id( $p_bug_id ) . '</a>';
 }
@@ -833,10 +978,17 @@ function string_get_bug_update_link( $p_bug_id ) {
  * @return string
  */
 function string_get_bug_update_url( $p_bug_id ) {
+//	error_log("string_get_bug_update_url()");
 	return string_get_bug_update_page() . '?bug_id=' . $p_bug_id;
 }
 
+/**
+ * return the name and GET parameters of a dwg UPDATE page
+ * @param integer $p_bug_id  A dwg identifier.
+ * @return string
+ */
 function string_get_dwg_update_url( $p_bug_id ) {
+//	error_log("string_get_dwg_update_url()");
 	return string_get_dwg_update_page() . '?bug_id=' . $p_bug_id;
 }
 
@@ -845,6 +997,7 @@ function string_get_dwg_update_url( $p_bug_id ) {
  * @return string
  */
 function string_get_bug_update_page() {
+//	error_log("string_get_bug_update_page()");
 	return string_get_bug_page( 'update' );
 }
 
@@ -853,6 +1006,7 @@ function string_get_bug_update_page() {
  * @return string
  */
 function string_get_dwg_update_page() {
+//	error_log("string_get_dwg_update_page()");
 	return string_get_dwg_page( 'update' );
 }
 
@@ -861,6 +1015,7 @@ function string_get_dwg_update_page() {
  * @return string
  */
 function string_get_bug_report_link() {
+//	error_log("string_get_bug_report_link()");
 	return '<a href="' . helper_mantis_url( string_get_bug_report_url() ) . '">' . lang_get( 'report_bug_link' ) . '</a>';
 }
 
@@ -869,6 +1024,7 @@ function string_get_bug_report_link() {
  * @return string
  */
 function string_get_dwg_report_link() {
+//	error_log("string_get_dwg_report_link()");
 	return '<a href="' . helper_mantis_url( string_get_dwg_create_url() ) . '">' . lang_get( 'create_dwg_link' ) . '</a>';
 }
 
@@ -877,6 +1033,7 @@ function string_get_dwg_report_link() {
  * @return string
  */
 function string_get_bug_report_url() {
+//	error_log("string_get_bug_report_url()");
 	return string_get_bug_page( 'report' );
 }
 
@@ -885,6 +1042,7 @@ function string_get_bug_report_url() {
  * @return string
  */
 function string_get_dwg_create_url() {
+//	error_log("string_get_dwg_create_url()");
 	return string_get_dwg_page( 'create' );
 }
 

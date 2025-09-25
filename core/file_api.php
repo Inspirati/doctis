@@ -618,6 +618,19 @@ function file_delete_bugnote_attachments( $p_bug_id, $p_bugnote_id ) {
 	return true;
 }
 
+function file_delete_dwgnote_attachments( $p_bug_id, $p_bugnote_id ) {
+	db_param_push();
+	$t_query = 'SELECT id, diskfile, filename FROM {bug_file} WHERE bug_id=' . db_param() . ' AND bugnote_id=' . db_param();
+	$t_result = db_query( $t_query, array( $p_bug_id, $p_bugnote_id ) );
+
+	while( $t_row = db_fetch_array( $t_result ) ) {
+		file_delete( (int)$t_row['id'], 'bug', $p_bugnote_id );
+	}
+
+	# db_query() errors on failure so:
+	return true;
+}
+
 /**
  * Link the specified file to the specified bugnote.
  * 
@@ -627,6 +640,13 @@ function file_delete_bugnote_attachments( $p_bug_id, $p_bugnote_id ) {
  * @return void
  */
 function file_link_to_bugnote( $p_file_id, $p_bugnote_id ) {
+	db_param_push();
+
+	$t_query = 'UPDATE {bug_file} SET bugnote_id=' . db_param() . ' WHERE id=' . db_param();
+	db_query( $t_query, array( $p_bugnote_id, $p_file_id ) );
+}
+
+function file_link_to_dwgnote( $p_file_id, $p_bugnote_id ) {
 	db_param_push();
 
 	$t_query = 'UPDATE {bug_file} SET bugnote_id=' . db_param() . ' WHERE id=' . db_param();

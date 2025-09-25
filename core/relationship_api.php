@@ -795,7 +795,7 @@ function relationship_can_resolve_bug( $p_bug_id ) {
 	return true;
 }
 
-function relationship_can_resolve_dwg( $p_bug_id ) {
+function dwg_relationship_can_resolve_dwg( $p_bug_id ) {
 	# retrieve all the relationships in which the bug is the source bug
 	$t_relationships = relationship_get_all_src( $p_bug_id );
 

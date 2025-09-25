@@ -337,7 +337,7 @@ if( $t_flags['reporter_show'] || $t_flags['handler_show'] || $t_flags['due_date_
 	if( $t_flags['reporter_show'] ) {
 		echo '<th class="bug-reporter category">', lang_get( 'dwg_creator' ), '</th>';
 		echo '<td class="bug-reporter">';
-		print_user_with_subject( $t_issue['reporter']['id'], $f_issue_id );
+		print_dwg_user_with_subject( $t_issue['reporter']['id'], $f_issue_id );
 		echo '</td>';
 	} else {
 		$t_spacer += 2;
@@ -348,7 +348,7 @@ if( $t_flags['reporter_show'] || $t_flags['handler_show'] || $t_flags['due_date_
 		echo '<th class="bug-assigned-to category">', lang_get( 'assigned_to' ), '</th>';
 		echo '<td class="bug-assigned-to">';
 		if( isset( $t_issue['handler'] ) ) {
-			print_user_with_subject( $t_issue['handler']['id'], $f_issue_id );
+			print_dwg_user_with_subject( $t_issue['handler']['id'], $f_issue_id );
 		}
 		echo '</td>';
 	} else {
@@ -770,9 +770,9 @@ if( $t_flags['monitor_show'] ) {
 					print_user( $t_monitor_user['id'] );
 					if( $t_flags['monitor_can_delete'] ) {
 						echo ' <a class="btn btn-xs btn-primary btn-white btn-round" '
-							. 'href="' . helper_mantis_url( 'bug_monitor_delete.php' )
+							. 'href="' . helper_mantis_url( 'dwg_monitor_delete.php' )
 							. '?bug_id=' . $f_issue_id . '&amp;user_id=' . $t_monitor_user['id']
-							. htmlspecialchars(form_security_param( 'bug_monitor_delete' ))
+							. htmlspecialchars(form_security_param( 'dwg_monitor_delete' ))
 							. '">'
 							. icon_get( 'fa-times' )
 							. '</a>';
@@ -783,11 +783,11 @@ if( $t_flags['monitor_show'] ) {
 			if( $t_flags['monitor_can_add'] ) {
 	?>
 			<br /><br />
-			<form method="post" action="bug_monitor_add.php" class="form-inline noprint">
-				<?php echo form_security_field( 'bug_monitor_add' ) ?>
+			<form method="post" action="dwg_monitor_add.php" class="form-inline noprint">
+				<?php echo form_security_field( 'dwg_monitor_add' ) ?>
 				<input type="hidden" name="bug_id" value="<?php echo (integer)$f_issue_id; ?>" />
 				<!--suppress HtmlFormInputWithoutLabel -->
-				<input type="text" class="input-sm" id="bug_monitor_list_user_to_add" name="user_to_add" />
+				<input type="text" class="input-sm" id="dwg_monitor_list_user_to_add" name="user_to_add" />
 				<input type="submit" class="btn btn-primary btn-sm btn-white btn-round" value="<?php echo lang_get( 'add' ) ?>" />
 			</form>
 			<?php } ?>
@@ -1117,8 +1117,8 @@ function dwg_view_relationship_view_box( $p_bug_id, $p_can_update ) {
 <?php
 		if( $p_can_update ) {
 ?>
-		<form method="post" action="bug_relationship_add.php" class="form-inline noprint">
-			<?php echo form_security_field( 'bug_relationship_add' ) ?>
+		<form method="post" action="dwg_relationship_add.php" class="form-inline noprint">
+			<?php echo form_security_field( 'dwg_relationship_add' ) ?>
 			<input type="hidden" name="src_bug_id" value="<?php echo $p_bug_id?>" />
 			<label class="inline"><?php echo lang_get( 'this_dwg' ) ?>&#160;&#160;</label>
 			<?php print_relationship_list_box( config_get( 'default_bug_relationship' ) )?>
@@ -1178,7 +1178,7 @@ function dwg_view_button_dwg_change_status( DwgData $p_bug ) {
 		$t_default = key( $t_enum_list );
 		ksort( $t_enum_list );
 
-		echo '<form method="post" action="bug_change_status_page.php" class="form-inline">';
+		echo '<form method="post" action="dwg_change_status_page.php" class="form-inline">';
 		# CSRF protection not required here - form does not result in modifications
 
 		$t_button_text = lang_get( 'bug_status_to_button' );
@@ -1364,7 +1364,7 @@ function dwg_view_action_buttons( $p_bug_id, $p_flags ) {
 		echo '<div class="pull-left padding-right-2">';
 		$t_reopen_status = config_get( 'bug_reopen_status', null, null, $t_dwg->project_id );
 		html_button(
-			'bug_change_status_page.php',
+			'dwg_change_status_page.php',
 			lang_get( 'reopen_bug_button' ),
 			array( 'id' => $t_dwg->id, 'new_status' => $t_reopen_status, 'change_type' => DWG_UPDATE_TYPE_REOPEN ) );
 		echo '</div>';
@@ -1375,7 +1375,7 @@ function dwg_view_action_buttons( $p_bug_id, $p_flags ) {
 		$t_closed_status = config_get( 'bug_closed_status_threshold', null, null, $t_dwg->project_id );
 		echo '<div class="pull-left padding-right-2">';
 		html_button(
-			'bug_change_status_page.php',
+			'dwg_change_status_page.php',
 			lang_get( 'close' ),
 			array( 'id' => $t_dwg->id, 'new_status' => $t_closed_status, 'change_type' => DWG_UPDATE_TYPE_CLOSE ) );
 		echo '</div>';

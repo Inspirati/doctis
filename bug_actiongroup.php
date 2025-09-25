@@ -164,7 +164,7 @@ foreach( $f_bug_arr as $t_bug_id ) {
 			$t_assign_status = bug_get_status_for_assign( $t_bug->handler_id, $f_assign, $t_status );
 			# check that new handler has rights to handle the issue, and
 			#  that current user has rights to assign the issue
-			$t_threshold = access_get_status_threshold( $t_assign_status, $t_bug->project_id );
+			$t_threshold = access_get_bug_status_threshold( $t_assign_status, $t_bug->project_id );
 			if( access_has_bug_level( config_get( 'update_bug_assign_threshold', config_get( 'update_bug_threshold' ) ), $t_bug_id ) ) {
 				# The new handler is checked at project level
 				if( access_has_project_level( config_get( 'handle_bug_threshold' ), $t_bug->project_id, $f_assign ) ) {
@@ -184,7 +184,7 @@ foreach( $f_bug_arr as $t_bug_id ) {
 			break;
 		case 'RESOLVE':
 			$t_resolved_status = config_get( 'bug_resolved_status_threshold' );
-			if( access_has_bug_level( access_get_status_threshold( $t_resolved_status, $t_bug->project_id ), $t_bug_id ) ) {
+			if( access_has_bug_level( access_get_bug_status_threshold( $t_resolved_status, $t_bug->project_id ), $t_bug_id ) ) {
 				if( ( $t_status < $t_resolved_status ) &&
 					bug_check_workflow( $t_status, $t_resolved_status )
 				) {
@@ -213,7 +213,7 @@ foreach( $f_bug_arr as $t_bug_id ) {
 			break;
 		case 'UP_STATUS':
 			$f_status = gpc_get_int( 'status' );
-			if( access_has_bug_level( access_get_status_threshold( $f_status, $t_bug->project_id ), $t_bug_id ) ) {
+			if( access_has_bug_level( access_get_bug_status_threshold( $f_status, $t_bug->project_id ), $t_bug_id ) ) {
 				if( true == bug_check_workflow( $t_status, $f_status ) ) {
 					# @todo we need to issue a helper_call_custom_function( 'issue_update_validate', array( $t_bug_id, $t_bug_data, $f_bugnote_text ) );
 					bug_set_field( $t_bug_id, 'status', $f_status );

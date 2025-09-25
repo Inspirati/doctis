@@ -735,13 +735,6 @@ function layout_print_sidebar( $p_active_sidebar_page = null ) {
 			'icon' => 'fa-dashboard'
 		);
 
-		# View Documents
-		$t_sidebar_items[] = array(
-			'url' => 'view_dwg_page.php',
-			'title' => 'view_dwg_link',
-			'icon' => 'fa-list-alt'
-		);
-
 		# View Bugs
 		$t_sidebar_items[] = array(
 			'url' => 'view_all_bug_page.php',
@@ -758,7 +751,14 @@ function layout_print_sidebar( $p_active_sidebar_page = null ) {
 			);
 		}
 
-		# Create Dwgs
+		# View Documents
+		$t_sidebar_items[] = array(
+			'url' => 'view_dwg_page.php',
+			'title' => 'view_dwg_link',
+			'icon' => 'fa-list-alt'
+		);
+
+		# Create Documents
 		if( access_has_any_project_level( 'create_dwg_threshold' ) ) {
 			$t_sidebar_items[] = array(
 				'url' => string_get_dwg_create_url(),

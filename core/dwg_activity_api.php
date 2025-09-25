@@ -69,7 +69,7 @@ function dwg_activity_get_all( $p_bug_id, $p_include_attachments = true ) {
 	$t_result['attachments'] = $t_attachments;
 
 	$t_bugnote_order = current_user_get_pref( 'bugnote_order' );
-	$t_bugnotes = bugnote_get_all_visible_bugnotes( $p_bug_id, $t_bugnote_order, 0, $t_user_id );
+	$t_bugnotes = dwgnote_get_all_visible_bugnotes( $p_bug_id, $t_bugnote_order, 0, $t_user_id );
 
 	$t_result['bugnotes'] = $t_bugnotes;
 

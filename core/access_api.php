@@ -675,11 +675,29 @@ function access_has_bugnote_level( $p_access_level, $p_bugnote_id, $p_user_id = 
 	# If the bug is private and the user is not the reporter, then the
 	# the user must also have higher access than private_bug_threshold
 	if( bugnote_get_field( $p_bugnote_id, 'view_state' ) == VS_PRIVATE && !bugnote_is_user_reporter( $p_bugnote_id, $p_user_id ) ) {
-		$t_private_bugnote_threshold = config_get( 'private_bugnote_threshold', null, $p_user_id, $t_project_id );
+		$t_private_bugnote_threshold = config_get( 'private_dwgnote_threshold', null, $p_user_id, $t_project_id );
 		$p_access_level = max( $p_access_level, $t_private_bugnote_threshold );
 	}
 
 	return access_has_bug_level( $p_access_level, $t_bug_id, $p_user_id );
+}
+
+function access_has_dwgnote_level( $p_access_level, $p_bugnote_id, $p_user_id = null ) {
+	if( null === $p_user_id ) {
+		$p_user_id = auth_get_current_user_id();
+	}
+
+	$t_bug_id = dwgnote_get_field( $p_bugnote_id, 'bug_id' );
+	$t_project_id = dwg_get_field( $t_bug_id, 'project_id' );
+
+	# If the bug is private and the user is not the reporter, then the
+	# the user must also have higher access than private_bug_threshold
+	if( dwgnote_get_field( $p_bugnote_id, 'view_state' ) == VS_PRIVATE && !bugnote_is_user_reporter( $p_bugnote_id, $p_user_id ) ) {
+		$t_private_bugnote_threshold = config_get( 'private_dwgnote_threshold', null, $p_user_id, $t_project_id );
+		$p_access_level = max( $p_access_level, $t_private_bugnote_threshold );
+	}
+
+	return access_has_dwg_level( $p_access_level, $t_bug_id, $p_user_id );
 }
 
 /**
@@ -701,6 +719,17 @@ function access_has_bugnote_level_filter( $p_access_level, $p_bugnote_id, $p_use
 	return $t_users_ids_with_access;
 }
 
+function access_has_dwgnote_level_filter( $p_access_level, $p_bugnote_id, $p_user_ids ) {
+	$t_users_ids_with_access = array();
+	foreach( $p_user_ids as $t_user_id ) {
+		if( access_has_dwgnote_level( $p_access_level, $p_bugnote_id, $t_user_id ) ) {
+			$t_users_ids_with_access[] = $t_user_id;
+		}
+	}
+
+	return $t_users_ids_with_access;
+}
+
 /**
  * Check if the user has the specified access level for the given bugnote
  * and deny access to the page if not
@@ -713,6 +742,12 @@ function access_has_bugnote_level_filter( $p_access_level, $p_bugnote_id, $p_use
  */
 function access_ensure_bugnote_level( $p_access_level, $p_bugnote_id, $p_user_id = null ) {
 	if( !access_has_bugnote_level( $p_access_level, $p_bugnote_id, $p_user_id ) ) {
+		access_denied();
+	}
+}
+
+function access_ensure_dwgnote_level( $p_access_level, $p_bugnote_id, $p_user_id = null ) {
+	if( !access_has_dwgnote_level( $p_access_level, $p_bugnote_id, $p_user_id ) ) {
 		access_denied();
 	}
 }
@@ -744,7 +779,7 @@ function access_can_close_bug( BugData $p_bug, $p_user_id = null ) {
 	}
 
 	$t_closed_status = config_get( 'bug_closed_status_threshold', null, null, $p_bug->project_id );
-	$t_closed_status_threshold = access_get_status_threshold( $t_closed_status, $p_bug->project_id );
+	$t_closed_status_threshold = access_get_bug_status_threshold( $t_closed_status, $p_bug->project_id );
 	return access_has_bug_level( $t_closed_status_threshold, $p_bug->id, $p_user_id );
 }
 
@@ -768,7 +803,7 @@ function access_can_close_dwg( DwgData $p_bug, $p_user_id = null ) {
 	}
 
 	$t_closed_status = config_get( 'dwg_closed_status_threshold', null, null, $p_bug->project_id );
-	$t_closed_status_threshold = access_get_status_threshold( $t_closed_status, $p_bug->project_id );
+	$t_closed_status_threshold = access_get_dwg_status_threshold( $t_closed_status, $p_bug->project_id );
 	return access_has_dwg_level( $t_closed_status_threshold, $p_bug->id, $p_user_id );
 }
 
@@ -812,25 +847,25 @@ function access_can_reopen_bug( BugData $p_bug, $p_user_id = null ) {
 	$t_reopen_status = config_get( 'bug_reopen_status', null, null, $p_bug->project_id );
 
 	# Reopen status must be reachable by workflow
-	if( !dwg_check_workflow( $p_bug->status, $t_reopen_status ) ) {
+	if( !bug_check_workflow( $p_bug->status, $t_reopen_status ) ) {
 		return false;
 	}
 
 	# If allow_reporter_reopen is enabled, then reporters can always reopen
 	# their own bugs as long as their access level is reporter or above
 	if( ON == config_get( 'allow_reporter_reopen', null, null, $p_bug->project_id )
-		&& dwg_is_user_reporter( $p_bug->id, $p_user_id )
-		&& access_has_project_level( config_get( 'create_dwg_threshold', null, $p_user_id, $p_bug->project_id ), $p_bug->project_id, $p_user_id )
+		&& bug_is_user_reporter( $p_bug->id, $p_user_id )
+		&& access_has_project_level( config_get( 'create_bug_threshold', null, $p_user_id, $p_bug->project_id ), $p_bug->project_id, $p_user_id )
 	) {
 		return true;
 	}
 
 	# Other users's access level must allow them to reopen bugs
-	$t_reopen_bug_threshold = config_get( 'reopen_dwg_threshold', null, null, $p_bug->project_id );
+	$t_reopen_bug_threshold = config_get( 'reopen_bug_threshold', null, null, $p_bug->project_id );
 	if( access_has_bug_level( $t_reopen_bug_threshold, $p_bug->id, $p_user_id ) ) {
 
 		# User must be allowed to change status to reopen status
-		$t_reopen_status_threshold = access_get_status_threshold( $t_reopen_status, $p_bug->project_id );
+		$t_reopen_status_threshold = access_get_bug_status_threshold( $t_reopen_status, $p_bug->project_id );
 		return access_has_bug_level( $t_reopen_status_threshold, $p_bug->id, $p_user_id );
 	}
 
@@ -868,7 +903,7 @@ function access_can_reopen_dwg( DwgData $p_bug, $p_user_id = null ) {
 	if( access_has_dwg_level( $t_reopen_bug_threshold, $p_bug->id, $p_user_id ) ) {
 
 		# User must be allowed to change status to reopen status
-		$t_reopen_status_threshold = access_get_status_threshold( $t_reopen_status, $p_bug->project_id );
+		$t_reopen_status_threshold = access_get_bug_status_threshold( $t_reopen_status, $p_bug->project_id );
 		return access_has_dwg_level( $t_reopen_status_threshold, $p_bug->id, $p_user_id );
 	}
 
@@ -886,6 +921,12 @@ function access_can_reopen_dwg( DwgData $p_bug, $p_user_id = null ) {
  */
 function access_ensure_can_reopen_bug( BugData $p_bug, $p_user_id = null ) {
 	if( !access_can_reopen_bug( $p_bug, $p_user_id ) ) {
+		access_denied();
+	}
+}
+
+function access_ensure_can_reopen_dwg( DwgData $p_bug, $p_user_id = null ) {
+	if( !access_can_reopen_dwg( $p_bug, $p_user_id ) ) {
 		access_denied();
 	}
 }
@@ -930,7 +971,7 @@ function access_get_local_level( $p_user_id, $p_project_id ) {
  * @return integer integer representing user level e.g. DEVELOPER
  * @access public
  */
-function access_get_status_threshold( $p_status, $p_project_id = ALL_PROJECTS ) {
+function access_get_bug_status_threshold( $p_status, $p_project_id = ALL_PROJECTS ) {
 	$t_thresh_array = config_get( 'set_status_threshold', null, null, $p_project_id );
 	if( isset( $t_thresh_array[(int)$p_status] ) ) {
 		return (int)$t_thresh_array[(int)$p_status];
@@ -939,6 +980,19 @@ function access_get_status_threshold( $p_status, $p_project_id = ALL_PROJECTS ) 
 			return config_get( 'report_bug_threshold', null, null, $p_project_id );
 		} else {
 			return config_get( 'update_bug_status_threshold', null, null, $p_project_id );
+		}
+	}
+}
+
+function access_get_dwg_status_threshold( $p_status, $p_project_id = ALL_PROJECTS ) {
+	$t_thresh_array = config_get( 'set_status_threshold', null, null, $p_project_id );
+	if( isset( $t_thresh_array[(int)$p_status] ) ) {
+		return (int)$t_thresh_array[(int)$p_status];
+	} else {
+		if( $p_status == config_get( 'dwg_submit_status', null, null, $p_project_id ) ) {
+			return config_get( 'create_dwg_threshold', null, null, $p_project_id );
+		} else {
+			return config_get( 'update_dwg_status_threshold', null, null, $p_project_id );
 		}
 	}
 }
@@ -996,6 +1050,23 @@ function access_can_see_handler_for_bug( BugData $p_bug, $p_user_id = null ) {
 	$t_can_view_handler =
 		( $p_bug->handler_id == $t_user_id )
 		|| access_has_bug_level(
+			config_get( 'view_handler_threshold', null, $t_user_id, $p_bug->project_id ),
+			$p_bug->id );
+
+	return $t_can_view_handler;
+}
+
+function access_can_see_handler_for_dwg( DwgData $p_bug, $p_user_id = null ) {
+	if( null === $p_user_id ) {
+		$t_user_id = auth_get_current_user_id();
+	} else {
+		$t_user_id = $p_user_id;
+	}
+
+	# handler can be viewed if allowed by access level, OR the user himself is the handler
+	$t_can_view_handler =
+		( $p_bug->handler_id == $t_user_id )
+		|| access_has_dwg_level(
 			config_get( 'view_handler_threshold', null, $t_user_id, $p_bug->project_id ),
 			$p_bug->id );
 
@@ -1104,6 +1175,22 @@ function access_can_view_bug_revisions( $p_bug_id, $p_user_id = null ) {
 	return $t_has_access || bug_is_user_reporter( $p_bug_id, $t_user_id );
 }
 
+function access_can_view_dwg_revisions( $p_bug_id, $p_user_id = null ) {
+	if( !dwg_exists( $p_bug_id ) ) {
+		return false;
+	}
+	$t_project_id = dwg_get_field( $p_bug_id, 'project_id' );
+	$t_user_id = null === $p_user_id ? auth_get_current_user_id() : $p_user_id;
+
+	$t_has_access = access_has_dwg_level(
+		config_get( 'dwg_revision_view_threshold', null, $t_user_id, $t_project_id ),
+		$p_bug_id,
+		$t_user_id
+	);
+
+	return $t_has_access || dwg_is_user_reporter( $p_bug_id, $t_user_id );
+}
+
 /**
  * Return true if user is allowed to view bugnote revisions.
  *
@@ -1130,4 +1217,22 @@ function access_can_view_bugnote_revisions( $p_bugnote_id, $p_user_id = null ) {
 
 
 	return $t_has_access || bugnote_is_user_reporter( $p_bugnote_id, $t_user_id );
+}
+
+function access_can_view_dwgnote_revisions( $p_bugnote_id, $p_user_id = null ) {
+	if( !dwgnote_exists( $p_bugnote_id ) ) {
+		return false;
+	}
+	$t_bug_id = dwgnote_get_field( $p_bugnote_id, 'bug_id' );
+	$t_project_id = dwg_get_field( $t_bug_id, 'project_id' );
+	$t_user_id = null === $p_user_id ? auth_get_current_user_id() : $p_user_id;
+
+	$t_has_access = access_has_dwgnote_level(
+		config_get( 'dwg_revision_view_threshold', null, $t_user_id, $t_project_id ),
+		$p_bugnote_id,
+		$t_user_id
+	);
+
+
+	return $t_has_access || dwgnote_is_user_reporter( $p_bugnote_id, $t_user_id );
 }

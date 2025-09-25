@@ -49,7 +49,7 @@ require_api( 'authentication_api.php' );
 require_api( 'bug_api.php' );
 require_api( 'dwg_api.php' );
 require_api( 'bug_group_action_api.php' );
-// require_api( 'dwg_group_action_api.php' );
+require_api( 'dwg_group_action_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
 require_api( 'custom_field_api.php' );
@@ -69,11 +69,11 @@ require_css( 'status_config.php' );
 auth_ensure_user_authenticated();
 
 $f_action = gpc_get_string( 'action', '' );
-$f_bug_arr = gpc_get_int_array( 'bug_arr', array() );
+$f_bug_arr = gpc_get_int_array( 'dwg_arr', array() );
 
 # redirects to all_bug_page if nothing is selected
 if( is_blank( $f_action ) || ( 0 == count( $f_bug_arr ) ) ) {
-	print_header_redirect( 'view_all_bug_page.php' );
+	print_header_dwg_redirect( 'view_dwg_page.php' );
 }
 
 # run through the issues to see if they are all from one project
@@ -83,15 +83,15 @@ $t_user = auth_get_current_user_id();
 $t_projects = array();
 $t_view_bug_threshold = array();
 
-bug_cache_array_rows( $f_bug_arr );
+dwg_cache_array_rows( $f_bug_arr );
 
 foreach( $f_bug_arr as $t_key => $t_bug_id ) {
-	$t_bug = bug_get( $t_bug_id );
+	$t_bug = dwg_get( $t_bug_id );
 
 	# Per-project cache of the access threshold
 	if( !isset( $t_view_bug_threshold[$t_bug->project_id] ) ) {
 		$t_view_bug_threshold[$t_bug->project_id] = config_get(
-			'view_bug_threshold',
+			'view_dwg_threshold',
 			null,
 			$t_user,
 			$t_bug->project_id
@@ -99,7 +99,7 @@ foreach( $f_bug_arr as $t_key => $t_bug_id ) {
 	}
 
 	# Remove any issues the user doesn't have access to
-	if( !access_has_bug_level( $t_view_bug_threshold[$t_bug->project_id], $t_bug_id, $t_user ) ) {
+	if( !access_has_dwg_level( $t_view_bug_threshold[$t_bug->project_id], $t_bug_id, $t_user ) ) {
 		unset( $f_bug_arr[$t_key] );
 		continue;
 	}
@@ -133,14 +133,14 @@ if( $t_project_id != helper_get_current_project() ) {
 	$g_project_override = $t_project_id;
 }
 
-define( 'BUG_ACTIONGROUP_INC_ALLOW', true );
+define( 'DWG_ACTIONGROUP_INC_ALLOW', true );
 
 $t_finished = false;
 $t_bugnote = false;
 
 $t_external_action_prefix = 'EXT_';
 if( strpos( $f_action, $t_external_action_prefix ) === 0 ) {
-	$t_form_page = 'bug_actiongroup_ext_page.php';
+	$t_form_page = 'dwg_actiongroup_ext_page.php';
 	require_once( $t_form_page );
 	exit;
 }
@@ -163,7 +163,7 @@ if( strpos( $f_action, $t_custom_fields_prefix ) === 0 ) {
 }
 
 # Form name
-$t_form_name = 'bug_actiongroup_' . $f_action;
+$t_form_name = 'dwg_actiongroup_' . $f_action;
 
 switch( $f_action ) {
 	# Use a simple confirmation page, if close or delete...
@@ -265,7 +265,7 @@ switch( $f_action ) {
 }
 $t_event_params['has_bugnote'] = $t_bugnote;
 
-bug_group_action_print_top();
+dwg_group_action_print_top();
 ?>
 
 <div class="col-md-12 col-xs-12">
@@ -275,11 +275,11 @@ if( $t_multiple_projects ) {
 }
 ?>
 <div id="action-group-div" class="form-container">
-	<form method="post" action="bug_actiongroup.php">
+	<form method="post" action="dwg_actiongroup.php">
 		<?php echo form_security_field( $t_form_name ); ?>
 		<input type="hidden" name="action" value="<?php echo string_attribute( $f_action ) ?>" />
 <?php
-	bug_group_action_print_hidden_fields( $f_bug_arr );
+	dwg_group_action_print_hidden_fields( $f_bug_arr );
 	if( $f_action === 'CUSTOM' ) {
 		echo "<input type=\"hidden\" name=\"custom_field_id\" value=\"$t_custom_field_id\" />";
 	}
@@ -321,7 +321,7 @@ if( $t_multiple_projects ) {
 			# if there is only one issue, use its current value as default
 			if( count( $f_bug_arr ) == 1 ) {
 				$t_bug_id = $f_bug_arr[0];
-				$t_bug = bug_get( $t_bug_id );
+				$t_bug = dwg_get( $t_bug_id );
 				if( !date_is_null( $t_bug->due_date ) ) {
 					$t_date_to_display = date( config_get( 'normal_date_format' ), $t_bug->due_date );
 				}
@@ -352,19 +352,19 @@ if( $t_multiple_projects ) {
 					print_assign_to_option_list( 0, $t_project_id );
 					break;
 				case 'RESOLVE':
-					print_enum_string_option_list( 'resolution', config_get( 'bug_resolution_fixed_threshold' ) );
+					print_enum_string_option_list( 'resolution', config_get( 'dwg_resolution_fixed_threshold' ) );
 					break;
 				case 'UP_PRIOR':
-					print_enum_string_option_list( 'priority', config_get( 'default_bug_priority' ) );
+					print_enum_string_option_list( 'priority', config_get( 'default_dwg_priority' ) );
 					break;
 				case 'UP_STATUS':
-					print_enum_string_option_list( 'status', config_get( 'bug_submit_status' ) );
+					print_enum_string_option_list( 'status', config_get( 'dwg_submit_status' ) );
 					break;
 				case 'UP_CATEGORY':
 					print_category_option_list( 0, null, true );
 					break;
 				case 'VIEW_STATUS':
-					print_enum_string_option_list( 'view_state', config_get( 'default_bug_view_status' ) );
+					print_enum_string_option_list( 'view_state', config_get( 'default_dwg_view_status' ) );
 					break;
 				case 'UP_TARGET_VERSION':
 					print_version_option_list( '', $t_projects, VERSION_FUTURE, true );
@@ -456,7 +456,7 @@ if( $t_multiple_projects ) {
 	}
 ?>
 		<tr class="spacer"></tr>
-		<?php bug_group_action_print_bug_list( $f_bug_arr ); ?>
+		<?php dwg_group_action_print_bug_list( $f_bug_arr ); ?>
 		<tr class="spacer"></tr>
 			</tbody>
 		</table>
@@ -472,4 +472,4 @@ if( $t_multiple_projects ) {
 </div>
 
 <?php
-bug_group_action_print_bottom();
+dwg_group_action_print_bottom();

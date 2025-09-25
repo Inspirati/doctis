@@ -34,10 +34,11 @@
  * @uses custom_field_api.php
  * @uses database_api.php
  * @uses date_api.php
- * @uses email_api.php
+ * @uses email_dwg_api.php
  * @uses error_api.php
  * @uses event_api.php
  * @uses file_api.php
+ * @uses file_dwg_api.php
  * @uses helper_api.php
  * @uses history_api.php
  * @uses lang_api.php
@@ -65,10 +66,12 @@ require_api( 'constant_inc.php' );
 require_api( 'custom_field_api.php' );
 require_api( 'database_api.php' );
 require_api( 'date_api.php' );
-require_api( 'email_api.php' );
+require_api( 'email_dwg_api.php' );
+require_api( 'email_dwg_api.php' );
 require_api( 'error_api.php' );
 require_api( 'event_api.php' );
 require_api( 'file_api.php' );
+require_api( 'file_dwg_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'history_api.php' );
 require_api( 'lang_api.php' );
@@ -184,7 +187,7 @@ class DwgData {
 	 */
 	public function get_attachment_count() {
 		if( $this->attachment_count === null ) {
-			$this->attachment_count = file_bug_attachment_count( $this->id );
+			$this->attachment_count = file_dwg_bug_attachment_count( $this->id );
 		}
 		return $this->attachment_count;
 	}
@@ -394,7 +397,7 @@ class DwgData {
 		}
 
 		if( !is_blank( $this->duplicate_id ) && ( $this->duplicate_id != 0 ) && ( $this->id == $this->duplicate_id ) ) {
-			trigger_error( ERROR_BUG_DUPLICATE_SELF, ERROR );
+			trigger_error( ERROR_DWG_DUPLICATE_SELF, ERROR );
 			# never returns
 		}
 	}
@@ -591,8 +594,8 @@ class DwgData {
 		# timestamps which could confuse the history log. They shouldn't get updated
 		# like this anyway; if you really need to change them use dwg_set_field().
 		db_param_push();
-#!		$t_query = 'UPDATE {bug}
-		$t_query = 'UPDATE {document}
+/*
+		$t_query = 'UPDATE {bug}
 					SET project_id=' . db_param() . ', reporter_id=' . db_param() . ',
 						handler_id=' . db_param() . ', duplicate_id=' . db_param() . ',
 						priority=' . db_param() . ', severity=' . db_param() . ',
@@ -637,6 +640,76 @@ class DwgData {
 		$t_fields[] = $this->id;
 
 		db_query( $t_query, $t_fields );
+ */
+/*
+		$t_query = 'UPDATE {document}
+					SET project_id=' . db_param() . ',
+						reporter_id=' . db_param() . ',
+						handler_id=' . db_param() . ',
+						duplicate_id=' . db_param() . ',
+						priority=' . db_param() . ',
+						severity=' . db_param() . ',
+						reproducibility=' . db_param() . ',
+						status=' . db_param() . ',
+						resolution=' . db_param() . ',
+						projection=' . db_param() . ',
+						ategory_id=' . db_param() . ',
+						eta=' . db_param() . ',
+						os=' . db_param() . ',
+						os_build=' . db_param() . ',
+						platform=' . db_param() . ',
+						version=' . db_param() . ',
+						build=' . db_param() . ',
+						fixed_in_version=' . db_param() . ',';
+
+		$t_fields = array(
+			$this->project_id,
+			$this->reporter_id,
+			$this->handler_id,
+			$this->duplicate_id,
+			$this->priority,
+			$this->severity,
+			$this->reproducibility,
+			$this->status,
+			$this->resolution,
+			$this->projection,
+			$this->category_id,
+			$this->eta,
+			$this->os,
+			$this->os_build,
+			$this->platform,
+			$this->version,
+			$this->build,
+			$this->fixed_in_version,
+		);
+ */
+////////////////////////////////////////////////////////////////////////////////
+		$t_query = 'UPDATE {document} SET 
+project_id=' . db_param() . ',
+creator_id=' . db_param() . ',
+handler_id=' . db_param() . ',
+duplicate_id=' . db_param() . ',
+status=' . db_param() . ',
+category_id=' . db_param() . ',
+version=' . db_param() . '
+';
+		$t_query .= 'WHERE id=' . db_param();
+
+		$t_fields = array(
+			$this->project_id,
+			$this->creator_id,
+			$this->handler_id,
+			$this->duplicate_id,
+			$this->status,
+			$this->category_id,
+			$this->version,
+			$this->id);
+
+		error_log("t_query: " . $t_query);
+
+		db_query( $t_query, $t_fields );
+////////////////////////////////////////////////////////////////////////////////
+
 
 		dwg_clear_cache( $this->id );
 
@@ -731,12 +804,12 @@ class DwgData {
 			if( $t_old_data->status != $this->status ) {
 				$t_status = MantisEnum::getLabel( config_get( 'status_enum_string' ), $this->status );
 				$t_status = str_replace( ' ', '_', $t_status );
-				email_bug_status_changed( $c_bug_id, $t_status );
+				email_dwg_status_changed( $c_bug_id, $t_status );
 				return true;
 			}
 
 			# @todo handle priority change if it requires special handling
-			email_bug_updated( $c_bug_id );
+			email_dwg_updated( $c_bug_id );
 		}
 
 		return true;
@@ -1363,8 +1436,8 @@ function dwg_copy( $p_bug_id, $p_target_project_id = null, $p_copy_custom_fields
 	}
 
 	# Create history entries to reflect the copy operation
-	history_log_event_special( $t_new_bug_id, BUG_CREATED_FROM, '', $t_bug_id );
-	history_log_event_special( $t_bug_id, BUG_CLONED_TO, '', $t_new_bug_id );
+	history_log_event_special( $t_new_bug_id, DWG_CREATED_FROM, '', $t_bug_id );
+	history_log_event_special( $t_bug_id, DWG_CLONED_TO, '', $t_new_bug_id );
 
 	return $t_new_bug_id;
 }
@@ -1438,8 +1511,8 @@ function dwg_delete( $p_bug_id ) {
 	# log deletion of bug
 	history_log_event_special( $p_bug_id, DWG_DELETED, bug_format_id( $p_bug_id ) );
 
-	email_bug_deleted( $p_bug_id );
-	email_relationship_bug_deleted( $p_bug_id );
+	email_dwg_deleted( $p_bug_id );
+	email_dwg_relationship_dwg_deleted( $p_bug_id );
 
 	# Call post-deletion custom function.
 	# We do this here to allow the custom function to access the bug's details
@@ -1449,7 +1522,7 @@ function dwg_delete( $p_bug_id ) {
 	helper_call_custom_function( 'document_delete_notify', array( $p_bug_id ) );
 
 	# Unmonitor bug for all users
-	bug_unmonitor( $p_bug_id, null );
+	dwg_unmonitor( $p_bug_id, null );
 
 	// # Delete custom fields
 	// custom_field_delete_all_values( $p_bug_id );
@@ -1664,7 +1737,7 @@ function dwg_format_summary( $p_bug_id, $p_context ) {
  *
  * @access public
  */
-function dwg_get_newest_bugnote_timestamp( $p_bug_id ) {
+function dwg_get_newest_dwgnote_timestamp( $p_bug_id ) {
 	$c_bug_id = (int)$p_bug_id;
 
 	db_param_push();
@@ -1691,7 +1764,7 @@ function dwg_get_newest_bugnote_timestamp( $p_bug_id ) {
  *
  * @access public
  */
-function dwg_get_bugnote_stats_array( array $p_bugs_id, $p_user_id = null ) {
+function dwg_get_dwgnote_stats_array( array $p_bugs_id, $p_user_id = null ) {
 	if( empty( $p_bugs_id ) ) {
 		return array();
 	}
@@ -1740,7 +1813,7 @@ function dwg_get_bugnote_stats_array( array $p_bugs_id, $p_user_id = null ) {
 				$t_user_access_level = access_get_project_level( $t_query_row['project_id'], $t_user_id );
 				$t_private_bugnote_visible = access_compare_level(
 					$t_user_access_level,
-					config_get( 'private_bugnote_threshold', null, $t_user_id, $t_query_row['project_id'] )
+					config_get( 'private_dwgnote_threshold', null, $t_user_id, $t_query_row['project_id'] )
 				);
 			}
 			if( 0 == $t_counter || $t_current_bug_id !== $c_bug_id ) {
@@ -1797,7 +1870,7 @@ function dwg_get_bugnote_stats( $p_bug_id ) {
 		return $g_cache_dwg[$c_bug_id]['_stats'];
 	}
 	else {
-		$t_stats = dwg_get_bugnote_stats_array( array( $p_bug_id ) );
+		$t_stats = dwg_get_dwgnote_stats_array( array( $p_bug_id ) );
 		return $t_stats[$p_bug_id];
 	}
 }
@@ -1963,10 +2036,10 @@ function dwg_assign( $p_bug_id, $p_user_id, $p_bugnote_text = '', $p_bugnote_pri
 			&& sponsorship_get_amount( sponsorship_get_all_ids( $p_bug_id ) ) > 0;
 		# The new handler is checked at project level
 		$t_project_id = dwg_get_field( $p_bug_id, 'project_id' );
-		if( !access_has_project_level( config_get( 'handle_bug_threshold' ), $t_project_id, $p_user_id ) ) {
+		if( !access_has_project_level( config_get( 'handle_dwg_threshold' ), $t_project_id, $p_user_id ) ) {
 			trigger_error( ERROR_HANDLER_ACCESS_TOO_LOW, ERROR );
 		}
-		if( $t_bug_sponsored && !access_has_project_level( config_get( 'handle_sponsored_bugs_threshold' ), $t_project_id, $p_user_id ) ) {
+		if( $t_bug_sponsored && !access_has_project_level( config_get( 'handle_sponsored_dwgs_threshold' ), $t_project_id, $p_user_id ) ) {
 			trigger_error( ERROR_SPONSORSHIP_HANDLER_ACCESS_LEVEL_TOO_LOW, ERROR );
 		}
 	}
@@ -1992,8 +2065,8 @@ function dwg_assign( $p_bug_id, $p_user_id, $p_bugnote_text = '', $p_bugnote_pri
 
 		# Add bugnote if supplied ignore false return
 		if( !is_blank( $p_bugnote_text ) ) {
-			$t_bugnote_id = bugnote_add( $p_bug_id, $p_bugnote_text, 0, $p_bugnote_private, 0, '', null, false );
-			bugnote_process_mentions( $p_bug_id, $t_bugnote_id, $p_bugnote_text );
+			$t_bugnote_id = dwgnote_add( $p_bug_id, $p_bugnote_text, 0, $p_bugnote_private, 0, '', null, false );
+			dwgnote_process_mentions( $p_bug_id, $t_bugnote_id, $p_bugnote_text );
 		}
 
 		# updated the last_updated date
@@ -2025,14 +2098,14 @@ function dwg_close( $p_bug_id, $p_bugnote_text = '', $p_bugnote_private = false,
 	$p_bugnote_text = trim( $p_bugnote_text );
 
 	# Add bugnote if supplied ignore a false return
-	# Moved bugnote_add before dwg_set_field calls in case time_tracking_no_note is off.
+	# Moved dwgnote_add before dwg_set_field calls in case time_tracking_no_note is off.
 	# Error condition stopped execution but status had already been changed
 	if( !is_blank( $p_bugnote_text ) || $p_time_tracking != '0:00' ) {
-		$t_bugnote_id = bugnote_add( $p_bug_id, $p_bugnote_text, $p_time_tracking, $p_bugnote_private, 0, '', null, false );
-		bugnote_process_mentions( $p_bug_id, $t_bugnote_id, $p_bugnote_text );
+		$t_bugnote_id = dwgnote_add( $p_bug_id, $p_bugnote_text, $p_time_tracking, $p_bugnote_private, 0, '', null, false );
+		dwgnote_process_mentions( $p_bug_id, $t_bugnote_id, $p_bugnote_text );
 	}
 
-	dwg_set_field( $p_bug_id, 'status', config_get( 'bug_closed_status_threshold' ) );
+	dwg_set_field( $p_bug_id, 'status', config_get( 'dwg_closed_status_threshold' ) );
 
 	email_close( $p_bug_id );
 	email_relationship_child_closed( $p_bug_id );
@@ -2062,17 +2135,17 @@ function dwg_resolve( $p_bug_id, $p_resolution, $p_fixed_in_version = '', $p_bug
 	$p_bugnote_text = trim( $p_bugnote_text );
 
 	# Add bugnote if supplied
-	# Moved bugnote_add before dwg_set_field calls in case time_tracking_no_note is off.
+	# Moved dwgnote_add before dwg_set_field calls in case time_tracking_no_note is off.
 	# Error condition stopped execution but status had already been changed
 	if( !is_blank( $p_bugnote_text ) || $p_time_tracking != '0:00' ) {
-		$t_bugnote_id = bugnote_add( $p_bug_id, $p_bugnote_text, $p_time_tracking, $p_bugnote_private, 0, '', null, false );
-		bugnote_process_mentions( $p_bug_id, $t_bugnote_id, $p_bugnote_text );
+		$t_bugnote_id = dwgnote_add( $p_bug_id, $p_bugnote_text, $p_time_tracking, $p_bugnote_private, 0, '', null, false );
+		dwgnote_process_mentions( $p_bug_id, $t_bugnote_id, $p_bugnote_text );
 	}
 
 	$t_duplicate = !is_blank( $p_duplicate_id ) && ( $p_duplicate_id != 0 );
 	if( $t_duplicate ) {
 		if( $p_bug_id == $p_duplicate_id ) {
-			trigger_error( ERROR_BUG_DUPLICATE_SELF, ERROR );
+			trigger_error( ERROR_DWG_DUPLICATE_SELF, ERROR );
 
 			# never returns
 		}
@@ -2080,7 +2153,7 @@ function dwg_resolve( $p_bug_id, $p_resolution, $p_fixed_in_version = '', $p_bug
 		# the related bug exists...
 		dwg_ensure_exists( $p_duplicate_id );
 
-		relationship_upsert( $p_bug_id, $p_duplicate_id, BUG_DUPLICATE, /* email_for_source */ false );
+		relationship_upsert( $p_bug_id, $p_duplicate_id, DWG_DUPLICATE, /* email_for_source */ false );
 
 		# Copy list of users monitoring the duplicate bug to the original bug
 		$t_old_reporter_id = dwg_get_field( $p_bug_id, 'reporter_id' );
@@ -2133,17 +2206,17 @@ function dwg_reopen( $p_bug_id, $p_bugnote_text = '', $p_time_tracking = '0:00',
 	$p_bugnote_text = trim( $p_bugnote_text );
 
 	# Add bugnote if supplied
-	# Moved bugnote_add before dwg_set_field calls in case time_tracking_no_note is off.
+	# Moved dwgnote_add before dwg_set_field calls in case time_tracking_no_note is off.
 	# Error condition stopped execution but status had already been changed
 	if( !is_blank( $p_bugnote_text ) || $p_time_tracking != '0:00' ) {
-		$t_bugnote_id = bugnote_add( $p_bug_id, $p_bugnote_text, $p_time_tracking, $p_bugnote_private, 0, '', null, false );
-		bugnote_process_mentions( $p_bug_id, $t_bugnote_id, $p_bugnote_text );
+		$t_bugnote_id = dwgnote_add( $p_bug_id, $p_bugnote_text, $p_time_tracking, $p_bugnote_private, 0, '', null, false );
+		dwgnote_process_mentions( $p_bug_id, $t_bugnote_id, $p_bugnote_text );
 	}
 
 	dwg_set_field( $p_bug_id, 'status', config_get( 'dwg_reopen_status' ) );
 	dwg_set_field( $p_bug_id, 'resolution', config_get( 'dwg_reopen_resolution' ) );
 
-	email_bug_reopened( $p_bug_id );
+	email_dwg_reopened( $p_bug_id );
 
 	return true;
 }
@@ -2197,7 +2270,7 @@ function dwg_monitor( $p_bug_id, $p_user_id ) {
 	// db_query( $t_query, array( $c_user_id, $c_bug_id ) );
 
 	// # log new monitoring action
-	// history_log_event_special( $c_bug_id, BUG_MONITOR, $c_user_id );
+	// history_log_event_special( $c_bug_id, DWG_MONITOR, $c_user_id );
 
 	// # updated the last_updated date
 	// dwg_update_date( $p_bug_id );
@@ -2263,7 +2336,7 @@ function dwg_monitor_copy( $p_source_bug_id, $p_dest_bug_id ) {
 	// 		$t_query = 'INSERT INTO {dwg_monitor} ( user_id, bug_id )
 	// 			VALUES ( ' . db_param() . ', ' . db_param() . ' )';
 	// 		db_query( $t_query, array( $t_dwg_monitor['user_id'], $c_dest_bug_id ) );
-	// 		history_log_event_special( $c_dest_bug_id, BUG_MONITOR, $t_dwg_monitor['user_id'] );
+	// 		history_log_event_special( $c_dest_bug_id, DWG_MONITOR, $t_dwg_monitor['user_id'] );
 	// 	}
 	// }
 }
@@ -2292,7 +2365,7 @@ function dwg_unmonitor( $p_bug_id, $p_user_id ) {
 	// db_query( $t_query, $t_db_query_params );
 
 	// # log new un-monitor action
-	// history_log_event_special( $p_bug_id, BUG_UNMONITOR, (int)$p_user_id );
+	// history_log_event_special( $p_bug_id, DWG_UNMONITOR, (int)$p_user_id );
 
 	// # updated the last_updated date
 	// dwg_update_date( $p_bug_id );
@@ -2360,7 +2433,7 @@ function dwg_get_status_for_assign( $p_current_handler, $p_new_handler, $p_curre
 function dwg_clear_cache_all( $p_bug_id = null ) {
 	dwg_clear_cache( $p_bug_id );
 	// bug_text_clear_cache( $p_bug_id );
-	file_bug_attachment_count_clear_cache( $p_bug_id );
+	file_dwg_bug_attachment_count_clear_cache( $p_bug_id );
 	bugnote_clear_bug_cache( $p_bug_id );
 	tag_clear_cache_bug_tags( $p_bug_id );
 	custom_field_clear_cache_values( $p_bug_id );
@@ -2416,7 +2489,7 @@ function dwg_clear_cache_all( $p_bug_id = null ) {
 
 // 		switch( $t_column ) {
 // 			case 'attachment_count':
-// 				file_bug_attachment_count_cache( $t_bug_ids );
+// 				file_dwg_bug_attachment_count_cache( $t_bug_ids );
 // 				break;
 // 			case 'handler_id':
 // 			case 'reporter_id':
@@ -2486,7 +2559,7 @@ function dwg_cache_columns_data( array $p_bugs, array $p_selected_columns ) {
 
 	// 	switch( $t_column ) {
 	// 		case 'attachment_count':
-	// 			file_bug_attachment_count_cache( $t_bug_ids );
+	// 			file_dwg_bug_attachment_count_cache( $t_bug_ids );
 	// 			break;
 	// 		case 'handler_id':
 	// 		case 'reporter_id':
