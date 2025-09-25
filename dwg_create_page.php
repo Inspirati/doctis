@@ -35,6 +35,7 @@
  * @uses error_api.php
  * @uses event_api.php
  * @uses file_api.php
+ * @uses file_dwg_api.php
  * @uses form_api.php
  * @uses gpc_api.php
  * @uses helper_api.php
@@ -64,6 +65,7 @@ require_api( 'date_api.php' );
 require_api( 'error_api.php' );
 require_api( 'event_api.php' );
 require_api( 'file_api.php' );
+require_api( 'file_dwg_api.php' );
 require_api( 'form_api.php' );
 require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
@@ -167,7 +169,7 @@ if( $f_master_bug_id > 0 ) {
 	if( !access_has_project_level( config_get( 'create_dwg_threshold' ) ) ) {
 		# If can't report on current project, show project selector if there is any other allowed project
 		access_ensure_any_project_level( 'create_dwg_threshold' );
-		print_header_redirect( 'login_select_proj_page.php?ref=dwg_create_page.php' );
+		print_dwg_header_redirect( 'login_select_proj_page.php?ref=dwg_create_page.php' );
 	}
 
 	if( ( ALL_PROJECTS == $t_project_id || project_exists( $t_project_id ) )
@@ -176,12 +178,12 @@ if( $f_master_bug_id > 0 ) {
 		helper_set_current_project( $t_project_id );
 		# Reloading the page is required so that the project browser
 		# reflects the new current project
-		print_header_redirect( $_SERVER['REQUEST_URI'], true, false, true );
+		print_dwg_header_redirect( $_SERVER['REQUEST_URI'], true, false, true );
 	}
 
 	# New issues cannot be reported for the 'All Project' selection
 	if( ALL_PROJECTS == $t_current_project ) {
-		if( !print_header_redirect( 'login_select_proj_page.php?ref=dwg_create_page.php' ) ) {
+		if( !print_dwg_header_redirect( 'login_select_proj_page.php?ref=dwg_create_page.php' ) ) {
 			die;
 		}
 	}
@@ -265,7 +267,7 @@ $t_show_product_build = $t_show_versions && in_array( 'product_build', $t_fields
 $t_show_target_version = $t_show_versions && in_array( 'target_version', $t_fields ) && access_has_project_level( config_get( 'roadmap_update_threshold' ) );
 $t_show_additional_info = in_array( 'additional_info', $t_fields );
 $t_show_due_date = in_array( 'due_date', $t_fields ) && access_has_project_level( config_get( 'due_date_update_threshold' ), helper_get_current_project(), auth_get_current_user_id() );
-$t_show_attachments = in_array( 'attachments', $t_fields ) && file_allow_bug_upload();
+$t_show_attachments = in_array( 'attachments', $t_fields ) && file_dwg_allow_dwg_upload();
 $t_show_view_state = in_array( 'view_state', $t_fields ) && access_has_project_level( config_get( 'set_view_status_threshold' ) );
 
 

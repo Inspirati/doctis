@@ -110,6 +110,9 @@ class DwgFilterQuery extends DbQuery {
 	public $user_id;
 	public $use_sticky;
 
+	# the name of the query base table
+//	public $table; // @TODO RobD - for potential merge back to BugFilterQuery.class, replace all instances of {documents} with {'.$this->table.'}: 
+
 	# internal storage for intermediate data
 	protected $query_type;
 	protected $parts_select = array();
@@ -160,6 +163,8 @@ class DwgFilterQuery extends DbQuery {
 		$this->use_sticky = false;
 		$this->project_id = helper_get_current_project();
 		$this->user_id = auth_get_current_user_id();
+
+//		$this->table = "document";  // if we go with abstracting the target table
 
 		# $p_config can be an array or an integer
 		if( is_array( $p_config ) ) {
@@ -248,6 +253,16 @@ class DwgFilterQuery extends DbQuery {
 		}
 		return parent::execute( $p_bind_array, $p_limit, $p_offset );
 	}
+
+////////////////////////////////////////////////////////////////////////////////
+// BEGIN doctis developmental section
+//	public function dwg_filter_query_test() {
+//
+//		$this->dwg_query_test();
+//
+//	}
+// END doctis developmental section
+////////////////////////////////////////////////////////////////////////////////
 
 	/**
 	 * Shorthand method to get the total number of issues matched by the filter

@@ -34,7 +34,7 @@
  * @uses current_user_api.php
  * @uses custom_field_api.php
  * @uses database_api.php
- * @uses email_api.php
+ * @uses email_bug_api.php
  * @uses error_api.php
  * @uses file_api.php
  * @uses form_api.php
@@ -67,7 +67,7 @@ require_api( 'constant_inc.php' );
 require_api( 'current_user_api.php' );
 require_api( 'custom_field_api.php' );
 require_api( 'database_api.php' );
-require_api( 'email_api.php' );
+require_api( 'email_bug_api.php' );
 require_api( 'error_api.php' );
 require_api( 'file_api.php' );
 require_api( 'form_api.php' );
@@ -1104,7 +1104,7 @@ function get_status_option_list( $p_user_auth = 0, $p_current_value = 0, $p_show
 
 	foreach ( $t_enum_values as $t_enum_value ) {
 		if( ( $p_show_current || $p_current_value != $t_enum_value )
-			&& access_compare_level( $p_user_auth, access_get_status_threshold( $t_enum_value, $p_project_id ) )
+			&& access_compare_level( $p_user_auth, access_get_bug_status_threshold( $t_enum_value, $p_project_id ) )
 		) {
 			$t_enum_list[$t_enum_value] = get_enum_element( 'status', $t_enum_value );
 		}

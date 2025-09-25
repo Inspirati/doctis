@@ -91,7 +91,7 @@ if( $f_new_status == $t_reopen && $f_change_type == BUG_UPDATE_TYPE_REOPEN ) {
 } else if( $f_new_status == $t_closed ) {
 	access_ensure_can_close_bug( $t_bug, $t_current_user_id );
 } else if( bug_is_readonly( $f_bug_id )
-	|| !access_has_bug_level( access_get_status_threshold( $f_new_status, $t_bug->project_id ), $f_bug_id, $t_current_user_id ) ) {
+	|| !access_has_bug_level( access_get_bug_status_threshold( $f_new_status, $t_bug->project_id ), $f_bug_id, $t_current_user_id ) ) {
 	access_denied();
 }
 

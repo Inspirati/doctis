@@ -87,11 +87,14 @@ $s_actiongroup_menu_update_due_date = 'Update Due Date';
 $s_actiongroup_menu_add_note = 'Add Note';
 $s_actiongroup_menu_attach_tags = 'Attach Tags';
 $s_actiongroup_bugs = 'Selected Issues';
+$s_actiongroup_dwgs = 'Selected Documents';
 $s_actiongroup_error_issue_is_readonly = 'Issue is readonly.';
+$s_actiongroup_error_document_is_readonly = 'Document is readonly.';
 
 # new strings:
 $s_all_projects = 'All Projects';
 $s_move_bugs = 'Move Issues';
+$s_move_dwgs = 'Move Documents';
 $s_operation_successful = 'Operation successful.';
 $s_operation_warnings = 'Operation completed with warnings.';
 $s_operation_failed = 'Operation did not complete successfully.';
@@ -133,8 +136,11 @@ $s_announcement = 'Announcement';
 $s_stays_on_top = 'Stays on Top';
 $s_bugnote_link_title = 'Direct link to note';
 $s_delete_bugnote_button = 'Delete Note';
+$s_delete_dwgnote_button = 'Delete Note';
 $s_delete_bugnote_sure_msg = 'Are you sure you wish to delete this note?';
+$s_delete_dwgnote_sure_msg = 'Are you sure you wish to delete this note?';
 $s_bug_relationships = 'Relationships';
+$s_dwg_relationships = 'Relationships';
 $s_empty_password_sure_msg = 'The user has an empty password. Are you sure that is what you want?';
 $s_empty_password_button = 'Use Empty Password';
 $s_reauthenticate_title = 'Authenticate';
@@ -222,6 +228,43 @@ $s_update_severity_title = 'Update Severity';
 $s_update_severity_msg = 'Choose issue severity';
 $s_update_severity_button = 'Update Severity';
 
+# dwg_actiongroup_page.php : mass treatment
+$s_dwg_actiongroup_access = 'You did not have appropriate permissions to perform that action.';
+$s_dwg_actiongroup_status = 'This issue cannot be changed to the requested status';
+$s_dwg_actiongroup_category = 'This issue cannot be changed to the requested category';
+$s_dwg_actiongroup_handler = 'The requested user is not allowed to handle this document';
+$s_dwg_actiongroup_version = 'The requested version does not exist in this document\'s project';
+$s_close_dwgs_conf_msg = 'Are you sure you wish to close these documents?';
+$s_delete_dwgs_conf_msg = 'Are you sure you wish to delete these documents?';
+$s_move_dwgs_conf_msg = 'Move documents to';
+$s_copy_dwgs_conf_msg = 'Copy documents to';
+$s_assign_dwgs_conf_msg = 'Assign documents to';
+$s_resolve_dwgs_conf_msg = 'Choose documents resolution';
+$s_priority_dwgs_conf_msg = 'Choose documents priority';
+$s_status_dwgs_conf_msg = 'Choose documents status';
+$s_view_status_dwgs_conf_msg = 'Choose documents view status';
+$s_category_dwgs_conf_msg = 'Choose documents category';
+$s_set_sticky_dwgs_conf_msg = 'Are you sure you wish to set/unset these documents sticky?';
+$s_product_version_dwgs_conf_msg = 'Update Product Version to';
+$s_fixed_in_version_dwgs_conf_msg = 'Update Fixed in Version to';
+$s_target_version_dwgs_conf_msg = 'Update Target Version to';
+$s_due_date_dwgs_conf_msg = 'Update Due Date to';
+$s_close_group_dwgs_button = 'Close Documents';
+$s_delete_group_dwgs_button = 'Delete Documents';
+$s_move_group_dwgs_button = 'Move Documents';
+$s_copy_group_dwgs_button = 'Copy Document';
+$s_assign_group_dwgs_button = 'Assign Document';
+$s_resolve_group_dwgs_button = 'Resolve Document';
+$s_priority_group_dwgs_button = 'Update Priority';
+$s_status_group_dwgs_button = 'Update Status';
+$s_category_group_dwgs_button = 'Update Category';
+$s_view_status_group_dwgs_button = 'Update View Status';
+$s_set_sticky_group_dwgs_button = 'Set/Unset Sticky';
+$s_product_version_group_dwgs_button = 'Update Product Version';
+$s_fixed_in_version_group_dwgs_button = 'Update Fixed in Version';
+$s_target_version_group_dwgs_button = 'Update Target Version';
+$s_due_date_group_dwgs_button = 'Update Due Date';
+
 # print_all_bug_page.php : display selected issues
 $s_hide_button = 'Display selected only';
 
@@ -296,10 +339,28 @@ $s_email_notification_title_for_action_bug_unassigned = 'The following issue has
 $s_email_notification_title_for_action_bug_reopened = 'The following issue has been REOPENED.';
 $s_email_notification_title_for_action_bug_deleted = 'The following issue has been DELETED.';
 $s_email_notification_title_for_action_bug_updated = 'The following issue has been UPDATED.';
+
+$s_email_notification_title_for_status_dwg_new = 'The following document is now in status NEW (again)';
+$s_email_notification_title_for_status_dwg_feedback = 'The following document requires FEEDBACK.';
+$s_email_notification_title_for_status_dwg_acknowledged = 'The following document has been ACKNOWLEDGED.';
+$s_email_notification_title_for_status_dwg_confirmed = 'The following document has been CONFIRMED.';
+$s_email_notification_title_for_status_dwg_assigned = 'The following document has been ASSIGNED.';
+$s_email_notification_title_for_status_dwg_resolved = 'The following document has been RESOLVED.';
+$s_email_notification_title_for_status_dwg_closed = 'The following document has been CLOSED';
+$s_email_notification_title_for_action_dwg_submitted = 'The following document has been SUBMITTED.';
+$s_email_notification_title_for_action_dwg_assigned = 'The following document has been ASSIGNED.';
+$s_email_notification_title_for_action_dwg_unassigned = 'The following document has been UNASSIGNED.';
+$s_email_notification_title_for_action_dwg_reopened = 'The following document has been REOPENED.';
+$s_email_notification_title_for_action_dwg_deleted = 'The following document has been DELETED.';
+$s_email_notification_title_for_action_dwg_updated = 'The following document has been UPDATED.';
+
 $s_email_notification_title_for_action_sponsorship_added = 'The following issue has been SPONSORED.';
 $s_email_notification_title_for_action_sponsorship_updated = 'A sponsorship of the following issue was modified.';
 $s_email_notification_title_for_action_sponsorship_deleted = 'A sponsorship of the following issue was withdrawn.';
 $s_email_notification_title_for_action_bugnote_submitted = 'A NOTE has been added to this issue.';
+
+$s_email_notification_title_for_action_dwgnote_submitted = 'A NOTE has been added to this document.';
+
 $s_email_notification_title_for_action_duplicate_of_relationship_added = 'The following issue has been set as DUPLICATE OF issue %1$s.';
 $s_email_notification_title_for_action_has_duplicate_relationship_added = 'The issue %1$s has been set as DUPLICATE OF the following issue.';
 $s_email_notification_title_for_action_related_to_relationship_added = 'The following issue has been set as RELATED TO issue %1$s.';
@@ -464,11 +525,24 @@ $s_acknowledged_bug_button = 'Acknowledge Issue';
 $s_confirmed_bug_button = 'Confirm Issue';
 $s_assigned_bug_button = 'Assign Issue';
 
+# dwg_change_status_page.php
+$s_new_dwg_title = 'New Document';
+$s_feedback_dwg_title = 'Request Feedback on Document';
+$s_acknowledged_dwg_title = 'Acknowledge Document';
+$s_confirmed_dwg_title = 'Confirm Document';
+$s_assigned_dwg_title = 'Assign Document';
+$s_new_dwg_button = 'New Document';
+$s_feedback_dwg_button = 'Request Feedback';
+$s_acknowledged_dwg_button = 'Acknowledge Document';
+$s_confirmed_dwg_button = 'Confirm Document';
+$s_assigned_dwg_button = 'Assign Document';
+$s_closed_dwg_title = 'Close Document';
+
 # bug_close.php
 $s_bug_close_msg = 'Issue has been closed...';
 $s_close_immediately = 'Close immediately:';
 
-# bug_close_page.php
+# bug_close_page.php  // @TODO RobD - no such module
 $s_closed_bug_title = 'Close Issue';
 
 # bug_delete.php
@@ -492,19 +566,33 @@ $s_upload_file_button = 'Upload File';
 $s_upload_files_button = 'Upload Files';
 $s_max_file_size_info = 'Maximum size: %1$s %2$s'; # $1 = size, $2 = unit (e.g. kb, bytes)
 
-# bug_reopen.php
+# bug_reopen.php  // @TODO RobD - there is no bug_reopen.php
 $s_bug_reopened_msg = 'Issue has been reopened...';
 $s_reopen_add_bugnote_title = 'Add Note Reason For Reopening Issue';
 $s_bugnote_add_reopen_button = 'Add Note and Reopen Issue';
 
-# bug_resolve_page.php
+# dwg_reopen.php
+$s_dwg_reopened_msg = 'Document has been reopened...';
+$s_reopen_add_dwgnote_title = 'Add Note Reason For Reopening Document';
+$s_dwgnote_add_reopen_button = 'Add Note and Reopen Document';
+
+# bug_resolve_page.php // @TODO RobD - there is no bug_resolve_page.php
 $s_resolved_bug_title = 'Resolve Issue';
 $s_resolved_bug_button = 'Resolve Issue';
+
+# dwg_resolve_page.php
+$s_resolved_dwg_title = 'Resolve Document';
+$s_resolved_dwg_button = 'Resolve Document';
 
 # bug_resolve_page2.php
 $s_bug_resolved_msg = 'Issue has been resolved. Enter note below...';
 $s_resolve_add_bugnote_title = 'Add Note Reason For Resolving Issue';
 $s_bugnote_add_resolve_button = 'Add Note';
+
+# dwg_resolve_page2.php
+$s_dwg_resolved_msg = 'Document has been resolved. Enter note below...';
+$s_resolve_add_dwgnote_title = 'Add Note Reason For Resolving Document';
+$s_dwgnote_add_resolve_button = 'Add Note';
 
 # bug_reminder_page.php
 $s_from = 'From';
@@ -543,13 +631,15 @@ $s_unstick_bug_button = 'Unstick';
 # bug_update.php
 $s_bug_updated_msg = 'Issue has been successfully updated...';
 
+# dwg_update.php
+$s_dwg_updated_msg = 'Document has been successfully updated...';
+
 # bug_update_page.php
 $s_back_to_bug_link = 'Back To Issue';
 $s_update_simple_link = 'Update Simple';
 $s_updating_bug_advanced_title = 'Updating Issue Information';
 $s_id = 'ID';
 $s_category = 'Category';
-$s_document = 'Document';
 $s_severity = 'Severity';
 $s_reproducibility = 'Reproducibility';
 $s_date_submitted = 'Date Submitted';
@@ -582,7 +672,9 @@ $s_profile = 'Profile';
 $s_updating_bug_simple_title = 'Updating Issue Information';
 
 # dwg_update_page.php
+$s_back_to_dwg_link = 'Back To Document';
 $s_updating_dwg_advanced_title = 'Updating Document Information (WIP)';
+$s_document = 'Document';
 
 # bug_view*
 $s_view_revisions = 'View Revisions';
@@ -620,12 +712,22 @@ $s_release_date = 'Release Date';
 # bugnote_add.php
 $s_bugnote_attached_files = 'Attached Files:';
 
+# dwgnote_add.php
+$s_dwgnote_attached_files = 'Attached Files:';
+
 # bugnote_delete.php
 $s_bugnote_deleted_msg = 'Note has been successfully deleted...';
 $s_bug_notes_title = 'Notes';
 
+# dwgnote_delete.php
+$s_dwgnote_deleted_msg = 'Note has been successfully deleted...';
+$s_dwg_notes_title = 'Notes';
+
 # bugnote_edit_page.php
 $s_edit_bugnote_title = 'Edit Note';
+
+# dwgnote_edit_page.php
+$s_edit_dwgnote_title = 'Edit Note';
 
 # bugnote_inc.php
 $s_no_bugnotes_msg = 'There are no notes attached to this issue.';
@@ -642,6 +744,9 @@ $s_closed_dwg_button = 'Close document';
 # bugnote_update.php
 $s_bugnote_updated_msg = 'Note has been successfully updated...';
 $s_last_edited = 'Last edited:';
+
+# dwgnote_update.php
+$s_dwgnote_updated_msg = 'Note has been successfully updated...';
 
 # file_api.php
 $s_hide_content = 'Hide Content';
@@ -1428,7 +1533,9 @@ $s_roadmap_empty_manager = 'No Roadmap information available.  Issues are includ
 $s_http_auth_realm = 'MantisBT Login';
 
 $s_bug = 'issue';
+$s_dwg = 'document';
 $s_bugs = 'issues';
+$s_dwgs = 'documents';
 $s_add_new_relationship = 'New relationship';
 $s_this_bug = 'Current issue';
 $s_this_dwg = 'Current document';
@@ -1440,12 +1547,18 @@ $s_replace_relationship_button = 'Replace';
 $s_relationship_with_parent = 'Relationship with the parent issue';
 $s_delete_relationship_sure_msg = 'Are you sure you wish to delete this relationship?';
 $s_relationship_warning_blocking_bugs_not_resolved = 'Not all the children of this issue are yet resolved or closed.';
+$s_relationship_warning_blocking_dwgs_not_resolved = 'Not all the children of this document are yet resolved or closed.';
 $s_relationship_warning_blocking_bugs_not_resolved_2 = '<strong>Attention:</strong> Not all the children of this issue are yet resolved or closed.<br />Before <strong>resolving/closing</strong> a parent issue, all the issues related as child with this one should be resolved or closed.';
+$s_relationship_warning_blocking_dwgs_not_resolved_2 = '<strong>Attention:</strong> Not all the children of this document are yet resolved or closed.<br />Before <strong>resolving/closing</strong> a parent issue, all the documents related as child with this one should be resolved or closed.';
 $s_create_child_bug_button = 'Clone';
+$s_create_child_dwg_button = 'Clone';
 $s_bug_cloned_to = 'Issue cloned';
+$s_dwg_cloned_to = 'Document cloned';
 $s_bug_created_from = 'Issue generated from';
+$s_dwg_created_from = 'Document generated from';
 $s_copy_from_parent = 'Copy extended data from parent issue';
 $s_copy_notes_from_parent = 'Copy issue notes';
+$s_dwg_copy_notes_from_parent = 'Copy document notes';
 $s_copy_attachments_from_parent = 'Copy attachments';
 $s_with = 'with';
 
@@ -1698,6 +1811,7 @@ $MANTIS_ERROR[ERROR_CONFIG_OPT_CANT_BE_SET_IN_DB] = 'Configuration option "%1$s"
 $MANTIS_ERROR[ERROR_CONFIG_OPT_BAD_SYNTAX] = 'Cannot set configuration option "%1$s": %2$s';
 $MANTIS_ERROR[ERROR_LANG_STRING_NOT_FOUND] = 'String "%1$s" not found.';
 $MANTIS_ERROR[ERROR_BUGNOTE_NOT_FOUND] = 'Note not found.';
+$MANTIS_ERROR[ERROR_DWGNOTE_NOT_FOUND] = 'Note not found.';
 $MANTIS_ERROR[ERROR_DB_FIELD_NOT_FOUND] = 'Database field "%1$s" not found.';
 $MANTIS_ERROR[ERROR_HANDLER_ACCESS_TOO_LOW] = 'Issue handler does not have sufficient access rights to handle issue at this status.';
 $MANTIS_ERROR[ERROR_PROJECT_HIERARCHY_DISABLED] = 'Project hierarchy (subprojects) is disabled.';

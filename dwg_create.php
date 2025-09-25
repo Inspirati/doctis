@@ -43,6 +43,7 @@ require_api( 'constant_inc.php' );
 require_api( 'custom_field_api.php' );
 require_api( 'error_api.php' );
 require_api( 'file_api.php' );
+require_api( 'file_dwg_api.php' );
 require_api( 'form_api.php' );
 require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
@@ -306,7 +307,7 @@ if( $f_dwg_entry_stay ) {
 
 	$t_report_more_bugs_url = helper_url_combine( string_get_dwg_create_url(), $t_data );
 
-	print_header_redirect( $t_report_more_bugs_url );
+	print_dwg_header_redirect( $t_report_more_bugs_url );
 } else {
 	print_dwg_header_redirect_view( $t_issue_id );
 }

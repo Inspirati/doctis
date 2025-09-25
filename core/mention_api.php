@@ -24,11 +24,11 @@
  * @link http://www.mantisbt.org
  *
  * @uses bug_api.php
- * @uses email_api.php
+ * @uses email_bug_api.php
  */
 
 require_api( 'bug_api.php' );
-require_api( 'email_api.php' );
+require_api( 'email_bug_api.php' );
 
 /**
  * Check if @ mentions feature is enabled or not.

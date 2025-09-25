@@ -33,7 +33,7 @@
  * @uses current_user_api.php
  * @uses custom_field_api.php
  * @uses database_api.php
- * @uses email_api.php
+ * @uses email_dwg_api.php
  * @uses error_api.php
  * @uses file_api.php
  * @uses form_api.php
@@ -63,9 +63,11 @@ require_api( 'constant_inc.php' );
 require_api( 'current_user_api.php' );
 require_api( 'custom_field_api.php' );
 require_api( 'database_api.php' );
-require_api( 'email_api.php' );
+// require_api( 'email_bug_api.php' );
+require_api( 'email_dwg_api.php' );
 require_api( 'error_api.php' );
 require_api( 'file_api.php' );
+require_api( 'file_dwg_api.php' );
 require_api( 'form_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'html_api.php' );
@@ -231,7 +233,7 @@ function print_dwg_user_with_subject( $p_user_id, $p_bug_id ) {
 		$t_email = user_get_email( $p_user_id );
 
 		echo '&nbsp;';
-		print_email_link_with_subject( $t_email, '', '', $p_bug_id );
+		print_dwg_email_link_with_subject( $t_email, '', '', $p_bug_id );
 	}
 }
 
@@ -1046,7 +1048,7 @@ function print_dwg_get_status_option_list( $p_user_auth = 0, $p_current_value = 
 
 	foreach ( $t_enum_values as $t_enum_value ) {
 		if( ( $p_show_current || $p_current_value != $t_enum_value )
-			&& access_compare_level( $p_user_auth, access_get_status_threshold( $t_enum_value, $p_project_id ) )
+			&& access_compare_level( $p_user_auth, access_get_dwg_status_threshold( $t_enum_value, $p_project_id ) )
 		) {
 			$t_enum_list[$t_enum_value] = get_enum_element( 'status', $t_enum_value );
 		}
@@ -1769,7 +1771,7 @@ function print_dwg_email_link( $p_email, $p_text ) {
 function print_dwg_email_link_with_subject( $p_email, $p_text, $p_tooltip, $p_bug_id, $p_show_as_button = true )
 {
 	global $g_project_override;
-	$t_bug = bug_get( $p_bug_id, true );
+	$t_bug = dwg_get( $p_bug_id, true );
 
 	$g_project_override = $t_bug->project_id;
 

@@ -17,17 +17,17 @@
 require_api( 'access_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'bug_api.php' );
-
 require_api( 'dwg_api.php' );
-
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
 require_api( 'custom_field_api.php' );
 require_api( 'date_api.php' );
-require_api( 'email_api.php' );
+require_api( 'email_bug_api.php' );
+require_api( 'email_dwg_api.php' );
 require_api( 'error_api.php' );
 require_api( 'event_api.php' );
 require_api( 'file_api.php' );
+require_api( 'file_dwg_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'last_visited_api.php' );
@@ -317,7 +317,7 @@ class DwgAddCommand extends Command {
 		}
 
 		if( isset( $t_issue['sticky'] ) &&
-			 access_has_project_level( config_get( 'set_bug_sticky_threshold', null, null, $t_project_id ), $t_project_id ) ) {
+			 access_has_project_level( config_get( 'set_dwg_sticky_threshold', null, null, $t_project_id ), $t_project_id ) ) {
 			$this->issue->sticky = $t_issue['sticky'];
 		}
 
@@ -348,7 +348,7 @@ class DwgAddCommand extends Command {
 		mci_project_custom_fields_validate( $t_project_id, $t_issue['custom_fields'] );
 
 		if( !empty( $t_issue['files'] ) ) {
-			if( !file_allow_bug_upload( /* issue id */ null, /* user id */ null, $t_project_id ) ) {
+			if( !file_dwg_allow_dwg_upload( /* issue id */ null, /* user id */ null, $t_project_id ) ) {
 				throw new ClientException(
 					'User not allowed to attach files.',
 					ERROR_ACCESS_DENIED );
@@ -434,7 +434,7 @@ class DwgAddCommand extends Command {
 				foreach ( $t_parent_bugnotes as $t_parent_bugnote ) {
 					$t_private = $t_parent_bugnote->view_state == VS_PRIVATE;
 
-					bugnote_add(
+					dwgnote_add(
 						$t_issue_id,
 						$t_parent_bugnote->note,
 						$t_parent_bugnote->time_tracking,
@@ -457,7 +457,7 @@ class DwgAddCommand extends Command {
 			}
 
 			if( isset( $t_clone_info['relationship_type'] ) &&  $t_clone_info['relationship_type'] > BUG_REL_ANY ) {
-				relationship_add( $t_issue_id, $t_master_issue_id, $t_clone_info['relationship_type'], /* email for source */ false );
+				dwg_relationship_add( $t_issue_id, $t_master_issue_id, $t_clone_info['relationship_type'], /* email for source */ false );
 			}
 		}
 
@@ -470,7 +470,7 @@ class DwgAddCommand extends Command {
 				$t_note_attr = isset( $t_note['note_type'] ) ? $t_note['note_attr'] : '';
 
 				$t_view_state_id = mci_get_enum_id_from_objectref( 'view_state', $t_view_state );
-				$t_note_id = bugnote_add(
+				$t_note_id = dwgnote_add(
 					$t_issue_id,
 					$t_note['text'],
 					mci_get_time_tracking_from_note( $t_issue_id, $t_note ),
@@ -480,7 +480,7 @@ class DwgAddCommand extends Command {
 					$this->user_id,
 					false ); # don't send mail
 
-				bugnote_process_mentions( $t_issue_id, $t_note_id, $t_note['text'] );
+				dwgnote_process_mentions( $t_issue_id, $t_note_id, $t_note['text'] );
 
 				log_event( LOG_WEBSERVICE, 'bugnote id \'' . $t_note_id . '\' added to issue \'' . $t_issue_id . '\'' );
 			}

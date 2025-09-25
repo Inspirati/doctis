@@ -67,11 +67,13 @@ require_api( 'date_api.php' );
 require_api( 'error_api.php' );
 require_api( 'event_api.php' );
 require_api( 'file_api.php' );
+require_api( 'file_dwg_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'icon_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'prepare_api.php' );
 require_api( 'print_api.php' );
+require_api( 'print_dwg_api.php' );
 require_api( 'project_api.php' );
 require_api( 'sponsorship_api.php' );
 require_api( 'string_api.php' );
@@ -1124,14 +1126,14 @@ function print_dwg_column_selection( DwgData $p_bug, $p_columns_target = COLUMNS
 		access_has_project_level( config_get( 'delete_bug_threshold', null, null, $p_bug->project_id ), $p_bug->project_id ) ||
 		# !TODO: check to see if the bug actually has any different selectable workflow states
 		access_has_project_level( config_get( 'update_bug_status_threshold', null, null, $p_bug->project_id ), $p_bug->project_id ) ||
-		access_has_project_level( config_get( 'set_bug_sticky_threshold', null, null, $p_bug->project_id ), $p_bug->project_id ) ||
+		access_has_project_level( config_get( 'set_dwg_sticky_threshold', null, null, $p_bug->project_id ), $p_bug->project_id ) ||
 		access_has_project_level( config_get( 'change_view_status_threshold', null, null, $p_bug->project_id ), $p_bug->project_id ) ||
 		access_has_project_level( config_get( 'add_bugnote_threshold', null, null, $p_bug->project_id ), $p_bug->project_id ) ||
 		access_has_project_level( config_get( 'tag_attach_threshold', null, null, $p_bug->project_id ), $p_bug->project_id ) ||
 		access_has_project_level( config_get( 'roadmap_update_threshold', null, null, $p_bug->project_id ), $p_bug->project_id ) ) {
 		$g_checkboxes_exist = true;
 		echo '<div class="checkbox no-padding no-margin"><label>';
-		printf( '<input type="checkbox" name="bug_arr[]" value="%d" class="ace" />', $p_bug->id );
+		printf( '<input type="checkbox" name="dwg_arr[]" value="%d" class="ace" />', $p_bug->id );
 		echo '<span class="lbl"></span>';
 		echo '</label></div>';
 	} else {
@@ -1267,7 +1269,7 @@ function print_dwg_column_bugnotes_count( DwgData $p_bug, $p_columns_target = CO
 	global $g_dwg_filter;
 
 	// # grab the bugnote count
-	// $t_bugnote_stats = bug_get_bugnote_stats( $p_bug->id );
+	// $t_bugnote_stats = dwg_get_bugnote_stats( $p_bug->id );
 	// if( is_array( $t_bugnote_stats ) ) {
 	// 	$t_bugnote_count = $t_bugnote_stats['count'];
 	// 	$t_bugnote_updated = $t_bugnote_stats['last_modified'];
@@ -1436,7 +1438,7 @@ function print_dwg_column_status( DwgData $p_bug, $p_columns_target = COLUMNS_TA
 	# print handler user next to status
 	if( $p_bug->handler_id > 0
 			&& ON == config_get( 'show_assigned_names', null, $t_current_user, $p_bug->project_id )
-			&& access_can_see_handler_for_bug( $p_bug ) ) {
+			&& access_can_see_handler_for_dwg( $p_bug ) ) {
 		printf( ' (%s)', prepare_user_name( $p_bug->handler_id ) );
 	}
 	echo '</div></td>';

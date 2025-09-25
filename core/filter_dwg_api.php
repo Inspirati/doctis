@@ -1336,7 +1336,7 @@ function filter_dwg_get_rows_filter( $p_project_id = null, $p_user_id = null ) {
  * @return array
  */
 function filter_dwg_cache_result( array $p_rows, array $p_id_array_lastmod ) {
-	$t_stats = bug_get_bugnote_stats_array( $p_id_array_lastmod );
+	$t_stats = dwg_get_dwgnote_stats_array( $p_id_array_lastmod );
 	$t_rows = array();
 	foreach( $p_rows as $t_row ) {
 		if( array_key_exists( $t_row['id'], $t_stats ) ) {
@@ -1480,7 +1480,7 @@ function filter_dwg_draw_selection_area() {
 				</div>
 				<?php if( count( $t_stored_queries_arr ) > 0 ) { ?>
 				<div class="widget-menu hidden-xs">
-					<form method="post" action="view_all_set.php">
+					<form method="post" action="view_dwg_set.php">
 						<input type="hidden" name="type" value="<?php echo FILTER_ACTION_LOAD ?>" />
 						<select id="filter-bar-query-id" class="input-xs">
 							<option value="-1">&nbsp;</option>
@@ -1498,7 +1498,7 @@ function filter_dwg_draw_selection_area() {
 				<?php } ?>
 				<div class="widget-menu margin-right-8">
 
-					<form method="post" action="view_all_set.php">
+					<form method="post" action="view_dwg_set.php">
 						<input type="hidden" name="type" value="<?php echo FILTER_ACTION_PARSE_ADD ?>" />
 						<input id="filter-bar-search-txt" type="text" size="16" class="input-xs"
 							   placeholder="<?php echo lang_get( 'search' ) ?>"
@@ -1555,7 +1555,7 @@ function filter_dwg_draw_selection_area() {
 
 	<?php
 	if( count( $t_stored_queries_arr ) > 0 ) { ?>
-						<form id="filter-queries-form" class="form-inline pull-left padding-left-8"  method="get" name="list_queries<?php echo $t_form_name_suffix;?>" action="view_all_set.php">
+						<form id="filter-queries-form" class="form-inline pull-left padding-left-8"  method="get" name="list_queries<?php echo $t_form_name_suffix;?>" action="view_dwg_set.php">
 							<?php # CSRF protection not required here - form does not result in modifications?>
 							<input type="hidden" name="type" value="<?php echo FILTER_ACTION_LOAD ?>" />
 							<label><?php echo lang_get( 'load' ) ?>
@@ -1579,7 +1579,7 @@ function filter_dwg_draw_selection_area() {
 				</div>
 			</div>
 
-			<form method="post" name="filters<?php echo $t_form_name_suffix?>" id="filters_form<?php echo $t_form_name_suffix?>" action="view_all_set.php">
+			<form method="post" name="filters<?php echo $t_form_name_suffix?>" id="filters_form<?php echo $t_form_name_suffix?>" action="view_dwg_set.php">
 				<?php # CSRF protection not required here - form does not result in modifications ?>
 				<input type="hidden" name="type" value="<?php echo FILTER_ACTION_PARSE_NEW ?>" />
 				<?php

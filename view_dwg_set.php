@@ -102,7 +102,7 @@ if( $f_type == -1 && $f_isset_new_key ) {
 }
 
 if( $f_type == -1 ) {
-	print_header_redirect( 'view_dwg_page.php' );
+	print_dwg_header_redirect( 'view_dwg_page.php' );
 }
 
 # -1 is a special case stored query: it means we want to reset our filter
@@ -224,4 +224,4 @@ if( $t_temp_filter ) {
 	$t_temporary_key = filter_temporary_set( $t_setting_arr, $t_previous_temporary_key );
 	$t_redirect_url = $t_redirect_url . '?' . filter_get_temporary_key_param( $t_temporary_key );
 }
-print_header_redirect( $t_redirect_url );
+print_dwg_header_redirect( $t_redirect_url );

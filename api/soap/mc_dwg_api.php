@@ -62,7 +62,7 @@ function mc_dwg_exists( $p_username, $p_password, $p_issue_id ) {
  * @param string  $p_password The password of the user.
  * @param integer $p_issue_id The id of the issue to retrieve.
  * @param array|null The list of fields to include in the result or null for all.
- * @return array that represents an IssueData structure
+ * @return array that represents an DocumentData structure
  */
 function mc_dwg_get( $p_username, $p_password, $p_issue_id, $p_fields = null ) {
 	$t_user_id = mci_check_login( $p_username, $p_password );
@@ -344,7 +344,7 @@ function mc_dwg_get_history( $p_username, $p_password, $p_issue_id ) {
 	}
 
 	if( !dwg_exists( $p_issue_id ) ) {
-		return ApiObjectFactory::faultNotFound( "Issue '$p_issue_id' does not exist" );
+		return ApiObjectFactory::faultNotFound( "Document '$p_issue_id' does not exist" );
 	}
 
 	$t_project_id = dwg_get_field( $p_issue_id, 'project_id' );
@@ -362,7 +362,7 @@ function mc_dwg_get_history( $p_username, $p_password, $p_issue_id ) {
 		return mci_fault_access_denied( $t_user_id );
 	}
 
-	log_event( LOG_WEBSERVICE, 'retrieving history for issue \'' . $p_issue_id . '\'' );
+	log_event( LOG_WEBSERVICE, 'retrieving history for document \'' . $p_issue_id . '\'' );
 
 	$t_bug_history = history_get_raw_events_array( $p_issue_id, $t_user_id );
 
@@ -387,7 +387,7 @@ function mci_dwg_get_due_date( DwgData $p_bug ) {
 /**
  * Sets the supplied array of custom field values to the specified issue id.
  *
- * @param int         $p_issue_id      Issue id to apply custom field values to.
+ * @param int         $p_issue_id      Document id to apply custom field values to.
  * @param array|null &$p_custom_fields The array of custom field values as described
  *                                     in the webservice complex types.
  * @param bool        $p_log_insert    Create history logs for new values.
@@ -459,7 +459,7 @@ function mci_dwg_set_custom_fields( $p_issue_id, ?array &$p_custom_fields, $p_lo
 /**
  * Get the custom field values associated with the specified issue id.
  *
- * @param integer $p_issue_id Issue id to get the custom field values for.
+ * @param integer $p_issue_id Document id to get the custom field values for.
  *
  * @return null if no custom field defined for the project that contains the issue, or if no custom
  *              fields are accessible to the current user.
@@ -690,13 +690,13 @@ function mci_dwg_note_data_as_array( $p_bugnote_row ) {
  * Get all visible notes for a specific issue
  *
  * @param integer $p_issue_id The id of the issue to retrieve the notes for.
- * @return array that represents an SOAP IssueNoteData structure
+ * @return array that represents an SOAP DocumentNoteData structure
  */
 function mci_dwg_get_notes( $p_issue_id ) {
 	// $t_user_bugnote_order = 'ASC'; # always get the notes in ascending order for consistency to the calling application.
 
 	// $t_result = array();
-	// foreach( bugnote_get_all_visible_bugnotes( $p_issue_id, $t_user_bugnote_order, 0 ) as $t_value ) {
+	// foreach( dwgnote_get_all_visible_bugnotes( $p_issue_id, $t_user_bugnote_order, 0 ) as $t_value ) {
 	// 	$t_bugnote = mci_dwg_note_data_as_array( $t_value );
 	// 	$t_result[] = $t_bugnote;
 	// }
@@ -719,7 +719,7 @@ function mci_dwg_get_notes( $p_issue_id ) {
  */
 function mci_dwg_set_monitors( $p_issue_id, $p_requesting_user_id, array $p_monitors ) {
 	if( dwg_is_readonly( $p_issue_id ) ) {
-		return mci_fault_access_denied( $p_requesting_user_id, 'Issue \'' . $p_issue_id . '\' is readonly' );
+		return mci_fault_access_denied( $p_requesting_user_id, 'Document \'' . $p_issue_id . '\' is readonly' );
 	}
 
 	# 1. get existing monitor ids
@@ -932,7 +932,7 @@ function mci_dwg_handler_access_check( $p_user_id, $p_project_id, $p_old_handler
  *
  * @param string   $p_username The name of the user trying to add the issue.
  * @param string   $p_password The password of the user.
- * @param array|stdClass $p_issue    A IssueData structure containing information about the new issue.
+ * @param array|stdClass $p_issue    A DocumentData structure containing information about the new issue.
  * @return integer|RestFault|SoapFault The id of the created issue.
  */
 function mc_dwg_add( $p_username, $p_password, $p_issue ) {
@@ -960,12 +960,12 @@ function mc_dwg_add( $p_username, $p_password, $p_issue ) {
 }
 
 /**
- * Update Issue in database.
+ * Update Document in database.
  *
  * @param string   $p_username The name of the user trying to update the issue.
  * @param string   $p_password The password of the user.
  * @param integer  $p_issue_id The issue id of the existing issue being updated.
- * @param stdClass $p_issue    A IssueData structure containing information
+ * @param stdClass $p_issue    A DocumentData structure containing information
  *                             about the new issue.
  *
  * @return true|RestFault|SoapFault
@@ -980,11 +980,11 @@ function mc_dwg_update( $p_username, $p_password, $p_issue_id, stdClass $p_issue
 	}
 
 	if( !dwg_exists( $p_issue_id ) ) {
-		return ApiObjectFactory::faultNotFound( 'Issue \'' . $p_issue_id . '\' does not exist.' );
+		return ApiObjectFactory::faultNotFound( 'Document \'' . $p_issue_id . '\' does not exist.' );
 	}
 
 	if( dwg_is_readonly( $p_issue_id ) ) {
-		return ApiObjectFactory::faultForbidden( 'Issue \'' . $p_issue_id . '\' is readonly' );
+		return ApiObjectFactory::faultForbidden( 'Document \'' . $p_issue_id . '\' is readonly' );
 	}
 
 	$t_project_id = dwg_get_field( $p_issue_id, 'project_id' );
@@ -997,7 +997,7 @@ function mc_dwg_update( $p_username, $p_password, $p_issue_id, stdClass $p_issue
 
 	$p_issue = ApiObjectFactory::objectToArray( $p_issue );
 
-	# If no project specified, default to the Issue's current project
+	# If no project specified, default to the Document's current project
 	if( isset( $p_issue['project'] ) ) {
 		$t_project = $p_issue['project'];
 		$t_project_id = mci_get_project_id( $t_project );
@@ -1023,10 +1023,10 @@ function mc_dwg_update( $p_username, $p_password, $p_issue_id, stdClass $p_issue
 	 * Retrieve Id of Version to set.
 	 *
 	 * If the Version is not defined in the issue data, the function will return 0
-	 * which will cause the version field to be cleared when the Issue is updated.
+	 * which will cause the version field to be cleared when the Document is updated.
 	 *
 	 * @param string $p_field      Version field to update.
-	 * @param array  $p_issue      Issue data.
+	 * @param array  $p_issue      Document data.
 	 * @param int    $p_project_id
 	 *
 	 * @return int Version Id or 0 to unset the version
@@ -1154,7 +1154,7 @@ function mc_dwg_update( $p_username, $p_password, $p_issue_id, stdClass $p_issue
 		$t_bug_data->target_version = $fn_set_version_field( $t_target_version_id );
 	}
 
-	if( isset( $p_issue['sticky'] ) && access_has_dwg_level( config_get( 'set_bug_sticky_threshold' ), $t_bug_data->id ) ) {
+	if( isset( $p_issue['sticky'] ) && access_has_dwg_level( config_get( 'set_dwg_sticky_threshold' ), $t_bug_data->id ) ) {
 		$t_bug_data->sticky = $p_issue['sticky'];
 	}
 
@@ -1170,7 +1170,7 @@ function mc_dwg_update( $p_username, $p_password, $p_issue_id, stdClass $p_issue
 	}
 
 	if( isset( $p_issue['notes'] ) && is_array( $p_issue['notes'] ) ) {
-		$t_bugnotes = bugnote_get_all_visible_bugnotes( $p_issue_id, 'DESC', 0 );
+		$t_bugnotes = dwgnote_get_all_visible_bugnotes( $p_issue_id, 'DESC', 0 );
 		$t_bugnotes_by_id = array();
 		foreach( $t_bugnotes as $t_bugnote ) {
 			$t_bugnotes_by_id[$t_bugnote->id] = $t_bugnote;
@@ -1215,7 +1215,7 @@ function mc_dwg_update( $p_username, $p_password, $p_issue_id, stdClass $p_issue
 				$t_note_type = isset( $t_note['note_type'] ) ? (int)$t_note['note_type'] : BUGNOTE;
 				$t_note_attr = isset( $t_note['note_type'] ) ? $t_note['note_attr'] : '';
 
-				bugnote_add( $p_issue_id, $t_note['text'], mci_get_time_tracking_from_note( $p_issue_id, $t_note ), $t_view_state_id == VS_PRIVATE, $t_note_type, $t_note_attr, $t_user_id, false );
+				dwgnote_add( $p_issue_id, $t_note['text'], mci_get_time_tracking_from_note( $p_issue_id, $t_note ), $t_view_state_id == VS_PRIVATE, $t_note_type, $t_note_attr, $t_user_id, false );
 			}
 		}
 
@@ -1250,7 +1250,7 @@ function mc_dwg_set_tags ( $p_username, $p_password, $p_issue_id, array $p_tags 
 	}
 
 	if( !dwg_exists( $p_issue_id ) ) {
-		return ApiObjectFactory::faultNotFound( 'Issue \'' . $p_issue_id . '\' does not exist.' );
+		return ApiObjectFactory::faultNotFound( 'Document \'' . $p_issue_id . '\' does not exist.' );
 	}
 
 	$t_project_id = dwg_get_field( $p_issue_id, 'project_id' );
@@ -1261,7 +1261,7 @@ function mc_dwg_set_tags ( $p_username, $p_password, $p_issue_id, array $p_tags 
 	}
 
 	if( dwg_is_readonly( $p_issue_id ) ) {
-		return mci_fault_access_denied( $t_user_id, 'Issue \'' . $p_issue_id . '\' is readonly' );
+		return mci_fault_access_denied( $t_user_id, 'Document \'' . $p_issue_id . '\' is readonly' );
 	}
 
 	mci_tag_set_for_issue( $p_issue_id, $p_tags, $t_user_id );
@@ -1284,7 +1284,7 @@ function mc_dwg_delete( $p_username, $p_password, $p_issue_id ) {
 	}
 
 	if( !dwg_exists( $p_issue_id ) ) {
-		return ApiObjectFactory::faultNotFound( "Issue '$p_issue_id' does not exist." );
+		return ApiObjectFactory::faultNotFound( "Document '$p_issue_id' does not exist." );
 	}
 
 	$t_project_id = dwg_get_field( $p_issue_id, 'project_id' );
@@ -1293,7 +1293,7 @@ function mc_dwg_delete( $p_username, $p_password, $p_issue_id ) {
 	}
 
 	$t_data = array( 'query' => array( 'id' => $p_issue_id ) );
-	$t_command = new IssueDeleteCommand( $t_data );
+	$t_command = new DocumentDeleteCommand( $t_data );
 	$t_command->execute();
 }
 
@@ -1352,7 +1352,7 @@ function mc_dwg_note_add( $p_username, $p_password, $p_issue_id, stdClass $p_not
 			'payload' => $t_payload
 		);
 
-		$t_command = new IssueNoteAddCommand( $t_data );
+		$t_command = new DocumentNoteAddCommand( $t_data );
 		$t_result = $t_command->execute();
 		return $t_result['id'];
 	}
@@ -1363,11 +1363,11 @@ function mc_dwg_note_add( $p_username, $p_password, $p_issue_id, stdClass $p_not
 	}
 
 	if( !dwg_exists( $p_issue_id ) ) {
-		return ApiObjectFactory::faultNotFound( 'Issue \'' . $p_issue_id . '\' does not exist.' );
+		return ApiObjectFactory::faultNotFound( 'Document \'' . $p_issue_id . '\' does not exist.' );
 	}
 
 	if( !isset( $p_note['text'] ) || is_blank( $p_note['text'] ) ) {
-		return ApiObjectFactory::faultBadRequest( 'Issue note text must not be blank.' );
+		return ApiObjectFactory::faultBadRequest( 'Document note text must not be blank.' );
 	}
 
 	global $g_project_override;
@@ -1378,7 +1378,7 @@ function mc_dwg_note_add( $p_username, $p_password, $p_issue_id, stdClass $p_not
 	}
 
 	if( dwg_is_readonly( $p_issue_id ) ) {
-		return mci_fault_access_denied( $t_user_id, 'Issue \'' . $p_issue_id . '\' is readonly' );
+		return mci_fault_access_denied( $t_user_id, 'Document \'' . $p_issue_id . '\' is readonly' );
 	}
 
 	if( isset( $p_note['view_state'] ) ) {
@@ -1401,7 +1401,7 @@ function mc_dwg_note_add( $p_username, $p_password, $p_issue_id, stdClass $p_not
 			# Make sure that active user has access level required to specify a different reporter.
 			$t_specify_reporter_access_level = config_get( 'webservice_specify_reporter_on_add_access_level_threshold' );
 			if( !access_has_project_level( $t_specify_reporter_access_level, $t_project_id, $t_user_id ) ) {
-				return mci_fault_access_denied( $t_user_id, "Active user does not have access level required to specify a different issue note reporter" );
+				return mci_fault_access_denied( $t_user_id, "Active user does not have access level required to specify a different document note reporter" );
 			}
 		}
 	} else {
@@ -1412,10 +1412,10 @@ function mc_dwg_note_add( $p_username, $p_password, $p_issue_id, stdClass $p_not
 
 	$t_note_attr = isset( $p_note['note_type'] ) ? $p_note['note_attr'] : '';
 
-	log_event( LOG_WEBSERVICE, 'adding bugnote to issue \'' . $p_issue_id . '\'' );
-	$t_bugnote_id = bugnote_add( $p_issue_id, $p_note['text'], mci_get_time_tracking_from_note( $p_issue_id, $p_note ), $t_view_state_id == VS_PRIVATE, $t_note_type, $t_note_attr, $t_reporter_id );
+	log_event( LOG_WEBSERVICE, 'adding dwgnote to document \'' . $p_issue_id . '\'' );
+	$t_bugnote_id = dwgnote_add( $p_issue_id, $p_note['text'], mci_get_time_tracking_from_note( $p_issue_id, $p_note ), $t_view_state_id == VS_PRIVATE, $t_note_type, $t_note_attr, $t_reporter_id );
 
-	bugnote_process_mentions( $p_issue_id, $t_bugnote_id, $p_note['text'] );
+	dwgnote_process_mentions( $p_issue_id, $t_bugnote_id, $p_note['text'] );
 
 	return $t_bugnote_id;
 }
@@ -1435,7 +1435,7 @@ function mc_dwg_note_delete( $p_username, $p_password, $p_issue_note_id ) {
 	}
 
 	if( (integer)$p_issue_note_id < 1 ) {
-		return ApiObjectFactory::faultBadRequest( 'Invalid issue note id \'' . $p_issue_note_id . '\'.' );
+		return ApiObjectFactory::faultBadRequest( 'Invalid document note id \'' . $p_issue_note_id . '\'.' );
 	}
 
 	$t_issue_id = bugnote_get_field( $p_issue_note_id, 'bug_id' );
@@ -1448,7 +1448,7 @@ function mc_dwg_note_delete( $p_username, $p_password, $p_issue_note_id ) {
 		'query' => array( 'id' => $p_issue_note_id )
 	);
 
-	$t_command = new IssueNoteDeleteCommand( $t_data );
+	$t_command = new DocumentNoteDeleteCommand( $t_data );
 	$t_command->execute();
 	return true;
 }
@@ -1473,17 +1473,17 @@ function mc_dwg_note_update( $p_username, $p_password, stdClass $p_note ) {
 	$p_note = ApiObjectFactory::objectToArray( $p_note );
 
 	if( !isset( $p_note['id'] ) || is_blank( $p_note['id'] ) ) {
-		return ApiObjectFactory::faultBadRequest( 'Issue note id must not be blank.' );
+		return ApiObjectFactory::faultBadRequest( 'Document note id must not be blank.' );
 	}
 
 	if( !isset( $p_note['text'] ) || is_blank( $p_note['text'] ) ) {
-		return ApiObjectFactory::faultBadRequest( 'Issue note text must not be blank.' );
+		return ApiObjectFactory::faultBadRequest( 'Document note text must not be blank.' );
 	}
 
 	$t_issue_note_id = $p_note['id'];
 
 	if( !bugnote_exists( $t_issue_note_id ) ) {
-		return ApiObjectFactory::faultNotFound( 'Issue note \'' . $t_issue_note_id . '\' does not exist.' );
+		return ApiObjectFactory::faultNotFound( 'Document note \'' . $t_issue_note_id . '\' does not exist.' );
 	}
 
 	$t_issue_id = bugnote_get_field( $t_issue_note_id, 'bug_id' );
@@ -1511,7 +1511,7 @@ function mc_dwg_note_update( $p_username, $p_password, stdClass $p_note ) {
 
 	# Check if the bug is readonly
 	if( dwg_is_readonly( $t_issue_id ) ) {
-		return mci_fault_access_denied( $t_user_id, 'Issue \'' . $t_issue_id . '\' is readonly' );
+		return mci_fault_access_denied( $t_user_id, 'Document \'' . $t_issue_id . '\' is readonly' );
 	}
 
 	if( isset( $p_note['view_state'] ) ) {
@@ -1556,12 +1556,12 @@ function mc_dwg_relationship_add( $p_username, $p_password, $p_issue_id, stdClas
 
 	# user has access to update the bug...
 	if( !access_has_dwg_level( config_get( 'update_dwg_threshold' ), $p_issue_id, $t_user_id ) ) {
-		return mci_fault_access_denied( $t_user_id, 'Active user does not have access level required to add a relationship to this issue' );
+		return mci_fault_access_denied( $t_user_id, 'Active user does not have access level required to add a relationship to this document' );
 	}
 
 	# source and destination bugs are the same bug...
 	if( $p_issue_id == $t_dest_issue_id ) {
-		return ApiObjectFactory::faultBadRequest( 'An issue can\'t be related to itself.' );
+		return ApiObjectFactory::faultBadRequest( 'An document can\'t be related to itself.' );
 	}
 
 	# the related bug exists...
@@ -1617,7 +1617,7 @@ function mc_dwg_relationship_delete( $p_username, $p_password, $p_issue_id, $p_r
 
 	# bug is not read-only...
 	if( dwg_is_readonly( $p_issue_id ) ) {
-		return mci_fault_access_denied( $t_user_id, 'Issue \'' . $p_issue_id . '\' is readonly.' );
+		return mci_fault_access_denied( $t_user_id, 'Document \'' . $p_issue_id . '\' is readonly.' );
 	}
 
 	# retrieve the destination bug of the relationship
@@ -1626,7 +1626,7 @@ function mc_dwg_relationship_delete( $p_username, $p_password, $p_issue_id, $p_r
 	# user can access to the related bug at least as viewer, if it's exist...
 	if( dwg_exists( $t_dest_issue_id ) ) {
 		if( !access_has_dwg_level( config_get( 'view_dwg_threshold', null, null, $t_project_id ), $t_dest_issue_id, $t_user_id ) ) {
-			return mci_fault_access_denied( $t_user_id, 'The issue \'' . $t_dest_issue_id . '\' requires higher access level.' );
+			return mci_fault_access_denied( $t_user_id, 'The document \'' . $t_dest_issue_id . '\' requires higher access level.' );
 		}
 	}
 
@@ -2014,7 +2014,7 @@ function mci_check_access_to_dwg( $p_user_id, $p_bug_id ) {
  * @param string                $p_username         The name of the user trying to access the issues.
  * @param string                $p_password         The password of the user.
  * @param IntegerArray          $p_issue_ids        Number of issues to display per page.
- * @return array that represents an IssueDataArray structure
+ * @return array that represents an DocumentDataArray structure
  */
 function mc_dwgs_get( $p_username, $p_password, $p_issue_ids ) {
 	$t_user_id = mci_check_login( $p_username, $p_password );
@@ -2045,7 +2045,7 @@ function mc_dwgs_get( $p_username, $p_password, $p_issue_ids ) {
  * @param string                $p_username         The name of the user trying to access the issues.
  * @param string                $p_password         The password of the user.
  * @param IntegerArray          $p_issue_ids        Number of issues to display per page.
- * @return array that represents an IssueHeaderDataArray structure
+ * @return array that represents an DocumentHeaderDataArray structure
  */
 function mc_dwgs_get_header( $p_username, $p_password, $p_issue_ids ) {
 	$t_user_id = mci_check_login( $p_username, $p_password );

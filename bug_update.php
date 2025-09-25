@@ -30,7 +30,7 @@
  * @uses config_api.php
  * @uses constant_inc.php
  * @uses custom_field_api.php
- * @uses email_api.php
+ * @uses email_bug_api.php
  * @uses error_api.php
  * @uses event_api.php
  * @uses form_api.php
@@ -50,7 +50,7 @@ require_api( 'bugnote_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
 require_api( 'custom_field_api.php' );
-require_api( 'email_api.php' );
+require_api( 'email_bug_api.php' );
 require_api( 'error_api.php' );
 require_api( 'event_api.php' );
 require_api( 'form_api.php' );
@@ -239,7 +239,7 @@ if( $t_existing_bug->status != $t_updated_bug->status ) {
 		error_parameters( lang_get( 'status' ) );
 		trigger_error( ERROR_CUSTOM_FIELD_INVALID_VALUE, ERROR );
 	}
-	if( !access_has_bug_level( access_get_status_threshold( $t_updated_bug->status, $t_updated_bug->project_id ), $f_bug_id ) ) {
+	if( !access_has_bug_level( access_get_bug_status_threshold( $t_updated_bug->status, $t_updated_bug->project_id ), $f_bug_id ) ) {
 		# The reporter may be allowed to close or reopen the issue regardless.
 		$t_can_bypass_status_access_thresholds = false;
 		if( $t_close_issue &&

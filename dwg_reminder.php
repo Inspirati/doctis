@@ -24,36 +24,35 @@
  *
  * @uses core.php
  * @uses access_api.php
- * @uses bug_api.php
- * @uses bugnote_api.php
+ * @uses dwg_api.php
+ * @uses dwgnote_api.php
  * @uses config_api.php
  * @uses constant_inc.php
- * @uses email_api.php
+ * @uses email_dwg_api.php
  * @uses error_api.php
  * @uses form_api.php
  * @uses gpc_api.php
  * @uses helper_api.php
  * @uses html_api.php
  * @uses lang_api.php
- * @uses print_api.php
+ * @uses print_dwg_api.php
  * @uses string_api.php
  */
 
 require_once( 'core.php' );
 require_api( 'access_api.php' );
-require_api( 'bug_api.php' );  // @TODO RobD -- purge
 require_api( 'dwg_api.php' );
 require_api( 'bugnote_api.php' );
+require_api( 'dwgnote_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
-require_api( 'email_api.php' );
+require_api( 'email_dwg_api.php' );
 require_api( 'error_api.php' );
 require_api( 'form_api.php' );
 require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
-require_api( 'print_api.php' );  // @TODO RobD -- purge
 require_api( 'print_dwg_api.php' );
 require_api( 'string_api.php' );
 
@@ -93,8 +92,8 @@ $t_reminder_recipients_monitor_bug = config_get( 'reminder_recipients_monitor_dw
 $t_monitor_bug_threshold = config_get( 'monitor_dwg_threshold' );
 
 // @TODO RobD - our documents table/structure does not have these fields, what to do?
-$t_handler = bug_get_field( $f_bug_id, 'handler_id' );
-$t_reporter = bug_get_field( $f_bug_id, 'reporter_id' );
+$t_handler = dwg_get_field( $f_bug_id, 'handler_id' );
+$t_reporter = dwg_get_field( $f_bug_id, 'reporter_id' );
 
 foreach( $f_to as $t_recipient ) {
 	if( ON == $t_reminder_recipients_monitor_bug
@@ -102,7 +101,7 @@ foreach( $f_to as $t_recipient ) {
 		&& $t_recipient != $t_handler
 		&& $t_recipient != $t_reporter
 	) {
-		bug_monitor( $f_bug_id, $t_recipient );
+		dwg_monitor( $f_bug_id, $t_recipient );
 	}
 }
 
@@ -124,7 +123,7 @@ if( ON == config_get( 'store_reminders' ) ) {
 		$t_attr .= $t_recipient;
 	}
 
-	// bugnote_add( $f_bug_id, $f_body, 0, $f_view_state == VS_PRIVATE, REMINDER, $t_attr, null, false );
+	// dwgnote_add( $f_bug_id, $f_body, 0, $f_view_state == VS_PRIVATE, REMINDER, $t_attr, null, false );
 
 	# Note: we won't trigger mentions here since reminders are triggered.
 }
@@ -132,4 +131,4 @@ if( ON == config_get( 'store_reminders' ) ) {
 form_security_purge( 'dwg_reminder' );
 
 $t_redirect = string_get_dwg_view_url( $f_bug_id );
-print_header_redirect( $t_redirect );
+print_dwg_header_redirect( $t_redirect );

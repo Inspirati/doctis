@@ -66,7 +66,7 @@ if( ( ALL_PROJECTS == $t_project_id || project_exists( $t_project_id ) ) && $t_p
 	helper_set_current_project( $t_project_id );
 	# Reloading the page is required so that the project browser
 	# reflects the new current project
-	print_header_redirect( $_SERVER['REQUEST_URI'], true, false, true );
+	print_dwg_header_redirect( $_SERVER['REQUEST_URI'], true, false, true );
 }
 
 $t_per_page = 0;
@@ -75,7 +75,7 @@ $t_page_count = 0;
 
 $t_rows = filter_dwg_get_rows( $f_page_number, $t_per_page, $t_page_count, $t_bug_count, null, null, null, true );
 if( $t_rows === false ) {
-	print_header_redirect( 'view_dwg_set.php?type=0' );
+	print_dwg_header_redirect( 'view_dwg_set.php?type=0' );
 }
 
 $t_dwgslist = array();

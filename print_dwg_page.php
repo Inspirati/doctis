@@ -113,7 +113,7 @@ layout_page_header();
 	</div>
 </td></tr></table>
 
-<form method="post" action="view_all_set.php">
+<form method="post" action="view_dwg_set.php">
 <?php # CSRF protection not required here - form does not result in modifications ?>
 	<input type="hidden" name="type" value="1" />
 	<input type="hidden" name="print" value="1" />
@@ -128,7 +128,7 @@ layout_page_header();
 #$t_bug_arr_sort is used for displaying
 #$f_export is a string for the word and excel pages
 
-$f_bug_arr = gpc_get_int_array( 'bug_arr', array() );
+$f_bug_arr = gpc_get_int_array( 'dwg_arr', array() );
 $f_bug_arr[$t_row_count]=-1;
 
 for( $i=0; $i < $t_row_count; $i++ ) {
@@ -177,7 +177,7 @@ $f_export = implode( ',', $f_bug_arr );
 </form>
 
 <?php
-$t_form_url = 'print_all_bug_page.php';
+$t_form_url = 'print_dwg_page.php';
 if( filter_is_temporary( $t_filter ) ) {
 	$t_form_url .='?' . filter_get_temporary_key_param( $t_filter );
 }

@@ -186,7 +186,6 @@ define( 'NO_USER', 0 );
 # history constants
 define( 'NORMAL_TYPE', 0 );
 define( 'NEW_BUG', 1 );
-define( 'NEW_DWG', 50 );
 define( 'BUGNOTE_ADDED', 2 );
 define( 'BUGNOTE_UPDATED', 3 );
 define( 'BUGNOTE_DELETED', 4 );
@@ -215,12 +214,42 @@ define( 'BUG_REVISION_DROPPED', 28 );
 define( 'BUGNOTE_REVISION_DROPPED', 29 );
 define( 'PLUGIN_HISTORY', 100 );
 
+define( 'NEW_DWG', 50 );
+define( 'DWGNOTE_ADDED', 52 );
+define( 'DWGNOTE_UPDATED', 53 );
+define( 'DWGNOTE_DELETED', 54 );
+
+define( 'DWGNOTE_STATE_CHANGED', 61 );
+define( 'DWG_MONITOR', 62 );
+define( 'DWG_UNMONITOR', 63 );
+define( 'DWG_DELETED', 64 );
+define( 'DWG_ADD_SPONSORSHIP', 65 );
+define( 'DWG_UPDATE_SPONSORSHIP', 66 );
+define( 'DWG_DELETE_SPONSORSHIP', 67 );
+define( 'DWG_ADD_RELATIONSHIP', 68 );
+define( 'DWG_DEL_RELATIONSHIP', 69 );
+define( 'DWG_CLONED_TO', 70 );
+define( 'DWG_CREATED_FROM', 71 );
+define( 'DWG_REPLACE_RELATIONSHIP', 73 );
+define( 'DWG_PAID_SPONSORSHIP', 74 );
+
+define( 'DWG_REVISION_DROPPED', 78 );
+define( 'DWGNOTE_REVISION_DROPPED', 79 );
+
+
 # bug revisions
 define( 'REV_ANY', 0 );
 define( 'REV_DESCRIPTION', 1 );
 define( 'REV_STEPS_TO_REPRODUCE', 2 );
 define( 'REV_ADDITIONAL_INFO', 3 );
 define( 'REV_BUGNOTE', 4 );
+
+# dwg revisions
+// define( 'REV_ANY', 0 );
+// define( 'REV_DESCRIPTION', 1 );
+// define( 'REV_STEPS_TO_REPRODUCE', 2 );
+// define( 'REV_ADDITIONAL_INFO', 3 );
+define( 'REV_DWGNOTE', 5 );
 
 # bug relationship constants
 define( 'BUG_REL_NONE', -2 );
@@ -327,6 +356,9 @@ define( 'ERROR_FILE_NAME_TOO_LONG', 507 );
 
 # ERROR_BUGNOTE_*
 define( 'ERROR_BUGNOTE_NOT_FOUND', 600 );
+
+# ERROR_DWGNOTE_*
+define( 'ERROR_DWGNOTE_NOT_FOUND', 650 );
 
 # ERROR_PROJECT_*
 define( 'ERROR_PROJECT_NOT_FOUND', 700 );
