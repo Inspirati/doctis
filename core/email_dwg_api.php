@@ -40,7 +40,7 @@
  * @uses lang_api.php
  * @uses logging_api.php
  * @uses project_api.php
- * @uses relationship_api.php
+ * @uses dwg_relationship_api.php
  * @uses sponsorship_api.php
  * @uses string_api.php
  * @uses user_api.php
@@ -52,7 +52,7 @@
  * @noinspection PhpMissingReturnTypeInspection, PhpMissingParamTypeInspection
  */
 
-require_api( 'access_api.php' );
+require_api( 'access_dwg_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'dwg_api.php' );
 require_api( 'dwgnote_api.php' );
@@ -70,7 +70,7 @@ require_api( 'history_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'logging_api.php' );
 require_api( 'project_api.php' );
-require_api( 'relationship_api.php' );
+require_api( 'dwg_relationship_api.php' );
 require_api( 'sponsorship_api.php' );
 require_api( 'string_api.php' );
 require_api( 'user_api.php' );
@@ -115,6 +115,15 @@ function email_dwg_collect_recipients( $p_bug_id, $p_notify_type, array $p_extra
 		} else {
 			log_event( LOG_EMAIL_RECIPIENT, 'Document = #%d, skip @U%d (explicit disabled)', $p_bug_id, $t_user_id );
 		}
+	}
+
+	# add Creator
+	$t_creator_id = dwg_get_field( $p_bug_id, 'creator_id' );
+	if( ON == email_notify_flag( $p_notify_type, 'creator' ) ) {
+		$t_recipients[$t_creator_id] = true;
+		log_event( LOG_EMAIL_RECIPIENT, 'Document = #%d, add @U%d (creator)', $p_bug_id, $t_creator_id );
+	} else {
+		log_event( LOG_EMAIL_RECIPIENT, 'Document = #%d, skip @U%d (creator disabled)', $p_bug_id, $t_creator_id );
 	}
 
 	# add Reporter
@@ -172,7 +181,7 @@ function email_dwg_collect_recipients( $p_bug_id, $p_notify_type, array $p_extra
 	# add users who contributed bugnotes
 	$t_notes_enabled = ( ON == email_notify_flag( $p_notify_type, 'bugnotes' ) );
 	db_param_push();
-	$t_query = 'SELECT DISTINCT reporter_id FROM {bugnote} WHERE bug_id = ' . db_param();
+	$t_query = 'SELECT DISTINCT creator_id FROM {dwgnote} WHERE dwg_id = ' . db_param();
 	$t_result = db_query( $t_query, array( $p_bug_id ) );
 	while( $t_row = db_fetch_array( $t_result ) ) {
 		$t_user_id = $t_row['reporter_id'];
@@ -627,7 +636,7 @@ function email_dwg_relationship_child_resolved_closed( $p_bug_id, $p_message_id 
 	}
 
 	for( $i = 0;$i < $t_relationship_count;$i++ ) {
-		if( $t_relationship[$i]->type == BUG_DEPENDANT ) {
+		if( $t_relationship[$i]->type == DWG_DEPENDANT ) {
 			$t_src_bug_id = $t_relationship[$i]->src_bug_id;
 			$t_status = dwg_get_field( $t_src_bug_id, 'status' );
 			if( $t_status < config_get( 'dwg_resolved_status_threshold' ) ) {
@@ -795,7 +804,7 @@ function email_dwgnote_add( $p_bugnote_id, $p_files = array(), $p_exclude_user_i
 		$t_contents = $t_message . "\n";
 
 		$t_mail_headers = [
-			'In-Reply-To' => email_generate_dwg_md5( $t_bugnote->bug_id, $t_date_submitted )
+			'In-Reply-To' => email_generate_md5( $t_bugnote->bug_id, $t_date_submitted )
 		];
 
 		email_store( $t_user_email, $t_subject, $t_contents, $t_mail_headers );
@@ -1117,7 +1126,7 @@ function email_dwg_info_to_one_user( array $p_visible_bug_data, string $p_messag
 
 	# build headers
 	$t_bug_id = $p_visible_bug_data['email_bug'];
-	$t_message_md5 = email_generate_bug_md5( $t_bug_id, $p_visible_bug_data['email_date_submitted'] );
+	$t_message_md5 = email_generate_md5( $t_bug_id, $p_visible_bug_data['email_date_submitted'] );
 	$t_mail_headers = array(
 		'keywords' => $p_visible_bug_data['set_category'],
 	);
@@ -1134,7 +1143,7 @@ function email_dwg_info_to_one_user( array $p_visible_bug_data, string $p_messag
 /**
  * Generates a formatted note to be used in email notifications.
  *
- * @param BugnoteData $p_bugnote              The bugnote object.
+ * @param DwgnoteData $p_bugnote              The bugnote object.
  * @param int         $p_project_id           The project id
  * @param bool        $p_show_time_tracking   True to show time tracking, false otherwise.
  * @param string      $p_horizontal_separator The horizontal line separator to use.
@@ -1148,7 +1157,7 @@ function email_format_dwgnote( $p_bugnote, $p_project_id, $p_show_time_tracking,
 	$t_last_modified = date( $t_date_format, $p_bugnote->last_modified );
 
 	$t_formatted_bugnote_id = dwgnote_format_id( $p_bugnote->id );
-	$t_bugnote_link = string_process_dwgnote_link( config_get( 'bugnote_link_tag' ) . $p_bugnote->id, false, false, true );
+	$t_bugnote_link = string_process_dwgnote_link( config_get( 'dwgnote_link_tag' ) . $p_bugnote->id, false, false, true );
 
 	if( $p_show_time_tracking && $p_bugnote->time_tracking > 0 ) {
 		$t_time_tracking = ' ' . lang_get( 'time_tracking' ) . ' ' . db_minutes_to_hhmm( $p_bugnote->time_tracking ) . "\n";
@@ -1247,7 +1256,7 @@ function email_format_dwg_message( array $p_visible_bug_data ) {
 
 	# end foreach custom field
 
-	if( isset( $t_status ) && config_get( 'bug_resolved_status_threshold' ) <= $t_status ) {
+	if( isset( $t_status ) && config_get( 'dwg_resolved_status_threshold' ) <= $t_status ) {
 		
 		if ( isset( $p_visible_bug_data[ 'email_resolution' ] ) ) {
 			$p_visible_bug_data['email_resolution'] = get_enum_element( 'resolution', $p_visible_bug_data['email_resolution'] );
@@ -1281,7 +1290,7 @@ function email_format_dwg_message( array $p_visible_bug_data ) {
 
 	if( isset( $p_visible_bug_data['relations'] ) ) {
 		if( $p_visible_bug_data['relations'] != '' ) {
-			$t_message .= $t_email_separator1 . "\n" . utf8_str_pad( lang_get( 'bug_relationships' ), 20 ) . utf8_str_pad( lang_get( 'id' ), 8 ) . lang_get( 'summary' ) . "\n" . $t_email_separator2 . "\n" . $p_visible_bug_data['relations'];
+			$t_message .= $t_email_separator1 . "\n" . utf8_str_pad( lang_get( 'dwg_relationships' ), 20 ) . utf8_str_pad( lang_get( 'id' ), 8 ) . lang_get( 'summary' ) . "\n" . $t_email_separator2 . "\n" . $p_visible_bug_data['relations'];
 		}
 	}
 
@@ -1312,7 +1321,7 @@ function email_format_dwg_message( array $p_visible_bug_data ) {
 
 	# format history
 	if( array_key_exists( 'history', $p_visible_bug_data ) ) {
-		$t_message .= lang_get( 'bug_history' ) . " \n";
+		$t_message .= lang_get( 'dwg_history' ) . " \n";
 		$t_message .= utf8_str_pad( lang_get( 'date_modified' ), 17 ) . utf8_str_pad( lang_get( 'username' ), 15 ) . utf8_str_pad( lang_get( 'field' ), 25 ) . utf8_str_pad( lang_get( 'change' ), 20 ) . " \n";
 
 		$t_message .= $t_email_separator1 . " \n";
@@ -1381,12 +1390,12 @@ function email_build_visible_dwg_data( $p_user_id, $p_bug_id, $p_message_id ) {
 	$t_row = dwg_get_extended_row( $p_bug_id );
 	$t_bug_data = array();
 
-	$t_bug_view_fields = config_get( 'bug_view_page_fields', null, $p_user_id, $t_row['project_id'] );
+	$t_bug_view_fields = config_get( 'dwg_view_page_fields', null, $p_user_id, $t_row['project_id'] );
 
 	$t_bug_data['email_bug'] = $p_bug_id;
 
-	if( $p_message_id !== 'email_notification_title_for_action_bug_deleted' ) {
-		$t_bug_data['email_bug_view_url'] = string_get_bug_view_url_with_fqdn( $p_bug_id );
+	if( $p_message_id !== 'email_notification_title_for_action_dwg_deleted' ) {
+		$t_bug_data['email_bug_view_url'] = string_get_dwg_view_url_with_fqdn( $p_bug_id );
 	}
 
 	if( access_compare_level( $t_user_access_level, config_get( 'view_handler_threshold' ) ) ) {
@@ -1494,12 +1503,12 @@ function email_build_visible_dwg_data( $p_user_id, $p_bug_id, $p_message_id ) {
  * Return formatted string with all the details on the requested relationship.
  *
  * @param int                 $p_bug_id       A bug identifier.
- * @param BugRelationshipData $p_relationship A bug relationship object.
+ * @param DwgRelationshipData $p_relationship A bug relationship object.
  *
  * @return string
  * @throws ClientException
  */
-function email_dwg_relationship_get_details( $p_bug_id, BugRelationshipData $p_relationship ) {
+function email_dwg_relationship_get_details( $p_bug_id, DwgRelationshipData $p_relationship ) {
 	$t_summary_wrap_at = mb_strlen( config_get( 'email_separator2' ) ) - 28;
 
 	if( $p_bug_id == $p_relationship->src_bug_id ) {

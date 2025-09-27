@@ -32,7 +32,7 @@
  */
 
 require_once( 'core.php' );
-require_api( 'access_api.php' );
+require_api( 'access_dwg_api.php' );
 require_api( 'form_api.php' );
 require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );

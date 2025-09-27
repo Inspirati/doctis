@@ -44,24 +44,22 @@
  * @uses print_api.php
  * @uses profile_api.php
  * @uses project_api.php
- * @uses relationship_api.php
+ * @uses dwg_relationship_api.php
  * @uses session_api.php
  * @uses string_api.php
- * @uses tag_api.php
+ * @uses tag_dwg_api.php
  * @uses user_api.php
  * @uses utility_api.php
  * @uses version_api.php
  * @uses filter_form_api.php
  */
 
-require_api( 'access_api.php' );
+require_api( 'access_dwg_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'bug_api.php' );
 require_api( 'collapse_api.php' );
 require_api( 'columns_api.php' );
-
 require_api( 'columns_dwg_api.php' );
-
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
 require_api( 'current_user_api.php' );
@@ -79,10 +77,10 @@ require_api( 'logging_api.php' );
 require_api( 'print_api.php' );
 require_api( 'profile_api.php' );
 require_api( 'project_api.php' );
-require_api( 'relationship_api.php' );
+require_api( 'dwg_relationship_api.php' );
 require_api( 'session_api.php' );
 require_api( 'string_api.php' );
-require_api( 'tag_api.php' );
+require_api( 'tag_dwg_api.php' );
 require_api( 'user_api.php' );
 require_api( 'utility_api.php' );
 require_api( 'version_api.php' );
@@ -727,6 +725,7 @@ function filter_dwg_ensure_valid_filter( array $p_filter_arr ) {
 		FILTER_PROPERTY_CATEGORY_ID => 'string',
 		FILTER_PROPERTY_SEVERITY => 'int',
 		FILTER_PROPERTY_STATUS => 'int',
+		FILTER_PROPERTY_CREATOR_ID => 'int',
 		FILTER_PROPERTY_REPORTER_ID => 'int',
 		FILTER_PROPERTY_HANDLER_ID => 'int',
 		FILTER_PROPERTY_NOTE_USER_ID => 'int',
@@ -937,7 +936,7 @@ function filter_dwg_get_default_array( $p_view_type = null ) {
 		// FILTER_PROPERTY_VIEW_STATE => META_FILTER_ANY,
 		// FILTER_PROPERTY_TAG_STRING => '',
 		// FILTER_PROPERTY_TAG_SELECT => 0,
-		// FILTER_PROPERTY_RELATIONSHIP_TYPE => BUG_REL_ANY,
+		// FILTER_PROPERTY_RELATIONSHIP_TYPE => DWG_REL_ANY,
 		// FILTER_PROPERTY_RELATIONSHIP_BUG => META_FILTER_ANY,
 	);
 
@@ -1230,7 +1229,7 @@ SQL Statement failed on preparation:
  */
 
 	$p_dwg_count = $t_filter_query->get_dwg_count();
-	error_log("get_dwg_count() p_dwg_count = " . print_r($p_dwg_count, true));
+	// error_log("get_dwg_count() p_dwg_count = " . print_r($p_dwg_count, true));
 
 	if( 0 == $p_dwg_count ) {
 		return array();
@@ -1396,7 +1395,7 @@ function filter_dwg_draw_selection_area() {
 					$t_temporary_icon_html ? lang_get( 'temporary_filter' ) : '',
 					$t_temporary_icon_html
 				);
-				echo lang_get( 'filters' )
+				echo lang_get( 'dwg_filters' )
 ?>
 			</h4>
 
@@ -2168,6 +2167,7 @@ function filter_dwg_gpc_get( ?array $p_filter = null ): array {
 	$f_show_severity = gpc_get( FILTER_PROPERTY_SEVERITY, $t_filter[FILTER_PROPERTY_SEVERITY] );
 	$f_show_status = gpc_get( FILTER_PROPERTY_STATUS, $t_filter[FILTER_PROPERTY_STATUS] );
 	$f_hide_status = gpc_get( FILTER_PROPERTY_HIDE_STATUS, $t_filter[FILTER_PROPERTY_HIDE_STATUS] );
+	$f_creator_id = gpc_get( FILTER_PROPERTY_REPORTER_ID, $t_filter[FILTER_PROPERTY_REPORTER_ID] );
 	$f_reporter_id = gpc_get( FILTER_PROPERTY_REPORTER_ID, $t_filter[FILTER_PROPERTY_REPORTER_ID] );
 	$f_handler_id = gpc_get( FILTER_PROPERTY_HANDLER_ID, $t_filter[FILTER_PROPERTY_HANDLER_ID] );
 	$f_project_id = gpc_get( FILTER_PROPERTY_PROJECT_ID, $t_filter[FILTER_PROPERTY_PROJECT_ID] );

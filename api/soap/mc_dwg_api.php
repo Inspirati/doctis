@@ -118,10 +118,10 @@ function mci_dwg_get_history( $p_issue_id, $p_user_id, $p_lang ) {
 		$t_skip = false;
 
 		switch( $t_type ) {
-			case BUG_ADD_SPONSORSHIP:         # Deprecated, not exposed in REST API
-			case BUG_UPDATE_SPONSORSHIP:      # Deprecated, not exposed in REST API
-			case BUG_DELETE_SPONSORSHIP:      # Deprecated, not exposed in REST API
-			case BUG_REVISION_DROPPED:        # Not Supported
+			case DWG_ADD_SPONSORSHIP:         # Deprecated, not exposed in REST API
+			case DWG_UPDATE_SPONSORSHIP:      # Deprecated, not exposed in REST API
+			case DWG_DELETE_SPONSORSHIP:      # Deprecated, not exposed in REST API
+			case DWG_REVISION_DROPPED:        # Not Supported
 			case BUGNOTE_REVISION_DROPPED:    # Not Supported
 				$t_skip = true;
 				break;
@@ -136,8 +136,8 @@ function mci_dwg_get_history( $p_issue_id, $p_user_id, $p_lang ) {
 		if( !is_blank( $t_field ) ) {
 			# map field names to external names
 			switch( $t_field )  {
-				case 'reporter_id':
-					$t_field = 'reporter';
+				case 'creator_id':
+					$t_field = 'creator';
 					break;
 				case 'handler_id':
 					$t_field = 'handler';
@@ -196,13 +196,13 @@ function mci_dwg_get_history( $p_issue_id, $p_user_id, $p_lang ) {
 				$t_old_value_name = 'view_state';
 				$t_new_value_name = 'note';
 				break;
-			case BUG_ADD_RELATIONSHIP:
-			case BUG_REPLACE_RELATIONSHIP:
-			case BUG_DEL_RELATIONSHIP:
+			case DWG_ADD_RELATIONSHIP:
+			case DWG_REPLACE_RELATIONSHIP:
+			case DWG_DEL_RELATIONSHIP:
 				$t_old_value_name = 'relationship';
 				$t_new_value_name = 'issue';
 				break;
-			case BUG_CLONED_TO:
+			case DWG_CLONED_TO:
 				$t_show_old_value = false;
 				$t_new_value_name = 'issue';
 				break;
@@ -252,9 +252,9 @@ function mci_dwg_get_history( $p_issue_id, $p_user_id, $p_lang ) {
 					}
 
 					return mci_enum_get_array_by_id( (int)$p_value, 'view_state', $p_lang );
-				case BUG_ADD_RELATIONSHIP:
-				case BUG_REPLACE_RELATIONSHIP:
-				case BUG_DEL_RELATIONSHIP:
+				case DWG_ADD_RELATIONSHIP:
+				case DWG_REPLACE_RELATIONSHIP:
+				case DWG_DEL_RELATIONSHIP:
 					if( $p_new_value ) {
 						return array( 'id' => (int)$p_value );
 					}
@@ -263,7 +263,7 @@ function mci_dwg_get_history( $p_issue_id, $p_user_id, $p_lang ) {
 						'id' => (int)$p_value,
 						'name' => relationship_get_name_for_api( (int)$p_value ),
 						'label' => relationship_get_description_for_history( (int)$p_value ) );
-				case BUG_CLONED_TO:
+				case DWG_CLONED_TO:
 					return array( 'id' => (int)$p_value );
 			}
 
@@ -286,7 +286,7 @@ function mci_dwg_get_history( $p_issue_id, $p_user_id, $p_lang ) {
 				case 'reproducibility':
 					$t_value = mci_enum_get_array_by_id( (int)$p_value, 'reproducibility', $p_lang );
 					break;
-				case 'reporter':
+				case 'creator':
 				case 'handler':
 					$t_value = mci_account_get_array_by_id( (int)$p_value );
 					break;
@@ -635,7 +635,7 @@ function mci_dwg_note_data_as_array( $p_bugnote_row ) {
 
 	$t_bugnote = array();
 	$t_bugnote['id'] = (int)$p_bugnote_row->id;
-	$t_bugnote['reporter'] = mci_account_get_array_by_id( $p_bugnote_row->reporter_id );
+	$t_bugnote['creator'] = mci_account_get_array_by_id( $p_bugnote_row->creator_id );
 	$t_bugnote['text'] = mci_sanitize_xml_string( $p_bugnote_row->note );
 	$t_bugnote['view_state'] = mci_enum_get_array_by_id( $p_bugnote_row->view_state, 'view_state', $t_lang );
 	$t_bugnote['time_tracking'] = $t_has_time_tracking_access ? $p_bugnote_row->time_tracking : 0;
@@ -801,7 +801,7 @@ function mc_dwg_get_biggest_id( $p_username, $p_password, $p_project_id ) {
 			'0' => $t_any,
 		),
 		'highlight_changed' => 0,
-		'reporter_id' => array(
+		'creator_id' => array(
 			'0' => $t_any,
 		),
 		'handler_id' => array(
@@ -1007,7 +1007,7 @@ function mc_dwg_update( $p_username, $p_password, $p_issue_id, stdClass $p_issue
 			return ApiObjectFactory::faultNotFound( 'Project \'' . $t_project_id . '\' does not exist.' );
 		}
 	}
-	$t_reporter_id = isset( $p_issue['reporter'] ) ? mci_get_user_id( $p_issue['reporter'] )  : $t_user_id ;
+	$t_creator_id = isset( $p_issue['creator'] ) ? mci_get_user_id( $p_issue['creator'] )  : $t_user_id ;
 	$t_handler_id = isset( $p_issue['handler'] ) ? mci_get_user_id( $p_issue['handler'] ) : 0;
 	$t_summary = $p_issue['summary'] ?? '';
 	$t_description = $p_issue['description'] ?? '';
@@ -1053,7 +1053,7 @@ function mc_dwg_update( $p_username, $p_password, $p_issue_id, stdClass $p_issue
 	# fields which we expect to always be set
 	$t_bug_data = dwg_get( $p_issue_id, true );
 	$t_bug_data->project_id = $t_project_id;
-	$t_bug_data->reporter_id = $t_reporter_id;
+	$t_bug_data->creator_id = $t_creator_id;
 
 	# Only check that user can handle the issue if it was modified by the update.
 	if( $t_bug_data->handler_id != $t_handler_id ) {
@@ -1225,7 +1225,7 @@ function mc_dwg_update( $p_username, $p_password, $p_issue_id, stdClass $p_issue
 	}
 
 	if( isset( $p_issue['tags'] ) && is_array( $p_issue['tags'] ) ) {
-		mci_tag_set_for_issue( $p_issue_id, $p_issue['tags'], $t_user_id );
+		// mci_tag_set_for_issue( $p_issue_id, $p_issue['tags'], $t_user_id );
 	}
 
 	# submit the issue
@@ -1264,7 +1264,7 @@ function mc_dwg_set_tags ( $p_username, $p_password, $p_issue_id, array $p_tags 
 		return mci_fault_access_denied( $t_user_id, 'Document \'' . $p_issue_id . '\' is readonly' );
 	}
 
-	mci_tag_set_for_issue( $p_issue_id, $p_tags, $t_user_id );
+	// mci_tag_set_for_issue( $p_issue_id, $p_tags, $t_user_id );
 
 	return true;
 }
@@ -1385,27 +1385,46 @@ function mc_dwg_note_add( $p_username, $p_password, $p_issue_id, stdClass $p_not
 		$t_view_state = $p_note['view_state'];
 	} else {
 		$t_view_state = array(
-			'id' => config_get( 'default_bug_view_status' ),
+			'id' => config_get( 'default_dwg_view_status' ),
 		);
 	}
 
-	# TODO: #17777: Add test case for mc_issue_add() and mc_issue_note_add() reporter override
-	if( isset( $p_note['reporter'] ) ) {
-		$t_reporter_id = mci_get_user_id( $p_note['reporter'] );
+//	creator
 
-		if( !$t_reporter_id ) {
-			return ApiObjectFactory::faultBadRequest( 'Invalid reporter.' );
+	# TODO: #17777: Add test case for mc_issue_add() and mc_issue_note_add() reporter override
+	// if( isset( $p_note['reporter'] ) ) {
+	// 	$t_reporter_id = mci_get_user_id( $p_note['reporter'] );
+
+	// 	if( !$t_reporter_id ) {
+	// 		return ApiObjectFactory::faultBadRequest( 'Invalid reporter.' );
+	// 	}
+
+	// 	if( $t_reporter_id != $t_user_id ) {
+	// 		# Make sure that active user has access level required to specify a different reporter.
+	// 		$t_specify_reporter_access_level = config_get( 'webservice_specify_reporter_on_add_access_level_threshold' );
+	// 		if( !access_has_project_level( $t_specify_reporter_access_level, $t_project_id, $t_user_id ) ) {
+	// 			return mci_fault_access_denied( $t_user_id, "Active user does not have access level required to specify a different document note reporter" );
+	// 		}
+	// 	}
+	// } else {
+	// 	$t_reporter_id = $t_user_id;
+	// }
+	if( isset( $p_note['creator'] ) ) {
+		$t_creator_id = mci_get_user_id( $p_note['creator'] );
+
+		if( !$t_creator_id ) {
+			return ApiObjectFactory::faultBadRequest( 'Invalid creator.' );
 		}
 
-		if( $t_reporter_id != $t_user_id ) {
-			# Make sure that active user has access level required to specify a different reporter.
+		if( $t_creator_id != $t_user_id ) {
+			# Make sure that active user has access level required to specify a different creator.
 			$t_specify_reporter_access_level = config_get( 'webservice_specify_reporter_on_add_access_level_threshold' );
 			if( !access_has_project_level( $t_specify_reporter_access_level, $t_project_id, $t_user_id ) ) {
-				return mci_fault_access_denied( $t_user_id, "Active user does not have access level required to specify a different document note reporter" );
+				return mci_fault_access_denied( $t_user_id, "Active user does not have access level required to specify a different document note creator" );
 			}
 		}
 	} else {
-		$t_reporter_id = $t_user_id;
+		$t_creator_id = $t_user_id;
 	}
 
 	$t_view_state_id = mci_get_enum_id_from_objectref( 'view_state', $t_view_state );
@@ -1413,7 +1432,7 @@ function mc_dwg_note_add( $p_username, $p_password, $p_issue_id, stdClass $p_not
 	$t_note_attr = isset( $p_note['note_type'] ) ? $p_note['note_attr'] : '';
 
 	log_event( LOG_WEBSERVICE, 'adding dwgnote to document \'' . $p_issue_id . '\'' );
-	$t_bugnote_id = dwgnote_add( $p_issue_id, $p_note['text'], mci_get_time_tracking_from_note( $p_issue_id, $p_note ), $t_view_state_id == VS_PRIVATE, $t_note_type, $t_note_attr, $t_reporter_id );
+	$t_bugnote_id = dwgnote_add( $p_issue_id, $p_note['text'], mci_get_time_tracking_from_note( $p_issue_id, $p_note ), $t_view_state_id == VS_PRIVATE, $t_note_type, $t_note_attr, $t_creator_id );
 
 	dwgnote_process_mentions( $p_issue_id, $t_bugnote_id, $p_note['text'] );
 
@@ -1495,17 +1514,18 @@ function mc_dwg_note_update( $p_username, $p_password, stdClass $p_note ) {
 	}
 
 	# Check if the user owns the bugnote and is allowed to update their own bugnotes
-	# regardless of the update_bugnote_threshold level.
-	$t_user_owns_the_bugnote = bugnote_is_user_reporter( $t_issue_note_id, $t_user_id );
-	$t_user_can_update_own_bugnote = config_get( 'bugnote_user_edit_threshold', null, $t_user_id, $t_project_id );
+	# regardless of the update_dwgnote_threshold level.
+	// $t_user_owns_the_bugnote = bugnote_is_user_reporter( $t_issue_note_id, $t_user_id );
+	$t_user_owns_the_bugnote = dwgnote_is_user_creator( $t_issue_note_id, $t_user_id );
+	$t_user_can_update_own_bugnote = config_get( 'dwgnote_user_edit_threshold', null, $t_user_id, $t_project_id );
 	if( $t_user_owns_the_bugnote && !$t_user_can_update_own_bugnote ) {
 		return mci_fault_access_denied( $t_user_id );
 	}
 
-	# Check if the user has an access level beyond update_bugnote_threshold for the
+	# Check if the user has an access level beyond update_dwgnote_threshold for the
 	# project containing the bugnote to update.
-	$t_update_bugnote_threshold = config_get( 'update_bugnote_threshold', null, $t_user_id, $t_project_id );
-	if( !$t_user_owns_the_bugnote && !access_has_bugnote_level( $t_update_bugnote_threshold, $t_issue_note_id, $t_user_id ) ) {
+	$t_update_dwgnote_threshold = config_get( 'update_dwgnote_threshold', null, $t_user_id, $t_project_id );
+	if( !$t_user_owns_the_bugnote && !access_has_dwgnote_level( $t_update_dwgnote_threshold, $t_issue_note_id, $t_user_id ) ) {
 		return mci_fault_access_denied( $t_user_id );
 	}
 
@@ -1674,6 +1694,14 @@ function mci_dwg_data_as_array( DwgData $p_issue_data, $p_user_id, $p_lang, $p_f
 		$t_issue['id'] = $t_id;
 	}
 
+	// if( $t_fields === null || isset( $t_fields['version'] ) ) {
+	// 	$t_issue['creator'] = mci_sanitize_xml_string( $p_issue_data->creator );
+	// }
+
+	if( $t_fields === null || isset( $t_fields['creator'] ) ) {
+		$t_issue['creator'] = mci_account_get_array_by_id( $p_issue_data->creator_id );
+	}
+
 	if( $t_fields === null || isset( $t_fields['version'] ) ) {
 		$t_issue['version'] = mci_sanitize_xml_string( $p_issue_data->version );
 	}
@@ -1752,8 +1780,8 @@ function mci_dwg_data_as_array( DwgData $p_issue_data, $p_user_id, $p_lang, $p_f
 		}
 	}
 
-	if( $t_fields === null || isset( $t_fields['reporter'] ) ) {
-		$t_issue['reporter'] = mci_account_get_array_by_id( $p_issue_data->reporter_id );
+	if( $t_fields === null || isset( $t_fields['creator'] ) ) {
+		$t_issue['creator'] = mci_account_get_array_by_id( $p_issue_data->creator_id );
 	}
 
 	if( $t_fields === null || isset( $t_fields['handler'] ) ) {
@@ -1964,7 +1992,7 @@ function mci_dwg_data_as_header_array( DwgData $p_issue_data ) {
 		$t_issue['severity'] = $p_issue_data->severity;
 		$t_issue['status'] = $p_issue_data->status;
 
-		$t_issue['reporter'] = $p_issue_data->reporter_id;
+		$t_issue['creator'] = $p_issue_data->creator_id;
 		$t_issue['summary'] = mci_sanitize_xml_string( $p_issue_data->summary );
 		if( !empty( $p_issue_data->handler_id ) ) {
 			$t_issue['handler'] = $p_issue_data->handler_id;

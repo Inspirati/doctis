@@ -43,16 +43,16 @@
  * @uses history_api.php
  * @uses lang_api.php
  * @uses mention_api.php
- * @uses relationship_api.php
+ * @uses dwg_relationship_api.php
  * @uses sponsorship_api.php
- * @uses tag_api.php
+ * @uses tag_dwg_api.php
  * @uses user_api.php
  * @uses utility_api.php
  *
  * @noinspection PhpUnused, PhpUnusedPrivateFieldInspection
  */
 
-require_api( 'access_api.php' );
+require_api( 'access_dwg_api.php' );
 require_api( 'antispam_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'bugnote_api.php' );
@@ -76,9 +76,9 @@ require_api( 'helper_api.php' );
 require_api( 'history_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'mention_api.php' );
-require_api( 'relationship_api.php' );
+require_api( 'dwg_relationship_api.php' );
 require_api( 'sponsorship_api.php' );
-require_api( 'tag_api.php' );
+require_api( 'tag_dwg_api.php' );
 require_api( 'user_api.php' );
 require_api( 'utility_api.php' );
 
@@ -89,6 +89,7 @@ use Mantis\Exceptions\ClientException;
  *
  * @property int $id
  * @property int $project_id
+ * @property int $creator_id
  * @property int $reporter_id
  * @property int $handler_id
  * @property int $duplicate_id
@@ -140,17 +141,22 @@ class DwgData {
 	protected $revision_date = '';
 	protected $release_date = '';
 
-// #TODO RobD - the legacy fields from the bug version
-	protected $reporter_id = 0;
+	protected $creator_id = 0;
 	protected $handler_id = 0;
 	protected $duplicate_id = 0;
+	protected $category_id = 1;
+
+// #TODO RobD - the legacy fields from the bug version
+	protected $reporter_id = 0;
+//	protected $handler_id = 0;
+//	protected $duplicate_id = 0;
 	protected $priority = NORMAL;
 	protected $severity = MINOR;
 	protected $reproducibility = 10;
 //	protected $status = NEW_;
 	protected $resolution = OPEN;
 	protected $projection = 10;
-	protected $category_id = 1;
+//	protected $category_id = 1;
 //	protected $date_submitted = '';
 //	protected $last_updated = '';
 	protected $eta = 10;
@@ -187,7 +193,7 @@ class DwgData {
 	 */
 	public function get_attachment_count() {
 		if( $this->attachment_count === null ) {
-			$this->attachment_count = file_dwg_bug_attachment_count( $this->id );
+			$this->attachment_count = file_dwg_dwg_attachment_count( $this->id );
 		}
 		return $this->attachment_count;
 	}
@@ -199,7 +205,7 @@ class DwgData {
 	 */
 	public function get_bugnotes_count() {
 		if( $this->bugnotes_count === null ) {
-			$this->bugnotes_count = self::bug_get_bugnote_count();
+			$this->bugnotes_count = self::dwg_get_dwgnote_count();
 		}
 		return $this->bugnotes_count;
 	}
@@ -217,7 +223,7 @@ class DwgData {
 			# integer types
 			case 'id':
 			case 'project_id':
-			case 'reporter_id':
+			case 'creator_id':
 			case 'handler_id':
 			case 'duplicate_id':
 			case 'priority':
@@ -229,6 +235,7 @@ class DwgData {
 			case 'projection':
 			case 'category_id':
 			case 'bug_text_id':
+			case 'dwg_text_id':
 				$p_value = (int)$p_value;
 				break;
 			case 'target_version':
@@ -347,7 +354,7 @@ class DwgData {
 	 *
 	 * @return int Number of bugnotes
 	 */
-	private function dwg_get_bugnote_count() {
+	private function dwg_get_dwgnote_count() {
 		if( !access_has_project_level( config_get( 'private_bugnote_threshold' ), $this->project_id ) ) {
 			$t_restriction = 'AND view_state=' . VS_PUBLIC;
 		} else {
@@ -355,8 +362,8 @@ class DwgData {
 		}
 
 		db_param_push();
-		$t_query = 'SELECT COUNT(*) FROM {bugnote}
-					  WHERE bug_id =' . db_param() . ' ' . $t_restriction;
+		$t_query = 'SELECT COUNT(*) FROM {dwgnote}
+					  WHERE dwg_id =' . db_param() . ' ' . $t_restriction;
 		$t_result = db_query( $t_query, array( $this->id ) );
 
 		return db_result( $t_result );
@@ -372,8 +379,9 @@ class DwgData {
 	public function validate( $p_update_extended = true ) {
 		# Summary cannot be blank
 		if( is_blank( $this->summary ) ) {  // @TODO RobD:
-			error_parameters( lang_get( 'summary' ) );
-			trigger_error( ERROR_EMPTY_FIELD, ERROR );
+			// error_parameters( lang_get( 'summary' ) );
+			// trigger_error( ERROR_EMPTY_FIELD, ERROR );
+			error_log("Summary cannot be blank - BUT CURRENTLY IT IS !!");
 		}
 
 		if( $p_update_extended ) {
@@ -427,7 +435,7 @@ class DwgData {
 
 		# Insert text information
 		// db_param_push();
-		// $t_query = 'INSERT INTO {bug_text}
+		// $t_query = 'INSERT INTO {dwg_text}
 		// 			    ( description, steps_to_reproduce, additional_information )
 		// 			  VALUES
 		// 			    ( ' . db_param() . ',' . db_param() . ',' . db_param() . ')';
@@ -472,6 +480,9 @@ class DwgData {
 // 	$this->release_date = db_now();
 // }
 
+//error_log("************dwg_php.php: reporter_id = " . print_r($this->reporter_id, true));
+//error_log("************dwg_php.php: creator_id = " . print_r($this->creator_id, true));
+
 	// $this->revision_date = db_now();
 	// $this->release_date = db_now();
 	$this->date_submitted = db_now();
@@ -482,20 +493,20 @@ class DwgData {
 		# Insert the rest of the data
 		db_param_push();
 		$t_query = 'INSERT INTO {document}
-						( project_id, status, enabled, version,
-						  title, number, revision, discipline,
-						  reference, link_url, classification,
+						( project_id, creator_id, status, enabled,
+						  version, title, number, revision, 
+						  discipline, reference, link_url, classification,
 						  revision_date, release_date, date_submitted, last_updated
 						)
 					  VALUES
 						( ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
 						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
-						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',
+						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
 						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ')';
 		db_query( $t_query, array(
-		  $this->project_id, $this->status, $this->enabled, $this->version,
-		  $this->title, $this->number, $this->revision, $this->discipline,
-		  $this->reference, $this->link_url, $this->classification,
+		  $this->project_id, $this->creator_id, $this->status, $this->enabled,
+		  $this->version, $this->title, $this->number, $this->revision,
+		  $this->discipline, $this->reference, $this->link_url, $this->classification,
 		  $this->revision_date, $this->release_date, $this->date_submitted, $this->last_updated ) );
 
 //  * Return the last inserted ID after a insert statement.
@@ -594,95 +605,6 @@ class DwgData {
 		# timestamps which could confuse the history log. They shouldn't get updated
 		# like this anyway; if you really need to change them use dwg_set_field().
 		db_param_push();
-/*
-		$t_query = 'UPDATE {bug}
-					SET project_id=' . db_param() . ', reporter_id=' . db_param() . ',
-						handler_id=' . db_param() . ', duplicate_id=' . db_param() . ',
-						priority=' . db_param() . ', severity=' . db_param() . ',
-						reproducibility=' . db_param() . ', status=' . db_param() . ',
-						resolution=' . db_param() . ', projection=' . db_param() . ',
-						category_id=' . db_param() . ', eta=' . db_param() . ',
-						os=' . db_param() . ', os_build=' . db_param() . ',
-						platform=' . db_param() . ', version=' . db_param() . ',
-						build=' . db_param() . ', fixed_in_version=' . db_param() . ',';
-
-		$t_fields = array(
-			$this->project_id, $this->reporter_id,
-			$this->handler_id, $this->duplicate_id,
-			$this->priority, $this->severity,
-			$this->reproducibility, $this->status,
-			$this->resolution, $this->projection,
-			$this->category_id, $this->eta,
-			$this->os, $this->os_build,
-			$this->platform, $this->version,
-			$this->build, $this->fixed_in_version,
-		);
-		$t_roadmap_updated = false;
-		if( access_has_project_level( config_get( 'roadmap_update_threshold' ) ) ) {
-			$t_query .= '
-						target_version=' . db_param() . ',';
-			$t_fields[] = $this->target_version;
-			$t_roadmap_updated = true;
-		}
-
-		$t_query .= '
-						view_state=' . db_param() . ',
-						summary=' . db_param() . ',
-						sponsorship_total=' . db_param() . ',
-						sticky=' . db_param() . ',
-						due_date=' . db_param() . '
-					WHERE id=' . db_param();
-		$t_fields[] = $this->view_state;
-		$t_fields[] = $this->summary;
-		$t_fields[] = $this->sponsorship_total;
-		$t_fields[] = (bool)$this->sticky;
-		$t_fields[] = $this->due_date;
-		$t_fields[] = $this->id;
-
-		db_query( $t_query, $t_fields );
- */
-/*
-		$t_query = 'UPDATE {document}
-					SET project_id=' . db_param() . ',
-						reporter_id=' . db_param() . ',
-						handler_id=' . db_param() . ',
-						duplicate_id=' . db_param() . ',
-						priority=' . db_param() . ',
-						severity=' . db_param() . ',
-						reproducibility=' . db_param() . ',
-						status=' . db_param() . ',
-						resolution=' . db_param() . ',
-						projection=' . db_param() . ',
-						ategory_id=' . db_param() . ',
-						eta=' . db_param() . ',
-						os=' . db_param() . ',
-						os_build=' . db_param() . ',
-						platform=' . db_param() . ',
-						version=' . db_param() . ',
-						build=' . db_param() . ',
-						fixed_in_version=' . db_param() . ',';
-
-		$t_fields = array(
-			$this->project_id,
-			$this->reporter_id,
-			$this->handler_id,
-			$this->duplicate_id,
-			$this->priority,
-			$this->severity,
-			$this->reproducibility,
-			$this->status,
-			$this->resolution,
-			$this->projection,
-			$this->category_id,
-			$this->eta,
-			$this->os,
-			$this->os_build,
-			$this->platform,
-			$this->version,
-			$this->build,
-			$this->fixed_in_version,
-		);
- */
 ////////////////////////////////////////////////////////////////////////////////
 		$t_query = 'UPDATE {document} SET 
 project_id=' . db_param() . ',
@@ -715,7 +637,7 @@ version=' . db_param() . '
 
 		# log changes
 		history_log_event_direct( $c_bug_id, 'project_id', $t_old_data->project_id, $this->project_id );
-		history_log_event_direct( $c_bug_id, 'reporter_id', $t_old_data->reporter_id, $this->reporter_id );
+		history_log_event_direct( $c_bug_id, 'creator_id', $t_old_data->reporter_id, $this->creator_id );
 		history_log_event_direct( $c_bug_id, 'handler_id', $t_old_data->handler_id, $this->handler_id );
 		history_log_event_direct( $c_bug_id, 'priority', $t_old_data->priority, $this->priority );
 		history_log_event_direct( $c_bug_id, 'severity', $t_old_data->severity, $this->severity );
@@ -749,7 +671,7 @@ version=' . db_param() . '
 			$t_bug_text_id = dwg_get_field( $c_bug_id, 'bug_text_id' );
 
 			db_param_push();
-			$t_query = 'UPDATE {bug_text}
+			$t_query = 'UPDATE {dwg_text}
 							SET description=' . db_param() . ',
 								steps_to_reproduce=' . db_param() . ',
 								additional_information=' . db_param() . '
@@ -760,13 +682,13 @@ version=' . db_param() . '
 				$this->additional_information,
 				$t_bug_text_id ) );
 
-			bug_text_clear_cache( $c_bug_id );
+			dwg_text_clear_cache( $c_bug_id );
 
 			$t_current_user = auth_get_current_user_id();
 
 			if( $t_old_data->description != $this->description ) {
 				if( bug_revision_count( $c_bug_id, REV_DESCRIPTION ) < 1 ) {
-					bug_revision_add( $c_bug_id, $t_old_data->reporter_id, REV_DESCRIPTION, $t_old_data->description, 0, $t_old_data->date_submitted );
+					bug_revision_add( $c_bug_id, $t_old_data->creator_id, REV_DESCRIPTION, $t_old_data->description, 0, $t_old_data->date_submitted );
 				}
 				$t_revision_id = dwg_revision_add( $c_bug_id, $t_current_user, REV_DESCRIPTION, $this->description );
 				history_log_event_special( $c_bug_id, DESCRIPTION_UPDATED, $t_revision_id );
@@ -774,7 +696,7 @@ version=' . db_param() . '
 
 			if( $t_old_data->steps_to_reproduce != $this->steps_to_reproduce ) {
 				if( bug_revision_count( $c_bug_id, REV_STEPS_TO_REPRODUCE ) < 1 ) {
-					bug_revision_add( $c_bug_id, $t_old_data->reporter_id, REV_STEPS_TO_REPRODUCE, $t_old_data->steps_to_reproduce, 0, $t_old_data->date_submitted );
+					bug_revision_add( $c_bug_id, $t_old_data->creator_id, REV_STEPS_TO_REPRODUCE, $t_old_data->steps_to_reproduce, 0, $t_old_data->date_submitted );
 				}
 				$t_revision_id = dwg_revision_add( $c_bug_id, $t_current_user, REV_STEPS_TO_REPRODUCE, $this->steps_to_reproduce );
 				history_log_event_special( $c_bug_id, STEP_TO_REPRODUCE_UPDATED, $t_revision_id );
@@ -782,7 +704,7 @@ version=' . db_param() . '
 
 			if( $t_old_data->additional_information != $this->additional_information ) {
 				if( bug_revision_count( $c_bug_id, REV_ADDITIONAL_INFO ) < 1 ) {
-					bug_revision_add( $c_bug_id, $t_old_data->reporter_id, REV_ADDITIONAL_INFO, $t_old_data->additional_information, 0, $t_old_data->date_submitted );
+					bug_revision_add( $c_bug_id, $t_old_data->creator_id, REV_ADDITIONAL_INFO, $t_old_data->additional_information, 0, $t_old_data->date_submitted );
 				}
 				$t_revision_id = dwg_revision_add( $c_bug_id, $t_current_user, REV_ADDITIONAL_INFO, $this->additional_information );
 				history_log_event_special( $c_bug_id, ADDITIONAL_INFO_UPDATED, $t_revision_id );
@@ -821,7 +743,7 @@ $g_cache_dwg_text = array();
 $g_cache_dwg_attachments = array();
 
 /**
- * Cache a database result-set containing full contents of bug_table row.
+ * Cache a database result-set containing full contents of _bug_table row.
  *
  * $p_stats parameter is an optional array representing bugnote statistics.
  * This parameter can be "false" if the bug has no bugnotes, so the cache can
@@ -997,7 +919,7 @@ $t_row = array("foobar", "barfoo");
 
 
 
-	// $t_query = 'SELECT bt.* FROM {bug_text} bt, {document} b
+	// $t_query = 'SELECT bt.* FROM {dwg_text} bt, {document} b
 	// 			  WHERE b.id=' . db_param() . ' AND b.bug_text_id = bt.id';
 	// $t_result = db_query( $t_query, array( $c_bug_id ) );
 
@@ -1105,18 +1027,18 @@ function dwg_ensure_exists( $p_bug_id ) {
 }
 
 /**
- * Check if the given user is the reporter of the bug.
+ * Check if the given user is the creator of the document.
  *
- * @param int $p_bug_id  Int representing bug identifier.
+ * @param int $p_bug_id  Int representing dwg identifier.
  * @param int $p_user_id Int representing a user identifier.
  *
- * @return bool True if the user is the reporter, false otherwise
- * @throws ClientException if the bug does not exist.
+ * @return bool True if the user is the creator, false otherwise
+ * @throws ClientException if the dwg does not exist.
  *
  * @access public
  */
-function dwg_is_user_reporter( $p_bug_id, $p_user_id ) {
-	if( dwg_get_field( $p_bug_id, 'reporter_id' ) == $p_user_id ) {
+function dwg_is_user_creator( $p_bug_id, $p_user_id ) {
+	if( dwg_get_field( $p_bug_id, 'creator_id' ) == $p_user_id ) {
 		return true;
 	} else {
 		return false;
@@ -1145,7 +1067,7 @@ function dwg_is_user_handler( $p_bug_id, $p_user_id ) {
 /**
  * Check if the bug is readonly and shouldn't be modified.
  *
- * For a bug to be readonly the status has to be >= bug_readonly_status_threshold and
+ * For a bug to be readonly the status has to be >= _bug_readonly_status_threshold and
  * current user access level < update_readonly_bug_threshold.
  *
  * @param int $p_bug_id Int representing bug identifier.
@@ -1180,7 +1102,7 @@ function dwg_is_readonly( $p_bug_id ) {
  */
 function dwg_is_resolved( $p_bug_id ) {
 	$t_bug = dwg_get( $p_bug_id );
-	return( $t_bug->status >= config_get( 'bug_resolved_status_threshold', null, null, $t_bug->project_id ) );
+	return( $t_bug->status >= config_get( 'dwg_resolved_status_threshold', null, null, $t_bug->project_id ) );
 }
 
 /**
@@ -1195,7 +1117,7 @@ function dwg_is_resolved( $p_bug_id ) {
  */
 function dwg_is_closed( $p_bug_id ) {
 	$t_bug = dwg_get( $p_bug_id );
-	return( $t_bug->status >= config_get( 'bug_closed_status_threshold', null, null, $t_bug->project_id ) );
+	return( $t_bug->status >= config_get( 'dwg_closed_status_threshold', null, null, $t_bug->project_id ) );
 }
 
 /**
@@ -1317,7 +1239,8 @@ function dwg_copy( $p_bug_id, $p_target_project_id = null, $p_copy_custom_fields
 	}
 
 	$t_bug_data->project_id = $t_target_project_id;
-	$t_bug_data->reporter_id = auth_get_current_user_id();
+	$t_bug_data->creator_id = auth_get_current_user_id();
+
 	$t_bug_data->date_submitted = db_now();
 	$t_bug_data->last_updated = db_now();
 
@@ -1368,20 +1291,20 @@ function dwg_copy( $p_bug_id, $p_target_project_id = null, $p_copy_custom_fields
 	# Copy bugnotes
 	if( $p_copy_bugnotes ) {
 		db_param_push();
-		$t_query = 'SELECT * FROM {bugnote} WHERE bug_id=' . db_param();
+		$t_query = 'SELECT * FROM {dwgnote} WHERE dwg_id=' . db_param();
 		$t_result = db_query( $t_query, array( $t_bug_id ) );
 
 		while( $t_bug_note = db_fetch_array( $t_result ) ) {
 			$t_bugnote_text_id = $t_bug_note['bugnote_text_id'];
 
 			db_param_push();
-			$t_query2 = 'SELECT * FROM {bugnote_text} WHERE id=' . db_param();
+			$t_query2 = 'SELECT * FROM {dwgnote_text} WHERE id=' . db_param();
 			$t_result2 = db_query( $t_query2, array( $t_bugnote_text_id ) );
 
 			$t_bugnote_text_insert_id = -1;
 			if( $t_bugnote_text = db_fetch_array( $t_result2 ) ) {
 				db_param_push();
-				$t_query2 = 'INSERT INTO {bugnote_text}
+				$t_query2 = 'INSERT INTO {dwgnote_text}
 							   ( note )
 							   VALUES ( ' . db_param() . ' )';
 				db_query( $t_query2, array( $t_bugnote_text['note'] ) );
@@ -1389,15 +1312,15 @@ function dwg_copy( $p_bug_id, $p_target_project_id = null, $p_copy_custom_fields
 			}
 
 			db_param_push();
-			$t_query2 = 'INSERT INTO {bugnote}
-						   ( bug_id, reporter_id, bugnote_text_id, view_state, date_submitted, last_modified )
+			$t_query2 = 'INSERT INTO {dwgnote}
+						   ( dwg_id, creator_id, dwgnote_text_id, view_state, date_submitted, last_modified )
 						   VALUES ( ' . db_param() . ',
 						   			' . db_param() . ',
 						   			' . db_param() . ',
 						   			' . db_param() . ',
 						   			' . db_param() . ',
 						   			' . db_param() . ')';
-			db_query( $t_query2, array( $t_new_bug_id, $t_bug_note['reporter_id'], $t_bugnote_text_insert_id, $t_bug_note['view_state'], $t_bug_note['date_submitted'], $t_bug_note['last_modified'] ) );
+			db_query( $t_query2, array( $t_new_bug_id, $t_bug_note['creator_id'], $t_bugnote_text_insert_id, $t_bug_note['view_state'], $t_bug_note['date_submitted'], $t_bug_note['last_modified'] ) );
 		}
 	}
 
@@ -1552,7 +1475,7 @@ function dwg_delete( $p_bug_id ) {
 	// $t_bug_text_id = dwg_get_field( $p_bug_id, 'bug_text_id' );
 
 	// db_param_push();
-	// $t_query = 'DELETE FROM {bug_text} WHERE id=' . db_param();
+	// $t_query = 'DELETE FROM {dwg_text} WHERE id=' . db_param();
 	// db_query( $t_query, array( $t_bug_text_id ) );
 
 	# Delete the bug entry
@@ -1625,10 +1548,10 @@ function dwg_get_row( $p_bug_id ) {
 }
 
 /**
- * Returns an object representing the specified bug.
+ * Returns an object representing the specified document.
  *
  * @param int  $p_bug_id       Int representing bug identifier.
- * @param bool $p_get_extended Whether to include extended information (including bug_text).
+ * @param bool $p_get_extended Whether to include extended information (including dwg_text).
  *
  * @return DwgData DwgData Object
  * @throws ClientException
@@ -1741,7 +1664,7 @@ function dwg_get_newest_dwgnote_timestamp( $p_bug_id ) {
 	$c_bug_id = (int)$p_bug_id;
 
 	db_param_push();
-	$t_query = 'SELECT last_modified FROM {bugnote} WHERE bug_id=' . db_param() . ' ORDER BY last_modified DESC';
+	$t_query = 'SELECT last_modified FROM {dwgnote} WHERE dwg_id=' . db_param() . ' ORDER BY last_modified DESC';
 	$t_result = db_query( $t_query, array( $c_bug_id ), 1 );
 	$t_row = db_result( $t_result );
 
@@ -1784,12 +1707,12 @@ function dwg_get_dwgnote_stats_array( array $p_bugs_id, $p_user_id = null ) {
 
 	# We need to check for each bugnote if user has permissions to view in respective project.
 	# bugnotes are grouped by project_id and bug_id to save calls to config_get
-	$t_sql = 'SELECT n.id, n.bug_id, n.reporter_id, n.view_state, n.last_modified, n.date_submitted, b.project_id'
-		. ' FROM {bugnote} n JOIN {document} b ON (n.bug_id = b.id)'
+	$t_sql = 'SELECT n.id, n.dwg_id, n.creator_id, n.view_state, n.last_modified, n.date_submitted, b.project_id'
+		. ' FROM {dwgnote} n JOIN {document} b ON (n.dwg_id = b.id)'
 		. ' WHERE %s'
-		. ' ORDER BY b.project_id, n.bug_id, n.last_modified';
+		. ' ORDER BY b.project_id, n.dwg_id, n.last_modified';
 	$t_query = new DbQuery();
-	$t_query->sql( sprintf( $t_sql, $t_query->sql_in( 'n.bug_id', 'bug_ids' ) ) );
+	$t_query->sql( sprintf( $t_sql, $t_query->sql_in( 'n.dwg_id', 'bug_ids' ) ) );
 
 	$t_counter = 0;
 	$t_stats = array();
@@ -1823,7 +1746,7 @@ function dwg_get_dwgnote_stats_array( array $p_bugs_id, $p_user_id = null ) {
 				$t_last_submit_date = 0;
 			}
 			$t_note_visible = $t_private_bugnote_visible
-				|| $t_query_row['reporter_id'] == $t_user_id
+				|| $t_query_row['creator_id'] == $t_user_id
 				|| ( VS_PUBLIC == $t_query_row['view_state'] );
 			if( $t_note_visible ) {
 				# only count the bugnote if user has access
@@ -1934,7 +1857,7 @@ function dwg_set_field( $p_bug_id, $p_field_name, $p_value ) {
 	switch( $p_field_name ) {
 		# integer
 		case 'project_id':
-		case 'reporter_id':
+		case 'creator_id':
 		case 'handler_id':
 		case 'duplicate_id':
 		case 'priority':
@@ -2156,10 +2079,10 @@ function dwg_resolve( $p_bug_id, $p_resolution, $p_fixed_in_version = '', $p_bug
 		relationship_upsert( $p_bug_id, $p_duplicate_id, DWG_DUPLICATE, /* email_for_source */ false );
 
 		# Copy list of users monitoring the duplicate bug to the original bug
-		$t_old_reporter_id = dwg_get_field( $p_bug_id, 'reporter_id' );
+		$t_old_creator_id = dwg_get_field( $p_bug_id, 'creator_id' );
 		$t_old_handler_id = dwg_get_field( $p_bug_id, 'handler_id' );
-		if( user_exists( $t_old_reporter_id ) ) {
-			dwg_monitor( $p_duplicate_id, $t_old_reporter_id );
+		if( user_exists( $t_old_creator_id ) ) {
+			dwg_monitor( $p_duplicate_id, $t_old_creator_id );
 		}
 		if( user_exists( $t_old_handler_id ) ) {
 			dwg_monitor( $p_duplicate_id, $t_old_handler_id );
@@ -2432,12 +2355,12 @@ function dwg_get_status_for_assign( $p_current_handler, $p_new_handler, $p_curre
  */
 function dwg_clear_cache_all( $p_bug_id = null ) {
 	dwg_clear_cache( $p_bug_id );
-	// bug_text_clear_cache( $p_bug_id );
-	file_dwg_bug_attachment_count_clear_cache( $p_bug_id );
+	dwg_text_clear_cache( $p_bug_id );
+	file_dwg_attachment_count_clear_cache( $p_bug_id );
 	bugnote_clear_bug_cache( $p_bug_id );
-	tag_clear_cache_bug_tags( $p_bug_id );
+	tag_dwg_clear_cache_bug_tags( $p_bug_id );
 	custom_field_clear_cache_values( $p_bug_id );
-	bug_attachments_clear_cache( $p_bug_id );
+	dwg_attachments_clear_cache( $p_bug_id );
 
 	$t_plugin_objects = columns_get_plugin_columns();
 	foreach( $t_plugin_objects as $t_plugin_column ) {
@@ -2489,7 +2412,7 @@ function dwg_clear_cache_all( $p_bug_id = null ) {
 
 // 		switch( $t_column ) {
 // 			case 'attachment_count':
-// 				file_dwg_bug_attachment_count_cache( $t_bug_ids );
+// 				file_dwg_dwg_attachment_count_cache( $t_bug_ids );
 // 				break;
 // 			case 'handler_id':
 // 			case 'reporter_id':
@@ -2506,7 +2429,7 @@ function dwg_clear_cache_all( $p_bug_id = null ) {
 // 				category_cache_array_rows( $t_category_ids );
 // 				break;
 // 			case 'tags':
-// 				tag_cache_dwg_tag_rows( $t_bug_ids );
+// 				tag_dwg_cache_dwg_bug_rows( $t_bug_ids );
 // 				break;
 // 		}
 // 	}
@@ -2559,7 +2482,7 @@ function dwg_cache_columns_data( array $p_bugs, array $p_selected_columns ) {
 
 	// 	switch( $t_column ) {
 	// 		case 'attachment_count':
-	// 			file_dwg_bug_attachment_count_cache( $t_bug_ids );
+	// 			file_dwg_dwg_attachment_count_cache( $t_bug_ids );
 	// 			break;
 	// 		case 'handler_id':
 	// 		case 'reporter_id':
@@ -2576,7 +2499,7 @@ function dwg_cache_columns_data( array $p_bugs, array $p_selected_columns ) {
 	// 			category_cache_array_rows( $t_category_ids );
 	// 			break;
 	// 		case 'tags':
-	// 			tag_cache_dwg_tag_rows( $t_bug_ids );
+	// 			tag_dwg_cache_bug_tag_rows( $t_bug_ids );
 	// 			break;
 	// 	}
 	// }

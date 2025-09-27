@@ -40,18 +40,18 @@
  * @uses constant_inc.php
  * @uses graphviz_api.php
  * @uses helper_api.php
- * @uses relationship_api.php
+ * @uses dwg_relationship_api.php
  * @uses string_api.php
  * @uses utility_api.php
  */
 
-require_api( 'access_api.php' );
+require_api( 'access_dwg_api.php' );
 require_api( 'bug_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
 require_api( 'graphviz_api.php' );
 require_api( 'helper_api.php' );
-require_api( 'relationship_api.php' );
+require_api( 'dwg_relationship_api.php' );
 require_api( 'string_api.php' );
 require_api( 'utility_api.php' );
 

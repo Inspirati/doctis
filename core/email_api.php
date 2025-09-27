@@ -52,7 +52,7 @@
  * @noinspection PhpMissingReturnTypeInspection, PhpMissingParamTypeInspection
  */
 
-require_api( 'access_api.php' );
+require_api( 'access_bug_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'bug_api.php' );
 require_api( 'bugnote_api.php' );
@@ -85,6 +85,18 @@ use PHPMailer\PHPMailer\PHPMailer;
 
 use Mantis\Exceptions\ClientException;
 use VBoctor\Email\DisposableEmailChecker;
+
+/**
+ * Generates md5 used in "In-Reply-To" header for emails.
+ *
+ * @param int $p_id
+ * @param int $p_date_submitted
+ *
+ * @return string
+ */
+function email_generate_md5( $p_id, $p_date_submitted ) {
+	return md5( $p_id . $p_date_submitted );
+}
 
 /**
  * Indicates how generated emails will be processed by the shutdown function

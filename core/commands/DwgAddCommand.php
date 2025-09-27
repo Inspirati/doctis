@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with MantisBT.  If not, see <http://www.gnu.org/licenses/>.
 
-require_api( 'access_api.php' );
+require_api( 'access_dwg_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'bug_api.php' );
 require_api( 'dwg_api.php' );
@@ -32,7 +32,7 @@ require_api( 'helper_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'last_visited_api.php' );
 require_api( 'profile_api.php' );
-require_api( 'relationship_api.php' );
+require_api( 'dwg_relationship_api.php' );
 require_api( 'string_api.php' );
 require_api( 'user_api.php' );
 
@@ -175,7 +175,7 @@ class DwgAddCommand extends Command {
 		global $g_project_override;
 		$g_project_override = $t_project_id;
 
-		if( !access_has_project_level( config_get( 'report_bug_threshold' ), $t_project_id, $this->user_id ) ) {
+		if( !access_has_project_level( config_get( 'report_dwg_threshold' ), $t_project_id, $this->user_id ) ) {
 			throw new ClientException(
 				'User does not have access right to report issues',
 				ERROR_ACCESS_DENIED );
@@ -192,20 +192,20 @@ class DwgAddCommand extends Command {
 		$t_view_state_id = isset( $t_issue['view_state'] ) ?  mci_get_view_state_id( $t_issue['view_state'] ) : config_get( 'default_bug_view_status' );
 
 		# TODO: #17777: Add test case for mc_issue_add() and mc_issue_note_add() reporter override
-		if( isset( $t_issue['reporter'] ) ) {
-			$t_reporter_id = mci_get_user_id( $t_issue['reporter'] );
+		if( isset( $t_issue['creator'] ) ) {
+			$t_creator_id = mci_get_user_id( $t_issue['creator'] );
 
-			if( $t_reporter_id != $this->user_id ) {
-				# Make sure that active user has access level required to specify a different reporter.
-				$t_specify_reporter_access_level = config_get( 'webservice_specify_reporter_on_add_access_level_threshold' );
-				if( !access_has_project_level( $t_specify_reporter_access_level, $t_project_id, $this->user_id ) ) {
+			if( $t_creator_id != $this->user_id ) {
+				# Make sure that active user has access level required to specify a different creator.
+				$t_specify_creator_access_level = config_get( 'webservice_specify_creator_on_add_access_level_threshold' );
+				if( !access_has_project_level( $t_specify_creator_access_level, $t_project_id, $this->user_id ) ) {
 					throw new ClientException(
-						'Active user does not have access level required to specify a different issue reporter',
+						'Active user does not have access level required to specify a different document creator',
 						ERROR_ACCESS_DENIED );
 				}
 			}
 		} else {
-			$t_reporter_id = $this->user_id;
+			$t_creator_id = $this->user_id;
 		}
 
 		# Prevent unauthorized users setting handler when reporting issue
@@ -270,7 +270,8 @@ class DwgAddCommand extends Command {
 		$this->issue->last_updated = $t_last_updated;
 
 		$this->issue->project_id = $t_project_id;
-		$this->issue->reporter_id = $t_reporter_id;
+		$this->issue->creator_id = $t_creator_id;
+//		$this->issue->reporter_id = $t_reporter_id;
 		$this->issue->summary = $t_summary;
 		$this->issue->description = $t_description;
 		$this->issue->steps_to_reproduce = $t_issue['steps_to_reproduce'] ?? '';
@@ -401,7 +402,7 @@ class DwgAddCommand extends Command {
 			}
 
 			# @TODO should this be replaced by TagAttachCommand, as suggested in #24441 ?
-			mci_tag_set_for_issue( $t_issue_id, $t_tags, $this->user_id );
+			// mci_tag_set_for_issue( $t_issue_id, $t_tags, $this->user_id );
 		}
 
 		# Handle the file upload

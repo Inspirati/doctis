@@ -36,7 +36,7 @@ if( !defined( 'BUG_ACTIONGROUP_INC_ALLOW' ) ) {
 	return;
 }
 
-require_api( 'access_api.php' );
+require_api( 'access_bug_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'config_api.php' );
 require_api( 'gpc_api.php' );

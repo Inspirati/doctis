@@ -53,10 +53,10 @@ require_api( 'print_api.php' );
 require_api( 'string_api.php' );
 require_api( 'utility_api.php' );
 
-form_security_validate( 'bug_report' );
+form_security_validate( 'dwg_report' );
 
 $f_master_bug_id = gpc_get_int( 'm_dwg_id', 0 );
-$f_rel_type = gpc_get_int( 'rel_type', BUG_REL_NONE );
+$f_rel_type = gpc_get_int( 'rel_type', DWG_REL_NONE );
 $f_copy_notes_from_parent = gpc_get_bool( 'copy_notes_from_parent', false );
 $f_copy_attachments_from_parent = gpc_get_bool( 'copy_attachments_from_parent', false );
 $f_dwg_entry_stay = gpc_get_bool( 'dwg_entry_stay', false );
@@ -76,7 +76,7 @@ if( $f_master_bug_id > 0 ) {
 
 	if( bug_is_readonly( $f_master_bug_id ) ) {
 		error_parameters( $f_master_bug_id );
-		trigger_error( ERROR_BUG_READ_ONLY_ACTION_DENIED, ERROR );
+		trigger_error( ERROR_DWG_READ_ONLY_ACTION_DENIED, ERROR );
 	}
 	$t_master_bug = dwg_get( $f_master_bug_id, true );
 	$t_project_id = $t_master_bug->project_id;
@@ -87,8 +87,7 @@ if( $f_master_bug_id > 0 ) {
 
 $t_issue = array(
 	'project' => array( 'id' => $t_project_id ),
-	'reporter' => array( 'id' => auth_get_current_user_id() ),
-
+	'creator' => array( 'id' => auth_get_current_user_id() ),
 	// 'version'			=> gpc_get_string( 'dwg_version' ),
 	'title'				=> gpc_get_string( 'dwg_title' ),
 	'number'			=> gpc_get_string( 'dwg_number' ),
@@ -287,7 +286,7 @@ $t_command = new DwgAddCommand( $t_data );
 $t_result = $t_command->execute();
 $t_issue_id = (int)$t_result['issue_id'];
 
-form_security_purge( 'bug_report' );
+form_security_purge( 'dwg_report' );
 
 if( $f_dwg_entry_stay ) {
 	$t_fields = array(

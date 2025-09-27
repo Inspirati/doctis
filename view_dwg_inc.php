@@ -89,7 +89,6 @@ if( $t_current_project > 0 ) {
 #!$g_columns = helper_get_columns_to_view( COLUMNS_TARGET_VIEW_PAGE );
 $g_columns = helper_get_dwg_columns_to_view( COLUMNS_TARGET_DWG_PAGE );
 
-#bug_cache_columns_data( $t_rows, $g_columns );
 dwg_cache_columns_data( $t_rows, $g_columns );
 
 
@@ -261,13 +260,13 @@ if( ( $t_filter_position & FILTER_POSITION_TOP ) == FILTER_POSITION_TOP ) {
 		 */
 		if( $g_checkboxes_exist ) {
 			echo '<label class="inline">';
-			echo '<input class="ace check_all input-sm" type="checkbox" id="bug_arr_all" name="bug_arr_all" value="all" />';
+			echo '<input class="ace check_all input-sm" type="checkbox" id="dwg_arr_all" name="dwg_arr_all" value="all" />';
 			echo '<span class="lbl padding-6">' . lang_get( 'select_all' ) . ' </span > ';
 			echo '</label>';
 ?>
 			<!--suppress HtmlFormInputWithoutLabel -->
 			<select name="action" class="input-sm">
-				<?php print_all_dwg_action_option_list( $t_unique_project_ids ) ?>
+				<?php print_dwg_all_dwg_action_option_list( $t_unique_project_ids ) ?>
 			</select>
 			<input type="submit" class="btn btn-primary btn-white btn-sm btn-round" value="<?php echo lang_get('ok'); ?>"/>
 <?php

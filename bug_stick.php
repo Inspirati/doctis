@@ -33,7 +33,7 @@
  */
 
 require_once( 'core.php' );
-require_api( 'access_api.php' );
+require_api( 'access_bug_api.php' );
 require_api( 'bug_api.php' );
 require_api( 'config_api.php' );
 require_api( 'form_api.php' );

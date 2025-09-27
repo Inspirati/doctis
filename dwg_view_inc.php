@@ -45,7 +45,7 @@
  * @uses print_dwg_api.php
  * @uses project_api.php
  * @uses string_api.php
- * @uses tag_api.php
+ * @uses tag_dwg_api.php
  * @uses utility_api.php
  * @uses version_api.php
  *
@@ -64,7 +64,7 @@ if( !defined( 'DWG_VIEW_INC_ALLOW' ) ) {
 	return;
 }
 
-require_api( 'access_api.php' );
+require_api( 'access_dwg_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'bug_api.php' );
 
@@ -91,7 +91,7 @@ require_api( 'print_api.php' );
 require_api( 'print_dwg_api.php' );
 require_api( 'project_api.php' );
 require_api( 'string_api.php' );
-require_api( 'tag_api.php' );
+require_api( 'tag_dwg_api.php' );
 require_api( 'utility_api.php' );
 require_api( 'version_api.php' );
 
@@ -181,7 +181,7 @@ foreach ( $t_issue_view['links'] as $t_plugin => $t_hooks ) {
 }
 
 # Jump to Bugnotes
-print_small_button( '#bugnotes', lang_get( 'jump_to_bugnotes' ) );
+print_small_button( '#dwgnotes', lang_get( 'jump_to_dwgnotes' ) );
 
 # Display or Jump to History
 if( $t_flags['history_show'] ) {
@@ -325,19 +325,19 @@ $t_date_format = 'Y-m-d';
 }
 
 #
-# Reporter, Handler, Due Date
+# Creator, Handler, Due Date
 #
 
-if( $t_flags['reporter_show'] || $t_flags['handler_show'] || $t_flags['due_date_show'] ) {
+if( $t_flags['creator_show'] || $t_flags['handler_show'] || $t_flags['due_date_show'] ) {
 	echo '<tr>';
 
 	$t_spacer = 0;
 
-	# Reporter
-	if( $t_flags['reporter_show'] ) {
-		echo '<th class="bug-reporter category">', lang_get( 'dwg_creator' ), '</th>';
-		echo '<td class="bug-reporter">';
-		print_dwg_user_with_subject( $t_issue['reporter']['id'], $f_issue_id );
+	# Creator
+	if( $t_flags['creator_show'] ) {
+		echo '<th class="dwg-creator category">', lang_get( 'dwg_creator' ), '</th>';
+		echo '<td class="dwg-creator">';
+		print_dwg_user_with_subject( $t_issue['creator']['id'], $f_issue_id );
 		echo '</td>';
 	} else {
 		$t_spacer += 2;
@@ -595,7 +595,7 @@ if( ( $t_flags['versions_target_version_show'] && isset( $t_issue['target_versio
 # Bug Details Event Signal
 #
 
-event_signal( 'EVENT_VIEW_BUG_DETAILS', array( $f_issue_id ) );
+event_signal( 'EVENT_VIEW_DWG_DETAILS', array( $f_issue_id ) );
 
 print_table_spacer( 6 );
 
@@ -661,7 +661,7 @@ if( !empty( $t_result['issue']['attachments'] ) ) {
 
 	$t_dwg_activity_get_all_result = dwg_activity_get_all( $f_issue_id, /* include_attachments */ true );
 	$t_activities = $t_dwg_activity_get_all_result['activities'];
-	$t_security_token_attachments_delete = form_security_token( 'bug_file_delete' );
+	$t_security_token_attachments_delete = form_security_token( 'dwg_file_delete' );
 
 	foreach( $t_activities as $t_activity ) {
 		if( $t_activity['type'] !== ENTRY_TYPE_ATTACHMENT ) {
@@ -669,7 +669,7 @@ if( !empty( $t_result['issue']['attachments'] ) ) {
 		}
 
 		foreach( $t_activity['attachments'] as $t_attachment ) {
-			print_bug_attachment( $t_attachment, $t_security_token_attachments_delete );
+			print_dwg_attachment( $t_attachment, $t_security_token_attachments_delete );
 		}
 	}
 
@@ -711,8 +711,8 @@ echo '</div></div></div></div></div>';
 
 # User list sponsoring the bug
 if( $t_flags['sponsorships_show'] ) {
-	define( 'BUG_SPONSORSHIP_LIST_VIEW_INC_ALLOW', true );
-	include( $t_mantis_dir . 'bug_sponsorship_list_view_inc.php' );
+	define( 'DWG_SPONSORSHIP_LIST_VIEW_INC_ALLOW', true );
+	include( $t_mantis_dir . 'dwg_sponsorship_list_view_inc.php' );
 }
 
 # Bug Relationships
@@ -750,7 +750,7 @@ if( $t_flags['monitor_show'] ) {
 					<table class="table table-bordered table-condensed table-striped">
 	<tr>
 		<th class="category width-15">
-			<label for="bug_monitor_list_user_to_add">
+			<label for="dwg_monitor_list_user_to_add">
 				<?php echo lang_get( 'monitoring_user_list' ); ?>
 			</label>
 		</th>
@@ -803,32 +803,32 @@ if( $t_flags['monitor_show'] ) {
 }
 
 # Bugnotes and "Add Note" box
-if( 'ASC' == current_user_get_pref( 'bugnote_order' ) ) {
-	define( 'BUGNOTE_VIEW_INC_ALLOW', true );
-	include( $t_mantis_dir . 'bugnote_view_inc.php' );
+if( 'ASC' == current_user_get_pref( 'dwgnote_order' ) ) {
+	define( 'DWGNOTE_VIEW_INC_ALLOW', true );
+	include( $t_mantis_dir . 'dwgnote_view_inc.php' );
 
 	if( !$t_force_readonly ) {
-		define( 'BUGNOTE_ADD_INC_ALLOW', true );
-		include( $t_mantis_dir . 'bugnote_add_inc.php' );
+		define( 'DWGNOTE_ADD_INC_ALLOW', true );
+		include( $t_mantis_dir . 'dwgnote_add_inc.php' );
 	}
 } else {
 	if( !$t_force_readonly ) {
-		define( 'BUGNOTE_ADD_INC_ALLOW', true );
-		include( $t_mantis_dir . 'bugnote_add_inc.php' );
+		define( 'DWGNOTE_ADD_INC_ALLOW', true );
+		include( $t_mantis_dir . 'dwgnote_add_inc.php' );
 	}
 
-	define( 'BUGNOTE_VIEW_INC_ALLOW', true );
-	include( $t_mantis_dir . 'bugnote_view_inc.php' );
+	define( 'DWGNOTE_VIEW_INC_ALLOW', true );
+	include( $t_mantis_dir . 'dwgnote_view_inc.php' );
 }
 
 # Allow plugins to display stuff after notes
-event_signal( 'EVENT_VIEW_BUG_EXTRA', array( $f_issue_id ) );
+event_signal( 'EVENT_VIEW_DWG_EXTRA', array( $f_issue_id ) );
 
 # Time tracking statistics
 if( config_get( 'time_tracking_enabled' ) &&
 	access_has_dwg_level( config_get( 'time_tracking_view_threshold' ), $f_issue_id ) ) {
-	define( 'BUGNOTE_STATS_INC_ALLOW', true );
-	include( $t_mantis_dir . 'bugnote_stats_inc.php' );
+	define( 'DWGNOTE_STATS_INC_ALLOW', true );
+	include( $t_mantis_dir . 'dwgnote_stats_inc.php' );
 }
 
 # History
@@ -913,7 +913,7 @@ layout_page_end();
  * Return formatted string with all the details on the requested relationship.
  *
  * @param integer             $p_bug_id       A bug identifier.
- * @param BugRelationshipData $p_relationship A bug relationship object.
+ * @param DwgRelationshipData $p_relationship A bug relationship object.
  * @param boolean             $p_html_preview Whether to include
  *                                            style/hyperlinks - if preview is
  *                                            false, we prettify the output.
@@ -923,7 +923,7 @@ layout_page_end();
  *
  * @throws ClientException
  */
-function dwg_view_relationship_get_details( $p_bug_id, BugRelationshipData $p_relationship, $p_html_preview = false, $p_show_project = false ) {
+function dwg_view_relationship_get_details( $p_bug_id, DwgRelationshipData $p_relationship, $p_html_preview = false, $p_show_project = false ) {
 	if( $p_bug_id == $p_relationship->src_bug_id ) {
 		# root bug is in the source side, related bug in the destination side
 		$t_related_project_id = $p_relationship->dest_bug_id;
@@ -968,7 +968,7 @@ function dwg_view_relationship_get_details( $p_bug_id, BugRelationshipData $p_re
 		$t_relationship_info_html .= '<td>' . icon_get( 'fa-square', 'fa-status-box ' . $t_status_css );
 		$t_relationship_info_html .= ' <span class="issue-status" title="' . string_attribute( $t_resolution_string ) . '">' . string_display_line( $t_status_string ) . '</span></td>';
 	} else {
-		$t_relationship_info_html .= $t_td . string_display_line( bug_format_id( $t_related_bug_id ) ) . '</td>';
+		$t_relationship_info_html .= $t_td . string_display_line( dwg_format_id( $t_related_bug_id ) ) . '</td>';
 		$t_relationship_info_html .= $t_td . string_display_line( $t_status_string ) . '&#160;</td>';
 	}
 
@@ -993,11 +993,11 @@ function dwg_view_relationship_get_details( $p_bug_id, BugRelationshipData $p_re
 
 	# add delete link if bug not read only and user has access level
 	if( !dwg_is_readonly( $p_bug_id ) && !current_user_is_anonymous() && !$p_html_preview ) {
-		if( access_has_dwg_level( config_get( 'update_bug_threshold' ), $p_bug_id ) ) {
+		if( access_has_dwg_level( config_get( 'update_dwg_threshold' ), $p_bug_id ) ) {
 			$t_relationship_info_html .= ' <a class="red noprint zoom-130" '
-				. 'href="bug_relationship_delete.php?bug_id=' . $p_bug_id
+				. 'href="dwg_relationship_delete.php?bug_id=' . $p_bug_id
 				. '&amp;rel_id=' . $p_relationship->id
-				. htmlspecialchars( form_security_param( 'bug_relationship_delete' ) )
+				. htmlspecialchars( form_security_param( 'dwg_relationship_delete' ) )
 				. '">'
 				. icon_get( 'fa-trash-o', 'ace-icon bigger-115' )
 				. '</a>';
@@ -1073,7 +1073,7 @@ function dwg_view_relationship_view_box( $p_bug_id, $p_can_update ) {
 	<div class="widget-header widget-header-small">
 		<h4 class="widget-title lighter">
 			<?php print_icon( 'fa-sitemap', 'ace-icon' ); ?>
-			<?php echo lang_get( 'bug_relationships' ) ?>
+			<?php echo lang_get( 'dwg_relationships' ) ?>
 		</h4>
 		<div class="widget-toolbar">
 			<a data-action="collapse" href="#">
@@ -1091,9 +1091,9 @@ function dwg_view_relationship_view_box( $p_bug_id, $p_can_update ) {
 		$t_buttons = array();
 		if( $t_relationship_graph ) {
 			$t_buttons[lang_get( 'relation_graph' )] =
-				'bug_relationship_graph.php?bug_id=' . $p_bug_id . '&graph=relation';
+				'dwg_relationship_graph.php?bug_id=' . $p_bug_id . '&graph=relation';
 			$t_buttons[lang_get( 'dependency_graph' )] =
-				'bug_relationship_graph.php?bug_id=' . $p_bug_id . '&graph=dependency';
+				'dwg_relationship_graph.php?bug_id=' . $p_bug_id . '&graph=dependency';
 		}
 
 		# Plugin-added buttons
@@ -1121,7 +1121,7 @@ function dwg_view_relationship_view_box( $p_bug_id, $p_can_update ) {
 			<?php echo form_security_field( 'dwg_relationship_add' ) ?>
 			<input type="hidden" name="src_bug_id" value="<?php echo $p_bug_id?>" />
 			<label class="inline"><?php echo lang_get( 'this_dwg' ) ?>&#160;&#160;</label>
-			<?php print_relationship_list_box( config_get( 'default_bug_relationship' ) )?>
+			<?php print_dwg_relationship_list_box( config_get( 'default_dwg_relationship' ) )?>
 			<!--suppress HtmlFormInputWithoutLabel -->
 			<input type="text" class="input-sm" name="dest_bug_id" value="" />
 			<input type="submit" class="btn btn-primary btn-sm btn-white btn-round"
@@ -1167,9 +1167,9 @@ function dwg_view_button_dwg_change_status( DwgData $p_bug ) {
 		# Add close if user is bug's reporter, still has rights to report issues
 		# (to prevent users downgraded to viewers from updating issues) and
 		# reporters are allowed to close their own issues
-		(  dwg_is_user_reporter( $p_bug->id, auth_get_current_user_id() )
+		(  dwg_is_user_creator( $p_bug->id, auth_get_current_user_id() )
 		&& access_has_dwg_level( config_get( 'create_dwg_threshold' ), $p_bug->id )
-		&& ON == config_get( 'allow_reporter_close' )
+		&& ON == config_get( 'allow_creator_close' )
 		),
 		$p_bug->project_id );
 
@@ -1181,7 +1181,7 @@ function dwg_view_button_dwg_change_status( DwgData $p_bug ) {
 		echo '<form method="post" action="dwg_change_status_page.php" class="form-inline">';
 		# CSRF protection not required here - form does not result in modifications
 
-		$t_button_text = lang_get( 'bug_status_to_button' );
+		$t_button_text = lang_get( 'dwg_status_to_button' );
 		echo '<input type="submit" class="btn btn-primary btn-sm btn-white btn-round" value="' . $t_button_text . '" />';
 
 		echo ' <select name="new_status" class="input-sm">';
@@ -1217,7 +1217,7 @@ function dwg_view_button_dwg_assign_to( DwgData $p_bug ) {
 	$t_default_assign_to = null;
 
 	if( ( $p_bug->handler_id != $t_current_user_id )
-		&& access_has_dwg_level( config_get( 'handle_bug_threshold' ), $p_bug->id, $t_current_user_id )
+		&& access_has_dwg_level( config_get( 'handle_dwg_threshold' ), $p_bug->id, $t_current_user_id )
 	) {
 		$t_options[] = array(
 			$t_current_user_id,
@@ -1226,17 +1226,17 @@ function dwg_view_button_dwg_assign_to( DwgData $p_bug ) {
 		$t_default_assign_to = $t_current_user_id;
 	}
 
-	if( ( $p_bug->handler_id != $p_bug->reporter_id )
-		&& user_exists( $p_bug->reporter_id )
-		&& access_has_dwg_level( config_get( 'handle_bug_threshold' ), $p_bug->id, $p_bug->reporter_id )
+	if( ( $p_bug->handler_id != $p_bug->creator_id )
+		&& user_exists( $p_bug->creator_id )
+		&& access_has_dwg_level( config_get( 'handle_dwg_threshold' ), $p_bug->id, $p_bug->creator_id )
 	) {
 		$t_options[] = array(
-			$p_bug->reporter_id,
+			$p_bug->creator_id,
 			'[' . lang_get( 'reporter' ) . ']',
 		);
 
 		if( $t_default_assign_to === null ) {
-			$t_default_assign_to = $p_bug->reporter_id;
+			$t_default_assign_to = $p_bug->creator_id;
 		}
 	}
 
@@ -1245,7 +1245,7 @@ function dwg_view_button_dwg_assign_to( DwgData $p_bug ) {
 	echo '<input type="hidden" name="last_updated" value="' . $p_bug->last_updated . '" />';
 	echo '<input type="hidden" name="action_type" value="' . DWG_UPDATE_TYPE_ASSIGN . '" />';
 
-	$t_button_text = lang_get( 'bug_assign_to_button' );
+	$t_button_text = lang_get( 'dwg_assign_to_button' );
 	echo '<input type="submit" class="btn btn-primary btn-sm btn-white btn-round" value="' . $t_button_text . '" />';
 
 	echo ' <select class="input-sm" name="handler_id">';
@@ -1327,52 +1327,52 @@ function dwg_view_action_buttons( $p_bug_id, $p_flags ) {
 	# Unmonitor
 	if( $p_flags['can_unmonitor'] ) {
 		echo '<div class="pull-left padding-right-2">';
-		html_button( 'bug_monitor_delete.php', lang_get( 'unmonitor_bug_button' ), array( 'bug_id' => $p_bug_id ) );
+		html_button( 'dwg_monitor_delete.php', lang_get( 'unmonitor_dwg_button' ), array( 'bug_id' => $p_bug_id ) );
 		echo '</div>';
 	}
 
 	# Monitor
 	if( $p_flags['can_monitor'] ) {
 		echo '<div class="pull-left padding-right-2">';
-		html_button( 'bug_monitor_add.php', lang_get( 'monitor_bug_button' ), array( 'bug_id' => $p_bug_id ) );
+		html_button( 'dwg_monitor_add.php', lang_get( 'monitor_dwg_button' ), array( 'bug_id' => $p_bug_id ) );
 		echo '</div>';
 	}
 
 	# Stick
 	if( $p_flags['can_sticky'] ) {
 		echo '<div class="pull-left padding-right-2">';
-		html_button( 'bug_stick.php', lang_get( 'stick_bug_button' ), array( 'bug_id' => $p_bug_id, 'action' => 'stick' ) );
+		html_button( 'dwg_stick.php', lang_get( 'stick_dwg_button' ), array( 'bug_id' => $p_bug_id, 'action' => 'stick' ) );
 		echo '</div>';
 	}
 
 	# Unstick
 	if( $p_flags['can_unsticky'] ) {
 		echo '<div class="pull-left padding-right-2">';
-		html_button( 'bug_stick.php', lang_get( 'unstick_bug_button' ), array( 'bug_id' => $p_bug_id, 'action' => 'unstick' ) );
+		html_button( 'dwg_stick.php', lang_get( 'unstick_dwg_button' ), array( 'bug_id' => $p_bug_id, 'action' => 'unstick' ) );
 		echo '</div>';
 	}
 
 	# CLONE button
 	if( $p_flags['can_clone'] ) {
 		echo '<div class="pull-left padding-right-2">';
-		html_button( string_get_dwg_create_url(), lang_get( 'create_child_bug_button' ), array( 'm_dwg_id' => $p_bug_id ) );
+		html_button( string_get_dwg_create_url(), lang_get( 'create_child_dwg_button' ), array( 'm_dwg_id' => $p_bug_id ) );
 		echo '</div>';
 	}
 
 	# REOPEN button
 	if( $p_flags['can_reopen'] ) {
 		echo '<div class="pull-left padding-right-2">';
-		$t_reopen_status = config_get( 'bug_reopen_status', null, null, $t_dwg->project_id );
+		$t_reopen_status = config_get( 'dwg_reopen_status', null, null, $t_dwg->project_id );
 		html_button(
 			'dwg_change_status_page.php',
-			lang_get( 'reopen_bug_button' ),
+			lang_get( 'reopen_dwg_button' ),
 			array( 'id' => $t_dwg->id, 'new_status' => $t_reopen_status, 'change_type' => DWG_UPDATE_TYPE_REOPEN ) );
 		echo '</div>';
 	}
 
 	# CLOSE button
 	if( $p_flags['can_close'] ) {
-		$t_closed_status = config_get( 'bug_closed_status_threshold', null, null, $t_dwg->project_id );
+		$t_closed_status = config_get( 'dwg_closed_status_threshold', null, null, $t_dwg->project_id );
 		echo '<div class="pull-left padding-right-2">';
 		html_button(
 			'dwg_change_status_page.php',
@@ -1384,14 +1384,14 @@ function dwg_view_action_buttons( $p_bug_id, $p_flags ) {
 	# MOVE button
 	if( $p_flags['can_move'] ) {
 		echo '<div class="pull-left padding-right-2">';
-		html_button( 'bug_actiongroup_page.php', lang_get( 'move' ), array( 'bug_arr[]' => $p_bug_id, 'action' => 'MOVE' ) );
+		html_button( 'dwg_actiongroup_page.php', lang_get( 'move' ), array( 'dwg_arr[]' => $p_bug_id, 'action' => 'MOVE' ) );
 		echo '</div>';
 	}
 
 	# DELETE button
 	if( $p_flags['can_delete'] ) {
 		echo '<div class="pull-left padding-right-2">';
-		html_button( 'bug_actiongroup_page.php', lang_get( 'delete' ), array( 'bug_arr[]' => $p_bug_id, 'action' => 'DELETE' ) );
+		html_button( 'dwg_actiongroup_page.php', lang_get( 'delete' ), array( 'dwg_arr[]' => $p_bug_id, 'action' => 'DELETE' ) );
 		echo '</div>';
 	}
 

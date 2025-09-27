@@ -23,7 +23,7 @@
  * @copyright Copyright 2002  MantisBT Team - mantisbt-dev@lists.sourceforge.net
  * @link http://www.mantisbt.org
  *
- * @uses bug_api.php
+ * @uses dwg_api.php
  * @uses config_api.php
  * @uses constant_inc.php
  * @uses helper_api.php
@@ -32,7 +32,7 @@
  * @uses string_api.php
  */
 
-require_api( 'bug_api.php' );
+// require_api( 'bug_api.php' );
 require_api( 'dwg_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
@@ -144,14 +144,14 @@ function dwg_group_action_print_results( array $p_failed_ids ) {
  */
 function dwg_group_action_print_hidden_fields( array $p_bug_ids_array ) {
 	foreach( $p_bug_ids_array as $t_bug_id ) {
-		echo '<input type="hidden" name="bug_arr[]" value="' . $t_bug_id . '" />' . "\n";
+		echo '<input type="hidden" name="dwg_arr[]" value="' . $t_bug_id . '" />' . "\n";
 	}
 }
 
 /**
  * Prints the list of fields in the custom action form.  These are the user inputs
  * and the submit button.  This ends up calling action_<action>_print_fields()
- * from bug_actiongroup_<action>_inc.php
+ * from dwg_actiongroup_<action>_inc.php
  *
  * @param string $p_action The custom action name without the "EXT_" prefix.
  * @return void
@@ -163,7 +163,7 @@ function dwg_group_action_print_action_fields( $p_action ) {
 
 /**
  * Prints some title text for the custom action page.  This ends up calling
- * action_<action>_print_title() from bug_actiongroup_<action>_inc.php
+ * action_<action>_print_title() from dwg_actiongroup_<action>_inc.php
  *
  * @param string $p_action The custom action name without the "EXT_" prefix.
  * @return void
@@ -175,7 +175,7 @@ function dwg_group_action_print_title( $p_action ) {
 
 /**
  * Validates the combination of an action and a bug.  This ends up calling
- * action_<action>_validate() from bug_actiongroup_<action>_inc.php
+ * action_<action>_validate() from dwg_actiongroup_<action>_inc.php
  *
  * @param string  $p_action The custom action name without the "EXT_" prefix.
  * @param integer $p_bug_id The id of the bug to validate the action on.
@@ -189,7 +189,7 @@ function dwg_group_action_validate( $p_action, $p_bug_id ) {
 
 /**
  * Executes an action on a bug.  This ends up calling
- * action_<action>_process() from bug_actiongroup_<action>_inc.php
+ * action_<action>_process() from dwg_actiongroup_<action>_inc.php
  *
  * @param string  $p_action The custom action name without the "EXT_" prefix.
  * @param integer $p_bug_id The id of the bug to validate the action on.
@@ -219,43 +219,43 @@ function dwg_group_action_get_commands( array $p_project_ids = [] ) {
 	version_cache_array_rows( $p_project_ids );
 	foreach( $p_project_ids as $t_project_id ) {
 
-		$t_update_bug_allowed = access_has_project_level( config_get( 'update_bug_threshold', null, $t_user_id, $t_project_id ), $t_project_id );
-		$t_update_bug_status_allowed = access_has_project_level( config_get( 'update_bug_status_threshold', null, $t_user_id, $t_project_id ), $t_project_id );
+		$t_update_bug_allowed = access_has_project_level( config_get( 'update_dwg_threshold', null, $t_user_id, $t_project_id ), $t_project_id );
+		$t_update_bug_status_allowed = access_has_project_level( config_get( 'update_dwg_status_threshold', null, $t_user_id, $t_project_id ), $t_project_id );
 
 		if( !isset( $t_commands['MOVE'] ) &&
 			user_has_more_than_one_project( $t_user_id ) &&
-			access_has_project_level( config_get( 'move_bug_threshold', null, $t_user_id, $t_project_id ), $t_project_id ) ) {
+			access_has_project_level( config_get( 'move_dwg_threshold', null, $t_user_id, $t_project_id ), $t_project_id ) ) {
 			$t_commands['MOVE'] = lang_get( 'move' );
 		}
 
 		if( !isset( $t_commands['COPY'] ) &&
-			access_has_any_project_level( 'report_bug_threshold' ) ) {
+			access_has_any_project_level( 'report_dwg_threshold' ) ) {
 			$t_commands['COPY'] = lang_get( 'actiongroup_menu_copy' );
 		}
 
 		if( !isset( $t_commands['ASSIGN'] ) &&
-			access_has_project_level( config_get( 'update_bug_assign_threshold', null, $t_user_id, $t_project_id ), $t_project_id ) ) {
+			access_has_project_level( config_get( 'update_dwg_assign_threshold', null, $t_user_id, $t_project_id ), $t_project_id ) ) {
 			$t_commands['ASSIGN'] = lang_get( 'actiongroup_menu_assign' );
 		}
 
 		if( !isset( $t_commands['CLOSE'] ) && $t_update_bug_status_allowed &&
-			( access_has_project_level( access_get_dwg_status_threshold( config_get( 'bug_closed_status_threshold', null, $t_user_id, $t_project_id ), $t_project_id ), $t_project_id ) ||
-				access_has_project_level( config_get( 'allow_reporter_close', null, $t_user_id, $t_project_id ), $t_project_id ) ) ) {
+			( access_has_project_level( access_get_dwg_status_threshold( config_get( 'dwg_closed_status_threshold', null, $t_user_id, $t_project_id ), $t_project_id ), $t_project_id ) ||
+				access_has_project_level( config_get( 'allow_creator_close', null, $t_user_id, $t_project_id ), $t_project_id ) ) ) {
 			$t_commands['CLOSE'] = lang_get( 'close' );
 		}
 
 		if( !isset( $t_commands['DELETE'] ) &&
-			access_has_project_level( config_get( 'delete_bug_threshold', null, $t_user_id, $t_project_id ), $t_project_id ) ) {
+			access_has_project_level( config_get( 'delete_dwg_threshold', null, $t_user_id, $t_project_id ), $t_project_id ) ) {
 			$t_commands['DELETE'] = lang_get( 'delete' );
 		}
 
 		if( !isset( $t_commands['RESOLVE'] ) && $t_update_bug_status_allowed &&
-			access_has_project_level( access_get_dwg_status_threshold( config_get( 'bug_resolved_status_threshold', null, $t_user_id, $t_project_id ), $t_project_id ), $t_project_id ) ) {
+			access_has_project_level( access_get_dwg_status_threshold( config_get( 'dwg_resolved_status_threshold', null, $t_user_id, $t_project_id ), $t_project_id ), $t_project_id ) ) {
 			$t_commands['RESOLVE'] = lang_get( 'actiongroup_menu_resolve' );
 		}
 
 		if( !isset( $t_commands['SET_STICKY'] ) &&
-			access_has_project_level( config_get( 'set_bug_sticky_threshold', null, $t_user_id, $t_project_id ), $t_project_id ) ) {
+			access_has_project_level( config_get( 'set_dwg_sticky_threshold', null, $t_user_id, $t_project_id ), $t_project_id ) ) {
 			$t_commands['SET_STICKY'] = lang_get( 'actiongroup_menu_set_sticky' );
 		}
 

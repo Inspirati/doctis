@@ -39,7 +39,7 @@
  * @noinspection PhpComposerExtensionStubsInspection FileInfo is optional
  */
 
-require_api( 'access_api.php' );
+require_api( 'access_bug_api.php' );
 require_api( 'antispam_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'bug_api.php' );
@@ -743,6 +743,9 @@ function file_delete( $p_file_id, $p_table = 'bug', $p_bugnote_id = 0 ) {
 	if( $p_table == 'bug' ) {
 		$t_bug_id = file_get_field( $p_file_id, 'bug_id', $p_table );
 		$t_project_id = bug_get_field( $t_bug_id, 'project_id' );
+	} else if( $p_table == 'dwg' ) {
+		$t_bug_id = file_get_field( $p_file_id, 'bug_id', $p_table );
+		$t_project_id = dwg_get_field( $t_bug_id, 'project_id' );
 	} else {
 		$t_project_id = file_get_field( $p_file_id, 'project_id', $p_table );
 	}
@@ -755,6 +758,10 @@ function file_delete( $p_file_id, $p_table = 'bug', $p_bugnote_id = 0 ) {
 	}
 
 	if( 'bug' == $p_table ) {
+		# log file deletion
+		history_log_event_special( $t_bug_id, FILE_DELETED, file_get_display_name( $t_filename ), $p_bugnote_id );
+	}
+	if( 'dwg' == $p_table ) {
 		# log file deletion
 		history_log_event_special( $t_bug_id, FILE_DELETED, file_get_display_name( $t_filename ), $p_bugnote_id );
 	}
@@ -850,6 +857,7 @@ function file_generate_unique_name( $p_filepath ) {
  *
  * @return bool true if unique
  */
+# @TODO RobD - needs to be parametised for the {?_file} table like the other functions here
 function diskfile_is_name_unique( $p_name, $p_filepath ) {
 	$c_name = $p_filepath . $p_name;
 
@@ -1312,6 +1320,9 @@ function file_get_content( $p_file_id, $p_type = 'bug' ) {
 	switch( $p_type ) {
 		case 'bug':
 			$t_query = 'SELECT * FROM {bug_file} WHERE id=' . db_param();
+			break;
+		case 'dwg':
+			$t_query = 'SELECT * FROM {dwg_file} WHERE id=' . db_param();
 			break;
 		case 'doc':
 			$t_query = 'SELECT * FROM {project_file} WHERE id=' . db_param();

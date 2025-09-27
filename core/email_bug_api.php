@@ -794,7 +794,7 @@ function email_bugnote_add( $p_bugnote_id, $p_files = array(), $p_exclude_user_i
 		$t_contents = $t_message . "\n";
 
 		$t_mail_headers = [
-			'In-Reply-To' => email_generate_bug_md5( $t_bugnote->bug_id, $t_date_submitted )
+			'In-Reply-To' => email_generate_md5( $t_bugnote->bug_id, $t_date_submitted )
 		];
 
 		email_store( $t_user_email, $t_subject, $t_contents, $t_mail_headers );
@@ -1116,7 +1116,7 @@ function email_bug_info_to_one_user( array $p_visible_bug_data, string $p_messag
 
 	# build headers
 	$t_bug_id = $p_visible_bug_data['email_bug'];
-	$t_message_md5 = email_generate_bug_md5( $t_bug_id, $p_visible_bug_data['email_date_submitted'] );
+	$t_message_md5 = email_generate_md5( $t_bug_id, $p_visible_bug_data['email_date_submitted'] );
 	$t_mail_headers = array(
 		'keywords' => $p_visible_bug_data['set_category'],
 	);
@@ -1492,12 +1492,12 @@ function email_build_visible_bug_data( $p_user_id, $p_bug_id, $p_message_id ) {
  * Return formatted string with all the details on the requested relationship.
  *
  * @param int                 $p_bug_id       A bug identifier.
- * @param BugRelationshipData $p_relationship A bug relationship object.
+ * @param DwgRelationshipData $p_relationship A bug relationship object.
  *
  * @return string
  * @throws ClientException
  */
-function email_relationship_get_details( $p_bug_id, BugRelationshipData $p_relationship ) {
+function email_relationship_get_details( $p_bug_id, DwgRelationshipData $p_relationship ) {
 	$t_summary_wrap_at = mb_strlen( config_get( 'email_separator2' ) ) - 28;
 
 	if( $p_bug_id == $p_relationship->src_bug_id ) {

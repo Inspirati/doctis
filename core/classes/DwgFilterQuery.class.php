@@ -21,7 +21,7 @@
  * @package MantisBT
  * @subpackage classes
  *
- * @uses access_api.php
+ * @uses access_dwg_api.php
  * @uses authentication_api.php
  * @uses config_api.php
  * @uses constant_inc.php
@@ -34,12 +34,12 @@
  * @uses helper_api.php
  * @uses logging_api.php
  * @uses project_api.php
- * @uses tag_api.php
+ * @uses tag_dwg_api.php
  * @uses user_api.php
  * @uses utility_api.php
  */
 
-require_api( 'access_api.php' );
+require_api( 'access_dwg_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
@@ -52,7 +52,7 @@ require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'logging_api.php' );
 require_api( 'project_api.php' );
-require_api( 'tag_api.php' );
+require_api( 'tag_dwg_api.php' );
 require_api( 'user_api.php' );
 require_api( 'utility_api.php' );
 
@@ -431,6 +431,9 @@ class DwgFilterQuery extends DbQuery {
 		// foreach( $this->filter as $t_prop => $t_value ) {
 		// 	# These are the main entries for filter properties
 		// 	switch( $t_prop ) {
+		// 		case FILTER_PROPERTY_CREATOR_ID:
+		// 			$this->build_prop_creator();
+		// 			break;
 		// 		case FILTER_PROPERTY_REPORTER_ID:
 		// 			$this->build_prop_reporter();
 		// 			break;
@@ -605,7 +608,7 @@ class DwgFilterQuery extends DbQuery {
 				$t_access_required_to_view_private_bugs = config_get( 'private_dwg_threshold', null, null, $t_pid );
 				$t_can_see_private = access_has_project_level( $t_access_required_to_view_private_bugs, $t_pid, $t_user_id );
 
-				if( access_has_limited_view( $t_pid, $t_user_id ) ) {
+				if( access_has_limited_view_dwg( $t_pid, $t_user_id ) ) {
 					if( $t_old_limit_reporters ) {
 						# we have a reduced access (show only own reported issues)
 						$t_old_limit_public_and_private_project_ids[] = $t_pid;
@@ -847,6 +850,15 @@ class DwgFilterQuery extends DbQuery {
 	// 	$t_user_ids = $this->helper_process_users_property( $this->filter[FILTER_PROPERTY_REPORTER_ID] );
 	// 	$t_users_query = $this->sql_in( '{document}.reporter_id', $t_user_ids );
 	// 	log_event( LOG_FILTERING, 'reporter query = ' . $t_users_query );
+	// 	$this->add_where( $t_users_query );
+	// }
+	// protected function build_prop_creator() {
+	// 	if( filter_field_is_any( $this->filter[FILTER_PROPERTY_CREATOR_ID] ) ) {
+	// 		return;
+	// 	}
+	// 	$t_user_ids = $this->helper_process_users_property( $this->filter[FILTER_PROPERTY_CREATOR_ID] );
+	// 	$t_users_query = $this->sql_in( '{document}.creator_id', $t_user_ids );
+	// 	log_event( LOG_FILTERING, 'creator query = ' . $t_users_query );
 	// 	$this->add_where( $t_users_query );
 	// }
 

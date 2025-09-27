@@ -38,7 +38,7 @@
  */
 
 require_once( 'core.php' );
-require_api( 'access_api.php' );
+require_api( 'access_dwg_api.php' );
 require_api( 'bug_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
@@ -140,7 +140,7 @@ layout_page_begin();
 					}
 				}
 				$t_selected_user_id = 0;
-				print_user_option_list( $t_selected_user_id, $t_project_id, $t_access_level );
+				print_dwg_user_option_list( $t_selected_user_id, $t_project_id, $t_access_level );
 				?>
 			</select>
 		</td>

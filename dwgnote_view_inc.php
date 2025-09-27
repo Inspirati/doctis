@@ -49,11 +49,14 @@ if( !defined( 'BUGNOTE_VIEW_INC_ALLOW' ) ) {
 	return;
 }
 
-require_api( 'access_api.php' );
+require_api( 'access_dwg_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'bug_activity_api.php' );
+require_api( 'dwg_activity_api.php' );
 require_api( 'bug_api.php' );
+require_api( 'dwg_api.php' );
 require_api( 'bug_revision_api.php' );
+require_api( 'dwg_revision_api.php' );
 require_api( 'bugnote_api.php' );
 require_api( 'collapse_api.php' );
 require_api( 'config_api.php' );
@@ -72,17 +75,17 @@ require_api( 'user_api.php' );
 access_cache_matrix_project( helper_get_current_project() );
 
 $t_show_time_tracking = config_get( 'time_tracking_enabled' )
-	&& access_has_bug_level( config_get( 'time_tracking_view_threshold' ), $f_bug_id );
+	&& access_has_dwg_level( config_get( 'time_tracking_view_threshold' ), $f_bug_id );
 
 # get attachments data
-$t_fields = config_get( 'bug_view_page_fields' );
+$t_fields = config_get( 'dwg_view_page_fields' );
 $t_fields = columns_filter_disabled( $t_fields );
 
 $t_show_attachments = in_array( 'attachments', $t_fields );
 
-# If included from bug_view_inc.php, then this may already be set.
+# If included from _bug_view_inc.php, then this may already be set.
 if( !isset( $t_bug_activity_get_all_result ) ) {
-	$t_bug_activity_get_all_result = bug_activity_get_all( $f_bug_id, /* include_attachments */ $t_show_attachments );
+	$t_bug_activity_get_all_result = dwg_activity_get_all( $f_bug_id, /* include_attachments */ $t_show_attachments );
 }
 
 $t_activities = $t_bug_activity_get_all_result['activities'];
@@ -138,7 +141,7 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 </tr>
 <?php }
 
-	event_signal( 'EVENT_VIEW_BUGNOTES_START', array( $f_bug_id, $t_bugnotes ) );
+	event_signal( 'EVENT_VIEW_DWGNOTES_START', array( $f_bug_id, $t_bugnotes ) );
 
 	$t_normal_date_format = config_get( 'normal_date_format' );
 	$t_total_time = 0;
@@ -188,7 +191,7 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 			<?php if( $t_activity['type'] == ENTRY_TYPE_NOTE ) { ?>
 			<?php print_icon( 'fa-link', 'grey' ); ?>
 			<a rel="bookmark" href="<?php echo string_get_bugnote_view_url( $t_activity['note']->bug_id, $t_activity['note']->id) ?>" class="lighter" title="<?php echo lang_get( 'bugnote_link_title' ) ?>">
-				<?php echo htmlentities( config_get_global( 'bugnote_link_tag' ) ) . $t_activity['id_formatted'] ?>
+				<?php echo htmlentities( config_get_global( 'dwgnote_link_tag' ) ) . $t_activity['id_formatted'] ?>
 			</a>
 			<?php } ?>
 		</p>
@@ -207,7 +210,7 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 ?>
 		<p class="no-margin">
 			<span class="small bugnote-revisions-link">
-				<a href="bug_revision_view_page.php?bugnote_id=<?php echo $t_activity['id'] ?>">
+				<a href="dwg_revision_view_page.php?bugnote_id=<?php echo $t_activity['id'] ?>">
 					<?php echo $t_view_num_revisions_text ?>
 				</a>
 			</span>
@@ -248,11 +251,11 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 						$t_security_token_notes_delete );
 				} else {
 					if ( !isset( $t_security_token_attachments_delete ) ) {
-						$t_security_token_attachments_delete = form_security_token( 'bug_file_delete' );
+						$t_security_token_attachments_delete = form_security_token( 'dwg_file_delete' );
 					}
 
 					if( $t_activity['can_delete'] ) {
-						print_link_button( 'bug_file_delete.php?file_id=' . $t_activity['id'] . form_security_param( 'bug_file_delete', $t_security_token_attachments_delete ),
+						print_link_button( 'dwg_file_delete.php?file_id=' . $t_activity['id'] . form_security_param( 'dwg_file_delete', $t_security_token_attachments_delete ),
 							lang_get( 'delete' ), 'btn-xs' );
 					}
 				}
@@ -335,24 +338,24 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 		}
 
 		if ( !isset( $t_security_token_attachments_delete ) ) {
-			$t_security_token_attachments_delete = form_security_token( 'bug_file_delete' );
+			$t_security_token_attachments_delete = form_security_token( 'dwg_file_delete' );
 		}
 	
 		foreach( $t_activity['attachments'] as $t_attachment ) {
-			print_bug_attachment( $t_attachment, $t_security_token_attachments_delete );
+			print_dwg_attachment( $t_attachment, $t_security_token_attachments_delete );
 		}
 	?>
 	</td>
 </tr>
 <?php
 		if( $t_activity['type'] == ENTRY_TYPE_NOTE ) {
-			event_signal( 'EVENT_VIEW_BUGNOTE', array( $f_bug_id, $t_activity['id'], $t_activity['private'] ) );
+			event_signal( 'EVENT_VIEW_DWGNOTE', array( $f_bug_id, $t_activity['id'], $t_activity['private'] ) );
 		}
 
 		print_table_spacer( 2 );
 	} # end for loop
 
-	event_signal( 'EVENT_VIEW_BUGNOTES_END', $f_bug_id );
+	event_signal( 'EVENT_VIEW_DWGNOTES_END', $f_bug_id );
 ?>
 </table>
 </div>

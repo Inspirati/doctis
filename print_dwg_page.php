@@ -80,7 +80,7 @@ $t_columns = helper_get_columns_to_view( COLUMNS_TARGET_PRINT_PAGE );
 $t_num_of_columns = count( $t_columns );
 
 # Get the filter in use
-$t_filter = current_user_get_bug_filter();
+$t_filter = current_user_get_dwg_filter();
 #!filter_init( $t_filter );
 filter_dwg_init( $t_filter );
 
@@ -99,7 +99,7 @@ $t_result = filter_get_bug_rows( $f_page_number, $t_per_page, $t_page_count, $t_
 $t_row_count = count( $t_result );
 
 # pre-cache column data
-bug_cache_columns_data( $t_result, $t_columns );
+dwg_cache_columns_data( $t_result, $t_columns );
 
 # for export
 $t_show_flag = gpc_get_int( 'show_flag', 0 );

@@ -54,7 +54,7 @@
  * @uses version_api.php
  */
 
-require_api( 'access_api.php' );
+require_api( 'access_bug_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'bug_group_action_api.php' );
 require_api( 'category_api.php' );
@@ -1237,13 +1237,6 @@ function print_all_bug_action_option_list( array $p_project_ids = [] ) {
 	foreach ( $t_commands as $t_action_id => $t_action_label) {
 		echo '<option value="' . $t_action_id . '">' . $t_action_label . '</option>';
 	}
-}
-
-function print_all_dwg_action_option_list( array $p_project_ids = [] ) {
-	// $t_commands = bug_group_action_get_commands( $p_project_ids );
-	// foreach ( $t_commands as $t_action_id => $t_action_label) {
-	// 	echo '<option value="' . $t_action_id . '">' . $t_action_label . '</option>';
-	// }
 }
 
 /**

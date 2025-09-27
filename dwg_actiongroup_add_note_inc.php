@@ -44,7 +44,7 @@ if( !defined( 'DWG_ACTIONGROUP_INC_ALLOW' ) ) {
 global $t_event_params;
 $t_event_params['has_bugnote'] = true;
 
-require_api( 'access_api.php' );
+require_api( 'access_dwg_api.php' );
 require_api( 'bug_api.php' );
 require_api( 'dwg_api.php' );
 require_api( 'config_api.php' );

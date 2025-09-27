@@ -35,7 +35,7 @@
  * @uses lang_api.php
  * @uses logging_api.php
  * @uses print_api.php
- * @uses relationship_api.php
+ * @uses dwg_relationship_api.php
  * @uses string_api.php
  * @uses user_api.php
  *
@@ -45,7 +45,7 @@
 use Mantis\Exceptions\ClientException;
 use Mantis\Exceptions\StateException;
 
-require_api( 'access_api.php' );
+require_api( 'access_dwg_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
@@ -58,7 +58,7 @@ require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'logging_api.php' );
 require_api( 'print_api.php' );
-require_api( 'relationship_api.php' );
+require_api( 'dwg_relationship_api.php' );
 require_api( 'string_api.php' );
 require_api( 'user_api.php' );
 
@@ -191,6 +191,45 @@ function print_filter_dwg_values_reporter_id( array $p_filter ) {
 		}
 	}
 }
+function print_filter_dwg_values_creator_id( array $p_filter ) {
+	$t_filter = $p_filter;
+	$t_output = '';
+	$t_any_found = false;
+	if( count( $t_filter[FILTER_PROPERTY_CREATOR_ID] ) == 0 ) {
+		echo lang_get( 'any' );
+	} else {
+		$t_first_flag = true;
+		foreach( $t_filter[FILTER_PROPERTY_CREATOR_ID] as $t_current ) {
+			$t_this_name = '';
+			echo '<input type="hidden" name="', FILTER_PROPERTY_CREATOR_ID, '[]" value="', string_attribute( $t_current ), '" />';
+			if( filter_field_is_any( $t_current ) ) {
+				$t_any_found = true;
+			} else if( filter_field_is_myself( $t_current ) ) {
+				if( access_has_project_level( config_get( 'create_dwg_threshold' ) ) ) {
+					$t_this_name = '[' . lang_get( 'myself' ) . ']';
+				} else {
+					$t_any_found = true;
+				}
+			} else if( filter_field_is_none( $t_current ) ) {
+				$t_this_name = lang_get( 'none' );
+			} else {
+				$t_this_name = user_get_name( $t_current );
+			}
+			if( !$t_first_flag ) {
+				$t_output .= '<br />';
+			} else {
+				$t_first_flag = false;
+			}
+			$t_output .= string_display_line( $t_this_name );
+		}
+		if( $t_any_found ) {
+			echo lang_get( 'any' );
+		} else {
+			echo $t_output;
+		}
+	}
+}
+
 
 /**
  * Print the reporter field.
@@ -209,7 +248,7 @@ function print_filter_dwg_reporter_id( ?array $p_filter = null ) {
 		<select class="input-xs" <?php echo filter_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_REPORTER_ID;?>[]">
 		<?php
 	# if current user is a reporter, and limited_reporters is set to ON, only display that name
-	if( access_has_limited_view() ) {
+	if( access_has_limited_view_dwg() ) {
 		$t_id = auth_get_current_user_id();
 		$t_username = user_get_name( $t_id );
 		$t_display_name = string_attribute( $t_username );
@@ -223,7 +262,7 @@ function print_filter_dwg_reporter_id( ?array $p_filter = null ) {
 				check_selected( $p_filter[FILTER_PROPERTY_REPORTER_ID], META_FILTER_MYSELF );
 				echo '>[' . lang_get( 'myself' ) . ']</option>';
 			}
-		print_reporter_option_list( $p_filter[FILTER_PROPERTY_REPORTER_ID] );
+		print_dwg_creator_option_list( $p_filter[FILTER_PROPERTY_REPORTER_ID] );
 	}?>
 		</select>
 		<?php
@@ -253,7 +292,7 @@ function print_filter_dwg_values_user_monitor( array $p_filter ) {
 			} else if( filter_field_is_none( $t_current ) ) {
 				$t_none_found = true;
 			} else if( filter_field_is_myself( $t_current ) ) {
-				if( access_has_project_level( config_get( 'monitor_bug_threshold' ) ) ) {
+				if( access_has_project_level( config_get( 'monitor_dwg_threshold' ) ) ) {
 					$t_this_name = '[' . lang_get( 'myself' ) . ']';
 				} else {
 					$t_any_found = true;
@@ -297,7 +336,7 @@ function print_filter_dwg_user_monitor( ?array $p_filter = null ) {
 			<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_MONITOR_USER_ID], META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
 			<option value="<?php echo META_FILTER_NONE?>"<?php check_selected( $p_filter[FILTER_PROPERTY_MONITOR_USER_ID], META_FILTER_NONE );?>>[<?php echo lang_get( 'none' )?>]</option>
 			<?php
-				if( access_has_project_level( config_get( 'monitor_bug_threshold' ) ) ) {
+				if( access_has_project_level( config_get( 'monitor_dwg_threshold' ) ) ) {
 		echo '<option value="' . META_FILTER_MYSELF . '" ';
 		check_selected( $p_filter[FILTER_PROPERTY_MONITOR_USER_ID], META_FILTER_MYSELF );
 		echo '>[' . lang_get( 'myself' ) . ']</option>';
@@ -305,7 +344,7 @@ function print_filter_dwg_user_monitor( ?array $p_filter = null ) {
 	$t_threshold = config_get( 'show_monitor_list_threshold' );
 
 	if( access_has_project_level( $t_threshold ) ) {
-		print_user_option_list( $p_filter[FILTER_PROPERTY_MONITOR_USER_ID], null, config_get( 'monitor_bug_threshold' ) );
+		print_dwg_user_option_list( $p_filter[FILTER_PROPERTY_MONITOR_USER_ID], null, config_get( 'monitor_dwg_threshold' ) );
 	}
 	?>
 		</select>
@@ -335,7 +374,7 @@ function print_filter_dwg_values_handler_id( array $p_filter ) {
 			} else if( filter_field_is_any( $t_current ) ) {
 				$t_any_found = true;
 			} else if( filter_field_is_myself( $t_current ) ) {
-				if( access_has_project_level( config_get( 'handle_bug_threshold' ) ) ) {
+				if( access_has_project_level( config_get( 'handle_dwg_threshold' ) ) ) {
 					$t_this_name = '[' . lang_get( 'myself' ) . ']';
 				} else {
 					$t_any_found = true;
@@ -378,7 +417,7 @@ function print_filter_dwg_handler_id( ?array $p_filter = null ) {
 			<?php if( access_has_project_level( config_get( 'view_handler_threshold' ) ) ) {?>
 			<option value="<?php echo META_FILTER_NONE?>"<?php check_selected( $p_filter[FILTER_PROPERTY_HANDLER_ID], META_FILTER_NONE );?>>[<?php echo lang_get( 'none' )?>]</option>
 			<?php
-				if( access_has_project_level( config_get( 'handle_bug_threshold' ) ) ) {
+				if( access_has_project_level( config_get( 'handle_dwg_threshold' ) ) ) {
 			echo '<option value="' . META_FILTER_MYSELF . '" ';
 			check_selected( $p_filter[FILTER_PROPERTY_HANDLER_ID], META_FILTER_MYSELF );
 			echo '>[' . lang_get( 'myself' ) . ']</option>';
@@ -1657,7 +1696,7 @@ function print_filter_dwg_values_relationship_type( array $p_filter ) {
 	echo '<input type="hidden" name="', FILTER_PROPERTY_RELATIONSHIP_BUG, '" value="', string_attribute( $t_filter[FILTER_PROPERTY_RELATIONSHIP_BUG] ), '" />';
 	$c_rel_type = $t_filter[FILTER_PROPERTY_RELATIONSHIP_TYPE];
 	$c_rel_bug = $t_filter[FILTER_PROPERTY_RELATIONSHIP_BUG];
-	if( BUG_REL_ANY == $c_rel_type ) {
+	if( DWG_REL_ANY == $c_rel_type ) {
 		switch ( $c_rel_bug ) {
 			case META_FILTER_NONE:
 				echo lang_get( 'none' );
@@ -1668,7 +1707,7 @@ function print_filter_dwg_values_relationship_type( array $p_filter ) {
 			default;
 				echo lang_get( 'any' ),' ' , lang_get( 'with' ), ' ', $c_rel_bug;
 		}
-	} elseif( BUG_REL_NONE == $c_rel_type ) {
+	} elseif( DWG_REL_NONE == $c_rel_type ) {
 		echo lang_get( 'none' );
 		switch ( $c_rel_bug ) {
 			case META_FILTER_NONE:
@@ -1706,7 +1745,7 @@ function print_filter_dwg_relationship_type( ?array $p_filter = null ) {
 		$p_filter = $g_dwg_filter;
 	}
 	$c_reltype_value = $p_filter[FILTER_PROPERTY_RELATIONSHIP_TYPE];
-	print_relationship_list_box( $c_reltype_value, 'relationship_type', true, true, "input-xs" );
+	print_dwg_relationship_list_box( $c_reltype_value, 'relationship_type', true, true, "input-xs" );
 	echo '<input class="input-xs" type="text" name="', FILTER_PROPERTY_RELATIONSHIP_BUG, '" size="5" maxlength="10" value="', $p_filter[FILTER_PROPERTY_RELATIONSHIP_BUG], '" />';
 }
 
@@ -1781,7 +1820,7 @@ function print_filter_dwg_values_note_user_id( array $p_filter ) {
 			} else if( filter_field_is_any( $t_current ) ) {
 				$t_any_found = true;
 			} else if( filter_field_is_myself( $t_current ) ) {
-				if( access_has_project_level( config_get( 'handle_bug_threshold' ) ) ) {
+				if( access_has_project_level( config_get( 'handle_dwg_threshold' ) ) ) {
 					$t_this_name = '[' . lang_get( 'myself' ) . ']';
 				} else {
 					$t_any_found = true;
@@ -1824,7 +1863,7 @@ function print_filter_dwg_note_user_id( ?array $p_filter = null ) {
 		<?php if( access_has_project_level( config_get( 'view_handler_threshold' ) ) ) {?>
 		<option value="<?php echo META_FILTER_NONE?>"<?php check_selected( $p_filter[FILTER_PROPERTY_NOTE_USER_ID], META_FILTER_NONE );?>>[<?php echo lang_get( 'none' )?>]</option>
 		<?php
-			if( access_has_project_level( config_get( 'handle_bug_threshold' ) ) ) {
+			if( access_has_project_level( config_get( 'handle_dwg_threshold' ) ) ) {
 				echo '<option value="' . META_FILTER_MYSELF . '"';
 				check_selected( $p_filter[FILTER_PROPERTY_NOTE_USER_ID], META_FILTER_MYSELF );
 				echo '>[' . lang_get( 'myself' ) . ']</option>';
@@ -2838,7 +2877,7 @@ function filter_form_draw_inputs( $p_filter, $p_for_screen = true, $p_static = f
 				));
 	}
 	$t_row3->add_item( new TableFieldsItem(
-			$get_field_header( 'relationship_type_filter', lang_get( 'bug_relationships' ) ),
+			$get_field_header( 'relationship_type_filter', lang_get( 'dwg_relationships' ) ),
 			filter_form_get_input( $t_filter, 'relationship_type', $t_show_inputs ),
 			1 /* colspan */,
 			null /* class */,

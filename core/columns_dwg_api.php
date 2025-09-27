@@ -55,7 +55,7 @@ columns_(?!dwg)
 
  */
 
-require_api( 'access_api.php' );
+require_api( 'access_dwg_api.php' );
 // require_api( 'bug_api.php' );
 require_api( 'dwg_api.php' );
 require_api( 'category_api.php' );
@@ -464,8 +464,8 @@ function column_dwg_get_title( $p_column ) {
 			return lang_get( 'os_build' );
 		case 'project_id':
 			return lang_get( 'email_project' );
-		case 'reporter_id':
-			return lang_get( 'reporter' );
+		case 'creator_id':
+			return lang_get( 'creator' );
 		case 'selection':
 			return '';
 		case 'sponsorship_total':
@@ -1037,7 +1037,7 @@ function print_dwg_column_title_description( $p_sort, $p_dir, $p_columns_target 
  */
 function print_dwg_column_title_notes( $p_sort, $p_dir, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	echo '<th class="column-notes">';
-	echo lang_get( 'bug_notes_title' );
+	echo lang_get( 'dwg_notes_title' );
 	echo '</th>';
 }
 

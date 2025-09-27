@@ -38,13 +38,13 @@
  * @uses lang_api.php
  * @uses print_api.php
  * @uses print_dwg_api.php
- * @uses relationship_api.php
+ * @uses dwg_relationship_api.php
  * @uses sponsorship_api.php
  * @uses version_api.php
  */
 
 require_once( 'core.php' );
-require_api( 'access_api.php' );
+require_api( 'access_dwg_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'bug_api.php' );
 require_api( 'dwg_api.php' );
@@ -60,7 +60,7 @@ require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'print_api.php' );
 require_api( 'print_dwg_api.php' );
-require_api( 'relationship_api.php' );
+require_api( 'dwg_relationship_api.php' );
 require_api( 'sponsorship_api.php' );
 require_api( 'version_api.php' );
 
@@ -83,7 +83,7 @@ if( $t_bug->project_id != helper_get_current_project() ) {
 }
 
 $f_new_status = gpc_get_int( 'new_status' );
-$f_change_type = gpc_get_string( 'change_type', BUG_UPDATE_TYPE_CHANGE_STATUS );
+$f_change_type = gpc_get_string( 'change_type', DWG_UPDATE_TYPE_CHANGE_STATUS );
 
 $t_reopen = config_get( 'dwg_reopen_status', null, null, $t_bug->project_id );
 $t_resolved = config_get( 'dwg_resolved_status_threshold', null, null, $t_bug->project_id );
@@ -92,7 +92,7 @@ $t_resolution_fixed = config_get( 'dwg_resolution_fixed_threshold', null, null, 
 $t_current_user_id = auth_get_current_user_id();
 
 # Ensure user has proper access level before proceeding
-if( $f_new_status == $t_reopen && $f_change_type == BUG_UPDATE_TYPE_REOPEN ) {
+if( $f_new_status == $t_reopen && $f_change_type == DWG_UPDATE_TYPE_REOPEN ) {
 	access_ensure_can_reopen_dwg( $t_bug, $t_current_user_id );
 } else if( $f_new_status == $t_closed ) {
 	access_ensure_can_close_dwg( $t_bug, $t_current_user_id );
