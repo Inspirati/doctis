@@ -41,11 +41,11 @@
  * @uses lang_api.php
  * @uses print_api.php
  * @uses print_dwg_api.php
- * @uses relationship_api.php
+ * @uses dwg_relationship_api.php
  */
 
 require_once( 'core.php' );
-require_api( 'access_api.php' );
+require_api( 'access_dwg_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'bug_api.php' );
 require_api( 'dwg_api.php' );
@@ -64,7 +64,7 @@ require_api( 'history_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'print_api.php' );
 require_api( 'print_dwg_api.php' );
-require_api( 'relationship_api.php' );
+require_api( 'dwg_relationship_api.php' );
 
 /**
  * Retrieves a version from form data and ensures it is valid.
@@ -119,27 +119,27 @@ $t_updated_bug->platform = gpc_get_string( 'platform', $t_existing_bug->platform
 $t_updated_bug->priority = gpc_get_int( 'priority', $t_existing_bug->priority );
 $t_updated_bug->projection = gpc_get_int( 'projection', $t_existing_bug->projection );
 
-$t_reporter_id = gpc_get_int( 'reporter_id', $t_existing_bug->reporter_id );
-# Only validate the reporter if different from the recorded one; this avoids
-# blocking the update when changing another field and the original reporter's
+$t_creator_id = gpc_get_int( 'creator_id', $t_existing_bug->creator_id );
+# Only validate the creator if different from the recorded one; this avoids
+# blocking the update when changing another field and the original creator's
 # account no longer exists.
-if( $t_reporter_id != $t_existing_bug->reporter_id ) {
-	user_ensure_exists( $t_reporter_id );
+if( $t_creator_id != $t_existing_bug->creator_id ) {
+	user_ensure_exists( $t_creator_id );
 	$t_report_bug_threshold = config_get( 'report_dwg_threshold',
 		null,
-		$t_reporter_id,
+		$t_creator_id,
 		$t_existing_bug->project_id
 	);
 	$t_can_report = access_has_project_level(
 		$t_report_bug_threshold,
 		$t_existing_bug->project_id,
-		$t_reporter_id
+		$t_creator_id
 	);
 	if( !$t_can_report ) {
 		trigger_error( ERROR_USER_DOES_NOT_HAVE_REQ_ACCESS, ERROR );
 	}
 }
-$t_updated_bug->reporter_id = $t_reporter_id;
+$t_updated_bug->creator_id = $t_creator_id;
 
 $t_updated_bug->reproducibility = gpc_get_int( 'reproducibility', $t_existing_bug->reproducibility );
 $t_updated_bug->resolution = gpc_get_int( 'resolution', $t_existing_bug->resolution );
@@ -187,17 +187,17 @@ if( $t_existing_bug->status < $t_resolved_status &&
 	$t_reopen_issue = true;
 }
 
-$t_reporter_closing =
+$t_creator_closing =
 	( $f_update_type == DWG_UPDATE_TYPE_CLOSE ) &&
-	dwg_is_user_reporter( $f_bug_id, $t_current_user_id ) &&
+	dwg_is_user_creator( $f_bug_id, $t_current_user_id ) &&
 	access_can_close_dwg( $t_existing_bug, $t_current_user_id );
 
-$t_reporter_reopening =
+$t_creator_reopening =
 	( ( $f_update_type == DWG_UPDATE_TYPE_REOPEN ) || $t_reopen_issue ) &&
-	dwg_is_user_reporter( $f_bug_id, $t_current_user_id ) &&
+	dwg_is_user_creator( $f_bug_id, $t_current_user_id ) &&
 	access_can_reopen_dwg( $t_existing_bug, $t_current_user_id );
 
-if ( !$t_reporter_reopening && !$t_reporter_closing ) {
+if ( !$t_creator_reopening && !$t_creator_closing ) {
 	switch( $f_update_type ) {
 		case DWG_UPDATE_TYPE_ASSIGN:
 			$t_threshold = 'update_dwg_assign_threshold';
@@ -249,15 +249,15 @@ if( $t_existing_bug->status != $t_updated_bug->status ) {
 		$t_can_bypass_status_access_thresholds = false;
 		if( $t_close_issue &&
 			$t_existing_bug->status >= $t_resolved_status &&
-			$t_existing_bug->reporter_id == $t_current_user_id &&
-			config_get( 'allow_reporter_close' )
+			$t_existing_bug->creator_id == $t_current_user_id &&
+			config_get( 'allow_creator_close' )
 		) {
 			$t_can_bypass_status_access_thresholds = true;
 		} else if( $t_reopen_issue &&
 				   $t_existing_bug->status >= $t_resolved_status &&
 				   $t_existing_bug->status <= $t_closed_status &&
-				   $t_existing_bug->reporter_id == $t_current_user_id &&
-				   config_get( 'allow_reporter_reopen' ) ) {
+				   $t_existing_bug->creator_id == $t_current_user_id &&
+				   config_get( 'allow_creator_reopen' ) ) {
 			$t_can_bypass_status_access_thresholds = true;
 		}
 		if( !$t_can_bypass_status_access_thresholds ) {
@@ -404,7 +404,7 @@ if( $t_updated_bug->duplicate_id != 0 ) {
 	dwg_ensure_exists( $t_updated_bug->duplicate_id );
 
 	if( !access_has_dwg_level( config_get( 'update_dwg_threshold' ), $t_updated_bug->duplicate_id ) ) {
-		trigger_error( ERROR_RELATIONSHIP_ACCESS_LEVEL_TO_DEST_BUG_TOO_LOW, ERROR );
+		trigger_error( ERROR_RELATIONSHIP_ACCESS_LEVEL_TO_DEST_DWG_TOO_LOW, ERROR );
 	}
 }
 
@@ -428,14 +428,14 @@ if( $t_bug_note->note ||
 # Handle the reassign on feedback feature. Note that this feature generally
 # won't work very well with custom workflows as it makes a lot of assumptions
 # that may not be true. It assumes you don't have any statuses in the workflow
-# between 'bug_submit_status' and 'bug_feedback_status'. It assumes you only
+# between 'dwg_submit_status' and 'dwg_feedback_status'. It assumes you only
 # have one feedback, assigned and submitted status.
 if( $t_bug_note->note &&
 	config_get( 'reassign_on_feedback' ) &&
 	$t_existing_bug->status == config_get( 'dwg_feedback_status' ) &&
 	$t_updated_bug->status == $t_existing_bug->status &&
 	$t_updated_bug->handler_id != $t_current_user_id &&
-	$t_updated_bug->reporter_id == $t_current_user_id
+	$t_updated_bug->creator_id == $t_current_user_id
 ) {
 	if( $t_updated_bug->handler_id != NO_USER ) {
 		$t_updated_bug->status = config_get( 'dwg_assigned_status' );
@@ -474,10 +474,10 @@ if( $t_bug_note->note || helper_duration_to_minutes( $t_bug_note->time_tracking 
 
 # Add a duplicate relationship if requested.
 if( $t_updated_bug->duplicate_id != 0 ) {
-	relationship_upsert( $f_bug_id, $t_updated_bug->duplicate_id, BUG_DUPLICATE, /* email_for_source */ false );
+	relationship_upsert( $f_bug_id, $t_updated_bug->duplicate_id, DWG_DUPLICATE, /* email_for_source */ false );
 
-	if( user_exists( $t_existing_bug->reporter_id ) ) {
-		dwg_monitor( $t_updated_bug->duplicate_id, $t_existing_bug->reporter_id );
+	if( user_exists( $t_existing_bug->creator_id ) ) {
+		dwg_monitor( $t_updated_bug->duplicate_id, $t_existing_bug->creator_id );
 	}
 	if( user_exists( $t_existing_bug->handler_id ) ) {
 		dwg_monitor( $t_updated_bug->duplicate_id, $t_existing_bug->handler_id );

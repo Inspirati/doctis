@@ -31,7 +31,7 @@
  */
 
 require_once( 'core.php' );
-require_api( 'access_api.php' );  // @TODO RobD - why wasn't this already here, implied by core.php, or overlooked
+require_api( 'access_bug_api.php' );  // @TODO RobD - why wasn't this already here, implied by core.php, or overlooked
 require_api( 'bug_api.php' );
 require_api( 'dwg_api.php' );
 require_api( 'gpc_api.php' );

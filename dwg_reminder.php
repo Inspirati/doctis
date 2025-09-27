@@ -40,7 +40,7 @@
  */
 
 require_once( 'core.php' );
-require_api( 'access_api.php' );
+require_api( 'access_dwg_api.php' );
 require_api( 'dwg_api.php' );
 require_api( 'bugnote_api.php' );
 require_api( 'dwgnote_api.php' );
@@ -87,19 +87,19 @@ foreach( $f_to as $t_recipient ) {
 }
 
 # Automatically add recipients to monitor list if they are above the monitor
-# threshold, option is enabled, and not reporter or handler.
+# threshold, option is enabled, and not creator or handler.
 $t_reminder_recipients_monitor_bug = config_get( 'reminder_recipients_monitor_dwg' );
 $t_monitor_bug_threshold = config_get( 'monitor_dwg_threshold' );
 
 // @TODO RobD - our documents table/structure does not have these fields, what to do?
 $t_handler = dwg_get_field( $f_bug_id, 'handler_id' );
-$t_reporter = dwg_get_field( $f_bug_id, 'reporter_id' );
+$t_creator = dwg_get_field( $f_bug_id, 'creator_id' );
 
 foreach( $f_to as $t_recipient ) {
 	if( ON == $t_reminder_recipients_monitor_bug
 		&& access_has_dwg_level( $t_monitor_bug_threshold, $f_bug_id )
 		&& $t_recipient != $t_handler
-		&& $t_recipient != $t_reporter
+		&& $t_recipient != $t_creator
 	) {
 		dwg_monitor( $f_bug_id, $t_recipient );
 	}

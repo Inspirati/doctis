@@ -44,7 +44,7 @@
  */
 
 require_once( 'core.php' );
-require_api( 'access_api.php' );
+require_api( 'access_dwg_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'bug_api.php' );
 require_api( 'dwg_api.php' );
@@ -415,7 +415,7 @@ if( $t_multiple_projects ) {
 	}
 
 	# signal plugin event for additional fields
-	event_signal( 'EVENT_BUG_ACTIONGROUP_FORM', array( $t_event_params ) );
+	event_signal( 'EVENT_DWG_ACTIONGROUP_FORM', array( $t_event_params ) );
 
 	if( $t_bugnote ) {
 		$t_default_bugnote_view_status = config_get( 'default_bugnote_view_status' );

@@ -78,7 +78,6 @@ $f_print				= gpc_get_bool( 'print' );
 $f_summary				= gpc_get_bool( 'summary' );
 
 # Get the filter in use
-#!$t_setting_arr = current_user_get_bug_filter();
 $t_setting_arr = current_user_get_dwg_filter();
 
 # If there is an explicit "temporary" parameter true/false, will force the new filter
@@ -164,6 +163,7 @@ switch( $f_type ) {
 		log_event( LOG_FILTERING, 'view_dwg_set.php: Generalise the filter' );
 
 		$t_setting_arr[FILTER_PROPERTY_CATEGORY_ID]			= array( META_FILTER_ANY );
+		$t_setting_arr[FILTER_PROPERTY_CREATOR_ID]			= array( META_FILTER_ANY );
 		$t_setting_arr[FILTER_PROPERTY_REPORTER_ID] 		= array( META_FILTER_ANY );
 		$t_setting_arr[FILTER_PROPERTY_HANDLER_ID] 			= array( META_FILTER_ANY );
 		$t_setting_arr[FILTER_PROPERTY_BUILD] 				= array( META_FILTER_ANY );

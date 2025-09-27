@@ -46,7 +46,7 @@
  * @uses utility_api.php
  */
 
-require_api( 'access_api.php' );
+require_api( 'access_dwg_api.php' );
 require_api( 'antispam_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'bug_api.php' );
@@ -72,10 +72,10 @@ require_api( 'utility_api.php' );
 use Mantis\Exceptions\ClientException;
 
 # Cache of bugnotes arrays related to a bug, indexed by bug_id.
-# Each item is an array of BugnoteData objects
+# Each item is an array of DwgnoteData objects
 $g_cache_dwgnotes_by_bug_id = array();
 
-# Cache of BugnoteData objects, indexed by bugnote id
+# Cache of DwgnoteData objects, indexed by bugnote id
 $g_cache_dwgnotes_by_id = array();
 
 /**
@@ -90,11 +90,13 @@ class DwgnoteData {
 	/**
 	 * Bug ID
 	 */
+	public $dwg_id;
 	public $bug_id;
 
 	/**
 	 * Reporter ID
 	 */
+	public $creator_id;
 	public $reporter_id;
 
 	/**
@@ -136,6 +138,7 @@ class DwgnoteData {
 	/**
 	 * Bugnote Text id
 	 */
+	public $dwgnote_text_id;
 	public $bugnote_text_id;
 }
 
@@ -163,8 +166,8 @@ function dwgnote_exists( $p_bugnote_id ) {
 
 	db_param_push();
 	$t_query = 'SELECT b.*, t.note
-				FROM {bugnote} b
-				LEFT JOIN {bugnote_text} t ON b.bugnote_text_id = t.id
+				FROM {dwgnote} b
+				LEFT JOIN {dwgnote_text} t ON b.bugnote_text_id = t.id
 				WHERE b.id = ' . db_param();
 	$t_result = db_query( $t_query, array( $c_bugnote_id ) );
 	$t_row = db_fetch_array( $t_result );
@@ -181,10 +184,10 @@ function dwgnote_exists( $p_bugnote_id ) {
 /**
  * Caches the provided bugnote object.
  *
- * @param BugnoteData $p_bugnote The bugnote object.
+ * @param DwgnoteData $p_bugnote The bugnote object.
  * @return void
  */
-function dwgnote_cache( BugnoteData $p_bugnote ) {
+function dwgnote_cache( DwgnoteData $p_bugnote ) {
 	global $g_cache_dwgnotes_by_id;
 
 	$g_cache_dwgnotes_by_id[(int)$p_bugnote->id] = $p_bugnote;
@@ -210,18 +213,18 @@ function dwgnote_ensure_exists( $p_bugnote_id ) {
 }
 
 /**
- * Check if the given user is the reporter of the bugnote.
+ * Check if the given user is the creator of the bugnote.
  *
  * @param int $p_bugnote_id A bugnote identifier.
  * @param int $p_user_id    A user identifier.
  *
- * @return bool True if the user is the reporter, false otherwise.
+ * @return bool True if the user is the creator, false otherwise.
  * @throws ClientException
  *
  * @access public
  */
-function dwgnote_is_user_reporter( $p_bugnote_id, $p_user_id ) {
-	return dwgnote_get_field( $p_bugnote_id, 'reporter_id' ) == $p_user_id;
+function dwgnote_is_user_creator( $p_bugnote_id, $p_user_id ) {
+	return dwgnote_get_field( $p_bugnote_id, 'creator_id' ) == $p_user_id;
 }
 
 /**
@@ -279,7 +282,7 @@ function dwgnote_add( $p_bug_id, $p_bugnote_text, $p_time_tracking = '0:00', $p_
 
 	# insert bugnote text
 	db_param_push();
-	$t_query = 'INSERT INTO {bugnote_text} ( note ) VALUES ( ' . db_param() . ' )';
+	$t_query = 'INSERT INTO {dwgnote_text} ( note ) VALUES ( ' . db_param() . ' )';
 	db_query( $t_query, array( $t_bugnote_text ) );
 
 	# retrieve bugnote text id number
@@ -299,8 +302,8 @@ function dwgnote_add( $p_bug_id, $p_bugnote_text, $p_time_tracking = '0:00', $p_
 
 	# insert bugnote info
 	db_param_push();
-	$t_query = 'INSERT INTO {bugnote}
-			(bug_id, reporter_id, bugnote_text_id, view_state, date_submitted, last_modified, note_type, note_attr, time_tracking)
+	$t_query = 'INSERT INTO {dwgnote}
+			(dwg_id, reporter_id, dwgnote_text_id, view_state, date_submitted, last_modified, note_type, note_attr, time_tracking)
 		VALUES ('
 		. db_param() . ', ' . db_param() . ', ' . db_param() . ', ' . db_param() . ', '
 		. db_param() . ', ' . db_param() . ', ' . db_param() . ', ' . db_param() . ', '
@@ -380,12 +383,12 @@ function dwgnote_delete( $p_bugnote_id ) {
 
 	# Remove the bugnote
 	db_param_push();
-	$t_query = 'DELETE FROM {bugnote} WHERE id=' . db_param();
+	$t_query = 'DELETE FROM {dwgnote} WHERE id=' . db_param();
 	db_query( $t_query, array( $p_bugnote_id ) );
 
 	# Remove the bugnote text
 	db_param_push();
-	$t_query = 'DELETE FROM {bugnote_text} WHERE id=' . db_param();
+	$t_query = 'DELETE FROM {dwgnote_text} WHERE id=' . db_param();
 	db_query( $t_query, array( $t_bugnote_text_id ) );
 
 	# Update the last_updated date
@@ -414,20 +417,20 @@ function dwgnote_delete( $p_bugnote_id ) {
 function dwgnote_delete_all( $p_bug_id ) {
 	# Delete the bugnote text items
 	db_param_push();
-	$t_query = 'SELECT bugnote_text_id FROM {bugnote} WHERE bug_id=' . db_param();
+	$t_query = 'SELECT bugnote_text_id FROM {dwgnote} WHERE bug_id=' . db_param();
 	$t_result = db_query( $t_query, array( (int)$p_bug_id ) );
 	while( $t_row = db_fetch_array( $t_result ) ) {
 		$t_bugnote_text_id = $t_row['bugnote_text_id'];
 
 		# Delete the corresponding bugnote texts
 		db_param_push();
-		$t_query = 'DELETE FROM {bugnote_text} WHERE id=' . db_param();
+		$t_query = 'DELETE FROM {dwgnote_text} WHERE id=' . db_param();
 		db_query( $t_query, array( $t_bugnote_text_id ) );
 	}
 
 	# Delete the corresponding bugnotes
 	db_param_push();
-	$t_query = 'DELETE FROM {bugnote} WHERE bug_id=' . db_param();
+	$t_query = 'DELETE FROM {dwgnote} WHERE bug_id=' . db_param();
 	db_query( $t_query, array( (int)$p_bug_id ) );
 }
 
@@ -446,7 +449,7 @@ function dwgnote_get_text( $p_bugnote_id ) {
 
 	# grab the bugnote text
 	db_param_push();
-	$t_query = 'SELECT note FROM {bugnote_text} WHERE id=' . db_param();
+	$t_query = 'SELECT note FROM {dwgnote_text} WHERE id=' . db_param();
 	$t_result = db_query( $t_query, array( $t_bugnote_text_id ) );
 
 	return db_result( $t_result );
@@ -478,7 +481,7 @@ function dwgnote_get_field( $p_bugnote_id, $p_field_name ) {
  */
 function dwgnote_get_latest_id( $p_bug_id ) {
 	db_param_push();
-	$t_query = 'SELECT id FROM {bugnote} WHERE bug_id=' . db_param() . ' ORDER by last_modified DESC';
+	$t_query = 'SELECT id FROM {dwgnote} WHERE dwg_id=' . db_param() . ' ORDER by last_modified DESC';
 	$t_result = db_query( $t_query, array( (int)$p_bug_id ), 1 );
 
 	return (int)db_result( $t_result );
@@ -495,7 +498,7 @@ function dwgnote_get_latest_id( $p_bug_id ) {
  * @param int $p_user_bugnote_limit Number of bugnotes to display to user.
  * @param int $p_user_id            A user identifier.
  *
- * @return BugnoteData[] Bugnotes with raw values from the database
+ * @return DwgnoteData[] Bugnotes with raw values from the database
  * @throws ClientException
  *
  * @access public
@@ -524,7 +527,7 @@ function dwgnote_get_all_visible_bugnotes( $p_bug_id, $p_user_bugnote_order, $p_
 	for( $i = 0; ( $i < $t_bugnote_count ) && ( $t_bugnotes_found < $t_bugnote_limit ); $i++ ) {
 		$t_bugnote = array_pop( $t_all_bugnotes );
 
-		if( $t_private_bugnote_visible || $t_bugnote->reporter_id == $t_user_id || ( VS_PUBLIC == $t_bugnote->view_state ) ) {
+		if( $t_private_bugnote_visible || $t_bugnote->creator_id == $t_user_id || $t_bugnote->reporter_id == $t_user_id || ( VS_PUBLIC == $t_bugnote->view_state ) ) {
 			# If the access level specified is not enough to see time tracking information
 			# then reset it to 0.
 			if( !$t_time_tracking_visible ) {
@@ -599,18 +602,21 @@ function dwgnote_get_all_visible_as_string( $p_bug_id, $p_user_bugnote_order, $p
  *
  * @param array $p_row The bugnote row (including bugnote_text note)
  *
- * @return BugnoteData The bugnote object.
+ * @return DwgnoteData The bugnote object.
  * @access private
  */
 function dwgnote_row_to_object( array $p_row ) {
-	$t_bugnote = new BugnoteData;
+	$t_bugnote = new DwgnoteData;
 
 	$t_bugnote->id = $p_row['id'];
 	$t_bugnote->bug_id = (int)$p_row['bug_id'];
 	$t_bugnote->bugnote_text_id = (int)$p_row['bugnote_text_id'];
 	$t_bugnote->note = $p_row['note'];
 	$t_bugnote->view_state = (int)$p_row['view_state'];
+
+	$t_bugnote->creator_id = (int)$p_row['creator_id'];
 	$t_bugnote->reporter_id = (int)$p_row['reporter_id'];
+
 	$t_bugnote->date_submitted = (int)$p_row['date_submitted'];
 	$t_bugnote->last_modified = (int)$p_row['last_modified'];
 	$t_bugnote->note_type = (int)$p_row['note_type'];
@@ -632,7 +638,7 @@ function dwgnote_row_to_object( array $p_row ) {
  *
  * @param int $p_bug_id A bug identifier.
  *
- * @return BugnoteData[] Bugnotes with raw values from the database
+ * @return DwgnoteData[] Bugnotes with raw values from the database
  *
  * @access public
  */
@@ -646,9 +652,9 @@ function dwgnote_get_all_bugnotes( $p_bug_id ) {
 		# performance in a measurable way
 		db_param_push();
 		$t_query = 'SELECT b.*, t.note
-			          	FROM      {bugnote} b
-			          	LEFT JOIN {bugnote_text} t ON b.bugnote_text_id = t.id
-						WHERE b.bug_id=' . db_param() . '
+			          	FROM      {dwgnote} b
+			          	LEFT JOIN {dwgnote_text} t ON b.bugnote_text_id = t.id
+						WHERE b.dwg_id=' . db_param() . '
 						ORDER BY b.date_submitted ASC, b.id ASC';
 		$t_bugnotes = array();
 
@@ -672,7 +678,7 @@ function dwgnote_get_all_bugnotes( $p_bug_id ) {
  *
  * @param int $p_bugnote_id The bugnote id.
  *
- * @return BugnoteData|void The bugnote object.
+ * @return DwgnoteData|void The bugnote object.
  * @throws ClientException
  */
 function dwgnote_get( $p_bugnote_id ) {
@@ -705,7 +711,7 @@ function dwgnote_set_time_tracking( $p_bugnote_id, $p_time_tracking ) {
 	$c_bugnote_time_tracking = helper_duration_to_minutes( $p_time_tracking );
 
 	db_param_push();
-	$t_query = 'UPDATE {bugnote} SET time_tracking = ' . db_param() . ' WHERE id=' . db_param();
+	$t_query = 'UPDATE {dwgnote} SET time_tracking = ' . db_param() . ' WHERE id=' . db_param();
 	db_query( $t_query, array( $c_bugnote_time_tracking, $p_bugnote_id ) );
 }
 
@@ -720,7 +726,7 @@ function dwgnote_set_time_tracking( $p_bugnote_id, $p_time_tracking ) {
  */
 function dwgnote_date_update( $p_bugnote_id ) {
 	db_param_push();
-	$t_query = 'UPDATE {bugnote} SET last_modified=' . db_param() . ' WHERE id=' . db_param();
+	$t_query = 'UPDATE {dwgnote} SET last_modified=' . db_param() . ' WHERE id=' . db_param();
 	db_query( $t_query, array( db_now(), $p_bugnote_id ) );
 }
 
@@ -756,7 +762,7 @@ function dwgnote_set_text( $p_bugnote_id, $p_bugnote_text ) {
 	}
 
 	db_param_push();
-	$t_query = 'UPDATE {bugnote_text} SET note=' . db_param() . ' WHERE id=' . db_param();
+	$t_query = 'UPDATE {dwgnote_text} SET note=' . db_param() . ' WHERE id=' . db_param();
 	db_query( $t_query, array( $p_bugnote_text, $t_bugnote_text_id ) );
 
 	# updated the last_updated date
@@ -794,7 +800,7 @@ function dwgnote_set_view_state( $p_bugnote_id, $p_private ) {
 	}
 
 	db_param_push();
-	$t_query = 'UPDATE {bugnote} SET view_state=' . db_param() . ' WHERE id=' . db_param();
+	$t_query = 'UPDATE {dwgnote} SET view_state=' . db_param() . ' WHERE id=' . db_param();
 	db_query( $t_query, array( $t_view_state, $p_bugnote_id ) );
 
 	history_log_event_special( $t_bug_id, DWGNOTE_STATE_CHANGED, $t_view_state, dwgnote_format_id( $p_bugnote_id ) );
@@ -847,10 +853,10 @@ function dwgnote_stats_get_events_array( $p_bug_id, $p_from, $p_to ) {
 
 	db_param_push();
 	$t_query = 'SELECT u.id AS user_id, username, realname, SUM(time_tracking) AS sum_time_tracking
-				FROM {user} u, {bugnote} bn
+				FROM {user} u, {dwgnote} bn
 				WHERE u.id = bn.reporter_id 
 				AND bn.time_tracking != 0 
-				AND bn.bug_id = ' . db_param()
+				AND bn.dwg_id = ' . db_param()
 		. $t_from_where
 		. $t_to_where . ' 
 				GROUP BY u.id, u.username, u.realname';

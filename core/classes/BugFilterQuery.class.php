@@ -38,7 +38,7 @@
  * @uses utility_api.php
  */
 
-require_api( 'access_api.php' );
+require_api( 'access_bug_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
@@ -583,7 +583,7 @@ class BugFilterQuery extends DbQuery {
 				$t_access_required_to_view_private_bugs = config_get( 'private_bug_threshold', null, null, $t_pid );
 				$t_can_see_private = access_has_project_level( $t_access_required_to_view_private_bugs, $t_pid, $t_user_id );
 
-				if( access_has_limited_view( $t_pid, $t_user_id ) ) {
+				if( access_has_limited_view_bug( $t_pid, $t_user_id ) ) {
 					if( $t_old_limit_reporters ) {
 						# we have a reduced access (show only own reported issues)
 						$t_old_limit_public_and_private_project_ids[] = $t_pid;

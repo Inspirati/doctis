@@ -44,14 +44,14 @@
  * @uses print_api.php
  * @uses profile_api.php
  * @uses project_api.php
- * @uses relationship_api.php
+ * @uses dwg_relationship_api.php
  * @uses string_api.php
  * @uses utility_api.php
  * @uses version_api.php
  */
 
 require_once( 'core.php' );
-require_api( 'access_api.php' );
+require_api( 'access_dwg_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'bug_api.php' );
 require_api( 'dwg_api.php' );
@@ -75,7 +75,7 @@ require_api( 'print_api.php' );
 require_api( 'print_dwg_api.php' );
 require_api( 'profile_api.php' );
 require_api( 'project_api.php' );
-require_api( 'relationship_api.php' );
+require_api( 'dwg_relationship_api.php' );
 require_api( 'string_api.php' );
 require_api( 'utility_api.php' );
 require_api( 'version_api.php' );
@@ -99,7 +99,7 @@ if( $f_master_bug_id > 0 ) {
 	# master bug is not read-only...
 	if( bug_is_readonly( $f_master_bug_id ) ) {
 		error_parameters( $f_master_bug_id );
-		trigger_error( ERROR_BUG_READ_ONLY_ACTION_DENIED, ERROR );
+		trigger_error( ERROR_DWG_READ_ONLY_ACTION_DENIED, ERROR );
 	}
 
 	# User can view the master bug
@@ -236,7 +236,7 @@ $f_dwg_entry_stay				= gpc_get_bool( 'dwg_entry_stay', false );
 $f_copy_notes_from_parent		= gpc_get_bool( 'copy_notes_from_parent', false );
 $f_copy_attachments_from_parent	= gpc_get_bool( 'copy_attachments_from_parent', false );
 
-$t_fields = config_get( 'bug_report_page_fields' );
+$t_fields = config_get( 'dwg_report_page_fields' );
 $t_fields = columns_filter_disabled( $t_fields );
 
 $t_show_category = in_array( 'category_id', $t_fields );
@@ -246,9 +246,9 @@ $t_show_severity = in_array( 'severity', $t_fields );
 $t_show_priority = in_array( 'priority', $t_fields );
 $t_show_steps_to_reproduce = in_array( 'steps_to_reproduce', $t_fields );
 $t_show_handler = in_array( 'handler', $t_fields )
-	&& access_has_project_level( config_get( 'update_bug_assign_threshold' ) );
+	&& access_has_project_level( config_get( 'update_dwg_assign_threshold' ) );
 $t_show_monitors = in_array( 'monitors', $t_fields )
-	&& access_has_project_level( config_get( 'monitor_add_others_bug_threshold' ) );
+	&& access_has_project_level( config_get( 'monitor_add_others_dwg_threshold' ) );
 $t_show_profiles = config_get( 'enable_profiles' );
 $t_show_platform = $t_show_profiles && in_array( 'platform', $t_fields );
 $t_show_os = $t_show_profiles && in_array( 'os', $t_fields );
@@ -309,12 +309,14 @@ $t_form_encoding = '';
 if( $t_show_attachments ) {
 	$t_form_encoding = 'enctype="multipart/form-data"';
 }
+
+# @TODO RobD - note the form id below 'report_bug_form' is referenced from some javascript (for the attachments image)
 ?>
 <div class="col-md-12 col-xs-12">
 <form id="report_bug_form"
 	method="post" <?php echo $t_form_encoding; ?>
 	action="dwg_create.php">
-<?php echo form_security_field( 'bug_report' ) ?>
+<?php echo form_security_field( 'dwg_report' ) ?>
 <input type="hidden" name="m_dwg_id" value="<?php echo $f_master_bug_id ?>" />
 <input type="hidden" name="project_id" value="<?php echo $t_project_id ?>" />
 <div class="widget-box widget-color-blue2">
@@ -423,13 +425,13 @@ if( $t_show_attachments ) {
 			<?php
 			$t_resolution_options = get_status_option_list(
 				access_get_project_level( $t_project_id ),
-				config_get( 'bug_submit_status' ),
+				config_get( 'dwg_submit_status' ),
 				true,
-				ON == config_get( 'allow_reporter_close' ),
+				ON == config_get( 'allow_creator_close' ),
 				$t_project_id );
 			foreach ( $t_resolution_options as $t_key => $t_value ) {
 			?>
-				<option value="<?php echo $t_key ?>" <?php check_selected( $t_key, config_get( 'bug_submit_status' ) ); ?> >
+				<option value="<?php echo $t_key ?>" <?php check_selected( $t_key, config_get( 'dwg_submit_status' ) ); ?> >
 					<?php echo $t_value ?>
 				</option>
 			<?php } ?>
@@ -661,7 +663,7 @@ if( $t_show_attachments ) {
 			<?php echo lang_get( 'relationship_with_parent' ) ?>
 		</th>
 		<td>
-			<?php print_relationship_list_box( config_get( 'default_bug_relationship_clone' ), "rel_type", false, true ) ?>
+			<?php print_dwg_relationship_list_box( config_get( 'default_dwg_relationship_clone' ), "rel_type", false, true ) ?>
 			<?php echo '<strong>' . lang_get( 'bug' ) . ' ' . bug_format_id( $f_master_bug_id ) . '</strong>' ?>
 		</td>
 	</tr>

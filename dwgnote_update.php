@@ -41,7 +41,7 @@
  */
 
 require_once( 'core.php' );
-require_api( 'access_api.php' );
+require_api( 'access_dwg_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'bug_api.php' );
 require_api( 'dwg_api.php' );
@@ -66,7 +66,7 @@ $f_time_tracking = gpc_get_string( 'time_tracking', '0:00' );
 
 # Check if the current user is allowed to edit the bugnote
 $t_user_id = auth_get_current_user_id();
-$t_reporter_id = dwgnote_get_field( $f_bugnote_id, 'reporter_id' );
+$t_creator_id = dwgnote_get_field( $f_bugnote_id, 'creator_id' );
 $t_bug_id = dwgnote_get_field( $f_bugnote_id, 'bug_id' );
 $t_project_id = dwg_get_field( $t_bug_id, 'project_id' );
 
@@ -74,8 +74,8 @@ if( helper_get_current_project() != $t_project_id ) {
 	$g_project_override = $t_project_id;
 }
 
-if( $t_user_id == $t_reporter_id ) {
-	access_ensure_dwgnote_level( config_get( 'bugnote_user_edit_threshold' ), $f_bugnote_id );
+if( $t_user_id == $t_creator_id ) {
+	access_ensure_dwgnote_level( config_get( 'dwgnote_user_edit_threshold' ), $f_bugnote_id );
 } else {
 	access_ensure_dwgnote_level( config_get( 'update_dwgnote_threshold' ), $f_bugnote_id );
 }

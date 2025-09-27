@@ -47,15 +47,16 @@
  * @uses project_api.php
  * @uses project_hierarchy_api.php
  * @uses string_api.php
- * @uses tag_api.php
+ * @uses tag_dwg_api.php
  * @uses user_api.php
  * @uses utility_api.php
  * @uses version_api.php
  */
 
-require_api( 'access_api.php' );
+require_api( 'access_dwg_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'bug_group_action_api.php' );
+require_api( 'dwg_group_action_api.php' );
 require_api( 'category_api.php' );
 require_api( 'config_api.php' );
 require_api( 'collapse_api.php' );
@@ -79,7 +80,7 @@ require_api( 'profile_api.php' );
 require_api( 'project_api.php' );
 require_api( 'project_hierarchy_api.php' );
 require_api( 'string_api.php' );
-require_api( 'tag_api.php' );
+require_api( 'tag_dwg_api.php' );
 require_api( 'user_api.php' );
 require_api( 'utility_api.php' );
 require_api( 'version_api.php' );
@@ -260,7 +261,7 @@ function print_dwg_captcha_input( $p_field_name ) {
 
 /**
  * This populates an option list with the appropriate users by access level
- * @todo from print_reporter_option_list
+ * @todo from print_dwg_creator_option_list
  * @param integer|array $p_user_id    A user identifier or a list of them.
  * @param integer       $p_project_id A project identifier.
  * @param integer       $p_access     An access level.
@@ -347,8 +348,8 @@ function print_dwg_user_option_list( $p_user_id, $p_project_id = null, $p_access
  * @param integer $p_project_id A project identifier.
  * @return void
  */
-function print_dwg_reporter_option_list( $p_user_id, $p_project_id = null ) {
-	print_user_option_list( $p_user_id, $p_project_id, config_get( 'create_dwg_threshold' ) );
+function print_dwg_creator_option_list( $p_user_id, $p_project_id = null ) {
+	print_dwg_user_option_list( $p_user_id, $p_project_id, config_get( 'create_dwg_threshold' ) );
 }
 
 /**
@@ -584,10 +585,10 @@ function print_dwg_news_string_by_news_id( $p_news_id ) {
  */
 function print_dwg_assign_to_option_list( $p_user_id = '', $p_project_id = null, $p_threshold = null ) {
 	if( null === $p_threshold ) {
-		$p_threshold = config_get( 'handle_bug_threshold' );
+		$p_threshold = config_get( 'handle_dwg_threshold' );
 	}
 
-	print_user_option_list( $p_user_id, $p_project_id, $p_threshold );
+	print_dwg_user_option_list( $p_user_id, $p_project_id, $p_threshold );
 }
 
 /**
@@ -602,7 +603,7 @@ function print_dwg_note_option_list( $p_user_id = '', $p_project_id = null, $p_t
 		$p_threshold = config_get( 'add_bugnote_threshold' );
 	}
 
-	print_user_option_list( $p_user_id, $p_project_id, $p_threshold );
+	print_dwg_user_option_list( $p_user_id, $p_project_id, $p_threshold );
 }
 
 /**
@@ -1058,8 +1059,8 @@ function print_dwg_get_status_option_list( $p_user_auth = 0, $p_current_value = 
 		$t_enum_list[$p_current_value] = get_enum_element( 'status', $p_current_value );
 	}
 
-	if( $p_add_close && access_compare_level( $p_current_value, config_get( 'bug_resolved_status_threshold', null, null, $p_project_id ) ) ) {
-		$t_closed = config_get( 'bug_closed_status_threshold', null, null, $p_project_id );
+	if( $p_add_close && access_compare_level( $p_current_value, config_get( 'dwg_resolved_status_threshold', null, null, $p_project_id ) ) ) {
+		$t_closed = config_get( 'dwg_closed_status_threshold', null, null, $p_project_id );
 		if( $p_show_current || $p_current_value != $t_closed ) {
 			$t_enum_list[$t_closed] = get_enum_element( 'status', $t_closed );
 		}
@@ -1069,7 +1070,7 @@ function print_dwg_get_status_option_list( $p_user_auth = 0, $p_current_value = 
 }
 
 /**
- * print the status option list for the bug_update pages
+ * print the status option list for the document_update pages
  * @param string  $p_select_label  The id/name html attribute of the select box.
  * @param integer $p_current_value The current value.
  * @param boolean $p_allow_close   Whether to allow close.
@@ -1106,7 +1107,7 @@ function print_dwg_status_option_list( $p_select_label, $p_current_value = 0, $p
  * @return void
  */
 function print_dwg_project_user_option_list( $p_project_id = null ) {
-	print_user_option_list( 0, $p_project_id );
+	print_dwg_user_option_list( 0, $p_project_id );
 }
 
 /**
@@ -1176,8 +1177,8 @@ function print_dwg_font_option_list( $p_font ) {
  *
  * @return void
  */
-function print_dwg_all_bug_action_option_list( array $p_project_ids = [] ) {
-	$t_commands = bug_group_action_get_commands( $p_project_ids );
+function print_dwg_all_dwg_action_option_list( array $p_project_ids = [] ) {
+	$t_commands = dwg_group_action_get_commands( $p_project_ids );
 	foreach ( $t_commands as $t_action_id => $t_action_label) {
 		echo '<option value="' . $t_action_id . '">' . $t_action_label . '</option>';
 	}
@@ -1306,7 +1307,7 @@ function print_dwg_formatted_priority_string( DwgData $p_bug ) {
 
 	if( $t_priority_threshold >= 0 &&
 		$p_bug->priority >= $t_priority_threshold &&
-		$p_bug->status < config_get( 'bug_closed_status_threshold' ) ) {
+		$p_bug->status < config_get( 'dwg_closed_status_threshold' ) ) {
 		echo '<span class="bold">' . $t_pri_str . '</span>';
 	} else {
 		echo $t_pri_str;
@@ -1325,7 +1326,7 @@ function print_dwg_formatted_severity_string( DwgData $p_bug ) {
 
 	if( $t_severity_threshold >= 0 &&
 		$p_bug->severity >= $t_severity_threshold &&
-		$p_bug->status < config_get( 'bug_closed_status_threshold' ) ) {
+		$p_bug->status < config_get( 'dwg_closed_status_threshold' ) ) {
 		echo '<span class="bold">' . $t_sev_str . '</span>';
 	} else {
 		echo $t_sev_str;
@@ -2074,7 +2075,7 @@ function print_dwg_attachment_header( array $p_attachment, $p_security_token ) {
 		}
 
 		echo lang_get( 'word_separator' ) . '(' . number_format( $p_attachment['size'] ) . lang_get( 'word_separator' ) . lang_get( 'bytes' ) . ')';
-		event_signal( 'EVENT_VIEW_BUG_ATTACHMENT', array( $p_attachment ) );
+		event_signal( 'EVENT_VIEW_DWG_ATTACHMENT', array( $p_attachment ) );
 	} else {
 		print_file_icon( $p_attachment['display_name'] );
 		echo lang_get( 'word_separator' ) . '<s>' . string_display_line( $p_attachment['display_name'] ) . '</s>' . lang_get( 'word_separator' ) . '(' . lang_get( 'attachment_missing' ) . ')';
@@ -2082,8 +2083,8 @@ function print_dwg_attachment_header( array $p_attachment, $p_security_token ) {
 
 	if( $p_attachment['can_delete'] ) {
 		echo '<a class="noprint red zoom-130 pull-right" '
-			. 'href="bug_file_delete.php?file_id=' . $p_attachment['id']
-			. form_security_param( 'bug_file_delete', $p_security_token ) . '">';
+			. 'href="dwg_file_delete.php?file_id=' . $p_attachment['id']
+			. form_security_param( 'dwg_file_delete', $p_security_token ) . '">';
 		print_icon( 'fa-trash-o', '1 ace-icon bigger-115' );
 		echo '</a>';
 	}
@@ -2138,7 +2139,7 @@ function print_dwg_attachment_preview_image( array $p_attachment ) {
 		$t_preview_style .= ' max-height:' . $t_max_height . 'px;';
 	}
 
-	$t_title = file_get_field( $p_attachment['id'], 'title' );
+	$t_title = file_get_field( $p_attachment['id'], 'title', 'dwg' );
 	$t_image_url = $p_attachment['download_url'] . '&show_inline=1' . form_security_param( 'file_show_inline' );
 
 	echo "\n<div class=\"bug-attachment-preview-image\">";
@@ -2339,17 +2340,17 @@ function print_dwg_option_list_from_array( array $p_array, $p_filter_value ) {
  * @param string  $p_input_css        CSS classes to use with input fields
  * @return void
  */
-function print_dwg_relationship_list_box( $p_default_rel_type = BUG_REL_ANY, $p_select_name = 'rel_type', $p_include_any = false, $p_include_none = false, $p_input_css = "input-sm" ) {
+function print_dwg_relationship_list_box( $p_default_rel_type = DWG_REL_ANY, $p_select_name = 'rel_type', $p_include_any = false, $p_include_none = false, $p_input_css = "input-sm" ) {
 	global $g_relationships;
 	?>
 <select class="<?php echo $p_input_css ?>" name="<?php echo $p_select_name?>">
 <?php if( $p_include_any ) {?>
-<option value="<?php echo BUG_REL_ANY ?>" <?php echo( $p_default_rel_type == BUG_REL_ANY ? ' selected="selected"' : '' )?>>[<?php echo lang_get( 'any' )?>]</option>
+<option value="<?php echo DWG_REL_ANY ?>" <?php echo( $p_default_rel_type == DWG_REL_ANY ? ' selected="selected"' : '' )?>>[<?php echo lang_get( 'any' )?>]</option>
 <?php
 	}
 
 	if( $p_include_none ) {?>
-<option value="<?php echo BUG_REL_NONE ?>" <?php echo( $p_default_rel_type == BUG_REL_NONE ? ' selected="selected"' : '' )?>>[<?php echo lang_get( 'none' )?>]</option>
+<option value="<?php echo DWG_REL_NONE ?>" <?php echo( $p_default_rel_type == DWG_REL_NONE ? ' selected="selected"' : '' )?>>[<?php echo lang_get( 'none' )?>]</option>
 <?php
 	}
 

@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with MantisBT.  If not, see <http://www.gnu.org/licenses/>.
 
-require_api( 'access_api.php' );
+require_api( 'access_bug_api.php' );
 require_api( 'history_api.php' );
 
 use Mantis\Exceptions\ClientException;

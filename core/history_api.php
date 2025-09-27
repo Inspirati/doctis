@@ -43,7 +43,7 @@
  * @uses utility_api.php
  */
 
-require_api( 'access_api.php' );
+require_api( 'access_bug_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'bug_api.php' );
 require_api( 'bug_revision_api.php' );

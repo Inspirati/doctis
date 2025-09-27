@@ -42,7 +42,7 @@ if( !defined( 'MY_VIEW_INC_ALLOW' ) ) {
 	return;
 }
 
-require_api( 'access_api.php' );
+require_api( 'access_bug_api.php' );
 require_api( 'bug_api.php' );
 require_api( 'category_api.php' );
 require_api( 'config_api.php' );
@@ -93,6 +93,7 @@ $c_filter['reported'] = filter_create_reported_by( helper_get_current_project(),
 $t_url_link_parameters['reported'] = [
 	FILTER_PROPERTY_REPORTER_ID => $t_current_user_id,
 	FILTER_PROPERTY_HIDE_STATUS => $t_hide_status_default,
+	FILTER_PROPERTY_CREATOR_ID => $t_current_user_id,
 ];
 
 $c_filter['resolved'] = array(
@@ -106,6 +107,9 @@ $c_filter['resolved'] = array(
 		'0' => $t_bug_resolved_status_threshold,
 	),
 	FILTER_PROPERTY_HIGHLIGHT_CHANGED => $t_default_show_changed,
+	FILTER_PROPERTY_CREATOR_ID => array(
+		'0' => META_FILTER_ANY,
+	),
 	FILTER_PROPERTY_REPORTER_ID => array(
 		'0' => META_FILTER_ANY,
 	),

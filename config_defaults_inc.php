@@ -3065,6 +3065,27 @@ $g_bug_report_page_fields = array(
 	'view_state',
 );
 
+$g_dwg_report_page_fields = array(
+	'additional_info',
+	'attachments',
+	'category_id',
+	'document_id',
+	'due_date',
+	'handler',
+	'os',
+	'os_build',
+	'platform',
+	'priority',
+	'product_build',
+	'product_version',
+	'reproducibility',
+	'severity',
+	'steps_to_reproduce',
+	'tags',
+	'target_version',
+	'view_state',
+);
+
 /**
  * An array of optional fields to show on the bug view page.
  *
@@ -3149,6 +3170,7 @@ $g_dwg_view_page_fields = array(
 	'due_date',
 	'eta',
 	'fixed_in_version',
+	'creator',
 	'handler',
 	'id',
 	'last_updated',
@@ -3160,7 +3182,6 @@ $g_dwg_view_page_fields = array(
 	'product_version',
 	'project',
 	'projection',
-	'reporter',
 	'reproducibility',
 	'resolution',
 	'severity',
@@ -3780,6 +3801,19 @@ $g_allow_no_document = OFF;
 $g_limit_reporters = OFF;
 
 /**
+ * Limit creators.
+ *
+ * Set to ON if you wish to limit users to only viewing dwgs that they create.
+ *
+ * This feature is deprecated and replaced by the 'limit_view_unless_threshold'
+ * option. It must be OFF to enable the new one.
+ *
+ * @global int $g_limit_creators
+ * @deprecated 2.24.0 Use $g_limit_view_unless_threshold instead
+ */
+$g_limit_creators = OFF;
+
+/**
  * Threshold at which a user can view all issues in the project (as allowed by other permissions).
  *
  * Not meeting this threshold means the user can only see the issues they reported,
@@ -4282,6 +4316,20 @@ $g_resolution_enum_string = '10:open,20:fixed,30:reopened,40:unable to duplicate
  * @global string $g_projection_enum_string
  */
 $g_projection_enum_string = '10:none,30:tweak,50:minor fix,70:major rework,90:redesign';
+
+/**
+ * Document enumeration.
+ *
+ * @global string $g_document_enum_string
+ */
+$g_document_enum_string = '10:recieved,20:triage,30:assignment,40:JoS,50:review,60:rework,60:independent review,80:accepted,90:incorported';
+
+/**
+ * Change Class enumeration.
+ *
+ * @global string $g_change_class_enum_string
+ */
+$g_change_class_enum_string = '10:Class 1,20:Class 2';
 
 /**
  * ETA enumeration.
@@ -5493,8 +5541,11 @@ $g_public_config_names = array(
 	'allow_parent_of_unresolved_to_close',
 	'allow_permanent_cookie',
 	'allow_reporter_close',
+	'allow_creator_close',
 	'allow_reporter_reopen',
+	'allow_creator_reopen',
 	'allow_reporter_upload',
+	'allow_creator_upload',
 	'allow_signup',
 	'allowed_files',
 	'anonymous_account',
@@ -5527,6 +5578,7 @@ $g_public_config_names = array(
 	'bug_reopen_status',
 	'dwg_reopen_status',
 	'bug_report_page_fields',
+	'dwg_report_page_fields',
 	'bug_resolution_fixed_threshold',
 	'dwg_resolution_fixed_threshold',
 	'bug_resolution_not_fixed_threshold',
@@ -5701,6 +5753,7 @@ $g_public_config_names = array(
 	'language_choices_arr',
 	'limit_email_domains',
 	'limit_reporters',
+	'limit_creators',
 	'limit_view_unless_threshold',
 	'logo_image',
 	'logo_url',
@@ -5909,6 +5962,7 @@ $g_public_config_names = array(
 	'webservice_rest_enabled',
 	'webservice_severity_enum_default_when_not_found',
 	'webservice_specify_reporter_on_add_access_level_threshold',
+	'webservice_specify_creator_on_add_access_level_threshold',
 	'webservice_status_enum_default_when_not_found',
 	'webservice_version_when_not_found',
 	'wiki_enable',
@@ -5967,6 +6021,19 @@ $g_webservice_admin_access_level_threshold = MANAGER;
  * @global int $g_webservice_specify_reporter_on_add_access_level_threshold
  */
 $g_webservice_specify_reporter_on_add_access_level_threshold = DEVELOPER;
+
+/**
+ * Minimum project access level required to be able to specify a creator name when
+ * adding a document.
+ *
+ * Otherwise, the current user is used as the creator.  Users who don't have
+ * this access level can always do another step to modify the document and specify
+ * a different name, but in this case it will be logged in the history who
+ * originally created the document.
+ *
+ * @global int $g_webservice_specify_creator_on_add_access_level_threshold
+ */
+$g_webservice_specify_creator_on_add_access_level_threshold = DEVELOPER;
 
 /**
  * The following enum id is used when the webservices get enum labels that are not

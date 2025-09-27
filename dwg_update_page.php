@@ -48,7 +48,7 @@
  */
 
 require_once( 'core.php' );
-require_api( 'access_api.php' );
+require_api( 'access_dwg_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'bug_api.php' );
 require_api( 'dwg_api.php' );
@@ -75,7 +75,7 @@ require_api( 'version_api.php' );
 require_css( 'status_config.php' );
 
 $f_bug_id = gpc_get_int( 'bug_id' );
-$f_reporter_edit = gpc_get_bool( 'reporter_edit' );
+$f_creator_edit = gpc_get_bool( 'creator_edit' );
 
 $t_bug = dwg_get( $f_bug_id, true );
 
@@ -109,7 +109,7 @@ $t_show_view_state = in_array( 'view_state', $t_fields );
 $t_view_state = $t_show_view_state ? string_display_line( get_enum_element( 'view_state', $t_bug->view_state ) ) : '';
 $t_show_date_submitted = in_array( 'date_submitted', $t_fields );
 $t_show_last_updated = in_array( 'last_updated', $t_fields );
-$t_show_reporter = in_array( 'reporter', $t_fields );
+$t_show_creator = in_array( 'creator', $t_fields );
 $t_show_handler = in_array( 'handler', $t_fields ) && access_has_dwg_level( config_get( 'view_handler_threshold' ), $t_bug_id );
 $t_show_priority = in_array( 'priority', $t_fields );
 $t_show_severity = in_array( 'severity', $t_fields );
@@ -280,31 +280,31 @@ if( $t_show_id || $t_show_project || $t_show_category || $t_show_view_state || $
 # Reporter, Assigned To, Due Date
 #
 
-if( $t_show_reporter || $t_show_handler || $t_show_due_date ) {
+if( $t_show_creator || $t_show_handler || $t_show_due_date ) {
 	echo '<tr>';
 
 	$t_spacer = 0;
 
-	if( $t_show_reporter ) {
+	if( $t_show_creator ) {
 		# Reporter
 		echo '<th class="category">';
-		if( $f_reporter_edit ) echo '<label for="reporter_id">';
+		if( $f_creator_edit ) echo '<label for="creator_id">';
 		echo lang_get( 'reporter' );
-		if( $f_reporter_edit ) echo '</label>';
+		if( $f_creator_edit ) echo '</label>';
 		echo '</th><td>';
 
-		# Do not allow the bug's reporter to edit the Reporter field
-		# when limit_reporters is ON
-		if( access_has_limited_view( $t_bug->project_id ) ) {
-			echo string_attribute( user_get_name( $t_bug->reporter_id ) );
+		# Do not allow the document's creator to edit the Creator field
+		# when limit_creators is ON
+		if( access_has_limited_view_dwg( $t_bug->project_id ) ) {
+			echo string_attribute( user_get_name( $t_bug->creator_id ) );
 		} else {
-			if( $f_reporter_edit ) {
-				echo '<select ' . helper_get_tab_index() . ' id="reporter_id" name="reporter_id">';
-				print_reporter_option_list( $t_bug->reporter_id, $t_bug->project_id );
+			if( $f_creator_edit ) {
+				echo '<select ' . helper_get_tab_index() . ' id="creator_id" name="creator_id">';
+				print_dwg_creator_option_list( $t_bug->creator_id, $t_bug->project_id );
 				echo '</select>';
 			} else {
-				echo string_attribute( user_get_name( $t_bug->reporter_id ) );
-				echo ' [<a href="#reporter_edit" class="click-url" data-url="' . string_get_dwg_update_url( $f_bug_id ) . '&amp;reporter_edit=true">' . lang_get( 'edit' ) . '</a>]';
+				echo string_attribute( user_get_name( $t_bug->creator_id ) );
+				echo ' [<a href="#creator_edit" class="click-url" data-url="' . string_get_dwg_update_url( $f_bug_id ) . '&amp;creator_edit=true">' . lang_get( 'edit' ) . '</a>]';
 			}
 		}
 		echo '</td>';

@@ -938,9 +938,17 @@ $g_upgrade[$t_idx++] = array( 'CreateTableSQL',
 		revision_date	I		UNSIGNED NOTNULL DEFAULT '1',
 		release_date	I		UNSIGNED NOTNULL DEFAULT '1',
 		date_submitted	I		UNSIGNED NOTNULL DEFAULT '1',
-		last_updated	I		UNSIGNED NOTNULL DEFAULT '1'
-	" )
-);
+		last_updated	I		UNSIGNED NOTNULL DEFAULT '1',
+
+		dwg_text_id		I		UNSIGNED NOTNULL DEFAULT '0',
+
+	bug_text_id				I		UNSIGNED NOTNULL DEFAULT '0',
+	profile_id				I		UNSIGNED NOTNULL DEFAULT '0',
+	fixed_in_version		C(64)	NOTNULL DEFAULT \" '' \",
+	summary					C(128)	NOTNULL DEFAULT \" '' \",
+	sticky					L		$t_notnull DEFAULT  \"'0'\" ",
+	$t_table_options
+	) );
 $g_upgrade[215] = array( 'CreateIndexSQL', array( 'idx_document_number', db_get_table( 'document' ), 'number' ) );
 $g_upgrade[216] = array( 'CreateIndexSQL', array( 'idx_document_category', db_get_table( 'document' ), 'category' ) );
 
@@ -961,113 +969,39 @@ $g_upgrade[$t_idx++] = array( 'AddColumnSQL', array( db_get_table( 'project' ), 
 # user access_level: '10:viewer,25:reporter,40:updater,55:developer,70:manager,90:administrator'
 # default password: 'pass' == 1a1dc91c907325c69271ddf0c944bc72
 
-$g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'user' ), "(
-		username, realname, email, password,
-		enabled, protected, access_level,
-		login_count, lost_password_request_count, failed_login_count,
-		cookie_string,
-		last_visit, date_created
-	)
-	VALUES (
-		'viewer', '', 'doctis.viewer@gmail.com', '1a1dc91c907325c69271ddf0c944bc72',
-		'1', '0', 10,
-		3, 0, 0,
-		'" . md5( mt_rand( 0, mt_getrandmax() ) + mt_rand( 0, mt_getrandmax() ) ) . md5( time() ) . "',
-		'1757927188', '1757927188'
-	)" ) );
+$g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwg_text' ), "
+	id						I		PRIMARY UNSIGNED NOTNULL AUTOINCREMENT,
+	description				XL		NOTNULL,
+	steps_to_reproduce		XL		$t_notnull,
+	additional_information	XL		$t_notnull",
+	$t_table_options
+	) );
 
-$g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'user' ), "(
-		username, realname, email, password,
-		enabled, protected, access_level,
-		login_count, lost_password_request_count, failed_login_count,
-		cookie_string,
-		last_visit, date_created
-	)
-	VALUES (
-		'reporter', '', 'doctis.reporter@gmail.com', '1a1dc91c907325c69271ddf0c944bc72',
-		'1', '0', 25,
-		3, 0, 0,
-		'" . md5( mt_rand( 0, mt_getrandmax() ) + mt_rand( 0, mt_getrandmax() ) ) . md5( time() ) . "',
-		'1757927188', '1757927188'
-	)" ) );
+$g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwgnote' ), "
+	id						I		UNSIGNED PRIMARY NOTNULL AUTOINCREMENT,
+	dwg_id					I		UNSIGNED NOTNULL DEFAULT '0',
+	creator_id				I		UNSIGNED NOTNULL DEFAULT '0',
+	dwgnote_text_id			I		UNSIGNED NOTNULL DEFAULT '0',
+	view_state				I2		NOTNULL DEFAULT '10',
+	date_submitted			I		UNSIGNED NOTNULL DEFAULT '1',
+	last_modified			I		UNSIGNED NOTNULL DEFAULT '1',
+	note_type				I		DEFAULT '0',
+	time_tracking			I		UNSIGNED NOTNULL DEFAULT \" 0 \",
+	note_attr				C(250)	DEFAULT \" '' \" ",
+	$t_table_options
+	) );
 
-$g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'user' ), "(
-		username, realname, email, password,
-		enabled, protected, access_level,
-		login_count, lost_password_request_count, failed_login_count,
-		cookie_string,
-		last_visit, date_created
-	)
-	VALUES (
-		'updater', '', 'doctis.updater@gmail.com', '1a1dc91c907325c69271ddf0c944bc72',
-		'1', '0', 40,
-		3, 0, 0,
-		'" . md5( mt_rand( 0, mt_getrandmax() ) + mt_rand( 0, mt_getrandmax() ) ) . md5( time() ) . "',
-		'1757927188', '1757927188'
-	)" ) );
+$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_dwg', db_get_table( 'dwgnote' ), 'dwg_id' ) );
+$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_dwg_last_mod', db_get_table( 'dwgnote' ), 'last_modified' ) );
 
-$g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'user' ), "(
-		username, realname, email, password,
-		enabled, protected, access_level,
-		login_count, lost_password_request_count, failed_login_count,
-		cookie_string,
-		last_visit, date_created
-	)
-	VALUES (
-		'developer', '', 'doctis.developer@gmail.com', '1a1dc91c907325c69271ddf0c944bc72',
-		'1', '0', 55,
-		3, 0, 0,
-		'" . md5( mt_rand( 0, mt_getrandmax() ) + mt_rand( 0, mt_getrandmax() ) ) . md5( time() ) . "',
-		'1757927188', '1757927188'
-	)" ) );
+$g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwgnote_text' ), "
+	id						I		UNSIGNED NOTNULL PRIMARY AUTOINCREMENT,
+	note					XL		NOTNULL",
+	$t_table_options
+	) );
 
-$g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'user' ), "(
-		username, realname, email, password,
-		enabled, protected, access_level,
-		login_count, lost_password_request_count, failed_login_count,
-		cookie_string,
-		last_visit, date_created
-	)
-	VALUES (
-		'manager', '', 'doctis.manager@gmail.com', '1a1dc91c907325c69271ddf0c944bc72',
-		'1', '0', 70,
-		3, 0, 0,
-		'" . md5( mt_rand( 0, mt_getrandmax() ) + mt_rand( 0, mt_getrandmax() ) ) . md5( time() ) . "',
-		'1757927188', '1757927188'
-	)" ) );
-
-$g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'user' ), "(
-		username, realname, email, password,
-		enabled, protected, access_level,
-		login_count, lost_password_request_count, failed_login_count,
-		cookie_string,
-		last_visit, date_created
-	)
-	VALUES (
-		'admin', '', 'doctis.admin@gmail.com', '1a1dc91c907325c69271ddf0c944bc72',
-		'1', '0', 90,
-		3, 0, 0,
-		'" . md5( mt_rand( 0, mt_getrandmax() ) + mt_rand( 0, mt_getrandmax() ) ) . md5( time() ) . "',
-		'1757927188', '1757927188'
-	)" ) );
-
-# Default username: 'user' password: 'pass' (note that last two fields here are fixed unixtimes, circa 15 Sept 2025)
-# You can log in as administrator and change this account to your liking, including username
-$g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'user' ), "(
-		username, realname, email, password,
-		enabled, protected, access_level,
-		login_count, lost_password_request_count, failed_login_count,
-		cookie_string,
-		last_visit, date_created
-	)
-	VALUES (
-		'user', '', 'doctis.user@gmail.com', '1a1dc91c907325c69271ddf0c944bc72',
-		'1', '0', 25,
-		3, 0, 0,
-		'" . md5( mt_rand( 0, mt_getrandmax() ) + mt_rand( 0, mt_getrandmax() ) ) . md5( time() ) . "',
-		'1757927188', '1757927188'
-	)" ) );
-
+/*
+ */
 # END Development marker: Inspirati - RobD
 
 

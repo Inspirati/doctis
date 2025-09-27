@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with MantisBT.  If not, see <http://www.gnu.org/licenses/>.
 
-require_api( 'access_api.php' );
+require_api( 'access_dwg_api.php' );
 require_api( 'authentication_api.php' );
 // require_api( 'bug_api.php' );
 require_api( 'dwg_api.php' );
@@ -32,7 +32,7 @@ require_api( 'helper_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'last_visited_api.php' );
 require_api( 'profile_api.php' );
-require_api( 'relationship_api.php' );
+require_api( 'dwg_relationship_api.php' );
 require_api( 'string_api.php' );
 require_api( 'user_api.php' );
 
@@ -257,7 +257,7 @@ class DwgViewPageCommand extends Command {
 		$t_flags['priority_show'] = in_array( 'priority', $t_fields ) && isset( $t_issue['priority'] );
 		$t_flags['project_show'] = in_array( 'project', $t_fields ) && isset( $t_issue['project'] );
 		$t_flags['projection_show'] = in_array( 'projection', $t_fields ) && isset( $t_issue['projection'] );
-		$t_flags['reporter_show'] = in_array( 'reporter', $t_fields ) && isset( $t_issue['reporter'] );
+		$t_flags['creator_show'] = in_array( 'creator', $t_fields ) && isset( $t_issue['creator'] );
 		$t_flags['reproducibility_show'] = in_array( 'reproducibility', $t_fields ) && isset( $t_issue['reproducibility'] );
 		$t_flags['resolution_show'] = in_array( 'resolution', $t_fields ) && isset( $t_issue['resolution'] );
 		$t_flags['severity_show'] = in_array( 'severity', $t_fields ) && isset( $t_issue['severity'] );

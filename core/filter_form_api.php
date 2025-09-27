@@ -45,7 +45,7 @@
 use Mantis\Exceptions\ClientException;
 use Mantis\Exceptions\StateException;
 
-require_api( 'access_api.php' );
+require_api( 'access_bug_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
@@ -209,7 +209,7 @@ function print_filter_reporter_id( ?array $p_filter = null ) {
 		<select class="input-xs" <?php echo filter_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_REPORTER_ID;?>[]">
 		<?php
 	# if current user is a reporter, and limited_reporters is set to ON, only display that name
-	if( access_has_limited_view() ) {
+	if( access_has_limited_view_bug() ) {
 		$t_id = auth_get_current_user_id();
 		$t_username = user_get_name( $t_id );
 		$t_display_name = string_attribute( $t_username );

@@ -40,7 +40,7 @@
  * @noinspection PhpComposerExtensionStubsInspection FileInfo is optional
  */
 
-require_api( 'access_api.php' );
+require_api( 'access_dwg_api.php' );
 require_api( 'antispam_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'bug_api.php' );
@@ -128,7 +128,7 @@ function file_dwg_get_display_name( $p_filename ) {
  *
  * @return void
  */
-function file_dwg_bug_attachment_count_cache( array $p_bug_ids ) {
+function file_dwg_dwg_attachment_count_cache( array $p_bug_ids ) {
 	global $g_cache_file_count;
 
 	if( empty( $p_bug_ids ) ) {
@@ -174,7 +174,7 @@ function file_dwg_bug_attachment_count_cache( array $p_bug_ids ) {
  *
  * @return int
  */
-function file_dwg_bug_attachment_count( $p_bug_id ) {
+function file_dwg_dwg_attachment_count( $p_bug_id ) {
 	global $g_cache_file_count;
 
 	# If it's not in cache, load the value
@@ -193,7 +193,7 @@ function file_dwg_bug_attachment_count( $p_bug_id ) {
  * @return bool
  * @access public
  */
-function file_dwg_bug_attachment_count_clear_cache( $p_bug_id = null ) {
+function file_dwg_attachment_count_clear_cache( $p_bug_id = null ) {
 	global $g_cache_file_count;
 
 	if( null === $p_bug_id ) {
@@ -1170,12 +1170,12 @@ function file_dwg_allow_dwg_upload( $p_bug_id = null, $p_user_id = null, $p_proj
 		$t_reporter = bug_is_user_reporter( $p_bug_id, $p_user_id );
 	}
 
-	if( $t_reporter && ( ON == config_get( 'allow_reporter_upload' ) ) ) {
+	if( $t_reporter && ( ON == config_get( 'allow_creator_upload' ) ) ) {
 		return true;
 	}
 
 	# Check the access level against the config setting
-	return access_has_project_level( config_get( 'upload_bug_file_threshold' ), $t_project_id, $p_user_id );
+	return access_has_project_level( config_get( 'upload_dwg_file_threshold' ), $t_project_id, $p_user_id );
 }
 
 /**

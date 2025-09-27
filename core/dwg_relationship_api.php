@@ -81,7 +81,7 @@
  * @uses utility_api.php
  */
 
-require_api( 'access_api.php' );
+require_api( 'access_dwg_api.php' );
 require_api( 'bug_api.php' );
 require_api( 'collapse_api.php' );
 require_api( 'config_api.php' );
@@ -93,6 +93,7 @@ require_api( 'helper_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'prepare_api.php' );
 require_api( 'print_api.php' );
+require_api( 'print_dwg_api.php' );
 require_api( 'project_api.php' );
 require_api( 'string_api.php' );
 require_api( 'utility_api.php' );
@@ -102,7 +103,7 @@ use Mantis\Exceptions\ClientException;
 /**
  * RelationshipData Structure Definition
  */
-class BugRelationshipData {
+class DwgRelationshipData {
 	/**
 	 * @var int Relationship id
 	 */
@@ -440,7 +441,7 @@ function dwg_relationship_copy_all( $p_bug_id, $p_new_bug_id ) {
  *
  * @param int $p_relationship_id Relationship Identifier.
  *
- * @return BugRelationshipData BugRelationshipData object
+ * @return DwgRelationshipData DwgRelationshipData object
  * @throws ClientException If the relationship does not exist.
  */
 function dwg_relationship_get( $p_relationship_id ) {
@@ -451,7 +452,7 @@ function dwg_relationship_get( $p_relationship_id ) {
 	$t_relationship = db_fetch_array( $t_result );
 
 	if( $t_relationship ) {
-		$t_bug_relationship_data = new BugRelationshipData;
+		$t_bug_relationship_data = new DwgRelationshipData;
 		$t_bug_relationship_data->id = $t_relationship['id'];
 		$t_bug_relationship_data->src_bug_id = $t_relationship['source_bug_id'];
 		$t_bug_relationship_data->dest_bug_id = $t_relationship['destination_bug_id'];
@@ -471,7 +472,7 @@ function dwg_relationship_get( $p_relationship_id ) {
  *
  * @param int $p_src_bug_id Source Bug identifier.
  *
- * @return array Array of BugRelationshipData objects
+ * @return array Array of DwgRelationshipData objects
  * @throws ClientException if the bug does not exist.
  */
 function dwg_relationship_get_all_src( $p_src_bug_id ) {
@@ -492,7 +493,7 @@ function dwg_relationship_get_all_src( $p_src_bug_id ) {
 	$i = 0;
 
 	while( $t_row = db_fetch_array( $t_result ) ) {
-		$t_bug_relationship_data[$i] = new BugRelationshipData;
+		$t_bug_relationship_data[$i] = new DwgRelationshipData;
 		$t_bug_relationship_data[$i]->id = $t_row['id'];
 		$t_bug_relationship_data[$i]->src_bug_id = $t_row['source_bug_id'];
 		$t_bug_relationship_data[$i]->src_project_id = $t_src_project_id;
@@ -515,7 +516,7 @@ function dwg_relationship_get_all_src( $p_src_bug_id ) {
  *
  * @param int $p_dest_bug_id Destination bug identifier.
  *
- * @return BugRelationshipData[]
+ * @return DwgRelationshipData[]
  * @throws ClientException if the bug does not exist.
  */
 function dwg_relationship_get_all_dest( $p_dest_bug_id ) {
@@ -536,7 +537,7 @@ function dwg_relationship_get_all_dest( $p_dest_bug_id ) {
 	$i = 0;
 
 	while( $t_row = db_fetch_array( $t_result ) ) {
-		$t_bug_relationship_data[$i] = new BugRelationshipData;
+		$t_bug_relationship_data[$i] = new DwgRelationshipData;
 		$t_bug_relationship_data[$i]->id = $t_row['id'];
 		$t_bug_relationship_data[$i]->src_bug_id = $t_row['source_bug_id'];
 		$t_bug_relationship_data[$i]->src_project_id = $t_row['project_id'];
@@ -560,7 +561,7 @@ function dwg_relationship_get_all_dest( $p_dest_bug_id ) {
  * @param bool &$p_is_different_projects Returned Boolean value indicating if
  *                                       some relationships cross project boundaries.
  *
- * @return array Array of BugRelationshipData objects
+ * @return array Array of DwgRelationshipData objects
  * @throws ClientException if the bug does not exist.
  */
 function dwg_relationship_get_all( $p_bug_id, &$p_is_different_projects ) {
@@ -776,25 +777,6 @@ function dwg_relationship_get_id_from_api_name( $p_relationship_type_name ) {
  * @return bool
  * @throws ClientException if the bug does not exist.
  */
-function dwg_relationship_can_resolve_bug( $p_bug_id ) {
-	# retrieve all the relationships in which the bug is the source bug
-	$t_relationships = dwg_relationship_get_all_src( $p_bug_id );
-
-	foreach( $t_relationships as $t_relationship ) {
-		# verify if each bug in relation DWG_DEPENDANT is already marked as resolved
-		if( $t_relationship->type == DWG_DEPENDANT ) {
-			$t_status = dwg_get_field( $t_relationship->dest_bug_id, 'status' );
-
-			if( $t_status < config_get( 'dwg_resolved_status_threshold', null, null, $t_relationship->dest_project_id ) ) {
-				# the bug is NOT marked as resolved/closed
-				return false;
-			}
-		}
-	}
-
-	return true;
-}
-
 function dwg_relationship_can_resolve_dwg( $p_bug_id ) {
 	# retrieve all the relationships in which the bug is the source bug
 	$t_relationships = dwg_relationship_get_all_src( $p_bug_id );

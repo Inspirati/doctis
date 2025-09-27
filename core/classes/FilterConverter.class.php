@@ -92,6 +92,7 @@ class FilterConverter {
 		$t_criteria = $p_criteria;
 	
 		$this->renameField( $t_criteria, FILTER_PROPERTY_HANDLER_ID, 'handler' );
+		$this->renameField( $t_criteria, FILTER_PROPERTY_CREATOR_ID, 'creator' );
 		$this->renameField( $t_criteria, FILTER_PROPERTY_REPORTER_ID, 'reporter' );
 		$this->renameField( $t_criteria, FILTER_PROPERTY_MONITOR_USER_ID, 'monitored' );
 		$this->renameField( $t_criteria, FILTER_PROPERTY_NOTE_USER_ID, 'commented' );
@@ -108,6 +109,7 @@ class FilterConverter {
 		$this->convertCategoryArrayToJson( $t_criteria );
 
 		$this->convertUserArrayToJson( $t_criteria, 'reporter' );
+		$this->convertUserArrayToJson( $t_criteria, 'creator' );
 		$this->convertUserArrayToJson( $t_criteria, 'handler' );
 		$this->convertUserArrayToJson( $t_criteria, 'monitored' );
 		$this->convertUserArrayToJson( $t_criteria, 'commented' );

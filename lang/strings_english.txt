@@ -300,7 +300,11 @@ $s_project_view_state_enum_string = '10:public,50:private';
 $s_view_state_enum_string = '10:public,50:private';
 
 $s_priority_enum_string = '10:none,20:low,30:normal,40:high,50:urgent,60:immediate';
-$s_severity_enum_string = '10:feature,20:trivial,30:text,40:tweak,50:minor,60:major,70:crash,80:block';
+#$s_severity_enum_string = '10:feature,20:trivial,30:text,40:tweak,50:minor,60:major,70:crash,80:block';
+
+$s_priority_enum_string = '10:none,20:low,30:normal,40:high,50:urgent,60:immediate,70:closed,80:pending,90:open';
+$s_severity_enum_string = '10:feature,20:comment,30:query,40:tweak,50:minor,60:major,70:crash,80:block';
+
 $s_reproducibility_enum_string = '10:always,30:sometimes,50:random,70:have not tried,90:unable to reproduce,100:N/A';
 $s_status_enum_string = '10:new,20:feedback,30:acknowledged,40:confirmed,50:assigned,80:resolved,90:closed';
 $s_resolution_enum_string = '10:open,20:fixed,30:reopened,40:unable to reproduce,50:not fixable,60:duplicate,70:no change required,80:suspended,90:won\'t fix';
@@ -554,8 +558,14 @@ $s_delete_bug_sure_msg = 'Are you sure you wish to delete this issue?';
 # bug_monitor_add.php
 $s_monitor_bug_button = 'Monitor';
 
+# dwg_monitor_add.php
+$s_monitor_dwg_button = 'Monitor';
+
 # bug_monitor_delete.php
 $s_unmonitor_bug_button = 'End Monitoring';
+
+# dwg_monitor_delete.php
+$s_unmonitor_dwg_button = 'End Monitoring';
 
 # bugnote_add_inc.php
 $s_upload_file = 'Upload File';
@@ -628,11 +638,18 @@ $s_confirm_sponsorship = 'Please confirm you want to sponsor issue %1$d for %2$s
 $s_stick_bug_button = 'Stick';
 $s_unstick_bug_button = 'Unstick';
 
+# dwg_stick.php
+$s_stick_dwg_button = 'Stick';
+$s_unstick_dwg_button = 'Unstick';
+
 # bug_update.php
 $s_bug_updated_msg = 'Issue has been successfully updated...';
 
 # dwg_update.php
 $s_dwg_updated_msg = 'Document has been successfully updated...';
+
+# dwg_update_page.php
+$s_creator = 'Creator';
 
 # bug_update_page.php
 $s_back_to_bug_link = 'Back To Issue';
@@ -717,11 +734,11 @@ $s_dwgnote_attached_files = 'Attached Files:';
 
 # bugnote_delete.php
 $s_bugnote_deleted_msg = 'Note has been successfully deleted...';
-$s_bug_notes_title = 'Notes';
+$s_bug_notes_title = 'Issue Notes';
 
 # dwgnote_delete.php
 $s_dwgnote_deleted_msg = 'Note has been successfully deleted...';
-$s_dwg_notes_title = 'Notes';
+$s_dwg_notes_title = 'Document Notes';
 
 # bugnote_edit_page.php
 $s_edit_bugnote_title = 'Edit Note';
@@ -739,7 +756,7 @@ $s_closed_bug_button = 'Close Issue';
 $s_no_dwgnotes_msg = 'There are no notes attached to this document.';
 $s_add_dwgnote_title = 'Add Note';
 $s_add_dwgnote_button = 'Add Note';
-$s_closed_dwg_button = 'Close document';
+$s_closed_dwg_button = 'Close Document';
 
 # bugnote_update.php
 $s_bugnote_updated_msg = 'Note has been successfully updated...';
@@ -1423,6 +1440,11 @@ $s_publish = 'Publish';
 $s_browser_does_not_support_audio = 'Your browser does not support audio tag.';
 $s_browser_does_not_support_video = 'Your browser does not support video tag.';
 
+# dwg_view_advanced_page.php
+$s_dwg_assign_to_button = 'Assign To:';
+$s_dwg_status_to_button = 'Change Status To:';
+$s_reopen_dwg_button = 'Reopen';
+
 # view.php
 $s_bug_view_title = 'View Issue Details';
 $s_no_users_monitoring_bug = 'There are no users monitoring this issue.';
@@ -1442,6 +1464,10 @@ $s_no_users_sponsoring_bug = 'There are no users sponsoring this issue.';
 $s_users_sponsoring_bug = 'Users sponsoring this issue';
 $s_sponsors_list = 'Sponsors List';
 $s_total_sponsorship_amount = 'Total Sponsorship = %1$s';
+
+# dwg_sponsorship_list_view_inc.php
+$s_no_users_sponsoring_dwg = 'There are no users sponsoring this document.';
+$s_users_sponsoring_dwg = 'Users sponsoring this document';
 
 # custom field strings
 $s_add_custom_field_button = 'New Custom Field';
@@ -1605,6 +1631,7 @@ $s_delete_attachments = 'Delete attachments';
 $s_delete_attachment_sure_msg = 'Are you sure you wish to delete this attachment?';
 $s_upload_issue_attachments = 'Upload issue attachments';
 $s_filters = 'Filters';
+$s_dwg_filters = 'Filters (WIP - not functional)';
 $s_save_filters = 'Save filters';
 $s_save_filters_as_shared = 'Save filters as shared';
 $s_use_saved_filters = 'Use saved filters';
