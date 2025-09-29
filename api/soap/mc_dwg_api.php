@@ -1352,7 +1352,7 @@ function mc_dwg_note_add( $p_username, $p_password, $p_issue_id, stdClass $p_not
 			'payload' => $t_payload
 		);
 
-		$t_command = new DocumentNoteAddCommand( $t_data );
+		$t_command = new DwgNoteAddCommand( $t_data );
 		$t_result = $t_command->execute();
 		return $t_result['id'];
 	}

@@ -50,7 +50,7 @@ require_api( 'database_api.php' );
 require_api( 'error_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'lang_api.php' );
-require_api( 'print_api.php' );
+require_api( 'print_dwg_api.php' );
 require_api( 'project_api.php' );
 require_api( 'string_api.php' );
 require_api( 'user_api.php' );

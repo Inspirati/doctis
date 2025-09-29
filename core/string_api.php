@@ -29,7 +29,7 @@
  * @uses bugnote_api.php
  * @uses config_api.php
  * @uses constant_inc.php
- * @uses email_bug_api.php
+ * @uses email_api.php
  * @uses event_api.php
  * @uses helper_api.php
  * @uses lang_api.php
@@ -484,23 +484,23 @@ function string_process_bugnote_link( $p_string, $p_include_anchor = true, $p_de
 }
 
 function string_process_dwgnote_link( $p_string, $p_include_anchor = true, $p_detail_info = true, $p_fqdn = false ) {
-	static $s_bugnote_link_callback = array();
+	static $s_dwgnote_link_callback = array();
 
-	$t_tag = config_get( 'bugnote_link_tag' );
+	$t_tag = config_get( 'dwgnote_link_tag' );
 
 	# bail if the link tag is blank
 	if( '' == $t_tag || $p_string == '' ) {
 		return $p_string;
 	}
 
-	if( !isset( $s_bugnote_link_callback[$p_include_anchor][$p_detail_info][$p_fqdn] ) ) {
+	if( !isset( $s_dwgnote_link_callback[$p_include_anchor][$p_detail_info][$p_fqdn] ) ) {
 		if( $p_include_anchor ) {
-			$s_bugnote_link_callback[$p_include_anchor][$p_detail_info][$p_fqdn] =
+			$s_dwgnote_link_callback[$p_include_anchor][$p_detail_info][$p_fqdn] =
 				function( $p_array ) use( $p_detail_info, $p_fqdn ) {
 					global $g_project_override;
 					$c_bugnote_id = (int)$p_array[2];
 					if( dwgnote_exists( $c_bugnote_id ) ) {
-						$t_bug_id = dwgnote_get_field( $c_bugnote_id, 'bug_id' );
+						$t_bug_id = dwgnote_get_field( $c_bugnote_id, 'dwg_id' );
 						if( dwg_exists( $t_bug_id ) ) {
 							$t_project_id = dwg_get_field( $t_bug_id, 'project_id' );
 							$t_user_id = auth_get_current_user_id();
@@ -513,7 +513,7 @@ function string_process_dwgnote_link( $p_string, $p_include_anchor = true, $p_de
 									user_get_access_level( $t_user_id, $t_project_id ),
 									config_get( 'private_dwgnote_threshold' )
 									)
-									|| dwgnote_get_field( $c_bugnote_id, 'reporter_id' ) == $t_user_id
+									|| dwgnote_get_field( $c_bugnote_id, 'creator_id' ) == $t_user_id
 									|| dwgnote_get_field( $c_bugnote_id, 'view_state' ) == VS_PUBLIC;
 
 								if( $t_can_view_note ) {
@@ -532,9 +532,9 @@ function string_process_dwgnote_link( $p_string, $p_include_anchor = true, $p_de
 						}
 					}
 					return $p_array[0];
-				}; # end of bugnote link callback closure
+				}; # end of dwgnote link callback closure
 		} else {
-			$s_bugnote_link_callback[$p_include_anchor][$p_detail_info][$p_fqdn] =
+			$s_dwgnote_link_callback[$p_include_anchor][$p_detail_info][$p_fqdn] =
 				function( $p_array ) {
 					$c_bugnote_id = (int)$p_array[2];
 					if( dwgnote_exists( $c_bugnote_id ) ) {
@@ -545,12 +545,12 @@ function string_process_dwgnote_link( $p_string, $p_include_anchor = true, $p_de
 						}
 					}
 					return $p_array[0];
-				}; # end of bugnote link callback closure
+				}; # end of dwgnote link callback closure
 		}
 	}
 	$p_string = preg_replace_callback(
 		'/(^|[^\w])' . preg_quote( $t_tag, '/' ) . '(\d+)\b/',
-		$s_bugnote_link_callback[$p_include_anchor][$p_detail_info][$p_fqdn],
+		$s_dwgnote_link_callback[$p_include_anchor][$p_detail_info][$p_fqdn],
 		$p_string
 	);
 	return $p_string;
@@ -1135,6 +1135,7 @@ function string_get_field_name( $p_string ) {
 		'project_id' => 'email_project',
 		'reporter_id' => 'reporter',
 		'view_state' => 'view_status',
+		'creator_id' => 'creator',
 	);
 
 	$t_string = $p_string;

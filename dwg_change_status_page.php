@@ -58,7 +58,6 @@ require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
-require_api( 'print_api.php' );
 require_api( 'print_dwg_api.php' );
 require_api( 'dwg_relationship_api.php' );
 require_api( 'sponsorship_api.php' );
@@ -229,7 +228,7 @@ layout_page_begin();
 				<td>
 					<select name="handler_id" class="input-sm">
 						<option value="0">&nbsp;</option>
-						<?php print_assign_to_option_list( $t_suggested_handler_id, $t_bug->project_id ) ?>
+						<?php print_dwg_assign_to_option_list( $t_suggested_handler_id, $t_bug->project_id ) ?>
 					</select>
 				</td>
 			</tr>

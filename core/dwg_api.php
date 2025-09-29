@@ -34,7 +34,7 @@
  * @uses custom_field_api.php
  * @uses database_api.php
  * @uses date_api.php
- * @uses email_dwg_api.php
+ * @uses email_api.php
  * @uses error_api.php
  * @uses event_api.php
  * @uses file_api.php
@@ -66,7 +66,6 @@ require_api( 'constant_inc.php' );
 require_api( 'custom_field_api.php' );
 require_api( 'database_api.php' );
 require_api( 'date_api.php' );
-require_api( 'email_dwg_api.php' );
 require_api( 'email_dwg_api.php' );
 require_api( 'error_api.php' );
 require_api( 'event_api.php' );
@@ -393,8 +392,8 @@ class DwgData {
 		}
 
 		# Make sure a category is set
-//		if( 0 == $this->category_id && !config_get( 'allow_no_category' ) ) {  // @TODO RobD:
-		if( 0 == $this->category_id && !config_get( 'allow_no_document' ) ) {
+		if( 0 == $this->category_id && !config_get( 'allow_no_category' ) ) {
+//		if( 0 == $this->category_id && !config_get( 'allow_no_document' ) ) {  // @TODO RobD:
 			error_parameters( lang_get( 'category' ) );
 			trigger_error( ERROR_EMPTY_FIELD, ERROR );
 		}
@@ -433,25 +432,28 @@ class DwgData {
 			$this->last_updated = db_now();
 		}
 
+		$this->description = isset($this->description) ? $this->description : '';
+		$this->steps_to_reproduce = isset($this->steps_to_reproduce) ? $this->steps_to_reproduce : '';
+		$this->additional_information = isset($this->additional_information) ? $this->additional_information : '';
+
 		# Insert text information
-		// db_param_push();
-		// $t_query = 'INSERT INTO {dwg_text}
-		// 			    ( description, steps_to_reproduce, additional_information )
-		// 			  VALUES
-		// 			    ( ' . db_param() . ',' . db_param() . ',' . db_param() . ')';
-		// db_query( $t_query, array( $this->description, $this->steps_to_reproduce, $this->additional_information ) );
+		db_param_push();
+		$t_query = 'INSERT INTO {dwg_text}
+					    ( description, steps_to_reproduce, additional_information )
+					  VALUES
+					    ( ' . db_param() . ',' . db_param() . ',' . db_param() . ')';
+		db_query( $t_query, array( $this->description, $this->steps_to_reproduce, $this->additional_information ) );
 
 		# Get the id of the text information we just inserted
 		# NOTE: this is guaranteed to be the correct one.
 		# The value LAST_INSERT_ID is stored on a per-connection basis.
 
-		// $t_text_id = db_insert_id( db_get_table( 'bug_text' ) );
+		$t_text_id = db_insert_id( db_get_table( 'bug_text' ) );
 
 		# check to see if we want to assign this right off
 		$t_original_status = $this->status;
 
 		# if not assigned, check if it should auto-assigned.
-/*
 		if( 0 == $this->handler_id ) {
 			# If a default user is associated with the category and we know that
 			# the bug was not assigned to somebody, then assign it automatically.
@@ -464,31 +466,22 @@ class DwgData {
 				$this->handler_id = $t_handler;
 			}
 		}
- */
+
 		# Check if bug was pre-assigned or auto-assigned.
 		$t_status = dwg_get_status_for_assign( NO_USER, $this->handler_id, $this->status);
-
-// $t_revision_date = $this->revision_date ? strtotime( $this->revision_date ) : 0;
-// $t_release_date = $this->release_date ? strtotime( $this->release_date ) : 0;
-// $this->revision_date = $t_revision_date;
-// $this->release_date = $t_release_date;
-
-// if( is_blank( $this->revision_date ) ) {
-// 	$this->revision_date = db_now();
-// }
-// if( is_blank( $this->release_date ) ) {
-// 	$this->release_date = db_now();
-// }
 
 //error_log("************dwg_php.php: reporter_id = " . print_r($this->reporter_id, true));
 //error_log("************dwg_php.php: creator_id = " . print_r($this->creator_id, true));
 
-	// $this->revision_date = db_now();
-	// $this->release_date = db_now();
-	$this->date_submitted = db_now();
-	$this->last_updated = db_now();
-	$this->classification = "OFFICIAL";
-	$this->link_url = "http";
+//	$this->date_submitted = db_now();
+//	$this->last_updated = db_now();
+//	$this->classification = "OFFICIAL";
+//	$this->link_url = "http";
+
+$this->classification = isset($this->classification) ? $this->classification : '';
+$this->link_url = isset($this->link_url) ? $this->link_url : '';
+//$desc = isset($desc) ? $desc : '';
+
 
 		# Insert the rest of the data
 		db_param_push();
@@ -496,30 +489,30 @@ class DwgData {
 						( project_id, creator_id, status, enabled,
 						  version, title, number, revision, 
 						  discipline, reference, link_url, classification,
-						  revision_date, release_date, date_submitted, last_updated
+						  revision_date, release_date, date_submitted, last_updated,
+						  dwg_text_id
 						)
 					  VALUES
 						( ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
 						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
 						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
-						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ')';
+						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
+						  ' . db_param() . ')';
 		db_query( $t_query, array(
 		  $this->project_id, $this->creator_id, $this->status, $this->enabled,
 		  $this->version, $this->title, $this->number, $this->revision,
 		  $this->discipline, $this->reference, $this->link_url, $this->classification,
-		  $this->revision_date, $this->release_date, $this->date_submitted, $this->last_updated ) );
+		  $this->revision_date, $this->release_date, $this->date_submitted, $this->last_updated,
+		  $t_text_id ) );
 
-//  * Return the last inserted ID after a insert statement.
-//  * Warning: this function must be used immediately after the insert statement
-//		$this->id = db_insert_id( db_get_table( 'bug' ) );
 		$this->id = db_insert_id( db_get_table( 'document' ) );
 
 		# log new bug
 		history_log_event_special( $this->id, NEW_DWG );
 
 		# log changes, if any (compare happens in history_log_event_direct)
-		// history_log_event_direct( $this->id, 'status', $t_original_status, $t_status );
-		// history_log_event_direct( $this->id, 'handler_id', 0, $this->handler_id );
+		history_log_event_direct( $this->id, 'status', $t_original_status, $t_status );
+		history_log_event_direct( $this->id, 'handler_id', 0, $this->handler_id );
 
 		return $this->id;
 	}
@@ -607,14 +600,14 @@ class DwgData {
 		db_param_push();
 ////////////////////////////////////////////////////////////////////////////////
 		$t_query = 'UPDATE {document} SET 
-project_id=' . db_param() . ',
-creator_id=' . db_param() . ',
-handler_id=' . db_param() . ',
-duplicate_id=' . db_param() . ',
-status=' . db_param() . ',
-category_id=' . db_param() . ',
-version=' . db_param() . '
-';
+			project_id=' . db_param() . ',
+			creator_id=' . db_param() . ',
+			handler_id=' . db_param() . ',
+			duplicate_id=' . db_param() . ',
+			status=' . db_param() . ',
+			category_id=' . db_param() . ',
+			version=' . db_param() . '
+			';
 		$t_query .= 'WHERE id=' . db_param();
 
 		$t_fields = array(
@@ -627,7 +620,7 @@ version=' . db_param() . '
 			$this->version,
 			$this->id);
 
-		error_log("t_query: " . $t_query);
+		// error_log("t_query: " . $t_query);
 
 		db_query( $t_query, $t_fields );
 ////////////////////////////////////////////////////////////////////////////////
@@ -920,7 +913,7 @@ $t_row = array("foobar", "barfoo");
 
 
 	// $t_query = 'SELECT bt.* FROM {dwg_text} bt, {document} b
-	// 			  WHERE b.id=' . db_param() . ' AND b.bug_text_id = bt.id';
+	// 			  WHERE b.id=' . db_param() . ' AND b.dwg_text_id = bt.id';
 	// $t_result = db_query( $t_query, array( $c_bug_id ) );
 
 	// $t_row = db_fetch_array( $t_result );
@@ -1240,7 +1233,6 @@ function dwg_copy( $p_bug_id, $p_target_project_id = null, $p_copy_custom_fields
 
 	$t_bug_data->project_id = $t_target_project_id;
 	$t_bug_data->creator_id = auth_get_current_user_id();
-
 	$t_bug_data->date_submitted = db_now();
 	$t_bug_data->last_updated = db_now();
 
@@ -2187,22 +2179,20 @@ function dwg_monitor( $p_bug_id, $p_user_id ) {
 		return false;
 	}
 
-	// # Insert monitoring record
-	// db_param_push();
-	// $t_query = 'INSERT INTO {dwg_monitor} ( user_id, bug_id ) VALUES (' . db_param() . ',' . db_param() . ')';
-	// db_query( $t_query, array( $c_user_id, $c_bug_id ) );
+	# Insert monitoring record
+	db_param_push();
+	$t_query = 'INSERT INTO {dwg_monitor} ( user_id, dwg_id ) VALUES (' . db_param() . ',' . db_param() . ')';
+	db_query( $t_query, array( $c_user_id, $c_bug_id ) );
 
-	// # log new monitoring action
-	// history_log_event_special( $c_bug_id, DWG_MONITOR, $c_user_id );
+	# log new monitoring action
+	history_log_event_special( $c_bug_id, DWG_MONITOR, $c_user_id );
 
-	// # updated the last_updated date
-	// dwg_update_date( $p_bug_id );
+	# updated the last_updated date
+	dwg_update_date( $p_bug_id );
 
-	// email_monitor_added( $p_bug_id, $p_user_id );
+	email_dwg_monitor_added( $p_bug_id, $p_user_id );
 
-	// return true;
-
-	return false;
+	return true;
 }
 
 /**
@@ -2213,27 +2203,27 @@ function dwg_monitor( $p_bug_id, $p_user_id ) {
  * @return array
  */
 function dwg_get_monitors( $p_bug_id ) {
-	// if( ! access_has_dwg_level( config_get( 'show_monitor_list_threshold' ), $p_bug_id ) ) {
-	// 	return array();
-	// }
+	if( ! access_has_dwg_level( config_get( 'show_monitor_list_threshold' ), $p_bug_id ) ) {
+		return array();
+	}
 
-	// # get the bugnote data
-	// db_param_push();
-	// $t_query = 'SELECT user_id, enabled
-	// 		FROM {dwg_monitor} m, {user} u
-	// 		WHERE m.bug_id=' . db_param() . ' AND m.user_id = u.id
-	// 		ORDER BY u.realname, u.username';
-	// $t_result = db_query( $t_query, array( $p_bug_id ) );
+	# get the bugnote data
+	db_param_push();
+	$t_query = 'SELECT user_id, enabled
+			FROM {dwg_monitor} m, {user} u
+			WHERE m.dwg_id=' . db_param() . ' AND m.user_id = u.id
+			ORDER BY u.realname, u.username';
+	$t_result = db_query( $t_query, array( $p_bug_id ) );
 
-	// $t_users = array();
-	// while( $t_row = db_fetch_array( $t_result ) ) {
-	// 	$t_users[] = $t_row['user_id'];
-	// }
+	$t_users = array();
+	while( $t_row = db_fetch_array( $t_result ) ) {
+		$t_users[] = $t_row['user_id'];
+	}
 
-	// user_cache_array_rows( $t_users );
+	user_cache_array_rows( $t_users );
 
-	// return $t_users;
-	return array();
+	return $t_users;
+//	return array();
 }
 
 /**
@@ -2245,23 +2235,23 @@ function dwg_get_monitors( $p_bug_id ) {
  * @access public
  */
 function dwg_monitor_copy( $p_source_bug_id, $p_dest_bug_id ) {
-	// $c_source_bug_id = (int)$p_source_bug_id;
-	// $c_dest_bug_id = (int)$p_dest_bug_id;
+	$c_source_bug_id = (int)$p_source_bug_id;
+	$c_dest_bug_id = (int)$p_dest_bug_id;
 
-	// db_param_push();
-	// $t_query = 'SELECT user_id FROM {dwg_monitor} WHERE bug_id = ' . db_param();
-	// $t_result = db_query( $t_query, array( $c_source_bug_id ) );
+	db_param_push();
+	$t_query = 'SELECT user_id FROM {dwg_monitor} WHERE dwg_id = ' . db_param();
+	$t_result = db_query( $t_query, array( $c_source_bug_id ) );
 
-	// while( $t_dwg_monitor = db_fetch_array( $t_result ) ) {
-	// 	if( user_exists( $t_dwg_monitor['user_id'] ) &&
-	// 		!user_is_monitoring_dwg( $t_dwg_monitor['user_id'], $c_dest_bug_id ) ) {
-	// 		db_param_push();
-	// 		$t_query = 'INSERT INTO {dwg_monitor} ( user_id, bug_id )
-	// 			VALUES ( ' . db_param() . ', ' . db_param() . ' )';
-	// 		db_query( $t_query, array( $t_dwg_monitor['user_id'], $c_dest_bug_id ) );
-	// 		history_log_event_special( $c_dest_bug_id, DWG_MONITOR, $t_dwg_monitor['user_id'] );
-	// 	}
-	// }
+	while( $t_dwg_monitor = db_fetch_array( $t_result ) ) {
+		if( user_exists( $t_dwg_monitor['user_id'] ) &&
+			!user_is_monitoring_dwg( $t_dwg_monitor['user_id'], $c_dest_bug_id ) ) {
+			db_param_push();
+			$t_query = 'INSERT INTO {dwg_monitor} ( user_id, dwg_id )
+				VALUES ( ' . db_param() . ', ' . db_param() . ' )';
+			db_query( $t_query, array( $t_dwg_monitor['user_id'], $c_dest_bug_id ) );
+			history_log_event_special( $c_dest_bug_id, DWG_MONITOR, $t_dwg_monitor['user_id'] );
+		}
+	}
 }
 
 /**
@@ -2275,23 +2265,23 @@ function dwg_monitor_copy( $p_source_bug_id, $p_dest_bug_id ) {
  * @access public
  */
 function dwg_unmonitor( $p_bug_id, $p_user_id ) {
-	// # Delete monitoring record
-	// db_param_push();
-	// $t_query = 'DELETE FROM {dwg_monitor} WHERE bug_id = ' . db_param();
-	// $t_db_query_params[] = $p_bug_id;
+	# Delete monitoring record
+	db_param_push();
+	$t_query = 'DELETE FROM {dwg_monitor} WHERE dwg_id = ' . db_param();
+	$t_db_query_params[] = $p_bug_id;
 
-	// if( $p_user_id !== null ) {
-	// 	$t_query .= ' AND user_id = ' . db_param();
-	// 	$t_db_query_params[] = $p_user_id;
-	// }
+	if( $p_user_id !== null ) {
+		$t_query .= ' AND user_id = ' . db_param();
+		$t_db_query_params[] = $p_user_id;
+	}
 
-	// db_query( $t_query, $t_db_query_params );
+	db_query( $t_query, $t_db_query_params );
 
-	// # log new un-monitor action
-	// history_log_event_special( $p_bug_id, DWG_UNMONITOR, (int)$p_user_id );
+	# log new un-monitor action
+	history_log_event_special( $p_bug_id, DWG_UNMONITOR, (int)$p_user_id );
 
-	// # updated the last_updated date
-	// dwg_update_date( $p_bug_id );
+	# updated the last_updated date
+	dwg_update_date( $p_bug_id );
 
 	return true;
 }
@@ -2369,76 +2359,6 @@ function dwg_clear_cache_all( $p_bug_id = null ) {
 	return true;
 }
 
-// /**
-//  * Populate the caches related to the selected columns.
-//  *
-//  * @param DwgData[] $p_bugs         Array of DwgData objects
-//  * @param array $p_selected_columns Array of columns to show
-//  */
-// function dwg_cache_columns_data( array $p_bugs, array $p_selected_columns ) {
-// 	$t_bug_ids = array();
-// 	$t_user_ids = array();
-// 	$t_project_ids = array();
-// 	$t_category_ids = array();
-// 	foreach( $p_bugs as $t_bug ) {
-// 		$t_bug_ids[] = (int)$t_bug->id;
-// 		$t_user_ids[] = (int)$t_bug->handler_id;
-// 		$t_user_ids[] = (int)$t_bug->reporter_id;
-// 		$t_project_ids[] = (int)$t_bug->project_id;
-// 		$t_category_ids[] = (int)$t_bug->category_id;
-// 	}
-// 	$t_user_ids = array_unique( $t_user_ids );
-// 	$t_project_ids = array_unique( $t_project_ids );
-// 	$t_category_ids = array_unique( $t_category_ids );
-
-// 	$t_custom_field_ids = array();
-// 	$t_users_cached = false;
-// 	foreach( $p_selected_columns as $t_column ) {
-
-// 		if( column_is_plugin_column( $t_column ) ) {
-// 			$plugin_objects = columns_get_plugin_columns();
-// 			$plugin_objects[$t_column]->cache( $p_bugs );
-// 			continue;
-// 		}
-
-// 		if( column_is_custom_field( $t_column ) ) {
-// 			$t_cf_name = column_get_custom_field_name( $t_column );
-// 			$t_cf_id = custom_field_get_id_from_name( $t_cf_name );
-// 			if( $t_cf_id ) {
-// 				$t_custom_field_ids[] = $t_cf_id;
-// 				continue;
-// 			}
-// 		}
-
-// 		switch( $t_column ) {
-// 			case 'attachment_count':
-// 				file_dwg_dwg_attachment_count_cache( $t_bug_ids );
-// 				break;
-// 			case 'handler_id':
-// 			case 'reporter_id':
-// 			case 'status':
-// 				if( !$t_users_cached ) {
-// 					user_cache_array_rows( $t_user_ids );
-// 					$t_users_cached = true;
-// 				}
-// 				break;
-// 			case 'project_id':
-// 				project_cache_array_rows( $t_project_ids );
-// 				break;
-// 			case 'category_id':
-// 				category_cache_array_rows( $t_category_ids );
-// 				break;
-// 			case 'tags':
-// 				tag_dwg_cache_dwg_bug_rows( $t_bug_ids );
-// 				break;
-// 		}
-// 	}
-
-// 	if( !empty( $t_custom_field_ids ) ) {
-// 		custom_field_cache_values( $t_bug_ids, $t_custom_field_ids );
-// 	}
-// }
-
 /**
  * Populate the caches related to the selected columns.
  *
@@ -2463,46 +2383,46 @@ function dwg_cache_columns_data( array $p_bugs, array $p_selected_columns ) {
 
 	$t_custom_field_ids = array();
 	$t_users_cached = false;
-	// foreach( $p_selected_columns as $t_column ) {
+	foreach( $p_selected_columns as $t_column ) {
 
-	// 	if( column_is_plugin_column( $t_column ) ) {
-	// 		$plugin_objects = columns_get_plugin_columns();
-	// 		$plugin_objects[$t_column]->cache( $p_bugs );
-	// 		continue;
-	// 	}
+		if( column_is_plugin_column( $t_column ) ) {
+			$plugin_objects = columns_get_plugin_columns();
+			$plugin_objects[$t_column]->cache( $p_bugs );
+			continue;
+		}
 
-	// 	if( column_is_custom_field( $t_column ) ) {
-	// 		$t_cf_name = column_get_custom_field_name( $t_column );
-	// 		$t_cf_id = custom_field_get_id_from_name( $t_cf_name );
-	// 		if( $t_cf_id ) {
-	// 			$t_custom_field_ids[] = $t_cf_id;
-	// 			continue;
-	// 		}
-	// 	}
+		if( column_dwg_is_custom_field( $t_column ) ) {
+			$t_cf_name = column_dwg_get_custom_field_name( $t_column );
+			$t_cf_id = custom_field_get_id_from_name( $t_cf_name );
+			if( $t_cf_id ) {
+				$t_custom_field_ids[] = $t_cf_id;
+				continue;
+			}
+		}
 
-	// 	switch( $t_column ) {
-	// 		case 'attachment_count':
-	// 			file_dwg_dwg_attachment_count_cache( $t_bug_ids );
-	// 			break;
-	// 		case 'handler_id':
-	// 		case 'reporter_id':
-	// 		case 'status':
-	// 			if( !$t_users_cached ) {
-	// 				user_cache_array_rows( $t_user_ids );
-	// 				$t_users_cached = true;
-	// 			}
-	// 			break;
-	// 		case 'project_id':
-	// 			project_cache_array_rows( $t_project_ids );
-	// 			break;
-	// 		case 'category_id':
-	// 			category_cache_array_rows( $t_category_ids );
-	// 			break;
-	// 		case 'tags':
-	// 			tag_dwg_cache_bug_tag_rows( $t_bug_ids );
-	// 			break;
-	// 	}
-	// }
+		switch( $t_column ) {
+			case 'attachment_count':
+				file_dwg_attachment_count_cache( $t_bug_ids );
+				break;
+			case 'handler_id':
+			case 'creator_id':
+			case 'status':
+				if( !$t_users_cached ) {
+					user_cache_array_rows( $t_user_ids );
+					$t_users_cached = true;
+				}
+				break;
+			case 'project_id':
+				project_cache_array_rows( $t_project_ids );
+				break;
+			case 'category_id':
+				category_cache_array_rows( $t_category_ids );
+				break;
+			case 'tags':
+				tag_dwg_cache_bug_tag_rows( $t_bug_ids );
+				break;
+		}
+	}
 
 	if( !empty( $t_custom_field_ids ) ) {
 		custom_field_cache_values( $t_bug_ids, $t_custom_field_ids );

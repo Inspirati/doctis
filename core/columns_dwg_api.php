@@ -52,6 +52,8 @@
 
 columns_(?!dwg)
 
+filter_[^dwg]
+
 
  */
 
@@ -72,7 +74,6 @@ require_api( 'helper_api.php' );
 require_api( 'icon_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'prepare_api.php' );
-require_api( 'print_api.php' );
 require_api( 'print_dwg_api.php' );
 require_api( 'project_api.php' );
 require_api( 'sponsorship_api.php' );
@@ -427,7 +428,7 @@ function columns_dwg_string_to_array( $p_string ) {
  * @access public
  */
 function column_dwg_get_title( $p_column ) {
-	$t_custom_field = column_get_custom_field_name( $p_column );
+	$t_custom_field = column_dwg_get_custom_field_name( $p_column );
 	if( $t_custom_field !== null ) {
 		$t_field_id = custom_field_get_id_from_name( $t_custom_field );
 

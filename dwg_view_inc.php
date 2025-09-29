@@ -67,12 +67,8 @@ if( !defined( 'DWG_VIEW_INC_ALLOW' ) ) {
 require_api( 'access_dwg_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'bug_api.php' );
-
 require_api( 'dwg_api.php' );
-
-// require_api( 'bug_activity_api.php' );
 //require_api( 'dwg_activity_api.php' );
-
 require_api( 'category_api.php' );
 require_api( 'columns_api.php' );
 require_api( 'compress_api.php' );
@@ -87,7 +83,6 @@ require_api( 'helper_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'prepare_api.php' );
-require_api( 'print_api.php' );
 require_api( 'print_dwg_api.php' );
 require_api( 'project_api.php' );
 require_api( 'string_api.php' );
@@ -1280,7 +1275,7 @@ function dwg_view_button_dwg_assign_to( DwgData $p_bug ) {
 	}
 
 	# 0 means currently selected
-	print_assign_to_option_list( 0, $p_bug->project_id );
+	print_dwg_assign_to_option_list( 0, $p_bug->project_id );
 	echo '</select>';
 
 	$t_dwg_id = string_attribute( $p_bug->id );

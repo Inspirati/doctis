@@ -53,7 +53,7 @@ require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
-require_api( 'print_api.php' );
+require_api( 'print_dwg_api.php' );
 
 
 
@@ -91,15 +91,12 @@ $g_columns = helper_get_dwg_columns_to_view( COLUMNS_TARGET_DWG_PAGE );
 
 dwg_cache_columns_data( $t_rows, $g_columns );
 
-
 $t_filter_position = config_get( 'filter_position' );
 
 # -- ====================== FILTER FORM ========================= --
-
 if( ( $t_filter_position & FILTER_POSITION_TOP ) == FILTER_POSITION_TOP ) {
 	filter_dwg_draw_selection_area();
 }
-
 # -- ====================== end of FILTER FORM ================== --
 
 
@@ -132,7 +129,7 @@ if( ( $t_filter_position & FILTER_POSITION_TOP ) == FILTER_POSITION_TOP ) {
 <?php
 	# -- ====================== TOP TOOLBAR ============================ --
 
-	$t_filter_param = filter_get_temporary_key_param( $t_filter );
+	$t_filter_param = filter_dwg_get_temporary_key_param( $t_filter );
 	if( empty( $t_filter_param ) ) {
 		$t_summary_link = 'view_dwg_set.php?summary=1&temporary=y';
 	} else {
@@ -167,7 +164,7 @@ if( ( $t_filter_position & FILTER_POSITION_TOP ) == FILTER_POSITION_TOP ) {
 	print_page_links(
 		'view_dwg_page.php',
 		1, $t_page_count, $f_page_number,
-		filter_get_temporary_key( $t_filter )
+		filter_dwg_get_temporary_key( $t_filter )
 	);
 	$t_page_number_links = ob_get_clean();
 
@@ -227,9 +224,9 @@ if( ( $t_filter_position & FILTER_POSITION_TOP ) == FILTER_POSITION_TOP ) {
 							<tr class="buglist-headers">
 <?php
 	$t_title_function = 'print_dwg_column_title';  // @TODO RobD - setting this causes most* all the column title hyperlinks to not be hyperlinks (* only the first column 'status' remains as a hyperlink?)
-	$t_sort_properties = filter_get_visible_sort_properties_array( $t_filter, COLUMNS_TARGET_VIEW_PAGE );
+	$t_sort_properties = filter_dwg_get_visible_sort_properties_array( $t_filter, COLUMNS_TARGET_DWG_PAGE );
 	foreach( $g_columns as $t_column ) {
-		helper_call_custom_function( $t_title_function, array( $t_column, COLUMNS_TARGET_VIEW_PAGE, $t_sort_properties ) );
+		helper_call_custom_function( $t_title_function, array( $t_column, COLUMNS_TARGET_DWG_PAGE, $t_sort_properties ) );
 	}
 ?>
 							</tr>

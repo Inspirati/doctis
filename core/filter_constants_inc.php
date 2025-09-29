@@ -81,6 +81,10 @@ define( 'FILTER_PROPERTY_OS_BUILD', 'os_build' );
 
 # dwg fields
 define( 'FILTER_PROPERTY_CREATOR_ID', 'creator_id' );
+define( 'FILTER_PROPERTY_REFERENCE', 'reference' );
+define( 'FILTER_PROPERTY_NUMBER', 'number' );
+define( 'FILTER_PROPERTY_TITLE', 'title' );
+define( 'FILTER_PROPERTY_DATE', 'date' );
 
 # These are old date fields names, keeping them for backward compatibility, if used externally
 define( 'FILTER_PROPERTY_START_DAY', FILTER_PROPERTY_DATE_SUBMITTED_START_DAY );

@@ -597,6 +597,9 @@ define( 'BUGNOTE', 0 );
 define( 'REMINDER', 1 );
 define( 'TIME_TRACKING', 2 );
 
+# dwgnote types
+define( 'DWGNOTE', 0 );
+
 # token types
 define( 'TOKEN_UNKNOWN', 0 );
 define( 'TOKEN_FILTER', 1 );

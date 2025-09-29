@@ -1843,6 +1843,17 @@ $g_default_dwg_relationship = BUG_RELATED;
 $g_default_category_for_moves = 1;
 
 /**
+ * Default document to use when moving issues.
+ *
+ * Default global document to be used when an issue is moved from a project to
+ * another that does not have a document with a matching name.
+ *
+ * The default is 1 which is the "General" category that is created in the
+ * default database.
+ */
+$g_default_document_for_moves = 1;
+
+/**
  *
  * @global int $g_default_limit_view
  */
@@ -2096,6 +2107,19 @@ $g_resolution_multipliers = array(
  * @global string $g_bugnote_order
  */
 $g_bugnote_order = 'DESC';
+
+#############################
+# MantisBT Dwgnote Settings #
+#############################
+
+/**
+ * Dwgnote ordering.
+ *
+ * Change to ASC or DESC
+ *
+ * @global string $g_dwgnote_order
+ */
+$g_dwgnote_order = 'DESC';
 
 #################################
 # MantisBT Bug History Settings #
@@ -4058,6 +4082,7 @@ $g_display_dwg_padding = 7;
  * @global int $g_display_bugnote_padding
  */
 $g_display_bugnote_padding = 7;
+$g_display_dwgnote_padding = 7;
 
 #############################
 # MantisBT Cookie Variables #
@@ -4203,6 +4228,7 @@ $g_filter_custom_fields_per_row = 8;
  * @global int $g_view_filters
  */
 $g_view_filters = SIMPLE_DEFAULT;
+$g_view_dwg_filters = SIMPLE_DEFAULT;
 
 /**
  * Allow use of dynamic filter controls.
@@ -5216,6 +5242,13 @@ $g_subprojects_enabled = ON;
 $g_subprojects_inherit_categories = ON;
 
 /**
+ * Sub-projects should inherit documents from parent projects.
+ *
+ * @global int $g_subprojects_inherit_documents
+ */
+$g_subprojects_inherit_documents = ON;
+
+/**
  * Sub-projects should inherit versions from parent projects.
  *
  * @global int $g_subprojects_inherit_versions
@@ -5657,6 +5690,7 @@ $g_public_config_names = array(
 	'default_bugnote_view_status',
 	'default_dwgnote_view_status',
 	'default_category_for_moves',
+	'default_document_for_moves',
 	'default_email_bugnote_limit',
 	'default_email_on_assigned_minimum_severity',
 	'default_email_on_assigned',
@@ -5697,6 +5731,7 @@ $g_public_config_names = array(
 	'display_bug_padding',
 	'display_dwg_padding',
 	'display_bugnote_padding',
+	'display_dwgnote_padding',
 	'display_errors',
 	'download_attachments_threshold',
 	'due_date_default',
@@ -5896,6 +5931,7 @@ $g_public_config_names = array(
 	'string_cookie',
 	'subprojects_enabled',
 	'subprojects_inherit_categories',
+	'subprojects_inherit_documents',
 	'subprojects_inherit_versions',
 	'summary_category_include_project',
 	'tag_attach_threshold',

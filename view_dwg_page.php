@@ -35,11 +35,6 @@
  * @uses project_api.php
  * @uses user_api.php
  */
-/* Revision history
- * 25-Aug-20205 RobD: initial version copied from view_all_bug_page.php
- * 
- * 
- */
 
 require_once( 'core.php' );
 require_api( 'authentication_api.php' );
@@ -50,7 +45,7 @@ require_api( 'filter_dwg_api.php' );
 require_api( 'gpc_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
-require_api( 'print_api.php' );
+require_api( 'print_dwg_api.php' );
 require_api( 'project_api.php' );
 require_api( 'user_api.php' );
 

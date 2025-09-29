@@ -26,7 +26,7 @@
  * @uses config_api.php
  * @uses constant_inc.php
  * @uses crypto_api.php
- * @uses email_bug_api.php
+ * @uses email_api.php
  * @uses form_api.php
  * @uses gpc_api.php
  * @uses helper_api.php

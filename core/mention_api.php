@@ -24,7 +24,7 @@
  * @link http://www.mantisbt.org
  *
  * @uses bug_api.php
- * @uses email_bug_api.php
+ * @uses email_api.php
  */
 
 require_api( 'bug_api.php' );
@@ -132,6 +132,11 @@ function mention_get_users( $p_text ) {
 function mention_process_user_mentions( $p_bug_id, $p_mentioned_user_ids, $p_message, $p_removed_mentions_user_ids ) {
 	return email_user_mention( $p_bug_id, $p_mentioned_user_ids, $p_message, $p_removed_mentions_user_ids );
 }
+
+function mention_dwg_process_user_mentions( $p_bug_id, $p_mentioned_user_ids, $p_message, $p_removed_mentions_user_ids ) {
+	return email_dwg_user_mention( $p_bug_id, $p_mentioned_user_ids, $p_message, $p_removed_mentions_user_ids );
+}
+
 
 /**
  * Format and hyperlink mentions

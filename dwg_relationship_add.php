@@ -39,7 +39,6 @@ require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'history_api.php' );
 require_api( 'lang_api.php' );
-require_api( 'print_api.php' );
 require_api( 'print_dwg_api.php' );
 
 form_security_validate( 'dwg_relationship_add' );

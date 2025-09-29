@@ -15,47 +15,55 @@
 # along with MantisBT.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
+ * This file turns monitoring on or off for a bug for the current user
+ *
  * @package MantisBT
  * @copyright Copyright 2000 - 2002  Kenzaburo Ito - kenito@300baud.org
  * @copyright Copyright 2002  MantisBT Team - mantisbt-dev@lists.sourceforge.net
- * @author Marcello Scata' <marcelloscata at users.sourceforge.net> ITALY
  * @link http://www.mantisbt.org
  *
  * @uses core.php
- * @uses access_api.php
+ * @uses access_dwg_api.php
  * @uses form_api.php
  * @uses gpc_api.php
  * @uses helper_api.php
- * @uses lang_api.php
- * @uses print_api.php
  * @uses print_dwg_api.php
+ * @uses utility_api.php
  */
 
 require_once( 'core.php' );
-require_api( 'access_dwg_api.php' );
+require_api( 'error_api.php' );
 require_api( 'form_api.php' );
 require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
-require_api( 'lang_api.php' );
 require_api( 'print_dwg_api.php' );
+require_api( 'utility_api.php' );
 
-form_security_validate( 'dwg_relationship_delete' );
+form_security_validate( 'dwg_monitor_add' );
 
-$f_rel_id = gpc_get_int( 'rel_id' );
 $f_bug_id = gpc_get_int( 'bug_id' );
+$f_usernames = trim( gpc_get_string( 'user_to_add', '' ) );
+
+$t_payload = array();
+
+if( !is_blank( $f_usernames ) ) {
+	$t_usernames = preg_split( '/[,|]/', $f_usernames, -1, PREG_SPLIT_NO_EMPTY );
+	$t_users = array();
+	foreach( $t_usernames as $t_username ) {
+		$t_users[] = array( 'name_or_realname' => trim( $t_username ) );
+	}
+
+	$t_payload['users'] = $t_users;
+}
 
 $t_data = array(
-	'query' => array(
-		'issue_id' => $f_bug_id,
-		'relationship_id' => $f_rel_id
-	)
+	'query' => array( 'issue_id' => $f_bug_id ),
+	'payload' => $t_payload,
 );
 
-helper_ensure_confirmed( lang_get( 'delete_relationship_sure_msg' ), lang_get( 'delete' ) );
-
-$t_command = new DocumentRelationshipDeleteCommand( $t_data );
+$t_command = new DwgMonitorAddCommand( $t_data );
 $t_command->execute();
 
-form_security_purge( 'dwg_relationship_delete' );
+form_security_purge( 'dwg_monitor_add' );
 
 print_dwg_header_redirect_view( $f_bug_id );

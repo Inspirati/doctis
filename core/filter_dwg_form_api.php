@@ -35,7 +35,7 @@
  * @uses lang_api.php
  * @uses logging_api.php
  * @uses print_api.php
- * @uses dwg_relationship_api.php
+ * @uses relationship_api.php
  * @uses string_api.php
  * @uses user_api.php
  *
@@ -50,14 +50,14 @@ require_api( 'authentication_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
 require_api( 'current_user_api.php' );
-require_api( 'filter_api.php' );
+require_api( 'filter_dwg_api.php' );
 require_api( 'filter_constants_inc.php' );
 require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'logging_api.php' );
-require_api( 'print_api.php' );
+require_api( 'print_dwg_api.php' );
 require_api( 'dwg_relationship_api.php' );
 require_api( 'string_api.php' );
 require_api( 'user_api.php' );
@@ -68,7 +68,7 @@ require_api( 'user_api.php' );
  *      They are derived from view_dwg_filters_page.php
  *      The functions follow a strict naming convention:
  *
- *      print_filter_[filter_name]
+ *      print_filter_dwg_[filter_name]
  *
  *      Where [filter_name] is the same as the "name" of the form element for
  *      that filter. This naming convention is depended upon by the controller
@@ -84,7 +84,7 @@ require_api( 'user_api.php' );
 /**
  * Returns HTML for each filter field, to be used in filter form.
  *
- * $p_filter_target is a field name to match any of "the print_filter_..."
+ * $p_filter_target is a field name to match any of "the print_filter_dwg_..."
  * functions, excluding those related to custom fields and plugin fields. When
  * $p_show_options is enabled, the form inputs are returned to allow selection,
  * if the option is disabled, returns the current value and a hidden input for
@@ -97,13 +97,13 @@ require_api( 'user_api.php' );
  *
  * @return string The html content for the field requested
  *
- * @throws StateException if there is no matching print_filter_... function
+ * @throws StateException if there is no matching print_filter_dwg_... function
  */
-function filter_form_get_input( array $p_filter, $p_filter_target, $p_show_inputs = true ) {
+function filter_dwg_form_get_input( array $p_filter, $p_filter_target, $p_show_inputs = true ) {
 	if( $p_show_inputs ) {
-		$t_function_prefix = 'print_filter_';
+		$t_function_prefix = 'print_filter_dwg_';
 	} else {
-		$t_function_prefix = 'print_filter_values_';
+		$t_function_prefix = 'print_filter_dwg_values_';
 	}
 	$t_params = array( $p_filter );
 	$t_function_name = $t_function_prefix . $p_filter_target;
@@ -123,7 +123,7 @@ function filter_form_get_input( array $p_filter, $p_filter_target, $p_show_input
 		call_user_func_array( $t_function_name, $t_params );
 		return ob_get_clean();
 	} else {
-		# error - no function to populate the target (e.g., print_filter_foo)
+		# error - no function to populate the target (e.g., print_filter_dwg_foo)
 		throw new StateException(
 			"No function to populate the target",
 			ERROR_FILTER_NOT_FOUND,
@@ -138,7 +138,7 @@ function filter_form_get_input( array $p_filter, $p_filter_target, $p_show_input
  * @param array $p_filter	Filter array to use
  * @return string
  */
-function filter_select_modifier( array $p_filter ) {
+function filter_dwg_select_modifier( array $p_filter ) {
 	if( FILTER_VIEW_TYPE_ADVANCED == $p_filter['_view_type'] ) {
 		return ' multiple="multiple" size="10"';
 	} else {
@@ -164,15 +164,15 @@ function print_filter_dwg_values_reporter_id( array $p_filter ) {
 		foreach( $t_filter[FILTER_PROPERTY_REPORTER_ID] as $t_current ) {
 			$t_this_name = '';
 			echo '<input type="hidden" name="', FILTER_PROPERTY_REPORTER_ID, '[]" value="', string_attribute( $t_current ), '" />';
-			if( filter_field_is_any( $t_current ) ) {
+			if( filter_dwg_field_is_any( $t_current ) ) {
 				$t_any_found = true;
-			} else if( filter_field_is_myself( $t_current ) ) {
+			} else if( filter_dwg_field_is_myself( $t_current ) ) {
 				if( access_has_project_level( config_get( 'create_dwg_threshold' ) ) ) {
 					$t_this_name = '[' . lang_get( 'myself' ) . ']';
 				} else {
 					$t_any_found = true;
 				}
-			} else if( filter_field_is_none( $t_current ) ) {
+			} else if( filter_dwg_field_is_none( $t_current ) ) {
 				$t_this_name = lang_get( 'none' );
 			} else {
 				$t_this_name = user_get_name( $t_current );
@@ -191,6 +191,7 @@ function print_filter_dwg_values_reporter_id( array $p_filter ) {
 		}
 	}
 }
+
 function print_filter_dwg_values_creator_id( array $p_filter ) {
 	$t_filter = $p_filter;
 	$t_output = '';
@@ -202,15 +203,15 @@ function print_filter_dwg_values_creator_id( array $p_filter ) {
 		foreach( $t_filter[FILTER_PROPERTY_CREATOR_ID] as $t_current ) {
 			$t_this_name = '';
 			echo '<input type="hidden" name="', FILTER_PROPERTY_CREATOR_ID, '[]" value="', string_attribute( $t_current ), '" />';
-			if( filter_field_is_any( $t_current ) ) {
+			if( filter_dwg_field_is_any( $t_current ) ) {
 				$t_any_found = true;
-			} else if( filter_field_is_myself( $t_current ) ) {
+			} else if( filter_dwg_field_is_myself( $t_current ) ) {
 				if( access_has_project_level( config_get( 'create_dwg_threshold' ) ) ) {
 					$t_this_name = '[' . lang_get( 'myself' ) . ']';
 				} else {
 					$t_any_found = true;
 				}
-			} else if( filter_field_is_none( $t_current ) ) {
+			} else if( filter_dwg_field_is_none( $t_current ) ) {
 				$t_this_name = lang_get( 'none' );
 			} else {
 				$t_this_name = user_get_name( $t_current );
@@ -245,7 +246,7 @@ function print_filter_dwg_reporter_id( ?array $p_filter = null ) {
 		$p_filter = $g_dwg_filter;
 	}
 	?>
-		<select class="input-xs" <?php echo filter_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_REPORTER_ID;?>[]">
+		<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_REPORTER_ID;?>[]">
 		<?php
 	# if current user is a reporter, and limited_reporters is set to ON, only display that name
 	if( access_has_limited_view_dwg() ) {
@@ -287,11 +288,11 @@ function print_filter_dwg_values_user_monitor( array $p_filter ) {
 		foreach( $t_filter[FILTER_PROPERTY_MONITOR_USER_ID] as $t_current ) {
 			echo '<input type="hidden" name="', FILTER_PROPERTY_MONITOR_USER_ID, '[]" value="', string_attribute( $t_current ), '" />';
 			$t_this_name = '';
-			if( filter_field_is_any( $t_current ) ) {
+			if( filter_dwg_field_is_any( $t_current ) ) {
 				$t_any_found = true;
-			} else if( filter_field_is_none( $t_current ) ) {
+			} else if( filter_dwg_field_is_none( $t_current ) ) {
 				$t_none_found = true;
-			} else if( filter_field_is_myself( $t_current ) ) {
+			} else if( filter_dwg_field_is_myself( $t_current ) ) {
 				if( access_has_project_level( config_get( 'monitor_dwg_threshold' ) ) ) {
 					$t_this_name = '[' . lang_get( 'myself' ) . ']';
 				} else {
@@ -332,7 +333,7 @@ function print_filter_dwg_user_monitor( ?array $p_filter = null ) {
 	}
 	?>
 	<!-- Monitored by -->
-		<select class="input-xs" <?php echo filter_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_MONITOR_USER_ID;?>[]">
+		<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_MONITOR_USER_ID;?>[]">
 			<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_MONITOR_USER_ID], META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
 			<option value="<?php echo META_FILTER_NONE?>"<?php check_selected( $p_filter[FILTER_PROPERTY_MONITOR_USER_ID], META_FILTER_NONE );?>>[<?php echo lang_get( 'none' )?>]</option>
 			<?php
@@ -369,11 +370,11 @@ function print_filter_dwg_values_handler_id( array $p_filter ) {
 		foreach( $t_filter[FILTER_PROPERTY_HANDLER_ID] as $t_current ) {
 			echo '<input type="hidden" name="', FILTER_PROPERTY_HANDLER_ID, '[]" value="', string_attribute( $t_current ), '" />';
 			$t_this_name = '';
-			if( filter_field_is_none( $t_current ) ) {
+			if( filter_dwg_field_is_none( $t_current ) ) {
 				$t_this_name = lang_get( 'none' );
-			} else if( filter_field_is_any( $t_current ) ) {
+			} else if( filter_dwg_field_is_any( $t_current ) ) {
 				$t_any_found = true;
-			} else if( filter_field_is_myself( $t_current ) ) {
+			} else if( filter_dwg_field_is_myself( $t_current ) ) {
 				if( access_has_project_level( config_get( 'handle_dwg_threshold' ) ) ) {
 					$t_this_name = '[' . lang_get( 'myself' ) . ']';
 				} else {
@@ -412,7 +413,7 @@ function print_filter_dwg_handler_id( ?array $p_filter = null ) {
 	}
 	?>
 		<!-- Handler -->
-		<select class="input-xs" <?php echo filter_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_HANDLER_ID;?>[]">
+		<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_HANDLER_ID;?>[]">
 			<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_HANDLER_ID], META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
 			<?php if( access_has_project_level( config_get( 'view_handler_threshold' ) ) ) {?>
 			<option value="<?php echo META_FILTER_NONE?>"<?php check_selected( $p_filter[FILTER_PROPERTY_HANDLER_ID], META_FILTER_NONE );?>>[<?php echo lang_get( 'none' )?>]</option>
@@ -423,7 +424,7 @@ function print_filter_dwg_handler_id( ?array $p_filter = null ) {
 			echo '>[' . lang_get( 'myself' ) . ']</option>';
 		}
 
-		print_assign_to_option_list( $p_filter[FILTER_PROPERTY_HANDLER_ID] );
+		print_dwg_assign_to_option_list( $p_filter[FILTER_PROPERTY_HANDLER_ID] );
 	}?>
 		</select>
 		<?php
@@ -448,9 +449,9 @@ function print_filter_dwg_values_show_category( array $p_filter ) {
 		foreach( $t_filter[FILTER_PROPERTY_CATEGORY_ID] as $t_current ) {
 			echo '<input type="hidden" name="', FILTER_PROPERTY_CATEGORY_ID, '[]" value="', string_attribute( $t_current ), '" />';
 			$t_this_string = '';
-			if( filter_field_is_any( $t_current ) ) {
+			if( filter_dwg_field_is_any( $t_current ) ) {
 				$t_any_found = true;
-			} elseif( filter_field_is_none( $t_current ) ) {
+			} elseif( filter_dwg_field_is_none( $t_current ) ) {
 				$t_none_found = true;
 			} else {
 				$t_this_string = $t_current;
@@ -487,7 +488,7 @@ function print_filter_dwg_show_category( ?array $p_filter = null ) {
 	}
 	?>
 		<!-- Category -->
-		<select class="input-xs" <?php echo filter_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_CATEGORY_ID;?>[]">
+		<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_CATEGORY_ID;?>[]">
 			<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_CATEGORY_ID], (string)META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
 			<option value="<?php echo META_FILTER_NONE?>"<?php check_selected( $p_filter[FILTER_PROPERTY_CATEGORY_ID], (string)META_FILTER_NONE );?>>[<?php echo lang_get( 'none' )?>]</option>
 			<?php print_category_filter_option_list( $p_filter[FILTER_PROPERTY_CATEGORY_ID] )?>
@@ -503,7 +504,7 @@ function print_filter_dwg_show_category( ?array $p_filter = null ) {
  * @return void
  */
 function print_filter_dwg_values_platform( array $p_filter ) {
-	print_multivalue_field( FILTER_PROPERTY_PLATFORM, $p_filter[FILTER_PROPERTY_PLATFORM] );
+	print_dwg_multivalue_field( FILTER_PROPERTY_PLATFORM, $p_filter[FILTER_PROPERTY_PLATFORM] );
 }
 
 /**
@@ -521,11 +522,11 @@ function print_filter_dwg_platform( ?array $p_filter = null ) {
 	}
 	?>
 		<!-- Platform -->
-		<select class="input-xs" <?php echo filter_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_PLATFORM;?>[]">
+		<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_PLATFORM;?>[]">
 			<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_PLATFORM], (string)META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
 			<?php
 				log_event( LOG_FILTERING, 'Platform = ' . var_export( $p_filter[FILTER_PROPERTY_PLATFORM], true ) );
-	print_platform_option_list( $p_filter[FILTER_PROPERTY_PLATFORM] );
+	print_dwg_platform_option_list( $p_filter[FILTER_PROPERTY_PLATFORM] );
 	?>
 		</select>
 		<?php
@@ -539,7 +540,7 @@ function print_filter_dwg_platform( ?array $p_filter = null ) {
  * @return void
  */
 function print_filter_dwg_values_os( array $p_filter ) {
-	print_multivalue_field( FILTER_PROPERTY_OS, $p_filter[FILTER_PROPERTY_OS] );
+	print_dwg_multivalue_field( FILTER_PROPERTY_OS, $p_filter[FILTER_PROPERTY_OS] );
 }
 
 /**
@@ -557,7 +558,7 @@ function print_filter_dwg_os( ?array $p_filter = null ) {
 	}
 	?>
 		<!-- OS -->
-		<select class="input-xs" <?php echo filter_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_OS;?>[]">
+		<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_OS;?>[]">
 			<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_OS], (string)META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
 			<?php print_os_option_list( $p_filter[FILTER_PROPERTY_OS] )?>
 		</select>
@@ -572,7 +573,7 @@ function print_filter_dwg_os( ?array $p_filter = null ) {
  * @return void
  */
 function print_filter_dwg_values_os_build( array $p_filter ) {
-	print_multivalue_field( FILTER_PROPERTY_OS_BUILD, $p_filter[FILTER_PROPERTY_OS_BUILD] );
+	print_dwg_multivalue_field( FILTER_PROPERTY_OS_BUILD, $p_filter[FILTER_PROPERTY_OS_BUILD] );
 }
 
 /**
@@ -590,7 +591,7 @@ function print_filter_dwg_os_build( ?array $p_filter = null ) {
 	}
 	?>
 		<!-- OS Build -->
-		<select class="input-xs" <?php echo filter_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_OS_BUILD;?>[]">
+		<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_OS_BUILD;?>[]">
 			<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_OS_BUILD], (string)META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
 			<?php print_os_build_option_list( $p_filter[FILTER_PROPERTY_OS_BUILD] )?>
 		</select>
@@ -615,7 +616,7 @@ function print_filter_dwg_values_show_severity( array $p_filter ) {
 		foreach( $t_filter[FILTER_PROPERTY_SEVERITY] as $t_current ) {
 			echo '<input type="hidden" name="', FILTER_PROPERTY_SEVERITY, '[]" value="', string_attribute( $t_current ), '" />';
 			$t_this_string = '';
-			if( filter_field_is_any( $t_current ) ) {
+			if( filter_dwg_field_is_any( $t_current ) ) {
 				$t_any_found = true;
 			} else {
 				$t_this_string = get_enum_element( 'severity', $t_current );
@@ -649,7 +650,7 @@ function print_filter_dwg_show_severity( ?array $p_filter = null ) {
 		$p_filter = $g_dwg_filter;
 	}
 	?><!-- Severity -->
-			<select class="input-xs" <?php echo filter_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_SEVERITY;?>[]">
+			<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_SEVERITY;?>[]">
 				<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_SEVERITY], META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
 				<?php print_enum_string_option_list( 'severity', $p_filter[FILTER_PROPERTY_SEVERITY] )?>
 			</select>
@@ -674,7 +675,7 @@ function print_filter_dwg_values_show_resolution( array $p_filter ) {
 		foreach( $t_filter[FILTER_PROPERTY_RESOLUTION] as $t_current ) {
 			echo '<input type="hidden" name="', FILTER_PROPERTY_RESOLUTION, '[]" value="', string_attribute( $t_current ), '" />';
 			$t_this_string = '';
-			if( filter_field_is_any( $t_current ) ) {
+			if( filter_dwg_field_is_any( $t_current ) ) {
 				$t_any_found = true;
 			} else {
 				$t_this_string = get_enum_element( 'resolution', $t_current );
@@ -708,7 +709,7 @@ function print_filter_dwg_show_resolution( ?array $p_filter = null ) {
 		$p_filter = $g_dwg_filter;
 	}
 	?><!-- Resolution -->
-			<select class="input-xs" <?php echo filter_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_RESOLUTION;?>[]">
+			<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_RESOLUTION;?>[]">
 				<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_RESOLUTION], META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
 				<?php print_enum_string_option_list( 'resolution', $p_filter[FILTER_PROPERTY_RESOLUTION] )?>
 			</select>
@@ -733,7 +734,7 @@ function print_filter_dwg_values_show_status( array $p_filter ) {
 		foreach( $t_filter[FILTER_PROPERTY_STATUS] as $t_current ) {
 			echo '<input type="hidden" name="', FILTER_PROPERTY_STATUS, '[]" value="', string_attribute( $t_current ), '" />';
 			$t_this_string = '';
-			if( filter_field_is_any( $t_current ) ) {
+			if( filter_dwg_field_is_any( $t_current ) ) {
 				$t_any_found = true;
 			} else {
 				$t_this_string = get_enum_element( 'status', $t_current );
@@ -767,7 +768,7 @@ function print_filter_dwg_show_status( ?array $p_filter = null ) {
 		$p_filter = $g_dwg_filter;
 	}
 	?>	<!-- Status -->
-			<select class="input-xs" <?php echo filter_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_STATUS;?>[]">
+			<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_STATUS;?>[]">
 				<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_STATUS], META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
 				<?php print_enum_string_option_list( 'status', $p_filter[FILTER_PROPERTY_STATUS] )?>
 			</select>
@@ -792,7 +793,7 @@ function print_filter_dwg_values_hide_status( array $p_filter ) {
 		foreach( $t_filter[FILTER_PROPERTY_HIDE_STATUS] as $t_current ) {
 			echo '<input type="hidden" name="', FILTER_PROPERTY_HIDE_STATUS, '[]" value="', string_attribute( $t_current ), '" />';
 			$t_this_string = '';
-			if( filter_field_is_none( $t_current ) ) {
+			if( filter_dwg_field_is_none( $t_current ) ) {
 				$t_none_found = true;
 			} else {
 				$t_this_string = get_enum_element( 'status', $t_current );
@@ -830,7 +831,7 @@ function print_filter_dwg_hide_status( ?array $p_filter = null ) {
 		$p_filter = $g_dwg_filter;
 	}
 	?><!-- Hide Status -->
-			<select class="input-xs" <?php echo filter_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_HIDE_STATUS;?>[]">
+			<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_HIDE_STATUS;?>[]">
 				<option value="<?php echo META_FILTER_NONE?>">[<?php echo lang_get( 'none' )?>]</option>
 				<?php print_enum_string_option_list( 'status', $p_filter[FILTER_PROPERTY_HIDE_STATUS] )?>
 			</select>
@@ -856,9 +857,9 @@ function print_filter_dwg_values_show_build( array $p_filter ) {
 			$t_current = stripslashes( $t_current );
 			echo '<input type="hidden" name="', FILTER_PROPERTY_BUILD, '[]" value="', string_attribute( $t_current ), '" />';
 			$t_this_string = '';
-			if( filter_field_is_any( $t_current ) ) {
+			if( filter_dwg_field_is_any( $t_current ) ) {
 				$t_any_found = true;
-			} else if( filter_field_is_none( $t_current ) ) {
+			} else if( filter_dwg_field_is_none( $t_current ) ) {
 				$t_this_string = lang_get( 'none' );
 			} else {
 				$t_this_string = $t_current;
@@ -892,7 +893,7 @@ function print_filter_dwg_show_build( ?array $p_filter = null ) {
 		$p_filter = $g_dwg_filter;
 	}
 	?><!-- Build -->
-		<select class="input-xs" <?php echo filter_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_BUILD;?>[]">
+		<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_BUILD;?>[]">
 			<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_BUILD], (string)META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
 			<option value="<?php echo META_FILTER_NONE?>"<?php check_selected( $p_filter[FILTER_PROPERTY_BUILD], (string)META_FILTER_NONE );?>>[<?php echo lang_get( 'none' )?>]</option>
 			<?php print_build_option_list( $p_filter[FILTER_PROPERTY_BUILD] )?>
@@ -919,9 +920,9 @@ function print_filter_dwg_values_show_version( array $p_filter ) {
 			$t_current = stripslashes( $t_current );
 			echo '<input type="hidden" name="', FILTER_PROPERTY_VERSION, '[]" value="', string_attribute( $t_current ), '" />';
 			$t_this_string = '';
-			if( filter_field_is_any( $t_current ) ) {
+			if( filter_dwg_field_is_any( $t_current ) ) {
 				$t_any_found = true;
-			} else if( filter_field_is_none( $t_current ) ) {
+			} else if( filter_dwg_field_is_none( $t_current ) ) {
 				$t_this_string = lang_get( 'none' );
 			} else {
 				$t_this_string = $t_current;
@@ -956,7 +957,7 @@ function print_filter_dwg_show_version( ?array $p_filter = null ) {
 	}
 	$t_projects = filter_dwg_get_included_projects( $p_filter );
 	?><!-- Version -->
-		<select class="input-xs" <?php echo filter_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_VERSION;?>[]">
+		<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_VERSION;?>[]">
 			<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_VERSION], (string)META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
 			<option value="<?php echo META_FILTER_NONE?>"<?php check_selected( $p_filter[FILTER_PROPERTY_VERSION], (string)META_FILTER_NONE );?>>[<?php echo lang_get( 'none' )?>]</option>
 			<?php print_version_option_list( $p_filter[FILTER_PROPERTY_VERSION], $t_projects, VERSION_ALL, false )?>
@@ -983,9 +984,9 @@ function print_filter_dwg_values_show_fixed_in_version( array $p_filter ) {
 			$t_current = stripslashes( $t_current );
 			echo '<input type="hidden" name="', FILTER_PROPERTY_FIXED_IN_VERSION, '[]" value="', string_attribute( $t_current ), '" />';
 			$t_this_string = '';
-			if( filter_field_is_any( $t_current ) ) {
+			if( filter_dwg_field_is_any( $t_current ) ) {
 				$t_any_found = true;
-			} else if( filter_field_is_none( $t_current ) ) {
+			} else if( filter_dwg_field_is_none( $t_current ) ) {
 				$t_this_string = lang_get( 'none' );
 			} else {
 				$t_this_string = $t_current;
@@ -1020,7 +1021,7 @@ function print_filter_dwg_show_fixed_in_version( ?array $p_filter = null ) {
 	}
 	$t_projects = filter_dwg_get_included_projects( $p_filter );
 	?><!-- Fixed in Version -->
-		<select class="input-xs" <?php echo filter_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_FIXED_IN_VERSION;?>[]">
+		<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_FIXED_IN_VERSION;?>[]">
 			<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_FIXED_IN_VERSION], (string)META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
 			<option value="<?php echo META_FILTER_NONE?>"<?php check_selected( $p_filter[FILTER_PROPERTY_FIXED_IN_VERSION], (string)META_FILTER_NONE );?>>[<?php echo lang_get( 'none' )?>]</option>
 			<?php print_version_option_list( $p_filter[FILTER_PROPERTY_FIXED_IN_VERSION], $t_projects, VERSION_ALL, false )?>
@@ -1047,9 +1048,9 @@ function print_filter_dwg_values_show_target_version( array $p_filter ) {
 			$t_current = stripslashes( $t_current );
 			echo '<input type="hidden" name="', FILTER_PROPERTY_TARGET_VERSION, '[]" value="', string_attribute( $t_current ), '" />';
 			$t_this_string = '';
-			if( filter_field_is_any( $t_current ) ) {
+			if( filter_dwg_field_is_any( $t_current ) ) {
 				$t_any_found = true;
-			} else if( filter_field_is_none( $t_current ) ) {
+			} else if( filter_dwg_field_is_none( $t_current ) ) {
 				$t_this_string = lang_get( 'none' );
 			} else {
 				$t_this_string = $t_current;
@@ -1084,7 +1085,7 @@ function print_filter_dwg_show_target_version( ?array $p_filter = null ) {
 	}
 	$t_projects = filter_dwg_get_included_projects( $p_filter );
 	?><!-- Fixed in Version -->
-		<select class="input-xs" <?php echo filter_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_TARGET_VERSION;?>[]">
+		<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_TARGET_VERSION;?>[]">
 			<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_TARGET_VERSION], (string)META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
 			<option value="<?php echo META_FILTER_NONE?>"<?php check_selected( $p_filter[FILTER_PROPERTY_TARGET_VERSION], (string)META_FILTER_NONE );?>>[<?php echo lang_get( 'none' )?>]</option>
 			<?php print_version_option_list( $p_filter[FILTER_PROPERTY_TARGET_VERSION], $t_projects, VERSION_ALL, false )?>
@@ -1110,7 +1111,7 @@ function print_filter_dwg_values_show_priority( array $p_filter ) {
 		foreach( $t_filter[FILTER_PROPERTY_PRIORITY] as $t_current ) {
 			echo '<input type="hidden" name="', FILTER_PROPERTY_PRIORITY, '[]" value="', string_attribute( $t_current ), '" />';
 			$t_this_string = '';
-			if( filter_field_is_any( $t_current ) ) {
+			if( filter_dwg_field_is_any( $t_current ) ) {
 				$t_any_found = true;
 			} else {
 				$t_this_string = get_enum_element( 'priority', $t_current );
@@ -1144,7 +1145,7 @@ function print_filter_dwg_show_priority( ?array $p_filter = null ) {
 		$p_filter = $g_dwg_filter;
 	}
 	?><!-- Priority -->
-	<select class="input-xs" <?php echo filter_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_PRIORITY;?>[]">
+	<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_PRIORITY;?>[]">
 			<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_PRIORITY], META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
 			<?php print_enum_string_option_list( 'priority', $p_filter[FILTER_PROPERTY_PRIORITY] )?>
 	</select>
@@ -1170,7 +1171,7 @@ function print_filter_dwg_values_show_profile( array $p_filter ) {
 		foreach( $t_filter[FILTER_PROPERTY_PROFILE_ID] as $t_current ) {
 			echo '<input type="hidden" name="', FILTER_PROPERTY_PROFILE_ID, '[]" value="', string_attribute( $t_current ), '" />';
 			$t_this_string = '';
-			if( filter_field_is_any( $t_current ) ) {
+			if( filter_dwg_field_is_any( $t_current ) ) {
 				$t_any_found = true;
 			} else {
 				$t_profile = new ProfileData( $t_current );
@@ -1205,9 +1206,9 @@ function print_filter_dwg_show_profile( ?array $p_filter = null ) {
 		$p_filter = $g_dwg_filter;
 	}
 	?><!-- Profile -->
-		<select class="input-xs" <?php echo filter_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_PROFILE_ID;?>[]">
+		<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_PROFILE_ID;?>[]">
 			<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_PROFILE_ID], META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
-			<?php print_profile_option_list_for_project( helper_get_current_project(), $p_filter[FILTER_PROPERTY_PROFILE_ID] );?>
+			<?php print_dwg_profile_option_list_for_project( helper_get_current_project(), $p_filter[FILTER_PROPERTY_PROFILE_ID] );?>
 		</select>
 		<?php
 }
@@ -1815,11 +1816,11 @@ function print_filter_dwg_values_note_user_id( array $p_filter ) {
 		foreach( $t_filter[FILTER_PROPERTY_NOTE_USER_ID] as $t_current ) {
 			echo '<input type="hidden" name="', FILTER_PROPERTY_NOTE_USER_ID, '[]" value="', string_attribute( $t_current ), '" />';
 			$t_this_name = '';
-			if( filter_field_is_none( $t_current ) ) {
+			if( filter_dwg_field_is_none( $t_current ) ) {
 				$t_this_name = lang_get( 'none' );
-			} else if( filter_field_is_any( $t_current ) ) {
+			} else if( filter_dwg_field_is_any( $t_current ) ) {
 				$t_any_found = true;
-			} else if( filter_field_is_myself( $t_current ) ) {
+			} else if( filter_dwg_field_is_myself( $t_current ) ) {
 				if( access_has_project_level( config_get( 'handle_dwg_threshold' ) ) ) {
 					$t_this_name = '[' . lang_get( 'myself' ) . ']';
 				} else {
@@ -1858,7 +1859,7 @@ function print_filter_dwg_note_user_id( ?array $p_filter = null ) {
 	}
 	?>
 	<!-- BUGNOTE REPORTER -->
-	<select class="input-xs" <?php echo filter_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_NOTE_USER_ID;?>[]">
+	<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_NOTE_USER_ID;?>[]">
 		<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_NOTE_USER_ID], META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
 		<?php if( access_has_project_level( config_get( 'view_handler_threshold' ) ) ) {?>
 		<option value="<?php echo META_FILTER_NONE?>"<?php check_selected( $p_filter[FILTER_PROPERTY_NOTE_USER_ID], META_FILTER_NONE );?>>[<?php echo lang_get( 'none' )?>]</option>
@@ -1869,7 +1870,7 @@ function print_filter_dwg_note_user_id( ?array $p_filter = null ) {
 				echo '>[' . lang_get( 'myself' ) . ']</option>';
 			}
 
-			print_note_option_list( $p_filter[FILTER_PROPERTY_NOTE_USER_ID] );
+			print_dwg_note_option_list( $p_filter[FILTER_PROPERTY_NOTE_USER_ID] );
 		}
 	?>
 	</select>
@@ -1893,7 +1894,7 @@ function print_filter_dwg_values_plugin_field( array $p_filter, $p_field_name, $
 		switch( $p_filter_object->type ) {
 			case FILTER_TYPE_STRING:
 			case FILTER_TYPE_INT:
-				if( filter_field_is_any( $t_value ) ) {
+				if( filter_dwg_field_is_any( $t_value ) ) {
 					echo lang_get( 'any' );
 				} else {
 					echo string_display_line( $t_value );
@@ -1913,7 +1914,7 @@ function print_filter_dwg_values_plugin_field( array $p_filter, $p_field_name, $
 				}
 				$t_strings = array();
 				foreach( $t_value as $t_current ) {
-					if( filter_field_is_any( $t_current ) ) {
+					if( filter_dwg_field_is_any( $t_current ) ) {
 						$t_strings[] = lang_get( 'any' );
 					} else {
 						$t_strings[] = string_display_line( $p_filter_object->display( $t_current ) );
@@ -1969,7 +1970,7 @@ function print_filter_dwg_plugin_field( $p_field_name, $p_filter_object, ?array 
 			break;
 
 		case FILTER_TYPE_MULTI_STRING:
-			echo '<select class="input-xs" ' . filter_select_modifier( $p_filter ) . ( $t_size > 0 ? ' size="' . $t_size . '"' : '' ),
+			echo '<select class="input-xs" ' . filter_dwg_select_modifier( $p_filter ) . ( $t_size > 0 ? ' size="' . $t_size . '"' : '' ),
 				' name="', string_attribute( $p_field_name ), '[]">', '<option value="', META_FILTER_ANY, '"';
 			check_selected( $p_filter[$p_field_name], (string)META_FILTER_ANY );
 			echo '>[', lang_get( 'any' ), ']</option>';
@@ -1984,7 +1985,7 @@ function print_filter_dwg_plugin_field( $p_field_name, $p_filter_object, ?array 
 			break;
 
 		case FILTER_TYPE_MULTI_INT:
-			echo '<select class="input-xs"' . filter_select_modifier( $p_filter ) . ( $t_size > 0 ? ' size="' . $t_size . '"' : '' ),
+			echo '<select class="input-xs"' . filter_dwg_select_modifier( $p_filter ) . ( $t_size > 0 ? ' size="' . $t_size . '"' : '' ),
 				' name="', string_attribute( $p_field_name ), '[]">', '<option value="', META_FILTER_ANY, '"';
 			check_selected( $p_filter[$p_field_name], META_FILTER_ANY );
 			echo '>[', lang_get( 'any' ), ']</option>';
@@ -2010,7 +2011,7 @@ function print_filter_dwg_plugin_field( $p_field_name, $p_filter_object, ?array 
  */
 function print_filter_dwg_values_custom_field( array $p_filter, $p_field_id ) {
 	if( CUSTOM_FIELD_TYPE_DATE == custom_field_type( $p_field_id ) ) {
-		print_filter_values_custom_field_date( $p_filter, $p_field_id );
+		print_filter_dwg_values_custom_field_date( $p_filter, $p_field_id );
 		return;
 	}
 
@@ -2018,12 +2019,12 @@ function print_filter_dwg_values_custom_field( array $p_filter, $p_field_id ) {
 	$t_strings = array();
 	$t_inputs = array();
 
-	if( filter_field_is_any( $t_values ) ) {
+	if( filter_dwg_field_is_any( $t_values ) ) {
 		$t_strings[] = lang_get( 'any' );
 	} else {
 		foreach( $t_values as $t_val ) {
 			$t_val = stripslashes( $t_val );
-			if( filter_field_is_none( $t_val ) ) {
+			if( filter_dwg_field_is_none( $t_val ) ) {
 				$t_strings[] = lang_get( 'none' );
 			} else {
 				$t_strings[] = string_attribute( $t_val );
@@ -2117,7 +2118,7 @@ function print_filter_dwg_custom_field( $p_field_id, ?array $p_filter = null ) {
 
 	switch( $t_cfdef['type'] ) {
 		case CUSTOM_FIELD_TYPE_DATE:
-			print_filter_custom_field_date( $p_field_id, $p_filter );
+			print_filter_dwg_custom_field_date( $p_field_id, $p_filter );
 			break;
 
 		case CUSTOM_FIELD_TYPE_TEXTAREA:
@@ -2125,7 +2126,7 @@ function print_filter_dwg_custom_field( $p_field_id, ?array $p_filter = null ) {
 			break;
 
 		default:
-			echo '<select class="input-xs" ' . filter_select_modifier( $p_filter ) . ' name="custom_field_' . $p_field_id . '[]">';
+			echo '<select class="input-xs" ' . filter_dwg_select_modifier( $p_filter ) . ' name="custom_field_' . $p_field_id . '[]">';
 			# Option META_FILTER_ANY
 			echo '<option value="' . META_FILTER_ANY . '"';
 			check_selected( $p_filter['custom_fields'][$p_field_id], META_FILTER_ANY, false );
@@ -2142,7 +2143,7 @@ function print_filter_dwg_custom_field( $p_field_id, ?array $p_filter = null ) {
 			if( is_array( $t_values ) ){
 				$t_max_length = config_get( 'max_dropdown_length' );
 				foreach( $t_values as $t_val ) {
-					if( filter_field_is_any($t_val) || filter_field_is_none( $t_val ) ) {
+					if( filter_dwg_field_is_any($t_val) || filter_dwg_field_is_none( $t_val ) ) {
 						continue;
 					}
 					echo '<option value="' . string_attribute( $t_val ) . '"';
@@ -2165,7 +2166,7 @@ function print_filter_dwg_custom_field( $p_field_id, ?array $p_filter = null ) {
  * @return void
  */
 function print_filter_dwg_values_show_sort( array $p_filter ) {
-	$p_sort_properties = filter_get_visible_sort_properties_array( $p_filter );
+	$p_sort_properties = filter_dwg_get_visible_sort_properties_array( $p_filter );
 	$t_sort_fields = $p_sort_properties[FILTER_PROPERTY_SORT_FIELD_NAME];
 	$t_dir_fields = $p_sort_properties[FILTER_PROPERTY_SORT_DIRECTION];
 
@@ -2180,8 +2181,8 @@ function print_filter_dwg_values_show_sort( array $p_filter ) {
 				echo ', ';
 			}
 			$t_sort = $t_sort_fields[$i];
-			if(column_is_custom_field( $t_sort ) ) {
-				$t_field_name = string_attribute( lang_get_defaulted( column_get_custom_field_name( $t_sort ) ) );
+			if(column_dwg_is_custom_field( $t_sort ) ) {
+				$t_field_name = string_attribute( lang_get_defaulted( column_dwg_get_custom_field_name( $t_sort ) ) );
 			} else {
 				$t_field_name = string_get_field_name( $t_sort );
 			}
@@ -2214,8 +2215,8 @@ function print_filter_dwg_show_sort( ?array $p_filter = null ) {
 
 	$t_shown_fields[''] = '';
 	foreach( $t_visible_columns as $t_column ) {
-		if(column_is_custom_field( $t_column ) ) {
-			$t_field_name = string_attribute( lang_get_defaulted( column_get_custom_field_name( $t_column ) ) );
+		if(column_dwg_is_custom_field( $t_column ) ) {
+			$t_field_name = string_attribute( lang_get_defaulted( column_dwg_get_custom_field_name( $t_column ) ) );
 		} else {
 			$t_field_name = string_get_field_name( $t_column );
 		}
@@ -2226,7 +2227,7 @@ function print_filter_dwg_show_sort( ?array $p_filter = null ) {
 	$t_shown_dirs['DESC'] = lang_get( 'bugnote_order_desc' );
 
 	# get values from filter structure
-	$p_sort_properties = filter_get_visible_sort_properties_array( $p_filter );
+	$p_sort_properties = filter_dwg_get_visible_sort_properties_array( $p_filter );
 	$t_sort_fields = $p_sort_properties[FILTER_PROPERTY_SORT_FIELD_NAME];
 	$t_dir_fields = $p_sort_properties[FILTER_PROPERTY_SORT_DIRECTION];
 
@@ -2427,7 +2428,7 @@ function print_filter_dwg_project_id( ?array $p_filter = null ) {
 	}
 	?>
 		<!-- Project -->
-		<select class="input-xs" <?php echo filter_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_PROJECT_ID;?>[]">
+		<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_PROJECT_ID;?>[]">
 			<option value="<?php echo META_FILTER_CURRENT ?>"
 				<?php check_selected( $p_filter[FILTER_PROPERTY_PROJECT_ID], META_FILTER_CURRENT );?>>
 				[<?php echo lang_get( 'current' )?>]
@@ -2455,7 +2456,7 @@ function print_filter_dwg_values_projection( array $p_filter ) {
 		foreach( $t_filter[FILTER_PROPERTY_PROJECTION] as $t_current ) {
 			echo '<input type="hidden" name="', FILTER_PROPERTY_PROJECTION, '[]" value="', string_attribute( $t_current ), '" />';
 			$t_this_string = '';
-			if( filter_field_is_any( $t_current ) ) {
+			if( filter_dwg_field_is_any( $t_current ) ) {
 				$t_any_found = true;
 			} else {
 				$t_this_string = get_enum_element( 'projection', $t_current );
@@ -2489,7 +2490,7 @@ function print_filter_dwg_projection( ?array $p_filter = null ) {
 		$p_filter = $g_dwg_filter;
 	}
 	?><!-- Projection -->
-			<select class="input-xs" <?php echo filter_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_PROJECTION;?>[]">
+			<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_PROJECTION;?>[]">
 				<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_PROJECTION], META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
 				<?php print_enum_string_option_list( 'projection', $p_filter[FILTER_PROPERTY_PROJECTION] )?>
 			</select>
@@ -2534,7 +2535,7 @@ function print_filter_dwg_match_type( ?array $p_filter = null ) {
 	}
 ?>
 		<!-- Project -->
-		<select class="input-xs" <?php echo filter_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_MATCH_TYPE;?>">
+		<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_MATCH_TYPE;?>">
 			<option value="<?php echo FILTER_MATCH_ALL?>" <?php check_selected( $p_filter[FILTER_PROPERTY_MATCH_TYPE], FILTER_MATCH_ALL );?>>[<?php echo lang_get( 'filter_match_all' )?>]</option>
 			<option value="<?php echo FILTER_MATCH_ANY?>" <?php check_selected( $p_filter[FILTER_PROPERTY_MATCH_TYPE], FILTER_MATCH_ANY );?>>[<?php echo lang_get( 'filter_match_any' )?>]</option>
 		</select>
@@ -2547,7 +2548,7 @@ function print_filter_dwg_match_type( ?array $p_filter = null ) {
  * @param mixed  $p_field_value Field value.
  * @return void
  */
-function print_multivalue_field( $p_field_name, $p_field_value ) {
+function print_dwg_multivalue_field( $p_field_name, $p_field_value ) {
 	$t_output = '';
 	$t_any_found = false;
 
@@ -2614,7 +2615,7 @@ function print_multivalue_field( $p_field_name, $p_field_value ) {
  * @return void
  * @throws StateException
  */
-function filter_form_draw_inputs( $p_filter, $p_for_screen = true, $p_static = false, $p_static_fallback_page = null, $p_show_search = true ) {
+function filter_dwg_form_draw_inputs( $p_filter, $p_for_screen = true, $p_static = false, $p_static_fallback_page = null, $p_show_search = true ) {
 
 	$t_filter = filter_dwg_ensure_valid_filter( $p_filter );
 	$t_view_type = $t_filter['_view_type'];
@@ -2622,7 +2623,7 @@ function filter_form_draw_inputs( $p_filter, $p_for_screen = true, $p_static = f
 
 	# If it's a stored filter, linked to a specific project, use that project_id to render available fields
 	if( $t_source_query_id > 0 ) {
-		$t_project_id = (int)filter_get_field( $t_source_query_id, 'project_id' );
+		$t_project_id = (int)filter_dwg_get_field( $t_source_query_id, 'project_id' );
 		if( ALL_PROJECTS == $t_project_id ) {
 			# If all_projects, the filter can be used at any project, select the current project id
 			$t_project_id = helper_get_current_project();
@@ -2668,8 +2669,8 @@ function filter_form_draw_inputs( $p_filter, $p_for_screen = true, $p_static = f
 		if( $p_static || !$p_dynamic ) {
 			return $p_label;
 		} else {
-			if( filter_is_temporary( $t_filter ) ) {
-				$t_data_filter_id = ' data-filter="' . filter_get_temporary_key( $t_filter ) . '"';
+			if( filter_dwg_is_temporary( $t_filter ) ) {
+				$t_data_filter_id = ' data-filter="' . filter_dwg_get_temporary_key( $t_filter ) . '"';
 			} elseif ( isset( $t_filter['_filter_id'] ) ) {
 				$t_data_filter_id = ' data-filter_id="' . $t_filter['_filter_id'] . '"';
 			} else {
@@ -2692,56 +2693,56 @@ function filter_form_draw_inputs( $p_filter, $p_for_screen = true, $p_static = f
 
 	$t_row1->add_item( new TableFieldsItem(
 			$get_field_header( 'reporter_id_filter', lang_get( 'reporter' ) ),
-			filter_form_get_input( $t_filter, 'reporter_id', $t_show_inputs ),
+			filter_dwg_form_get_input( $t_filter, 'reporter_id', $t_show_inputs ),
 			1 /* colspan */,
 			null /* class */,
 			'reporter_id_filter_target' /* content id */
 			));
 	$t_row1->add_item( new TableFieldsItem(
 			$get_field_header( 'handler_id_filter', lang_get( 'assigned_to' ) ),
-			filter_form_get_input( $t_filter, 'handler_id', $t_show_inputs ),
+			filter_dwg_form_get_input( $t_filter, 'handler_id', $t_show_inputs ),
 			1 /* colspan */,
 			null /* class */,
 			'handler_id_filter_target' /* content id */
 			));
 	$t_row1->add_item( new TableFieldsItem(
 			$get_field_header( 'user_monitor_filter', lang_get( 'monitored_by' ) ),
-			filter_form_get_input( $t_filter, 'user_monitor', $t_show_inputs ),
+			filter_dwg_form_get_input( $t_filter, 'user_monitor', $t_show_inputs ),
 			1 /* colspan */,
 			null /* class */,
 			'user_monitor_filter_target' /* content id */
 			));
 	$t_row1->add_item( new TableFieldsItem(
 			$get_field_header( 'note_user_id_filter', lang_get( 'note_user_id' ) ),
-			filter_form_get_input( $t_filter, 'note_user_id', $t_show_inputs ),
+			filter_dwg_form_get_input( $t_filter, 'note_user_id', $t_show_inputs ),
 			1 /* colspan */,
 			null /* class */,
 			'note_user_id_filter_target' /* content id */
 			));
 	$t_row1->add_item( new TableFieldsItem(
 			$get_field_header( 'show_priority_filter', lang_get( 'priority' ) ),
-			filter_form_get_input( $t_filter, 'show_priority', $t_show_inputs ),
+			filter_dwg_form_get_input( $t_filter, 'show_priority', $t_show_inputs ),
 			1 /* colspan */,
 			null /* class */,
 			'show_priority_filter_target' /* content id */
 			));
 	$t_row1->add_item( new TableFieldsItem(
 			$get_field_header( 'show_severity_filter', lang_get( 'severity' ) ),
-			filter_form_get_input( $t_filter, 'show_severity', $t_show_inputs ),
+			filter_dwg_form_get_input( $t_filter, 'show_severity', $t_show_inputs ),
 			1 /* colspan */,
 			null /* class */,
 			'show_severity_filter_target' /* content id */
 			));
 	$t_row1->add_item( new TableFieldsItem(
 			$get_field_header( 'view_state_filter', lang_get( 'view_status' ) ),
-			filter_form_get_input( $t_filter, 'view_state', $t_show_inputs ),
+			filter_dwg_form_get_input( $t_filter, 'view_state', $t_show_inputs ),
 			1 /* colspan */,
 			null /* class */,
 			'view_state_filter_target' /* content id */
 			));
 	$t_row1->add_item( new TableFieldsItem(
 			$get_field_header( 'sticky_issues_filter', lang_get( 'sticky' ) ),
-			filter_form_get_input( $t_filter, 'sticky_issues', $t_show_inputs ),
+			filter_dwg_form_get_input( $t_filter, 'sticky_issues', $t_show_inputs ),
 			1 /* colspan */,
 			null /* class */,
 			'sticky_issues_filter_target' /* content id */
@@ -2751,7 +2752,7 @@ function filter_form_draw_inputs( $p_filter, $p_for_screen = true, $p_static = f
 
 	$t_row2->add_item( new TableFieldsItem(
 			$get_field_header( 'show_category_filter', lang_get( 'category' ) ),
-			filter_form_get_input( $t_filter, 'show_category', $t_show_inputs ),
+			filter_dwg_form_get_input( $t_filter, 'show_category', $t_show_inputs ),
 			1 /* colspan */,
 			null /* class */,
 			'show_category_filter_target' /* content id */
@@ -2759,7 +2760,7 @@ function filter_form_draw_inputs( $p_filter, $p_for_screen = true, $p_static = f
 	if( FILTER_VIEW_TYPE_SIMPLE == $t_view_type ) {
 		$t_row2->add_item( new TableFieldsItem(
 				$get_field_header( 'hide_status_filter', lang_get( 'hide_status' ) ),
-				filter_form_get_input( $t_filter, 'hide_status', $t_show_inputs ),
+				filter_dwg_form_get_input( $t_filter, 'hide_status', $t_show_inputs ),
 				1 /* colspan */,
 				null /* class */,
 				'hide_status_filter_target' /* content id */
@@ -2767,14 +2768,14 @@ function filter_form_draw_inputs( $p_filter, $p_for_screen = true, $p_static = f
 	}
 	$t_row2->add_item( new TableFieldsItem(
 			$get_field_header( 'show_status_filter', lang_get( 'status' ) ),
-			filter_form_get_input( $t_filter, 'show_status', $t_show_inputs ),
+			filter_dwg_form_get_input( $t_filter, 'show_status', $t_show_inputs ),
 			1 /* colspan */,
 			null /* class */,
 			'show_status_filter_target' /* content id */
 			));
 	$t_row2->add_item( new TableFieldsItem(
 			$get_field_header( 'show_resolution_filter', lang_get( 'resolution' ) ),
-			filter_form_get_input( $t_filter, 'show_resolution', $t_show_inputs ),
+			filter_dwg_form_get_input( $t_filter, 'show_resolution', $t_show_inputs ),
 			1 /* colspan */,
 			null /* class */,
 			'show_resolution_filter_target' /* content id */
@@ -2782,7 +2783,7 @@ function filter_form_draw_inputs( $p_filter, $p_for_screen = true, $p_static = f
 	if( ON == config_get( 'enable_projection' ) ) {
 		$t_row2->add_item( new TableFieldsItem(
 				$get_field_header( 'projection_filter', lang_get( 'projection' ) ),
-				filter_form_get_input( $t_filter, 'projection', $t_show_inputs ),
+				filter_dwg_form_get_input( $t_filter, 'projection', $t_show_inputs ),
 				1 /* colspan */,
 				null /* class */,
 				'projection_filter_target' /* content id */
@@ -2790,14 +2791,14 @@ function filter_form_draw_inputs( $p_filter, $p_for_screen = true, $p_static = f
 	}
 	$t_row2->add_item( new TableFieldsItem(
 			$get_field_header( 'do_filter_by_date_filter', lang_get( 'use_date_filters' ) ),
-			filter_form_get_input( $t_filter, 'do_filter_by_date', $t_show_inputs ),
+			filter_dwg_form_get_input( $t_filter, 'do_filter_by_date', $t_show_inputs ),
 			1 /* colspan */,
 			null /* class */,
 			'do_filter_by_date_filter_target' /* content id */
 			));
 	$t_row2->add_item( new TableFieldsItem(
 			$get_field_header( 'do_filter_by_last_updated_date_filter', lang_get( 'use_last_updated_date_filters' ) ),
-			filter_form_get_input( $t_filter, 'do_filter_by_last_updated_date', $t_show_inputs ),
+			filter_dwg_form_get_input( $t_filter, 'do_filter_by_last_updated_date', $t_show_inputs ),
 			1 /* colspan */,
 			null /* class */,
 			'do_filter_by_last_updated_date_filter_target' /* content id */
@@ -2805,7 +2806,7 @@ function filter_form_draw_inputs( $p_filter, $p_for_screen = true, $p_static = f
 	if( FILTER_VIEW_TYPE_ADVANCED == $t_view_type ) {
 		$t_row2->add_item( new TableFieldsItem(
 				$get_field_header( 'project_id_filter', lang_get( 'email_project' ) ),
-				filter_form_get_input( $t_filter, 'project_id', $t_show_inputs ),
+				filter_dwg_form_get_input( $t_filter, 'project_id', $t_show_inputs ),
 				1 /* colspan */,
 				null /* class */,
 				'project_id_filter_target' /* content id */
@@ -2817,28 +2818,28 @@ function filter_form_draw_inputs( $p_filter, $p_for_screen = true, $p_static = f
 	if( ON == config_get( 'enable_profiles' ) ) {
 		$t_row3->add_item( new TableFieldsItem(
 				$get_field_header( 'show_profile_filter', lang_get( 'profile' ) ),
-				filter_form_get_input( $t_filter, 'show_profile', $t_show_inputs ),
+				filter_dwg_form_get_input( $t_filter, 'show_profile', $t_show_inputs ),
 				1 /* colspan */,
 				null /* class */,
 				'show_profile_filter_target' /* content id */
 				));
 		$t_row3->add_item( new TableFieldsItem(
 				$get_field_header( 'platform_filter', lang_get( 'platform' ) ),
-				filter_form_get_input( $t_filter, 'platform', $t_show_inputs ),
+				filter_dwg_form_get_input( $t_filter, 'platform', $t_show_inputs ),
 				1 /* colspan */,
 				null /* class */,
 				'platform_filter_target' /* content id */
 				));
 		$t_row3->add_item( new TableFieldsItem(
 				$get_field_header( 'os_filter', lang_get( 'os' ) ),
-				filter_form_get_input( $t_filter, 'os', $t_show_inputs ),
+				filter_dwg_form_get_input( $t_filter, 'os', $t_show_inputs ),
 				1 /* colspan */,
 				null /* class */,
 				'os_filter_target' /* content id */
 				));
 		$t_row3->add_item( new TableFieldsItem(
 				$get_field_header( 'os_build_filter', lang_get( 'os_build' ) ),
-				filter_form_get_input( $t_filter, 'os_build', $t_show_inputs ),
+				filter_dwg_form_get_input( $t_filter, 'os_build', $t_show_inputs ),
 				1 /* colspan */,
 				null /* class */,
 				'os_build_filter_target' /* content id */
@@ -2847,7 +2848,7 @@ function filter_form_draw_inputs( $p_filter, $p_for_screen = true, $p_static = f
 	if( $t_show_build ) {
 		$t_row3->add_item( new TableFieldsItem(
 				$get_field_header( 'show_build_filter', lang_get( 'product_build' ) ),
-				filter_form_get_input( $t_filter, 'show_build', $t_show_inputs ),
+				filter_dwg_form_get_input( $t_filter, 'show_build', $t_show_inputs ),
 				1 /* colspan */,
 				null /* class */,
 				'show_build_filter_target' /* content id */
@@ -2856,21 +2857,21 @@ function filter_form_draw_inputs( $p_filter, $p_for_screen = true, $p_static = f
 	if( $t_show_product_version ) {
 		$t_row3->add_item( new TableFieldsItem(
 				$get_field_header( 'show_version_filter', lang_get( 'product_version' ) ),
-				filter_form_get_input( $t_filter, 'show_version', $t_show_inputs ),
+				filter_dwg_form_get_input( $t_filter, 'show_version', $t_show_inputs ),
 				1 /* colspan */,
 				null /* class */,
 				'show_version_filter_target' /* content id */
 				));
 		$t_row3->add_item( new TableFieldsItem(
 				$get_field_header( 'show_fixed_in_version_filter', lang_get( 'fixed_in_version' ) ),
-				filter_form_get_input( $t_filter, 'show_fixed_in_version', $t_show_inputs ),
+				filter_dwg_form_get_input( $t_filter, 'show_fixed_in_version', $t_show_inputs ),
 				1 /* colspan */,
 				null /* class */,
 				'show_fixed_in_version_filter_target' /* content id */
 				));
 		$t_row3->add_item( new TableFieldsItem(
 				$get_field_header( 'show_target_version_filter', lang_get( 'target_version' ) ),
-				filter_form_get_input( $t_filter, 'show_target_version', $t_show_inputs ),
+				filter_dwg_form_get_input( $t_filter, 'show_target_version', $t_show_inputs ),
 				1 /* colspan */,
 				null /* class */,
 				'show_target_version_filter_target' /* content id */
@@ -2878,7 +2879,7 @@ function filter_form_draw_inputs( $p_filter, $p_for_screen = true, $p_static = f
 	}
 	$t_row3->add_item( new TableFieldsItem(
 			$get_field_header( 'relationship_type_filter', lang_get( 'dwg_relationships' ) ),
-			filter_form_get_input( $t_filter, 'relationship_type', $t_show_inputs ),
+			filter_dwg_form_get_input( $t_filter, 'relationship_type', $t_show_inputs ),
 			1 /* colspan */,
 			null /* class */,
 			'relationship_type_filter_target' /* content id */
@@ -2886,7 +2887,7 @@ function filter_form_draw_inputs( $p_filter, $p_for_screen = true, $p_static = f
 	if( access_has_project_level( config_get( 'tag_view_threshold' ) ) ) {
 		$t_row3->add_item( new TableFieldsItem(
 				$get_field_header( 'tag_string_filter', lang_get( 'tags' ) ),
-				filter_form_get_input( $t_filter, 'tag_string', $t_show_inputs ),
+				filter_dwg_form_get_input( $t_filter, 'tag_string', $t_show_inputs ),
 				3 /* colspan */,
 				null /* class */,
 				'tag_string_filter_target' /* content id */
@@ -2897,15 +2898,15 @@ function filter_form_draw_inputs( $p_filter, $p_for_screen = true, $p_static = f
 
 	$t_row_extra = new FilterDwgBoxGridLayout( $t_filter_cols , TableGridLayout::ORIENTATION_VERTICAL );
 
-	$t_plugin_filters = filter_get_plugin_filters();
+	$t_plugin_filters = filter_dwg_get_plugin_filters();
 	foreach( $t_plugin_filters as $t_field_name => $t_filter_object ) {
 		$t_colspan = (int)$t_filter_object->colspan;
 		$t_header = $get_field_header( string_attribute( $t_field_name ) . '_filter', string_display_line( $t_filter_object->title ) );
 		ob_start();
 		if( $p_static ) {
-			print_filter_plugin_field( $t_field_name, $t_filter_object, $t_filter );
+			print_filter_dwg_plugin_field( $t_field_name, $t_filter_object, $t_filter );
 		} else {
-			print_filter_values_plugin_field( $t_filter, $t_field_name, $t_filter_object );
+			print_filter_dwg_values_plugin_field( $t_filter, $t_field_name, $t_filter_object );
 		}
 		$t_content = ob_get_clean();
 
@@ -2936,9 +2937,9 @@ function filter_form_draw_inputs( $p_filter, $p_for_screen = true, $p_static = f
 				$t_header = $get_field_header( 'custom_field_' . $t_cfdef['id'] . '_filter', string_attribute( lang_get_defaulted( $t_cfdef['name'] ) ) );
 				ob_start();
 				if( $p_static ) {
-					print_filter_custom_field( $t_cfdef['id'], $t_filter );
+					print_filter_dwg_custom_field( $t_cfdef['id'], $t_filter );
 				} else {
-					print_filter_values_custom_field( $t_filter, $t_cfdef['id'] );
+					print_filter_dwg_values_custom_field( $t_filter, $t_cfdef['id'] );
 				}
 				$t_content = ob_get_clean();
 
@@ -2959,28 +2960,28 @@ function filter_form_draw_inputs( $p_filter, $p_for_screen = true, $p_static = f
 
 	$t_section_last->add_item( new TableFieldsItem(
 			$get_field_header( 'per_page_filter', lang_get( 'show' ) ),
-			filter_form_get_input( $t_filter, 'per_page', $t_show_inputs ),
+			filter_dwg_form_get_input( $t_filter, 'per_page', $t_show_inputs ),
 			1 /* colspan */,
 			null /* class */,
 			'per_page_filter_target' /* content id */
 			));
 	$t_section_last->add_item( new TableFieldsItem(
 			$get_field_header( 'show_sort_filter', lang_get( 'sort' ) ),
-			filter_form_get_input( $t_filter, 'show_sort', $t_show_inputs ),
+			filter_dwg_form_get_input( $t_filter, 'show_sort', $t_show_inputs ),
 			1 /* colspan */,
 			null /* class */,
 			'show_sort_filter_target' /* content id */
 			));
 	$t_section_last->add_item( new TableFieldsItem(
 			$get_field_header( 'match_type_filter', lang_get( 'filter_match_type' ) ),
-			filter_form_get_input( $t_filter, 'match_type', $t_show_inputs ),
+			filter_dwg_form_get_input( $t_filter, 'match_type', $t_show_inputs ),
 			1 /* colspan */,
 			null /* class */,
 			'match_type_filter_target' /* content id */
 			));
 	$t_section_last->add_item( new TableFieldsItem(
 			$get_field_header( 'highlight_changed_filter', lang_get( 'changed' ) ),
-			filter_form_get_input( $t_filter, 'highlight_changed', $t_show_inputs ),
+			filter_dwg_form_get_input( $t_filter, 'highlight_changed', $t_show_inputs ),
 			1 /* colspan */,
 			null /* class */,
 			'highlight_changed_filter_target' /* content id */
@@ -2991,7 +2992,7 @@ function filter_form_draw_inputs( $p_filter, $p_for_screen = true, $p_static = f
 
 		$t_section_search->add_item( new TableFieldsItem(
 				$get_field_header( 'search_filter', lang_get( 'search' ), false /* don't expand this field */ ),
-				filter_form_get_input( $t_filter, 'search', $t_show_inputs ),
+				filter_dwg_form_get_input( $t_filter, 'search', $t_show_inputs ),
 				$t_filter_cols /* colspan */,
 				'bigger-120' /* class */,
 				'search_filter_target' /* content id */
@@ -3084,7 +3085,7 @@ class FilterDwgBoxGridLayout extends TableGridLayout {
  */
 function print_filter_dwg_values_search( array $p_filter ) {
 	# always show the search text input
-	print_filter_search( $p_filter );
+	print_filter_dwg_search( $p_filter );
 }
 
 /**

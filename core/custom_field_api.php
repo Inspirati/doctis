@@ -29,7 +29,7 @@
  * @uses config_api.php
  * @uses constant_inc.php
  * @uses database_api.php
- * @uses email_bug_api.php
+ * @uses email_api.php
  * @uses error_api.php
  * @uses helper_api.php
  * @uses history_api.php
@@ -920,7 +920,7 @@ function custom_field_get_linked_ids( $p_project_id = ALL_PROJECTS ) {
 		$t_query = 'SELECT CFP.project_id, CF.id FROM {custom_field} CF '
 				. ' JOIN {custom_field_project} CFP ON CFP.field_id = CF.id'
 				. ' WHERE CFP.project_id ' . $t_project_clause
-				. '	ORDER BY sequence ASC, name ASC';
+				. ' ORDER BY sequence ASC, name ASC';
 
 		$t_result = db_query( $t_query, $t_params );
 

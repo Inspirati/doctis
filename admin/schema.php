@@ -916,7 +916,6 @@ $g_upgrade[213] = array( 'UpdateFunction', 'category_status_default' );
 
 $t_idx = 214;  # the next upgrade sequence number from the released version when branched
 
-// REFERENCE VERSION: this passes checks
 $g_upgrade[$t_idx++] = array( 'CreateTableSQL',
 	array( db_get_table( 'document' ), "
 		id				I		NOTNULL UNSIGNED AUTOINCREMENT PRIMARY,
@@ -939,9 +938,7 @@ $g_upgrade[$t_idx++] = array( 'CreateTableSQL',
 		release_date	I		UNSIGNED NOTNULL DEFAULT '1',
 		date_submitted	I		UNSIGNED NOTNULL DEFAULT '1',
 		last_updated	I		UNSIGNED NOTNULL DEFAULT '1',
-
 		dwg_text_id		I		UNSIGNED NOTNULL DEFAULT '0',
-
 	bug_text_id				I		UNSIGNED NOTNULL DEFAULT '0',
 	profile_id				I		UNSIGNED NOTNULL DEFAULT '0',
 	fixed_in_version		C(64)	NOTNULL DEFAULT \" '' \",
@@ -949,13 +946,18 @@ $g_upgrade[$t_idx++] = array( 'CreateTableSQL',
 	sticky					L		$t_notnull DEFAULT  \"'0'\" ",
 	$t_table_options
 	) );
-$g_upgrade[215] = array( 'CreateIndexSQL', array( 'idx_document_number', db_get_table( 'document' ), 'number' ) );
-$g_upgrade[216] = array( 'CreateIndexSQL', array( 'idx_document_category', db_get_table( 'document' ), 'category' ) );
+$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_document_number', db_get_table( 'document' ), 'number' ) );
+$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_document_category', db_get_table( 'document' ), 'category_id' ) );
+
+$g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'document' ), "
+	( title, category_id )
+	VALUES
+	( 'Empty', '0' )" ) );
 
 # @TODO RobD - extract from dwg_api.php ~line number 1982:
-	# log changes except for duplicate_id which is obsolete and should be removed in MantisBT 1.3
+#    "log changes except for duplicate_id which is obsolete and should be removed in MantisBT 1.3"
 
-# @TODO RobD: or we could rename the project_id field, as it should become unused
+# @TODO RobD: or we could instead  rename the project_id field, as it should become unused
 $g_upgrade[$t_idx++] = array( 'AddColumnSQL', array( db_get_table( 'bug' ), "
 	document_id			I		UNSIGNED NOTNULL DEFAULT '0' " ) );
 
@@ -963,15 +965,9 @@ $g_upgrade[$t_idx++] = array( 'AddColumnSQL', array( db_get_table( 'bug' ), "
 $g_upgrade[$t_idx++] = array( 'AddColumnSQL', array( db_get_table( 'project' ), "
 	classification		C(255)	NOTNULL DEFAULT \" '' \" " ) );
 
-# IMPORTANT: keep these entries as the last indexes, as they will be deleted in release versions
-#			 (you will need to bump all the indexes when inserting tables database statements above here)
-
-# user access_level: '10:viewer,25:reporter,40:updater,55:developer,70:manager,90:administrator'
-# default password: 'pass' == 1a1dc91c907325c69271ddf0c944bc72
-
 $g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwg_text' ), "
 	id						I		PRIMARY UNSIGNED NOTNULL AUTOINCREMENT,
-	description				XL		NOTNULL,
+	description				XL		$t_notnull,
 	steps_to_reproduce		XL		$t_notnull,
 	additional_information	XL		$t_notnull",
 	$t_table_options
@@ -1000,6 +996,38 @@ $g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwgnote_te
 	$t_table_options
 	) );
 
+$g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwg_monitor' ), "
+	user_id					I		UNSIGNED NOTNULL PRIMARY DEFAULT '0',
+	dwg_id					I		UNSIGNED NOTNULL PRIMARY DEFAULT '0'
+	",
+	$t_table_options
+	) );
+$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_bug_id', db_get_table( 'dwg_monitor' ), 'dwg_id' ) );
+
+$g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwg_relationship' ), "
+	id						I		UNSIGNED NOTNULL AUTOINCREMENT PRIMARY,
+	source_dwg_id			I		UNSIGNED NOTNULL DEFAULT '0',
+	destination_dwg_id		I		UNSIGNED NOTNULL DEFAULT '0',
+	relationship_type		I2		NOTNULL DEFAULT '0' ",
+	$t_table_options
+	) );
+$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_relationship_source', db_get_table( 'dwg_relationship' ), 'source_dwg_id' ) );
+$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_relationship_destination', db_get_table( 'dwg_relationship' ), 'destination_dwg_id' ) );
+
+$g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwg_filters' ), "
+	id						I		UNSIGNED NOTNULL PRIMARY AUTOINCREMENT,
+	user_id					I		NOTNULL DEFAULT '0',
+	project_id				I		NOTNULL DEFAULT '0',
+	is_public				L		DEFAULT NULL,
+	name					C(64)	NOTNULL DEFAULT \" '' \",
+	filter_string			XL		NOTNULL",
+	$t_table_options
+	) );
+
+# IMPORTANT: keep these entries as the last indexes, as they will be deleted in release versions
+#			 (you will need to bump all the indexes when inserting tables database statements above here)
+# user access_level: '10:viewer,25:reporter,40:updater,55:developer,70:manager,90:administrator'
+# default password: 'pass' == 1a1dc91c907325c69271ddf0c944bc72
 /*
  */
 # END Development marker: Inspirati - RobD
