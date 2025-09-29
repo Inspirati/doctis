@@ -56,7 +56,7 @@
 
 require_api( 'access_dwg_api.php' );
 require_api( 'authentication_api.php' );
-require_api( 'bug_api.php' );
+require_api( 'dwg_api.php' );
 require_api( 'collapse_api.php' );
 require_api( 'columns_api.php' );
 require_api( 'columns_dwg_api.php' );
@@ -66,7 +66,6 @@ require_api( 'current_user_api.php' );
 require_api( 'custom_field_api.php' );
 require_api( 'database_api.php' );
 require_api( 'date_api.php' );
-//require_api( 'dwg_api.php' );
 require_api( 'error_api.php' );
 require_api( 'event_api.php' );
 require_api( 'filter_constants_inc.php' );
@@ -74,7 +73,7 @@ require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'logging_api.php' );
-require_api( 'print_api.php' );
+require_api( 'print_dwg_api.php' );
 require_api( 'profile_api.php' );
 require_api( 'project_api.php' );
 require_api( 'dwg_relationship_api.php' );
@@ -84,7 +83,7 @@ require_api( 'tag_dwg_api.php' );
 require_api( 'user_api.php' );
 require_api( 'utility_api.php' );
 require_api( 'version_api.php' );
-require_api( 'filter_form_api.php' );
+require_api( 'filter_dwg_form_api.php' );
 
 use Mantis\Exceptions\ClientException;
 
@@ -99,7 +98,6 @@ use Mantis\Exceptions\ClientException;
  *
  * @global array $g_dwg_filter
  */
-#!$g_filter = null;
 $g_dwg_filter = null;
 
 
@@ -110,15 +108,15 @@ $g_dwg_filter = null;
 
 /**
  * Indexed by filter_id, contains the filter rows as read from db table.
- * @global array $g_cache_filter_db_rows
+ * @global array $g_cache_filter_dwg_db_rows
  */
-$g_cache_filter_db_rows = array();
+$g_cache_filter_dwg_db_rows = array();
 
 /**
  * Indexed by a hash of the filter array, contains a prebuilt BugFilterQuery object.
- * @global array $g_cache_filter_subquery
+ * @global array $g_cache_filter_dwg_subquery
  */
-$g_cache_filter_subquery = array();
+$g_cache_filter_dwg_subquery = array();
 
 /**
  * Initialize the filter API with the current filter.
@@ -173,7 +171,7 @@ function filter_dwg_get_plugin_filters() {
 function filter_dwg_get_url( array $p_custom_filter ) {
 	$t_query = array();
 
-	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_PROJECT_ID] ) ) {
+	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_PROJECT_ID] ) ) {
 		$t_project_id = $p_custom_filter[FILTER_PROPERTY_PROJECT_ID];
 
 		if( count( $t_project_id ) == 1 && $t_project_id[0] == META_FILTER_CURRENT ) {
@@ -185,189 +183,189 @@ function filter_dwg_get_url( array $p_custom_filter ) {
 		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_PROJECT_ID, $t_project_id );
 	}
 
-	if( ! filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_PROJECTION] ) ) {
+	if( ! filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_PROJECTION] ) ) {
 		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_PROJECTION, $p_custom_filter[FILTER_PROPERTY_PROJECTION] );
 	}
 
-	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_SEARCH] ) ) {
+	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_SEARCH] ) ) {
 		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_SEARCH, $p_custom_filter[FILTER_PROPERTY_SEARCH] );
 	}
 
-	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_CATEGORY_ID] ) ) {
+	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_CATEGORY_ID] ) ) {
 		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_CATEGORY_ID, $p_custom_filter[FILTER_PROPERTY_CATEGORY_ID] );
 	}
 
-	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_REPORTER_ID] ) ) {
+	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_REPORTER_ID] ) ) {
 		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_REPORTER_ID, $p_custom_filter[FILTER_PROPERTY_REPORTER_ID] );
 	}
 
-	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_STATUS] ) ) {
+	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_STATUS] ) ) {
 		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_STATUS, $p_custom_filter[FILTER_PROPERTY_STATUS] );
 	}
 
-	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_MONITOR_USER_ID] ) ) {
+	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_MONITOR_USER_ID] ) ) {
 		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_MONITOR_USER_ID, $p_custom_filter[FILTER_PROPERTY_MONITOR_USER_ID] );
 	}
 
-	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_HANDLER_ID] ) ) {
+	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_HANDLER_ID] ) ) {
 		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_HANDLER_ID, $p_custom_filter[FILTER_PROPERTY_HANDLER_ID] );
 	}
 
-	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_NOTE_USER_ID] ) ) {
+	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_NOTE_USER_ID] ) ) {
 		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_NOTE_USER_ID, $p_custom_filter[FILTER_PROPERTY_NOTE_USER_ID] );
 	}
 
-	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_SEVERITY] ) ) {
+	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_SEVERITY] ) ) {
 		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_SEVERITY, $p_custom_filter[FILTER_PROPERTY_SEVERITY] );
 	}
 
-	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_RESOLUTION] ) ) {
+	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_RESOLUTION] ) ) {
 		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_RESOLUTION, $p_custom_filter[FILTER_PROPERTY_RESOLUTION] );
 	}
 
-	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_PRIORITY] ) ) {
+	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_PRIORITY] ) ) {
 		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_PRIORITY, $p_custom_filter[FILTER_PROPERTY_PRIORITY] );
 	}
 
-	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_VIEW_STATE] ) ) {
+	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_VIEW_STATE] ) ) {
 		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_VIEW_STATE, $p_custom_filter[FILTER_PROPERTY_VIEW_STATE] );
 	}
 
-	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_STICKY] ) ) {
+	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_STICKY] ) ) {
 		$t_query[] = filter_dwg_encode_field_and_value(
 			FILTER_PROPERTY_STICKY,
 			$p_custom_filter[FILTER_PROPERTY_STICKY] ? 'on' : 'off' );
 	}
 
-	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_VERSION] ) ) {
+	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_VERSION] ) ) {
 		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_VERSION, $p_custom_filter[FILTER_PROPERTY_VERSION] );
 	}
 
-	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_BUILD] ) ) {
+	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_BUILD] ) ) {
 		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_BUILD, $p_custom_filter[FILTER_PROPERTY_BUILD] );
 	}
 
-	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_FIXED_IN_VERSION] ) ) {
+	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_FIXED_IN_VERSION] ) ) {
 		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_FIXED_IN_VERSION, $p_custom_filter[FILTER_PROPERTY_FIXED_IN_VERSION] );
 	}
 
-	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_TARGET_VERSION] ) ) {
+	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_TARGET_VERSION] ) ) {
 		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_TARGET_VERSION, $p_custom_filter[FILTER_PROPERTY_TARGET_VERSION] );
 	}
 
-	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_SORT_FIELD_NAME] ) ) {
+	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_SORT_FIELD_NAME] ) ) {
 		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_SORT_FIELD_NAME, $p_custom_filter[FILTER_PROPERTY_SORT_FIELD_NAME] );
 	}
 
-	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_SORT_DIRECTION] ) ) {
+	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_SORT_DIRECTION] ) ) {
 		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_SORT_DIRECTION, $p_custom_filter[FILTER_PROPERTY_SORT_DIRECTION] );
 	}
 
-	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_ISSUES_PER_PAGE] ) ) {
+	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_ISSUES_PER_PAGE] ) ) {
 		if( $p_custom_filter[FILTER_PROPERTY_ISSUES_PER_PAGE] != config_get( 'default_limit_view' ) ) {
 			$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_ISSUES_PER_PAGE, $p_custom_filter[FILTER_PROPERTY_ISSUES_PER_PAGE] );
 		}
 	}
 
-	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_HIGHLIGHT_CHANGED] ) ) {
+	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_HIGHLIGHT_CHANGED] ) ) {
 		if( $p_custom_filter[FILTER_PROPERTY_HIGHLIGHT_CHANGED] != config_get( 'default_show_changed' ) ) {
 			$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_HIGHLIGHT_CHANGED, $p_custom_filter[FILTER_PROPERTY_HIGHLIGHT_CHANGED] );
 		}
 	}
 
-	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_HIDE_STATUS] ) ) {
+	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_HIDE_STATUS] ) ) {
 		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_HIDE_STATUS, $p_custom_filter[FILTER_PROPERTY_HIDE_STATUS] );
 	}
 
-	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_FILTER_BY_DATE_SUBMITTED] ) ) {
+	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_FILTER_BY_DATE_SUBMITTED] ) ) {
 		$t_query[] = filter_dwg_encode_field_and_value(
 			FILTER_PROPERTY_FILTER_BY_DATE_SUBMITTED,
 			$p_custom_filter[FILTER_PROPERTY_FILTER_BY_DATE_SUBMITTED] ? 'on' : 'off' );
 
 		# The start and end dates are only applicable if filter by date is set.
-		if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_START_DAY] ) ) {
+		if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_START_DAY] ) ) {
 			$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_DATE_SUBMITTED_START_DAY, $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_START_DAY] );
 		}
 
-		if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_END_DAY] ) ) {
+		if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_END_DAY] ) ) {
 			$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_DATE_SUBMITTED_END_DAY, $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_END_DAY] );
 		}
 
-		if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_START_MONTH] ) ) {
+		if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_START_MONTH] ) ) {
 			$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_DATE_SUBMITTED_START_MONTH, $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_START_MONTH] );
 		}
 
-		if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_END_MONTH] ) ) {
+		if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_END_MONTH] ) ) {
 			$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_DATE_SUBMITTED_END_MONTH, $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_END_MONTH] );
 		}
 
-		if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_START_YEAR] ) ) {
+		if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_START_YEAR] ) ) {
 			$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_DATE_SUBMITTED_START_YEAR, $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_START_YEAR] );
 		}
 
-		if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_END_YEAR] ) ) {
+		if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_END_YEAR] ) ) {
 			$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_DATE_SUBMITTED_END_YEAR, $p_custom_filter[FILTER_PROPERTY_DATE_SUBMITTED_END_YEAR] );
 		}
 	}
 
-	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_FILTER_BY_LAST_UPDATED_DATE] ) ) {
+	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_FILTER_BY_LAST_UPDATED_DATE] ) ) {
 		$t_query[] = filter_dwg_encode_field_and_value(
 			FILTER_PROPERTY_FILTER_BY_LAST_UPDATED_DATE,
 			$p_custom_filter[FILTER_PROPERTY_FILTER_BY_LAST_UPDATED_DATE] ? 'on' : 'off' );
 
 		# The start and end dates are only applicable if filter by date is set.
-		if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_START_DAY] ) ) {
+		if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_START_DAY] ) ) {
 			$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_LAST_UPDATED_START_DAY, $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_START_DAY] );
 		}
 
-		if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_END_DAY] ) ) {
+		if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_END_DAY] ) ) {
 			$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_LAST_UPDATED_END_DAY, $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_END_DAY] );
 		}
 
-		if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_START_MONTH] ) ) {
+		if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_START_MONTH] ) ) {
 			$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_LAST_UPDATED_START_MONTH, $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_START_MONTH] );
 		}
 
-		if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_END_MONTH] ) ) {
+		if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_END_MONTH] ) ) {
 			$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_LAST_UPDATED_END_MONTH, $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_END_MONTH] );
 		}
 
-		if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_START_YEAR] ) ) {
+		if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_START_YEAR] ) ) {
 			$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_LAST_UPDATED_START_YEAR, $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_START_YEAR] );
 		}
 
-		if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_END_YEAR] ) ) {
+		if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_END_YEAR] ) ) {
 			$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_LAST_UPDATED_END_YEAR, $p_custom_filter[FILTER_PROPERTY_LAST_UPDATED_END_YEAR] );
 		}
 	}
 
-	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_RELATIONSHIP_TYPE] ) ) {
+	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_RELATIONSHIP_TYPE] ) ) {
 		if( $p_custom_filter[FILTER_PROPERTY_RELATIONSHIP_TYPE] != -1 ) {
 			$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_RELATIONSHIP_TYPE, $p_custom_filter[FILTER_PROPERTY_RELATIONSHIP_TYPE] );
 		}
 	}
 
-	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_RELATIONSHIP_BUG] ) ) {
+	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_RELATIONSHIP_BUG] ) ) {
 		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_RELATIONSHIP_BUG, $p_custom_filter[FILTER_PROPERTY_RELATIONSHIP_BUG] );
 	}
 
-	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_PLATFORM] ) ) {
+	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_PLATFORM] ) ) {
 		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_PLATFORM, $p_custom_filter[FILTER_PROPERTY_PLATFORM] );
 	}
 
-	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_OS] ) ) {
+	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_OS] ) ) {
 		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_OS, $p_custom_filter[FILTER_PROPERTY_OS] );
 	}
 
-	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_OS_BUILD] ) ) {
+	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_OS_BUILD] ) ) {
 		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_OS_BUILD, $p_custom_filter[FILTER_PROPERTY_OS_BUILD] );
 	}
 
-	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_TAG_STRING] ) ) {
+	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_TAG_STRING] ) ) {
 		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_TAG_STRING, $p_custom_filter[FILTER_PROPERTY_TAG_STRING] );
 	}
 
-	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_TAG_SELECT] ) ) {
+	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_TAG_SELECT] ) ) {
 		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_TAG_SELECT, $p_custom_filter[FILTER_PROPERTY_TAG_SELECT] );
 	}
 
@@ -375,7 +373,7 @@ function filter_dwg_get_url( array $p_custom_filter ) {
 
 	if( isset( $p_custom_filter['custom_fields'] ) ) {
 		foreach( $p_custom_filter['custom_fields'] as $t_custom_field_id => $t_custom_field_values ) {
-			if( !filter_field_is_any( $t_custom_field_values ) ) {
+			if( !filter_dwg_field_is_any( $t_custom_field_values ) ) {
 				$t_query[] = filter_dwg_encode_field_and_value( 'custom_field_' . $t_custom_field_id, $t_custom_field_values );
 			}
 		}
@@ -384,7 +382,7 @@ function filter_dwg_get_url( array $p_custom_filter ) {
 	# Allow plugins to add filter fields
 	$t_plugin_filter_array = filter_dwg_get_plugin_filters();
 	foreach( $t_plugin_filter_array as $t_field_name => $t_filter_object ) {
-		if( !filter_field_is_any( $p_custom_filter[$t_field_name] ) ) {
+		if( !filter_dwg_field_is_any( $p_custom_filter[$t_field_name] ) ) {
 			$t_query[] = filter_dwg_encode_field_and_value( $t_field_name, $p_custom_filter[$t_field_name], $t_filter_object->type );
 		}
 	}
@@ -794,8 +792,8 @@ function filter_dwg_ensure_valid_filter( array $p_filter_arr ) {
 	# to remove hidden status. This may happen after switching from simple to advanced.
 	# Then, remove hide_status property, as it does not apply to advanced filter
 	if( $p_filter_arr['_view_type'] == FILTER_VIEW_TYPE_ADVANCED
-			&& !filter_field_is_none( $p_filter_arr[FILTER_PROPERTY_HIDE_STATUS] ) ) {
-		if( filter_field_is_any( $p_filter_arr[FILTER_PROPERTY_STATUS] ) ) {
+			&& !filter_dwg_field_is_none( $p_filter_arr[FILTER_PROPERTY_HIDE_STATUS] ) ) {
+		if( filter_dwg_field_is_any( $p_filter_arr[FILTER_PROPERTY_STATUS] ) ) {
 			$t_selected_status_array = MantisEnum::getValues( config_get( 'status_enum_string' ) );
 		} else {
 			$t_selected_status_array = $p_filter_arr[FILTER_PROPERTY_STATUS];
@@ -817,7 +815,7 @@ function filter_dwg_ensure_valid_filter( array $p_filter_arr ) {
 
 	#If view_type is simple, resolve conflicts between show_status and hide_status
 	if( $p_filter_arr['_view_type'] == FILTER_VIEW_TYPE_SIMPLE
-			&& !filter_field_is_none( $p_filter_arr[FILTER_PROPERTY_HIDE_STATUS] ) ) {
+			&& !filter_dwg_field_is_none( $p_filter_arr[FILTER_PROPERTY_HIDE_STATUS] ) ) {
 		# get array of hidden status ids
 		$t_all_status = MantisEnum::getValues( config_get( 'status_enum_string' ) );
 		$t_hidden_status = $p_filter_arr[FILTER_PROPERTY_HIDE_STATUS][0];
@@ -893,51 +891,52 @@ function filter_dwg_get_default_array( $p_view_type = null ) {
 		'_version' => DWG_FILTER_VERSION,
 		'_view_type' => $t_view_type,
 		FILTER_PROPERTY_CATEGORY_ID => $t_meta_filter_any_array,
-		// FILTER_PROPERTY_SEVERITY => $t_meta_filter_any_array,
-		// FILTER_PROPERTY_STATUS => $t_meta_filter_any_array,
-		// FILTER_PROPERTY_HIGHLIGHT_CHANGED => $t_default_show_changed,
-		// FILTER_PROPERTY_REPORTER_ID => $t_meta_filter_any_array,
-		// FILTER_PROPERTY_HANDLER_ID => $t_meta_filter_any_array,
-		// FILTER_PROPERTY_PROJECT_ID => array( META_FILTER_CURRENT ),
-		// FILTER_PROPERTY_PROJECTION => $t_meta_filter_any_array,
-		// FILTER_PROPERTY_RESOLUTION => $t_meta_filter_any_array,
-		// FILTER_PROPERTY_BUILD => $t_meta_filter_any_array,
-		// FILTER_PROPERTY_VERSION => $t_meta_filter_any_array,
-		// FILTER_PROPERTY_HIDE_STATUS => array( $t_hide_status_default ),
-		// FILTER_PROPERTY_MONITOR_USER_ID => $t_meta_filter_any_array,
-		// FILTER_PROPERTY_SORT_FIELD_NAME => 'last_updated',
-		// FILTER_PROPERTY_SORT_DIRECTION => 'DESC',
-		// FILTER_PROPERTY_ISSUES_PER_PAGE => config_get( 'default_limit_view' ),
-		// FILTER_PROPERTY_MATCH_TYPE => FILTER_MATCH_ALL,
-		// FILTER_PROPERTY_PLATFORM => $t_meta_filter_any_array,
-		// FILTER_PROPERTY_OS => $t_meta_filter_any_array,
-		// FILTER_PROPERTY_OS_BUILD => $t_meta_filter_any_array,
-		// FILTER_PROPERTY_FIXED_IN_VERSION => $t_meta_filter_any_array,
-		// FILTER_PROPERTY_TARGET_VERSION => $t_meta_filter_any_array,
-		// FILTER_PROPERTY_PROFILE_ID => $t_meta_filter_any_array,
-		// FILTER_PROPERTY_PRIORITY => $t_meta_filter_any_array,
-		// FILTER_PROPERTY_NOTE_USER_ID => $t_meta_filter_any_array,
-		// FILTER_PROPERTY_STICKY => gpc_string_to_bool( config_get( 'show_sticky_issues' ) ),
-		// FILTER_PROPERTY_FILTER_BY_DATE_SUBMITTED => false,
-		// FILTER_PROPERTY_DATE_SUBMITTED_START_MONTH => date( 'm' ),
-		// FILTER_PROPERTY_DATE_SUBMITTED_END_MONTH => date( 'm' ),
-		// FILTER_PROPERTY_DATE_SUBMITTED_START_DAY => 1,
-		// FILTER_PROPERTY_DATE_SUBMITTED_END_DAY => date( 'd' ),
-		// FILTER_PROPERTY_DATE_SUBMITTED_START_YEAR => date( 'Y' ),
-		// FILTER_PROPERTY_DATE_SUBMITTED_END_YEAR => date( 'Y' ),
-		// FILTER_PROPERTY_FILTER_BY_LAST_UPDATED_DATE => false,
-		// FILTER_PROPERTY_LAST_UPDATED_START_MONTH => date( 'm' ),
-		// FILTER_PROPERTY_LAST_UPDATED_END_MONTH => date( 'm' ),
-		// FILTER_PROPERTY_LAST_UPDATED_START_DAY => 1,
-		// FILTER_PROPERTY_LAST_UPDATED_END_DAY => date( 'd' ),
-		// FILTER_PROPERTY_LAST_UPDATED_START_YEAR => date( 'Y' ),
-		// FILTER_PROPERTY_LAST_UPDATED_END_YEAR => date( 'Y' ),
-		// FILTER_PROPERTY_SEARCH => '',
-		// FILTER_PROPERTY_VIEW_STATE => META_FILTER_ANY,
-		// FILTER_PROPERTY_TAG_STRING => '',
-		// FILTER_PROPERTY_TAG_SELECT => 0,
-		// FILTER_PROPERTY_RELATIONSHIP_TYPE => DWG_REL_ANY,
-		// FILTER_PROPERTY_RELATIONSHIP_BUG => META_FILTER_ANY,
+		FILTER_PROPERTY_SEVERITY => $t_meta_filter_any_array,
+		FILTER_PROPERTY_STATUS => $t_meta_filter_any_array,
+		FILTER_PROPERTY_HIGHLIGHT_CHANGED => $t_default_show_changed,
+		FILTER_PROPERTY_REPORTER_ID => $t_meta_filter_any_array,
+		FILTER_PROPERTY_CREATOR_ID => $t_meta_filter_any_array,
+		FILTER_PROPERTY_HANDLER_ID => $t_meta_filter_any_array,
+		FILTER_PROPERTY_PROJECT_ID => array( META_FILTER_CURRENT ),
+		FILTER_PROPERTY_PROJECTION => $t_meta_filter_any_array,
+		FILTER_PROPERTY_RESOLUTION => $t_meta_filter_any_array,
+		FILTER_PROPERTY_BUILD => $t_meta_filter_any_array,
+		FILTER_PROPERTY_VERSION => $t_meta_filter_any_array,
+		FILTER_PROPERTY_HIDE_STATUS => array( $t_hide_status_default ),
+		FILTER_PROPERTY_MONITOR_USER_ID => $t_meta_filter_any_array,
+		FILTER_PROPERTY_SORT_FIELD_NAME => 'last_updated',
+		FILTER_PROPERTY_SORT_DIRECTION => 'DESC',
+		FILTER_PROPERTY_ISSUES_PER_PAGE => config_get( 'default_limit_view' ),
+		FILTER_PROPERTY_MATCH_TYPE => FILTER_MATCH_ALL,
+		FILTER_PROPERTY_PLATFORM => $t_meta_filter_any_array,
+		FILTER_PROPERTY_OS => $t_meta_filter_any_array,
+		FILTER_PROPERTY_OS_BUILD => $t_meta_filter_any_array,
+		FILTER_PROPERTY_FIXED_IN_VERSION => $t_meta_filter_any_array,
+		FILTER_PROPERTY_TARGET_VERSION => $t_meta_filter_any_array,
+		FILTER_PROPERTY_PROFILE_ID => $t_meta_filter_any_array,
+		FILTER_PROPERTY_PRIORITY => $t_meta_filter_any_array,
+		FILTER_PROPERTY_NOTE_USER_ID => $t_meta_filter_any_array,
+		FILTER_PROPERTY_STICKY => gpc_string_to_bool( config_get( 'show_sticky_issues' ) ),
+		FILTER_PROPERTY_FILTER_BY_DATE_SUBMITTED => false,
+		FILTER_PROPERTY_DATE_SUBMITTED_START_MONTH => date( 'm' ),
+		FILTER_PROPERTY_DATE_SUBMITTED_END_MONTH => date( 'm' ),
+		FILTER_PROPERTY_DATE_SUBMITTED_START_DAY => 1,
+		FILTER_PROPERTY_DATE_SUBMITTED_END_DAY => date( 'd' ),
+		FILTER_PROPERTY_DATE_SUBMITTED_START_YEAR => date( 'Y' ),
+		FILTER_PROPERTY_DATE_SUBMITTED_END_YEAR => date( 'Y' ),
+		FILTER_PROPERTY_FILTER_BY_LAST_UPDATED_DATE => false,
+		FILTER_PROPERTY_LAST_UPDATED_START_MONTH => date( 'm' ),
+		FILTER_PROPERTY_LAST_UPDATED_END_MONTH => date( 'm' ),
+		FILTER_PROPERTY_LAST_UPDATED_START_DAY => 1,
+		FILTER_PROPERTY_LAST_UPDATED_END_DAY => date( 'd' ),
+		FILTER_PROPERTY_LAST_UPDATED_START_YEAR => date( 'Y' ),
+		FILTER_PROPERTY_LAST_UPDATED_END_YEAR => date( 'Y' ),
+		FILTER_PROPERTY_SEARCH => '',
+		FILTER_PROPERTY_VIEW_STATE => META_FILTER_ANY,
+		FILTER_PROPERTY_TAG_STRING => '',
+		FILTER_PROPERTY_TAG_SELECT => 0,
+		FILTER_PROPERTY_RELATIONSHIP_TYPE => DWG_REL_ANY,
+		FILTER_PROPERTY_RELATIONSHIP_BUG => META_FILTER_ANY,
 	);
 
 	# initialize plugin filters
@@ -1088,18 +1087,18 @@ function filter_dwg_serialize( $p_filter_array ) {
 /**
  * Get the filter db row $p_filter_id
  * using the cached row if it's available
- * @global array $g_cache_filter_db_rows
+ * @global array $g_cache_filter_dwg_db_rows
  * @param integer $p_filter_id      A filter identifier to look up in the database.
  * @return array|boolean	The row of filter data as stored in db table, or false if does not exist
  */
 function filter_dwg_get_row( $p_filter_id ) {
-	global $g_cache_filter_db_rows;
+	global $g_cache_filter_dwg_db_rows;
 
-	if( !isset( $g_cache_filter_db_rows[$p_filter_id] ) ) {
+	if( !isset( $g_cache_filter_dwg_db_rows[$p_filter_id] ) ) {
 		filter_cache_rows( array($p_filter_id) );
 	}
 
-	$t_row = $g_cache_filter_db_rows[$p_filter_id];
+	$t_row = $g_cache_filter_dwg_db_rows[$p_filter_id];
 	return $t_row;
 }
 
@@ -1192,7 +1191,6 @@ function filter_dwg_get_rows( &$p_page_number, &$p_per_page, &$p_page_count, &$p
 	}
 
 	# build a filter query, here for counting results
-#!	$t_filter_query = new BugFilterQuery(
 	$t_filter_query = new DwgFilterQuery(
 			$t_filter,
 			array(
@@ -1202,34 +1200,10 @@ function filter_dwg_get_rows( &$p_page_number, &$p_per_page, &$p_page_count, &$p
 				'use_sticky' => $p_show_sticky
 				)
 			);
-/*
-$p_query_string = "SELECT DISTINCT {bug}.* FROM {bug} JOIN {project} ON {project}.id = {bug}.project_id WHERE {project}.enabled = $0 AND ({bug}.project_id = $1 AND {bug}.view_state = $2 OR {bug}.project_id = $3 AND {bug}.view_state <> $4 AND {bug}.reporter_id = $5) ORDER BY {bug}.sticky DESC, {bug}.last_updated DESC, {bug}.date_submitted DESC"
- */
-// @TODO RobD - this is a temporary call path which hard-codes a database read of the document table
-// @TODO RobD - for some reason we are still dependent of this ?
-
-//	$p_dwg_count = $t_filter_query->dwg_filter_query_test();  // --> dwg_query_test()
-
-/*
-APPLICATION ERROR #401
-
-Database query failed. Error received from database was #1064: You have an error in your SQL syntax;
- check the manual that corresponds to your MariaDB server version for the right syntax to use near 'LIMIT 0,48' at line 1 for the query:
-	
-	SELECT DISTINCT mantis_document_table.* FROM mantis_document_table 
-	JOIN mantis_project_table ON mantis_project_table.id = mantis_document_table.project_id 
-	WHERE mantis_project_table.enabled = ? ORDER BY .
-
-Previous non-fatal errors occurred. Page contents follow.
-SQL Statement failed on preparation: 
-	SELECT DISTINCT mantis_document_table.* FROM mantis_document_table
-	JOIN mantis_project_table ON mantis_project_table.id = mantis_document_table.project_id
-	WHERE mantis_project_table.enabled = ? ORDER BY LIMIT 0,48'
-
- */
 
 	$p_dwg_count = $t_filter_query->get_dwg_count();
-	// error_log("get_dwg_count() p_dwg_count = " . print_r($p_dwg_count, true));
+
+	error_log("get_dwg_count() p_dwg_count = " . print_r($p_dwg_count, true));
 
 	if( 0 == $p_dwg_count ) {
 		return array();
@@ -1248,7 +1222,6 @@ SQL Statement failed on preparation:
 	$t_dwg_id_array = array_column( $t_rows, 'id' );
 
 	# Return the processed rows: cache data, convert to bug objects
-#!	return filter_cache_result( $t_rows, $t_dwg_id_array );
 	return filter_dwg_cache_result( $t_rows, $t_dwg_id_array );
 }
 // END doctis developmental section
@@ -1308,8 +1281,6 @@ function filter_dwg_get_rows_filter( $p_project_id = null, $p_user_id = null ) {
 	}
 
 
-	// @TODO RobD - temporarily disable fetching of filters and just return an empty array
-#/*
 	if( $t_user_id == $t_current_user_id ) {
 		$t_filter = current_user_get_dwg_filter();
 	} else {
@@ -1320,8 +1291,6 @@ function filter_dwg_get_rows_filter( $p_project_id = null, $p_user_id = null ) {
 	if( false === $t_filter ) {
 		$t_filter = array();  // @TODO RobD: does this work? or results in a php internal error being thrown (as demonstrated below)
 	}
-#*/		
-	// $t_filter = array();
 
 	return $t_filter;
 }
@@ -1379,8 +1348,6 @@ function filter_dwg_draw_selection_area() {
 	$t_temporary_icon_html = ( $t_is_temporary && $t_can_persist ) ?
 		icon_get( 'fa-clock-o', 'fa-xs-top' )
 		: '';
-#!	$t_url_reset_filter = 'view_all_set.php?type=' . FILTER_ACTION_RESET;
-#!	$t_url_persist_filter = 'view_all_set.php?temporary=n' . $t_tmp_filter_param . '&set_project_id=' . helper_get_current_project();
 	$t_url_reset_filter = 'view_dwg_set.php?type=' . FILTER_ACTION_RESET;
 	$t_url_persist_filter = 'view_dwg_set.php?temporary=n' . $t_tmp_filter_param . '&set_project_id=' . helper_get_current_project();
 	?>
@@ -1412,20 +1379,15 @@ function filter_dwg_draw_selection_area() {
 						</a>
 						<ul class="dropdown-menu dropdown-menu-right dropdown-yellow dropdown-caret dropdown-closer">
 							<?php
-
-#							$t_url = config_get( 'use_dynamic_filters' )
-#								? 'view_all_set.php?type=' . FILTER_ACTION_PARSE_ADD . $t_tmp_filter_param . '&view_type='
-#								: 'view_dwg_filters_page.php?view_type=';
 							$t_url = config_get( 'use_dynamic_filters' )
 								? 'view_dwg_set.php?type=' . FILTER_ACTION_PARSE_ADD . $t_tmp_filter_param . '&view_type='
 								: 'view_dwg_filters_page.php?view_type=';
-
-							filter_print_view_type_toggle( $t_url, $t_filter['_view_type'] );
+							filter_dwg_print_view_type_toggle( $t_url, $t_filter['_view_type'] );
 
 							if( access_has_project_level( config_get( 'create_permalink_threshold' ) ) ) {
 								# Add CSRF protection, see #22702
 								$t_permalink_url = 'permalink_page.php?filter='
-									. filter_temporary_set( $t_filter )
+									. filter_dwg_temporary_set( $t_filter )
 									. form_security_param( 'permalink' );
 								echo '<li>';
 								echo '<a href="' . $t_permalink_url . '">';
@@ -1436,7 +1398,7 @@ function filter_dwg_draw_selection_area() {
 							}
 							if( count( $t_stored_queries_arr ) > 0 ) {
 								echo '<li>';
-								echo '<a href="manage_filter_page.php">';
+								echo '<a href="manage_filter_dwg_page.php">';
 								print_icon( 'fa-wrench', 'ace-icon' );
 								echo '&#160;&#160;' . lang_get( 'open_queries' );
 								echo '</a>';
@@ -1521,7 +1483,7 @@ function filter_dwg_draw_selection_area() {
 	<?php
 	# Top left toolbar for buttons
 
-	$t_url_reset_filter = 'view_all_set.php?type=' . FILTER_ACTION_RESET;
+	$t_url_reset_filter = 'view_dwg_set.php?type=' . FILTER_ACTION_RESET;
 	if( $t_is_temporary && $t_can_persist ) {
 	?>
 							<a class="btn btn-sm btn-primary btn-white btn-round" href="<?php echo $t_url_persist_filter ?>">
@@ -1533,13 +1495,13 @@ function filter_dwg_draw_selection_area() {
 	?>
 							<a class="btn btn-sm btn-primary btn-white btn-round" href="<?php echo $t_url_reset_filter ?>">
 								<?php print_icon( 'fa-times', 'ace-icon' ); ?>
-								<?php echo lang_get( 'reset' ) ?>
+								<?php echo lang_get( 'dwg_reset' ) ?>
 							</a>
 
 	<?php
 	if( access_has_project_level( config_get( 'stored_query_create_threshold' ) ) ) {
-		$t_url_save_filter = 'query_store_page.php';
-		if( filter_is_temporary( $t_filter ) ) {
+		$t_url_save_filter = 'dwg_query_store_page.php';
+		if( filter_dwg_is_temporary( $t_filter ) ) {
 			$t_url_save_filter .= '?filter=' . filter_dwg_get_temporary_key( $t_filter );
 		}
 	?>
@@ -1582,7 +1544,7 @@ function filter_dwg_draw_selection_area() {
 				<?php # CSRF protection not required here - form does not result in modifications ?>
 				<input type="hidden" name="type" value="<?php echo FILTER_ACTION_PARSE_NEW ?>" />
 				<?php
-				if( filter_is_temporary( $t_filter ) ) {
+				if( filter_dwg_is_temporary( $t_filter ) ) {
 					echo '<input type="hidden" name="filter" value="' . filter_dwg_get_temporary_key( $t_filter ) . '" />';
 				}
 				?>
@@ -1591,7 +1553,7 @@ function filter_dwg_draw_selection_area() {
 			<div class="widget-main no-padding">
 				<div class="table-responsive">
 					<?php
-					filter_form_draw_inputs( $t_filter, true, false, 'view_dwg_filters_page.php', false /* don't show search */ );
+					filter_dwg_form_draw_inputs( $t_filter, true, false, 'view_dwg_filters_page.php', false /* don't show search */ );
 					?>
 				</div>
 			</div>
@@ -1616,7 +1578,7 @@ function filter_dwg_draw_selection_area() {
 }
 
 function filter_dwg_cache_rows( array $p_filter_ids ) {
-	global $g_cache_filter_db_rows;
+	global $g_cache_filter_dwg_db_rows;
 
 	if( empty( $p_filter_ids ) ) {
 		return;
@@ -1630,15 +1592,15 @@ function filter_dwg_cache_rows( array $p_filter_ids ) {
 		$t_params[] = (int)$t_id;
 		$t_ids_not_found[$t_id] = $t_id;
 	}
-	$t_query = 'SELECT * FROM {filters} WHERE id IN ('
+	$t_query = 'SELECT * FROM {dwg_filters} WHERE id IN ('
 			. implode( ',', $t_sql_params ) . ')';
 	$t_result = db_query( $t_query, $t_params );
 	while( $t_row = db_fetch_array( $t_result ) ) {
-		$g_cache_filter_db_rows[$t_row['id']] = $t_row;
+		$g_cache_filter_dwg_db_rows[$t_row['id']] = $t_row;
 		unset( $t_ids_not_found[$t_row['id']] );
 	}
 	foreach( $t_ids_not_found as $t_id ) {
-		$g_cache_filter_db_rows[$t_id] = false;
+		$g_cache_filter_dwg_db_rows[$t_id] = false;
 	}
 }
 
@@ -1648,12 +1610,12 @@ function filter_dwg_cache_rows( array $p_filter_ids ) {
  * @return boolean
  */
 function filter_dwg_clear_cache( $p_filter_id = null ) {
-	global $g_cache_filter_db_rows;
+	global $g_cache_filter_dwg_db_rows;
 
 	if( null === $p_filter_id ) {
-		$g_cache_filter_db_rows = array();
+		$g_cache_filter_dwg_db_rows = array();
 	} else {
-		unset( $g_cache_filter_db_rows[(int)$p_filter_id] );
+		unset( $g_cache_filter_dwg_db_rows[(int)$p_filter_id] );
 	}
 
 	return true;
@@ -1672,7 +1634,7 @@ function filter_dwg_clear_cache( $p_filter_id = null ) {
 function filter_dwg_db_update_filter( $p_filter_id, $p_filter_string, $p_project_id = null, $p_is_public = null, $p_name = null ) {
 	db_param_push();
 	$t_params = array();
-	$t_query = 'UPDATE {filters} SET filter_string=' . db_param();
+	$t_query = 'UPDATE {dwg_filters} SET filter_string=' . db_param();
 	$t_params[] = $p_filter_string;
 	if( null !== $p_project_id ) {
 		$t_query .= ', project_id=' . db_param();
@@ -1708,7 +1670,7 @@ function filter_dwg_db_create_filter( $p_filter_string, $p_user_id, $p_project_i
 	$c_is_public = (bool)$p_is_public;
 
 	db_param_push();
-	$t_query = 'INSERT INTO {filters} ( user_id, project_id, is_public, name, filter_string )'
+	$t_query = 'INSERT INTO {dwg_filters} ( user_id, project_id, is_public, name, filter_string )'
 			. ' VALUES ( ' . db_param() . ', ' . db_param() . ', ' . db_param() . ', ' . db_param() . ', ' . db_param() . ' )';
 	$t_params = array( $c_user_id, $c_project_id, $c_is_public, $p_name, $p_filter_string );
 	db_query( $t_query, $t_params );
@@ -1752,7 +1714,7 @@ function filter_dwg_set_project_filter( array $p_filter, $p_project_id = null, $
 	$t_id = filter_dwg_db_get_project_current( $t_project_id, $p_user_id );
 	if( $t_id ) {
 		# A row already esxists
-		filter_db_update_filter( $t_id, $p_filter_string );
+		filter_dwg_db_update_filter( $t_id, $p_filter_string );
 	} else {
 		# Must create a row
 		$t_db_project_id = -1 * $t_project_id;
@@ -1801,15 +1763,12 @@ function filter_dwg_db_get_project_current( $p_project_id = null, $p_user_id = n
 	$t_filter_project_id = $c_project_id * -1;
 
 	db_param_push();
-	$t_query = 'SELECT id FROM {filters} WHERE user_id = ' . db_param()
+	$t_query = 'SELECT id FROM {dwg_filters} WHERE user_id = ' . db_param()
 			. ' AND project_id = ' . db_param() . ' AND name = ' . db_param();
 	$t_result = db_query( $t_query, array( $c_user_id, $t_filter_project_id, '' ) );
 
 	if( $t_row = db_fetch_array( $t_result ) ) {
-		// return $t_row['id'];
-
-// @TODO RobD - since we don't have any facility to store Dwg filters in the {filters} table, anything returned here would be invalid, so don't
-
+		return $t_row['id'];
 	}
 
 	return null;
@@ -1870,12 +1829,12 @@ function filter_dwg_db_can_delete_filter( $p_filter_id, $p_user_id = null ) {
 function filter_dwg_db_delete_filter( $p_filter_id ) {
 	$c_filter_id = (int)$p_filter_id;
 
-	if( !filter_db_can_delete_filter( $c_filter_id ) ) {
+	if( !filter_dwg_db_can_delete_filter( $c_filter_id ) ) {
 		return false;
 	}
 
 	db_param_push();
-	$t_query = 'DELETE FROM {filters} WHERE id=' . db_param();
+	$t_query = 'DELETE FROM {dwg_filters} WHERE id=' . db_param();
 	db_query( $t_query, array( $c_filter_id ) );
 
 	return true;
@@ -1889,7 +1848,7 @@ function filter_dwg_db_delete_current_filters() {
 	$t_all_id = ALL_PROJECTS;
 
 	db_param_push();
-	$t_query = 'DELETE FROM {filters} WHERE project_id<=' . db_param() . ' AND name=' . db_param();
+	$t_query = 'DELETE FROM {dwg_filters} WHERE project_id<=' . db_param() . ' AND name=' . db_param();
 	db_query( $t_query, array( $t_all_id, '' ) );
 }
 
@@ -1904,7 +1863,7 @@ function filter_dwg_db_delete_current_filters() {
 function filter_dwg_db_get_named_filters( $p_project_id = null, $p_user_id = null, $p_public = null ) {
 	db_param_push();
 	$t_params = array();
-	$t_query = 'SELECT id, name FROM {filters} WHERE project_id >= ' . db_param();
+	$t_query = 'SELECT id, name FROM {dwg_filters} WHERE project_id >= ' . db_param();
 	$t_params[] = 0;
 
 	# build where clauses
@@ -1964,7 +1923,7 @@ function filter_dwg_db_get_available_queries( $p_project_id = null, $p_user_id =
 	db_param_push();
 
 	if( $p_filter_by_project ) {
-		$t_query = 'SELECT * FROM {filters}
+		$t_query = 'SELECT * FROM {dwg_filters}
 			WHERE (project_id = ' . db_param() . '
 				OR project_id = 0)
 			AND name != \'\'
@@ -1977,7 +1936,7 @@ function filter_dwg_db_get_available_queries( $p_project_id = null, $p_user_id =
 		$t_project_ids = user_get_all_accessible_projects( $t_user_id );
 		$t_project_ids[] = ALL_PROJECTS;
 
-		$t_query = 'SELECT * FROM {filters}
+		$t_query = 'SELECT * FROM {dwg_filters}
 			WHERE project_id in (' . implode( ',', $t_project_ids ) . ')
 			AND name != \'\'
 			AND (is_public = ' . db_param() . '
@@ -1993,7 +1952,7 @@ function filter_dwg_db_get_available_queries( $p_project_id = null, $p_user_id =
 	while( $t_row = db_fetch_array( $t_result ) ) {
 		$t_filters[$t_row['id']] = $t_row['name'];
 	}
-	filter_cache_rows( array_keys( $t_filters ) );
+	filter_dwg_cache_rows( array_keys( $t_filters ) );
 
 	if( $p_return_names_only ) {
 		asort( $t_filters );
@@ -2591,10 +2550,10 @@ function filter_dwg_print_view_type_toggle( $p_url, $p_view_type ) {
 function filter_dwg_get_included_projects( array $p_filter, $p_project_id = null, $p_user_id = null, $p_return_all_projects = false ) {
 
 	// @TODO RobD - during development, i used a null filter (no filter), and this is then needed to avoid throwing an exception below
-	if (count( $p_filter ) == 0) {
-		return null;
-	}
-	
+//	if (count( $p_filter ) == 0) {
+//		return null;
+//	}
+
 	if( null === $p_project_id ) {
 		$t_project_id = helper_get_current_project();
 	} else {
@@ -2799,7 +2758,7 @@ function filter_dwg_update_source_properties( array $p_filter ) {
 	if( isset( $p_filter['_source_query_id'] ) && $t_filter_id != $p_filter['_source_query_id'] ) {
 		$t_source_query_id = $p_filter['_source_query_id'];
 		# check if filter id is a proper named filter, and is accessible
-		if( filter_is_named_filter( $t_source_query_id ) && filter_is_accessible( $t_source_query_id ) ){
+		if( filter_dwg_is_named_filter( $t_source_query_id ) && filter_is_accessible( $t_source_query_id ) ){
 			# replace filter with the referenced one
 			$t_new_filter = filter_dwg_deserialize( filter_db_get_filter_string( $t_source_query_id ) );
 			if( is_array( $t_new_filter ) ) {
@@ -2863,7 +2822,7 @@ function filter_dwg_temporary_get( $p_filter_key, $p_default = null ) {
  */
 function filter_dwg_temporary_set( array $p_filter, $p_filter_key = null ) {
 	if( null === $p_filter_key ) {
-		$t_filter_key = filter_dwg_copy_runtime_properties( $p_filter );
+		$t_filter_key = filter_dwg_get_temporary_key( $p_filter );
 		if( !$t_filter_key ) {
 			$t_filter_key = uniqid();
 		}
@@ -2982,14 +2941,14 @@ function filter_dwg_copy_runtime_properties( array $p_filter_to, array $p_filter
  * @return BugFilterQuery	A query object for the filter
  */
 function filter_dwg_cache_subquery( array $p_filter ) {
-	global $g_cache_filter_subquery;
+	global $g_cache_filter_dwg_subquery;
 
 	$t_hash = md5( json_encode( $p_filter ) );
-	if( !isset( $g_cache_filter_subquery[$t_hash] ) ) {
-		$g_cache_filter_subquery[$t_hash] = new BugFilterQuery( $p_filter, BugFilterQuery::QUERY_TYPE_IDS );
+	if( !isset( $g_cache_filter_dwg_subquery[$t_hash] ) ) {
+		$g_cache_filter_dwg_subquery[$t_hash] = new BugFilterQuery( $p_filter, BugFilterQuery::QUERY_TYPE_IDS );
 	}
 
-	return $g_cache_filter_subquery[$t_hash];
+	return $g_cache_filter_dwg_subquery[$t_hash];
 }
 /**
  * Returns true if the user can use peristent filters, in contexts such as view_all_bug_page.
@@ -3001,28 +2960,3 @@ function filter_dwg_cache_subquery( array $p_filter ) {
 function filter_dwg_user_can_use_persistent( $p_user_id = null ) {
 	return !user_is_anonymous( $p_user_id );
 }
-
-/*
-what is the difference between === and == when testing (comparing) variables?
- 
- == (loose comparison / equality operator)
-Compares values after type juggling (automatic type conversion).
-PHP will try to convert the operands to a common type before comparing.
-
-	var_dump(5 == "5");      // true   (string "5" converted to int)
-	var_dump(0 == false);    // true   (false converted to 0)
-	var_dump("0" == false);  // true   (both considered 0)
-
-=== (strict comparison / identity operator)
-Compares both value and type. No type conversion happens.
-Both operands must be of the same type and have the same value.
-
-	var_dump(5 === "5");     // false  (int vs string)
-	var_dump(0 === false);   // false  (int vs boolean)
-	var_dump("0" === false); // false  (string vs boolean)
-	var_dump(5 === 5);       // true   (same type, same value)
-
-Rule of thumb:
-	Use == if you want to allow PHP to coerce types when comparing.
-	Use === if you want to be strict and avoid unexpected matches (which is usually the safer/better choice).
- */

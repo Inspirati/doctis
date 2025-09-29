@@ -53,7 +53,6 @@ require_api( 'error_api.php' );
 require_api( 'event_api.php' );
 require_api( 'form_api.php' );
 require_api( 'gpc_api.php' );
-require_api( 'print_api.php' );
 require_api( 'print_dwg_api.php' );
 require_api( 'string_api.php' );
 require_api( 'helper_api.php' );
@@ -96,4 +95,4 @@ event_signal( 'EVENT_DWGNOTE_EDIT', array( $t_bug_id, $f_bugnote_id ) );
 
 form_security_purge( 'dwgnote_update' );
 
-print_header_redirect( string_get_dwgnote_view_url( $t_bug_id, $f_bugnote_id ) );
+print_dwg_header_redirect( string_get_dwgnote_view_url( $t_bug_id, $f_bugnote_id ) );

@@ -38,11 +38,6 @@
  * @uses print_api.php
  * @uses utility_api.php
  */
-/* Revision history
- * 25-Aug-20205 RobD: initial version copied from view_all_set.php
- * 
- * 
- */
 
 require_once( 'core.php' );
 require_api( 'authentication_api.php' );
@@ -57,7 +52,7 @@ require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'html_api.php' );
 require_api( 'logging_api.php' );
-require_api( 'print_api.php' );
+require_api( 'print_dwg_api.php' );
 require_api( 'utility_api.php' );
 
 auth_ensure_user_authenticated();
@@ -92,7 +87,7 @@ if( $f_isset_temporary ) {
 	}
 	$t_temp_filter = $f_make_temporary;
 } else {
-	$t_temp_filter = filter_is_temporary( $t_setting_arr );
+	$t_temp_filter = filter_dwg_is_temporary( $t_setting_arr );
 }
 
 if( $f_type == -1 && $f_isset_new_key ) {
@@ -114,7 +109,7 @@ if( !filter_user_can_use_persistent( auth_get_current_user_id() ) ) {
 	$t_temp_filter = true;
 }
 
-$t_previous_temporary_key = filter_get_temporary_key( $t_setting_arr );
+$t_previous_temporary_key = filter_dwg_get_temporary_key( $t_setting_arr );
 $t_force_new_key = $t_temp_filter && $f_force_new_key;
 
 # Clear the source query id.  Since we have entered new filter criteria.
@@ -147,7 +142,7 @@ switch( $f_type ) {
 	case FILTER_ACTION_LOAD:
 		log_event( LOG_FILTERING, 'view_dwg_set.php: Load stored filter' );
 
-		$t_setting_arr = filter_get( $f_source_query_id, null );
+		$t_setting_arr = filter_dwg_get( $f_source_query_id, null );
 		if( null === $t_setting_arr ) {
 			# couldn't get the filter, if we were trying to use the filter, clear it and reload
 			error_proceed_url( 'view_dwg_set.php?type=' . FILTER_ACTION_RESET );
@@ -221,7 +216,7 @@ if( $t_temp_filter ) {
 		$t_previous_temporary_key = null;
 		unset( $t_setting_arr['_temporary_key'] );
 	}
-	$t_temporary_key = filter_temporary_set( $t_setting_arr, $t_previous_temporary_key );
-	$t_redirect_url = $t_redirect_url . '?' . filter_get_temporary_key_param( $t_temporary_key );
+	$t_temporary_key = filter_dwg_temporary_set( $t_setting_arr, $t_previous_temporary_key );
+	$t_redirect_url = $t_redirect_url . '?' . filter_dwg_get_temporary_key_param( $t_temporary_key );
 }
 print_dwg_header_redirect( $t_redirect_url );

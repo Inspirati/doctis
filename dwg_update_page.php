@@ -65,7 +65,7 @@ require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'last_visited_api.php' );
 require_api( 'prepare_api.php' );
-require_api( 'print_api.php' );
+require_api( 'print_dwg_api.php' );
 require_api( 'print_dwg_api.php' );
 require_api( 'project_api.php' );
 require_api( 'string_api.php' );
@@ -320,7 +320,7 @@ if( $t_show_creator || $t_show_handler || $t_show_due_date ) {
 		if( access_has_project_level( config_get( 'update_dwg_assign_threshold', config_get( 'update_dwg_threshold' ) ) ) ) {
 			echo '<select ' . helper_get_tab_index() . ' id="handler_id" name="handler_id" class="input-sm">';
 			echo '<option value="0">&nbsp;</option>';
-			print_assign_to_option_list( $t_bug->handler_id, $t_bug->project_id );
+			print_dwg_assign_to_option_list( $t_bug->handler_id, $t_bug->project_id );
 			echo '</select>';
 		} else {
 			echo $t_handler_name;
@@ -790,8 +790,8 @@ if( $t_bottom_buttons_enabled ) {
 </div>
 
 <?php
-// define( 'BUGNOTE_VIEW_INC_ALLOW', true );
-// include( __DIR__ . '/bugnote_view_inc.php' );
+define( 'DWGNOTE_VIEW_INC_ALLOW', true );
+include( __DIR__ . '/dwgnote_view_inc.php' );
 layout_page_end();
 
 last_visited_issue( $t_bug_id );

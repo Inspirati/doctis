@@ -373,8 +373,8 @@ class DwgFilterQuery extends DbQuery {
 			$this->unique_query_parts();
 		}
 		$t_select_string = 'SELECT DISTINCT ' . implode( ', ', $this->parts_select );
-		// $t_order_string = ' ORDER BY ' . implode( ', ', $this->parts_order );
-		$t_order_string = '';  // @TODO RobD - because we don't have a filter defined, this was ending up being just 'ORDER BY ', which leads to query failure
+		$t_order_string = ' ORDER BY ' . implode( ', ', $this->parts_order );
+		// $t_order_string = '';  // @TODO RobD - because we don't have a filter defined, this was ending up being just 'ORDER BY ', which leads to query failure
 		return $t_select_string . $this->helper_string_query_inner() . $t_order_string;
 	}
 
@@ -428,12 +428,12 @@ class DwgFilterQuery extends DbQuery {
 			return;
 		}
 
-		// foreach( $this->filter as $t_prop => $t_value ) {
-		// 	# These are the main entries for filter properties
-		// 	switch( $t_prop ) {
-		// 		case FILTER_PROPERTY_CREATOR_ID:
-		// 			$this->build_prop_creator();
-		// 			break;
+		foreach( $this->filter as $t_prop => $t_value ) {
+			# These are the main entries for filter properties
+			switch( $t_prop ) {
+				case FILTER_PROPERTY_CREATOR_ID:
+					$this->build_prop_creator();
+					break;
 		// 		case FILTER_PROPERTY_REPORTER_ID:
 		// 			$this->build_prop_reporter();
 		// 			break;
@@ -455,9 +455,9 @@ class DwgFilterQuery extends DbQuery {
 		// 		case FILTER_PROPERTY_BUILD:
 		// 			$this->build_prop_build();
 		// 			break;
-		// 		case FILTER_PROPERTY_VERSION:
-		// 			$this->build_prop_version();
-		// 			break;
+				case FILTER_PROPERTY_VERSION:
+					$this->build_prop_version();
+					break;
 		// 		case FILTER_PROPERTY_FIXED_IN_VERSION:
 		// 			$this->build_prop_fixed_version();
 		// 			break;
@@ -500,8 +500,8 @@ class DwgFilterQuery extends DbQuery {
 		// 		case FILTER_PROPERTY_PROJECTION:
 		// 			$this->build_prop_projection();
 		// 			break;
-		// 	}
-		// }
+			}
+		}
 		# these have several properties that must be built only once
 		// if( isset( $this->filter[FILTER_PROPERTY_TAG_STRING] )
 		// 		|| isset( $this->filter[FILTER_PROPERTY_TAG_SELECT] ) ) {
@@ -553,7 +553,7 @@ class DwgFilterQuery extends DbQuery {
 		$this->rt_included_projects = $t_included_project_ids;
 
 
-		$t_projects_query_required = false;  // @TODO RobD - pretend we are always administrator to try an use a null filter
+		// $t_projects_query_required = false;  // @TODO RobD - pretend we are always administrator to try an use a null filter
 
 
 		if( $t_projects_query_required ) {
@@ -638,61 +638,61 @@ class DwgFilterQuery extends DbQuery {
 			}
 
 			$t_query_projects_or = array();
-			// # for these projects, search all issues
-			// if( !empty( $t_private_and_public_project_ids ) ) {
-			// 	$t_query_projects_or[] = $this->sql_in( '{document}.project_id', $t_private_and_public_project_ids );
-			// }
+			# for these projects, search all issues
+			if( !empty( $t_private_and_public_project_ids ) ) {
+				$t_query_projects_or[] = $this->sql_in( '{document}.project_id', $t_private_and_public_project_ids );
+			}
 
-			// # for these projects, search public issues
-			// if( !empty( $t_public_only_project_ids ) ) {
-			// 	$t_query_projects_or[] = $this->sql_in( '{document}.project_id', $t_public_only_project_ids )
-			// 			. ' AND {document}.view_state = ' . $this->param( VS_PUBLIC );
-			// }
+			# for these projects, search public issues
+			if( !empty( $t_public_only_project_ids ) ) {
+				$t_query_projects_or[] = $this->sql_in( '{document}.project_id', $t_public_only_project_ids )
+						. ' AND {document}.view_state = ' . $this->param( VS_PUBLIC );
+			}
 
-			// # for these projects, search private issues where the user is reporter
-			// if( !empty( $t_private_is_reporter_project_ids ) ) {
-			// 	$t_query_projects_or[] = $this->sql_in( '{document}.project_id', $t_private_is_reporter_project_ids )
-			// 			. ' AND {document}.view_state <> ' . $this->param( VS_PUBLIC )
-			// 			. ' AND {document}.reporter_id = ' . $this->param( $t_user_id );
-			// }
+			# for these projects, search private issues where the user is reporter
+			if( !empty( $t_private_is_reporter_project_ids ) ) {
+				$t_query_projects_or[] = $this->sql_in( '{document}.project_id', $t_private_is_reporter_project_ids )
+						. ' AND {document}.view_state <> ' . $this->param( VS_PUBLIC )
+						. ' AND {document}.reporter_id = ' . $this->param( $t_user_id );
+			}
 
-			// # for these projects, search any issue (public or private) valid for the old 'limit_reporters' configuration
-			// if( !empty( $t_old_limit_public_and_private_project_ids ) ) {
-			// 	$t_query_projects_or[] = $this->sql_in( '{document}.project_id', $t_old_limit_public_and_private_project_ids )
-			// 			. ' AND {document}.reporter_id = ' . $this->param( $t_user_id );
-			// }
+			# for these projects, search any issue (public or private) valid for the old 'limit_reporters' configuration
+			if( !empty( $t_old_limit_public_and_private_project_ids ) ) {
+				$t_query_projects_or[] = $this->sql_in( '{document}.project_id', $t_old_limit_public_and_private_project_ids )
+						. ' AND {document}.reporter_id = ' . $this->param( $t_user_id );
+			}
 
-			// # for these projects, search public issues valid for the old 'limit_reporters' configuration
-			// if( !empty( $t_old_limit_public_only_project_ids ) ) {
-			// 	$t_query_projects_or[] = $this->sql_in( '{document}.project_id', $t_old_limit_public_only_project_ids )
-			// 			. ' AND {document}.view_state = ' . $this->param( VS_PUBLIC )
-			// 			. ' AND {document}.reporter_id = ' . $this->param( $t_user_id );
-			// }
+			# for these projects, search public issues valid for the old 'limit_reporters' configuration
+			if( !empty( $t_old_limit_public_only_project_ids ) ) {
+				$t_query_projects_or[] = $this->sql_in( '{document}.project_id', $t_old_limit_public_only_project_ids )
+						. ' AND {document}.view_state = ' . $this->param( VS_PUBLIC )
+						. ' AND {document}.reporter_id = ' . $this->param( $t_user_id );
+			}
 
-			// # for these projects, search any issue (public or private) valid for limited view
-			// if( !empty( $t_limited_public_and_private_project_ids ) ) {
-			// 	$t_query_projects_or[] = $this->sql_in( '{document}.project_id', $t_limited_public_and_private_project_ids )
-			// 			. ' AND ('
-			// 			. ' {document}.reporter_id = ' . $this->param( $t_user_id )
-			// 			. ' OR {document}.handler_id = ' . $this->param( $t_user_id )
-			// 			. ' OR EXISTS ( SELECT 1 FROM {bug_monitor} bm'
-			// 			. ' WHERE bm.user_id = ' . $this->param( $t_user_id )
-			// 			. ' AND bm.bug_id = {document}.id )'
-			// 			. ' )';
-			// }
+			# for these projects, search any issue (public or private) valid for limited view
+			if( !empty( $t_limited_public_and_private_project_ids ) ) {
+				$t_query_projects_or[] = $this->sql_in( '{document}.project_id', $t_limited_public_and_private_project_ids )
+						. ' AND ('
+						. ' {document}.reporter_id = ' . $this->param( $t_user_id )
+						. ' OR {document}.handler_id = ' . $this->param( $t_user_id )
+						. ' OR EXISTS ( SELECT 1 FROM {bug_monitor} bm'
+						. ' WHERE bm.user_id = ' . $this->param( $t_user_id )
+						. ' AND bm.bug_id = {document}.id )'
+						. ' )';
+			}
 
-			// # for these projects, search public issues valid for limited view
-			// if( !empty( $t_limited_public_only_project_ids ) ) {
-			// 	$t_query_projects_or[] = $this->sql_in( '{document}.project_id', $t_limited_public_only_project_ids )
-			// 			. ' AND {document}.view_state = ' . $this->param( VS_PUBLIC )
-			// 			. ' AND ('
-			// 			. ' {document}.reporter_id = ' . $this->param( $t_user_id )
-			// 			. ' OR {document}.handler_id = ' . $this->param( $t_user_id )
-			// 			. ' OR EXISTS ( SELECT 1 FROM {bug_monitor} bm'
-			// 			. ' WHERE bm.user_id = ' . $this->param( $t_user_id )
-			// 			. ' AND bm.bug_id = {document}.id )'
-			// 			. ' )';
-			// }
+			# for these projects, search public issues valid for limited view
+			if( !empty( $t_limited_public_only_project_ids ) ) {
+				$t_query_projects_or[] = $this->sql_in( '{document}.project_id', $t_limited_public_only_project_ids )
+						. ' AND {document}.view_state = ' . $this->param( VS_PUBLIC )
+						. ' AND ('
+						. ' {document}.reporter_id = ' . $this->param( $t_user_id )
+						. ' OR {document}.handler_id = ' . $this->param( $t_user_id )
+						. ' OR EXISTS ( SELECT 1 FROM {bug_monitor} bm'
+						. ' WHERE bm.user_id = ' . $this->param( $t_user_id )
+						. ' AND bm.bug_id = {document}.id )'
+						. ' )';
+			}
 
 			$t_project_query = '(' . implode( ' OR ', $t_query_projects_or ) . ')';
 
@@ -839,10 +839,10 @@ class DwgFilterQuery extends DbQuery {
 		return $t_new_array;
 	}
 
-	// /**
-	//  * Build the query parts for the filter property "reporter"
-	//  * @return void
-	//  */
+	/**
+	 * Build the query parts for the filter property "reporter"
+	 * @return void
+	 */
 	// protected function build_prop_reporter() {
 	// 	if( filter_field_is_any( $this->filter[FILTER_PROPERTY_REPORTER_ID] ) ) {
 	// 		return;
@@ -852,15 +852,15 @@ class DwgFilterQuery extends DbQuery {
 	// 	log_event( LOG_FILTERING, 'reporter query = ' . $t_users_query );
 	// 	$this->add_where( $t_users_query );
 	// }
-	// protected function build_prop_creator() {
-	// 	if( filter_field_is_any( $this->filter[FILTER_PROPERTY_CREATOR_ID] ) ) {
-	// 		return;
-	// 	}
-	// 	$t_user_ids = $this->helper_process_users_property( $this->filter[FILTER_PROPERTY_CREATOR_ID] );
-	// 	$t_users_query = $this->sql_in( '{document}.creator_id', $t_user_ids );
-	// 	log_event( LOG_FILTERING, 'creator query = ' . $t_users_query );
-	// 	$this->add_where( $t_users_query );
-	// }
+	protected function build_prop_creator() {
+		if( filter_field_is_any( $this->filter[FILTER_PROPERTY_CREATOR_ID] ) ) {
+			return;
+		}
+		$t_user_ids = $this->helper_process_users_property( $this->filter[FILTER_PROPERTY_CREATOR_ID] );
+		$t_users_query = $this->sql_in( '{document}.creator_id', $t_user_ids );
+		log_event( LOG_FILTERING, 'creator query = ' . $t_users_query );
+		$this->add_where( $t_users_query );
+	}
 
 	// /**
 	//  * Build the query parts for the filter property "handler"
@@ -1007,18 +1007,18 @@ class DwgFilterQuery extends DbQuery {
 	// 	$this->add_where( $t_query );
 	// }
 
-	// /**
-	//  * Build the query parts for the filter property "version"
-	//  * @return void
-	//  */
-	// protected function build_prop_version() {
-	// 	if( filter_field_is_any( $this->filter[FILTER_PROPERTY_VERSION] ) ) {
-	// 		return;
-	// 	}
-	// 	$t_array = $this->helper_process_string_property( $this->filter[FILTER_PROPERTY_VERSION] );
-	// 	$t_query = $this->sql_in( '{document}.version', $t_array );
-	// 	$this->add_where( $t_query );
-	// }
+	/**
+	 * Build the query parts for the filter property "version"
+	 * @return void
+	 */
+	protected function build_prop_version() {
+		if( filter_field_is_any( $this->filter[FILTER_PROPERTY_VERSION] ) ) {
+			return;
+		}
+		$t_array = $this->helper_process_string_property( $this->filter[FILTER_PROPERTY_VERSION] );
+		$t_query = $this->sql_in( '{document}.version', $t_array );
+		$this->add_where( $t_query );
+	}
 
 	// /**
 	//  * Utility function to process the values for a filter property that is related
@@ -1157,16 +1157,16 @@ class DwgFilterQuery extends DbQuery {
 	// 	$this->add_where( $t_where );
 	// }
 
-	// /**
-	//  * Creates a JOIN clause for the bugnote table and returns the table alias used
-	//  * for this join, to be used in sql expressions.
-	//  * This JOIN is built with restrictions to meet user permissions to view private notes.
-	//  *
-	//  * The JOIN is created only once for this class, If it's already created, this function
-	//  * returns the alias to be reused.
-	//  *
-	//  * @return string	A table alias for this join clause
-	//  */
+	/**
+	 * Creates a JOIN clause for the bugnote table and returns the table alias used
+	 * for this join, to be used in sql expressions.
+	 * This JOIN is built with restrictions to meet user permissions to view private notes.
+	 *
+	 * The JOIN is created only once for this class, If it's already created, this function
+	 * returns the alias to be reused.
+	 *
+	 * @return string	A table alias for this join clause
+	 */
 	// protected function helper_table_alias_for_bugnote() {
 	// 	if( $this->rt_table_alias_bugnote ) {
 	// 		return $this->rt_table_alias_bugnote;

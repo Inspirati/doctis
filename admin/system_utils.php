@@ -74,6 +74,12 @@ print_admin_menu_bar( 'system_utils.php' );
 			</td>
 		</tr>
 		<tr>
+			<td>Delete and rebuild database</td>
+			<td class="center">
+				<?php html_button( 'db_rebuild.php', 'Rebuild', array() );?>
+			</td>
+		</tr>
+		<tr>
 			<td>Show database statistics</td>
 			<td class="center">
 				<?php html_button( 'db_stats.php', 'Display', array() );?>

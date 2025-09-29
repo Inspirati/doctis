@@ -28,7 +28,7 @@
  * @uses config_api.php
  * @uses constant_inc.php
  * @uses database_api.php
- * @uses email_bug_api.php
+ * @uses email_api.php
  * @uses error_api.php
  * @uses history_api.php
  */

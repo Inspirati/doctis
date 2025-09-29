@@ -128,7 +128,7 @@ function file_dwg_get_display_name( $p_filename ) {
  *
  * @return void
  */
-function file_dwg_dwg_attachment_count_cache( array $p_bug_ids ) {
+function file_dwg_attachment_count_cache( array $p_bug_ids ) {
 	global $g_cache_file_count;
 
 	if( empty( $p_bug_ids ) ) {

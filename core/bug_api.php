@@ -34,7 +34,7 @@
  * @uses custom_field_api.php
  * @uses database_api.php
  * @uses date_api.php
- * @uses email_bug_api.php
+ * @uses email_api.php
  * @uses error_api.php
  * @uses event_api.php
  * @uses file_api.php

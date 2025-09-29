@@ -49,16 +49,13 @@ require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
 require_api( 'current_user_api.php' );
 require_api( 'custom_field_api.php' );
-require_api( 'filter_api.php' );
-
 require_api( 'filter_dwg_api.php' );
-
 require_api( 'filter_constants_inc.php' );
 require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
-require_api( 'print_api.php' );
+require_api( 'print_dwg_api.php' );
 require_api( 'string_api.php' );
 require_api( 'version_api.php' );
 
@@ -75,7 +72,7 @@ if( null === $f_filter_id ) {
 	$t_filter = current_user_get_dwg_filter();
 	$t_named_filter = false;
 } else {
-	$t_filter = filter_get( $f_filter_id, null );
+	$t_filter = filter_dwg_get( $f_filter_id, null );
 	if( null === $t_filter ) {
 		access_denied();
 	}
@@ -94,7 +91,7 @@ $f_static = gpc_get_bool( 'static', false );
 
 $f_view_type = gpc_get_string( 'view_type', $t_filter['_view_type'] );
 $t_filter['_view_type'] = $f_view_type;
-$t_filter = filter_ensure_valid_filter( $t_filter );
+$t_filter = filter_dwg_ensure_valid_filter( $t_filter );
 
 ?>
 <div class="space-10"></div>
@@ -131,7 +128,7 @@ $t_filter = filter_ensure_valid_filter( $t_filter );
 									$t_url .= '&filter_id=' . $f_filter_id;
 								}
 								$t_url .= '&view_type=';
-								filter_print_view_type_toggle( $t_url, $t_filter['_view_type'] );
+								filter_dwg_print_view_type_toggle( $t_url, $t_filter['_view_type'] );
 							?>
 						</ul>
 					</div>
@@ -143,7 +140,7 @@ $t_filter = filter_ensure_valid_filter( $t_filter );
 
 					<div class="table-responsive">
 							<?php
-							filter_form_draw_inputs( $t_filter, $f_for_screen, $f_static );
+							filter_dwg_form_draw_inputs( $t_filter, $f_for_screen, $f_static );
 							?>
 					</div>
 

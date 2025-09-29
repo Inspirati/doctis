@@ -271,7 +271,6 @@ class DwgAddCommand extends Command {
 
 		$this->issue->project_id = $t_project_id;
 		$this->issue->creator_id = $t_creator_id;
-//		$this->issue->reporter_id = $t_reporter_id;
 		$this->issue->summary = $t_summary;
 		$this->issue->description = $t_description;
 		$this->issue->steps_to_reproduce = $t_issue['steps_to_reproduce'] ?? '';

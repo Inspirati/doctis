@@ -893,25 +893,25 @@ function mci_get_category( $p_category_id ) {
 }
 
 // @TODO RobD - unused, it is probably not the right apprach to getting the document (to be continued...)
-function mci_get_document( $p_document_id ) {
-	if( ApiObjectFactory::$soap ) {
-		if( $p_document_id == 0 ) {
-			# This should be really null, but will leave it to avoid changing the behavior
-			return '';
-		}
+// function mci_get_document( $p_document_id ) {
+// 	if( ApiObjectFactory::$soap ) {
+// 		if( $p_document_id == 0 ) {
+// 			# This should be really null, but will leave it to avoid changing the behavior
+// 			return '';
+// 		}
 
-		return mci_null_if_empty( document_get_name( $p_document_id ) );
-	}
+// 		return mci_null_if_empty( document_get_name( $p_document_id ) );
+// 	}
 
-	if( $p_document_id == 0 ) {
-		return null;
-	}
+// 	if( $p_document_id == 0 ) {
+// 		return null;
+// 	}
 
-	return array(
-		'id' => $p_document_id,
-		'name' => mci_null_if_empty( document_get_name( $p_document_id ) ),
-	);
-}
+// 	return array(
+// 		'id' => $p_document_id,
+// 		'name' => mci_null_if_empty( document_get_name( $p_document_id ) ),
+// 	);
+// }
 
 /**
  * Convert a category name or object reference to a category id.
@@ -1023,7 +1023,7 @@ function mci_get_document_id( $p_document, $p_project_id ) {
 				}
 
 				if( document_exists( $t_id ) ) {
-					error_log("document_exists");
+					error_log("mci_get_document_id() PASS - document_exists");
 				}
 
 				//settype( $t_id, 'int' );
@@ -1047,7 +1047,7 @@ function mci_get_document_id( $p_document, $p_project_id ) {
 		}
 
 		# Retrieve Document Id from Name
-		$t_cat_array = category_get_all_rows( $p_project_id );
+		$t_cat_array = document_get_all_rows( $p_project_id );
 		foreach( $t_cat_array as $t_category_row ) {
 			if( strcasecmp( $t_category_row['name'], $t_document_name ) == 0 ) {
 				return $t_category_row['id'];

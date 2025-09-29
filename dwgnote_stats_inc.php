@@ -23,7 +23,6 @@
  * @copyright Copyright 2002  MantisBT Team - mantisbt-dev@lists.sourceforge.net
  * @link http://www.mantisbt.org
  *
- * @uses bugnote_api.php
  * @uses dwgnote_api.php
  * @uses collapse_api.php
  * @uses config_api.php
@@ -40,12 +39,10 @@ if( !defined( 'DWGNOTE_STATS_INC_ALLOW' ) ) {
 	return;
 }
 
-require_api( 'bugnote_api.php' );
 require_api( 'dwgnote_api.php' );
 require_api( 'collapse_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
-require_api( 'filter_api.php' );
 require_api( 'filter_dwg_api.php' );
 require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
@@ -117,8 +114,8 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 						$t_filter[FILTER_PROPERTY_DATE_SUBMITTED_END_DAY] = $t_bugnote_stats_to_d;
 						$t_filter[FILTER_PROPERTY_DATE_SUBMITTED_END_MONTH] = $t_bugnote_stats_to_m;
 						$t_filter[FILTER_PROPERTY_DATE_SUBMITTED_END_YEAR] = $t_bugnote_stats_to_y;
-						filter_init( $t_filter );
-						print_filter_do_filter_by_date( true );
+						filter_dwg_init( $t_filter );
+						print_filter_dwg_do_filter_by_date( true );
 					?>
 				</div>
 				<div class="widget-toolbox padding-8 clearfix">

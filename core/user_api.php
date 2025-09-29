@@ -28,7 +28,7 @@
  * @uses config_api.php
  * @uses constant_inc.php
  * @uses database_api.php
- * @uses email_bug_api.php
+ * @uses email_api.php
  * @uses error_api.php
  * @uses filter_api.php
  * @uses helper_api.php
@@ -49,6 +49,7 @@ require_api( 'database_api.php' );
 require_api( 'email_bug_api.php' );
 require_api( 'error_api.php' );
 require_api( 'filter_api.php' );
+require_api( 'filter_dwg_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'ldap_api.php' );

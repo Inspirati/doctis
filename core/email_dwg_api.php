@@ -151,7 +151,7 @@ function email_dwg_collect_recipients( $p_bug_id, $p_notify_type, array $p_extra
 	# add users monitoring the bug
 	$t_monitoring_enabled = ON == email_notify_flag( $p_notify_type, 'monitor' );
 	db_param_push();
-	$t_query = 'SELECT DISTINCT user_id FROM {bug_monitor} WHERE bug_id=' . db_param();
+	$t_query = 'SELECT DISTINCT user_id FROM {dwg_monitor} WHERE dwg_id=' . db_param();
 	$t_result = db_query( $t_query, array( $p_bug_id ) );
 
 	while( $t_row = db_fetch_array( $t_result ) ) {
@@ -184,7 +184,7 @@ function email_dwg_collect_recipients( $p_bug_id, $p_notify_type, array $p_extra
 	$t_query = 'SELECT DISTINCT creator_id FROM {dwgnote} WHERE dwg_id = ' . db_param();
 	$t_result = db_query( $t_query, array( $p_bug_id ) );
 	while( $t_row = db_fetch_array( $t_result ) ) {
-		$t_user_id = $t_row['reporter_id'];
+		$t_user_id = $t_row['creator_id'];
 		if ( $t_notes_enabled ) {
 			$t_recipients[$t_user_id] = true;
 			log_event( LOG_EMAIL_RECIPIENT, 'Document = #%d, add @U%d (note author)', $p_bug_id, $t_user_id );
@@ -747,25 +747,25 @@ function email_dwgnote_add( $p_bugnote_id, $p_files = array(), $p_exclude_user_i
 
 	$t_bugnote = dwgnote_get( $p_bugnote_id );
 
-	log_event( LOG_EMAIL, sprintf( 'Note ~%d added to Document #%d', $p_bugnote_id, $t_bugnote->bug_id ) );
+	log_event( LOG_EMAIL, sprintf( 'Note ~%d added to Document #%d', $p_bugnote_id, $t_bugnote->dwg_id ) );
 
-	$t_project_id = dwg_get_field( $t_bugnote->bug_id, 'project_id' );
-	$t_date_submitted = dwg_get_field( $t_bugnote->bug_id, 'date_submitted' );
+	$t_project_id = dwg_get_field( $t_bugnote->dwg_id, 'project_id' );
+	$t_date_submitted = dwg_get_field( $t_bugnote->dwg_id, 'date_submitted' );
 	$t_separator = config_get( 'email_separator2' );
 	$t_time_tracking_access_threshold = config_get( 'time_tracking_view_threshold' );
 	$t_view_attachments_threshold = config_get( 'view_attachments_threshold' );
 	$t_message_id = 'email_notification_title_for_action_bugnote_submitted';
 
-	$t_subject = email_dwg_build_subject( $t_bugnote->bug_id );
+	$t_subject = email_dwg_build_subject( $t_bugnote->dwg_id );
 
-	$t_recipients = email_dwg_collect_recipients( $t_bugnote->bug_id, 'bugnote', /* extra_user_ids */ array(), $p_bugnote_id );
+	$t_recipients = email_dwg_collect_recipients( $t_bugnote->dwg_id, 'bugnote', /* extra_user_ids */ array(), $p_bugnote_id );
 	$t_recipients_verbose = array();
 
 	# send email to every recipient
 	foreach( $t_recipients as $t_user_id => $t_user_email ) {
 		if( in_array( $t_user_id, $p_exclude_user_ids ) ) {
 			log_event( LOG_EMAIL_RECIPIENT, 'Document = #%d, Note = ~%d, Type = %s, Msg = \'%s\', User = @U%d excluded, Email = \'%s\'.',
-				$t_bugnote->bug_id, $p_bugnote_id, 'bugnote', 'email_notification_title_for_action_bugnote_submitted', $t_user_id, $t_user_email );
+				$t_bugnote->dwg_id, $p_bugnote_id, 'bugnote', 'email_notification_title_for_action_bugnote_submitted', $t_user_id, $t_user_email );
 			continue;
 		}
 
@@ -776,21 +776,21 @@ function email_dwgnote_add( $p_bugnote_id, $p_files = array(), $p_exclude_user_i
 		}
 
 		log_event( LOG_EMAIL_VERBOSE, 'Document = #%d, Note = ~%d, Type = %s, Msg = \'%s\', User = @U%d, Email = \'%s\'.',
-			$t_bugnote->bug_id, $p_bugnote_id, 'bugnote', $t_message_id, $t_user_id, $t_user_email );
+			$t_bugnote->dwg_id, $p_bugnote_id, 'bugnote', $t_message_id, $t_user_id, $t_user_email );
 
 		# load (push) user language
 		lang_push( user_pref_get_language( $t_user_id, $t_project_id ) );
 
 		$t_message = lang_get( 'email_notification_title_for_action_dwgnote_submitted' ) . "\n\n";
 
-		$t_show_time_tracking = access_has_dwg_level( $t_time_tracking_access_threshold, $t_bugnote->bug_id, $t_user_id );
+		$t_show_time_tracking = access_has_dwg_level( $t_time_tracking_access_threshold, $t_bugnote->dwg_id, $t_user_id );
 		$t_formatted_note = email_format_dwgnote( $t_bugnote, $t_project_id, $t_show_time_tracking, $t_separator );
 		$t_message .= trim( $t_formatted_note ) . "\n";
 		$t_message .= $t_separator . "\n";
 
 		# Files attached
 		if( count( $p_files ) > 0 &&
-			access_has_dwg_level( $t_view_attachments_threshold, $t_bugnote->bug_id, $t_user_id ) ) {
+			access_has_dwg_level( $t_view_attachments_threshold, $t_bugnote->dwg_id, $t_user_id ) ) {
 			$t_message .= lang_get( 'dwgnote_attached_files' ) . "\n";
 
 			foreach( $p_files as $t_file ) {
@@ -804,20 +804,20 @@ function email_dwgnote_add( $p_bugnote_id, $p_files = array(), $p_exclude_user_i
 		$t_contents = $t_message . "\n";
 
 		$t_mail_headers = [
-			'In-Reply-To' => email_generate_md5( $t_bugnote->bug_id, $t_date_submitted )
+			'In-Reply-To' => email_generate_md5( $t_bugnote->dwg_id, $t_date_submitted )
 		];
 
 		email_store( $t_user_email, $t_subject, $t_contents, $t_mail_headers );
 
 		log_event( LOG_EMAIL_VERBOSE, 'queued dwgnote email for note ~' . $p_bugnote_id .
-			' issue #' . $t_bugnote->bug_id . ' by U' . $t_user_id );
+			' issue #' . $t_bugnote->dwg_id . ' by U' . $t_user_id );
 
 		lang_pop();
 	}
 
 	# Send emails out for users that select verbose notifications
 	email_dwg_generic_to_recipients(
-		$t_bugnote->bug_id,
+		$t_bugnote->dwg_id,
 		'dwgnote',
 		$t_recipients_verbose,
 		$t_message_id

@@ -15,7 +15,7 @@
 # along with MantisBT.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Set sponsorship on a bug
+ * This file turns monitoring on or off for a bug for the current user
  *
  * @package MantisBT
  * @copyright Copyright 2000 - 2002  Kenzaburo Ito - kenito@300baud.org
@@ -28,15 +28,11 @@
  * @uses dwg_api.php
  * @uses config_api.php
  * @uses constant_inc.php
- * @uses current_user_api.php
  * @uses form_api.php
  * @uses gpc_api.php
  * @uses helper_api.php
- * @uses lang_api.php
  * @uses print_dwg_api.php
- * @uses sponsorship_api.php
  * @uses user_api.php
- * @uses utility_api.php
  */
 
 require_once( 'core.php' );
@@ -45,64 +41,47 @@ require_api( 'authentication_api.php' );
 require_api( 'dwg_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
-require_api( 'current_user_api.php' );
 require_api( 'form_api.php' );
 require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
-require_api( 'lang_api.php' );
 require_api( 'print_dwg_api.php' );
-require_api( 'sponsorship_api.php' );
 require_api( 'user_api.php' );
-require_api( 'utility_api.php' );
 
-form_security_validate( 'dwg_set_sponsorship' );
+form_security_validate( 'dwg_monitor_delete' );
 
-# anonymous users are not allowed to sponsor issues
-if( current_user_is_anonymous() ) {
-	access_denied();
+$f_bug_id = gpc_get_int( 'bug_id' );
+$t_bug = dwg_get( $f_bug_id, true );
+$f_user_id = gpc_get_int( 'user_id', NO_USER );
+
+$t_logged_in_user_id = auth_get_current_user_id();
+
+if( $f_user_id === NO_USER ) {
+	$t_user_id = $t_logged_in_user_id;
+} else {
+	user_ensure_exists( $f_user_id );
+	$t_user_id = $f_user_id;
 }
 
-$f_bug_id	= gpc_get_int( 'bug_id' );
-$f_amount	= gpc_get_int( 'amount' );
+if( user_is_anonymous( $t_user_id ) ) {
+	trigger_error( ERROR_PROTECTED_ACCOUNT, E_USER_ERROR );
+}
 
-$t_bug = dwg_get( $f_bug_id, true );
+dwg_ensure_exists( $f_bug_id );
+
 if( $t_bug->project_id != helper_get_current_project() ) {
 	# in case the current project is not the same project of the bug we are viewing...
 	# ... override the current project. This to avoid problems with categories and handlers lists etc.
 	$g_project_override = $t_bug->project_id;
 }
 
-if( config_get( 'enable_sponsorship' ) == OFF ) {
-	trigger_error( ERROR_SPONSORSHIP_NOT_ENABLED, ERROR );
-}
-
-access_ensure_dwg_level( config_get( 'sponsor_threshold' ), $f_bug_id );
-
-helper_ensure_confirmed(
-	sprintf( lang_get( 'confirm_sponsorship' ), $f_bug_id, sponsorship_format_amount( $f_amount ) ),
-	lang_get( 'sponsor_issue' ) );
-
-if( $f_amount == 0 ) {
-	# if amount == 0, delete sponsorship by current user (if any)
-	$t_sponsorship_id = sponsorship_get_id( $f_bug_id );
-	if( $t_sponsorship_id !== false ) {
-		sponsorship_delete( $t_sponsorship_id );
-	}
+if( $t_logged_in_user_id == $t_user_id ) {
+	access_ensure_dwg_level( config_get( 'monitor_dwg_threshold' ), $f_bug_id );
 } else {
-	# add sponsorship
-	$t_user = auth_get_current_user_id();
-	if( is_blank( user_get_email( $t_user ) ) ) {
-		trigger_error( ERROR_SPONSORSHIP_SPONSOR_NO_EMAIL, ERROR );
-	} else {
-		$t_sponsorship = new SponsorshipData;
-		$t_sponsorship->bug_id = $f_bug_id;
-		$t_sponsorship->user_id = $t_user;
-		$t_sponsorship->amount = $f_amount;
-
-		sponsorship_set( $t_sponsorship );
-	}
+	access_ensure_dwg_level( config_get( 'monitor_delete_others_dwg_threshold' ), $f_bug_id );
 }
 
-form_security_purge( 'dwg_set_sponsorship' );
+dwg_unmonitor( $f_bug_id, $t_user_id );
+
+form_security_purge( 'dwg_monitor_delete' );
 
 print_dwg_header_redirect_view( $f_bug_id );

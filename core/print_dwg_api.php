@@ -1394,8 +1394,8 @@ function print_view_dwg_sort_link( $p_label, $p_sort_field, $p_sort, $p_dir, $p_
 /*
  @TODO RobD - found it! this is where the url comes from for the documents list column headers hyperlink
  */			
-#!			$t_url = helper_url_combine( 'view_all_set.php', $t_params );
-			// $t_url = helper_url_combine( 'view_all_set.php', $t_params );
+#!			$t_url = helper_url_combine( 'view_dwg_set.php', $t_params );
+			// $t_url = helper_url_combine( 'view_dwg_set.php', $t_params );
 			// $t_url = helper_url_combine( 'view_all_FOOBAR_set.php', $t_params );
 
 // potential universal solution for integration into the one function as previous (above)
@@ -1403,7 +1403,7 @@ function print_view_dwg_sort_link( $p_label, $p_sort_field, $p_sort, $p_dir, $p_
 				$t_url = helper_url_combine( 'view_dwg_set.php', $t_params );
 			} else {
 				// $t_url = helper_url_combine( 'view_all_BARFOOBAR_set.php', $t_params );
-				$t_url = helper_url_combine( 'view_all_set.php', $t_params );
+				$t_url = helper_url_combine( 'view_dwg_set.php', $t_params );
 			}
 
 $t_url = helper_url_combine( 'view_dwg_set.php', $t_params );
@@ -1411,8 +1411,8 @@ $t_url = helper_url_combine( 'view_dwg_set.php', $t_params );
 //
 // END doctis developmental section
 ////////////////////////////////////////////////////////////////////////////////
-			if( filter_is_temporary( $g_dwg_filter ) ) {
-				$t_url .= '&' . filter_get_temporary_key_param( $g_dwg_filter );
+			if( filter_dwg_is_temporary( $g_dwg_filter ) ) {
+				$t_url .= '&' . filter_dwg_get_temporary_key_param( $g_dwg_filter );
 			}
 			print_link( $t_url, $p_label, false, '', $p_icon );
 			break;
@@ -1728,7 +1728,7 @@ function print_dwg_page_links( $p_page, $p_start, $p_end, $p_current, $p_temp_fi
 			array_push( $t_items, '<li class="active pull-right"><a>' . $i . '</a></li>' );
 		} else {
 			$t_delimiter = ( strpos( $p_page, '?' ) ? '&' : '?' ) ;
-			$t_filter_param = filter_get_temporary_key_param( $p_temp_filter_key );
+			$t_filter_param = filter_dwg_get_temporary_key_param( $p_temp_filter_key );
 			$t_filter_param .= $t_filter_param === null ? '' : '&amp;';
 			array_push( $t_items, '<li class="pull-right"><a href="' . $p_page . $t_delimiter . $t_filter_param . 'page_number=' . $i . '">' . $i . '</a></li>' );
 		}

@@ -40,7 +40,6 @@
  * @uses utility_api.php
  */
 
-require_api( 'access_bug_api.php' );
 require_api( 'access_dwg_api.php' );
 require_api( 'antispam_api.php' );
 require_api( 'authentication_api.php' );
@@ -1152,7 +1151,7 @@ function tag_dwg_stats_related( $p_tag_id, $p_limit = 5 ) {
 		FILTER_PROPERTY_PROJECT_ID => array( ALL_PROJECTS ),
 		'_view_type' => FILTER_VIEW_TYPE_ADVANCED,
 	);
-	$t_filter = filter_ensure_valid_filter( $t_filter );
+	$t_filter = filter_dwg_ensure_valid_filter( $t_filter );
 
 	$t_filter_subquery = new DwgFilterQuery( $t_filter, DwgFilterQuery::QUERY_TYPE_IDS );
 

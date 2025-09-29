@@ -58,7 +58,6 @@ require_api( 'form_api.php' );
 require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'lang_api.php' );
-require_api( 'print_api.php' );
 require_api( 'print_dwg_api.php' );
 require_api( 'string_api.php' );
 require_api( 'utility_api.php' );
@@ -349,7 +348,7 @@ if( $t_multiple_projects ) {
 					);
 					break;
 				case 'ASSIGN':
-					print_assign_to_option_list( 0, $t_project_id );
+					print_dwg_assign_to_option_list( 0, $t_project_id );
 					break;
 				case 'RESOLVE':
 					print_enum_string_option_list( 'resolution', config_get( 'dwg_resolution_fixed_threshold' ) );

@@ -41,23 +41,18 @@
  * @uses string_api.php
  * @uses utility_api.php
  */
-/* Revision history
- * 25-Aug-20205 RobD: initial version copied from print_all_bug_page.php
- * 
- * 
- */
 
 require_once( 'core.php' );
 require_api( 'authentication_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
-require_api( 'filter_api.php' );
+require_api( 'filter_dwg_api.php' );
 require_api( 'filter_constants_inc.php' );
 require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
-require_api( 'print_api.php' );
+require_api( 'print_dwg_api.php' );
 require_api( 'project_api.php' );
 require_api( 'string_api.php' );
 require_api( 'utility_api.php' );
@@ -81,7 +76,6 @@ $t_num_of_columns = count( $t_columns );
 
 # Get the filter in use
 $t_filter = current_user_get_dwg_filter();
-#!filter_init( $t_filter );
 filter_dwg_init( $t_filter );
 
 $f_highlight_changed = $t_filter[FILTER_PROPERTY_HIGHLIGHT_CHANGED];
@@ -95,7 +89,7 @@ $t_per_page = -1;
 $t_bug_count = null;
 $t_page_count = null;
 
-$t_result = filter_get_bug_rows( $f_page_number, $t_per_page, $t_page_count, $t_bug_count );
+$t_result = filter_dwg_get_bug_rows( $f_page_number, $t_per_page, $t_page_count, $t_bug_count );
 $t_row_count = count( $t_result );
 
 # pre-cache column data
@@ -162,8 +156,8 @@ $f_export = implode( ',', $f_bug_arr );
 			'export' => $f_export,
 			'show_flag' => $t_show_flag,
 		);
-		if( filter_is_temporary( $t_filter ) ) {
-			$t_params['filter'] = filter_get_temporary_key( $t_filter );
+		if( filter_dwg_is_temporary( $t_filter ) ) {
+			$t_params['filter'] = filter_dwg_get_temporary_key( $t_filter );
 		}
 
 		echo '<a href="' . helper_url_combine( $t_icon[0] . '.php', $t_params ) . '" ' . $t_icon[2] . '>';
@@ -178,8 +172,8 @@ $f_export = implode( ',', $f_bug_arr );
 
 <?php
 $t_form_url = 'print_dwg_page.php';
-if( filter_is_temporary( $t_filter ) ) {
-	$t_form_url .='?' . filter_get_temporary_key_param( $t_filter );
+if( filter_dwg_is_temporary( $t_filter ) ) {
+	$t_form_url .='?' . filter_dwg_get_temporary_key_param( $t_filter );
 }
 ?>
 <form method="post" action="<?php echo $t_form_url ?>">
@@ -205,9 +199,8 @@ if( filter_is_temporary( $t_filter ) ) {
 </tr>
 <tr class="row-category">
 	<?php
-		$t_sort_properties = filter_get_visible_sort_properties_array( $t_filter, COLUMNS_TARGET_PRINT_PAGE );
+		$t_sort_properties = filter_dwg_get_visible_sort_properties_array( $t_filter, COLUMNS_TARGET_PRINT_PAGE );
 		foreach( $t_columns as $t_column ) {
-			// helper_call_custom_function( 'print_column_title', array( $t_column, COLUMNS_TARGET_PRINT_PAGE, $t_sort_properties ) );
 			helper_call_custom_function( 'print_dwg_column_title', array( $t_column, COLUMNS_TARGET_PRINT_PAGE, $t_sort_properties ) );
 		}
 	?>

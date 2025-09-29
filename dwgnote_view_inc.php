@@ -45,19 +45,16 @@
  * @uses user_api.php
  */
 
-if( !defined( 'BUGNOTE_VIEW_INC_ALLOW' ) ) {
+if( !defined( 'DWGNOTE_VIEW_INC_ALLOW' ) ) {
 	return;
 }
 
 require_api( 'access_dwg_api.php' );
 require_api( 'authentication_api.php' );
-require_api( 'bug_activity_api.php' );
 require_api( 'dwg_activity_api.php' );
-require_api( 'bug_api.php' );
 require_api( 'dwg_api.php' );
-require_api( 'bug_revision_api.php' );
 require_api( 'dwg_revision_api.php' );
-require_api( 'bugnote_api.php' );
+require_api( 'dwgnote_api.php' );
 require_api( 'collapse_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
@@ -67,7 +64,7 @@ require_api( 'event_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'prepare_api.php' );
-require_api( 'print_api.php' );
+require_api( 'print_dwg_api.php' );
 require_api( 'string_api.php' );
 require_api( 'user_api.php' );
 
@@ -103,7 +100,7 @@ user_cache_array_rows( array_keys( $t_users_to_cache ) );
 $t_activities_count = count( $t_activities );
 ?>
 
-<?php # Bugnotes BEGIN ?>
+<?php # Dwgnotes BEGIN ?>
 <div class="col-md-12 col-xs-12">
 <div class="space-10"></div>
 
@@ -131,12 +128,12 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 	<div class="table-responsive">
 	<table class="table table-bordered table-condensed table-striped">
 <?php
-	# no bugnotes
+	# no dwgnotes
 	if( 0 == $t_activities_count ) {
 ?>
 <tr class="bugnotes-empty">
 	<td class="center">
-		<?php echo lang_get( 'no_bugnotes_msg' ) ?>
+		<?php echo lang_get( 'no_dwgnotes_msg' ) ?>
 	</td>
 </tr>
 <?php }
@@ -203,8 +200,8 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 				. lang_get( 'word_separator' )
 				. date( $t_normal_date_format, $t_activity['last_modified'] )
 				. '</p>';
-			if( access_can_view_bugnote_revisions( $t_activity['id'] ) ) {
-				$t_revision_count = bug_revision_count( $f_bug_id, REV_BUGNOTE, $t_activity['id'] );
+			if( access_can_view_dwgnote_revisions( $t_activity['id'] ) ) {
+				$t_revision_count = dwg_revision_count( $f_bug_id, REV_BUGNOTE, $t_activity['id'] );
 				if( $t_revision_count >= 1 ) {
 					$t_view_num_revisions_text = sprintf( lang_get( 'view_num_revisions' ), $t_revision_count );
 ?>

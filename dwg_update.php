@@ -31,7 +31,7 @@
  * @uses config_api.php
  * @uses constant_inc.php
  * @uses custom_field_api.php
- * @uses email_bug_api.php
+ * @uses email_api.php
  * @uses error_api.php
  * @uses event_api.php
  * @uses form_api.php
@@ -62,7 +62,6 @@ require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'history_api.php' );
 require_api( 'lang_api.php' );
-require_api( 'print_api.php' );
 require_api( 'print_dwg_api.php' );
 require_api( 'dwg_relationship_api.php' );
 

@@ -33,10 +33,9 @@
 
 require_once( 'core.php' );
 require_api( 'file_api.php' );
-require_api( 'file_dwg.php' );
+require_api( 'file_dwg_api.php' );
 require_api( 'form_api.php' );
 require_api( 'gpc_api.php' );
-require_api( 'print_api.php' );
 require_api( 'print_dwg_api.php' );
 
 form_security_validate( 'dwgnote_add' );
@@ -64,7 +63,7 @@ $t_data = array(
 	'payload' => $t_payload,
 );
 
-$t_command = new DocumentNoteAddCommand( $t_data );
+$t_command = new DwgNoteAddCommand( $t_data );
 $t_command->execute();
 
 form_security_purge( 'dwgnote_add' );
