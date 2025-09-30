@@ -24,11 +24,9 @@
  * @link http://www.mantisbt.org
  *
  * @uses bug_api.php
- * @uses dwg_api.php
  * @uses bugnote_api.php
  * @uses category_api.php
  * @uses columns_api.php
- * @uses columns_dwg_api.php
  * @uses config_api.php
  * @uses constant_inc.php
  * @uses custom_field_api.php
@@ -39,7 +37,6 @@
  * @uses lang_api.php
  * @uses prepare_api.php
  * @uses print_api.php
- * @uses print_dwg_api.php
  * @uses string_api.php
  * @uses utility_api.php
  * @uses version_api.php

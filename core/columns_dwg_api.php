@@ -25,7 +25,6 @@
  *
  * @uses access_api.php
  * @uses bug_api.php
- * @uses dwg_api.php
  * @uses category_api.php
  * @uses config_api.php
  * @uses constant_inc.php
@@ -44,21 +43,7 @@
  * @uses string_api.php
  */
 
-/*
-  @TODO RobD - vscode regular expression searches syntax
-  keyword: regex
-
-= filter_(?!dwg)
-
-columns_(?!dwg)
-
-filter_[^dwg]
-
-
- */
-
 require_api( 'access_dwg_api.php' );
-// require_api( 'bug_api.php' );
 require_api( 'dwg_api.php' );
 require_api( 'category_api.php' );
 require_api( 'columns_api.php' );
@@ -68,7 +53,6 @@ require_api( 'custom_field_api.php' );
 require_api( 'date_api.php' );
 require_api( 'error_api.php' );
 require_api( 'event_api.php' );
-require_api( 'file_api.php' );
 require_api( 'file_dwg_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'icon_api.php' );
@@ -1266,6 +1250,7 @@ function print_dwg_column_sponsorship_total( DwgData $p_bug, $p_columns_target =
  * @return void
  * @access public
  */
+# @TODO RobD - note, never called
 function print_dwg_column_bugnotes_count( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	global $g_dwg_filter;
 

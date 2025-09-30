@@ -25,7 +25,6 @@
  * @uses access_api.php
  * @uses authentication_api.php
  * @uses bug_api.php
- * @uses dwg_api.php
  * @uses compress_api.php
  * @uses config_api.php
  * @uses constant_inc.php
@@ -34,14 +33,12 @@
  * @uses html_api.php
  * @uses lang_api.php
  * @uses print_api.php
- * @uses print_dwg_api.php
  * @uses relationship_graph_api.php
  */
 
 require_once( 'core.php' );
 require_api( 'access_dwg_api.php' );
 require_api( 'authentication_api.php' );
-require_api( 'bug_api.php' );
 require_api( 'dwg_api.php' );
 require_api( 'compress_api.php' );
 require_api( 'config_api.php' );

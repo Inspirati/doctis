@@ -26,7 +26,6 @@
  * @uses access_api.php
  * @uses authentication_api.php
  * @uses bug_api.php
- * @uses dwg_api.php
  * @uses bugnote_api.php
  * @uses config_api.php
  * @uses constant_inc.php
@@ -40,20 +39,17 @@
  * @uses history_api.php
  * @uses lang_api.php
  * @uses print_api.php
- * @uses print_dwg_api.php
- * @uses dwg_relationship_api.php
+ * @uses relationship_api.php
  */
 
 require_once( 'core.php' );
 require_api( 'access_dwg_api.php' );
 require_api( 'authentication_api.php' );
-require_api( 'bug_api.php' );
 require_api( 'dwg_api.php' );
-require_api( 'bugnote_api.php' );
+require_api( 'dwgnote_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
 require_api( 'custom_field_api.php' );
-require_api( 'email_bug_api.php' );
 require_api( 'email_dwg_api.php' );
 require_api( 'error_api.php' );
 require_api( 'event_api.php' );

@@ -34,6 +34,7 @@ require_api( 'string_api.php' );
 require_api( 'user_api.php' );
 
 require_api( 'document_api.php' );  // @TODO RobD - investigate why this is required whilst category_api.php is not?
+									// ANSWER - it is because we have introduced the call to mci_get_document_id()
 
 $t_soap_dir = dirname( __DIR__, 2 ) . '/api/soap/';
 require_once( $t_soap_dir . 'mc_api.php' );

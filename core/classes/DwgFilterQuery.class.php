@@ -21,20 +21,19 @@
  * @package MantisBT
  * @subpackage classes
  *
- * @uses access_dwg_api.php
+ * @uses access_api.php
  * @uses authentication_api.php
  * @uses config_api.php
  * @uses constant_inc.php
  * @uses custom_field_api.php
  * @uses database_api.php
  * @uses filter_api.php
- * @uses filter_dwg_api.php
  * @uses filter_constants_inc.php
  * @uses gpc_api.php
  * @uses helper_api.php
  * @uses logging_api.php
  * @uses project_api.php
- * @uses tag_dwg_api.php
+ * @uses tag_api.php
  * @uses user_api.php
  * @uses utility_api.php
  */
@@ -45,7 +44,6 @@ require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
 require_api( 'custom_field_api.php' );
 require_api( 'database_api.php' );
-// require_api( 'filter_api.php' );  // BEWARE: this is already included in the call stack anyhow
 require_api( 'filter_dwg_api.php' );
 require_api( 'filter_constants_inc.php' );
 require_api( 'gpc_api.php' );
@@ -254,16 +252,6 @@ class DwgFilterQuery extends DbQuery {
 		return parent::execute( $p_bind_array, $p_limit, $p_offset );
 	}
 
-////////////////////////////////////////////////////////////////////////////////
-// BEGIN doctis developmental section
-//	public function dwg_filter_query_test() {
-//
-//		$this->dwg_query_test();
-//
-//	}
-// END doctis developmental section
-////////////////////////////////////////////////////////////////////////////////
-
 	/**
 	 * Shorthand method to get the total number of issues matched by the filter
 	 * It creates a copy of current object, set its type to a count query,
@@ -374,7 +362,6 @@ class DwgFilterQuery extends DbQuery {
 		}
 		$t_select_string = 'SELECT DISTINCT ' . implode( ', ', $this->parts_select );
 		$t_order_string = ' ORDER BY ' . implode( ', ', $this->parts_order );
-		// $t_order_string = '';  // @TODO RobD - because we don't have a filter defined, this was ending up being just 'ORDER BY ', which leads to query failure
 		return $t_select_string . $this->helper_string_query_inner() . $t_order_string;
 	}
 
@@ -798,19 +785,19 @@ class DwgFilterQuery extends DbQuery {
 		}
 	}
 
-	// /**
-	//  * Build the query parts for the filter property "view state"
-	//  * @return void
-	//  */
-	// protected function build_prop_view_state() {
-	// 	if( filter_field_is_any( $this->filter[FILTER_PROPERTY_VIEW_STATE] ) ) {
-	// 		return;
-	// 	}
-	// 	$t_view_state = (int)$this->filter[FILTER_PROPERTY_VIEW_STATE];
-	// 	$t_view_state_query = '{document}.view_state = ' . $this->param( $t_view_state ) ;
-	// 	log_event( LOG_FILTERING, 'view_state query = ' . $t_view_state_query );
-	// 	$this->add_where( $t_view_state_query );
-	// }
+	/**
+	 * Build the query parts for the filter property "view state"
+	 * @return void
+	 */
+	protected function build_prop_view_state() {
+		if( filter_field_is_any( $this->filter[FILTER_PROPERTY_VIEW_STATE] ) ) {
+			return;
+		}
+		$t_view_state = (int)$this->filter[FILTER_PROPERTY_VIEW_STATE];
+		$t_view_state_query = '{document}.view_state = ' . $this->param( $t_view_state ) ;
+		log_event( LOG_FILTERING, 'view_state query = ' . $t_view_state_query );
+		$this->add_where( $t_view_state_query );
+	}
 
 	/**
 	 * Utility function to process the values for a filter property that is related

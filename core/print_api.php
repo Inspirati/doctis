@@ -27,7 +27,6 @@
  * @uses authentication_api.php
  * @uses bug_group_action_api.php
  * @uses category_api.php
- * @uses document_api.php
  * @uses config_api.php
  * @uses collapse_api.php
  * @uses constant_inc.php

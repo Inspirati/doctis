@@ -25,8 +25,7 @@
  * @uses access_api.php
  * @uses authentication_api.php
  * @uses bug_api.php
- * @uses dwg_api.php
- * @uses dwg_activity_api.php
+ * @uses bug_activity_api.php
  * @uses category_api.php
  * @uses columns_api.php
  * @uses compress_api.php
@@ -42,10 +41,9 @@
  * @uses lang_api.php
  * @uses prepare_api.php
  * @uses print_api.php
- * @uses print_dwg_api.php
  * @uses project_api.php
  * @uses string_api.php
- * @uses tag_dwg_api.php
+ * @uses tag_api.php
  * @uses utility_api.php
  * @uses version_api.php
  *
@@ -66,7 +64,6 @@ if( !defined( 'DWG_VIEW_INC_ALLOW' ) ) {
 
 require_api( 'access_dwg_api.php' );
 require_api( 'authentication_api.php' );
-require_api( 'bug_api.php' );
 require_api( 'dwg_api.php' );
 //require_api( 'dwg_activity_api.php' );
 require_api( 'category_api.php' );

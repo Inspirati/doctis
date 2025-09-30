@@ -35,7 +35,6 @@
  * @uses error_api.php
  * @uses event_api.php
  * @uses file_api.php
- * @uses file_dwg_api.php
  * @uses form_api.php
  * @uses gpc_api.php
  * @uses helper_api.php
@@ -44,7 +43,7 @@
  * @uses print_api.php
  * @uses profile_api.php
  * @uses project_api.php
- * @uses dwg_relationship_api.php
+ * @uses relationship_api.php
  * @uses string_api.php
  * @uses utility_api.php
  * @uses version_api.php
@@ -53,10 +52,8 @@
 require_once( 'core.php' );
 require_api( 'access_dwg_api.php' );
 require_api( 'authentication_api.php' );
-require_api( 'bug_api.php' );
 require_api( 'dwg_api.php' );
 require_api( 'collapse_api.php' );
-require_api( 'columns_api.php' );
 require_api( 'columns_dwg_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
@@ -64,7 +61,6 @@ require_api( 'custom_field_api.php' );
 require_api( 'date_api.php' );
 require_api( 'error_api.php' );
 require_api( 'event_api.php' );
-require_api( 'file_api.php' );
 require_api( 'file_dwg_api.php' );
 require_api( 'form_api.php' );
 require_api( 'gpc_api.php' );
@@ -79,16 +75,32 @@ require_api( 'string_api.php' );
 require_api( 'utility_api.php' );
 require_api( 'version_api.php' );
 
-/*
-    In MantisBT, the term “master bug” comes from its bug relationship feature.
-    A master bug is simply the parent in a relationship.
-    It’s the bug that other bugs (called related, duplicate of, dependent on, child of, etc.) are linked to.
-    The most common case is dependency tracking:
-    If Bug A is marked as "dependent on" Bug **B", then Bug B is considered the master bug, and Bug A is the child (or dependent).
-    The master bug must usually be resolved before dependent bugs can be completed.
-    So in practical terms:
-    👉 A master bug is the higher-level issue that other bugs depend on. It acts as an umbrella or blocker in the relationship hierarchy.
- */
+function random_numeric() {
+	$length = random_int(1, 2);
+    $digits = '';
+    for( $i = 0; $i < $length; $i++ ) {
+        $digits .= random_int(0, 9);
+    }
+    return $digits;
+}
+
+function random_numeric_string() {
+	$length = random_int(5, 15);
+    $digits = '';
+    for( $i = 0; $i < $length; $i++ ) {
+        $digits .= random_int(0, 9);
+    }
+    return $digits;
+}
+
+function random_reference() {
+    $digits = 'AB';
+    for( $i = 0; $i < 8; $i++ ) {
+        $digits .= random_int(0, 9);
+    }
+    return $digits;
+}
+
 $f_master_bug_id = gpc_get_int( 'm_dwg_id', 0 );
 
 if( $f_master_bug_id > 0 ) {
@@ -187,17 +199,18 @@ if( $f_master_bug_id > 0 ) {
 		}
 	}
 
-	access_ensure_project_level( config_get( 'create_dwg_threshold' ) );
+	$t_random_numeric = random_numeric();
+	$t_random_numeric_str = random_numeric_string();
+	$t_random_reference_str = random_reference();
 
-	// $f_author			= gpc_get_string( 'author', 'Benjamin Hoff' );
-	// $f_isbn				= gpc_get_string( 'isbn', '9780008529543' );
+	access_ensure_project_level( config_get( 'create_dwg_threshold' ) );
 
 	$f_dwg_version			= gpc_get_string( 'dwg_version', '1.0' );
 	$f_dwg_title			= gpc_get_string( 'dwg_title', 'The Tao of Pooh' );
-	$f_dwg_number			= gpc_get_string( 'dwg_number', '2.7182' );
-	$f_dwg_revision			= gpc_get_string( 'dwg_revision', 'First Edition' );
+	$f_dwg_number			= gpc_get_string( 'dwg_number', $t_random_numeric_str );
+	$f_dwg_revision			= gpc_get_string( 'dwg_revision', 'Edition ' . $t_random_numeric);
 	$f_dwg_discipline		= gpc_get_string( 'dwg_discipline', 'Philopsophy' );
-	$f_dwg_reference		= gpc_get_string( 'dwg_reference', 'AB31415926' );
+	$f_dwg_reference		= gpc_get_string( 'dwg_reference', $t_random_reference_str );
 	$f_dwg_link_url			= gpc_get_string( 'dwg_link_url', 'https://openlibrary.org/books/OL3504254M/The_Tao_of_Pooh' );
 	$f_dwg_class			= gpc_get_string( 'dwg_classification', 'UNCLASSIFIED' );
 	$f_dwg_revision_date	= gpc_get_string( 'dwg_revision_date', 'nil' );
@@ -702,10 +715,7 @@ if( $t_show_attachments ) {
 </div>
 <div class="widget-toolbox padding-8 clearfix">
 	<span class="required pull-right"> * <?php echo lang_get( 'required' ) ?></span>
-	<input <?php echo helper_get_tab_index() ?>
-        type="submit"
-        class="btn btn-primary btn-white btn-round"
-        value="<?php echo lang_get( 'submit_dwg_button' ) ?>" />
+	<input <?php echo helper_get_tab_index() ?> type="submit" class="btn btn-primary btn-white btn-round" value="<?php echo lang_get( 'submit_dwg_button' ) ?>" />
 </div>
 </div>
 </div>

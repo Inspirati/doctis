@@ -24,7 +24,6 @@
  *
  * @uses access_api.php
  * @uses bug_api.php
- * @uses dwg_api.php
  * @uses config_api.php
  * @uses constant_inc.php
  * @uses error_api.php
@@ -32,7 +31,6 @@
  * @uses helper_api.php
  * @uses lang_api.php
  * @uses print_api.php
- * @uses print_dwg_api.php
  * @uses utility_api.php
  */
 
@@ -45,7 +43,6 @@ global $t_event_params;
 $t_event_params['has_bugnote'] = true;
 
 require_api( 'access_dwg_api.php' );
-require_api( 'bug_api.php' );
 require_api( 'dwg_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );

@@ -40,7 +40,7 @@
  * @uses lang_api.php
  * @uses logging_api.php
  * @uses project_api.php
- * @uses dwg_relationship_api.php
+ * @uses relationship_api.php
  * @uses sponsorship_api.php
  * @uses string_api.php
  * @uses user_api.php
@@ -76,8 +76,6 @@ require_api( 'string_api.php' );
 require_api( 'user_api.php' );
 require_api( 'user_pref_api.php' );
 require_api( 'utility_api.php' );
-
-// require_once( 'email_api.php' );
 
 require_once( __DIR__ . '/classes/EmailMessage.class.php' );
 require_once( __DIR__ . '/classes/EmailSender.class.php' );

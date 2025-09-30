@@ -24,15 +24,12 @@
  *
  * @uses core.php
  * @uses file_api.php
- * @uses file_dwg_api.php
  * @uses form_api.php
  * @uses gpc_api.php
  * @uses print_api.php
- * @uses print_dwg_api.php
  */
 
 require_once( 'core.php' );
-require_api( 'file_api.php' );
 require_api( 'file_dwg_api.php' );
 require_api( 'form_api.php' );
 require_api( 'gpc_api.php' );

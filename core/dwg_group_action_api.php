@@ -23,7 +23,7 @@
  * @copyright Copyright 2002  MantisBT Team - mantisbt-dev@lists.sourceforge.net
  * @link http://www.mantisbt.org
  *
- * @uses dwg_api.php
+ * @uses bug_api.php
  * @uses config_api.php
  * @uses constant_inc.php
  * @uses helper_api.php
@@ -32,7 +32,6 @@
  * @uses string_api.php
  */
 
-// require_api( 'bug_api.php' );
 require_api( 'dwg_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );

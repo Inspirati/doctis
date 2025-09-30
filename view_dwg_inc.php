@@ -29,7 +29,6 @@
  * @uses current_user_api.php
  * @uses event_api.php
  * @uses filter_api.php
- * @uses filter_dwg_api.php
  * @uses gpc_api.php
  * @uses helper_api.php
  * @uses html_api.php
@@ -47,7 +46,6 @@ require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
 require_api( 'current_user_api.php' );
 require_api( 'event_api.php' );
-// require_api( 'filter_api.php' );  // BEWARE: this is already included in the call stack anyhow
 require_api( 'filter_dwg_api.php' );
 require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );

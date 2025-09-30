@@ -26,10 +26,8 @@
  * @uses access_api.php
  * @uses authentication_api.php
  * @uses bug_api.php
- * @uses dwg_api.php
  * @uses bug_revision_api.php
  * @uses bugnote_api.php
- * @uses dwgnote_api.php
  * @uses collapse_api.php
  * @uses config_api.php
  * @uses constant_inc.php
@@ -40,7 +38,6 @@
  * @uses lang_api.php
  * @uses prepare_api.php
  * @uses print_api.php
- * @uses print_dwg_api.php
  * @uses string_api.php
  * @uses user_api.php
  */

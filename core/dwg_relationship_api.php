@@ -43,7 +43,7 @@
  * --------------------------------------------------------
  * RESOLVE/CLOSE BUGS WITH BLOCKING CHILD BUGS STILL OPEN
  * Just a warning is print out on the form when a user attempts to resolve or close a bug with
- * related bugs in relation DWG_DEPENDANT still not resolved.
+ * related bugs in relation BUG_DEPENDANT still not resolved.
  * Anyway the user can force the resolving/closing action.
  * --------------------------------------------------------
  * EMAIL NOTIFICATION TO PARENT BUGS WHEN CHILDREN BUGS ARE RESOLVED/CLOSED
@@ -82,7 +82,7 @@
  */
 
 require_api( 'access_dwg_api.php' );
-require_api( 'bug_api.php' );
+require_api( 'dwg_api.php' );
 require_api( 'collapse_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );

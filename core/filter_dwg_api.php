@@ -44,10 +44,10 @@
  * @uses print_api.php
  * @uses profile_api.php
  * @uses project_api.php
- * @uses dwg_relationship_api.php
+ * @uses relationship_api.php
  * @uses session_api.php
  * @uses string_api.php
- * @uses tag_dwg_api.php
+ * @uses tag_api.php
  * @uses user_api.php
  * @uses utility_api.php
  * @uses version_api.php
@@ -58,7 +58,6 @@ require_api( 'access_dwg_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'dwg_api.php' );
 require_api( 'collapse_api.php' );
-require_api( 'columns_api.php' );
 require_api( 'columns_dwg_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
@@ -2070,6 +2069,17 @@ function filter_dwg_create_reported_by( $p_project_id, $p_user_id ) {
 	return filter_dwg_ensure_valid_filter( $t_filter );
 }
 
+function filter_dwg_create_created_by( $p_project_id, $p_user_id ) {
+	$t_filter = filter_dwg_get_default();
+	$t_filter[FILTER_PROPERTY_CREATOR_ID] = array( '0' => $p_user_id );
+
+	if( $p_project_id != ALL_PROJECTS ) {
+		$t_filter[FILTER_PROPERTY_PROJECT_ID] = array( '0' => $p_project_id );
+	}
+
+	return filter_dwg_ensure_valid_filter( $t_filter );
+}
+
 /**
  * Create a filter for getting issues monitored by the specified project and user.
  * @param integer $p_project_id The project id or ALL_PROJECTS.
@@ -2723,6 +2733,9 @@ function filter_dwg_standard_get( $p_filter_name, $p_user_id = null, $p_project_
 			break;
 		case FILTER_STANDARD_REPORTED:
 			$t_filter = filter_dwg_create_reported_by( $t_project_id, $t_user_id );
+			break;
+		case FILTER_STANDARD_CREATED:
+			$t_filter = filter_dwg_create_created_by( $t_project_id, $t_user_id );
 			break;
 		case FILTER_STANDARD_MONITORED:
 			$t_filter = filter_dwg_create_monitored_by( $t_project_id, $t_user_id );

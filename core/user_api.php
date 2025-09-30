@@ -48,7 +48,6 @@ require_api( 'constant_inc.php' );
 require_api( 'database_api.php' );
 require_api( 'email_bug_api.php' );
 require_api( 'error_api.php' );
-require_api( 'filter_api.php' );
 require_api( 'filter_dwg_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'lang_api.php' );

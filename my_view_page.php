@@ -40,6 +40,7 @@
 
 require_once( 'core.php' );
 require_api( 'access_bug_api.php' );
+require_api( 'access_dwg_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'category_api.php' );
 require_api( 'compress_api.php' );
@@ -51,6 +52,7 @@ require_api( 'helper_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'print_api.php' );
+require_api( 'print_dwg_api.php' );
 require_api( 'user_api.php' );
 require_api( 'layout_api.php' );
 require_css( 'status_config.php' );
@@ -85,6 +87,7 @@ $f_page_number = gpc_get_int( 'page_number', 1 );
 
 $t_per_page = config_get( 'my_view_bug_count' );
 $t_bug_count = null;
+$t_dwg_count = null;
 $t_page_count = null;
 
 # The projects that need to be evaluated are those that will be included in the filters
