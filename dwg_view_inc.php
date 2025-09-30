@@ -222,6 +222,55 @@ if( $t_top_buttons_enabled ) {
 
 echo '<tbody>';
 
+if( true
+) {
+#
+# Document Title (screen wide fields)
+#
+// # Summary
+// if( $t_flags['summary_show'] && isset( $t_issue['summary'] ) ) {
+// 	echo '<tr>';
+// 	echo '<th class="bug-summary category">', lang_get( 'summary' ), '</th>';
+// 	echo '<td class="bug-summary" colspan="5">', bug_format_summary( $f_issue_id, SUMMARY_FIELD ), '</td>';
+// 	echo '</tr>';
+// }
+	# Title
+	if( isset( $t_issue['title'] ) ) {
+		echo '<tr>';
+		echo '<th class="bug-summary category">', lang_get( 'dwg_title' ), '</th>';
+		echo '<td class="bug-summary" colspan="5">', string_display_line( $t_issue['title'] ), '</td>';
+		echo '</tr>';
+	}
+	// print_table_spacer( 6 );
+}
+
+if( true
+) {
+	# Labels
+	echo '<tr class="bug-header">';
+	echo '<th class="bug-project category width-15">', $t_flags['project_show'] ? lang_get( 'dwg_reference' ) : '', '</th>';
+	echo '<th class="bug-project category width-20">', $t_flags['project_show'] ? lang_get( 'dwg_number' ) : '', '</th>';
+	echo '<th class="bug-project category width-15">', $t_flags['project_show'] ? lang_get( 'dwg_revision' ) : '', '</th>';
+	echo '<th class="bug-project category width-15">', $t_flags['project_show'] ? lang_get( 'dwg_version' ) : '', '</th>';
+	echo '<th class="bug-project category width-15">', $t_flags['project_show'] ? lang_get( 'dwg_author' ) : '', '</th>';
+	echo '<th class="bug-project category width-15">', $t_flags['project_show'] ? lang_get( 'dwg_release_date' ) : '', '</th>';
+	echo '</tr>';
+
+	echo '<tr class="bug-header-data">';
+	echo '<td class="bug-project">', $t_flags['project_show'] && isset( $t_issue['reference'] ) ? string_display_line( $t_issue['reference'] ) : '', '</td>';
+	echo '<td class="bug-project">', $t_flags['project_show'] && isset( $t_issue['number'] ) ? string_display_line( $t_issue['number'] ) : '', '</td>';
+	echo '<td class="bug-project">', $t_flags['project_show'] && isset( $t_issue['revision'] ) ? string_display_line( $t_issue['revision'] ) : '', '</td>';
+	echo '<td class="bug-project">', $t_flags['project_show'] && isset( $t_issue['version'] ) ? string_display_line( $t_issue['version'] ) : '', '</td>';
+	echo '<td class="bug-project">', $t_flags['project_show'] && isset( $t_issue['author'] ) ? string_display_line( $t_issue['author'] ) : '', '</td>';
+	$t_date_format = 'Y-m-d';
+	$t_release_date = date( $t_date_format, $t_issue['release_date'] );
+	$t_release_date = string_display_line( date( $t_date_format, $t_issue['release_date'] ) );
+	// $t_release_date = string_display_line( date( $t_date_format, strtotime( $t_issue['release_date'] ) ) );
+	echo '<td class="bug-project">', $t_flags['project_show'] && isset( $t_issue['release_date'] ) ? $t_release_date : '', '</td>';
+	echo '</tr>';
+	print_table_spacer( 6 );
+}
+
 if( $t_flags['id_show'] || $t_flags['project_show'] || $t_flags['category_show'] ||
     $t_flags['view_state_show'] || $t_flags['created_at_show'] || $t_flags['updated_at_show']
 ) {
@@ -231,7 +280,8 @@ if( $t_flags['id_show'] || $t_flags['project_show'] || $t_flags['category_show']
 	echo '<th class="bug-id category width-15">', $t_flags['id_show'] ? lang_get( 'id' ) : '', '</th>';
 	echo '<th class="bug-project category width-20">', $t_flags['project_show'] ? lang_get( 'email_project' ) : '', '</th>';
 	echo '<th class="bug-category category width-15">', $t_flags['category_show'] ? lang_get( 'category' ) : '', '</th>';
-	echo '<th class="bug-view-status category width-15">', $t_flags['view_state_show'] ? lang_get( 'view_status' ) : '', '</th>';
+	// echo '<th class="bug-view-status category width-15">', $t_flags['view_state_show'] ? lang_get( 'view_status' ) : '', '</th>';
+	echo '<th class="bug-view-status category width-15">', $t_flags['view_state_show'] ? lang_get( 'dwg_discipline' ) : '', '</th>';
 	echo '<th class="bug-date-submitted category width-15">', $t_flags['created_at_show'] ? lang_get( 'date_submitted' ) : '', '</th>';
 	echo '<th class="bug-last-modified category width-20">', $t_flags['updated_at_show'] ? lang_get( 'last_update' ) : '','</th>';
 	echo '</tr>';
@@ -259,7 +309,8 @@ if( $t_flags['id_show'] || $t_flags['project_show'] || $t_flags['category_show']
 	echo '</td>';
 
 	# View Status
-	echo '<td class="bug-view-status">', $t_flags['view_state_show'] && isset( $t_issue['view_state']['label'] ) ? string_display_line( $t_issue['view_state']['label'] ) : '', '</td>';
+	// echo '<td class="bug-view-status">', $t_flags['view_state_show'] && isset( $t_issue['view_state']['label'] ) ? string_display_line( $t_issue['view_state']['label'] ) : '', '</td>';
+	echo '<td class="bug-view-status">', $t_flags['view_state_show'] && isset( $t_issue['dwg_discipline'] ) ? string_display_line( $t_issue['discipline'] ) : '', '</td>';
 
 	# Date Submitted
 	echo '<td class="bug-date-submitted">', $t_flags['created_at_show'] ? $t_issue_view['created_at'] : '', '</td>';
@@ -272,9 +323,8 @@ if( $t_flags['id_show'] || $t_flags['project_show'] || $t_flags['category_show']
 	print_table_spacer( 6 );
 }
 
-if( true
+if( false
 ) {
-
 	# Labels
 	echo '<tr class="bug-header">';
 	echo '<th class="bug-project category width-15">', $t_flags['project_show'] ? lang_get( 'dwg_title' ) : '', '</th>';
@@ -325,16 +375,6 @@ if( $t_flags['creator_show'] || $t_flags['handler_show'] || $t_flags['due_date_s
 
 	$t_spacer = 0;
 
-	# Creator
-	if( $t_flags['creator_show'] ) {
-		echo '<th class="dwg-creator category">', lang_get( 'dwg_creator' ), '</th>';
-		echo '<td class="dwg-creator">';
-		print_dwg_user_with_subject( $t_issue['creator']['id'], $f_issue_id );
-		echo '</td>';
-	} else {
-		$t_spacer += 2;
-	}
-
 	# Handler
 	if( $t_flags['handler_show'] ) {
 		echo '<th class="bug-assigned-to category">', lang_get( 'assigned_to' ), '</th>';
@@ -347,21 +387,23 @@ if( $t_flags['creator_show'] || $t_flags['handler_show'] || $t_flags['due_date_s
 		$t_spacer += 2;
 	}
 
-	# Due Date
-	if( $t_flags['due_date_show'] ) {
-		echo '<th class="bug-due-date category">', lang_get( 'due_date' ), '</th>';
-
-		$t_css = 'dwg-due-date';
-		if( $t_issue_view['overdue'] !== false ) {
-			$t_css .= ' due-' . $t_issue_view['overdue'];
-		}
-		echo '<td class="' . $t_css . '">', $t_issue_view['due_date'], '</td>';
+	# Creator
+	if( $t_flags['creator_show'] ) {
+		echo '<th class="dwg-creator category">', lang_get( 'dwg_creator' ), '</th>';
+		echo '<td class="dwg-creator">';
+		print_dwg_user_with_subject( $t_issue['creator']['id'], $f_issue_id );
+		echo '</td>';
 	} else {
 		$t_spacer += 2;
 	}
 
-	if( $t_spacer > 0 ) {
-		echo '<td colspan="', $t_spacer, '">&#160;</td>';
+	# Classification
+	if( $t_flags['resolution_show'] ) {
+		echo '<th class="bug-resolution category">', lang_get( 'dwg_classification' ), '</th>';
+		// echo '<td class="bug-resolution">', string_display_line( $t_issue['classification']['label'] ), '</td>';
+		echo '<td class="bug-resolution">', isset( $t_issue['classification'] ) ? string_display_line( $t_issue['classification'] ) : '', '</td>';
+	} else {
+		$t_spacer += 2;
 	}
 
 	echo '</tr>';
@@ -371,7 +413,8 @@ if( $t_flags['creator_show'] || $t_flags['handler_show'] || $t_flags['due_date_s
 # Priority, Severity, Reproducibility
 #
 
-if( $t_flags['priority_show'] || $t_flags['severity_show'] || $t_flags['reproducibility_show'] ) {
+// if( $t_flags['priority_show'] || $t_flags['severity_show'] || $t_flags['reproducibility_show'] ) {
+if( false ) {
 	echo '<tr>';
 
 	$t_spacer = 0;
@@ -439,6 +482,23 @@ if( $t_flags['status_show'] || $t_flags['resolution_show'] ) {
 		$t_spacer += 2;
 	}
 
+	# Due Date
+	if( $t_flags['due_date_show'] ) {
+		echo '<th class="bug-due-date category">', lang_get( 'due_date' ), '</th>';
+
+		$t_css = 'dwg-due-date';
+		if( $t_issue_view['overdue'] !== false ) {
+			$t_css .= ' due-' . $t_issue_view['overdue'];
+		}
+		echo '<td class="' . $t_css . '">', $t_issue_view['due_date'], '</td>';
+	} else {
+		$t_spacer += 2;
+	}
+
+	if( $t_spacer > 0 ) {
+		echo '<td colspan="', $t_spacer, '">&#160;</td>';
+	}
+
 	# spacer
 	if( $t_spacer > 0 ) {
 		echo '<td colspan="', $t_spacer, '">&#160;</td>';
@@ -450,7 +510,6 @@ if( $t_flags['status_show'] || $t_flags['resolution_show'] ) {
 #
 # Projection, ETA
 #
-
 if( $t_flags['projection_show'] || $t_flags['eta_show'] ) {
 	echo '<tr>';
 

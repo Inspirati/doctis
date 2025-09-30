@@ -200,6 +200,7 @@ class DwgViewPageCommand extends Command {
 			!$t_force_readonly &&
 			access_has_dwg_level( config_get( 'tag_attach_threshold' ), $t_issue_id );
 
+		// $t_flags['creator_show'] = in_array( 'creator', $t_fields ) && isset( $t_issue['creator'] );
 		# Due date
 		$t_flags['due_date_show'] = in_array( 'due_date', $t_fields ) && access_has_dwg_level( config_get( 'due_date_view_threshold' ), $t_issue_id );
 		if( $t_flags['due_date_show'] ) {

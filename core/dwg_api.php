@@ -125,10 +125,13 @@ class DwgData {
 	protected $status = NEW_;
 	protected $date_submitted = '';
 	protected $last_updated = '';
+	protected $summary = 'nil';
 	protected $version = '';
+	protected $sticky = 0;
 // #TODO RobD - and now all the new data fields for the documents table	
 	protected $enabled = 1;
 	protected $title = '';
+	protected $author = '';
 	protected $number = '';
 	protected $revision = '';
 	protected $discipline = '';
@@ -140,8 +143,8 @@ class DwgData {
 
 	protected $creator_id = 0;
 	protected $handler_id = 0;
-	protected $duplicate_id = 0;
 	protected $category_id = 1;
+	protected $duplicate_id = 0;
 
 // #TODO RobD - the legacy fields from the bug version
 	protected $reporter_id = 0;
@@ -165,10 +168,11 @@ class DwgData {
 	protected $target_version = '';
 	protected $build = '';
 	protected $view_state = VS_PUBLIC;
-	protected $summary = 'empty';
+	// protected $summary = 'empty';
 	protected $sponsorship_total = 0;
-	protected $sticky = 0;
-	protected $due_date = '';
+	// protected $sticky = 0;
+	// protected $due_date = '';
+	protected $due_date = 0;
 	protected $profile_id = 0;
 	protected $bug_text_id;
 	protected $description = '';
@@ -470,29 +474,30 @@ class DwgData {
 
 $this->classification = isset($this->classification) ? $this->classification : '';
 $this->link_url = isset($this->link_url) ? $this->link_url : '';
+$this->author = isset($this->author) ? $this->author : '';
 
 
 		# Insert the rest of the data
 		db_param_push();
 		$t_query = 'INSERT INTO {document}
 						( project_id, creator_id, status, enabled,
-						  version, title, number, revision, 
-						  discipline, reference, link_url, classification,
-						  revision_date, release_date, date_submitted, last_updated,
-						  dwg_text_id
+						  version, title, author, number,
+						  revision, discipline, reference, link_url,
+						  classification, revision_date, release_date, date_submitted,
+						  last_updated, dwg_text_id
 						)
 					  VALUES
 						( ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
 						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
 						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
 						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
-						  ' . db_param() . ')';
+						  ' . db_param() . ',' . db_param() . ')';
 		db_query( $t_query, array(
 		  $this->project_id, $this->creator_id, $this->status, $this->enabled,
-		  $this->version, $this->title, $this->number, $this->revision,
-		  $this->discipline, $this->reference, $this->link_url, $this->classification,
-		  $this->revision_date, $this->release_date, $this->date_submitted, $this->last_updated,
-		  $t_text_id ) );
+		  $this->version, $this->title, $this->author, $this->number,
+		  $this->revision, $this->discipline, $this->reference, $this->link_url,
+		  $this->classification, $this->revision_date, $this->release_date, $this->date_submitted,
+		  $this->last_updated, $t_text_id ) );
 
 		$this->id = db_insert_id( db_get_table( 'document' ) );
 

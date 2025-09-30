@@ -75,6 +75,10 @@ require_api( 'string_api.php' );
 require_api( 'utility_api.php' );
 require_api( 'version_api.php' );
 
+if (array_key_exists('USE_LOREM_IPSUM', $GLOBALS)) {
+require_once( 'lorem_ipsum.php' );
+}
+
 $f_master_bug_id = gpc_get_int( 'm_id', 0 );
 
 if( $f_master_bug_id > 0 ) {
@@ -191,6 +195,11 @@ if( $f_master_bug_id > 0 ) {
 	}
 
 	$t_changed_project		= false;
+
+	if (array_key_exists('USE_LOREM_IPSUM', $GLOBALS)) {
+		$f_summary = generate_random_lorem(50, 100);
+		$f_description = generate_random_lorem(200, 2500);
+	}
 }
 
 $f_report_stay					= gpc_get_bool( 'report_stay', false );
