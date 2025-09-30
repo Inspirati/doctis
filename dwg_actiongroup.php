@@ -46,9 +46,8 @@
 require_once( 'core.php' );
 require_api( 'access_dwg_api.php' );
 require_api( 'authentication_api.php' );
-require_api( 'bug_api.php' );
 require_api( 'dwg_api.php' );
-require_api( 'bugnote_api.php' );
+require_api( 'dwgnote_api.php' );
 require_api( 'category_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );

@@ -28,7 +28,6 @@
  * @uses helper_api.php
  * @uses lang_api.php
  * @uses print_api.php
- * @uses print_dwg_api.php
  */
 
 require_once( 'core.php' );

@@ -29,7 +29,6 @@
  * @uses custom_field_api.php
  * @uses error_api.php
  * @uses filter_api.php
- * @uses filter_dwg_api.php
  * @uses filter_constants_inc.php
  * @uses gpc_api.php
  * @uses helper_api.php
@@ -45,7 +44,6 @@ require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
 require_api( 'custom_field_api.php' );
 require_api( 'error_api.php' );
-// require_api( 'filter_api.php' );  // BEWARE: this is already included in the call stack anyhow
 require_api( 'filter_dwg_api.php' );
 require_api( 'filter_constants_inc.php' );
 require_api( 'gpc_api.php' );

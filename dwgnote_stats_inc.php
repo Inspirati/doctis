@@ -23,12 +23,11 @@
  * @copyright Copyright 2002  MantisBT Team - mantisbt-dev@lists.sourceforge.net
  * @link http://www.mantisbt.org
  *
- * @uses dwgnote_api.php
+ * @uses bugnote_api.php
  * @uses collapse_api.php
  * @uses config_api.php
  * @uses constant_inc.php
  * @uses filter_api.php
- * @uses filter_dwg_api.php
  * @uses gpc_api.php
  * @uses helper_api.php
  * @uses lang_api.php

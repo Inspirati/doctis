@@ -39,10 +39,10 @@
  * @uses user_api.php
  */
 
-require_api( 'authentication_api.php' );
 require_api( 'access_api.php' );
-require_api( 'bug_api.php' );
-require_api( 'bugnote_api.php' );
+require_api( 'authentication_api.php' );
+require_api( 'dwg_api.php' );
+require_api( 'dwgnote_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
 require_api( 'current_user_api.php' );
@@ -293,12 +293,6 @@ function access_can_reopen_dwg( DwgData $p_bug, $p_user_id = null ) {
 
 	# If allow_creator_reopen is enabled, then reporters can always reopen
 	# their own bugs as long as their access level is reporter or above
-	// if( ON == config_get( 'allow_creator_reopen', null, null, $p_bug->project_id )
-	// 	&& dwg_is_user_reporter( $p_bug->id, $p_user_id )
-	// 	&& access_has_project_level( config_get( 'create_dwg_threshold', null, $p_user_id, $p_bug->project_id ), $p_bug->project_id, $p_user_id )
-	// ) {
-	// 	return true;
-	// }
 	if( ON == config_get( 'allow_creator_reopen', null, null, $p_bug->project_id )
 		&& dwg_is_user_creator( $p_bug->id, $p_user_id )
 		&& access_has_project_level( config_get( 'create_dwg_threshold', null, $p_user_id, $p_bug->project_id ), $p_bug->project_id, $p_user_id )

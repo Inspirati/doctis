@@ -15,7 +15,6 @@
 # along with MantisBT.  If not, see <http://www.gnu.org/licenses/>.
 
 require_api( 'authentication_api.php' );
-// require_api( 'bug_api.php' );
 require_api( 'dwg_api.php' );
 require_api( 'dwgnote_api.php' );
 require_api( 'constant_inc.php' );
@@ -323,3 +322,4 @@ class DwgNoteAddCommand extends Command {
 		}
 	}
 }
+

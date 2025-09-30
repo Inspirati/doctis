@@ -582,7 +582,6 @@ function document_get_all_rows( $p_project_id, $p_inherit = null, $p_sort_by_pro
 
 	$t_result = db_query( $t_query );
 	$t_rows = array();
-
 	while( $t_row = db_fetch_array( $t_result ) ) {
 		$t_rows[] = $t_row;
 		$g_document_cache[(int)$t_row['id']] = $t_row;

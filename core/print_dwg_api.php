@@ -33,7 +33,7 @@
  * @uses current_user_api.php
  * @uses custom_field_api.php
  * @uses database_api.php
- * @uses email_dwg_api.php
+ * @uses email_api.php
  * @uses error_api.php
  * @uses file_api.php
  * @uses form_api.php
@@ -47,7 +47,7 @@
  * @uses project_api.php
  * @uses project_hierarchy_api.php
  * @uses string_api.php
- * @uses tag_dwg_api.php
+ * @uses tag_api.php
  * @uses user_api.php
  * @uses utility_api.php
  * @uses version_api.php
@@ -55,7 +55,6 @@
 
 require_api( 'access_dwg_api.php' );
 require_api( 'authentication_api.php' );
-require_api( 'bug_group_action_api.php' );
 require_api( 'dwg_group_action_api.php' );
 require_api( 'category_api.php' );
 require_api( 'config_api.php' );
@@ -64,10 +63,8 @@ require_api( 'constant_inc.php' );
 require_api( 'current_user_api.php' );
 require_api( 'custom_field_api.php' );
 require_api( 'database_api.php' );
-// require_api( 'email_bug_api.php' );
 require_api( 'email_dwg_api.php' );
 require_api( 'error_api.php' );
-require_api( 'file_api.php' );
 require_api( 'file_dwg_api.php' );
 require_api( 'form_api.php' );
 require_api( 'helper_api.php' );

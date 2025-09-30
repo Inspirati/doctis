@@ -23,15 +23,15 @@
  * @link http://www.mantisbt.org
  *
  * @uses core.php
- * @uses access_dwg_api.php
- * @uses dwg_api.php
+ * @uses access_api.php
+ * @uses bug_api.php
  * @uses config_api.php
  * @uses file_api.php
  * @uses form_api.php
  * @uses gpc_api.php
  * @uses helper_api.php
  * @uses lang_api.php
- * @uses print_dwg_api.php
+ * @uses print_api.php
  */
 
 require_once( 'core.php' );

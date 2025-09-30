@@ -42,7 +42,6 @@ require_once( 'core.php' );
 require_api( 'constant_inc.php' );
 require_api( 'custom_field_api.php' );
 require_api( 'error_api.php' );
-require_api( 'file_api.php' );
 require_api( 'file_dwg_api.php' );
 require_api( 'form_api.php' );
 require_api( 'gpc_api.php' );

@@ -27,7 +27,7 @@
  * @uses compress_api.php
  * @uses config_api.php
  * @uses current_user_api.php
- * @uses filter_dwg_api.php
+ * @uses filter_api.php
  * @uses gpc_api.php
  * @uses html_api.php
  * @uses lang_api.php

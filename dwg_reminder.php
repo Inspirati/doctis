@@ -24,25 +24,24 @@
  *
  * @uses core.php
  * @uses access_api.php
- * @uses dwg_api.php
- * @uses dwgnote_api.php
+ * @uses bug_api.php
+ * @uses bugnote_api.php
  * @uses config_api.php
  * @uses constant_inc.php
- * @uses email_dwg_api.php
+ * @uses email_api.php
  * @uses error_api.php
  * @uses form_api.php
  * @uses gpc_api.php
  * @uses helper_api.php
  * @uses html_api.php
  * @uses lang_api.php
- * @uses print_dwg_api.php
+ * @uses print_api.php
  * @uses string_api.php
  */
 
 require_once( 'core.php' );
 require_api( 'access_dwg_api.php' );
 require_api( 'dwg_api.php' );
-require_api( 'bugnote_api.php' );
 require_api( 'dwgnote_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
@@ -90,8 +89,6 @@ foreach( $f_to as $t_recipient ) {
 # threshold, option is enabled, and not creator or handler.
 $t_reminder_recipients_monitor_bug = config_get( 'reminder_recipients_monitor_dwg' );
 $t_monitor_bug_threshold = config_get( 'monitor_dwg_threshold' );
-
-// @TODO RobD - our documents table/structure does not have these fields, what to do?
 $t_handler = dwg_get_field( $f_bug_id, 'handler_id' );
 $t_creator = dwg_get_field( $f_bug_id, 'creator_id' );
 

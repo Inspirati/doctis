@@ -39,8 +39,8 @@
  * @uses user_api.php
  */
 
-require_api( 'authentication_api.php' );
 require_api( 'access_api.php' );
+require_api( 'authentication_api.php' );
 require_api( 'bug_api.php' );
 require_api( 'bugnote_api.php' );
 require_api( 'config_api.php' );
@@ -288,7 +288,7 @@ function access_can_reopen_bug( BugData $p_bug, $p_user_id = null ) {
 	# their own bugs as long as their access level is reporter or above
 	if( ON == config_get( 'allow_reporter_reopen', null, null, $p_bug->project_id )
 		&& bug_is_user_reporter( $p_bug->id, $p_user_id )
-		&& access_has_project_level( config_get( 'create_bug_threshold', null, $p_user_id, $p_bug->project_id ), $p_bug->project_id, $p_user_id )
+		&& access_has_project_level( config_get( 'report_bug_threshold', null, $p_user_id, $p_bug->project_id ), $p_bug->project_id, $p_user_id )
 	) {
 		return true;
 	}

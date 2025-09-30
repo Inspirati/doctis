@@ -27,9 +27,7 @@
  * @uses antispam_api.php
  * @uses authentication_api.php
  * @uses bug_api.php
- * @uses dwg_api.php
  * @uses bug_revision_api.php
- * @uses dwg_revision_api.php
  * @uses config_api.php
  * @uses constant_inc.php
  * @uses database_api.php
@@ -37,7 +35,6 @@
  * @uses error_api.php
  * @uses event_api.php
  * @uses file_api.php
- * @uses file_dwg_api.php
  * @uses helper_api.php
  * @uses history_api.php
  * @uses lang_api.php
@@ -49,18 +46,14 @@
 require_api( 'access_dwg_api.php' );
 require_api( 'antispam_api.php' );
 require_api( 'authentication_api.php' );
-require_api( 'bug_api.php' );
 require_api( 'dwg_api.php' );
-require_api( 'bug_revision_api.php' );
 require_api( 'dwg_revision_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
 require_api( 'database_api.php' );
-require_api( 'email_bug_api.php' );
 require_api( 'email_dwg_api.php' );
 require_api( 'error_api.php' );
 require_api( 'event_api.php' );
-require_api( 'file_api.php' );
 require_api( 'file_dwg_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'history_api.php' );

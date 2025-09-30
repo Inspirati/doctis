@@ -23,8 +23,8 @@
  * @copyright Copyright 2002  MantisBT Team - mantisbt-dev@lists.sourceforge.net
  * @link http://www.mantisbt.org
  *
- * @uses access_dwg_api.php
- * @uses dwg_api.php
+ * @uses access_api.php
+ * @uses bug_api.php
  * @uses collapse_api.php
  * @uses config_api.php
  * @uses constant_inc.php
@@ -32,7 +32,7 @@
  * @uses form_api.php
  * @uses helper_api.php
  * @uses lang_api.php
- * @uses print_dwg_api.php
+ * @uses print_api.php
  * @uses sponsorship_api.php
  * @uses utility_api.php
  */

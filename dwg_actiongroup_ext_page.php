@@ -25,7 +25,6 @@
  * @uses core.php
  * @uses authentication_api.php
  * @uses bug_group_action_api.php
- * @uses dwg_group_action_api.php
  * @uses form_api.php
  * @uses gpc_api.php
  * @uses print_api.php
@@ -41,7 +40,6 @@ if( !defined( 'DWG_ACTIONGROUP_INC_ALLOW' ) ) {
 global $t_event_params;
 
 require_api( 'authentication_api.php' );
-require_api( 'bug_group_action_api.php' );
 require_api( 'dwg_group_action_api.php' );
 require_api( 'form_api.php' );
 require_api( 'gpc_api.php' );

@@ -38,7 +38,6 @@
  * @uses error_api.php
  * @uses event_api.php
  * @uses file_api.php
- * @uses file_dwg_api.php
  * @uses helper_api.php
  * @uses history_api.php
  * @uses lang_api.php
@@ -69,7 +68,6 @@ require_api( 'date_api.php' );
 require_api( 'email_dwg_api.php' );
 require_api( 'error_api.php' );
 require_api( 'event_api.php' );
-require_api( 'file_api.php' );
 require_api( 'file_dwg_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'history_api.php' );
@@ -470,17 +468,8 @@ class DwgData {
 		# Check if bug was pre-assigned or auto-assigned.
 		$t_status = dwg_get_status_for_assign( NO_USER, $this->handler_id, $this->status);
 
-//error_log("************dwg_php.php: reporter_id = " . print_r($this->reporter_id, true));
-//error_log("************dwg_php.php: creator_id = " . print_r($this->creator_id, true));
-
-//	$this->date_submitted = db_now();
-//	$this->last_updated = db_now();
-//	$this->classification = "OFFICIAL";
-//	$this->link_url = "http";
-
 $this->classification = isset($this->classification) ? $this->classification : '';
 $this->link_url = isset($this->link_url) ? $this->link_url : '';
-//$desc = isset($desc) ? $desc : '';
 
 
 		# Insert the rest of the data
@@ -2223,7 +2212,6 @@ function dwg_get_monitors( $p_bug_id ) {
 	user_cache_array_rows( $t_users );
 
 	return $t_users;
-//	return array();
 }
 
 /**

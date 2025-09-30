@@ -26,7 +26,6 @@
  * @uses access_api.php
  * @uses authentication_api.php
  * @uses bug_api.php
- * @uses dwg_api.php
  * @uses columns_api.php
  * @uses config_api.php
  * @uses constant_inc.php
@@ -50,7 +49,6 @@
 require_once( 'core.php' );
 require_api( 'access_dwg_api.php' );
 require_api( 'authentication_api.php' );
-require_api( 'bug_api.php' );
 require_api( 'dwg_api.php' );
 require_api( 'columns_api.php' );
 require_api( 'config_api.php' );
@@ -65,7 +63,6 @@ require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'last_visited_api.php' );
 require_api( 'prepare_api.php' );
-require_api( 'print_dwg_api.php' );
 require_api( 'print_dwg_api.php' );
 require_api( 'project_api.php' );
 require_api( 'string_api.php' );
@@ -794,4 +791,4 @@ define( 'DWGNOTE_VIEW_INC_ALLOW', true );
 include( __DIR__ . '/dwgnote_view_inc.php' );
 layout_page_end();
 
-last_visited_issue( $t_bug_id );
+// last_visited_issue( $t_bug_id );
