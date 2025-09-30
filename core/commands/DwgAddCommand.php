@@ -114,11 +114,12 @@ class DwgAddCommand extends Command {
 
 		$t_version				= $t_issue['version'];
 		$t_title				= $t_issue['title'];
+		$t_author				= $t_issue['author'];
 		$t_number				= $t_issue['number'];
 		$t_revision				= $t_issue['revision'];
 		$t_category				= $t_issue['category'];
 		$t_reference			= $t_issue['reference'];
-		$t_link_url				= $t_issue['f_link_url'];
+		$t_link_url				= $t_issue['link_url'];
 		$t_classification		= $t_issue['classification'];
 		$t_revision_date		= $t_issue['revision_date'];
 		$t_release_date			= $t_issue['release_date'];
@@ -255,6 +256,7 @@ class DwgAddCommand extends Command {
 
 		$this->issue->version = $t_version;
 		$this->issue->title = $t_title;
+		$this->issue->author = $t_author;
 		$this->issue->number = $t_number;
 		$this->issue->revision = $t_revision;
 		$this->issue->category = $t_category;

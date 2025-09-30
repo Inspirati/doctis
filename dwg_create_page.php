@@ -75,30 +75,8 @@ require_api( 'string_api.php' );
 require_api( 'utility_api.php' );
 require_api( 'version_api.php' );
 
-function random_numeric() {
-	$length = random_int(1, 2);
-    $digits = '';
-    for( $i = 0; $i < $length; $i++ ) {
-        $digits .= random_int(0, 9);
-    }
-    return $digits;
-}
-
-function random_numeric_string() {
-	$length = random_int(5, 15);
-    $digits = '';
-    for( $i = 0; $i < $length; $i++ ) {
-        $digits .= random_int(0, 9);
-    }
-    return $digits;
-}
-
-function random_reference() {
-    $digits = 'AB';
-    for( $i = 0; $i < 8; $i++ ) {
-        $digits .= random_int(0, 9);
-    }
-    return $digits;
+if (array_key_exists('USE_LOREM_IPSUM', $GLOBALS)) {
+require_once( 'lorem_ipsum.php' );
 }
 
 $f_master_bug_id = gpc_get_int( 'm_dwg_id', 0 );
@@ -131,17 +109,17 @@ if( $f_master_bug_id > 0 ) {
 
 	access_ensure_project_level( config_get( 'create_dwg_threshold' ) );
 
-	$f_dwg_version			= $t_bug->$t_dwg_version;
-	$f_dwg_title			= $t_bug->$t_dwg_title;
-	$f_dwg_number			= $t_bug->$t_dwg_number;
-	$f_dwg_revision			= $t_bug->$t_dwg_revision;
-	$f_dwg_discipline		= $t_bug->$t_dwg_discipline;
-	$f_dwg_reference		= $t_bug->$t_dwg_reference;
-	$f_dwg_link_url			= $t_bug->$t_dwg_link_url;
-	$f_dwg_class			= $t_bug->$t_dwg_classification;
-	$f_dwg_revision_date	= $t_bug->$f_dwg_revision_date;
-	$f_dwg_release_date		= $t_bug->$f_dwg_release_date;
-
+	$f_dwg_version			= $t_bug->version;
+	$f_dwg_title			= $t_bug->title;
+	$f_dwg_author			= $t_bug->author;
+	$f_dwg_number			= $t_bug->number;
+	$f_dwg_revision			= $t_bug->revision;
+	$f_dwg_discipline		= $t_bug->discipline;
+	$f_dwg_reference		= $t_bug->reference;
+	$f_dwg_link_url			= $t_bug->link_url;
+	$f_dwg_classification	= $t_bug->classification;
+	$f_dwg_revision_date	= $t_bug->revision_date;
+	$f_dwg_release_date		= $t_bug->release_date;
 
 	$f_build				= $t_bug->build;
 	$f_platform				= $t_bug->platform;
@@ -199,22 +177,32 @@ if( $f_master_bug_id > 0 ) {
 		}
 	}
 
-	$t_random_numeric = random_numeric();
-	$t_random_numeric_str = random_numeric_string();
-	$t_random_reference_str = random_reference();
-
 	access_ensure_project_level( config_get( 'create_dwg_threshold' ) );
 
 	$f_dwg_version			= gpc_get_string( 'dwg_version', '1.0' );
-	$f_dwg_title			= gpc_get_string( 'dwg_title', 'The Tao of Pooh' );
-	$f_dwg_number			= gpc_get_string( 'dwg_number', $t_random_numeric_str );
-	$f_dwg_revision			= gpc_get_string( 'dwg_revision', 'Edition ' . $t_random_numeric);
+if (array_key_exists('USE_LOREM_IPSUM', $GLOBALS)) {
+	$f_dwg_title			= gpc_get_string( 'dwg_title', random_publication_title() );
+	$f_dwg_author			= gpc_get_string( 'dwg_author', random_author_name() );
+	$f_dwg_number			= gpc_get_string( 'dwg_number', random_numeric_string() );
+	$f_dwg_revision			= gpc_get_string( 'dwg_revision', 'Edition ' . random_numeric() );
+	$f_dwg_reference		= gpc_get_string( 'dwg_reference', random_reference() );
 	$f_dwg_discipline		= gpc_get_string( 'dwg_discipline', 'Philopsophy' );
-	$f_dwg_reference		= gpc_get_string( 'dwg_reference', $t_random_reference_str );
 	$f_dwg_link_url			= gpc_get_string( 'dwg_link_url', 'https://openlibrary.org/books/OL3504254M/The_Tao_of_Pooh' );
-	$f_dwg_class			= gpc_get_string( 'dwg_classification', 'UNCLASSIFIED' );
-	$f_dwg_revision_date	= gpc_get_string( 'dwg_revision_date', 'nil' );
-	$f_dwg_release_date		= gpc_get_string( 'dwg_release_date', 'nil' );
+	$f_dwg_classification	= gpc_get_string( 'dwg_classification', 'UNCLASSIFIED' );
+} else {
+	$f_dwg_title			= gpc_get_string( 'dwg_title', '' );
+	$f_dwg_author			= gpc_get_string( 'dwg_author', '' );
+	$f_dwg_number			= gpc_get_string( 'dwg_number', '' );
+	$f_dwg_revision			= gpc_get_string( 'dwg_revision', '' );
+	$f_dwg_reference		= gpc_get_string( 'dwg_reference', '' );
+	$f_dwg_discipline		= gpc_get_string( 'dwg_discipline', '' );
+	$f_dwg_link_url			= gpc_get_string( 'dwg_link_url', '' );
+	$f_dwg_classification	= gpc_get_string( 'dwg_classification', '' );
+}
+	// $f_dwg_revision_date	= gpc_get_string( 'dwg_revision_date', 'nil' );
+	// $f_dwg_release_date		= gpc_get_string( 'dwg_release_date', 'nil' );
+	$f_dwg_revision_date	= gpc_get_string( 'dwg_revision_date', '' );
+	$f_dwg_release_date		= gpc_get_string( 'dwg_release_date', '' );
 
 	$f_build				= gpc_get_string( 'build', '' );
 	$f_platform				= gpc_get_string( 'platform', '' );
@@ -454,47 +442,47 @@ if( $t_show_attachments ) {
 
 <?php event_signal( 'EVENT_CREATE_DWG_FORM', array( $t_project_id ) ) ?>
 	<tr>
+	<tr>
 		<th class="category">
-<!--			<span class="required">*</span>  -->
+			<span class="required">*</span>
+			<label for="dwg_reference"><?php print_documentation_link( 'dwg_reference' ) ?></label>
+		</th>
+		<td>
+			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_reference" name="dwg_reference" size="105" maxlength="128" value="<?php echo string_attribute( $f_dwg_reference ) ?>" required />
+		</td>
+	</tr>
+
+		<th class="category">
 			<span class="required">*</span>
 			<label for="dwg_title"><?php print_documentation_link( 'dwg_title' ) ?></label>
 		</th>
 		<td>
-<!--			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_title" name="dwg_title" size="105" maxlength="128" value="<?php echo string_attribute( $f_dwg_title ) ?>" required />  -->
-			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_title" name="dwg_title" size="105" maxlength="128" value="<?php echo string_attribute( $f_dwg_title ) ?>" />
+			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_title" name="dwg_title" size="105" maxlength="255" value="<?php echo string_attribute( $f_dwg_title ) ?>" required />
 		</td>
 	</tr>
 	<tr>
 		<th class="category">
-<!--			<span class="required">*</span>  -->
-			<span class="required">*</span>
+			<label for="dwg_author"><?php print_documentation_link( 'dwg_author' ) ?></label>
+		</th>
+		<td>
+			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_author" name="dwg_author" size="105" maxlength="255" value="<?php echo string_attribute( $f_dwg_author ) ?>" />
+		</td>
+	</tr>
+	<tr>
+		<th class="category">
 			<label for="dwg_number"><?php print_documentation_link( 'dwg_number' ) ?></label>
 		</th>
 		<td>
-<!--			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_number" name="dwg_number" size="105" maxlength="128" value="<?php echo string_attribute( $f_dwg_number ) ?>" required />  -->
 			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_number" name="dwg_number" size="105" maxlength="128" value="<?php echo string_attribute( $f_dwg_number ) ?>" />
 		</td>
 	</tr>
 
 	<tr>
 		<th class="category">
-<!--			<span class="required">*</span>  -->
 			<label for="dwg_revision"><?php print_documentation_link( 'dwg_revision' ) ?></label>
 		</th>
 		<td>
-<!--			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_revision" name="dwg_revision" size="105" maxlength="128" value="<?php echo string_attribute( $f_dwg_revision ) ?>" required />  -->
 			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_revision" name="dwg_revision" size="105" maxlength="128" value="<?php echo string_attribute( $f_dwg_revision ) ?>" />
-		</td>
-	</tr>
-
-	<tr>
-		<th class="category">
-<!--			<span class="required">*</span>  -->
-			<label for="dwg_reference"><?php print_documentation_link( 'dwg_reference' ) ?></label>
-		</th>
-		<td>
-<!--			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_reference" name="dwg_reference" size="105" maxlength="128" value="<?php echo string_attribute( $f_dwg_reference ) ?>" required />  -->
-			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_reference" name="dwg_reference" size="105" maxlength="128" value="<?php echo string_attribute( $f_dwg_reference ) ?>" />
 		</td>
 	</tr>
 
@@ -512,7 +500,7 @@ if( $t_show_attachments ) {
 			<label for="dwg_link_url"><?php print_documentation_link( 'dwg_link_url' ) ?></label>
 		</th>
 		<td>
-			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_link_url" name="dwg_link_url" size="105" maxlength="128" value="<?php echo string_attribute( $f_dwg_link_url ) ?>" />
+			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_link_url" name="dwg_link_url" size="105" maxlength="2048" value="<?php echo string_attribute( $f_dwg_link_url ) ?>" />
 		</td>
 	</tr>
 
