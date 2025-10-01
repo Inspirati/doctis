@@ -1028,6 +1028,36 @@ $g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwg_filter
 	$t_table_options
 	) );
 
+$g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwg_file' ), "
+	id						I		UNSIGNED NOTNULL PRIMARY AUTOINCREMENT,
+	dwg_id					I		UNSIGNED NOTNULL DEFAULT '0',
+	user_id					I		UNSIGNED NOTNULL DEFAULT '0',
+	dwgnote_id				I		UNSIGNED DEFAULT '0',
+	title					C(250)	NOTNULL DEFAULT \" '' \",
+	description				C(250)	NOTNULL DEFAULT \" '' \",
+	diskfile				C(250)	NOTNULL DEFAULT \" '' \",
+	filename				C(250)	NOTNULL DEFAULT \" '' \",
+	folder					C(250)	NOTNULL DEFAULT \" '' \",
+	filesize				I		NOTNULL DEFAULT '0',
+	file_type				C(250)	NOTNULL DEFAULT \" '' \",
+	date_added				I		UNSIGNED NOTNULL DEFAULT '1',
+	content					B		NULL " . $t_blob_default,
+	$t_table_options
+	) );
+
+$g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwg_history' ), "
+	id						I		UNSIGNED NOTNULL PRIMARY AUTOINCREMENT,
+	user_id					I		UNSIGNED NOTNULL DEFAULT '0',
+	dwg_id					I		UNSIGNED NOTNULL DEFAULT '0',
+	date_modified			I		UNSIGNED NOTNULL DEFAULT '1',
+	field_name				C(64)	$t_notnull,
+	old_value				C(255)	$t_notnull,
+	new_value				C(255)	$t_notnull,
+	type					I2		NOTNULL DEFAULT '0'",
+	$t_table_options
+	) );
+$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_dwg_history_dwg_id', db_get_table( 'dwg_history' ), 'dwg_id' ) );
+
 # IMPORTANT: keep these entries as the last indexes, as they will be deleted in release versions
 #			 (you will need to bump all the indexes when inserting tables database statements above here)
 # user access_level: '10:viewer,25:reporter,40:updater,55:developer,70:manager,90:administrator'

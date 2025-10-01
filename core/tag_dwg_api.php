@@ -49,7 +49,7 @@ require_api( 'constant_inc.php' );
 require_api( 'database_api.php' );
 require_api( 'error_api.php' );
 require_api( 'form_api.php' );
-require_api( 'history_api.php' );
+require_api( 'history_dwg_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'string_api.php' );
 require_api( 'user_api.php' );
@@ -729,7 +729,7 @@ function tag_dwg_update( $p_tag_id, $p_name, $p_user_id, $p_description ) {
 		$t_bugs = tag_dwg_get_bugs_attached( $p_tag_id );
 
 		foreach( $t_bugs as $t_bug_id ) {
-			history_log_event_special( $t_bug_id, TAG_RENAMED, $t_tag_name, $p_name );
+			history_dwg_log_event_special( $t_bug_id, TAG_RENAMED, $t_tag_name, $p_name );
 		}
 	}
 
@@ -937,7 +937,7 @@ function tag_dwg_bug_attach( $p_tag_id, $p_bug_id, $p_user_id = null ) {
 	tag_dwg_clear_cache_bug_tags( $p_bug_id );
 
 	$t_tag_name = tag_dwg_get_field( $p_tag_id, 'name' );
-	history_log_event_special( $p_bug_id, TAG_ATTACHED, $t_tag_name );
+	history_dwg_log_event_special( $p_bug_id, TAG_ATTACHED, $t_tag_name );
 
 	# updated the last_updated date
 	dwg_update_date( $p_bug_id );
@@ -989,7 +989,7 @@ function tag_dwg_bug_detach( $p_tag_id, $p_bug_id, $p_add_history = true, $p_use
 
 	if( $p_add_history ) {
 		$t_tag_name = tag_dwg_get_field( $p_tag_id, 'name' );
-		history_log_event_special( $p_bug_id, TAG_DETACHED, $t_tag_name );
+		history_dwg_log_event_special( $p_bug_id, TAG_DETACHED, $t_tag_name );
 	}
 
 	# updated the last_updated date

@@ -1515,7 +1515,6 @@ function mc_dwg_note_update( $p_username, $p_password, stdClass $p_note ) {
 
 	# Check if the user owns the bugnote and is allowed to update their own bugnotes
 	# regardless of the update_dwgnote_threshold level.
-	// $t_user_owns_the_bugnote = bugnote_is_user_reporter( $t_issue_note_id, $t_user_id );
 	$t_user_owns_the_bugnote = dwgnote_is_user_creator( $t_issue_note_id, $t_user_id );
 	$t_user_can_update_own_bugnote = config_get( 'dwgnote_user_edit_threshold', null, $t_user_id, $t_project_id );
 	if( $t_user_owns_the_bugnote && !$t_user_can_update_own_bugnote ) {

@@ -48,7 +48,7 @@ require_api( 'constant_inc.php' );
 require_api( 'database_api.php' );
 require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
-require_api( 'history_api.php' );
+require_api( 'history_dwg_api.php' );
 require_api( 'project_api.php' );
 require_api( 'utility_api.php' );
 
@@ -80,7 +80,7 @@ function file_dwg_attach_files( $p_bug_id, $p_files, $p_bugnote_id = 0 ) {
 			$t_file_infos[] = file_dwg_add(
 				$p_bug_id,
 				$t_file,
-				'bug',
+				'document',
 				'', /* title */
 				'', /* desc */
 				null, /* user_id */
@@ -147,14 +147,14 @@ function file_dwg_attachment_count_cache( array $p_bug_ids ) {
 		$t_in_values[] = db_param();
 	}
 
-	$t_query = 'SELECT B.id AS bug_id, COUNT(F.bug_id) AS attachments'
-			. ' FROM {bug} B JOIN {bug_file} F ON ( B.id = F.bug_id )'
+	$t_query = 'SELECT B.id AS dwg_id, COUNT(F.dwg_id) AS attachments'
+			. ' FROM {document} B JOIN {dwg_file} F ON ( B.id = F.dwg_id )'
 			. ' WHERE B.id IN (' . implode( ',', $t_in_values ) . ')'
 			. ' GROUP BY B.id';
 
 	$t_result = db_query( $t_query, $t_params );
 	while( $t_row = db_fetch_array( $t_result ) ) {
-		$c_bug_id = (int)$t_row['bug_id'];
+		$c_bug_id = (int)$t_row['dwg_id'];
 		$g_cache_file_count[$c_bug_id] = (int)$t_row['attachments'];
 		unset( $t_ids_to_search[$c_bug_id] );
 	}
@@ -172,12 +172,12 @@ function file_dwg_attachment_count_cache( array $p_bug_ids ) {
  *
  * @return int
  */
-function file_dwg_dwg_attachment_count( $p_bug_id ) {
+function file_dwg_attachment_count( $p_bug_id ) {
 	global $g_cache_file_count;
 
 	# If it's not in cache, load the value
 	if( !isset( $g_cache_file_count[$p_bug_id] ) ) {
-		file_bug_attachment_count_cache( array( (int)$p_bug_id ) );
+		file_dwg_attachment_count_cache( array( (int)$p_bug_id ) );
 	}
 
 	return $g_cache_file_count[$p_bug_id];
@@ -210,8 +210,8 @@ function file_dwg_attachment_count_clear_cache( $p_bug_id = null ) {
  *
  * @return bool
  */
-function file_dwg_bug_has_attachments( $p_bug_id ) {
-	if( file_bug_attachment_count( $p_bug_id ) > 0 ) {
+function file_dwg_has_attachments( $p_bug_id ) {
+	if( file_dwg_attachment_count( $p_bug_id ) > 0 ) {
 		return true;
 	} else {
 		return false;
@@ -222,7 +222,7 @@ function file_dwg_bug_has_attachments( $p_bug_id ) {
  * Check if the current user can view or download attachments.
  *
  * Generic call used by
- * - {@see file_dwg_can_view_bug_attachments()}
+ * - {@see file_dwg_can_view_dwg_attachments()}
  * - {@see file_dwg_can_view_bugnote_attachments}
  * - {@see file_dwg_can_download_bug_attachments()}
  * - {@see file_can_download_bugnote_attachments}
@@ -278,8 +278,8 @@ function file_dwg_can_view_or_download( $p_action, $p_bug_id, $p_uploader_user_i
  * @return bool
  * @throws ClientException
  */
-function file_dwg_can_view_bug_attachments( $p_bug_id, $p_uploader_user_id = null ) {
-	return file_can_view_or_download( 'view', $p_bug_id, $p_uploader_user_id );
+function file_dwg_can_view_dwg_attachments( $p_bug_id, $p_uploader_user_id = null ) {
+	return file_dwg_can_view_or_download( 'view', $p_bug_id, $p_uploader_user_id );
 }
 
 /**
@@ -299,12 +299,12 @@ function file_dwg_can_view_bugnote_attachments( $p_bugnote_id, $p_uploader_user_
 	}
 
 	if( $p_bug_id === null ) {
-		$t_bug_id = dwgnote_get_field( $p_bugnote_id, 'bug_id' );
+		$t_bug_id = dwgnote_get_field( $p_bugnote_id, 'dwg_id' );
 	} else {
 		$t_bug_id = (int)$p_bug_id;
 	}
 
-	return file_can_view_or_download( 'view', $t_bug_id, $p_uploader_user_id );
+	return file_dwg_can_view_or_download( 'view', $t_bug_id, $p_uploader_user_id );
 }
 
 /**
@@ -317,7 +317,7 @@ function file_dwg_can_view_bugnote_attachments( $p_bugnote_id, $p_uploader_user_
  * @throws ClientException
  */
 function file_dwg_can_download_bug_attachments( $p_bug_id, $p_uploader_user_id = null ) {
-	return file_can_view_or_download( 'download', $p_bug_id, $p_uploader_user_id );
+	return file_dwg_can_view_or_download( 'download', $p_bug_id, $p_uploader_user_id );
 }
 
 /**
@@ -333,8 +333,8 @@ function file_dwg_can_download_bugnote_attachments( $p_bugnote_id, $p_uploader_u
 	if( $p_bugnote_id == 0 ) {
 		return true;
 	}
-	$t_bug_id = dwgnote_get_field( $p_bugnote_id, 'bug_id' );
-	return file_can_view_or_download( 'download', $t_bug_id, $p_uploader_user_id, $p_bugnote_id );
+	$t_bug_id = dwgnote_get_field( $p_bugnote_id, 'dwg_id' );
+	return file_dwg_can_view_or_download( 'download', $t_bug_id, $p_uploader_user_id, $p_bugnote_id );
 }
 
 /**
@@ -495,7 +495,7 @@ function file_dwg_get_visible_attachments( $p_bug_id ) {
 		$t_user_id = (int)$t_row['user_id'];
 		$t_attachment_note_id = (int)$t_row['bugnote_id'];
 
-		if( !file_dwg_can_view_bug_attachments( $p_bug_id, $t_user_id )
+		if( !file_dwg_can_view_dwg_attachments( $p_bug_id, $t_user_id )
 		|| !file_dwg_can_view_bugnote_attachments( $t_attachment_note_id, $t_user_id, $p_bug_id )
 		) {
 			continue;
@@ -570,7 +570,7 @@ function file_dwg_delete_attachments( $p_bug_id ) {
 
 	# Delete files from disk
 	db_param_push();
-	$t_query = 'SELECT diskfile, filename FROM {bug_file} WHERE bug_id=' . db_param();
+	$t_query = 'SELECT diskfile, filename FROM {dwg_file} WHERE dwg_id=' . db_param();
 	$t_result = db_query( $t_query, array( $p_bug_id ) );
 
 	$t_file_count = db_num_rows( $t_result );
@@ -583,13 +583,13 @@ function file_dwg_delete_attachments( $p_bug_id ) {
 			$t_row = db_fetch_array( $t_result );
 
 			$t_local_diskfile = file_dwg_normalize_attachment_path( $t_row['diskfile'], dwg_get_field( $p_bug_id, 'project_id' ) );
-			file_delete_local( $t_local_diskfile );
+			file_dwg_delete_local( $t_local_diskfile );
 		}
 	}
 
 	# Delete the corresponding db records
 	db_param_push();
-	$t_query = 'DELETE FROM {bug_file} WHERE bug_id=' . db_param();
+	$t_query = 'DELETE FROM {dwg_file} WHERE dwg_id=' . db_param();
 	db_query( $t_query, array( $p_bug_id ) );
 
 	# db_query() errors on failure so:
@@ -605,13 +605,13 @@ function file_dwg_delete_attachments( $p_bug_id ) {
  * @return bool
  * @throws ClientException
  */
-function file_dwg_delete_bugnote_attachments( $p_bug_id, $p_bugnote_id ) {
+function file_dwg_delete_dwgnote_attachments( $p_bug_id, $p_bugnote_id ) {
 	db_param_push();
-	$t_query = 'SELECT id, diskfile, filename FROM {bug_file} WHERE bug_id=' . db_param() . ' AND bugnote_id=' . db_param();
+	$t_query = 'SELECT id, diskfile, filename FROM {dwg_file} WHERE dwg_id=' . db_param() . ' AND dwgnote_id=' . db_param();
 	$t_result = db_query( $t_query, array( $p_bug_id, $p_bugnote_id ) );
 
 	while( $t_row = db_fetch_array( $t_result ) ) {
-		file_delete( (int)$t_row['id'], 'bug', $p_bugnote_id );
+		file_dwg_delete( (int)$t_row['id'], 'document', $p_bugnote_id );
 	}
 
 	# db_query() errors on failure so:
@@ -626,10 +626,10 @@ function file_dwg_delete_bugnote_attachments( $p_bug_id, $p_bugnote_id ) {
  *
  * @return void
  */
-function file_dwg_link_to_bugnote( $p_file_id, $p_bugnote_id ) {
+function file_dwg_link_to_dwgnote( $p_file_id, $p_bugnote_id ) {
 	db_param_push();
 
-	$t_query = 'UPDATE {bug_file} SET bugnote_id=' . db_param() . ' WHERE id=' . db_param();
+	$t_query = 'UPDATE {dwg_file} SET dwgnote_id=' . db_param() . ' WHERE id=' . db_param();
 	db_query( $t_query, array( $p_bugnote_id, $p_file_id ) );
 }
 
@@ -656,7 +656,7 @@ function file_dwg_delete_project_files( $p_project_id ) {
 			$t_row = db_fetch_array( $t_result );
 
 			$t_local_diskfile = file_dwg_normalize_attachment_path( $t_row['diskfile'], $p_project_id );
-			file_delete_local( $t_local_diskfile );
+			file_dwg_delete_local( $t_local_diskfile );
 		}
 	}
 
@@ -713,15 +713,15 @@ function file_dwg_get_field( $p_file_id, $p_field_name, $p_table = 'bug' ) {
  * @return bool
  * @throws ClientException
  */
-function file_dwg_delete( $p_file_id, $p_table = 'bug', $p_bugnote_id = 0 ) {
+function file_dwg_delete( $p_file_id, $p_table = 'document', $p_bugnote_id = 0 ) {
 	$t_upload_method = config_get( 'file_upload_method' );
 
 	$c_file_id = (int)$p_file_id;
 	$t_filename = file_dwg_get_field( $p_file_id, 'filename', $p_table );
 	$t_diskfile = file_dwg_get_field( $p_file_id, 'diskfile', $p_table );
 
-	if( $p_table == 'bug' ) {
-		$t_bug_id = file_dwg_get_field( $p_file_id, 'bug_id', $p_table );
+	if( $p_table == 'document' ) {
+		$t_bug_id = file_dwg_get_field( $p_file_id, 'dwg_id', $p_table );
 		$t_project_id = dwg_get_field( $t_bug_id, 'project_id' );
 	} else {
 		$t_project_id = file_dwg_get_field( $p_file_id, 'project_id', $p_table );
@@ -730,13 +730,13 @@ function file_dwg_delete( $p_file_id, $p_table = 'bug', $p_bugnote_id = 0 ) {
 	if( DISK == $t_upload_method ) {
 		$t_local_disk_file = file_dwg_normalize_attachment_path( $t_diskfile, $t_project_id );
 		if( file_exists( $t_local_disk_file ) ) {
-			file_delete_local( $t_local_disk_file );
+			file_dwg_delete_local( $t_local_disk_file );
 		}
 	}
 
-	if( 'bug' == $p_table ) {
+	if( 'document' == $p_table ) {
 		# log file deletion
-		history_log_event_special( $t_bug_id, FILE_DELETED, file_get_display_name( $t_filename ), $p_bugnote_id );
+		history_dwg_log_event_special( $t_bug_id, FILE_DELETED, file_dwg_get_display_name( $t_filename ), $p_bugnote_id );
 	}
 
 	$t_file_table = db_get_table( $p_table . '_file' );
@@ -836,7 +836,7 @@ function _diskfile_is_name_unique( $p_name, $p_filepath ) {
 	db_param_push();
 	$t_query = 'SELECT count(*)
 		FROM (
-			SELECT diskfile FROM {bug_file} WHERE diskfile=' . db_param() . '
+			SELECT diskfile FROM {dwg_file} WHERE diskfile=' . db_param() . '
 			UNION
 			SELECT diskfile FROM {project_file} WHERE diskfile=' . db_param() . '
 			) f';
@@ -857,14 +857,14 @@ function _diskfile_is_name_unique( $p_name, $p_filepath ) {
  *
  * @return bool true if unique
  */
-function file_dwg_is_name_unique( $p_name, $p_bug_id, $p_table = 'bug' ) {
+function file_dwg_is_name_unique( $p_name, $p_bug_id, $p_table = 'document' ) {
 	$t_file_table = db_get_table( "{$p_table}_file" );
 
 	db_param_push();
 	$t_query = 'SELECT COUNT(*) FROM ' . $t_file_table . ' WHERE filename=' . db_param();
 	$t_param = array( $p_name );
-	if( $p_table == 'bug' ) {
-		$t_query .= ' AND bug_id=' . db_param();
+	if( $p_table == 'document' ) {
+		$t_query .= ' AND dwg_id=' . db_param();
 		$t_param[] = $p_bug_id;
 	}
 
@@ -901,7 +901,7 @@ function file_dwg_is_name_unique( $p_name, $p_bug_id, $p_table = 'bug' ) {
  * @throws ServiceException
  * @throws Exception
  */
-function file_dwg_add( $p_bug_id, array $p_file, $p_table = 'bug', $p_title = '', $p_desc = '', $p_user_id = null, $p_date_added = 0, $p_skip_bug_update = false, $p_bugnote_id = 0 ) {
+function file_dwg_add( $p_bug_id, array $p_file, $p_table = 'document', $p_title = '', $p_desc = '', $p_user_id = null, $p_date_added = 0, $p_skip_bug_update = false, $p_bugnote_id = 0 ) {
 	$t_file_info = array();
 
 	if( !isset( $p_file['error'] ) ) {
@@ -926,7 +926,7 @@ function file_dwg_add( $p_bug_id, array $p_file, $p_table = 'bug', $p_title = ''
 		$p_file['type'] = 'application/octet-stream';
 	}
 
-	file_ensure_uploaded( $p_file );
+	file_dwg_ensure_uploaded( $p_file );
 	$t_file_name = $p_file['name'];
 
 	if( strlen( $t_file_name ) > DB_FIELD_SIZE_FILENAME ) {
@@ -937,7 +937,7 @@ function file_dwg_add( $p_bug_id, array $p_file, $p_table = 'bug', $p_title = ''
 		);
 	}
 
-	if( !file_type_check( $t_file_name ) ) {
+	if( !file_dwg_type_check( $t_file_name ) ) {
 		throw new ClientException(
 			sprintf( "File '%s' type not allowed", $t_file_name ),
 			ERROR_FILE_NOT_ALLOWED
@@ -947,7 +947,7 @@ function file_dwg_add( $p_bug_id, array $p_file, $p_table = 'bug', $p_title = ''
 	$t_org_filename = $t_file_name;
 	$t_suffix_id = 1;
 
-	while( !file_is_name_unique( $t_file_name, $p_bug_id ) ) {
+	while( !file_dwg_is_name_unique( $t_file_name, $p_bug_id ) ) {
 		$t_suffix_id++;
 
 		$t_dot_index = strripos( $t_org_filename, '.' );
@@ -1008,7 +1008,7 @@ function file_dwg_add( $p_bug_id, array $p_file, $p_table = 'bug', $p_title = ''
 
 	switch( $t_method ) {
 		case DISK:
-			file_ensure_valid_upload_path( $t_file_path );
+			file_dwg_ensure_valid_upload_path( $t_file_path );
 
 			$t_disk_file_name = $t_file_path . $t_unique_name;
 			if( !file_exists( $t_disk_file_name ) ) {
@@ -1060,8 +1060,8 @@ function file_dwg_add( $p_bug_id, array $p_file, $p_table = 'bug', $p_title = ''
 		'date_added'  => $p_date_added,
 		'user_id'     => (int)$p_user_id
 	);
-	if( 'bug' == $p_table ) {
-		$t_param['bugnote_id'] = is_null( $p_bugnote_id ) ? null : (int)$p_bugnote_id;
+	if( 'document' == $p_table ) {
+		$t_param['dwgnote_id'] = is_null( $p_bugnote_id ) ? null : (int)$p_bugnote_id;
 	}
 	# Oracle has to update BLOBs separately
 	if( !db_is_oracle() ) {
@@ -1088,11 +1088,11 @@ function file_dwg_add( $p_bug_id, array $p_file, $p_table = 'bug', $p_title = ''
 	if( 'bug' == $p_table ) {
 		# update the last_updated date
 		if( !$p_skip_bug_update ) {
-			bug_update_date( $p_bug_id );
+			dwg_update_date( $p_bug_id );
 		}
 
 		# log file added to bug history
-		history_log_event_special( $p_bug_id, FILE_ADDED, $t_file_name, $p_bugnote_id );
+		history_dwg_log_event_special( $p_bug_id, FILE_ADDED, $t_file_name, $p_bugnote_id );
 	}
 
 	return $t_file_info;
@@ -1165,7 +1165,7 @@ function file_dwg_allow_dwg_upload( $p_bug_id = null, $p_user_id = null, $p_proj
 		$t_project_id = dwg_get_field( $p_bug_id, 'project_id' );
 
 		# check if the user is the reporter of the bug
-		$t_reporter = bug_is_user_reporter( $p_bug_id, $p_user_id );
+		$t_reporter = dwg_is_user_creator( $p_bug_id, $p_user_id );
 	}
 
 	if( $t_reporter && ( ON == config_get( 'allow_creator_upload' ) ) ) {
@@ -1285,13 +1285,13 @@ function file_dwg_get_mime_type_for_content( $p_content ) {
  *                    failure to retrieve file
  * @throws ClientException
  */
-function file_dwg_get_content( $p_file_id, $p_type = 'bug' ) {
+function file_dwg_get_content( $p_file_id, $p_type = 'document' ) {
 	# we handle the case where the file is attached to a bug
 	# or attached to a project as a project doc.
 	db_param_push();
 	switch( $p_type ) {
-		case 'bug':
-			$t_query = 'SELECT * FROM {bug_file} WHERE id=' . db_param();
+		case 'document':
+			$t_query = 'SELECT * FROM {dwg_file} WHERE id=' . db_param();
 			break;
 		case 'doc':
 			$t_query = 'SELECT * FROM {project_file} WHERE id=' . db_param();
@@ -1304,9 +1304,9 @@ function file_dwg_get_content( $p_file_id, $p_type = 'bug' ) {
 	$t_row = db_fetch_array( $t_result );
 
 	if( $p_type == 'bug' ) {
-		$t_project_id = dwg_get_field( $t_row['bug_id'], 'project_id' );
+		$t_project_id = dwg_get_field( $t_row['dwg_id'], 'project_id' );
 	} else {
-		$t_project_id = $t_row['bug_id'];
+		$t_project_id = $t_row['dwg_id'];
 	}
 
 	$t_content_type = $t_row['file_type'];
@@ -1322,7 +1322,7 @@ function file_dwg_get_content( $p_file_id, $p_type = 'bug' ) {
 					$t_content_type = $t_file_info_type;
 				}
 
-				return array( 'type' => $t_content_type, 'content' => file_get_contents( $t_local_disk_file ) );
+				return array( 'type' => $t_content_type, 'content' => file_dwg_get_contents( $t_local_disk_file ) );
 			}
 			return false;
 		case DATABASE:
@@ -1361,7 +1361,7 @@ function file_dwg_move_bug_attachments( $p_bug_id, $p_project_id_to ) {
 		return;
 	}
 
-	if( !file_bug_has_attachments( $p_bug_id ) ) {
+	if( !file_dwg_has_attachments( $p_bug_id ) ) {
 		return;
 	}
 
@@ -1369,12 +1369,12 @@ function file_dwg_move_bug_attachments( $p_bug_id, $p_project_id_to ) {
 	if( is_blank( $t_path_from ) ) {
 		$t_path_from = config_get_global( 'absolute_path_default_upload_folder' );
 	}
-	file_ensure_valid_upload_path( $t_path_from );
+	file_dwg_ensure_valid_upload_path( $t_path_from );
 	$t_path_to = project_get_field( $p_project_id_to, 'file_path' );
 	if( is_blank( $t_path_to ) ) {
 		$t_path_to = config_get_global( 'absolute_path_default_upload_folder' );
 	}
-	file_ensure_valid_upload_path( $t_path_to );
+	file_dwg_ensure_valid_upload_path( $t_path_to );
 	if( $t_path_from == $t_path_to ) {
 		return;
 	}
@@ -1382,9 +1382,9 @@ function file_dwg_move_bug_attachments( $p_bug_id, $p_project_id_to ) {
 	# Initialize the update query to update a single row
 	$c_bug_id = (int)$p_bug_id;
 	db_param_push();
-	$t_query_disk_attachment_update = 'UPDATE {bug_file}
+	$t_query_disk_attachment_update = 'UPDATE {dwg_file}
 	                                 SET folder=' . db_param() . '
-	                                 WHERE bug_id=' . db_param() . '
+	                                 WHERE dwg_id=' . db_param() . '
 	                                 AND id =' . db_param();
 
 	$t_attachment_rows = dwg_get_attachments( $p_bug_id );
@@ -1402,7 +1402,7 @@ function file_dwg_move_bug_attachments( $p_bug_id, $p_project_id_to ) {
 				if( !copy( $t_disk_file_name_from, $t_disk_file_name_to ) ) {
 					trigger_error( ERROR_FILE_MOVE_FAILED, ERROR );
 				}
-				file_delete_local( $t_disk_file_name_from );
+				file_dwg_delete_local( $t_disk_file_name_from );
 			}
 			chmod( $t_disk_file_name_to, config_get( 'attachments_file_permissions' ) );
 			# Don't pop the parameters after query execution since we're in a loop
@@ -1432,7 +1432,7 @@ function file_dwg_move_bug_attachments( $p_bug_id, $p_project_id_to ) {
  */
 function file_dwg_copy_attachments( $p_source_bug_id, $p_dest_bug_id ) {
 	db_param_push();
-	$t_query = 'SELECT * FROM {bug_file} WHERE bug_id = ' . db_param();
+	$t_query = 'SELECT * FROM {dwg_file} WHERE dwg_id = ' . db_param();
 	$t_result = db_query( $t_query, array( $p_source_bug_id ) );
 	$t_count = db_num_rows( $t_result );
 
@@ -1462,8 +1462,8 @@ function file_dwg_copy_attachments( $p_source_bug_id, $p_dest_bug_id ) {
 		}
 
 		db_param_push();
-		$t_query = 'INSERT INTO {bug_file} (
-				bug_id, title, description, diskfile, filename, folder,
+		$t_query = 'INSERT INTO {dwg_file} (
+				dwg_id, title, description, diskfile, filename, folder,
 				filesize, file_type, date_added, user_id, content
 			)
 			VALUES ( '

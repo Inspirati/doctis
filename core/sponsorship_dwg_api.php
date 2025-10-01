@@ -40,7 +40,7 @@ require_api( 'constant_inc.php' );
 require_api( 'database_api.php' );
 require_api( 'email_bug_api.php' );
 require_api( 'error_api.php' );
-require_api( 'history_api.php' );
+require_api( 'history_dwg_api.php' );
 
 /**
  * Sponsorship Data Structure Definition
@@ -334,7 +334,7 @@ function sponsorship_set( SponsorshipData $p_sponsorship ) {
 
 		$t_sponsorship_id = db_insert_id( db_get_table( 'sponsorship' ) );
 
-		history_log_event_special( $c_bug_id, BUG_ADD_SPONSORSHIP, $c_user_id, $c_amount );
+		history_dwg_log_event_special( $c_bug_id, BUG_ADD_SPONSORSHIP, $c_user_id, $c_amount );
 	} else {
 		$t_old_amount = sponsorship_get_amount( $c_id );
 		$t_sponsorship_id = $c_id;
@@ -358,7 +358,7 @@ function sponsorship_set( SponsorshipData $p_sponsorship ) {
 
 		db_query( $t_query, array( $c_bug_id, $c_user_id, $c_amount, $c_logo, $c_url, $c_now, $c_id ) );
 
-		history_log_event_special( $c_bug_id, BUG_UPDATE_SPONSORSHIP, $c_user_id, $c_amount );
+		history_dwg_log_event_special( $c_bug_id, BUG_UPDATE_SPONSORSHIP, $c_user_id, $c_amount );
 	}
 
 	sponsorship_update_bug( $c_bug_id );
@@ -410,7 +410,7 @@ function sponsorship_delete( $p_sponsorship_id ) {
 
 	sponsorship_clear_cache( $p_sponsorship_id );
 
-	history_log_event_special( $t_sponsorship->bug_id, BUG_DELETE_SPONSORSHIP, $t_sponsorship->user_id, $t_sponsorship->amount );
+	history_dwg_log_event_special( $t_sponsorship->bug_id, BUG_DELETE_SPONSORSHIP, $t_sponsorship->user_id, $t_sponsorship->amount );
 	sponsorship_update_bug( $t_sponsorship->bug_id );
 
 	email_sponsorship_deleted( $t_sponsorship->bug_id );
@@ -429,7 +429,7 @@ function sponsorship_update_paid( $p_sponsorship_id, $p_paid ) {
 	$t_query = 'UPDATE {sponsorship} SET last_updated=' . db_param() . ', paid=' . db_param() . ' WHERE id=' . db_param();
 	db_query( $t_query, array( db_now(), (int)$p_paid, (int)$p_sponsorship_id ) );
 
-	history_log_event_special( $t_sponsorship->bug_id, BUG_PAID_SPONSORSHIP, $t_sponsorship->user_id, $p_paid );
+	history_dwg_log_event_special( $t_sponsorship->bug_id, BUG_PAID_SPONSORSHIP, $t_sponsorship->user_id, $p_paid );
 	sponsorship_clear_cache( $p_sponsorship_id );
 
 	return true;

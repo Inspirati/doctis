@@ -134,11 +134,21 @@ EOF
 #  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 #COMMIT;
 
-show_parameters
-drop_existing_database
-initialise_database
-configure_database
-run_mantis_install_log ${project}
-load_mantis_example_data ${project}
-load_mantis_testing_user ${project}
+main() {
+    show_parameters
+    sleep 0.01  # tiny delay to allow earlier stdout echos to flush
+    echo -e "${WARN}This will destroy all data in the ${project} database${OFF}" >&2
+    read -rp "Type 'yes' to proceed: " answer
+    if [ "$answer" = "yes" ]; then
+        echo -e "${INFO}Attempting to delete ${project} database${OFF}"
+        drop_existing_database
+        initialise_database
+        configure_database
+        run_mantis_install_log ${project}
+        load_mantis_example_data ${project}
+        load_mantis_testing_user ${project}
+    fi
+}
+
+main "$@"
 

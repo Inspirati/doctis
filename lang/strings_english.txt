@@ -316,6 +316,7 @@ $s_severity_enum_string = '10:feature,20:comment,30:query,40:tweak,50:minor,60:m
 
 $s_reproducibility_enum_string = '10:always,30:sometimes,50:random,70:have not tried,90:unable to reproduce,100:N/A';
 $s_status_enum_string = '10:new,20:feedback,30:acknowledged,40:confirmed,50:assigned,80:resolved,90:closed';
+$s_dwg_status_enum_string = '10:received,20:triage,30:assigned,40:JoS,50:review,60:rework,60:independent review,80:accepted,90:incorported';
 $s_resolution_enum_string = '10:open,20:fixed,30:reopened,40:unable to reproduce,50:not fixable,60:duplicate,70:no change required,80:suspended,90:won\'t fix';
 $s_projection_enum_string = '10:none,30:tweak,50:minor fix,70:major rework,90:redesign';
 $s_eta_enum_string = '10:none,20:< 1 day,30:2-3 days,40:< 1 week,50:< 1 month,60:> 1 month';
@@ -545,11 +546,33 @@ $s_acknowledged_dwg_title = 'Acknowledge Document';
 $s_confirmed_dwg_title = 'Confirm Document';
 $s_assigned_dwg_title = 'Assign Document';
 $s_new_dwg_button = 'New Document';
+
+// @TODO RobD - all the strings in this block are probably not required
 $s_feedback_dwg_button = 'Request Feedback';
 $s_acknowledged_dwg_button = 'Acknowledge Document';
 $s_confirmed_dwg_button = 'Confirm Document';
-$s_assigned_dwg_button = 'Assign Document';
+// $s_assigned_dwg_button = 'Assign Document';
+
+// ?
 $s_closed_dwg_title = 'Close Document';
+
+$s_received_dwg_button = 'Set to Received';
+$s_triage_dwg_button = 'Set to Triage Document';
+$s_JoS_dwg_button = 'Set to JoS required';
+$s_review_dwg_button = 'Set to Review';
+$s_received_dwg_button = 'Set to Received';
+$s_rework_dwg_button = 'Set to Rework';
+$s_accepted_dwg_button = 'Set to Accepted';
+$s_assigned_dwg_button = 'Set to Assigned';
+$s_incorported_dwg_button = 'Set to Incorporated';
+
+$s_triage_dwg_button = 'Set Document to Perform Triage';
+$s_JoS_dwg_button = 'Set Document to Assign Judgement of Significance (JoS)';
+$s_review_dwg_title = 'Set Document to Review Required';
+$s_received_dwg_title = 'Set Document to Received';
+$s_rework_dwg_title = 'Set Document to Send for Rework';
+$s_accepted_dwg_title = 'Set Document to Accepted';
+$s_incorported_dwg_title = 'Set Document to Incorporated';
 
 # bug_close.php
 $s_bug_close_msg = 'Issue has been closed...';
@@ -686,7 +709,7 @@ $s_build = 'Build';
 $s_fixed_in_version = 'Fixed in Version';
 $s_target_version = 'Target Version';
 $s_votes = 'Votes';
-$s_summary = 'Summary';
+$s_summary = 'Issue Summary';
 $s_synthesis = 'Synthesis';
 $s_description = 'Description';
 $s_steps_to_reproduce = 'Steps To Reproduce';
@@ -717,14 +740,16 @@ $s_activities_title = 'Activities';
 
 # documents_view*
 $s_dwg_title = 'Document Title';
+$s_dwg_author = 'Author';
+$s_dwg_number = 'Number';
+$s_dwg_version = 'Version';
 $s_dwg_revision = 'Revision';
 $s_dwg_reference = 'Reference';
-$s_dwg_number = 'Number';
 $s_dwg_discipline = 'Discipline';
 $s_dwg_date = 'Date';
 $s_dwg_link_url = 'Link URL';
-$s_dwg_revision_date = 'Revision Date';
 $s_dwg_release_date = 'Release Date';
+$s_dwg_revision_date = 'Revision Date';
 $s_dwg_classification = 'Classification';
 
 $s_dwg_creator = 'Created by';
@@ -871,6 +896,7 @@ $s_create_short_link = 'Create Short Link';
 $s_filter_permalink = 'Following is a permanent link to the currently configured filter:';
 $s_manage_users_link = 'Users';
 $s_manage_projects_link = 'Projects';
+$s_manage_import_link = 'Import Data';
 $s_manage_custom_field_link = 'Custom Fields';
 $s_manage_global_profiles_link = 'Global Profiles';
 $s_manage_plugin_link = 'Plugins';
@@ -1533,6 +1559,7 @@ $s_kib = 'KiB';
 $s_attachment_missing = 'Attachment missing';
 $s_attachment_count = 'Attachment count';
 $s_bugnotes_count = 'Issue Notes count';
+$s_dwgnotes_count = 'Document Notes count';
 $s_view_attachments_for_issue = 'View %1$d attachment(s) for issue #%2$d';
 $s_warning_update_custom_field_type = '<strong>Warning:</strong> Custom field "%1$s" already has stored values. Changing field type may cause errors and unexpected behaviour if existing values are not consistent with the field\'s new type. To proceed, click the button below';
 
@@ -1640,7 +1667,7 @@ $s_delete_attachments = 'Delete attachments';
 $s_delete_attachment_sure_msg = 'Are you sure you wish to delete this attachment?';
 $s_upload_issue_attachments = 'Upload issue attachments';
 $s_filters = 'Filters';
-$s_dwg_filters = 'Filters (WIP - not functional)';
+$s_dwg_filters = 'Filters (WIP - non functional)';
 $s_save_filters = 'Save filters';
 $s_save_filters_as_shared = 'Save filters as shared';
 $s_use_saved_filters = 'Use saved filters';

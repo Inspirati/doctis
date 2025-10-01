@@ -2101,7 +2101,7 @@ function print_dwg_attachment_preview_text( array $p_attachment ) {
 	switch( config_get( 'file_upload_method' ) ) {
 		case DISK:
 			if( file_exists( $p_attachment['diskfile'] ) ) {
-				$t_content = file_get_contents( $p_attachment['diskfile'] );
+				$t_content = file_dwg_get_contents( $p_attachment['diskfile'] );
 			}
 			break;
 		case DATABASE:
@@ -2136,7 +2136,7 @@ function print_dwg_attachment_preview_image( array $p_attachment ) {
 		$t_preview_style .= ' max-height:' . $t_max_height . 'px;';
 	}
 
-	$t_title = file_get_field( $p_attachment['id'], 'title', 'dwg' );
+	$t_title = file_dwg_get_field( $p_attachment['id'], 'title', 'dwg' );
 	$t_image_url = $p_attachment['download_url'] . '&show_inline=1' . form_security_param( 'file_show_inline' );
 
 	echo "\n<div class=\"bug-attachment-preview-image\">";

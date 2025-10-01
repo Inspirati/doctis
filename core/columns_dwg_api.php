@@ -230,20 +230,14 @@ function columns_dwg_get_custom_fields() {
  * @return array Array of column names
  */
 function columns_dwg_get_all_active_columns() {
-	// $t_columns = array_merge(
-	// 		columns_dwg_get_standard(),
-	// 		array_keys( columns_dwg_get_plugin_columns() ),
-	// 		columns_dwg_get_custom_fields()
-	// 		);
-	// return columns_dwg_filter_disabled( $t_columns );
-
-	// $t_columns = array_merge(
-	// 		columns_dwg_get_standard()
-	// 		);
-    // return $t_columns();
-
-	$t_columns = columns_dwg_get_standard();
+	$t_columns = array_merge(
+			columns_dwg_get_standard(),
+			array_keys( columns_dwg_get_plugin_columns() ),
+			columns_dwg_get_custom_fields()
+			);
 	return columns_dwg_filter_disabled( $t_columns );
+//	$t_columns = columns_dwg_get_standard();
+//	return columns_dwg_filter_disabled( $t_columns );
 }
 
 /**
@@ -339,7 +333,7 @@ function column_dwg_is_sortable( $p_column ) {
 	switch( $p_column ) {
 		case 'selection':
 		case 'edit':
-		case 'bugnotes_count':
+		case 'dwgnotes_count':
 		case 'attachment_count':
 		case 'tags':
 		case 'additional_information':
@@ -435,7 +429,7 @@ function column_dwg_get_title( $p_column ) {
 	switch( $p_column ) {
 		case 'attachment_count':
 			return lang_get( 'attachments' );
-		case 'bugnotes_count':
+		case 'dwgnotes_count':
 			return '#';
 		case 'category_id':
 			return lang_get( 'category' );
@@ -990,9 +984,9 @@ function print_dwg_column_title_summary( $p_sort, $p_dir, $p_columns_target = CO
  * @return void
  * @access public
  */
-function print_dwg_column_title_bugnotes_count( $p_sort, $p_dir, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function print_dwg_column_title_dwgnotes_count( $p_sort, $p_dir, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	echo '<th class="column-bugnotes-count">';
-	print_icon( 'fa-comments', 'blue', lang_get( 'bugnotes_count' ) );
+	print_icon( 'fa-comments', 'blue', lang_get( 'dwgnotes_count' ) );
 	echo '</th>';
 }
 
@@ -1106,14 +1100,14 @@ function print_dwg_column_selection( DwgData $p_bug, $p_columns_target = COLUMNS
 		# !TODO: check if any other projects actually exist for the bug to be moved to
 		access_has_project_level( config_get( 'move_bug_threshold', null, null, $p_bug->project_id ), $p_bug->project_id ) ||
 		# !TODO: factor in $g_auto_set_status_to_assigned == ON
-		access_has_project_level( config_get( 'update_bug_assign_threshold', null, null, $p_bug->project_id ), $p_bug->project_id ) ||
+		access_has_project_level( config_get( 'update_dwg_assign_threshold', null, null, $p_bug->project_id ), $p_bug->project_id ) ||
 		access_has_project_level( config_get( 'update_dwg_threshold', null, null, $p_bug->project_id ), $p_bug->project_id ) ||
-		access_has_project_level( config_get( 'delete_bug_threshold', null, null, $p_bug->project_id ), $p_bug->project_id ) ||
+		access_has_project_level( config_get( 'delete_dwg_threshold', null, null, $p_bug->project_id ), $p_bug->project_id ) ||
 		# !TODO: check to see if the bug actually has any different selectable workflow states
-		access_has_project_level( config_get( 'update_bug_status_threshold', null, null, $p_bug->project_id ), $p_bug->project_id ) ||
+		access_has_project_level( config_get( 'update_dwg_status_threshold', null, null, $p_bug->project_id ), $p_bug->project_id ) ||
 		access_has_project_level( config_get( 'set_dwg_sticky_threshold', null, null, $p_bug->project_id ), $p_bug->project_id ) ||
 		access_has_project_level( config_get( 'change_view_status_threshold', null, null, $p_bug->project_id ), $p_bug->project_id ) ||
-		access_has_project_level( config_get( 'add_bugnote_threshold', null, null, $p_bug->project_id ), $p_bug->project_id ) ||
+		access_has_project_level( config_get( 'add_dwgnote_threshold', null, null, $p_bug->project_id ), $p_bug->project_id ) ||
 		access_has_project_level( config_get( 'tag_attach_threshold', null, null, $p_bug->project_id ), $p_bug->project_id ) ||
 		access_has_project_level( config_get( 'roadmap_update_threshold', null, null, $p_bug->project_id ), $p_bug->project_id ) ) {
 		$g_checkboxes_exist = true;
@@ -1257,33 +1251,33 @@ function print_dwg_column_sponsorship_total( DwgData $p_bug, $p_columns_target =
  * @return void
  * @access public
  */
-# @TODO RobD - note, never called
-function print_dwg_column_bugnotes_count( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+# @TODO RobD - note, seems to never be called - but it may be a run-time generated function name!
+function print_dwg_column_dwgnotes_count( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	global $g_dwg_filter;
 
-	// # grab the bugnote count
-	// $t_bugnote_stats = dwg_get_bugnote_stats( $p_bug->id );
-	// if( is_array( $t_bugnote_stats ) ) {
-	// 	$t_bugnote_count = $t_bugnote_stats['count'];
-	// 	$t_bugnote_updated = $t_bugnote_stats['last_modified'];
-	// } else {
-	// 	$t_bugnote_count = 0;
-	// }
+	# grab the bugnote count
+	$t_bugnote_stats = dwg_get_dwgnote_stats( $p_bug->id );
+	if( is_array( $t_bugnote_stats ) ) {
+		$t_bugnote_count = $t_bugnote_stats['count'];
+		$t_bugnote_updated = $t_bugnote_stats['last_modified'];
+	} else {
+		$t_bugnote_count = 0;
+	}
 
-	// echo '<td class="column-bugnotes-count">';
-	// if( $t_bugnote_count > 0 ) {
-	// 	$t_show_in_bold = $t_bugnote_updated > strtotime( '-' . $g_dwg_filter[FILTER_PROPERTY_HIGHLIGHT_CHANGED] . ' hours' );
-	// 	if( $t_show_in_bold ) {
-	// 		echo '<span class="bold">';
-	// 	}
-	// 	print_link( string_get_dwg_view_url( $p_bug->id ) . '&nbn=' . $t_bugnote_count . '#bugnotes', $t_bugnote_count );
-	// 	if( $t_show_in_bold ) {
-	// 		echo '</span>';
-	// 	}
-	// } else {
-	// 	echo '&#160;';
-	// }
-	// echo '</td>';
+	echo '<td class="column-bugnotes-count">';
+	if( $t_bugnote_count > 0 ) {
+		$t_show_in_bold = $t_bugnote_updated > strtotime( '-' . $g_dwg_filter[FILTER_PROPERTY_HIGHLIGHT_CHANGED] . ' hours' );
+		if( $t_show_in_bold ) {
+			echo '<span class="bold">';
+		}
+		print_link( string_get_dwg_view_url( $p_bug->id ) . '&nbn=' . $t_bugnote_count . '#bugnotes', $t_bugnote_count );
+		if( $t_show_in_bold ) {
+			echo '</span>';
+		}
+	} else {
+		echo '&#160;';
+	}
+	echo '</td>';
 }
 
 /**
@@ -1298,8 +1292,8 @@ function print_dwg_column_attachment_count( DwgData $p_bug, $p_columns_target = 
 
 	# Check for attachments
 	$t_attachment_count = 0;
-	if( file_can_view_bug_attachments( $p_bug->id, null ) ) {
-		$t_attachment_count = file_bug_attachment_count( $p_bug->id );
+	if( file_dwg_can_view_dwg_attachments( $p_bug->id, null ) ) {
+		$t_attachment_count = file_dwg_attachment_count( $p_bug->id );
 	}
 
 	echo '<td class="column-attachments">';
@@ -1423,10 +1417,13 @@ function print_dwg_column_status( DwgData $p_bug, $p_columns_target = COLUMNS_TA
 	echo '<td class="column-status">';
 	echo '<div class="align-left">';
 	print_icon( 'fa-square', 'fa-status-box ' . $t_status_css );
-	printf( ' <span title="%s">%s</span>',
-		get_enum_element( 'resolution', $p_bug->resolution, $t_current_user, $p_bug->project_id ),
-		get_enum_element( 'dwg_status', $p_bug->status, $t_current_user, $p_bug->project_id )
-	);
+	// printf( ' <span title="%s">%s</span>',
+	// 	get_enum_element( 'resolution', $p_bug->resolution, $t_current_user, $p_bug->project_id ),
+	// 	get_enum_element( 'dwg_status', $p_bug->status, $t_current_user, $p_bug->project_id )
+	// );
+$t_resolution = get_enum_element( 'resolution', $p_bug->resolution, $t_current_user, $p_bug->project_id );
+$t_status = get_enum_element( 'dwg_status', $p_bug->status, $t_current_user, $p_bug->project_id );
+printf( ' <span title="%s">%s</span>', $t_resolution, $t_status );
 
 	# print handler user next to status
 	if( $p_bug->handler_id > 0

@@ -155,9 +155,9 @@ function dwg_revision_drop( $p_revision_id ) {
 		db_query( $t_query, $p_revision_id );
 		foreach( $p_revision_id as $t_rev_id ) {
 			if( $t_revisions[$t_rev_id]['type'] == REV_DWGNOTE ) {
-				history_log_event_special( $t_revisions[$t_rev_id]['bug_id'], DWGNOTE_REVISION_DROPPED, dwgnote_format_id( $t_rev_id ), $t_revisions[$t_rev_id]['bugnote_id'] );
+				history_dwg_log_event_special( $t_revisions[$t_rev_id]['bug_id'], DWGNOTE_REVISION_DROPPED, dwgnote_format_id( $t_rev_id ), $t_revisions[$t_rev_id]['bugnote_id'] );
 			} else {
-				history_log_event_special( $t_revisions[$t_rev_id]['bug_id'], DWG_REVISION_DROPPED, dwgnote_format_id( $t_rev_id ), $t_revisions[$t_rev_id]['type'] );
+				history_dwg_log_event_special( $t_revisions[$t_rev_id]['bug_id'], DWG_REVISION_DROPPED, dwgnote_format_id( $t_rev_id ), $t_revisions[$t_rev_id]['type'] );
 			}
 		}
 	} else {
@@ -165,9 +165,9 @@ function dwg_revision_drop( $p_revision_id ) {
 		$t_query = 'DELETE FROM {bug_revision} WHERE id=' . db_param();
 		db_query( $t_query, array( $p_revision_id ) );
 		if( $t_revision['type'] == REV_DWGNOTE ) {
-			history_log_event_special( $t_revision['bug_id'], DWGNOTE_REVISION_DROPPED, dwgnote_format_id( $p_revision_id ), $t_revision['bugnote_id'] );
+			history_dwg_log_event_special( $t_revision['bug_id'], DWGNOTE_REVISION_DROPPED, dwgnote_format_id( $p_revision_id ), $t_revision['bugnote_id'] );
 		} else {
-			history_log_event_special( $t_revision['bug_id'], DWG_REVISION_DROPPED, dwgnote_format_id( $p_revision_id ), $t_revision['type'] );
+			history_dwg_log_event_special( $t_revision['bug_id'], DWG_REVISION_DROPPED, dwgnote_format_id( $p_revision_id ), $t_revision['type'] );
 		}
 	}
 }

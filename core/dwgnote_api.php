@@ -56,7 +56,7 @@ require_api( 'error_api.php' );
 require_api( 'event_api.php' );
 require_api( 'file_dwg_api.php' );
 require_api( 'helper_api.php' );
-require_api( 'history_api.php' );
+require_api( 'history_dwg_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'mention_api.php' );
 require_api( 'user_api.php' );
@@ -314,7 +314,7 @@ function dwgnote_add( $p_bug_id, $p_bugnote_text, $p_time_tracking = '0:00', $p_
 
 	# log new bug
 	if( $p_log_history ) {
-		history_log_event_special( $p_bug_id, DWGNOTE_ADDED, dwgnote_format_id( $t_bugnote_id ) );
+		history_dwg_log_event_special( $p_bug_id, DWGNOTE_ADDED, dwgnote_format_id( $t_bugnote_id ) );
 	}
 
 	# Event integration
@@ -385,10 +385,10 @@ function dwgnote_delete( $p_bugnote_id ) {
 	dwg_update_date( $t_bug_id );
 
 	# log deletion of bug
-	history_log_event_special( $t_bug_id, DWGNOTE_DELETED, dwgnote_format_id( $p_bugnote_id ) );
+	history_dwg_log_event_special( $t_bug_id, DWGNOTE_DELETED, dwgnote_format_id( $p_bugnote_id ) );
 
 	# Delete attachments linked to bugnote in the db (i.e. dwgnote_id is set)
-	file_delete_dwgnote_attachments( $t_bug_id, $p_bugnote_id );
+	file_dwg_delete_dwgnote_attachments( $t_bug_id, $p_bugnote_id );
 
 	# Event integration
 	event_signal( 'EVENT_DWGNOTE_DELETED', array( $t_bug_id, $p_bugnote_id ) );
@@ -761,7 +761,7 @@ function dwgnote_set_text( $p_bugnote_id, $p_bugnote_text ) {
 	$t_revision_id = dwg_revision_add( $t_bug_id, $t_user_id, REV_DWGNOTE, $p_bugnote_text, $p_bugnote_id );
 
 	# log new bugnote
-	history_log_event_special( $t_bug_id, DWGNOTE_UPDATED, dwgnote_format_id( $p_bugnote_id ), $t_revision_id );
+	history_dwg_log_event_special( $t_bug_id, DWGNOTE_UPDATED, dwgnote_format_id( $p_bugnote_id ), $t_revision_id );
 
 	return true;
 }
@@ -790,7 +790,7 @@ function dwgnote_set_view_state( $p_bugnote_id, $p_private ) {
 	$t_query = 'UPDATE {dwgnote} SET view_state=' . db_param() . ' WHERE id=' . db_param();
 	db_query( $t_query, array( $t_view_state, $p_bugnote_id ) );
 
-	history_log_event_special( $t_bug_id, DWGNOTE_STATE_CHANGED, $t_view_state, dwgnote_format_id( $p_bugnote_id ) );
+	history_dwg_log_event_special( $t_bug_id, DWGNOTE_STATE_CHANGED, $t_view_state, dwgnote_format_id( $p_bugnote_id ) );
 
 	return true;
 }

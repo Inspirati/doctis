@@ -49,7 +49,7 @@ form_security_validate( 'dwg_file_delete' );
 
 $f_file_id = gpc_get_int( 'file_id' );
 
-$t_bug_id = file_get_field( $f_file_id, 'bug_id', 'dwg' );
+$t_bug_id = file_dwg_get_field( $f_file_id, 'bug_id', 'dwg' );
 
 $t_bug = dwg_get( $t_bug_id, true );
 if( $t_bug->project_id != helper_get_current_project() ) {
@@ -58,7 +58,7 @@ if( $t_bug->project_id != helper_get_current_project() ) {
 	$g_project_override = $t_bug->project_id;
 }
 
-$t_attachment_owner = file_get_field( $f_file_id, 'user_id', 'dwg' );
+$t_attachment_owner = file_dwg_get_field( $f_file_id, 'user_id', 'dwg' );
 $t_current_user_is_attachment_owner = $t_attachment_owner == auth_get_current_user_id();
 if( !$t_current_user_is_attachment_owner || ( $t_current_user_is_attachment_owner && !config_get( 'allow_delete_own_attachments' ) ) ) {
 	access_ensure_dwg_level( config_get( 'delete_attachments_threshold' ), $t_bug_id );
@@ -67,7 +67,7 @@ if( !$t_current_user_is_attachment_owner || ( $t_current_user_is_attachment_owne
 helper_ensure_confirmed( lang_get( 'delete_attachment_sure_msg' ), lang_get( 'delete' ) );
 
 # @TODO RobD - it looks like file_api.php is already (mostly) parametised to use alternative tables
-file_delete( $f_file_id, 'dwg' );
+file_dwg_delete( $f_file_id, 'dwg' );
 
 form_security_purge( 'dwg_file_delete' );
 
