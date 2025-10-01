@@ -247,6 +247,10 @@ class DwgViewPageCommand extends Command {
 			$t_flags['can_unmonitor'] = false;
 		}
 
+		$t_flags['creator_show'] = in_array( 'creator', $t_fields ) && isset( $t_issue['creator'] );
+		$t_flags['reference_show'] = in_array( 'reference', $t_fields ) && isset( $t_issue['reference'] );
+		$t_flags['classification_show'] = in_array( 'classification', $t_fields ) && isset( $t_issue['classification'] );
+
 		$t_flags['attachments_show'] = in_array( 'attachments', $t_fields );
 		$t_flags['category_show'] = in_array( 'category_id', $t_fields );
 		$t_flags['eta_show'] = in_array( 'eta', $t_fields );
@@ -254,7 +258,6 @@ class DwgViewPageCommand extends Command {
 		$t_flags['priority_show'] = in_array( 'priority', $t_fields ) && isset( $t_issue['priority'] );
 		$t_flags['project_show'] = in_array( 'project', $t_fields ) && isset( $t_issue['project'] );
 		$t_flags['projection_show'] = in_array( 'projection', $t_fields ) && isset( $t_issue['projection'] );
-		$t_flags['creator_show'] = in_array( 'creator', $t_fields ) && isset( $t_issue['creator'] );
 		$t_flags['reproducibility_show'] = in_array( 'reproducibility', $t_fields ) && isset( $t_issue['reproducibility'] );
 		$t_flags['resolution_show'] = in_array( 'resolution', $t_fields ) && isset( $t_issue['resolution'] );
 		$t_flags['severity_show'] = in_array( 'severity', $t_fields ) && isset( $t_issue['severity'] );

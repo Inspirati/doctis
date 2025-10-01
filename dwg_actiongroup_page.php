@@ -353,7 +353,7 @@ if( $t_multiple_projects ) {
 					print_enum_string_option_list( 'priority', config_get( 'default_dwg_priority' ) );
 					break;
 				case 'UP_STATUS':
-					print_enum_string_option_list( 'status', config_get( 'dwg_submit_status' ) );
+					print_enum_string_option_list( 'dwg_status', config_get( 'dwg_submit_status' ) );
 					break;
 				case 'UP_CATEGORY':
 					print_category_option_list( 0, null, true );
@@ -413,7 +413,7 @@ if( $t_multiple_projects ) {
 	event_signal( 'EVENT_DWG_ACTIONGROUP_FORM', array( $t_event_params ) );
 
 	if( $t_bugnote ) {
-		$t_default_bugnote_view_status = config_get( 'default_bugnote_view_status' );
+		$t_default_bugnote_view_status = config_get( 'default_dwgnote_view_status' );
 		$t_bugnote_private = $t_default_bugnote_view_status == VS_PRIVATE;
 		$t_bugnote_class = $t_bugnote_private ? 'form-control bugnote-private' : 'form-control';
 
@@ -427,7 +427,7 @@ if( $t_multiple_projects ) {
 					</td>
 				</tr>
 <?php
-		if( access_has_project_level( config_get( 'private_bugnote_threshold' ), $t_project_id ) ) {
+		if( access_has_project_level( config_get( 'private_dwgnote_threshold' ), $t_project_id ) ) {
 ?>
 				<tr>
 					<th class="category">

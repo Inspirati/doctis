@@ -1223,6 +1223,13 @@ function print_dwg_column_id( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET
 	echo '</td>';
 }
 
+#@ NOTE: called via a run-time generated function name
+function print_dwg_column_dwg_id( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+	echo '<td class="column-id">';
+	print_dwg_link( $p_bug->id, false );
+	echo '</td>';
+}
+
 /**
  * Print column content for column sponsorship total
  *
@@ -1412,13 +1419,13 @@ function print_dwg_column_resolution( DwgData $p_bug, $p_columns_target = COLUMN
 function print_dwg_column_status( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	$t_current_user = auth_get_current_user_id();
 	# choose color based on status
-	$t_status_css = html_get_status_css_fg( $p_bug->status, $t_current_user, $p_bug->project_id );
+	$t_status_css = html_dwg_get_status_css_fg( $p_bug->status, $t_current_user, $p_bug->project_id );
 	echo '<td class="column-status">';
 	echo '<div class="align-left">';
 	print_icon( 'fa-square', 'fa-status-box ' . $t_status_css );
 	printf( ' <span title="%s">%s</span>',
 		get_enum_element( 'resolution', $p_bug->resolution, $t_current_user, $p_bug->project_id ),
-		get_enum_element( 'status', $p_bug->status, $t_current_user, $p_bug->project_id )
+		get_enum_element( 'dwg_status', $p_bug->status, $t_current_user, $p_bug->project_id )
 	);
 
 	# print handler user next to status
@@ -1515,7 +1522,7 @@ function print_dwg_column_date_submitted( DwgData $p_bug, $p_columns_target = CO
 }
 
 // function print_column_date( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
-function print_column_date( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function print_column_date( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	$t_date = string_display_line( date( config_get( 'short_date_format' ), $p_bug->date_submitted ) );
 
 	echo '<td class="column-date-submitted">', $t_date, '</td>';

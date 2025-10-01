@@ -52,8 +52,6 @@
  * @noinspection PhpMissingReturnTypeInspection, PhpMissingParamTypeInspection
  */
 
-require_once( 'email_api.php' );
-
 require_api( 'access_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'bug_api.php' );
@@ -64,6 +62,7 @@ require_api( 'constant_inc.php' );
 require_api( 'current_user_api.php' );
 require_api( 'custom_field_api.php' );
 require_api( 'database_api.php' );
+require_api( 'email_api.php' );
 require_api( 'email_queue_api.php' );
 require_api( 'event_api.php' );
 require_api( 'helper_api.php' );

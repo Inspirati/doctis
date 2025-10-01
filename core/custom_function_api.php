@@ -623,6 +623,9 @@ function custom_function_default_print_dwg_column_value( $p_column, DwgData $p_b
 		$t_column_end = '</td>';
 		$t_column_empty = '&#160;';
 	}
+	if ($p_column == "status") {
+		error_log("custom_function_default_print_dwg_column_value: " . $p_column);
+	}
 	// if ($p_column == "dwg_id") {
 	// 	error_log("custom_function_default_print_dwg_column_value: " . $p_column);
 	// }

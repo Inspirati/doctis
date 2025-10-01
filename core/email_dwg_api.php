@@ -124,15 +124,6 @@ function email_dwg_collect_recipients( $p_bug_id, $p_notify_type, array $p_extra
 		log_event( LOG_EMAIL_RECIPIENT, 'Document = #%d, skip @U%d (creator disabled)', $p_bug_id, $t_creator_id );
 	}
 
-	# add Reporter
-	$t_reporter_id = dwg_get_field( $p_bug_id, 'reporter_id' );
-	if( ON == email_notify_flag( $p_notify_type, 'reporter' ) ) {
-		$t_recipients[$t_reporter_id] = true;
-		log_event( LOG_EMAIL_RECIPIENT, 'Document = #%d, add @U%d (reporter)', $p_bug_id, $t_reporter_id );
-	} else {
-		log_event( LOG_EMAIL_RECIPIENT, 'Document = #%d, skip @U%d (reporter disabled)', $p_bug_id, $t_reporter_id );
-	}
-
 	# add Handler
 	$t_handler_id = dwg_get_field( $p_bug_id, 'handler_id' );
 	if( $t_handler_id > 0 ) {
@@ -230,10 +221,10 @@ function email_dwg_collect_recipients( $p_bug_id, $p_notify_type, array $p_extra
 		case 'reopened':
 		case 'resolved':
 		case 'closed':
-		case 'bugnote':
+		case 'dwgnote':
 			$t_pref_field = 'email_on_' . $p_notify_type;
 			if( !$p_bugnote_id ) {
-				$p_bugnote_id = bugnote_get_latest_id( $p_bug_id );
+				$p_bugnote_id = dwgnote_get_latest_id( $p_bug_id );
 			}
 			break;
 		case 'owner':
@@ -448,7 +439,7 @@ function email_dwg_relationship_added( $p_bug_id, $p_related_bug_id, $p_rel_type
 		trigger_error( ERROR_RELATIONSHIP_NOT_FOUND, ERROR );
 	}
 
-	$t_rev_rel_type = relationship_get_complementary_type( $p_rel_type );
+	$t_rev_rel_type = dwg_relationship_get_complementary_type( $p_rel_type );
 	if( !isset( $g_relationships[$t_rev_rel_type] ) ) {
 		trigger_error( ERROR_RELATIONSHIP_NOT_FOUND, ERROR );
 	}
@@ -531,7 +522,7 @@ function email_dwg_relationship_deleted( $p_bug_id, $p_related_bug_id, $p_rel_ty
 		trigger_error( ERROR_RELATIONSHIP_NOT_FOUND, ERROR );
 	}
 
-	$t_rev_rel_type = relationship_get_complementary_type( $p_rel_type );
+	$t_rev_rel_type = dwg_relationship_get_complementary_type( $p_rel_type );
 	if( !isset( $g_relationships[$t_rev_rel_type] ) ) {
 		trigger_error( ERROR_RELATIONSHIP_NOT_FOUND, ERROR );
 	}
@@ -568,7 +559,7 @@ function email_dwg_relationship_deleted( $p_bug_id, $p_related_bug_id, $p_rel_ty
  */
 function email_dwg_relationship_dwg_deleted( $p_bug_id ) {
 	$t_ignore = false;
-	$t_relationships = relationship_get_all( $p_bug_id, $t_ignore );
+	$t_relationships = dwg_relationship_get_all( $p_bug_id, $t_ignore );
 	if( empty( $t_relationships ) ) {
 		return;
 	}
@@ -620,7 +611,7 @@ function email_dwg_relationship_child_closed( $p_bug_id ) {
  */
 function email_dwg_relationship_child_resolved_closed( $p_bug_id, $p_message_id ) {
 	# retrieve all the relationships in which the bug is the destination bug
-	$t_relationship = relationship_get_all_dest( $p_bug_id );
+	$t_relationship = dwg_relationship_get_all_dest( $p_bug_id );
 	$t_relationship_count = count( $t_relationship );
 	if( $t_relationship_count == 0 ) {
 		# no parent bug found
@@ -1237,7 +1228,7 @@ function email_format_dwg_message( array $p_visible_bug_data ) {
 
 	if ( isset( $p_visible_bug_data[ 'email_status' ] ) ) {
 		$t_status = $p_visible_bug_data['email_status'];
-		$p_visible_bug_data['email_status'] = get_enum_element( 'status', $t_status );	
+		$p_visible_bug_data['email_status'] = get_enum_element( 'dwg_status', $t_status );	
 		$t_message .= email_dwg_format_attribute( $p_visible_bug_data, 'email_status' );
 	}
 
@@ -1513,12 +1504,12 @@ function email_dwg_relationship_get_details( $p_bug_id, DwgRelationshipData $p_r
 		# root bug is in the source side, related bug in the destination side
 		$t_related_project_id = $p_relationship->dest_bug_id;
 		$t_related_bug_id = $p_relationship->dest_bug_id;
-		$t_relationship_descr = relationship_get_description_src_side( $p_relationship->type );
+		$t_relationship_descr = dwg_relationship_get_description_src_side( $p_relationship->type );
 	} else {
 		# root bug is in the dest side, related bug in the source side
 		$t_related_project_id = $p_relationship->src_bug_id;
 		$t_related_bug_id = $p_relationship->src_bug_id;
-		$t_relationship_descr = relationship_get_description_dest_side( $p_relationship->type );
+		$t_relationship_descr = dwg_relationship_get_description_dest_side( $p_relationship->type );
 	}
 
 	# related bug not existing...
@@ -1562,7 +1553,7 @@ function email_dwg_relationship_get_summary_text( $p_bug_id ) {
 	# to multiple projects.
 	$t_show_project = false;
 
-	$t_relationship_all = relationship_get_all( $p_bug_id, $t_show_project );
+	$t_relationship_all = dwg_relationship_get_all( $p_bug_id, $t_show_project );
 	$t_relationship_all_count = count( $t_relationship_all );
 
 	# prepare the relationships table

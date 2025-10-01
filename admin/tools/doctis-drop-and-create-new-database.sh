@@ -106,7 +106,7 @@ VALUES (1, 'example', 10, 1, 10, 10, '', '', 1, 1, '');
 SQL
 )
 EOF
-    echo -e "${INFO}Database ${mysqldatabase} loaded.${OFF}" >&2
+    echo -e "${INFO}Example data loaded.${OFF}" >&2
 }
 
 load_mantis_testing_user() {

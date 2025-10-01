@@ -2875,6 +2875,13 @@ $g_auto_set_status_to_assigned = ON;
  */
 $g_status_enum_workflow = array();
 
+/**
+ * Document Status Workflow definition.
+ *
+ * @global array $g_dwg_status_enum_workflow
+ */
+$g_dwg_status_enum_workflow = array();
+
 ############################
 # Bug Attachments Settings #
 ############################
@@ -3567,6 +3574,13 @@ $g_admin_site_threshold = ADMINISTRATOR;
  * @global int $g_manage_project_threshold
  */
 $g_manage_project_threshold = MANAGER;
+
+/**
+ * Threshold needed to import data into a project.
+ *
+ * @global int $g_manage_import_threshold
+ */
+$g_manage_import_threshold = MANAGER;
 
 /**
  * Threshold needed to add/delete/modify news.
@@ -4346,9 +4360,9 @@ $g_projection_enum_string = '10:none,30:tweak,50:minor fix,70:major rework,90:re
 /**
  * Document enumeration.
  *
- * @global string $g_document_enum_string
+ * @global string $g_dwg_status_enum_string
  */
-$g_document_enum_string = '10:recieved,20:triage,30:assignment,40:JoS,50:review,60:rework,60:independent review,80:accepted,90:incorported';
+$g_dwg_status_enum_string = '10:received,20:triage,30:assigned,40:JoS,50:review,60:rework,60:independent review,80:accepted,90:incorported';
 
 /**
  * Change Class enumeration.
@@ -5181,7 +5195,8 @@ $g_due_date_update_threshold = NOBODY;
  *
  * @global int $g_due_date_view_threshold
  */
-$g_due_date_view_threshold = NOBODY;
+// $g_due_date_view_threshold = NOBODY;
+$g_due_date_view_threshold = DEVELOPER;
 
 /**
  * Default due date value for newly submitted issues.
@@ -5733,11 +5748,13 @@ $g_public_config_names = array(
 	'display_bugnote_padding',
 	'display_dwgnote_padding',
 	'display_errors',
+	'dwg_status_enum_string',
 	'download_attachments_threshold',
 	'due_date_default',
 	'due_date_update_threshold',
 	'due_date_view_threshold',
 	'due_date_warning_levels',
+	'dwg_status_enum_workflow',
 	'email_ensure_unique',
 	'email_dkim_domain',
 	'email_dkim_enable',
@@ -5804,6 +5821,7 @@ $g_public_config_names = array(
 	'manage_news_threshold',
 	'manage_plugin_threshold',
 	'manage_project_threshold',
+	'manage_import_threshold',
 	'manage_site_threshold',
 	'manage_user_threshold',
 	'manage_users_cookie',

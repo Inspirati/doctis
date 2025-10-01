@@ -11,11 +11,20 @@ The Doctis project aims to add support to MantisBT for tracking documents and th
 
 Documents can be any set of electronic files or physical objects that can have suitable configuration data to uniquely identify them.
 
-The documents themselves will not be contained within the system, but rather their leading particulars will include a reference number, and/or a URL to their location.
+The documents themselves do not need to be contained within the system, but rather their leading particulars will include a reference number, and/or a URL to their location.
 
 The easiest way to try Doctis is to duplicate the developers test environment, hosted in a VirtualBox running Debian Linux.
 
 A script to automatically clone, install, and configure Doctis is under development and is currently undergoing beta testing.
+
+Design Goals (requirements)
+---------------------------
+
+* simple to use, should require little to no training
+* track status of documents through the review cycle
+* track status of issue identified during review (mostly existing mantis functionality)
+* bulk import of document data from spreadsheet, csv, tsv
+* users can be assigned to groups
 
 Installing
 ----------

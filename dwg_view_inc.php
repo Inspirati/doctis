@@ -323,6 +323,10 @@ if( $t_flags['id_show'] || $t_flags['project_show'] || $t_flags['category_show']
 	print_table_spacer( 6 );
 }
 
+#
+# Document, Reference, Author
+#
+
 if( false
 ) {
 	# Labels
@@ -370,7 +374,7 @@ $t_date_format = 'Y-m-d';
 # Creator, Handler, Due Date
 #
 
-if( $t_flags['creator_show'] || $t_flags['handler_show'] || $t_flags['due_date_show'] ) {
+if( $t_flags['creator_show'] || $t_flags['handler_show'] || $t_flags['classification_show'] ) {
 	echo '<tr>';
 
 	$t_spacer = 0;
@@ -398,10 +402,10 @@ if( $t_flags['creator_show'] || $t_flags['handler_show'] || $t_flags['due_date_s
 	}
 
 	# Classification
-	if( $t_flags['resolution_show'] ) {
-		echo '<th class="bug-resolution category">', lang_get( 'dwg_classification' ), '</th>';
-		// echo '<td class="bug-resolution">', string_display_line( $t_issue['classification']['label'] ), '</td>';
-		echo '<td class="bug-resolution">', isset( $t_issue['classification'] ) ? string_display_line( $t_issue['classification'] ) : '', '</td>';
+	if( $t_flags['classification_show'] ) {
+		echo '<th class="bug-classification category">', lang_get( 'dwg_classification' ), '</th>';
+		// echo '<td class="bug-classificatin">', string_display_line( $t_issue['classification']['label'] ), '</td>';
+		echo '<td class="bug-classification">', isset( $t_issue['classification'] ) ? string_display_line( $t_issue['classification'] ) : '', '</td>';
 	} else {
 		$t_spacer += 2;
 	}
@@ -581,66 +585,66 @@ if( $t_flags['projection_show'] || $t_flags['eta_show'] ) {
 # Product Version, Product Build
 #
 
-if( ( $t_flags['versions_product_version_show'] && isset( $t_issue['version'] ) ) ||
-	( $t_flags['versions_product_build_show'] && isset( $t_issue['build'] ) ) ) {
-	$t_spacer = 2;
+// if( ( $t_flags['versions_product_version_show'] && isset( $t_issue['version'] ) ) ||
+// 	( $t_flags['versions_product_build_show'] && isset( $t_issue['build'] ) ) ) {
+// 	$t_spacer = 2;
 
-	echo '<tr>';
+// 	echo '<tr>';
 
-	# Product Version
-	if( $t_flags['versions_product_version_show'] && isset( $t_issue['version'] ) ) {
-		echo '<th class="bug-product-version category">', lang_get( 'product_version' ), '</th>';
-		echo '<td class="bug-product-version">', string_display_line( $t_issue_view['product_version'] ), '</td>';
-	} else {
-		$t_spacer += 2;
-	}
+// 	# Product Version
+// 	if( $t_flags['versions_product_version_show'] && isset( $t_issue['version'] ) ) {
+// 		echo '<th class="bug-product-version category">', lang_get( 'product_version' ), '</th>';
+// 		echo '<td class="bug-product-version">', string_display_line( $t_issue_view['product_version'] ), '</td>';
+// 	} else {
+// 		$t_spacer += 2;
+// 	}
 
-	# Product Build
-	if( $t_flags['versions_product_build_show'] && isset( $t_issue['build'] ) ) {
-		echo '<th class="bug-product-build category">', lang_get( 'product_build' ), '</th>';
-		echo '<td class="bug-product-build">', string_display_line( $t_issue['build'] ), '</td>';
-	} else {
-		$t_spacer += 2;
-	}
+// 	# Product Build
+// 	if( $t_flags['versions_product_build_show'] && isset( $t_issue['build'] ) ) {
+// 		echo '<th class="bug-product-build category">', lang_get( 'product_build' ), '</th>';
+// 		echo '<td class="bug-product-build">', string_display_line( $t_issue['build'] ), '</td>';
+// 	} else {
+// 		$t_spacer += 2;
+// 	}
 
-	# spacer
-	echo '<td colspan="', $t_spacer, '">&#160;</td>';
+// 	# spacer
+// 	echo '<td colspan="', $t_spacer, '">&#160;</td>';
 
-	echo '</tr>';
-}
+// 	echo '</tr>';
+// }
 
 #
 # Target Version, Fixed In Version
 #
 
-if( ( $t_flags['versions_target_version_show'] && isset( $t_issue['target_version'] ) ) ||
-    ( $t_flags['versions_fixed_in_version_show'] && isset( $t_issue['fixed_in_version'] ) ) ) {
-	$t_spacer = 2;
+// if( ( $t_flags['versions_target_version_show'] && isset( $t_issue['target_version'] ) ) ||
+//     ( $t_flags['versions_fixed_in_version_show'] && isset( $t_issue['fixed_in_version'] ) ) ) {
+// 	$t_spacer = 2;
 
-	echo '<tr>';
+// 	echo '<tr>';
 
-	# target version
-	if( $t_flags['versions_target_version_show'] && isset( $t_issue['target_version'] ) ) {
-		# Target Version
-		echo '<th class="bug-target-version category">', lang_get( 'target_version' ), '</th>';
-		echo '<td class="bug-target-version">', string_display_line( $t_issue_view['target_version'] ), '</td>';
-	} else {
-		$t_spacer += 2;
-	}
+// 	# target version
+// 	if( $t_flags['versions_target_version_show'] && isset( $t_issue['target_version'] ) ) {
+// 		# Target Version
+// 		echo '<th class="bug-target-version category">', lang_get( 'target_version' ), '</th>';
+// 		echo '<td class="bug-target-version">', string_display_line( $t_issue_view['target_version'] ), '</td>';
+// 	} else {
+// 		$t_spacer += 2;
+// 	}
 
-	# fixed in version
-	if( $t_flags['versions_fixed_in_version_show'] && isset( $t_issue['fixed_in_version'] ) ) {
-		echo '<th class="bug-fixed-in-version category">', lang_get( 'fixed_in_version' ), '</th>';
-		echo '<td class="bug-fixed-in-version">', string_display_line( $t_issue_view['fixed_in_version'] ), '</td>';
-	} else {
-		$t_spacer += 2;
-	}
+// 	# fixed in version
+// 	if( $t_flags['versions_fixed_in_version_show'] && isset( $t_issue['fixed_in_version'] ) ) {
+// 		echo '<th class="bug-fixed-in-version category">', lang_get( 'fixed_in_version' ), '</th>';
+// 		echo '<td class="bug-fixed-in-version">', string_display_line( $t_issue_view['fixed_in_version'] ), '</td>';
+// 	} else {
+// 		$t_spacer += 2;
+// 	}
 
-	# spacer
-	echo '<td colspan="', $t_spacer, '">&#160;</td>';
+// 	# spacer
+// 	echo '<td colspan="', $t_spacer, '">&#160;</td>';
 
-	echo '</tr>';
-}
+// 	echo '</tr>';
+// }
 
 #
 # Bug Details Event Signal
@@ -980,13 +984,13 @@ function dwg_view_relationship_get_details( $p_bug_id, DwgRelationshipData $p_re
 		$t_related_project_id = $p_relationship->dest_bug_id;
 		$t_related_project_name = project_get_name( $p_relationship->dest_project_id );
 		$t_related_bug_id = $p_relationship->dest_bug_id;
-		$t_relationship_descr = relationship_get_description_src_side( $p_relationship->type );
+		$t_relationship_descr = dwg_relationship_get_description_src_side( $p_relationship->type );
 	} else {
 		# root bug is in the dest side, related bug in the source side
 		$t_related_project_id = $p_relationship->src_bug_id;
 		$t_related_bug_id = $p_relationship->src_bug_id;
 		$t_related_project_name = project_get_name( $p_relationship->src_project_id );
-		$t_relationship_descr = relationship_get_description_dest_side( $p_relationship->type );
+		$t_relationship_descr = dwg_relationship_get_description_dest_side( $p_relationship->type );
 	}
 
 	# related bug not existing...
@@ -1008,7 +1012,7 @@ function dwg_view_relationship_get_details( $p_bug_id, DwgRelationshipData $p_re
 	# get the information from the related bug and prepare the link
 	$t_current_user_id = auth_get_current_user_id();
 	$t_dwg = dwg_get( $t_related_bug_id );
-	$t_status_string = get_enum_element( 'status', $t_dwg->status, $t_current_user_id, $t_dwg->project_id );
+	$t_status_string = get_enum_element( 'dwg_status', $t_dwg->status, $t_current_user_id, $t_dwg->project_id );
 	$t_resolution_string = get_enum_element( 'resolution', $t_dwg->resolution, $t_current_user_id, $t_dwg->project_id );
 
 	$t_relationship_info_html = $t_td . string_no_break( $t_relationship_descr ) . '&#160;</td>';
@@ -1074,7 +1078,7 @@ function dwg_view_relationship_get_summary_html( $p_bug_id ) {
 	# to multiple projects.
 	$t_show_project = false;
 
-	$t_relationship_all = relationship_get_all( $p_bug_id, $t_show_project );
+	$t_relationship_all = dwg_relationship_get_all( $p_bug_id, $t_show_project );
 	$t_relationship_all_count = count( $t_relationship_all );
 
 	# prepare the relationships table
@@ -1083,7 +1087,7 @@ function dwg_view_relationship_get_summary_html( $p_bug_id ) {
 	}
 
 	if( !is_blank( $t_summary ) ) {
-		if( !relationship_can_resolve_bug( $p_bug_id ) ) {
+		if( !dwg_relationship_can_resolve_bug( $p_bug_id ) ) {
 			$t_summary .= '<tr><td colspan="' . ( 5 + $t_show_project ) . '"><strong>' .
 				lang_get( 'relationship_warning_blocking_bugs_not_resolved' ) . '</strong></td></tr>';
 		}

@@ -239,6 +239,12 @@ $f_copy_attachments_from_parent	= gpc_get_bool( 'copy_attachments_from_parent', 
 $t_fields = config_get( 'dwg_report_page_fields' );
 $t_fields = columns_filter_disabled( $t_fields );
 
+$t_show_author = in_array( 'author', $t_fields );
+$t_show_creator = in_array( 'creator_id', $t_fields );
+$t_show_revision = in_array( 'revision', $t_fields );
+$t_show_reference = in_array( 'reference', $t_fields );
+$t_show_classification = in_array( 'classification', $t_fields );
+
 $t_show_category = in_array( 'category_id', $t_fields );
 $t_show_reproducibility = in_array( 'reproducibility', $t_fields );
 $t_show_eta = in_array( 'eta', $t_fields );

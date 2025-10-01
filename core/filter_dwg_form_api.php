@@ -737,7 +737,7 @@ function print_filter_dwg_values_show_status( array $p_filter ) {
 			if( filter_dwg_field_is_any( $t_current ) ) {
 				$t_any_found = true;
 			} else {
-				$t_this_string = get_enum_element( 'status', $t_current );
+				$t_this_string = get_enum_element( 'dwg_status', $t_current );
 			}
 			if( !$t_first_flag ) {
 				$t_output .= '<br />';
@@ -770,7 +770,7 @@ function print_filter_dwg_show_status( ?array $p_filter = null ) {
 	?>	<!-- Status -->
 			<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_STATUS;?>[]">
 				<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_STATUS], META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
-				<?php print_enum_string_option_list( 'status', $p_filter[FILTER_PROPERTY_STATUS] )?>
+				<?php print_enum_string_option_list( 'dwg_status', $p_filter[FILTER_PROPERTY_STATUS] )?>
 			</select>
 		<?php
 }
@@ -796,7 +796,7 @@ function print_filter_dwg_values_hide_status( array $p_filter ) {
 			if( filter_dwg_field_is_none( $t_current ) ) {
 				$t_none_found = true;
 			} else {
-				$t_this_string = get_enum_element( 'status', $t_current );
+				$t_this_string = get_enum_element( 'dwg_status', $t_current );
 			}
 			if( !$t_first_flag ) {
 				$t_output .= '<br />';
@@ -833,7 +833,7 @@ function print_filter_dwg_hide_status( ?array $p_filter = null ) {
 	?><!-- Hide Status -->
 			<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_HIDE_STATUS;?>[]">
 				<option value="<?php echo META_FILTER_NONE?>">[<?php echo lang_get( 'none' )?>]</option>
-				<?php print_enum_string_option_list( 'status', $p_filter[FILTER_PROPERTY_HIDE_STATUS] )?>
+				<?php print_enum_string_option_list( 'dwg_status', $p_filter[FILTER_PROPERTY_HIDE_STATUS] )?>
 			</select>
 		<?php
 }

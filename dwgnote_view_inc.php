@@ -260,19 +260,19 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 			# show make public or make private button if the user is allowed to change the view state of this bugnote
 			if( $t_activity['can_change_view_state'] ) {
 				if ( !isset( $t_security_token_state ) ) {
-					$t_security_token_state = form_security_token( 'bugnote_set_view_state' );
+					$t_security_token_state = form_security_token( 'dwgnote_set_view_state' );
 				}
 
 				echo '<div class="pull-left">';
 				if( $t_activity['private'] ) {
 					print_form_button(
-						'bugnote_set_view_state.php',
+						'dwgnote_set_view_state.php',
 						lang_get( 'make_public' ),
 						array( 'private' => '0', 'bugnote_id' => $t_activity['id'] ),
 						$t_security_token_state );
 				} else {
 					print_form_button(
-						'bugnote_set_view_state.php',
+						'dwgnote_set_view_state.php',
 						lang_get( 'make_private' ),
 						array( 'private' => '1', 'bugnote_id' => $t_activity['id'] ),
 						$t_security_token_state );

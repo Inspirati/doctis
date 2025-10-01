@@ -120,7 +120,7 @@ if( config_get( 'dwg_assigned_status' ) == $f_new_status ) {
 	}
 }
 
-$t_status_label = str_replace( ' ', '_', MantisEnum::getLabel( config_get( 'status_enum_string' ), $f_new_status ) );
+$t_status_label = str_replace( ' ', '_', MantisEnum::getLabel( config_get( 'dwg_status_enum_string' ), $f_new_status ) );
 
 layout_page_header( dwg_format_summary( $f_bug_id, SUMMARY_CAPTION ) );
 
@@ -179,7 +179,7 @@ layout_page_begin();
 			<?php
 				$t_resolution = $t_bug_resolution_is_fixed ? $t_current_resolution : $t_resolution_fixed;
 
-				$t_relationships = relationship_get_all_src( $f_bug_id );
+				$t_relationships = dwg_relationship_get_all_src( $f_bug_id );
 				foreach( $t_relationships as $t_relationship ) {
 					if( $t_relationship->type == DWG_DUPLICATE ) {
 						$t_resolution = config_get( 'dwg_duplicate_resolution' );
