@@ -702,7 +702,7 @@ class DwgFilterQuery extends DbQuery {
 				$t_selected_status_array = $this->filter[FILTER_PROPERTY_STATUS];
 				# if we have metavalue for "any", expand to all status, to filter them
 				if( filter_field_is_any( $t_selected_status_array ) ) {
-					$t_selected_status_array = MantisEnum::getValues( config_get( 'status_enum_string' ) );
+					$t_selected_status_array = MantisEnum::getValues( config_get( 'dwg_status_enum_string' ) );
 				}
 				$t_hide_status = $this->filter[FILTER_PROPERTY_HIDE_STATUS][0];
 				# Filter out status that must be hidden

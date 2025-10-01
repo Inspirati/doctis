@@ -151,21 +151,21 @@ function dwg_activity_get_all( $p_bug_id, $p_include_attachments = true ) {
 		} else {
 			# check if the user can edit this bugnote
 			if( $t_user_id == $t_activity['user_id'] ) {
-				$t_can_edit_bugnote = access_has_bugnote_level( $t_bugnote_user_edit_threshold, $t_activity['id'] );
+				$t_can_edit_bugnote = access_has_dwgnote_level( $t_bugnote_user_edit_threshold, $t_activity['id'] );
 			} else {
 				$t_can_edit_bugnote = $t_can_edit_all_bugnotes;
 			}
 
 			# check if the user can delete this bugnote
 			if( $t_user_id == $t_activity['user_id'] ) {
-				$t_can_delete_bugnote = access_has_bugnote_level( $t_bugnote_user_delete_threshold, $t_activity['id'] );
+				$t_can_delete_bugnote = access_has_dwgnote_level( $t_bugnote_user_delete_threshold, $t_activity['id'] );
 			} else {
 				$t_can_delete_bugnote = $t_can_delete_all_bugnotes;
 			}
 
 			# check if the user can make this bugnote private
 			if( $t_user_id == $t_activity['user_id'] ) {
-				$t_can_change_view_state = access_has_bugnote_level( $t_bugnote_user_change_view_state_threshold, $t_activity['id'] );
+				$t_can_change_view_state = access_has_dwgnote_level( $t_bugnote_user_change_view_state_threshold, $t_activity['id'] );
 			} else {
 				$t_can_change_view_state = $t_can_change_view_state_all_bugnotes;
 			}

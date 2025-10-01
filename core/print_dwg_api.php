@@ -1026,8 +1026,8 @@ function print_dwg_enum_string_option_list( $p_enum_name, $p_val = 0 ) {
  * @return array
  */
 function print_dwg_get_status_option_list( $p_user_auth = 0, $p_current_value = 0, $p_show_current = true, $p_add_close = false, $p_project_id = ALL_PROJECTS ) {
-	$t_config_var_value = config_get( 'status_enum_string', null, null, $p_project_id );
-	$t_enum_workflow = config_get( 'status_enum_workflow', null, null, $p_project_id );
+	$t_config_var_value = config_get( 'dwg_status_enum_string', null, null, $p_project_id );
+	$t_enum_workflow = config_get( 'dwg_status_enum_workflow', null, null, $p_project_id );
 
 	if( count( $t_enum_workflow ) < 1 || !MantisEnum::hasValue( $t_config_var_value, $p_current_value ) ) {
 		# workflow not defined, use default enumeration
@@ -1048,18 +1048,18 @@ function print_dwg_get_status_option_list( $p_user_auth = 0, $p_current_value = 
 		if( ( $p_show_current || $p_current_value != $t_enum_value )
 			&& access_compare_level( $p_user_auth, access_get_dwg_status_threshold( $t_enum_value, $p_project_id ) )
 		) {
-			$t_enum_list[$t_enum_value] = get_enum_element( 'status', $t_enum_value );
+			$t_enum_list[$t_enum_value] = get_enum_element( 'dwg_status', $t_enum_value );
 		}
 	}
 
 	if( $p_show_current ) {
-		$t_enum_list[$p_current_value] = get_enum_element( 'status', $p_current_value );
+		$t_enum_list[$p_current_value] = get_enum_element( 'dwg_status', $p_current_value );
 	}
 
 	if( $p_add_close && access_compare_level( $p_current_value, config_get( 'dwg_resolved_status_threshold', null, null, $p_project_id ) ) ) {
 		$t_closed = config_get( 'dwg_closed_status_threshold', null, null, $p_project_id );
 		if( $p_show_current || $p_current_value != $t_closed ) {
-			$t_enum_list[$t_closed] = get_enum_element( 'status', $t_closed );
+			$t_enum_list[$t_closed] = get_enum_element( 'dwg_status', $t_closed );
 		}
 	}
 
@@ -1093,7 +1093,7 @@ function print_dwg_status_option_list( $p_select_label, $p_current_value = 0, $p
 	} else if( count( $t_enum_list ) == 1 ) {
 		echo array_pop( $t_enum_list );
 	} else {
-		echo MantisEnum::getLabel( lang_get( 'status_enum_string' ), $p_current_value );
+		echo MantisEnum::getLabel( lang_get( 'dwg_status_enum_string' ), $p_current_value );
 	}
 }
 

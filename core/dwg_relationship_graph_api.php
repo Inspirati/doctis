@@ -514,7 +514,7 @@ function dwg_relgraph_output_map( Graph $p_graph, $p_name ) {
  * @return void
  */
 function dwg_relgraph_add_bug_to_graph( Graph &$p_graph, $p_bug_id, BugData $p_bug, $p_url = null, $p_highlight = false, $p_show_summary = false ) {
-	$t_status = get_enum_element( 'status', $p_bug->status );
+	$t_status = get_enum_element( 'dwg_status', $p_bug->status );
 	$t_label = $p_bug_id;
 	if( $p_show_summary ) {
 		# Truncate summary to 30 chars, to avoid nodes being too wide

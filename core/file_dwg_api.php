@@ -258,7 +258,7 @@ function file_dwg_can_view_or_download( $p_action, $p_bug_id, $p_uploader_user_i
 	if( $p_bugnote_id === null ) {
 		$t_can_access = access_has_dwg_level( $t_access_global, $p_bug_id );
 	} else {
-		$t_can_access = access_has_bugnote_level( $t_access_global, $p_bugnote_id );
+		$t_can_access = access_has_dwgnote_level( $t_access_global, $p_bugnote_id );
 	}
 	if( $t_can_access ) {
 		return true;

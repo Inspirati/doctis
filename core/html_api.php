@@ -783,6 +783,9 @@ function print_manage_menu( $p_page = '' ) {
 	if( access_has_project_level( config_get( 'manage_project_threshold' ) ) ) {
 		$t_pages['manage_proj_page.php'] = array( 'url'   => 'manage_proj_page.php', 'label' => 'manage_projects_link' );
 	}
+	if( access_has_project_level( config_get( 'manage_import_threshold' ) ) ) {
+		$t_pages['manage_import_data_page.php'] = array( 'url'   => 'manage_import_data_page.php', 'label' => 'manage_import_link' );
+	}
 	if( access_has_global_level( config_get( 'tag_edit_threshold' ) ) ) {
 		$t_pages['manage_tags_page.php'] = array( 'url'   => 'manage_tags_page.php', 'label' => 'manage_tags_link' );
 	}
@@ -1076,6 +1079,15 @@ function html_button( $p_action, $p_button_text, array $p_fields = array(), $p_m
  */
 function html_get_status_css_fg( $p_status, $p_user = null, $p_project = null ) {
 	$t_status_enum = config_get( 'status_enum_string', null, $p_user, $p_project );
+	if( MantisEnum::hasValue( $t_status_enum, $p_status ) ) {
+		return 'status-' . $p_status . '-fg';
+	} else {
+		return '';
+	}
+}
+
+function html_dwg_get_status_css_fg( $p_status, $p_user = null, $p_project = null ) {
+	$t_status_enum = config_get( 'dwg_status_enum_string', null, $p_user, $p_project );
 	if( MantisEnum::hasValue( $t_status_enum, $p_status ) ) {
 		return 'status-' . $p_status . '-fg';
 	} else {

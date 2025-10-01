@@ -203,7 +203,7 @@ function access_has_dwgnote_level_filter( $p_access_level, $p_bugnote_id, $p_use
 /**
  * Check if the user has the specified access level for the given bugnote
  * and deny access to the page if not
- * @see access_has_bugnote_level
+ * @see access_has_dwgnote_level
  * @param integer      $p_access_level Integer representing access level.
  * @param integer      $p_bugnote_id   Integer representing bugnote id to check access against.
  * @param integer|null $p_user_id      Integer representing user id, defaults to null to use current user.

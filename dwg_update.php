@@ -321,7 +321,7 @@ if( $t_existing_bug->resolution != $t_updated_bug->resolution && (
 ) ) {
 	error_parameters(
 		get_enum_element( 'resolution', $t_updated_bug->resolution ),
-		get_enum_element( 'status', $t_updated_bug->status )
+		get_enum_element( 'dwg_status', $t_updated_bug->status )
 	);
 	trigger_error( ERROR_INVALID_RESOLUTION, ERROR );
 }
@@ -408,14 +408,14 @@ if( $t_bug_note->note ||
 	( config_get( 'time_tracking_enabled' ) &&
 	  helper_duration_to_minutes( $t_bug_note->time_tracking ) > 0 )
 ) {
-	access_ensure_dwg_level( config_get( 'add_bugnote_threshold' ), $f_bug_id );
+	access_ensure_dwg_level( config_get( 'add_dwgnote_threshold' ), $f_bug_id );
 	if( !$t_bug_note->note &&
 		!config_get( 'time_tracking_without_note' )
 	) {
-		error_parameters( lang_get( 'bugnote' ) );
+		error_parameters( lang_get( 'dwgnote' ) );
 		trigger_error( ERROR_EMPTY_FIELD, ERROR );
 	}
-	if( $t_bug_note->view_state != config_get( 'default_bugnote_view_status' ) ) {
+	if( $t_bug_note->view_state != config_get( 'default_dwgnote_view_status' ) ) {
 		access_ensure_dwg_level( config_get( 'set_view_status_threshold' ), $f_bug_id );
 	}
 }
@@ -500,7 +500,7 @@ if( $t_resolve_issue ) {
 } else if( $t_existing_bug->handler_id != $t_updated_bug->handler_id ) {
 	email_dwg_owner_changed( $f_bug_id, $t_existing_bug->handler_id, $t_updated_bug->handler_id );
 } else if( $t_existing_bug->status != $t_updated_bug->status ) {
-	$t_new_status_label = MantisEnum::getLabel( config_get( 'status_enum_string' ), $t_updated_bug->status );
+	$t_new_status_label = MantisEnum::getLabel( config_get( 'dwg_status_enum_string' ), $t_updated_bug->status );
 	$t_new_status_label = str_replace( ' ', '_', $t_new_status_label );
 	email_dwg_status_changed( $f_bug_id, $t_new_status_label );
 } else {

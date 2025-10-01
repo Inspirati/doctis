@@ -200,7 +200,9 @@ function collapse_cache_token() {
 		$t_data = json_decode( $t_token, true );
 	} else {
 		$t_data = array();
-		$t_data['filter'] = false;
+		// $t_data['filter'] = false;
+		$t_data['filter'] = true;
+		$t_data['dwg_filter'] = true;
 	}
 
 	$g_collapse_cache_token = $t_data;

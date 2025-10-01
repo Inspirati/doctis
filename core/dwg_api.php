@@ -356,7 +356,7 @@ class DwgData {
 	 * @return int Number of bugnotes
 	 */
 	private function dwg_get_dwgnote_count() {
-		if( !access_has_project_level( config_get( 'private_bugnote_threshold' ), $this->project_id ) ) {
+		if( !access_has_project_level( config_get( 'private_dwgnote_threshold' ), $this->project_id ) ) {
 			$t_restriction = 'AND view_state=' . VS_PUBLIC;
 		} else {
 			$t_restriction = '';
@@ -674,24 +674,24 @@ $this->author = isset($this->author) ? $this->author : '';
 			$t_current_user = auth_get_current_user_id();
 
 			if( $t_old_data->description != $this->description ) {
-				if( bug_revision_count( $c_bug_id, REV_DESCRIPTION ) < 1 ) {
-					bug_revision_add( $c_bug_id, $t_old_data->creator_id, REV_DESCRIPTION, $t_old_data->description, 0, $t_old_data->date_submitted );
+				if( dwg_revision_count( $c_bug_id, REV_DESCRIPTION ) < 1 ) {
+					dwg_revision_add( $c_bug_id, $t_old_data->creator_id, REV_DESCRIPTION, $t_old_data->description, 0, $t_old_data->date_submitted );
 				}
 				$t_revision_id = dwg_revision_add( $c_bug_id, $t_current_user, REV_DESCRIPTION, $this->description );
 				history_log_event_special( $c_bug_id, DESCRIPTION_UPDATED, $t_revision_id );
 			}
 
 			if( $t_old_data->steps_to_reproduce != $this->steps_to_reproduce ) {
-				if( bug_revision_count( $c_bug_id, REV_STEPS_TO_REPRODUCE ) < 1 ) {
-					bug_revision_add( $c_bug_id, $t_old_data->creator_id, REV_STEPS_TO_REPRODUCE, $t_old_data->steps_to_reproduce, 0, $t_old_data->date_submitted );
+				if( dwg_revision_count( $c_bug_id, REV_STEPS_TO_REPRODUCE ) < 1 ) {
+					dwg_revision_add( $c_bug_id, $t_old_data->creator_id, REV_STEPS_TO_REPRODUCE, $t_old_data->steps_to_reproduce, 0, $t_old_data->date_submitted );
 				}
 				$t_revision_id = dwg_revision_add( $c_bug_id, $t_current_user, REV_STEPS_TO_REPRODUCE, $this->steps_to_reproduce );
 				history_log_event_special( $c_bug_id, STEP_TO_REPRODUCE_UPDATED, $t_revision_id );
 			}
 
 			if( $t_old_data->additional_information != $this->additional_information ) {
-				if( bug_revision_count( $c_bug_id, REV_ADDITIONAL_INFO ) < 1 ) {
-					bug_revision_add( $c_bug_id, $t_old_data->creator_id, REV_ADDITIONAL_INFO, $t_old_data->additional_information, 0, $t_old_data->date_submitted );
+				if( dwg_revision_count( $c_bug_id, REV_ADDITIONAL_INFO ) < 1 ) {
+					dwg_revision_add( $c_bug_id, $t_old_data->creator_id, REV_ADDITIONAL_INFO, $t_old_data->additional_information, 0, $t_old_data->date_submitted );
 				}
 				$t_revision_id = dwg_revision_add( $c_bug_id, $t_current_user, REV_ADDITIONAL_INFO, $this->additional_information );
 				history_log_event_special( $c_bug_id, ADDITIONAL_INFO_UPDATED, $t_revision_id );
@@ -705,13 +705,13 @@ $this->author = isset($this->author) ? $this->author : '';
 		if( !$p_bypass_mail ) {
 			# If handler changes, send out owner change email
 			if( $t_old_data->handler_id != $this->handler_id ) {
-				email_owner_changed( $c_bug_id, $t_old_data->handler_id, $this->handler_id );
+				email_dwg_owner_changed( $c_bug_id, $t_old_data->handler_id, $this->handler_id );
 				return true;
 			}
 
 			# status changed
 			if( $t_old_data->status != $this->status ) {
-				$t_status = MantisEnum::getLabel( config_get( 'status_enum_string' ), $this->status );
+				$t_status = MantisEnum::getLabel( config_get( 'dwg_status_enum_string' ), $this->status );
 				$t_status = str_replace( ' ', '_', $t_status );
 				email_dwg_status_changed( $c_bug_id, $t_status );
 				return true;
@@ -1170,9 +1170,9 @@ function dwg_is_overdue( $p_bug_id ) {
  * @access public
  */
 function dwg_check_workflow( $p_bug_status, $p_wanted_status ) {
-	$t_status_enum_workflow = config_get( 'status_enum_workflow' );
+	$t_dwg_status_enum_workflow = config_get( 'dwg_status_enum_workflow' );
 
-	if( count( $t_status_enum_workflow ) < 1 ) {
+	if( count( $t_dwg_status_enum_workflow ) < 1 ) {
 		# workflow not defined, use default enum
 		return true;
 	}
@@ -1183,12 +1183,12 @@ function dwg_check_workflow( $p_bug_status, $p_wanted_status ) {
 	}
 
 	# There should always be a possible next status, if not defined, then allow all.
-	if( !isset( $t_status_enum_workflow[$p_bug_status] ) ) {
+	if( !isset( $t_dwg_status_enum_workflow[$p_bug_status] ) ) {
 		return true;
 	}
 
 	# workflow defined - find allowed states
-	$t_allowed_states = $t_status_enum_workflow[$p_bug_status];
+	$t_allowed_states = $t_dwg_status_enum_workflow[$p_bug_status];
 
 	return MantisEnum::hasValue( $t_allowed_states, $p_wanted_status );
 }
@@ -1437,25 +1437,25 @@ function dwg_delete( $p_bug_id ) {
 	// custom_field_delete_all_values( $p_bug_id );
 
 	// # Delete bugnotes
-	// bugnote_delete_all( $p_bug_id );
+	// dwgnote_delete_all( $p_bug_id );
 
 	// # Delete all sponsorships
 	// sponsorship_delete_all( $p_bug_id );
 
 	// # Delete all relationships
-	// relationship_delete_all( $p_bug_id );
+	// dwg_relationship_delete_all( $p_bug_id );
 
 	// # Delete files
 	// file_delete_attachments( $p_bug_id );
 
 	// # Detach tags
-	// tag_bug_detach_all( $p_bug_id, false );
+	// tag_dwg_detach_all( $p_bug_id, false );
 
 	// # Delete the bug history
 	// history_delete( $p_bug_id );
 
 	// # Delete bug info revisions
-	// bug_revision_delete( $p_bug_id );
+	// dwg_revision_delete( $p_bug_id );
 
 	// # Delete the bugnote text
 	// $t_bug_text_id = dwg_get_field( $p_bug_id, 'bug_text_id' );
@@ -1984,7 +1984,7 @@ function dwg_assign( $p_bug_id, $p_user_id, $p_bugnote_text = '', $p_bugnote_pri
 		dwg_clear_cache( $p_bug_id );
 
 		# Send email for change of handler
-		email_owner_changed( $p_bug_id, $h_handler_id, $p_user_id );
+		email_dwg_owner_changed( $p_bug_id, $h_handler_id, $p_user_id );
 	}
 
 	return true;

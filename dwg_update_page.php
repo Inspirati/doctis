@@ -99,6 +99,12 @@ $t_action_button_position = config_get( 'action_button_position' );
 $t_top_buttons_enabled = $t_action_button_position == POSITION_TOP || $t_action_button_position == POSITION_BOTH;
 $t_bottom_buttons_enabled = $t_action_button_position == POSITION_BOTTOM || $t_action_button_position == POSITION_BOTH;
 
+$t_show_author = in_array( 'author', $t_fields );
+$t_show_creator = in_array( 'creator', $t_fields );
+$t_show_revision = in_array( 'revision', $t_fields );
+$t_show_reference = in_array( 'reference', $t_fields );
+$t_show_classification = in_array( 'classification', $t_fields );
+
 $t_show_id = in_array( 'id', $t_fields );
 $t_show_project = in_array( 'project', $t_fields );
 $t_show_category = in_array( 'category_id', $t_fields );
@@ -106,7 +112,6 @@ $t_show_view_state = in_array( 'view_state', $t_fields );
 $t_view_state = $t_show_view_state ? string_display_line( get_enum_element( 'view_state', $t_bug->view_state ) ) : '';
 $t_show_date_submitted = in_array( 'date_submitted', $t_fields );
 $t_show_last_updated = in_array( 'last_updated', $t_fields );
-$t_show_creator = in_array( 'creator', $t_fields );
 $t_show_handler = in_array( 'handler', $t_fields ) && access_has_dwg_level( config_get( 'view_handler_threshold' ), $t_bug_id );
 $t_show_priority = in_array( 'priority', $t_fields );
 $t_show_severity = in_array( 'severity', $t_fields );
@@ -433,7 +438,7 @@ if( $t_show_status || $t_show_resolution ) {
 		echo '<td class="bug-status">';
 		print_icon( 'fa-square', 'fa-status-box ' . $t_status_css );
 		echo '&nbsp;';
-		print_status_option_list( 'status', $t_bug->status,
+		print_status_option_list( 'dwg_status', $t_bug->status,
 			access_can_close_dwg( $t_bug ),
 			$t_bug->project_id );
 		echo '</td>';
@@ -725,23 +730,23 @@ if( $t_custom_fields_found ) {
 }
 
 # Bugnote Text Box
-$t_default_bugnote_view_status = config_get( 'default_bugnote_view_status' );
+$t_default_bugnote_view_status = config_get( 'default_dwgnote_view_status' );
 $t_bugnote_private = $t_default_bugnote_view_status == VS_PRIVATE;
 $t_bugnote_class = $t_bugnote_private ? 'form-control bugnote-private' : 'form-control';
 
 echo '<tr>';
-echo '<th class="category"><label for="bugnote_text">' . lang_get( 'add_bugnote_title' ) . '</label></th>';
+echo '<th class="category"><label for="bugnote_text">' . lang_get( 'add_dwgnote_title' ) . '</label></th>';
 echo '<td colspan="5"><textarea ', helper_get_tab_index(), ' id="bugnote_text" name="bugnote_text" class="', $t_bugnote_class, '" cols="80" rows="7"></textarea></td></tr>';
 
 # Bugnote Private Checkbox (if permitted)
-if( access_has_dwg_level( config_get( 'private_bugnote_threshold' ), $t_bug_id ) ) {
+if( access_has_dwg_level( config_get( 'private_dwgnote_threshold' ), $t_bug_id ) ) {
 	echo '<tr>';
 	echo '<th class="category">' . lang_get( 'private' ) . '</th>';
 	echo '<td colspan="5">';
 
 	if( access_has_dwg_level( config_get( 'set_view_status_threshold' ), $t_bug_id ) ) {
 		echo '<label>';
-		echo '<input ', helper_get_tab_index(), ' type="checkbox" class="ace" id="private" name="private" ', check_checked( config_get( 'default_bugnote_view_status' ), VS_PRIVATE ), ' />';
+		echo '<input ', helper_get_tab_index(), ' type="checkbox" class="ace" id="private" name="private" ', check_checked( config_get( 'default_dwgnote_view_status' ), VS_PRIVATE ), ' />';
 		echo '<span class="lbl"></span>';
 		echo '</label>';
 	} else {

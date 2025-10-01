@@ -793,7 +793,7 @@ function filter_dwg_ensure_valid_filter( array $p_filter_arr ) {
 	if( $p_filter_arr['_view_type'] == FILTER_VIEW_TYPE_ADVANCED
 			&& !filter_dwg_field_is_none( $p_filter_arr[FILTER_PROPERTY_HIDE_STATUS] ) ) {
 		if( filter_dwg_field_is_any( $p_filter_arr[FILTER_PROPERTY_STATUS] ) ) {
-			$t_selected_status_array = MantisEnum::getValues( config_get( 'status_enum_string' ) );
+			$t_selected_status_array = MantisEnum::getValues( config_get( 'dwg_status_enum_string' ) );
 		} else {
 			$t_selected_status_array = $p_filter_arr[FILTER_PROPERTY_STATUS];
 		}
@@ -816,7 +816,7 @@ function filter_dwg_ensure_valid_filter( array $p_filter_arr ) {
 	if( $p_filter_arr['_view_type'] == FILTER_VIEW_TYPE_SIMPLE
 			&& !filter_dwg_field_is_none( $p_filter_arr[FILTER_PROPERTY_HIDE_STATUS] ) ) {
 		# get array of hidden status ids
-		$t_all_status = MantisEnum::getValues( config_get( 'status_enum_string' ) );
+		$t_all_status = MantisEnum::getValues( config_get( 'dwg_status_enum_string' ) );
 		$t_hidden_status = $p_filter_arr[FILTER_PROPERTY_HIDE_STATUS][0];
 		$t_hidden_status_array = array();
 		foreach( $t_all_status as $t_status ) {

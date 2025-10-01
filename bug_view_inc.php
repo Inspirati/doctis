@@ -286,6 +286,10 @@ if( $t_flags['id_show'] || $t_flags['project_show'] || $t_flags['category_show']
 	print_table_spacer( 6 );
 }
 
+#
+# Document, Reference, Author
+#
+
 if( true
 ) {
 
@@ -301,7 +305,7 @@ if( true
 
 	echo '<tr class="bug-header-data">';
 
-	# Project
+	# Document
 
 	// $t_created_at = ApiObjectFactory::datetime( $t_attachment_row['date_added'] );
 //	$t_release_date = ApiObjectFactory::datetime( $t_document['release_date'] );
@@ -328,16 +332,6 @@ if( $t_flags['reporter_show'] || $t_flags['handler_show'] || $t_flags['due_date_
 
 	$t_spacer = 0;
 
-	# Reporter
-	if( $t_flags['reporter_show'] ) {
-		echo '<th class="bug-reporter category">', lang_get( 'reporter' ), '</th>';
-		echo '<td class="bug-reporter">';
-		print_user_with_subject( $t_issue['reporter']['id'], $f_issue_id );
-		echo '</td>';
-	} else {
-		$t_spacer += 2;
-	}
-
 	# Handler
 	if( $t_flags['handler_show'] ) {
 		echo '<th class="bug-assigned-to category">', lang_get( 'assigned_to' ), '</th>';
@@ -345,6 +339,16 @@ if( $t_flags['reporter_show'] || $t_flags['handler_show'] || $t_flags['due_date_
 		if( isset( $t_issue['handler'] ) ) {
 			print_user_with_subject( $t_issue['handler']['id'], $f_issue_id );
 		}
+		echo '</td>';
+	} else {
+		$t_spacer += 2;
+	}
+
+	# Reporter
+	if( $t_flags['reporter_show'] ) {
+		echo '<th class="bug-reporter category">', lang_get( 'reporter' ), '</th>';
+		echo '<td class="bug-reporter">';
+		print_user_with_subject( $t_issue['reporter']['id'], $f_issue_id );
 		echo '</td>';
 	} else {
 		$t_spacer += 2;
