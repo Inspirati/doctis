@@ -284,7 +284,7 @@ function dwg_activity_bugnote_link_attachments( $p_bugnote_id ) {
 	foreach( $t_activities['activities'] as $t_activity ) {
 		if( (int)$t_activity['id'] == (int)$p_bugnote_id ) {
 			foreach( $t_activity['attachments'] as $t_attachment ) {
-				file_link_to_bugnote( (int)$t_attachment['id'], $p_bugnote_id );
+				file_dwg_link_to_dwgnote( (int)$t_attachment['id'], $p_bugnote_id );
 				$t_files[] = $t_attachment;
 			}
 		}

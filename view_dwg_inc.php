@@ -53,13 +53,7 @@ require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'print_dwg_api.php' );
 
-
-
-# TODO: leads to page failure
 require_api( 'dwg_api.php' );
-
-
-
 
 /**
  * Variables defined in parent script.

@@ -70,7 +70,7 @@ require_api( 'error_api.php' );
 require_api( 'event_api.php' );
 require_api( 'file_dwg_api.php' );
 require_api( 'helper_api.php' );
-require_api( 'history_api.php' );
+require_api( 'history_dwg_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'mention_api.php' );
 require_api( 'dwg_relationship_api.php' );
@@ -174,13 +174,13 @@ class DwgData {
 	// protected $due_date = '';
 	protected $due_date = 0;
 	protected $profile_id = 0;
-	protected $bug_text_id;
+	protected $dwg_text_id;
 	protected $description = '';
 	protected $steps_to_reproduce = '';
 	protected $additional_information = '';
 	private $_stats = null;
 	public $attachment_count = null;
-	public $bugnotes_count = null;
+	public $dwgnotes_count = null;
 
 	/**
 	 * Indicates if bug is currently being loaded from database
@@ -204,11 +204,11 @@ class DwgData {
 	 *
 	 * @return int Number of bugnotes
 	 */
-	public function get_bugnotes_count() {
-		if( $this->bugnotes_count === null ) {
-			$this->bugnotes_count = self::dwg_get_dwgnote_count();
+	public function get_dwgnotes_count() {
+		if( $this->dwgnotes_count === null ) {
+			$this->dwgnotes_count = self::dwg_get_dwgnote_count();
 		}
-		return $this->bugnotes_count;
+		return $this->dwgnotes_count;
 	}
 
 	/**
@@ -235,7 +235,6 @@ class DwgData {
 			case 'eta':
 			case 'projection':
 			case 'category_id':
-			case 'bug_text_id':
 			case 'dwg_text_id':
 				$p_value = (int)$p_value;
 				break;
@@ -502,7 +501,7 @@ $this->author = isset($this->author) ? $this->author : '';
 		$this->id = db_insert_id( db_get_table( 'document' ) );
 
 		# log new bug
-		history_log_event_special( $this->id, NEW_DWG );
+		history_dwg_log_event_special( $this->id, NEW_DWG );
 
 		# log changes, if any (compare happens in history_log_event_direct)
 		history_log_event_direct( $this->id, 'status', $t_original_status, $t_status );
@@ -655,7 +654,7 @@ $this->author = isset($this->author) ? $this->author : '';
 
 		# Update extended info if requested
 		if( $p_update_extended ) {
-			$t_bug_text_id = dwg_get_field( $c_bug_id, 'bug_text_id' );
+			$t_bug_text_id = dwg_get_field( $c_bug_id, 'dwg_text_id' );
 
 			db_param_push();
 			$t_query = 'UPDATE {dwg_text}
@@ -678,7 +677,7 @@ $this->author = isset($this->author) ? $this->author : '';
 					dwg_revision_add( $c_bug_id, $t_old_data->creator_id, REV_DESCRIPTION, $t_old_data->description, 0, $t_old_data->date_submitted );
 				}
 				$t_revision_id = dwg_revision_add( $c_bug_id, $t_current_user, REV_DESCRIPTION, $this->description );
-				history_log_event_special( $c_bug_id, DESCRIPTION_UPDATED, $t_revision_id );
+				history_dwg_log_event_special( $c_bug_id, DESCRIPTION_UPDATED, $t_revision_id );
 			}
 
 			if( $t_old_data->steps_to_reproduce != $this->steps_to_reproduce ) {
@@ -686,7 +685,7 @@ $this->author = isset($this->author) ? $this->author : '';
 					dwg_revision_add( $c_bug_id, $t_old_data->creator_id, REV_STEPS_TO_REPRODUCE, $t_old_data->steps_to_reproduce, 0, $t_old_data->date_submitted );
 				}
 				$t_revision_id = dwg_revision_add( $c_bug_id, $t_current_user, REV_STEPS_TO_REPRODUCE, $this->steps_to_reproduce );
-				history_log_event_special( $c_bug_id, STEP_TO_REPRODUCE_UPDATED, $t_revision_id );
+				history_dwg_log_event_special( $c_bug_id, STEP_TO_REPRODUCE_UPDATED, $t_revision_id );
 			}
 
 			if( $t_old_data->additional_information != $this->additional_information ) {
@@ -694,7 +693,7 @@ $this->author = isset($this->author) ? $this->author : '';
 					dwg_revision_add( $c_bug_id, $t_old_data->creator_id, REV_ADDITIONAL_INFO, $t_old_data->additional_information, 0, $t_old_data->date_submitted );
 				}
 				$t_revision_id = dwg_revision_add( $c_bug_id, $t_current_user, REV_ADDITIONAL_INFO, $this->additional_information );
-				history_log_event_special( $c_bug_id, ADDITIONAL_INFO_UPDATED, $t_revision_id );
+				history_dwg_log_event_special( $c_bug_id, ADDITIONAL_INFO_UPDATED, $t_revision_id );
 			}
 		}
 
@@ -1321,19 +1320,19 @@ function dwg_copy( $p_bug_id, $p_target_project_id = null, $p_copy_custom_fields
 	}
 
 	# COPY HISTORY
-	history_delete( $t_new_bug_id );	# should history only be deleted inside the if statement below?
+	history_dwg_delete( $t_new_bug_id );	# should history only be deleted inside the if statement below?
 	if( $p_copy_history ) {
 		# @todo problem with this code: the generated history trail is incorrect
 		#   because the note IDs are those of the original bug, not the copied ones
 		# @todo actually, does it even make sense to copy the history ?
 		db_param_push();
-		$t_query = 'SELECT * FROM {bug_history} WHERE bug_id = ' . db_param();
+		$t_query = 'SELECT * FROM {dwg_history} WHERE dwg_id = ' . db_param();
 		$t_result = db_query( $t_query, array( $t_bug_id ) );
 
 		while( $t_bug_history = db_fetch_array( $t_result ) ) {
 			db_param_push();
-			$t_query = 'INSERT INTO {bug_history}
-						  ( user_id, bug_id, date_modified, field_name, old_value, new_value, type )
+			$t_query = 'INSERT INTO {dwg_history}
+						  ( user_id, dwg_id, date_modified, field_name, old_value, new_value, type )
 						  VALUES ( ' . db_param() . ',' . db_param() . ',' . db_param() . ',
 						  		   ' . db_param() . ',' . db_param() . ',' . db_param() . ',
 						  		   ' . db_param() . ' );';
@@ -1341,12 +1340,12 @@ function dwg_copy( $p_bug_id, $p_target_project_id = null, $p_copy_custom_fields
 		}
 	} else {
 		# Create a "New Issue" history entry
-		history_log_event_special( $t_new_bug_id, NEW_BUG );
+		history_dwg_log_event_special( $t_new_bug_id, NEW_BUG );
 	}
 
 	# Create history entries to reflect the copy operation
-	history_log_event_special( $t_new_bug_id, DWG_CREATED_FROM, '', $t_bug_id );
-	history_log_event_special( $t_bug_id, DWG_CLONED_TO, '', $t_new_bug_id );
+	history_dwg_log_event_special( $t_new_bug_id, DWG_CREATED_FROM, '', $t_bug_id );
+	history_dwg_log_event_special( $t_bug_id, DWG_CLONED_TO, '', $t_new_bug_id );
 
 	return $t_new_bug_id;
 }
@@ -1418,7 +1417,7 @@ function dwg_delete( $p_bug_id ) {
 	event_signal( 'EVENT_DWG_DELETED', array( $c_bug_id ) );
 
 	# log deletion of bug
-	history_log_event_special( $p_bug_id, DWG_DELETED, bug_format_id( $p_bug_id ) );
+	history_dwg_log_event_special( $p_bug_id, DWG_DELETED, bug_format_id( $p_bug_id ) );
 
 	email_dwg_deleted( $p_bug_id );
 	email_dwg_relationship_dwg_deleted( $p_bug_id );
@@ -1433,36 +1432,36 @@ function dwg_delete( $p_bug_id ) {
 	# Unmonitor bug for all users
 	dwg_unmonitor( $p_bug_id, null );
 
-	// # Delete custom fields
-	// custom_field_delete_all_values( $p_bug_id );
+	# Delete custom fields
+	custom_field_delete_all_values( $p_bug_id );
 
-	// # Delete bugnotes
-	// dwgnote_delete_all( $p_bug_id );
+	# Delete bugnotes
+	dwgnote_delete_all( $p_bug_id );
 
-	// # Delete all sponsorships
-	// sponsorship_delete_all( $p_bug_id );
+	# Delete all sponsorships
+	sponsorship_delete_all( $p_bug_id );
 
-	// # Delete all relationships
-	// dwg_relationship_delete_all( $p_bug_id );
+	# Delete all relationships
+	dwg_relationship_delete_all( $p_bug_id );
 
-	// # Delete files
-	// file_delete_attachments( $p_bug_id );
+	# Delete files
+	file_dwg_delete_attachments( $p_bug_id );
 
-	// # Detach tags
-	// tag_dwg_detach_all( $p_bug_id, false );
+	# Detach tags
+	tag_dwg_detach_all( $p_bug_id, false );
 
-	// # Delete the bug history
-	// history_delete( $p_bug_id );
+	# Delete the bug history
+	history_dwg_delete( $p_bug_id );
 
-	// # Delete bug info revisions
-	// dwg_revision_delete( $p_bug_id );
+	# Delete bug info revisions
+	dwg_revision_delete( $p_bug_id );
 
-	// # Delete the bugnote text
-	// $t_bug_text_id = dwg_get_field( $p_bug_id, 'bug_text_id' );
+	# Delete the bugnote text
+	$t_bug_text_id = dwg_get_field( $p_bug_id, 'dwg_text_id' );
 
-	// db_param_push();
-	// $t_query = 'DELETE FROM {dwg_text} WHERE id=' . db_param();
-	// db_query( $t_query, array( $t_bug_text_id ) );
+	db_param_push();
+	$t_query = 'DELETE FROM {dwg_text} WHERE id=' . db_param();
+	db_query( $t_query, array( $t_bug_text_id ) );
 
 	# Delete the bug entry
 	db_param_push();
@@ -1771,7 +1770,7 @@ function dwg_get_dwgnote_stats_array( array $p_bugs_id, $p_user_id = null ) {
  *
  * @access public
  */
-function dwg_get_bugnote_stats( $p_bug_id ) {
+function dwg_get_dwgnote_stats( $p_bug_id ) {
 	global $g_cache_dwg;
 	$c_bug_id = (int)$p_bug_id;
 
@@ -2179,7 +2178,7 @@ function dwg_monitor( $p_bug_id, $p_user_id ) {
 	db_query( $t_query, array( $c_user_id, $c_bug_id ) );
 
 	# log new monitoring action
-	history_log_event_special( $c_bug_id, DWG_MONITOR, $c_user_id );
+	history_dwg_log_event_special( $c_bug_id, DWG_MONITOR, $c_user_id );
 
 	# updated the last_updated date
 	dwg_update_date( $p_bug_id );
@@ -2242,7 +2241,7 @@ function dwg_monitor_copy( $p_source_bug_id, $p_dest_bug_id ) {
 			$t_query = 'INSERT INTO {dwg_monitor} ( user_id, dwg_id )
 				VALUES ( ' . db_param() . ', ' . db_param() . ' )';
 			db_query( $t_query, array( $t_dwg_monitor['user_id'], $c_dest_bug_id ) );
-			history_log_event_special( $c_dest_bug_id, DWG_MONITOR, $t_dwg_monitor['user_id'] );
+			history_dwg_log_event_special( $c_dest_bug_id, DWG_MONITOR, $t_dwg_monitor['user_id'] );
 		}
 	}
 }
@@ -2271,7 +2270,7 @@ function dwg_unmonitor( $p_bug_id, $p_user_id ) {
 	db_query( $t_query, $t_db_query_params );
 
 	# log new un-monitor action
-	history_log_event_special( $p_bug_id, DWG_UNMONITOR, (int)$p_user_id );
+	history_dwg_log_event_special( $p_bug_id, DWG_UNMONITOR, (int)$p_user_id );
 
 	# updated the last_updated date
 	dwg_update_date( $p_bug_id );

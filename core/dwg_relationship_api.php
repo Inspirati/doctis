@@ -283,8 +283,8 @@ function dwg_relationship_add( $p_src_bug_id, $p_dest_bug_id, $p_relationship_ty
 
 	$t_relationship_id = db_insert_id( db_get_table( 'dwg_relationship' ) );
 
-	history_log_event_special( $p_src_bug_id, DWG_ADD_RELATIONSHIP, $p_relationship_type, $p_dest_bug_id );
-	history_log_event_special( $p_dest_bug_id, DWG_ADD_RELATIONSHIP, dwg_relationship_get_complementary_type( $p_relationship_type ), $p_src_bug_id );
+	history_dwg_log_event_special( $p_src_bug_id, DWG_ADD_RELATIONSHIP, $p_relationship_type, $p_dest_bug_id );
+	history_dwg_log_event_special( $p_dest_bug_id, DWG_ADD_RELATIONSHIP, dwg_relationship_get_complementary_type( $p_relationship_type ), $p_src_bug_id );
 
 	dwg_update_date( $p_src_bug_id );
 	dwg_update_date( $p_dest_bug_id );
@@ -316,8 +316,8 @@ function dwg_relationship_update( $p_relationship_id, $p_src_bug_id, $p_dest_bug
 	$t_param[] = (int)$p_relationship_id;
 	db_query( $t_query, $t_param );
 
-	history_log_event_special( $p_src_bug_id, DWG_REPLACE_RELATIONSHIP, $p_relationship_type, $p_dest_bug_id );
-	history_log_event_special( $p_dest_bug_id, DWG_REPLACE_RELATIONSHIP, dwg_relationship_get_complementary_type( $p_relationship_type ), $p_src_bug_id );
+	history_dwg_log_event_special( $p_src_bug_id, DWG_REPLACE_RELATIONSHIP, $p_relationship_type, $p_dest_bug_id );
+	history_dwg_log_event_special( $p_dest_bug_id, DWG_REPLACE_RELATIONSHIP, dwg_relationship_get_complementary_type( $p_relationship_type ), $p_src_bug_id );
 
 	dwg_update_date( $p_src_bug_id );
 	dwg_update_date( $p_dest_bug_id );
@@ -375,10 +375,10 @@ function dwg_relationship_delete( $p_relationship_id, $p_send_email = true ) {
 	dwg_update_date( $t_src_bug_id );
 	dwg_update_date( $t_dest_bug_id );
 
-	history_log_event_special( $t_src_bug_id, DWG_DEL_RELATIONSHIP, $t_rel_type, $t_dest_bug_id );
+	history_dwg_log_event_special( $t_src_bug_id, DWG_DEL_RELATIONSHIP, $t_rel_type, $t_dest_bug_id );
 
 	if( dwg_exists( $t_dest_bug_id ) ) {
-		history_log_event_special(
+		history_dwg_log_event_special(
 			$t_dest_bug_id,
 			DWG_DEL_RELATIONSHIP,
 			dwg_relationship_get_complementary_type( $t_rel_type ),

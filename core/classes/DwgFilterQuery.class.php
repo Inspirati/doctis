@@ -237,7 +237,7 @@ class DwgFilterQuery extends DbQuery {
 	}
 
 	/**
-	 * Override DbQuery execute method to check first if the query is already buils and up to date
+	 * Override DbQuery execute method to check first if the query is already built and up to date
 	 * with current query parts.
 	 *
 	 * @param array $p_bind_array	Array for binding values
@@ -849,36 +849,36 @@ class DwgFilterQuery extends DbQuery {
 		$this->add_where( $t_users_query );
 	}
 
-	// /**
-	//  * Build the query parts for the filter property "handler"
-	//  * @return void
-	//  */
-	// protected function build_prop_handler() {
-	// 	if( filter_field_is_any( $this->filter[FILTER_PROPERTY_HANDLER_ID] ) ) {
-	// 		return;
-	// 	}
+	/**
+	 * Build the query parts for the filter property "handler"
+	 * @return void
+	 */
+	protected function build_prop_handler() {
+		if( filter_field_is_any( $this->filter[FILTER_PROPERTY_HANDLER_ID] ) ) {
+			return;
+		}
 
-	// 	# the user can view handler if he meets access level for
-	// 	# 'view_handler_threshold' or if he is the handler
-	// 	$t_projects_can_view = $this->helper_filter_projects_using_access( 'view_handler_threshold' );
-	// 	if( ALL_PROJECTS == $t_projects_can_view ) {
-	// 		$t_view_condition = null;
-	// 	} else {
-	// 		$t_view_condition = '{document}.handler_id = ' . $this->param( $this->user_id );
-	// 		if( !empty( $t_projects_can_view ) ) {
-	// 			$t_view_condition = '(' . $t_view_condition . ' OR '
-	// 					. $this->sql_in( '{document}.project_id', $t_projects_can_view ) . ')';
-	// 		}
-	// 	}
-	// 	if( $t_view_condition ) {
-	// 		$t_view_condition = ' AND ' . $t_view_condition;
-	// 	}
+		# the user can view handler if he meets access level for
+		# 'view_handler_threshold' or if he is the handler
+		$t_projects_can_view = $this->helper_filter_projects_using_access( 'view_handler_threshold' );
+		if( ALL_PROJECTS == $t_projects_can_view ) {
+			$t_view_condition = null;
+		} else {
+			$t_view_condition = '{document}.handler_id = ' . $this->param( $this->user_id );
+			if( !empty( $t_projects_can_view ) ) {
+				$t_view_condition = '(' . $t_view_condition . ' OR '
+						. $this->sql_in( '{document}.project_id', $t_projects_can_view ) . ')';
+			}
+		}
+		if( $t_view_condition ) {
+			$t_view_condition = ' AND ' . $t_view_condition;
+		}
 
-	// 	$t_user_ids = $this->helper_process_users_property( $this->filter[FILTER_PROPERTY_HANDLER_ID] );
-	// 	$t_query = $this->sql_in( '{document}.handler_id', $t_user_ids ) . $t_view_condition;
-	// 	log_event( LOG_FILTERING, 'handler query = ' . $t_query );
-	// 	$this->add_where( $t_query );
-	// }
+		$t_user_ids = $this->helper_process_users_property( $this->filter[FILTER_PROPERTY_HANDLER_ID] );
+		$t_query = $this->sql_in( '{document}.handler_id', $t_user_ids ) . $t_view_condition;
+		log_event( LOG_FILTERING, 'handler query = ' . $t_query );
+		$this->add_where( $t_query );
+	}
 
 	// /**
 	//  * Build the query parts for the filter property "category"
@@ -1105,44 +1105,44 @@ class DwgFilterQuery extends DbQuery {
 	// 	$this->add_where( $t_query );
 	// }
 
-	// /**
-	//  * Build the query parts for the filter property "monitor by"
-	//  * @return void
-	//  */
-	// protected function build_prop_monitor_by() {
-	// 	if( filter_field_is_any( $this->filter[FILTER_PROPERTY_MONITOR_USER_ID] ) ) {
-	// 		return;
-	// 	}
-	// 	$t_user_ids = $this->helper_process_users_property( $this->filter[FILTER_PROPERTY_MONITOR_USER_ID] );
-	// 	$t_use_none = ( in_array( 0, $t_user_ids ) );
+	/**
+	 * Build the query parts for the filter property "monitor by"
+	 * @return void
+	 */
+	protected function build_prop_monitor_by() {
+		if( filter_field_is_any( $this->filter[FILTER_PROPERTY_MONITOR_USER_ID] ) ) {
+			return;
+		}
+		$t_user_ids = $this->helper_process_users_property( $this->filter[FILTER_PROPERTY_MONITOR_USER_ID] );
+		$t_use_none = ( in_array( 0, $t_user_ids ) );
 
-	// 	# Build a condition for determining monitoring visibility, the user can view:
-	// 	# - his own monitored issues
-	// 	# - other users monitoring if he meets access level for 'show_monitor_list_threshold'
-	// 	$t_projects_can_view = $this->helper_filter_projects_using_access( 'show_monitor_list_threshold' );
-	// 	if( ALL_PROJECTS == $t_projects_can_view ) {
-	// 		$t_view_condition = null;
-	// 	} else {
-	// 		$t_view_condition = '{bug_monitor}.user_id = ' . $this->param( $this->user_id );
-	// 		if( !empty( $t_projects_can_view ) ) {
-	// 			$t_view_condition = '(' . $t_view_condition . ' OR '
-	// 					. $this->sql_in( '{document}.project_id', $t_projects_can_view ) . ')';
-	// 		}
-	// 	}
-	// 	if( $t_view_condition ) {
-	// 		$t_view_condition = ' AND ' . $t_view_condition;
-	// 	}
+		# Build a condition for determining monitoring visibility, the user can view:
+		# - his own monitored issues
+		# - other users monitoring if he meets access level for 'show_monitor_list_threshold'
+		$t_projects_can_view = $this->helper_filter_projects_using_access( 'show_monitor_list_threshold' );
+		if( ALL_PROJECTS == $t_projects_can_view ) {
+			$t_view_condition = null;
+		} else {
+			$t_view_condition = '{bug_monitor}.user_id = ' . $this->param( $this->user_id );
+			if( !empty( $t_projects_can_view ) ) {
+				$t_view_condition = '(' . $t_view_condition . ' OR '
+						. $this->sql_in( '{document}.project_id', $t_projects_can_view ) . ')';
+			}
+		}
+		if( $t_view_condition ) {
+			$t_view_condition = ' AND ' . $t_view_condition;
+		}
 
-	// 	$this->add_join( 'LEFT JOIN {bug_monitor} ON {document}.id = {bug_monitor}.bug_id' . $t_view_condition );
-	// 	if( $t_use_none ) {
-	// 		$t_expr = 'COALESCE( {bug_monitor}.user_id, 0 )';
-	// 	} else {
-	// 		$t_expr = '{bug_monitor}.user_id';
-	// 	}
+		$this->add_join( 'LEFT JOIN {bug_monitor} ON {document}.id = {bug_monitor}.bug_id' . $t_view_condition );
+		if( $t_use_none ) {
+			$t_expr = 'COALESCE( {bug_monitor}.user_id, 0 )';
+		} else {
+			$t_expr = '{bug_monitor}.user_id';
+		}
 
-	// 	$t_where = $this->sql_in( $t_expr, $t_user_ids );
-	// 	$this->add_where( $t_where );
-	// }
+		$t_where = $this->sql_in( $t_expr, $t_user_ids );
+		$this->add_where( $t_where );
+	}
 
 	/**
 	 * Creates a JOIN clause for the bugnote table and returns the table alias used
@@ -1185,10 +1185,10 @@ class DwgFilterQuery extends DbQuery {
 	// 	return $this->rt_table_alias_bugnote;
 	// }
 
-	// /**
-	//  * Build the query parts for the filter property "note by"
-	//  * @return void
-	//  */
+	/**
+	 * Build the query parts for the filter property "note by"
+	 * @return void
+	 */
 	// protected function build_prop_note_by() {
 	// 	if( filter_field_is_any( $this->filter[FILTER_PROPERTY_NOTE_USER_ID] ) ) {
 	// 		return;
@@ -1208,10 +1208,10 @@ class DwgFilterQuery extends DbQuery {
 	// 	$this->add_where( $t_where );
 	// }
 
-	// /**
-	//  * Build the query parts for the filter property "relationship"
-	//  * @return void
-	//  */
+	/**
+	 * Build the query parts for the filter property "relationship"
+	 * @return void
+	 */
 	// protected function build_prop_relationship() {
 	// 	$c_rel_type = (int)$this->filter[FILTER_PROPERTY_RELATIONSHIP_TYPE];
 	// 	$c_rel_bug = (int)$this->filter[FILTER_PROPERTY_RELATIONSHIP_BUG];
@@ -1322,118 +1322,118 @@ class DwgFilterQuery extends DbQuery {
 		return $t_new_array;
 	}
 
-	// /**
-	//  * Build the query parts for the filter property "tags"
-	//  * @return void
-	//  */
-	// protected function build_prop_tags() {
-	// 	$c_tag_string = trim( $this->filter[FILTER_PROPERTY_TAG_STRING] );
-	// 	$c_tag_select = (int)$this->filter[FILTER_PROPERTY_TAG_SELECT];
-	// 	if( is_blank( $c_tag_string ) && $c_tag_select == 0 ) {
-	// 		# shortcut exit
-	// 		return;
-	// 	}
+	/**
+	 * Build the query parts for the filter property "tags"
+	 * @return void
+	 */
+	protected function build_prop_tags() {
+		$c_tag_string = trim( $this->filter[FILTER_PROPERTY_TAG_STRING] );
+		$c_tag_select = (int)$this->filter[FILTER_PROPERTY_TAG_SELECT];
+		if( is_blank( $c_tag_string ) && $c_tag_select == 0 ) {
+			# shortcut exit
+			return;
+		}
 
-	// 	$t_tags = tag_parse_filters( $c_tag_string );
-	// 	if( empty( $t_tags ) && $c_tag_select == 0 ) {
-	// 		# shortcut exit
-	// 		return;
-	// 	}
+		$t_tags = tag_parse_filters( $c_tag_string );
+		if( empty( $t_tags ) && $c_tag_select == 0 ) {
+			# shortcut exit
+			return;
+		}
 
-	// 	$t_projects_can_view_tags = $this->helper_filter_projects_using_access( 'tag_view_threshold' );
-	// 	if( ALL_PROJECTS == $t_projects_can_view_tags ) {
-	// 		$t_tag_projects_clause = '';
-	// 	} else {
-	// 		if( empty( $t_projects_can_view_tags ) ) {
-	// 			# if can't view tags in any project, exit
-	// 			log_event( LOG_FILTERING, 'tags query, no accessible projects ' );
-	// 			return;
-	// 		} else {
-	// 			$t_tag_projects_clause = ' AND ' . $this->sql_in( '{document}.project_id', $t_projects_can_view_tags );
-	// 			log_event( LOG_FILTERING, 'tags query, accessible projects =  @P' . implode( ', @P', $t_projects_can_view_tags ) );
-	// 		}
-	// 	}
+		$t_projects_can_view_tags = $this->helper_filter_projects_using_access( 'tag_view_threshold' );
+		if( ALL_PROJECTS == $t_projects_can_view_tags ) {
+			$t_tag_projects_clause = '';
+		} else {
+			if( empty( $t_projects_can_view_tags ) ) {
+				# if can't view tags in any project, exit
+				log_event( LOG_FILTERING, 'tags query, no accessible projects ' );
+				return;
+			} else {
+				$t_tag_projects_clause = ' AND ' . $this->sql_in( '{document}.project_id', $t_projects_can_view_tags );
+				log_event( LOG_FILTERING, 'tags query, accessible projects =  @P' . implode( ', @P', $t_projects_can_view_tags ) );
+			}
+		}
 
-	// 	$t_tags_always = array();
-	// 	$t_tags_any = array();
-	// 	$t_tags_never = array();
+		$t_tags_always = array();
+		$t_tags_any = array();
+		$t_tags_never = array();
 
-	// 	# @TODO, use constants for tag modifiers
-	// 	foreach( $t_tags as $t_tag_row ) {
-	// 		switch( $t_tag_row['filter'] ) {
-	// 			case 1:
-	// 				# A matched issue must always have this tag
-	// 				$t_tags_always[] = $t_tag_row;
-	// 				break;
-	// 			case 0:
-	// 				# A matched issue may have this tag
-	// 				$t_tags_any[] = $t_tag_row;
-	// 				break;
-	// 			case -1:
-	// 				# A matched must never have this tag
-	// 				$t_tags_never[] = $t_tag_row;
-	// 				break;
-	// 		}
-	// 	}
+		# @TODO, use constants for tag modifiers
+		foreach( $t_tags as $t_tag_row ) {
+			switch( $t_tag_row['filter'] ) {
+				case 1:
+					# A matched issue must always have this tag
+					$t_tags_always[] = $t_tag_row;
+					break;
+				case 0:
+					# A matched issue may have this tag
+					$t_tags_any[] = $t_tag_row;
+					break;
+				case -1:
+					# A matched must never have this tag
+					$t_tags_never[] = $t_tag_row;
+					break;
+			}
+		}
 
-	// 	# Consider those tags that must always match, to also be part of those that can be
-	// 	# optionally matched. This solves the scenario for an issue that matches one tag
-	// 	# from the "always" group, and none from the "any" group.
-	// 	if( !empty( $t_tags_always ) && !empty( $t_tags_any ) ) {
-	// 		$t_tags_any = array_merge( $t_tags_any, $t_tags_always );
-	// 	}
+		# Consider those tags that must always match, to also be part of those that can be
+		# optionally matched. This solves the scenario for an issue that matches one tag
+		# from the "always" group, and none from the "any" group.
+		if( !empty( $t_tags_always ) && !empty( $t_tags_any ) ) {
+			$t_tags_any = array_merge( $t_tags_any, $t_tags_always );
+		}
 
-	// 	# Add the tag id to the array, from filter field "tag_select"
-	// 	if( 0 < $c_tag_select && tag_exists( $c_tag_select ) ) {
-	// 		$t_tags_any[] = tag_get( $c_tag_select );
-	// 	}
+		# Add the tag id to the array, from filter field "tag_select"
+		if( 0 < $c_tag_select && tag_exists( $c_tag_select ) ) {
+			$t_tags_any[] = tag_get( $c_tag_select );
+		}
 
-	// 	$t_where = array();
+		$t_where = array();
 
-	// 	if( count( $t_tags_always ) ) {
-	// 		foreach( $t_tags_always as $t_tag_row ) {
-	// 			$t_tag_alias = 'bug_tag_alias_alw_' . $t_tag_row['id'];
-	// 			$t_join_inc = 'LEFT JOIN {bug_tag} ' . $t_tag_alias . ' ON ' . $t_tag_alias . '.bug_id = {document}.id'
-	// 				. ' AND ' . $t_tag_alias . '.tag_id = ' . $this->param( (int)$t_tag_row['id'] )
-	// 				. $t_tag_projects_clause;
-	// 			$this->add_join( $t_join_inc );
-	// 			$t_where[] = $t_tag_alias . '.tag_id IS NOT NULL';
-	// 		}
-	// 	}
+		if( count( $t_tags_always ) ) {
+			foreach( $t_tags_always as $t_tag_row ) {
+				$t_tag_alias = 'bug_tag_alias_alw_' . $t_tag_row['id'];
+				$t_join_inc = 'LEFT JOIN {bug_tag} ' . $t_tag_alias . ' ON ' . $t_tag_alias . '.bug_id = {document}.id'
+					. ' AND ' . $t_tag_alias . '.tag_id = ' . $this->param( (int)$t_tag_row['id'] )
+					. $t_tag_projects_clause;
+				$this->add_join( $t_join_inc );
+				$t_where[] = $t_tag_alias . '.tag_id IS NOT NULL';
+			}
+		}
 
-	// 	if( count( $t_tags_any ) ) {
-	// 		$t_tag_alias = 'bug_tag_alias_any';
-	// 		$t_tag_ids = $this->helper_array_map_int( array_column( $t_tags_any, 'id' ) );
-	// 		$t_join_any = 'LEFT JOIN {bug_tag} ' . $t_tag_alias . ' ON ' . $t_tag_alias . '.bug_id = {document}.id'
-	// 			. ' AND ' . $this->sql_in( $t_tag_alias . '.tag_id', $t_tag_ids )
-	// 			. $t_tag_projects_clause;
-	// 		$this->add_join( $t_join_any );
-	// 		$t_where[] = $t_tag_alias . '.tag_id IS NOT NULL';
-	// 	}
+		if( count( $t_tags_any ) ) {
+			$t_tag_alias = 'bug_tag_alias_any';
+			$t_tag_ids = $this->helper_array_map_int( array_column( $t_tags_any, 'id' ) );
+			$t_join_any = 'LEFT JOIN {bug_tag} ' . $t_tag_alias . ' ON ' . $t_tag_alias . '.bug_id = {document}.id'
+				. ' AND ' . $this->sql_in( $t_tag_alias . '.tag_id', $t_tag_ids )
+				. $t_tag_projects_clause;
+			$this->add_join( $t_join_any );
+			$t_where[] = $t_tag_alias . '.tag_id IS NOT NULL';
+		}
 
-	// 	if( count( $t_tags_never ) ) {
-	// 		$t_tag_alias = 'bug_tag_alias_nev';
-	// 		$t_tag_ids = $this->helper_array_map_int( array_column( $t_tags_never, 'id' ) );
-	// 		$t_join_exc = 'LEFT JOIN {bug_tag} ' . $t_tag_alias . ' ON ' . $t_tag_alias . '.bug_id = {document}.id'
-	// 			. ' AND ' . $this->sql_in(  $t_tag_alias . '.tag_id', $t_tag_ids )
-	// 			. $t_tag_projects_clause;
-	// 		$this->add_join( $t_join_exc );
-	// 		$t_where[] = $t_tag_alias . '.tag_id IS NULL';
-	// 	}
+		if( count( $t_tags_never ) ) {
+			$t_tag_alias = 'bug_tag_alias_nev';
+			$t_tag_ids = $this->helper_array_map_int( array_column( $t_tags_never, 'id' ) );
+			$t_join_exc = 'LEFT JOIN {bug_tag} ' . $t_tag_alias . ' ON ' . $t_tag_alias . '.bug_id = {document}.id'
+				. ' AND ' . $this->sql_in(  $t_tag_alias . '.tag_id', $t_tag_ids )
+				. $t_tag_projects_clause;
+			$this->add_join( $t_join_exc );
+			$t_where[] = $t_tag_alias . '.tag_id IS NULL';
+		}
 
-	// 	if( !empty( $t_where ) ) {
-	// 		$this->add_where( implode( ' AND ', $t_where ) );
-	// 	}
-	// }
+		if( !empty( $t_where ) ) {
+			$this->add_where( implode( ' AND ', $t_where ) );
+		}
+	}
 
-	// /**
-	//  * Creates a JOIN clause for the custom field table and returns the table
-	//  * alias used for this join.
-	//  * May return false if the join was not created. This may happen, if no
-	//  * values are viewable.
-	//  * @param array $p_cfdef	Custom field definition array
-	//  * @return string	A table alias for this join clause
-	//  */
+	/**
+	 * Creates a JOIN clause for the custom field table and returns the table
+	 * alias used for this join.
+	 * May return false if the join was not created. This may happen, if no
+	 * values are viewable.
+	 * @param array $p_cfdef	Custom field definition array
+	 * @return string	A table alias for this join clause
+	 */
 	// protected function helper_table_alias_for_cf( $p_cfdef ) {
 	// 	$t_id = (int)$p_cfdef['id'];
 	// 	if( isset( $this->rt_table_alias_cf[$t_id] ) ) {
@@ -1462,10 +1462,10 @@ class DwgFilterQuery extends DbQuery {
 	// 	return $this->rt_table_alias_cf[$t_id];
 	// }
 
-	// /**
-	//  * Build the query parts for the filter properties related to custom fields
-	//  * @return void
-	//  */
+	/**
+	 * Build the query parts for the filter properties related to custom fields
+	 * @return void
+	 */
 	// protected function build_prop_custom_fields() {
 	// 	if( ON != config_get( 'filter_by_custom_fields' ) ) {
 	// 		log_event( LOG_FILTERING, 'filter custom fields is globally disabled, skip' );
@@ -1557,10 +1557,10 @@ class DwgFilterQuery extends DbQuery {
 	// 	} # foreach cf
 	// }
 
-	// /**
-	//  * Build the query parts for the filter property "text search"
-	//  * @return void
-	//  */
+	/**
+	 * Build the query parts for the filter property "text search"
+	 * @return void
+	 */
 	// protected function build_prop_search() {
 	// 	if( is_blank( $this->filter[FILTER_PROPERTY_SEARCH] ) ) {
 	// 		return;
@@ -1591,10 +1591,10 @@ class DwgFilterQuery extends DbQuery {
 
 	// 		$c_search = '%' . $t_search_term . '%';
 	// 		$t_textsearch_where_clause .= '( ' . $this->sql_like( '{document}.summary', $c_search )
-	// 				. ' OR ' . $this->sql_like( '{bug_text}.description', $c_search )
-	// 				. ' OR ' . $this->sql_like( '{bug_text}.steps_to_reproduce', $c_search )
-	// 				. ' OR ' . $this->sql_like( '{bug_text}.additional_information', $c_search )
-	// 				. ' OR ' . $this->sql_like( '{bugnote_text}.note', $c_search );
+	// 				. ' OR ' . $this->sql_like( '{dwg_text}.description', $c_search )
+	// 				. ' OR ' . $this->sql_like( '{dwg_text}.steps_to_reproduce', $c_search )
+	// 				. ' OR ' . $this->sql_like( '{dwg_text}.additional_information', $c_search )
+	// 				. ' OR ' . $this->sql_like( '{dwgnote_text}.note', $c_search );
 
 	// 		if( is_numeric( $t_search_term ) ) {
 	// 			# Note: no need to test negative values, '-' sign has been removed
@@ -1612,10 +1612,10 @@ class DwgFilterQuery extends DbQuery {
 
 	// 	# add text query elements to arrays
 	// 	if( !$t_first ) {
-	// 		# join with bugnote table has already been created or reused
-	// 		$this->add_join( 'JOIN {bug_text} ON {document}.bug_text_id = {bug_text}.id' );
+	// 		# join with dwgnote table has already been created or reused
+	// 		$this->add_join( 'JOIN {dwg_text} ON {document}.dwg_text_id = {dwg_text}.id' );
 	// 		# Outer join required otherwise we don't retrieve issues without notes
-	// 		$this->add_join( 'LEFT JOIN {bugnote_text} ON ' . $t_bugnote_table . '.bugnote_text_id = {bugnote_text}.id' );
+	// 		$this->add_join( 'LEFT JOIN {dwgnote_text} ON ' . $t_bugnote_table . '.bugnote_text_id = {dwgnote_text}.id' );
 	// 		$this->add_where( $t_textsearch_where_clause );
 	// 	}
 
@@ -1742,111 +1742,111 @@ class DwgFilterQuery extends DbQuery {
 			$this->add_order( '{document}.sticky DESC' );
 		}
 
-		// $t_count = count( $t_sort_fields );
-		// for( $i = 0; $i < $t_count; $i++ ) {
-		// 	$c_sort = $t_sort_fields[$i];
-		// 	$c_dir = 'DESC' == $t_dir_fields[$i] ? 'DESC' : 'ASC';
+		$t_count = count( $t_sort_fields );
+		for( $i = 0; $i < $t_count; $i++ ) {
+			$c_sort = $t_sort_fields[$i];
+			$c_dir = 'DESC' == $t_dir_fields[$i] ? 'DESC' : 'ASC';
 
-		// 	# if sorting by a custom field
-		// 	if( column_dwg_is_custom_field( $c_sort ) ) {
-		// 		$t_custom_field = column_dwg_get_custom_field_name( $c_sort );
-		// 		$t_custom_field_id = custom_dwg_field_get_id_from_name( $t_custom_field );
-		// 		$t_def = custom_field_get_definition( $t_custom_field_id );
-		// 		$t_value_field = ( $t_def['type'] == CUSTOM_FIELD_TYPE_TEXTAREA ? 'text' : 'value' );
+			# if sorting by a custom field
+			if( column_dwg_is_custom_field( $c_sort ) ) {
+				$t_custom_field = column_dwg_get_custom_field_name( $c_sort );
+				$t_custom_field_id = custom_dwg_field_get_id_from_name( $t_custom_field );
+				$t_def = custom_field_get_definition( $t_custom_field_id );
+				$t_value_field = ( $t_def['type'] == CUSTOM_FIELD_TYPE_TEXTAREA ? 'text' : 'value' );
 
-		// 		$t_table_name = $this->helper_table_alias_for_cf( $t_def );
-		// 		if( !$t_table_name ) {
-		// 			continue;
-		// 		}
+				$t_table_name = $this->helper_table_alias_for_cf( $t_def );
+				if( !$t_table_name ) {
+					continue;
+				}
 
-		// 		# if no join can be used (eg, no view access), skip this field from the order clause
-		// 		if( empty( $t_table_name ) ) {
-		// 			continue;
-		// 		}
+				# if no join can be used (eg, no view access), skip this field from the order clause
+				if( empty( $t_table_name ) ) {
+					continue;
+				}
 
-		// 		$t_field_alias = 'cf_sortfield_' . $t_custom_field_id;
-		// 		$t_sort_col = $t_table_name . '.' . $t_value_field;
+				$t_field_alias = 'cf_sortfield_' . $t_custom_field_id;
+				$t_sort_col = $t_table_name . '.' . $t_value_field;
 
-		// 		# which types need special type cast
-		// 		switch( $t_def['type'] ) {
-		// 				case CUSTOM_FIELD_TYPE_FLOAT:
-		// 					# mysql can't cast to float, use alternative syntax
-		// 					$t_sort_expr = db_is_mysql() ? $t_sort_col . '+0.0' : 'CAST(NULLIF(' . $t_sort_col . ',\'\') AS FLOAT)';
-		// 					break;
-		// 				case CUSTOM_FIELD_TYPE_DATE:
-		// 				case CUSTOM_FIELD_TYPE_NUMERIC:
-		// 					$t_sort_expr = 'CAST(NULLIF(' . $t_sort_col . ',\'\') AS DECIMAL)';
-		// 					break;
-		// 				default: # no cast needed
-		// 					$t_sort_expr = $t_sort_col;
-		// 		}
+				# which types need special type cast
+				switch( $t_def['type'] ) {
+						case CUSTOM_FIELD_TYPE_FLOAT:
+							# mysql can't cast to float, use alternative syntax
+							$t_sort_expr = db_is_mysql() ? $t_sort_col . '+0.0' : 'CAST(NULLIF(' . $t_sort_col . ',\'\') AS FLOAT)';
+							break;
+						case CUSTOM_FIELD_TYPE_DATE:
+						case CUSTOM_FIELD_TYPE_NUMERIC:
+							$t_sort_expr = 'CAST(NULLIF(' . $t_sort_col . ',\'\') AS DECIMAL)';
+							break;
+						default: # no cast needed
+							$t_sort_expr = $t_sort_col;
+				}
 
-		// 		# which types need special treatment for null sorting
-		// 		switch( $t_def['type'] ) {
-		// 			case CUSTOM_FIELD_TYPE_DATE:
-		// 			case CUSTOM_FIELD_TYPE_NUMERIC:
-		// 			case CUSTOM_FIELD_TYPE_FLOAT:
-		// 				$t_null_last = true;
-		// 				break;
-		// 			default:
-		// 				$t_null_last = false;
-		// 		}
+				# which types need special treatment for null sorting
+				switch( $t_def['type'] ) {
+					case CUSTOM_FIELD_TYPE_DATE:
+					case CUSTOM_FIELD_TYPE_NUMERIC:
+					case CUSTOM_FIELD_TYPE_FLOAT:
+						$t_null_last = true;
+						break;
+					default:
+						$t_null_last = false;
+				}
 
-		// 		if( $t_null_last ) {
-		// 			$t_null_expr = 'CASE WHEN NULLIF(' . $t_sort_col . ', \'\') IS NULL THEN 1 ELSE 0 END';
-		// 			$t_clause_for_select = $t_null_expr . ' AS ' . $t_field_alias . '_null';
-		// 			$t_clause_for_select .= ', ' . $t_sort_expr . ' AS ' . $t_field_alias;
-		// 			$t_clause_for_order = $t_field_alias . '_null ASC, ' . $t_field_alias . ' ' . $c_dir;
-		// 		} else {
-		// 			$t_clause_for_select = $t_sort_expr . ' AS ' . $t_field_alias;
-		// 			$t_clause_for_order = $t_field_alias . ' ' . $c_dir;
-		// 		}
+				if( $t_null_last ) {
+					$t_null_expr = 'CASE WHEN NULLIF(' . $t_sort_col . ', \'\') IS NULL THEN 1 ELSE 0 END';
+					$t_clause_for_select = $t_null_expr . ' AS ' . $t_field_alias . '_null';
+					$t_clause_for_select .= ', ' . $t_sort_expr . ' AS ' . $t_field_alias;
+					$t_clause_for_order = $t_field_alias . '_null ASC, ' . $t_field_alias . ' ' . $c_dir;
+				} else {
+					$t_clause_for_select = $t_sort_expr . ' AS ' . $t_field_alias;
+					$t_clause_for_order = $t_field_alias . ' ' . $c_dir;
+				}
 
-		// 		# Note: pgsql needs the sort expression to appear as member of the "select distinct"
-		// 		$this->add_select( $t_clause_for_select );
-		// 		$this->add_order( $t_clause_for_order );
+				# Note: pgsql needs the sort expression to appear as member of the "select distinct"
+				$this->add_select( $t_clause_for_select );
+				$this->add_order( $t_clause_for_order );
 
-		// 	# if sorting by plugin columns
-		// 	} else if( column_dwg_is_plugin_column( $c_sort ) ) {
-		// 		$t_plugin_columns = columns_dwg_get_plugin_columns();
-		// 		$t_column_object = $t_plugin_columns[$c_sort];
+			# if sorting by plugin columns
+			} else if( column_dwg_is_plugin_column( $c_sort ) ) {
+				$t_plugin_columns = columns_dwg_get_plugin_columns();
+				$t_column_object = $t_plugin_columns[$c_sort];
 
-		// 		$t_clauses = $t_column_object->sortquery( $c_dir );
-		// 		if( is_array( $t_clauses ) ) {
-		// 			if( isset( $t_clauses['select'] ) ) {
-		// 				$this->add_select( $t_clauses['select'] );
-		// 			}
-		// 			if( isset( $t_clauses['join'] ) ) {
-		// 				$this->add_join( $t_clauses['join'] );
-		// 			}
-		// 			if( isset( $t_clauses['order'] ) ) {
-		// 				$this->add_order( $t_clauses['order'] );
-		// 			}
-		// 		}
+				$t_clauses = $t_column_object->sortquery( $c_dir );
+				if( is_array( $t_clauses ) ) {
+					if( isset( $t_clauses['select'] ) ) {
+						$this->add_select( $t_clauses['select'] );
+					}
+					if( isset( $t_clauses['join'] ) ) {
+						$this->add_join( $t_clauses['join'] );
+					}
+					if( isset( $t_clauses['order'] ) ) {
+						$this->add_order( $t_clauses['order'] );
+					}
+				}
 
-		// 	# standard column
-		// 	} else {
-		// 		$t_sort_col = $this->helper_sort_column_alias( $c_sort );
+			# standard column
+			} else {
+				$t_sort_col = $this->helper_sort_column_alias( $c_sort );
 
-		// 		# When sorting by due_date, always display undefined dates last.
-		// 		# Undefined date is defaulted as "1" in database, so add a special
-		// 		# sort clause to group and sort by this.
-		// 		if( 'due_date' == $c_sort && 'ASC' == $c_dir ) {
-		// 			$t_null_expr = 'CASE ' . $t_sort_col . ' WHEN 1 THEN 1 ELSE 0 END';
-		// 			$this->add_select( $t_null_expr . ' AS due_date_sort_null' );
-		// 			$this->add_order( 'due_date_sort_null ASC' );
-		// 		}
-		// 		# main sort clause for due date
-		// 		$this->add_order( $t_sort_col . ' ' .$c_dir );
-		// 	}
-		//}
+				# When sorting by due_date, always display undefined dates last.
+				# Undefined date is defaulted as "1" in database, so add a special
+				# sort clause to group and sort by this.
+				if( 'due_date' == $c_sort && 'ASC' == $c_dir ) {
+					$t_null_expr = 'CASE ' . $t_sort_col . ' WHEN 1 THEN 1 ELSE 0 END';
+					$this->add_select( $t_null_expr . ' AS due_date_sort_null' );
+					$this->add_order( 'due_date_sort_null ASC' );
+				}
+				# main sort clause for due date
+				$this->add_order( $t_sort_col . ' ' .$c_dir );
+			}
+		}
 
-		// # add basic sorting if necessary
-		// if( !in_array( 'last_updated', $t_sort_fields ) ) {
-		// 	$this->add_order( '{document}.last_updated DESC' );
-		// }
-		// if( !in_array( 'date_submitted', $t_sort_fields ) ) {
-		// 	$this->add_order( '{document}.date_submitted DESC' );
-		// }
+		# add basic sorting if necessary
+		if( !in_array( 'last_updated', $t_sort_fields ) ) {
+			$this->add_order( '{document}.last_updated DESC' );
+		}
+		if( !in_array( 'date_submitted', $t_sort_fields ) ) {
+			$this->add_order( '{document}.date_submitted DESC' );
+		}
 	}
 }

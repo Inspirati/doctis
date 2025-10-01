@@ -618,19 +618,6 @@ function file_delete_bugnote_attachments( $p_bug_id, $p_bugnote_id ) {
 	return true;
 }
 
-function file_delete_dwgnote_attachments( $p_bug_id, $p_bugnote_id ) {
-	db_param_push();
-	$t_query = 'SELECT id, diskfile, filename FROM {bug_file} WHERE bug_id=' . db_param() . ' AND bugnote_id=' . db_param();
-	$t_result = db_query( $t_query, array( $p_bug_id, $p_bugnote_id ) );
-
-	while( $t_row = db_fetch_array( $t_result ) ) {
-		file_delete( (int)$t_row['id'], 'bug', $p_bugnote_id );
-	}
-
-	# db_query() errors on failure so:
-	return true;
-}
-
 /**
  * Link the specified file to the specified bugnote.
  * 
@@ -640,13 +627,6 @@ function file_delete_dwgnote_attachments( $p_bug_id, $p_bugnote_id ) {
  * @return void
  */
 function file_link_to_bugnote( $p_file_id, $p_bugnote_id ) {
-	db_param_push();
-
-	$t_query = 'UPDATE {bug_file} SET bugnote_id=' . db_param() . ' WHERE id=' . db_param();
-	db_query( $t_query, array( $p_bugnote_id, $p_file_id ) );
-}
-
-function file_link_to_dwgnote( $p_file_id, $p_bugnote_id ) {
 	db_param_push();
 
 	$t_query = 'UPDATE {bug_file} SET bugnote_id=' . db_param() . ' WHERE id=' . db_param();
@@ -743,9 +723,6 @@ function file_delete( $p_file_id, $p_table = 'bug', $p_bugnote_id = 0 ) {
 	if( $p_table == 'bug' ) {
 		$t_bug_id = file_get_field( $p_file_id, 'bug_id', $p_table );
 		$t_project_id = bug_get_field( $t_bug_id, 'project_id' );
-	} else if( $p_table == 'dwg' ) {
-		$t_bug_id = file_get_field( $p_file_id, 'bug_id', $p_table );
-		$t_project_id = dwg_get_field( $t_bug_id, 'project_id' );
 	} else {
 		$t_project_id = file_get_field( $p_file_id, 'project_id', $p_table );
 	}
@@ -758,10 +735,6 @@ function file_delete( $p_file_id, $p_table = 'bug', $p_bugnote_id = 0 ) {
 	}
 
 	if( 'bug' == $p_table ) {
-		# log file deletion
-		history_log_event_special( $t_bug_id, FILE_DELETED, file_get_display_name( $t_filename ), $p_bugnote_id );
-	}
-	if( 'dwg' == $p_table ) {
 		# log file deletion
 		history_log_event_special( $t_bug_id, FILE_DELETED, file_get_display_name( $t_filename ), $p_bugnote_id );
 	}
@@ -857,7 +830,6 @@ function file_generate_unique_name( $p_filepath ) {
  *
  * @return bool true if unique
  */
-# @TODO RobD - needs to be parametised for the {?_file} table like the other functions here
 function diskfile_is_name_unique( $p_name, $p_filepath ) {
 	$c_name = $p_filepath . $p_name;
 
@@ -1320,9 +1292,6 @@ function file_get_content( $p_file_id, $p_type = 'bug' ) {
 	switch( $p_type ) {
 		case 'bug':
 			$t_query = 'SELECT * FROM {bug_file} WHERE id=' . db_param();
-			break;
-		case 'dwg':
-			$t_query = 'SELECT * FROM {dwg_file} WHERE id=' . db_param();
 			break;
 		case 'doc':
 			$t_query = 'SELECT * FROM {project_file} WHERE id=' . db_param();
