@@ -172,8 +172,11 @@ $s_blocks = 'child of';
 $s_new_bug = 'New Issue';
 $s_new_dwg = 'New Document';
 $s_bugnote_added = 'Note Added';
+$s_dwgnote_added = 'Note Added';
 $s_bugnote_edited = 'Note Edited';
+$s_dwgnote_edited = 'Note Edited';
 $s_bugnote_deleted = 'Note Deleted';
+$s_dwgnote_deleted = 'Note Deleted';
 $s_summary_updated = 'Summary Updated';
 $s_description_updated = 'Description Updated';
 $s_additional_information_updated = 'Additional Information Updated';
@@ -1461,7 +1464,7 @@ $s_ok = 'OK';
 $s_select_all = 'Select All';
 
 # view_dwg_page.php
-$s_viewing_dwg_title = 'Viewing Documents';
+$s_viewing_dwgs_title = 'Viewing Documents';
 $s_dwg_sticky = 'Show Sticky Documents';
 $s_dwg_issue_id = 'Document #';
 

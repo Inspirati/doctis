@@ -1717,7 +1717,7 @@ function dwg_get_dwgnote_stats_array( array $p_bugs_id, $p_user_id = null ) {
 			 * @var int  $t_note_count
 			 * @var int  $t_last_submit_date
 			 */
-			$c_bug_id = (int)$t_query_row['bug_id'];
+			$c_bug_id = (int)$t_query_row['dwg_id'];
 			if( 0 == $t_counter || $t_current_project_id !== $t_query_row['project_id'] ) {
 				# evaluating a new project from the rowset
 				$t_current_project_id = $t_query_row['project_id'];
@@ -1738,7 +1738,7 @@ function dwg_get_dwgnote_stats_array( array $p_bugs_id, $p_user_id = null ) {
 				|| ( VS_PUBLIC == $t_query_row['view_state'] );
 			if( $t_note_visible ) {
 				# only count the bugnote if user has access
-				$t_stats[$c_bug_id]['bug_id'] = $c_bug_id;
+				$t_stats[$c_bug_id]['dwg_id'] = $c_bug_id;
 				$t_stats[$c_bug_id]['last_modified'] = $t_query_row['last_modified'];
 				$t_stats[$c_bug_id]['count'] = ++$t_note_count;
 				$t_stats[$c_bug_id]['last_modified_bugnote'] = $t_query_row['id'];

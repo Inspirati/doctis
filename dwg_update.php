@@ -149,7 +149,7 @@ $t_updated_bug->version = get_valid_version( $t_existing_bug, 'version' );
 
 $t_updated_bug->view_state = gpc_get_int( 'view_state', $t_existing_bug->view_state );
 
-$t_bug_note = new BugNoteData();
+$t_bug_note = new DwgnoteData();
 $t_bug_note->note = gpc_get_string( 'dwgnote_text', '' );
 $t_bug_note->view_state = gpc_get_bool( 'private' ) ? VS_PRIVATE : VS_PUBLIC;
 $t_bug_note->time_tracking = gpc_get_string( 'time_tracking', '0:00' );

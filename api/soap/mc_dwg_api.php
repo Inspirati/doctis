@@ -81,7 +81,7 @@ function mc_dwg_get( $p_username, $p_password, $p_issue_id, $p_fields = null ) {
 		return mci_fault_access_denied( $t_user_id );
 	}
 
-	log_event( LOG_WEBSERVICE, 'getting details for issue \'' . $p_issue_id . '\'' );
+	log_event( LOG_WEBSERVICE, 'getting details for document \'' . $p_issue_id . '\'' );
 
 	$t_bug = dwg_get( $p_issue_id, true );
 	$t_issue_data = mci_dwg_data_as_array( $t_bug, $t_user_id, $t_lang, $p_fields );
@@ -520,7 +520,7 @@ function mci_dwg_get_attachments( $p_issue_id, $p_note_id = null ) {
 	$t_result = array();
 	foreach( $t_attachment_rows as $t_attachment_row ) {
 		# Filter out attachments that are not requested by caller
-		if( !is_null( $p_note_id ) && (int)$t_attachment_row['bugnote_id'] != (int)$p_note_id ) {
+		if( !is_null( $p_note_id ) && (int)$t_attachment_row['dwgnote_id'] != (int)$p_note_id ) {
 			continue;
 		}
 
@@ -1232,7 +1232,7 @@ function mc_dwg_update( $p_username, $p_password, $p_issue_id, stdClass $p_issue
 	}
 
 	# submit the issue
-	log_event( LOG_WEBSERVICE, 'updating issue \'' . $p_issue_id . '\'' );
+	log_event( LOG_WEBSERVICE, 'updating document \'' . $p_issue_id . '\'' );
 	return $t_bug_data->update( /* update extended */ true, /* bypass email */ false );
 }
 
@@ -1362,7 +1362,7 @@ function mc_dwg_note_add( $p_username, $p_password, $p_issue_id, stdClass $p_not
 
 	# TODO: Keep the code path below for adding REMINDERs.
 	if( (integer)$p_issue_id < 1 ) {
-		return ApiObjectFactory::faultBadRequest( 'Invalid issue id \'' . $p_issue_id . '\'' );
+		return ApiObjectFactory::faultBadRequest( 'Invalid document id \'' . $p_issue_id . '\'' );
 	}
 
 	if( !dwg_exists( $p_issue_id ) ) {
@@ -1376,8 +1376,8 @@ function mc_dwg_note_add( $p_username, $p_password, $p_issue_id, stdClass $p_not
 	global $g_project_override;
 	$g_project_override = $t_project_id;
 
-	if( !access_has_dwg_level( config_get( 'add_bugnote_threshold' ), $p_issue_id, $t_user_id ) ) {
-		return mci_fault_access_denied( $t_user_id, 'You do not have access rights to add notes to this issue' );
+	if( !access_has_dwg_level( config_get( 'add_dwgnote_threshold' ), $p_issue_id, $t_user_id ) ) {
+		return mci_fault_access_denied( $t_user_id, 'You do not have access rights to add notes to this document' );
 	}
 
 	if( dwg_is_readonly( $p_issue_id ) ) {
@@ -2075,7 +2075,7 @@ function mc_dwgs_get_header( $p_username, $p_password, $p_issue_ids ) {
 		if( mci_check_access_to_dwg( $t_user_id, $t_id ) === false )
 			continue;
 
-		log_event( LOG_WEBSERVICE, 'getting details for issue \'' . $t_id . '\'' );
+		log_event( LOG_WEBSERVICE, 'getting details for document \'' . $t_id . '\'' );
 
 		$t_issue_data = dwg_get( $t_id, true );
 		$t_result[] = mci_dwg_data_as_header_array( $t_issue_data );

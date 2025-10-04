@@ -111,7 +111,7 @@ function dwg_action_add_note_print_fields() {
  * @return string|null On failure: the reason why the action could not be validated. On success: null.
  */
 function dwg_action_add_note_validate( $p_bug_id ) {
-	$f_bugnote_text = gpc_get_string( 'dwgnote_text' );
+	$f_bugnote_text = gpc_get_string( 'bugnote_text' );
 
 	if( is_blank( $f_bugnote_text ) ) {
 		error_parameters( lang_get( 'dwgnote' ) );
@@ -139,7 +139,7 @@ function dwg_action_add_note_validate( $p_bug_id ) {
  * @return null Previous validation ensures that this function doesn't fail. Therefore we can always return null to indicate no errors occurred.
  */
 function dwg_action_add_note_process( $p_bug_id ) {
-	$f_bugnote_text = gpc_get_string( 'dwgnote_text' );
+	$f_bugnote_text = gpc_get_string( 'bugnote_text' );
 	$f_view_state = gpc_get_int( 'view_state' );
 	$t_bugnote_id = dwgnote_add( $p_bug_id, $f_bugnote_text, '0:00', $f_view_state != VS_PUBLIC );
 	dwgnote_process_mentions( $p_bug_id, $t_bugnote_id, $f_bugnote_text );

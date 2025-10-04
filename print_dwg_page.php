@@ -71,7 +71,7 @@ $f_sort 				= null;
 $f_dir		 			= null;
 $t_project_id 			= 0;
 
-$t_columns = helper_get_columns_to_view( COLUMNS_TARGET_PRINT_PAGE );
+$t_columns = helper_get_dwg_columns_to_view( COLUMNS_TARGET_PRINT_PAGE );
 $t_num_of_columns = count( $t_columns );
 
 # Get the filter in use
@@ -184,7 +184,7 @@ if( filter_dwg_is_temporary( $t_filter ) ) {
 <tr>
     <td class="bold bigger-110" colspan="<?php echo $t_num_of_columns ?>">
 		<?php
-			echo lang_get( 'viewing_bugs_title' );
+			echo lang_get( 'viewing_dwgs_title' );
 
 			if( $t_row_count > 0 ) {
 				$v_start = $f_offset+1;
