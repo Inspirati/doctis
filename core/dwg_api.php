@@ -381,7 +381,7 @@ class DwgData {
 		if( is_blank( $this->summary ) ) {  // @TODO RobD:
 			// error_parameters( lang_get( 'summary' ) );
 			// trigger_error( ERROR_EMPTY_FIELD, ERROR );
-			error_log("Summary cannot be blank - BUT CURRENTLY IT IS !!");
+			// error_log("Summary cannot be blank - BUT CURRENTLY IT IS !!");
 		}
 
 		if( $p_update_extended ) {
