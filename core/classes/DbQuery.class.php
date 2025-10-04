@@ -791,7 +791,10 @@ class DbQuery {
 		$t_query->db_param_array = $p_params;
 
 		$t_query->process_sql_syntax();
+
+if( defined( 'SEQUEL_TRACE_LOG' ) ) {
 		error_log("SEQUEL: " . clean_sql($t_query->db_query_string));
+}
 
 		# Pushing params to safeguard the ADOdb parameter count (required for pgsql)
 		$g_db_param->push();

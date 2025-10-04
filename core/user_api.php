@@ -48,6 +48,7 @@ require_api( 'constant_inc.php' );
 require_api( 'database_api.php' );
 require_api( 'email_bug_api.php' );
 require_api( 'error_api.php' );
+require_api( 'filter_api.php' );
 require_api( 'filter_dwg_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'lang_api.php' );
@@ -485,19 +486,23 @@ function user_is_monitoring_bug( $p_user_id, $p_bug_id ) {
 	}
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// BEGIN doctis developmental section
 function user_is_monitoring_dwg( $p_user_id, $p_bug_id ) {
-	// db_param_push();
-	// $t_query = 'SELECT COUNT(*) FROM {bug_monitor}
-	// 			  WHERE user_id=' . db_param() . ' AND bug_id=' . db_param();
+	db_param_push();
+	$t_query = 'SELECT COUNT(*) FROM {dwg_monitor}
+				  WHERE user_id=' . db_param() . ' AND dwg_id=' . db_param();
 
-	// $t_result = db_query( $t_query, array( (int)$p_user_id, (int)$p_bug_id ) );
+	$t_result = db_query( $t_query, array( (int)$p_user_id, (int)$p_bug_id ) );
 
-	// if( 0 == db_result( $t_result ) ) {
+	if( 0 == db_result( $t_result ) ) {
 		return false;
-	// } else {
-	// 	return true;
-	// }
+	} else {
+		return true;
+	}
 }
+// END doctis developmental section
+////////////////////////////////////////////////////////////////////////////////
 
 /**
  * Check if the specified user is an administrator.
@@ -1734,9 +1739,6 @@ function user_get_dwg_filter( $p_user_id, $p_project_id = null ) {
 
 	# Currently we use the filters saved in db as "current" special filters,
 	# to track the active settings for filters in use.
-
-# @TODO RobD - for development work, pretend we are an anonymous user who can't have persistent (saved) filters
-return filter_dwg_get_default();
 
 	# for anonymous user, we don't allow using persistent filter
 	# if this function is reached, we return a default filter for it.

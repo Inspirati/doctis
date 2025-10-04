@@ -49,7 +49,7 @@ require_api( 'print_dwg_api.php' );
 require_api( 'project_api.php' );
 require_api( 'user_api.php' );
 
-require_js( 'bugFilter.js' );
+require_js( 'bugFilter.js' );  // there is nothing 'bug' specific in the javascript
 require_css( 'status_config.php' );
 
 auth_ensure_user_authenticated();

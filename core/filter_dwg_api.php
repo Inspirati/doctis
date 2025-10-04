@@ -2293,6 +2293,7 @@ function filter_dwg_gpc_get( ?array $p_filter = null ): array {
 	$t_filter_input[FILTER_PROPERTY_ISSUES_PER_PAGE] 		= $f_per_page;
 	$t_filter_input[FILTER_PROPERTY_HIGHLIGHT_CHANGED] 		= $f_highlight_changed;
 	$t_filter_input[FILTER_PROPERTY_REPORTER_ID] 			= $f_reporter_id;
+	$t_filter_input[FILTER_PROPERTY_CREATOR_ID] 			= $f_creator_id;
 	$t_filter_input[FILTER_PROPERTY_HANDLER_ID] 				= $f_handler_id;
 	$t_filter_input[FILTER_PROPERTY_PROJECT_ID] 				= $f_project_id;
 	$t_filter_input[FILTER_PROPERTY_PROJECTION] 				= $f_projection;

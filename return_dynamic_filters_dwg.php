@@ -69,7 +69,7 @@ if( null !== $f_filter_id ) {
 		trigger_error( ERROR_ACCESS_DENIED, ERROR );
 	}
 } else {
-	$t_filter = current_user_get_bug_filter();
+	$t_filter = current_user_get_dwg_filter();
 }
 
 $f_view_type = gpc_get_string( 'view_type', $t_filter['_view_type'] );

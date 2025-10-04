@@ -50,11 +50,11 @@ Installation
 
     4. create a clone (backup) of this virtual machine as a reference baseline (recommended)
 
-    5. start the virtual machine
+    5. start the virtual machine and login to your user account
 
 3. Download and install the Doctis project.
 
-    1. make a working directory, or just use the existing '~/Documents' directory
+    1. make a working directory, or just change to the existing '~/Documents' directory
 
     ```sh
          cd Documents
@@ -66,7 +66,7 @@ Installation
          wget -O- https://tinyurl.com/get-doctis > install.sh
     ```
 
-    3. customise the install.sh script as needed (optional):
+    3. customise the configuration options in the install.sh script as needed (optional):
 
     ```sh
          pico install.sh
@@ -80,7 +80,7 @@ Installation
          ./install.sh
     ```
 
-    Or, as a single statement:
+    Or, for a default install, simply copy and paste this single statement:
 
     ```sh
          cd Documents && wget -O- https://tinyurl.com/get-doctis | bash
@@ -88,7 +88,7 @@ Installation
 
 4. Follow the getting-started tips which should eventually be displayed.
 
-NOTE: in order to create new users in mantisbt/doctis, the ability to send smtp emails is required and perhap the most-difficult way to achieve this is to create an App Password for a gmail account. However the system can still be used in single administrator mode without being able to send email. The default account is 'administrator' with password 'root'.
+NOTE: in order to create new users in mantisbt/doctis, the ability to send smtp emails is required and perhaps the most-difficult way to achieve this is to create an App Password for a gmail account. However the system can still be used in single administrator mode without being able to send email. The default account is 'administrator' with password 'root'.
 
 [^1]: for alternative desktop environments, perform a manual Debian setup process. (this has undergone minimal testing)
 [^2]: a system restart seems to be required to ensure sudo is enabled upon next login
@@ -121,7 +121,7 @@ chmod +x install-doctis.sh
 Documentation
 -------------
 
-For complete documentation, please read the administration guide included with this release in the `doc/<lang>` directory. The guide is available in text, PDF, and HTML formats.
+For complete documentation, please read the mantisbt administration guide included with this release in the `doc/<lang>` directory. The guide is available in text, PDF, and HTML formats.
 
 Limitations
 -----------
@@ -161,9 +161,6 @@ https://www.mantisbt.org/guidelines.php
   themselves should make their purpose apparent. The approach used is to break the
   work into many small files rather than have a small number of really
   large files.
-
-* You can set `$g_top_include_page` and `$g_bottom_include_page`
-  to alter what should be visible at the top and bottom of each page.
 
 * For legacy and namespace reasons, there are a few naming anomolies.
   In particular:
