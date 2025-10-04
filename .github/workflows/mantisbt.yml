@@ -36,11 +36,11 @@ jobs:
           - mysqli
 #          - pgsql
         php:
-#          - 8.3
-#          - 8.2
+          - 8.3
+          - 8.2
           - 8.1
-#          - 8.0
-#          - 7.4
+          - 8.0
+          - 7.4
         experimental: [false]
         include:
           - php: 8.4
@@ -86,17 +86,17 @@ jobs:
         # Make the DB execution command available to subsequent steps
         echo "DB_CMD=$DB_CMD $DB_NAME -e " >> "$GITHUB_ENV"
 
-    - name: Initialize PostgreSQL
-      if: ${{ matrix.DB == 'pgsql' }}
-      run: |
-        sudo systemctl start postgresql.service
-        pg_isready
-        DB_CMD="sudo -u postgres psql"
-        sudo -u postgres createdb $DB_NAME
-        $DB_CMD -c "CREATE USER $DB_USER WITH SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN PASSWORD '$DB_PASSWORD'"
-        $DB_CMD -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER"
-        # Make the DB execution command available to subsequent steps
-        echo "DB_CMD=$DB_CMD $DB_NAME -c " >> "$GITHUB_ENV"
+#    - name: Initialize PostgreSQL
+#      if: ${{ matrix.DB == 'pgsql' }}
+#      run: |
+#        sudo systemctl start postgresql.service
+#        pg_isready
+#        DB_CMD="sudo -u postgres psql"
+#        sudo -u postgres createdb $DB_NAME
+#        $DB_CMD -c "CREATE USER $DB_USER WITH SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN PASSWORD '$DB_PASSWORD'"
+#        $DB_CMD -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER"
+#        # Make the DB execution command available to subsequent steps
+#        echo "DB_CMD=$DB_CMD $DB_NAME -c " >> "$GITHUB_ENV"
 
     - name: Start webserver
       run: |
