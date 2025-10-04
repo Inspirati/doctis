@@ -153,44 +153,44 @@ function filter_dwg_select_modifier( array $p_filter ) {
  *
  * @return void
  */
-function print_filter_dwg_values_reporter_id( array $p_filter ) {
-	$t_filter = $p_filter;
-	$t_output = '';
-	$t_any_found = false;
-	if( count( $t_filter[FILTER_PROPERTY_REPORTER_ID] ) == 0 ) {
-		echo lang_get( 'any' );
-	} else {
-		$t_first_flag = true;
-		foreach( $t_filter[FILTER_PROPERTY_REPORTER_ID] as $t_current ) {
-			$t_this_name = '';
-			echo '<input type="hidden" name="', FILTER_PROPERTY_REPORTER_ID, '[]" value="', string_attribute( $t_current ), '" />';
-			if( filter_dwg_field_is_any( $t_current ) ) {
-				$t_any_found = true;
-			} else if( filter_dwg_field_is_myself( $t_current ) ) {
-				if( access_has_project_level( config_get( 'create_dwg_threshold' ) ) ) {
-					$t_this_name = '[' . lang_get( 'myself' ) . ']';
-				} else {
-					$t_any_found = true;
-				}
-			} else if( filter_dwg_field_is_none( $t_current ) ) {
-				$t_this_name = lang_get( 'none' );
-			} else {
-				$t_this_name = user_get_name( $t_current );
-			}
-			if( !$t_first_flag ) {
-				$t_output .= '<br />';
-			} else {
-				$t_first_flag = false;
-			}
-			$t_output .= string_display_line( $t_this_name );
-		}
-		if( $t_any_found ) {
-			echo lang_get( 'any' );
-		} else {
-			echo $t_output;
-		}
-	}
-}
+// function print_filter_dwg_values_reporter_id( array $p_filter ) {
+// 	$t_filter = $p_filter;
+// 	$t_output = '';
+// 	$t_any_found = false;
+// 	if( count( $t_filter[FILTER_PROPERTY_REPORTER_ID] ) == 0 ) {
+// 		echo lang_get( 'any' );
+// 	} else {
+// 		$t_first_flag = true;
+// 		foreach( $t_filter[FILTER_PROPERTY_REPORTER_ID] as $t_current ) {
+// 			$t_this_name = '';
+// 			echo '<input type="hidden" name="', FILTER_PROPERTY_REPORTER_ID, '[]" value="', string_attribute( $t_current ), '" />';
+// 			if( filter_dwg_field_is_any( $t_current ) ) {
+// 				$t_any_found = true;
+// 			} else if( filter_dwg_field_is_myself( $t_current ) ) {
+// 				if( access_has_project_level( config_get( 'create_dwg_threshold' ) ) ) {
+// 					$t_this_name = '[' . lang_get( 'myself' ) . ']';
+// 				} else {
+// 					$t_any_found = true;
+// 				}
+// 			} else if( filter_dwg_field_is_none( $t_current ) ) {
+// 				$t_this_name = lang_get( 'none' );
+// 			} else {
+// 				$t_this_name = user_get_name( $t_current );
+// 			}
+// 			if( !$t_first_flag ) {
+// 				$t_output .= '<br />';
+// 			} else {
+// 				$t_first_flag = false;
+// 			}
+// 			$t_output .= string_display_line( $t_this_name );
+// 		}
+// 		if( $t_any_found ) {
+// 			echo lang_get( 'any' );
+// 		} else {
+// 			echo $t_output;
+// 		}
+// 	}
+// }
 
 function print_filter_dwg_values_creator_id( array $p_filter ) {
 	$t_filter = $p_filter;
@@ -240,13 +240,43 @@ function print_filter_dwg_values_creator_id( array $p_filter ) {
  * @return void
  * @global array     $g_dwg_filter
  */
-function print_filter_dwg_reporter_id( ?array $p_filter = null ) {
+/*
+// function print_filter_dwg_reporter_id( ?array $p_filter = null ) {
+// 	global $g_dwg_filter;
+// 	if( null === $p_filter ) {
+// 		$p_filter = $g_dwg_filter;
+// 	}
+// 	?>
+// 		<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_REPORTER_ID;?>[]">
+// 		<?php
+// 	# if current user is a reporter, and limited_reporters is set to ON, only display that name
+// 	if( access_has_limited_view_dwg() ) {
+// 		$t_id = auth_get_current_user_id();
+// 		$t_username = user_get_name( $t_id );
+// 		$t_display_name = string_attribute( $t_username );
+// 		echo '<option value="' . $t_id . '" selected="selected">' . $t_display_name . '</option>';
+// 	} else {
+// 		?>
+// 		<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_REPORTER_ID], META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
+// 		<?php
+// 			if( access_has_project_level( config_get( 'create_dwg_threshold' ) ) ) {
+// 				echo '<option value="' . META_FILTER_MYSELF . '" ';
+// 				check_selected( $p_filter[FILTER_PROPERTY_REPORTER_ID], META_FILTER_MYSELF );
+// 				echo '>[' . lang_get( 'myself' ) . ']</option>';
+// 			}
+// 		print_dwg_creator_option_list( $p_filter[FILTER_PROPERTY_REPORTER_ID] );
+// 	}?>
+// 		</select>
+// 		<?php
+// }
+ */
+function print_filter_dwg_creator_id( ?array $p_filter = null ) {
 	global $g_dwg_filter;
 	if( null === $p_filter ) {
 		$p_filter = $g_dwg_filter;
 	}
 	?>
-		<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_REPORTER_ID;?>[]">
+		<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_CREATOR_ID;?>[]">
 		<?php
 	# if current user is a reporter, and limited_reporters is set to ON, only display that name
 	if( access_has_limited_view_dwg() ) {
@@ -256,14 +286,14 @@ function print_filter_dwg_reporter_id( ?array $p_filter = null ) {
 		echo '<option value="' . $t_id . '" selected="selected">' . $t_display_name . '</option>';
 	} else {
 		?>
-		<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_REPORTER_ID], META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
+		<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_CREATOR_ID], META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
 		<?php
 			if( access_has_project_level( config_get( 'create_dwg_threshold' ) ) ) {
 				echo '<option value="' . META_FILTER_MYSELF . '" ';
-				check_selected( $p_filter[FILTER_PROPERTY_REPORTER_ID], META_FILTER_MYSELF );
+				check_selected( $p_filter[FILTER_PROPERTY_CREATOR_ID], META_FILTER_MYSELF );
 				echo '>[' . lang_get( 'myself' ) . ']</option>';
 			}
-		print_dwg_creator_option_list( $p_filter[FILTER_PROPERTY_REPORTER_ID] );
+		print_dwg_creator_option_list( $p_filter[FILTER_PROPERTY_CREATOR_ID] );
 	}?>
 		</select>
 		<?php
@@ -1301,7 +1331,19 @@ function print_filter_dwg_view_state( ?array $p_filter = null ) {
  *
  * @return void
  */
-function print_filter_dwg_values_sticky_issues( array $p_filter ) {
+/*
+// function print_filter_dwg_values_sticky_issues( array $p_filter ) {
+// 	$t_filter = $p_filter;
+// 	$t_sticky_filter_state = gpc_string_to_bool( $t_filter[FILTER_PROPERTY_STICKY] );
+// 	print( $t_sticky_filter_state ? lang_get( 'yes' ) : lang_get( 'no' ) );
+// 	?>
+// 	<input type="hidden" name="<?php
+// 		echo FILTER_PROPERTY_STICKY; ?>" value="<?php
+// 		echo $t_sticky_filter_state ? ON : OFF; ?>" />
+// 	<?php
+// }
+ */
+function print_filter_dwg_values_sticky_documents( array $p_filter ) {
 	$t_filter = $p_filter;
 	$t_sticky_filter_state = gpc_string_to_bool( $t_filter[FILTER_PROPERTY_STICKY] );
 	print( $t_sticky_filter_state ? lang_get( 'yes' ) : lang_get( 'no' ) );
@@ -1320,7 +1362,7 @@ function print_filter_dwg_values_sticky_issues( array $p_filter ) {
  * @return void
  * @global array     $g_dwg_filter
  */
-function print_filter_dwg_sticky_issues( ?array $p_filter = null ) {
+function print_filter_dwg_sticky_documents( ?array $p_filter = null ) {
 	global $g_dwg_filter;
 	if( null === $p_filter ) {
 		$p_filter = $g_dwg_filter;
@@ -1694,9 +1736,9 @@ function print_filter_dwg_do_filter_by_last_updated_date( $p_hide_checkbox = fal
 function print_filter_dwg_values_relationship_type( array $p_filter ) {
 	$t_filter = $p_filter;
 	echo '<input type="hidden" name="', FILTER_PROPERTY_RELATIONSHIP_TYPE, '" value="', string_attribute( $t_filter[FILTER_PROPERTY_RELATIONSHIP_TYPE] ), '" />';
-	echo '<input type="hidden" name="', FILTER_PROPERTY_RELATIONSHIP_BUG, '" value="', string_attribute( $t_filter[FILTER_PROPERTY_RELATIONSHIP_BUG] ), '" />';
+	echo '<input type="hidden" name="', FILTER_PROPERTY_RELATIONSHIP_DWG, '" value="', string_attribute( $t_filter[FILTER_PROPERTY_RELATIONSHIP_DWG] ), '" />';
 	$c_rel_type = $t_filter[FILTER_PROPERTY_RELATIONSHIP_TYPE];
-	$c_rel_bug = $t_filter[FILTER_PROPERTY_RELATIONSHIP_BUG];
+	$c_rel_bug = $t_filter[FILTER_PROPERTY_RELATIONSHIP_DWG];
 	if( DWG_REL_ANY == $c_rel_type ) {
 		switch ( $c_rel_bug ) {
 			case META_FILTER_NONE:
@@ -1747,7 +1789,7 @@ function print_filter_dwg_relationship_type( ?array $p_filter = null ) {
 	}
 	$c_reltype_value = $p_filter[FILTER_PROPERTY_RELATIONSHIP_TYPE];
 	print_dwg_relationship_list_box( $c_reltype_value, 'relationship_type', true, true, "input-xs" );
-	echo '<input class="input-xs" type="text" name="', FILTER_PROPERTY_RELATIONSHIP_BUG, '" size="5" maxlength="10" value="', $p_filter[FILTER_PROPERTY_RELATIONSHIP_BUG], '" />';
+	echo '<input class="input-xs" type="text" name="', FILTER_PROPERTY_RELATIONSHIP_DWG, '" size="5" maxlength="10" value="', $p_filter[FILTER_PROPERTY_RELATIONSHIP_DWG], '" />';
 }
 
 /**
@@ -1845,7 +1887,7 @@ function print_filter_dwg_values_note_user_id( array $p_filter ) {
 }
 
 /**
- * Print note reporter field.
+ * Print note creator field.
  *
  * @param array|null $p_filter Filter array
  *
@@ -2692,11 +2734,11 @@ function filter_dwg_form_draw_inputs( $p_filter, $p_for_screen = true, $p_static
 	$t_row1 = new FilterDwgBoxGridLayout( $t_filter_cols , TableGridLayout::ORIENTATION_VERTICAL );
 
 	$t_row1->add_item( new TableFieldsItem(
-			$get_field_header( 'reporter_id_filter', lang_get( 'reporter' ) ),
-			filter_dwg_form_get_input( $t_filter, 'reporter_id', $t_show_inputs ),
+			$get_field_header( 'creator_id_filter', lang_get( 'creator' ) ),
+			filter_dwg_form_get_input( $t_filter, 'creator_id', $t_show_inputs ),
 			1 /* colspan */,
 			null /* class */,
-			'reporter_id_filter_target' /* content id */
+			'creator_id_filter_target' /* content id */
 			));
 	$t_row1->add_item( new TableFieldsItem(
 			$get_field_header( 'handler_id_filter', lang_get( 'assigned_to' ) ),
@@ -2741,11 +2783,11 @@ function filter_dwg_form_draw_inputs( $p_filter, $p_for_screen = true, $p_static
 			'view_state_filter_target' /* content id */
 			));
 	$t_row1->add_item( new TableFieldsItem(
-			$get_field_header( 'sticky_issues_filter', lang_get( 'sticky' ) ),
-			filter_dwg_form_get_input( $t_filter, 'sticky_issues', $t_show_inputs ),
+			$get_field_header( 'sticky_dwgs_filter', lang_get( 'dwg_sticky' ) ),
+			filter_dwg_form_get_input( $t_filter, 'sticky_documents', $t_show_inputs ),
 			1 /* colspan */,
 			null /* class */,
-			'sticky_issues_filter_target' /* content id */
+			'sticky_dwgs_filter_target' /* content id */
 			));
 
 	$t_row2 = new FilterDwgBoxGridLayout( $t_filter_cols , TableGridLayout::ORIENTATION_VERTICAL );

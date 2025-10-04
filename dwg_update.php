@@ -140,7 +140,7 @@ $t_updated_bug->reproducibility = gpc_get_int( 'reproducibility', $t_existing_bu
 $t_updated_bug->resolution = gpc_get_int( 'resolution', $t_existing_bug->resolution );
 $t_updated_bug->severity = gpc_get_int( 'severity', $t_existing_bug->severity );
 $t_updated_bug->status = gpc_get_int( 'status', $t_existing_bug->status );
-$t_updated_bug->steps_to_reproduce = gpc_get_string( 'steps_to_reproduce', $t_existing_bug->steps_to_reproduce );
+// $t_updated_bug->steps_to_reproduce = gpc_get_string( 'steps_to_reproduce', $t_existing_bug->steps_to_reproduce );
 $t_updated_bug->summary = gpc_get_string( 'summary', $t_existing_bug->summary );
 
 $t_updated_bug->fixed_in_version = get_valid_version( $t_existing_bug, 'fixed_in_version' );
@@ -240,7 +240,7 @@ if( $t_existing_bug->status != $t_updated_bug->status ) {
 		trigger_error( ERROR_CUSTOM_FIELD_INVALID_VALUE, ERROR );
 	}
 	if( !access_has_dwg_level( access_get_dwg_status_threshold( $t_updated_bug->status, $t_updated_bug->project_id ), $f_bug_id ) ) {
-		# The reporter may be allowed to close or reopen the issue regardless.
+		# The creator may be allowed to close or reopen the issue regardless.
 		$t_can_bypass_status_access_thresholds = false;
 		if( $t_close_issue &&
 			$t_existing_bug->status >= $t_resolved_status &&

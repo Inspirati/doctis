@@ -137,8 +137,8 @@ if( $f_master_bug_id > 0 ) {
 	$f_priority				= $t_bug->priority;
 	$f_summary				= $t_bug->summary;
 	$f_description			= $t_bug->description;
-	$f_steps_to_reproduce	= $t_bug->steps_to_reproduce;
-	$f_additional_info		= $t_bug->additional_information;
+	// $f_steps_to_reproduce	= $t_bug->steps_to_reproduce;
+	// $f_additional_info		= $t_bug->additional_information;
 	$f_view_state			= (int)$t_bug->view_state;
 	$f_due_date				= $t_bug->due_date;
 
@@ -220,8 +220,8 @@ if (array_key_exists('USE_LOREM_IPSUM', $GLOBALS)) {
 	$f_priority				= gpc_get_int( 'priority', (int)config_get( 'default_bug_priority' ) );
 	$f_summary				= gpc_get_string( 'summary', '' );
 	$f_description			= gpc_get_string( 'description', config_get( 'default_bug_description' ) );
-	$f_steps_to_reproduce	= gpc_get_string( 'steps_to_reproduce', config_get( 'default_bug_steps_to_reproduce' ) );
-	$f_additional_info		= gpc_get_string( 'additional_info', config_get( 'default_bug_additional_info' ) );
+	// $f_steps_to_reproduce	= gpc_get_string( 'steps_to_reproduce', config_get( 'default_bug_steps_to_reproduce' ) );
+	// $f_additional_info		= gpc_get_string( 'additional_info', config_get( 'default_bug_additional_info' ) );
 	$f_view_state			= gpc_get_int( 'view_state', (int)config_get( 'default_bug_view_status' ) );
 	$f_due_date				= gpc_get_string( 'due_date', date_strtotime( config_get( 'due_date_default' ) ) );
 
@@ -250,7 +250,7 @@ $t_show_reproducibility = in_array( 'reproducibility', $t_fields );
 $t_show_eta = in_array( 'eta', $t_fields );
 $t_show_severity = in_array( 'severity', $t_fields );
 $t_show_priority = in_array( 'priority', $t_fields );
-$t_show_steps_to_reproduce = in_array( 'steps_to_reproduce', $t_fields );
+// $t_show_steps_to_reproduce = in_array( 'steps_to_reproduce', $t_fields );
 $t_show_handler = in_array( 'handler', $t_fields )
 	&& access_has_project_level( config_get( 'update_dwg_assign_threshold' ) );
 $t_show_monitors = in_array( 'monitors', $t_fields )
@@ -399,7 +399,8 @@ if( $t_show_attachments ) {
 <?php
 	}
 
-	if( $t_show_due_date ) {
+	// if( $t_show_due_date ) {
+	if( true ) {
 		$t_date_to_display = '';
 
 		if( !date_is_null( $f_due_date ) ) {

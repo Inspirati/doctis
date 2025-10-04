@@ -45,7 +45,7 @@ helper_ensure_confirmed( lang_get( 'delete_dwgnote_sure_msg' ),
 
 $t_data = array( 'query' => array( 'id' => $f_bugnote_id  ) );
 
-$t_command = new DocumentNoteDeleteCommand( $t_data );
+$t_command = new DwgNoteDeleteCommand( $t_data );
 $t_result = $t_command->execute();
 
 form_security_purge( 'dwgnote_delete' );

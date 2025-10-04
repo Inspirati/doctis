@@ -20,18 +20,19 @@ A script to automatically clone, install, and configure Doctis is under developm
 Design Goals (requirements)
 ---------------------------
 
-* simple to use, should require little to no training
+* simple to use, requires little to no training
 * track status of documents through the review cycle
-* track status of issue identified during review (mostly existing mantis functionality)
+* track status of issues identified during document reviews (tailor existing mantis functionality)
+* maximise maintainability (minimise the diff with mantisbt codebase)
 * bulk import of document data from spreadsheet, csv, tsv
-* users can be assigned to groups
+* add group feature (users can be assigned to groups)
 
 Installing
 ----------
 
 1. Install [VirtualBox](https://www.virtualbox.org/) on any system it is supported on.
 
-2. Create a Debian Linux virtual machine using the ISO image at [Debian-13.1.0-amd64-netinst.iso](https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-13.1.0-amd64-netinst.iso)
+2. Create a Debian based Linux virtual machine using the ISO image at [Debian-13.1.0-amd64-netinst.iso](https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-13.1.0-amd64-netinst.iso). Debian 12 or recent Ubuntu distribution should also work. (limited testing has been performed)
 
     1. select the VirtualBox default automated install option (results in a GNOME[^1] desktop environment)
 
@@ -95,7 +96,7 @@ NOTE: in order to create new users in mantisbt/doctis, the ability to send smtp 
 Doctis Install Script
 ---------------------
 
-WARNING: this script should only be used inside your Debian Linux virtual machine.
+WARNING: this script should only be used inside your Debian based Linux virtual machine.
 
 ```sh
 #!/bin/bash
@@ -125,7 +126,7 @@ For complete documentation, please read the administration guide included with t
 Limitations
 -----------
 
-There is currently no built-in user interface support for adding documents to the database. Document data needs to be added to the database directly using other tools, such as phpMyAdmin or the CLI.
+There is currently no built-in user interface support for bulk adding documents to the database. Bulk document data needs to be added to the database directly using other tools, such as phpMyAdmin or the CLI.
 
 Style Guide / Naming Convention
 -------------------------------

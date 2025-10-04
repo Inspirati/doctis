@@ -68,7 +68,7 @@ $t_per_page = 0;
 $t_bug_count = 0;
 $t_page_count = 0;
 
-$t_rows = filter_dwg_get_rows( $f_page_number, $t_per_page, $t_page_count, $t_bug_count, null, null, null, true );
+$t_rows = filter_dwg_get_dwg_rows( $f_page_number, $t_per_page, $t_page_count, $t_bug_count, null, null, null, true );
 if( $t_rows === false ) {
 	print_dwg_header_redirect( 'view_dwg_set.php?type=0' );
 }

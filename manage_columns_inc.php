@@ -71,6 +71,10 @@ $t_csv = implode( ', ', $t_columns );
 $t_columns = helper_get_columns_to_view( COLUMNS_TARGET_VIEW_PAGE, false, $t_user_id );
 $t_view_issues = implode( ', ', $t_columns );
 
+// $t_columns = helper_get_dwg_columns_to_view( COLUMNS_TARGET_VIEW_DWG_PAGE, false, $t_user_id );
+$t_columns = helper_get_dwg_columns_to_view( COLUMNS_TARGET_VIEW_PAGE, false, $t_user_id );
+$t_view_dwg_issues = implode( ', ', $t_columns );
+
 $t_columns = helper_get_columns_to_view( COLUMNS_TARGET_PRINT_PAGE, false, $t_user_id );
 $t_print_issues = implode( ', ', $t_columns );
 
@@ -123,6 +127,17 @@ if( $t_account_page ) {
 					<?php # Newline after opening textarea tag is intentional, see #25839 ?>
 					<textarea class="form-control" id="view-issues-columns" <?php echo helper_get_tab_index() ?> name="view_issues_columns" cols="80" rows="5">
 <?php echo $t_view_issues ?>
+</textarea>
+				</td>
+			</tr>
+			<tr>
+				<td class="category">
+					<?php echo lang_get( 'view_document_columns_title' )?>
+				</td>
+				<td>
+					<?php # Newline after opening textarea tag is intentional, see #25839 ?>
+					<textarea class="form-control" id="print-document-columns" <?php echo helper_get_tab_index() ?> name="print_document_columns" cols="80" rows="5">
+<?php echo $t_view_dwg_issues ?>
 </textarea>
 				</td>
 			</tr>

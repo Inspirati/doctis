@@ -1131,6 +1131,22 @@ function mci_get_time_tracking_from_note( $p_issue_id, array $p_note ) {
 	return $p_note['time_tracking']['duration'];
 }
 
+function mci_dwg_get_time_tracking_from_note( $p_issue_id, array $p_note ) {
+	if( !access_has_dwg_level( config_get( 'time_tracking_view_threshold' ), $p_issue_id ) ) {
+		return '00:00';
+	}
+
+	if( !isset( $p_note['time_tracking'] ) ) {
+		return '00:00';
+	}
+
+	if( is_numeric( $p_note['time_tracking'] ) ) {
+		return db_minutes_to_hhmm( $p_note['time_tracking'] );
+	}
+
+	return $p_note['time_tracking']['duration'];
+}
+
 /**
  * Unhandled exception handler
  *

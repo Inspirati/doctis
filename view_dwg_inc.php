@@ -52,8 +52,7 @@ require_api( 'helper_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'print_dwg_api.php' );
-
-require_api( 'dwg_api.php' );
+// require_api( 'dwg_api.php' );  // we are picking this up from filter_dwg_api.php, but should probably have it here anyway
 
 /**
  * Variables defined in parent script.
@@ -78,8 +77,7 @@ if( $t_current_project > 0 ) {
 	category_get_all_rows( $t_current_project );
 }
 
-#!$g_columns = helper_get_columns_to_view( COLUMNS_TARGET_VIEW_PAGE );
-$g_columns = helper_get_dwg_columns_to_view( COLUMNS_TARGET_DWG_PAGE );
+$g_columns = helper_get_dwg_columns_to_view( COLUMNS_TARGET_VIEW_PAGE );
 
 dwg_cache_columns_data( $t_rows, $g_columns );
 
@@ -216,9 +214,9 @@ if( ( $t_filter_position & FILTER_POSITION_TOP ) == FILTER_POSITION_TOP ) {
 							<tr class="buglist-headers">
 <?php
 	$t_title_function = 'print_dwg_column_title';  // @TODO RobD - setting this causes most* all the column title hyperlinks to not be hyperlinks (* only the first column 'status' remains as a hyperlink?)
-	$t_sort_properties = filter_dwg_get_visible_sort_properties_array( $t_filter, COLUMNS_TARGET_DWG_PAGE );
+	$t_sort_properties = filter_dwg_get_visible_sort_properties_array( $t_filter, COLUMNS_TARGET_VIEW_PAGE );
 	foreach( $g_columns as $t_column ) {
-		helper_call_custom_function( $t_title_function, array( $t_column, COLUMNS_TARGET_DWG_PAGE, $t_sort_properties ) );
+		helper_call_custom_function( $t_title_function, array( $t_column, COLUMNS_TARGET_VIEW_PAGE, $t_sort_properties ) );
 	}
 ?>
 							</tr>

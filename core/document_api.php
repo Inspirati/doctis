@@ -423,7 +423,7 @@ function document_sort_rows_by_project( $p_document1, ?array $p_document2 = null
 		return $t_proj_cmp;
 	}
 
-	return strcasecmp( (string)$p_document1['name'], (string)$p_document2['name'] );
+	return strcasecmp( (string)$p_document1['title'], (string)$p_document2['title'] );
 }
 
 $g_cache_document_project = null;

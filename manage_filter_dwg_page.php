@@ -65,7 +65,7 @@ $t_filter_ids_available =
 		filter_dwg_db_get_named_filters( $t_project_id, $t_user_id, false ) +
 		filter_dwg_db_get_named_filters( $t_project_id, null, true )
 		;
-filter_cache_rows( $t_filter_ids_available );
+filter_dwg_cache_rows( $t_filter_ids_available );
 
 $t_rss_enabled = config_get( 'rss_enabled' );
 
@@ -94,7 +94,7 @@ function table_print_filter_row( $p_filter_id ) {
 	# Filter name
 	echo '<td>';
 	$t_name = filter_dwg_get_field( $p_filter_id, 'name' );
-	print_link( 'view_filters_page.php?filter_id=' . $p_filter_id, $t_name );
+	print_link( 'view_dwg_filters_page.php?filter_id=' . $p_filter_id, $t_name );
 	echo '</td>';
 	# RSS
 	if( $t_rss_enabled ) {

@@ -579,8 +579,8 @@ function history_dwg_localize_field_name( $p_field_name ) {
 		case 'handler_id':
 			$t_field_localized = lang_get( 'assigned_to' );
 			break;
-		case 'reporter_id':
-			$t_field_localized = lang_get( 'reporter' );
+		case 'creator_id':
+			$t_field_localized = lang_get( 'creator' );
 			break;
 		case 'version':
 			$t_field_localized = lang_get( 'product_version' );
@@ -789,7 +789,7 @@ function history_dwg_localize_item( $p_bug_id, $p_field_name, $p_type, $p_old_va
 			}
 			break;
 		case 'handler_id':
-		case 'reporter_id':
+		case 'creator_id':
 			if( 0 == $p_old_value ) {
 				$p_old_value = '';
 			} else {

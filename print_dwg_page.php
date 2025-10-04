@@ -89,7 +89,7 @@ $t_per_page = -1;
 $t_bug_count = null;
 $t_page_count = null;
 
-$t_result = filter_dwg_get_bug_rows( $f_page_number, $t_per_page, $t_page_count, $t_bug_count );
+$t_result = filter_dwg_get_dwg_rows( $f_page_number, $t_per_page, $t_page_count, $t_bug_count );
 $t_row_count = count( $t_result );
 
 # pre-cache column data

@@ -183,9 +183,8 @@ configure_project() {
 \$g_bug_report_page_fields = array(${default_page_fields});
 \$g_bug_view_page_fields = array(${default_page_fields});
 \$g_bug_update_page_fields = array(${default_page_fields});
-\$g_priority_enum_string = '10:closed,20:pending,30:open';
-\$g_severity_enum_string = '30:comment,40:query,50:minor,60:major';
-\$g_default_bug_severity = 50; // Set minor as default
+\$g_severity_enum_string = '20:comment,30:query,50:minor,60:major';
+\$g_default_bug_severity = 20; // Set comment as default
 \$g_reproducibility_enum_string = '';
 \$g_enable_profiles = OFF;
 EOF
