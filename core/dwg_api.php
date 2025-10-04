@@ -130,6 +130,7 @@ class DwgData {
 	protected $sticky = 0;
 // #TODO RobD - and now all the new data fields for the documents table	
 	protected $enabled = 1;
+	protected $priority = NORMAL;
 	protected $title = '';
 	protected $author = '';
 	protected $number = '';
@@ -150,7 +151,7 @@ class DwgData {
 	// protected $reporter_id = 0;
 //	protected $handler_id = 0;
 //	protected $duplicate_id = 0;
-	protected $priority = NORMAL;
+//	protected $priority = NORMAL;
 	protected $severity = MINOR;
 	protected $reproducibility = 10;
 //	protected $status = NEW_;
@@ -325,9 +326,9 @@ class DwgData {
 			/** @noinspection PhpUnhandledExceptionInspection */
 			$t_text = dwg_text_cache_row( $this->id );
 
-			$this->description = $t_text['description'];
-			$this->steps_to_reproduce = $t_text['steps_to_reproduce'];
-			$this->additional_information = $t_text['additional_information'];
+			// $this->description = $t_text['description'];
+			// $this->steps_to_reproduce = $t_text['steps_to_reproduce'];
+			// $this->additional_information = $t_text['additional_information'];
 		}
 	}
 
@@ -598,6 +599,7 @@ $this->author = isset($this->author) ? $this->author : '';
 			handler_id=' . db_param() . ',
 			duplicate_id=' . db_param() . ',
 			status=' . db_param() . ',
+			priority=' . db_param() . ',
 			category_id=' . db_param() . ',
 			version=' . db_param() . '
 			';
@@ -609,6 +611,7 @@ $this->author = isset($this->author) ? $this->author : '';
 			$this->handler_id,
 			$this->duplicate_id,
 			$this->status,
+			$this->priority,
 			$this->category_id,
 			$this->version,
 			$this->id);
@@ -639,9 +642,9 @@ $this->author = isset($this->author) ? $this->author : '';
 		history_log_event_direct( $c_bug_id, 'version', $t_old_data->version, $this->version );
 		history_log_event_direct( $c_bug_id, 'build', $t_old_data->build, $this->build );
 		history_log_event_direct( $c_bug_id, 'fixed_in_version', $t_old_data->fixed_in_version, $this->fixed_in_version );
-		if( $t_roadmap_updated ) {
-			history_log_event_direct( $c_bug_id, 'target_version', $t_old_data->target_version, $this->target_version );
-		}
+		// if( $t_roadmap_updated ) {
+		// 	history_log_event_direct( $c_bug_id, 'target_version', $t_old_data->target_version, $this->target_version );
+		// }
 		history_log_event_direct( $c_bug_id, 'view_state', $t_old_data->view_state, $this->view_state );
 		history_log_event_direct( $c_bug_id, 'summary', $t_old_data->summary, $this->summary );
 		history_log_event_direct( $c_bug_id, 'sponsorship_total', $t_old_data->sponsorship_total, $this->sponsorship_total );
@@ -2015,8 +2018,8 @@ function dwg_close( $p_bug_id, $p_bugnote_text = '', $p_bugnote_private = false,
 
 	dwg_set_field( $p_bug_id, 'status', config_get( 'dwg_closed_status_threshold' ) );
 
-	email_close( $p_bug_id );
-	email_relationship_child_closed( $p_bug_id );
+	email_dwg_close( $p_bug_id );
+	email_dwg_relationship_child_closed( $p_bug_id );
 
 	return true;
 }
@@ -2091,8 +2094,8 @@ function dwg_resolve( $p_bug_id, $p_resolution, $p_fixed_in_version = '', $p_bug
 		dwg_set_field( $p_bug_id, 'handler_id', $p_handler_id );
 	}
 
-	email_resolved( $p_bug_id );
-	email_relationship_child_resolved( $p_bug_id );
+	email_dwg_resolved( $p_bug_id );
+	email_dwg_relationship_child_resolved( $p_bug_id );
 
 	return true;
 }

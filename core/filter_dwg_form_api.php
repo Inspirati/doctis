@@ -153,45 +153,6 @@ function filter_dwg_select_modifier( array $p_filter ) {
  *
  * @return void
  */
-// function print_filter_dwg_values_reporter_id( array $p_filter ) {
-// 	$t_filter = $p_filter;
-// 	$t_output = '';
-// 	$t_any_found = false;
-// 	if( count( $t_filter[FILTER_PROPERTY_REPORTER_ID] ) == 0 ) {
-// 		echo lang_get( 'any' );
-// 	} else {
-// 		$t_first_flag = true;
-// 		foreach( $t_filter[FILTER_PROPERTY_REPORTER_ID] as $t_current ) {
-// 			$t_this_name = '';
-// 			echo '<input type="hidden" name="', FILTER_PROPERTY_REPORTER_ID, '[]" value="', string_attribute( $t_current ), '" />';
-// 			if( filter_dwg_field_is_any( $t_current ) ) {
-// 				$t_any_found = true;
-// 			} else if( filter_dwg_field_is_myself( $t_current ) ) {
-// 				if( access_has_project_level( config_get( 'create_dwg_threshold' ) ) ) {
-// 					$t_this_name = '[' . lang_get( 'myself' ) . ']';
-// 				} else {
-// 					$t_any_found = true;
-// 				}
-// 			} else if( filter_dwg_field_is_none( $t_current ) ) {
-// 				$t_this_name = lang_get( 'none' );
-// 			} else {
-// 				$t_this_name = user_get_name( $t_current );
-// 			}
-// 			if( !$t_first_flag ) {
-// 				$t_output .= '<br />';
-// 			} else {
-// 				$t_first_flag = false;
-// 			}
-// 			$t_output .= string_display_line( $t_this_name );
-// 		}
-// 		if( $t_any_found ) {
-// 			echo lang_get( 'any' );
-// 		} else {
-// 			echo $t_output;
-// 		}
-// 	}
-// }
-
 function print_filter_dwg_values_creator_id( array $p_filter ) {
 	$t_filter = $p_filter;
 	$t_output = '';
@@ -231,7 +192,6 @@ function print_filter_dwg_values_creator_id( array $p_filter ) {
 	}
 }
 
-
 /**
  * Print the reporter field.
  *
@@ -239,36 +199,6 @@ function print_filter_dwg_values_creator_id( array $p_filter ) {
  *
  * @return void
  * @global array     $g_dwg_filter
- */
-/*
-// function print_filter_dwg_reporter_id( ?array $p_filter = null ) {
-// 	global $g_dwg_filter;
-// 	if( null === $p_filter ) {
-// 		$p_filter = $g_dwg_filter;
-// 	}
-// 	?>
-// 		<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_REPORTER_ID;?>[]">
-// 		<?php
-// 	# if current user is a reporter, and limited_reporters is set to ON, only display that name
-// 	if( access_has_limited_view_dwg() ) {
-// 		$t_id = auth_get_current_user_id();
-// 		$t_username = user_get_name( $t_id );
-// 		$t_display_name = string_attribute( $t_username );
-// 		echo '<option value="' . $t_id . '" selected="selected">' . $t_display_name . '</option>';
-// 	} else {
-// 		?>
-// 		<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_REPORTER_ID], META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
-// 		<?php
-// 			if( access_has_project_level( config_get( 'create_dwg_threshold' ) ) ) {
-// 				echo '<option value="' . META_FILTER_MYSELF . '" ';
-// 				check_selected( $p_filter[FILTER_PROPERTY_REPORTER_ID], META_FILTER_MYSELF );
-// 				echo '>[' . lang_get( 'myself' ) . ']</option>';
-// 			}
-// 		print_dwg_creator_option_list( $p_filter[FILTER_PROPERTY_REPORTER_ID] );
-// 	}?>
-// 		</select>
-// 		<?php
-// }
  */
 function print_filter_dwg_creator_id( ?array $p_filter = null ) {
 	global $g_dwg_filter;

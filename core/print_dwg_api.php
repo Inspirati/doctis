@@ -1799,7 +1799,7 @@ function print_dwg_email_link_with_subject( $p_email, $p_text, $p_tooltip, $p_bu
 	echo prepare_email_link(
 			$p_email,
 			$p_text,
-			email_build_subject( $p_bug_id ),
+			email_dwg_build_subject( $p_bug_id ),
 			$p_tooltip,
 			$p_show_as_button
 		);

@@ -167,8 +167,8 @@ function email_dwg_collect_recipients( $p_bug_id, $p_notify_type, array $p_extra
 		}
 	}
 
-	# add users who contributed bugnotes
-	$t_notes_enabled = ( ON == email_notify_flag( $p_notify_type, 'bugnotes' ) );
+	# add users who contributed dwgnotes
+	$t_notes_enabled = ( ON == email_notify_flag( $p_notify_type, 'dwgnotes' ) );
 	db_param_push();
 	$t_query = 'SELECT DISTINCT creator_id FROM {dwgnote} WHERE dwg_id = ' . db_param();
 	$t_result = db_query( $t_query, array( $p_bug_id ) );
@@ -294,7 +294,7 @@ function email_dwg_collect_recipients( $p_bug_id, $p_notify_type, array $p_extra
 		}
 
 		# exclude users who don't have at least viewer access to the bug,
-		# or who can't see bugnotes if the last update included a bugnote
+		# or who can't see dwgnotes if the last update included a bugnote
 		$t_view_bug_threshold = config_get( 'view_dwg_threshold', null, $t_id, $t_bug->project_id );
 		if(   !access_has_dwg_level( $t_view_bug_threshold, $p_bug_id, $t_id )
 		   || (   $p_bugnote_id
@@ -381,7 +381,7 @@ function email_dwg_generic_to_recipients( int $p_bug_id, string $p_notify_type, 
 
 	ignore_user_abort( true );
 
-	dwgnote_get_all_bugnotes( $p_bug_id );
+	dwgnote_get_all_dwgnotes( $p_bug_id );
 
 	$t_project_id = dwg_get_field( $p_bug_id, 'project_id' );
 
@@ -943,7 +943,7 @@ function email_dwg_build_subject( $p_bug_id ) {
 	$t_email_subject = '[' . $p_project_name . ' ' . $t_bug_id . ']: ' . $p_subject;
 
 	# update subject as defined by plugins
-	return event_signal( 'EVENT_DISPLAY_email_dwg_build_subject', $t_email_subject, array( $p_bug_id ) );
+	return event_signal( 'EVENT_DISPLAY_EMAIL_BUILD_SUBJECT', $t_email_subject, array( $p_bug_id ) );
 }
 
 /**
@@ -1301,10 +1301,10 @@ function email_format_dwg_message( array $p_visible_bug_data ) {
 
 	$t_message .= $t_email_separator1 . " \n\n";
 
-	# format bugnotes
-	foreach( $p_visible_bug_data['bugnotes'] as $t_bugnote ) {
+	# format dwgnotes
+	foreach( $p_visible_bug_data['dwgnotes'] as $t_bugnote ) {
 		# Show time tracking is always true, since data has already been filtered out when creating the bug visible data.
-		$t_message .= email_format_bugnote( $t_bugnote, $p_visible_bug_data['email_project_id'],
+		$t_message .= email_format_dwgnote( $t_bugnote, $p_visible_bug_data['email_project_id'],
 				/* show_time_tracking */ true,  $t_email_separator2, $t_normal_date_format ) . "\n";
 	}
 
@@ -1317,7 +1317,7 @@ function email_format_dwg_message( array $p_visible_bug_data ) {
 
 		foreach( $p_visible_bug_data['history'] as $t_raw_history_item ) {
 			$t_localized_item = history_localize_item(
-				$t_raw_history_item['bug_id'],
+				$t_raw_history_item['dwg_id'],
 				$t_raw_history_item['field'],
 				$t_raw_history_item['type'],
 				$t_raw_history_item['old_value'],
@@ -1461,7 +1461,7 @@ function email_build_visible_dwg_data( $p_user_id, $p_bug_id, $p_message_id ) {
 	$t_bug_data['set_category'] = '[' . $t_bug_data['email_project'] . '] ' . $t_category_name;
 
 	$t_bug_data['custom_fields'] = custom_field_get_linked_fields( $p_bug_id, $t_user_access_level );
-	$t_bug_data['bugnotes'] = dwgnote_get_all_visible_dwgnotes( $p_bug_id, $t_user_bugnote_order, $t_user_bugnote_limit, $p_user_id );
+	$t_bug_data['dwgnotes'] = dwgnote_get_all_visible_dwgnotes( $p_bug_id, $t_user_bugnote_order, $t_user_bugnote_limit, $p_user_id );
 
 	# put history data
 	if( ( ON == config_get( 'history_default_visible' ) ) && access_compare_level( $t_user_access_level, config_get( 'view_history_threshold' ) ) ) {
