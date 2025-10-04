@@ -1006,7 +1006,7 @@ $g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwg_monito
 	",
 	$t_table_options
 	) );
-$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_bug_id', db_get_table( 'dwg_monitor' ), 'dwg_id' ) );
+$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_dwg_id', db_get_table( 'dwg_monitor' ), 'dwg_id' ) );
 
 $g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwg_relationship' ), "
 	id						I		UNSIGNED NOTNULL AUTOINCREMENT PRIMARY,
@@ -1015,8 +1015,8 @@ $g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwg_relati
 	relationship_type		I2		NOTNULL DEFAULT '0' ",
 	$t_table_options
 	) );
-$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_relationship_source', db_get_table( 'dwg_relationship' ), 'source_dwg_id' ) );
-$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_relationship_destination', db_get_table( 'dwg_relationship' ), 'destination_dwg_id' ) );
+$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_dwg_relationship_source', db_get_table( 'dwg_relationship' ), 'source_dwg_id' ) );
+$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_dwg_relationship_destination', db_get_table( 'dwg_relationship' ), 'destination_dwg_id' ) );
 
 $g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwg_filters' ), "
 	id						I		UNSIGNED NOTNULL PRIMARY AUTOINCREMENT,
@@ -1057,6 +1057,20 @@ $g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwg_histor
 	$t_table_options
 	) );
 $g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_dwg_history_dwg_id', db_get_table( 'dwg_history' ), 'dwg_id' ) );
+
+
+$g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwg_revision' ), "
+	id						I		UNSIGNED NOTNULL PRIMARY AUTOINCREMENT,
+	dwg_id					I		UNSIGNED NOTNULL,
+	dwgnote_id				I		UNSIGNED NOTNULL DEFAULT '0',
+	user_id					I		UNSIGNED NOTNULL,
+	timestamp				I		UNSIGNED NOTNULL DEFAULT '1',
+	type					I		UNSIGNED NOTNULL,
+	value					XL		NOTNULL",
+	$t_table_options
+	) );
+$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_dwg_rev_id_time', db_get_table( 'dwg_revision' ), 'dwg_id, timestamp' ) );
+$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_dwg_rev_type', db_get_table( 'dwg_revision' ), 'type' ) );
 
 # IMPORTANT: keep these entries as the last indexes, as they will be deleted in release versions
 #			 (you will need to bump all the indexes when inserting tables database statements above here)
