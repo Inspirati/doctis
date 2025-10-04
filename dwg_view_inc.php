@@ -895,7 +895,7 @@ if( $t_flags['history_show'] && $f_history ) {
 	$t_collapse_block = is_collapsed( 'history' );
 	$t_block_css = $t_collapse_block ? 'collapsed' : '';
 	$t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
-	$t_history = history_get_events_array( $f_issue_id );
+	$t_history = history_dwg_get_events_array( $f_issue_id );
 ?>
 		<div id="history" class="widget-box widget-color-blue2 <?php echo $t_block_css ?>">
 			<div class="widget-header widget-header-small">

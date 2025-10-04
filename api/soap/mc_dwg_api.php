@@ -106,11 +106,11 @@ function mci_dwg_get_history( $p_issue_id, $p_user_id, $p_lang ) {
 		return array();
 	}
 
-	$t_history_rows = history_get_raw_events_array( $p_issue_id, $p_user_id );
+	$t_history_rows = history_dwg_get_raw_events_array( $p_issue_id, $p_user_id );
 
 	$t_history = array();
 
-	$t_files = file_get_visible_attachments( $p_issue_id );
+	$t_files = file_dwg_get_visible_attachments( $p_issue_id );
 
 	foreach( $t_history_rows as $t_history_row ) {
 		$t_type = (int)$t_history_row['type'];
@@ -122,7 +122,7 @@ function mci_dwg_get_history( $p_issue_id, $p_user_id, $p_lang ) {
 			case DWG_UPDATE_SPONSORSHIP:      # Deprecated, not exposed in REST API
 			case DWG_DELETE_SPONSORSHIP:      # Deprecated, not exposed in REST API
 			case DWG_REVISION_DROPPED:        # Not Supported
-			case BUGNOTE_REVISION_DROPPED:    # Not Supported
+			case DWGNOTE_REVISION_DROPPED:    # Not Supported
 				$t_skip = true;
 				break;
 		}
@@ -150,7 +150,7 @@ function mci_dwg_get_history( $p_issue_id, $p_user_id, $p_lang ) {
 
 			$t_event['field'] = array(
 				'name' => $t_field,
-				'label' => history_localize_field_name( $t_history_row['field'] ) );
+				'label' => history_dwg_localize_field_name( $t_history_row['field'] ) );
 		}
 
 		if( $t_skip ) {
@@ -159,7 +159,7 @@ function mci_dwg_get_history( $p_issue_id, $p_user_id, $p_lang ) {
 
 		$t_event['type'] = array(
 			'id' => $t_type,
-			'name' => history_get_type_name( $t_history_row['type'] ) );
+			'name' => history_dwg_get_type_name( $t_history_row['type'] ) );
 
 		$t_old_value_name = 'old_value';
 		$t_new_value_name = 'new_value';
@@ -186,13 +186,13 @@ function mci_dwg_get_history( $p_issue_id, $p_user_id, $p_lang ) {
 				$t_show_new_value = false;
 				$t_old_value_name = 'file';
 				break;
-			case BUGNOTE_ADDED:
-			case BUGNOTE_UPDATED:
-			case BUGNOTE_DELETED:
+			case DWGNOTE_ADDED:
+			case DWGNOTE_UPDATED:
+			case DWGNOTE_DELETED:
 				$t_show_new_value = false;
 				$t_old_value_name = 'note';
 				break;
-			case BUGNOTE_STATE_CHANGED:
+			case DWGNOTE_STATE_CHANGED:
 				$t_old_value_name = 'view_state';
 				$t_new_value_name = 'note';
 				break;
@@ -222,10 +222,10 @@ function mci_dwg_get_history( $p_issue_id, $p_user_id, $p_lang ) {
 					}
 
 					return array( 'id' => $t_tag['id'], 'name' => $t_tag['name'] );
-				case BUGNOTE_ADDED:
-				case BUGNOTE_DELETED:
+				case DWGNOTE_ADDED:
+				case DWGNOTE_DELETED:
 					return array( 'id' => (int)$p_value );
-				case BUGNOTE_UPDATED:
+				case DWGNOTE_UPDATED:
 					if( !$p_new_value ) {
 						return array( 'id' => (int) $p_value );
 					}
@@ -246,7 +246,7 @@ function mci_dwg_get_history( $p_issue_id, $p_user_id, $p_lang ) {
 					$t_value['filename'] = $p_value;
 
 					return $t_value;
-				case BUGNOTE_STATE_CHANGED:
+				case DWGNOTE_STATE_CHANGED:
 					if( $p_new_value ) {
 						return array( 'id' => (int)$p_value );
 					}
@@ -306,7 +306,7 @@ function mci_dwg_get_history( $p_issue_id, $p_user_id, $p_lang ) {
 			$t_event[$t_new_value_name] = $fn_process_value( $p_issue_id, $t_type, $t_field, $t_history_row['new_value'], $p_lang, true );
 		}
 
-		$t_localized_row = history_localize_item(
+		$t_localized_row = history_dwg_localize_item(
 			$p_issue_id,
 			$t_history_row['field'],
 			$t_history_row['type'],
@@ -364,7 +364,7 @@ function mc_dwg_get_history( $p_username, $p_password, $p_issue_id ) {
 
 	log_event( LOG_WEBSERVICE, 'retrieving history for document \'' . $p_issue_id . '\'' );
 
-	$t_bug_history = history_get_raw_events_array( $p_issue_id, $t_user_id );
+	$t_bug_history = history_dwg_get_raw_events_array( $p_issue_id, $t_user_id );
 
 	return $t_bug_history;
 }
@@ -512,7 +512,7 @@ function mci_dwg_get_custom_fields( $p_issue_id ) {
  * @return array that represents an AttachmentData structure
  */
 function mci_dwg_get_attachments( $p_issue_id, $p_note_id = null ) {
-	$t_attachment_rows = file_get_visible_attachments( $p_issue_id );
+	$t_attachment_rows = file_dwg_get_visible_attachments( $p_issue_id );
 	if( $t_attachment_rows == null ) {
 		return array();
 	}
@@ -1224,7 +1224,7 @@ function mc_dwg_update( $p_username, $p_password, $p_issue_id, stdClass $p_issue
 
 		# The issue has been cached earlier in the bug_get() call.  Flush the cache since it is
 		# now stale.  Otherwise, the email notification will be based on the cached data.
-		bugnote_clear_bug_cache( $p_issue_id );
+		dwgnote_clear_bug_cache( $p_issue_id );
 	}
 
 	if( isset( $p_issue['tags'] ) && is_array( $p_issue['tags'] ) ) {
@@ -1443,7 +1443,7 @@ function mc_dwg_note_delete( $p_username, $p_password, $p_issue_note_id ) {
 		return ApiObjectFactory::faultBadRequest( 'Invalid document note id \'' . $p_issue_note_id . '\'.' );
 	}
 
-	$t_issue_id = bugnote_get_field( $p_issue_note_id, 'bug_id' );
+	$t_issue_id = dwgnote_get_field( $p_issue_note_id, 'dwg_id' );
 	$t_project_id = dwg_get_field( $t_issue_id, 'project_id' );
 	if( !mci_has_readwrite_access( $t_user_id, $t_project_id ) ) {
 		return mci_fault_access_denied( $t_user_id );
@@ -1491,7 +1491,7 @@ function mc_dwg_note_update( $p_username, $p_password, stdClass $p_note ) {
 		return ApiObjectFactory::faultNotFound( 'Document note \'' . $t_issue_note_id . '\' does not exist.' );
 	}
 
-	$t_issue_id = bugnote_get_field( $t_issue_note_id, 'bug_id' );
+	$t_issue_id = dwgnote_get_field( $t_issue_note_id, 'dwg_id' );
 	$t_project_id = dwg_get_field( $t_issue_id, 'project_id' );
 	$g_project_override = $t_project_id;
 

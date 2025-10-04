@@ -221,8 +221,8 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 			# show edit button if the user is allowed to edit this bugnote
 			if( $t_activity['can_edit'] ) {
 				echo '<div class="pull-left">';
-				print_form_button(
-					'bugnote_edit_page.php',
+				print_dwg_form_button(
+					'dwgnote_edit_page.php',
 					lang_get( 'edit' ),
 					array( 'bugnote_id' => $t_activity['id'] ),
 					OFF );
@@ -238,7 +238,7 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 						$t_security_token_notes_delete = form_security_token( 'dwgnote_delete' );
 					}
 
-					print_form_button(
+					print_dwg_form_button(
 						'dwgnote_delete.php',
 						lang_get( 'delete' ),
 						array( 'bugnote_id' => $t_activity['id'] ),
@@ -265,13 +265,13 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 
 				echo '<div class="pull-left">';
 				if( $t_activity['private'] ) {
-					print_form_button(
+					print_dwg_form_button(
 						'dwgnote_set_view_state.php',
 						lang_get( 'make_public' ),
 						array( 'private' => '0', 'bugnote_id' => $t_activity['id'] ),
 						$t_security_token_state );
 				} else {
-					print_form_button(
+					print_dwg_form_button(
 						'dwgnote_set_view_state.php',
 						lang_get( 'make_private' ),
 						array( 'private' => '1', 'bugnote_id' => $t_activity['id'] ),

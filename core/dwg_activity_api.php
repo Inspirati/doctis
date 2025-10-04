@@ -58,7 +58,7 @@ function dwg_activity_get_all( $p_bug_id, $p_include_attachments = true ) {
 	$t_bug_readonly = dwg_is_readonly( $p_bug_id );
 
 	if ( $p_include_attachments ) {
-		$t_attachments = file_get_visible_attachments( $p_bug_id );
+		$t_attachments = file_dwg_get_visible_attachments( $p_bug_id );
 	} else {
 		$t_attachments = array();
 	}
@@ -277,7 +277,7 @@ function dwg_activity_combine( $p_entries ) {
  * @return void
  */
 function dwg_activity_bugnote_link_attachments( $p_bugnote_id ) {
-	$t_bug_id = bugnote_get_field( $p_bugnote_id, 'bug_id' );
+	$t_bug_id = dwgnote_get_field( $p_bugnote_id, 'dwg_id' );
 	$t_activities = dwg_activity_get_all( $t_bug_id, /* include_attachments */ true );
 
 	$t_files = array();
@@ -293,7 +293,7 @@ function dwg_activity_bugnote_link_attachments( $p_bugnote_id ) {
 	# explicitly link the attached files history events to the bugnote to control
 	# there visibility based on the view state of the bugnote.
 	foreach( $t_files as $t_file ) {
-		history_link_file_to_bugnote( $t_bug_id, $t_file['display_name'], $p_bugnote_id );
+		history_dwg_link_file_to_bugnote( $t_bug_id, $t_file['display_name'], $p_bugnote_id );
 	}
 }
 

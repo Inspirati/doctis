@@ -2330,13 +2330,13 @@ function print_dwg_dropzone_template(){
  *
  * @return void
  *
- * @deprecated 2.0 use {@see print_form_button()} instead
+ * @deprecated 2.0 use {@see print_dwg_form_button()} instead
  * @see form_security_token()
  */
 function print_dwg_button( $p_action_page, $p_label, array $p_args_to_post = [], $p_security_token = null ) {
-	error_parameters( __FUNCTION__, 'print_form_button' );
+	error_parameters( __FUNCTION__, 'print_dwg_form_button' );
 	trigger_error( ERROR_DEPRECATED_SUPERSEDED, DEPRECATED );
-	print_form_button( $p_action_page, $p_label, $p_args_to_post, $p_security_token );
+	print_dwg_form_button( $p_action_page, $p_label, $p_args_to_post, $p_security_token );
 }
 
 /**
