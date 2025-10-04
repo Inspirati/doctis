@@ -120,6 +120,7 @@ use Mantis\Exceptions\ClientException;
 #[AllowDynamicProperties]
 class DwgData {
 	protected $id;
+	protected $dwg_id;  // @TODO RobD - need to figure this out, include so as reflection class will match up with columns configuration string ie id === dwg_id
 	protected $project_id = null;
 	protected $status = NEW_;
 	protected $date_submitted = '';
@@ -146,7 +147,7 @@ class DwgData {
 	protected $duplicate_id = 0;
 
 // #TODO RobD - the legacy fields from the bug version
-	protected $reporter_id = 0;
+	// protected $reporter_id = 0;
 //	protected $handler_id = 0;
 //	protected $duplicate_id = 0;
 	protected $priority = NORMAL;
