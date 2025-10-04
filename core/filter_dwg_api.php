@@ -344,8 +344,8 @@ function filter_dwg_get_url( array $p_custom_filter ) {
 		}
 	}
 
-	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_RELATIONSHIP_BUG] ) ) {
-		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_RELATIONSHIP_BUG, $p_custom_filter[FILTER_PROPERTY_RELATIONSHIP_BUG] );
+	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_RELATIONSHIP_DWG] ) ) {
+		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_RELATIONSHIP_DWG, $p_custom_filter[FILTER_PROPERTY_RELATIONSHIP_DWG] );
 	}
 
 	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_PLATFORM] ) ) {
@@ -613,7 +613,7 @@ function filter_dwg_ensure_valid_filter( array $p_filter_arr ) {
 		$p_filter_arr['_version'] = DWG_FILTER_VERSION;
 	}
 
-	if( filter_version_compare( $p_filter_arr['_version'], DWG_FILTER_VERSION, '<' ) ) {
+	if( filter_dwg_version_compare( $p_filter_arr['_version'], DWG_FILTER_VERSION, '<' ) ) {
 		$p_filter_arr = filter_dwg_version_upgrade( $p_filter_arr );
 	}
 
@@ -703,7 +703,7 @@ function filter_dwg_ensure_valid_filter( array $p_filter_arr ) {
 	$t_single_value_list = array(
 		FILTER_PROPERTY_VIEW_STATE => 'int',
 		FILTER_PROPERTY_RELATIONSHIP_TYPE => 'int',
-		FILTER_PROPERTY_RELATIONSHIP_BUG => 'int',
+		FILTER_PROPERTY_RELATIONSHIP_DWG => 'int',
 	);
 	foreach( $t_single_value_list as $t_field_name => $t_field_type ) {
 		$t_value = $p_filter_arr[$t_field_name];
@@ -837,11 +837,11 @@ function filter_dwg_ensure_valid_filter( array $p_filter_arr ) {
 
 	# validate relationship fields
 	if( !(
-		$p_filter_arr[FILTER_PROPERTY_RELATIONSHIP_BUG] > 0
-		|| $p_filter_arr[FILTER_PROPERTY_RELATIONSHIP_BUG] == META_FILTER_ANY
-		|| $p_filter_arr[FILTER_PROPERTY_RELATIONSHIP_BUG] == META_FILTER_NONE
+		$p_filter_arr[FILTER_PROPERTY_RELATIONSHIP_DWG] > 0
+		|| $p_filter_arr[FILTER_PROPERTY_RELATIONSHIP_DWG] == META_FILTER_ANY
+		|| $p_filter_arr[FILTER_PROPERTY_RELATIONSHIP_DWG] == META_FILTER_NONE
 		) ) {
-		$p_filter_arr[FILTER_PROPERTY_RELATIONSHIP_BUG] = filter_dwg_get_default_property( FILTER_PROPERTY_RELATIONSHIP_BUG, $t_view_type );
+		$p_filter_arr[FILTER_PROPERTY_RELATIONSHIP_DWG] = filter_dwg_get_default_property( FILTER_PROPERTY_RELATIONSHIP_DWG, $t_view_type );
 	}
 
 	# all of our filter values are now guaranteed to be there, and correct.
@@ -881,7 +881,7 @@ function filter_dwg_get_default_array( $p_view_type = null ) {
 	}
 
 	if( $t_view_type == FILTER_VIEW_TYPE_SIMPLE ) {
-		$t_hide_status_default = config_get( 'hide_status_default' );
+		$t_hide_status_default = config_get( 'dwg_hide_status_default' );
 	} else {
 		$t_hide_status_default = META_FILTER_NONE;
 	}
@@ -915,7 +915,7 @@ function filter_dwg_get_default_array( $p_view_type = null ) {
 		FILTER_PROPERTY_PROFILE_ID => $t_meta_filter_any_array,
 		FILTER_PROPERTY_PRIORITY => $t_meta_filter_any_array,
 		FILTER_PROPERTY_NOTE_USER_ID => $t_meta_filter_any_array,
-		FILTER_PROPERTY_STICKY => gpc_string_to_bool( config_get( 'show_sticky_issues' ) ),
+		FILTER_PROPERTY_STICKY => gpc_string_to_bool( config_get( 'show_sticky_documents' ) ),
 		FILTER_PROPERTY_FILTER_BY_DATE_SUBMITTED => false,
 		FILTER_PROPERTY_DATE_SUBMITTED_START_MONTH => date( 'm' ),
 		FILTER_PROPERTY_DATE_SUBMITTED_END_MONTH => date( 'm' ),
@@ -935,7 +935,7 @@ function filter_dwg_get_default_array( $p_view_type = null ) {
 		FILTER_PROPERTY_TAG_STRING => '',
 		FILTER_PROPERTY_TAG_SELECT => 0,
 		FILTER_PROPERTY_RELATIONSHIP_TYPE => DWG_REL_ANY,
-		FILTER_PROPERTY_RELATIONSHIP_BUG => META_FILTER_ANY,
+		FILTER_PROPERTY_RELATIONSHIP_DWG => META_FILTER_ANY,
 	);
 
 	# initialize plugin filters
@@ -1094,7 +1094,7 @@ function filter_dwg_get_row( $p_filter_id ) {
 	global $g_cache_filter_dwg_db_rows;
 
 	if( !isset( $g_cache_filter_dwg_db_rows[$p_filter_id] ) ) {
-		filter_cache_rows( array($p_filter_id) );
+		filter_dwg_cache_rows( array($p_filter_id) );
 	}
 
 	$t_row = $g_cache_filter_dwg_db_rows[$p_filter_id];
@@ -1137,54 +1137,11 @@ function filter_dwg_get_field( $p_filter_id, $p_field_name ) {
  * @param boolean $p_show_sticky   True/false - get sticky issues only.
  * @return boolean|array
  */
-function filter_dwg_get_bug_rows( &$p_page_number, &$p_per_page, &$p_page_count, &$p_dwg_count, $p_custom_filter = null, $p_project_id = null, $p_user_id = null, $p_show_sticky = null ) {
+function filter_dwg_get_dwg_rows( &$p_page_number, &$p_per_page, &$p_page_count, &$p_dwg_count, $p_custom_filter = null, $p_project_id = null, $p_user_id = null, $p_show_sticky = null ) {
 	# assigning to $p_* for this function writes the values back in case the caller wants to know
 
 	if( $p_custom_filter === null ) {
-		$t_filter = filter_dwg_get_bug_rows_filter( $p_project_id, $p_user_id );
-	} else {
-		$t_filter = filter_dwg_ensure_valid_filter( $p_custom_filter );
-	}
-
-	# build a filter query, here for counting results
-	$t_filter_query = new BugFilterQuery(
-			$t_filter,
-			array(
-				'query_type' => BugFilterQuery::QUERY_TYPE_LIST,
-				'project_id' => $p_project_id,
-				'user_id' => $p_user_id,
-				'use_sticky' => $p_show_sticky
-				)
-			);
-	$p_dwg_count = $t_filter_query->get_bug_count();
-	if( 0 == $p_dwg_count ) {
-		return array();
-	}
-
-	# Calculate pagination
-	$p_per_page = filter_dwg_per_page( $t_filter, $p_dwg_count, $p_per_page );
-	$p_page_count = filter_dwg_page_count( $p_dwg_count, $p_per_page );
-	$p_page_number = filter_dwg_valid_page_number( $p_page_number, $p_page_count );
-	$t_offset = filter_dwg_offset( $p_page_number, $p_per_page );
-
-	$t_filter_query->set_limit( $p_per_page );
-	$t_filter_query->set_offset( $t_offset );
-	# Execute query
-	$t_rows = $t_filter_query->fetch_all();
-	$t_dwg_id_array = array_column( $t_rows, 'id' );
-
-	# Return the processed rows: cache data, convert to bug objects
-#!	return filter_cache_result( $t_rows, $t_dwg_id_array );
-	return filter_dwg_cache_result( $t_rows, $t_dwg_id_array );
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// BEGIN doctis developmental section
-function filter_dwg_get_rows( &$p_page_number, &$p_per_page, &$p_page_count, &$p_dwg_count, $p_custom_filter = null, $p_project_id = null, $p_user_id = null, $p_show_sticky = null ) {
-	# assigning to $p_* for this function writes the values back in case the caller wants to know
-
-	if( $p_custom_filter === null ) {
-		$t_filter = filter_dwg_get_rows_filter( $p_project_id, $p_user_id );
+		$t_filter = filter_dwg_get_dwg_rows_filter( $p_project_id, $p_user_id );
 	} else {
 		$t_filter = filter_dwg_ensure_valid_filter( $p_custom_filter );
 	}
@@ -1199,11 +1156,7 @@ function filter_dwg_get_rows( &$p_page_number, &$p_per_page, &$p_page_count, &$p
 				'use_sticky' => $p_show_sticky
 				)
 			);
-
 	$p_dwg_count = $t_filter_query->get_dwg_count();
-
-	error_log("get_dwg_count() p_dwg_count = " . print_r($p_dwg_count, true));
-
 	if( 0 == $p_dwg_count ) {
 		return array();
 	}
@@ -1223,8 +1176,6 @@ function filter_dwg_get_rows( &$p_page_number, &$p_per_page, &$p_page_count, &$p
 	# Return the processed rows: cache data, convert to bug objects
 	return filter_dwg_cache_result( $t_rows, $t_dwg_id_array );
 }
-// END doctis developmental section
-////////////////////////////////////////////////////////////////////////////////
 
 /**
  * Get the filter defined by user and project.
@@ -1232,7 +1183,7 @@ function filter_dwg_get_rows( &$p_page_number, &$p_per_page, &$p_page_count, &$p
  * @param integer $p_user_id       User id to use as current user when filtering.
  * @return array
  */
-function filter_dwg_get_bug_rows_filter( $p_project_id = null, $p_user_id = null ) {
+function filter_dwg_get_dwg_rows_filter( $p_project_id = null, $p_user_id = null ) {
 	$t_current_user_id = auth_get_current_user_id();
 
 	if( $p_user_id === null || $p_user_id === 0 ) {
@@ -1260,41 +1211,6 @@ function filter_dwg_get_bug_rows_filter( $p_project_id = null, $p_user_id = null
 	}
 	return $t_filter;
 }
-
-////////////////////////////////////////////////////////////////////////////////
-// BEGIN doctis developmental section
-function filter_dwg_get_rows_filter( $p_project_id = null, $p_user_id = null ) {
-	$t_current_user_id = auth_get_current_user_id();
-
-	if( $p_user_id === null || $p_user_id === 0 ) {
-		$t_user_id = $t_current_user_id;
-	} else {
-		$t_user_id = $p_user_id;
-	}
-
-	if( null === $p_project_id ) {
-		# @@@ If project_id is not specified, then use the project id(s) in the filter if set, otherwise, use current project.
-		$t_project_id = helper_get_current_project();
-	} else {
-		$t_project_id = $p_project_id;
-	}
-
-
-	if( $t_user_id == $t_current_user_id ) {
-		$t_filter = current_user_get_dwg_filter();
-	} else {
-		$t_filter = user_get_dwg_filter( $t_user_id, $t_project_id );
-	}
-
-	# if filter isn't return above, create a new filter from an empty array.
-	if( false === $t_filter ) {
-		$t_filter = array();  // @TODO RobD: does this work? or results in a php internal error being thrown (as demonstrated below)
-	}
-
-	return $t_filter;
-}
-// END doctis developmental section
-////////////////////////////////////////////////////////////////////////////////
 
 /**
  * Cache the filter results with bugnote stats for later use
@@ -1674,7 +1590,7 @@ function filter_dwg_db_create_filter( $p_filter_string, $p_user_id, $p_project_i
 	$t_params = array( $c_user_id, $c_project_id, $c_is_public, $p_name, $p_filter_string );
 	db_query( $t_query, $t_params );
 
-	return db_insert_id( db_get_table( 'filters' ) );
+	return db_insert_id( db_get_table( 'dwg_filters' ) );
 }
 
 /**
@@ -1732,7 +1648,7 @@ function filter_dwg_set_project_filter( array $p_filter, $p_project_id = null, $
 function filter_dwg_db_get_filter_string( $p_filter_id, $p_user_id = null ) {
 	$c_filter_id = (int)$p_filter_id;
 
-	if( !filter_is_accessible( $c_filter_id, $p_user_id ) ) {
+	if( !filter_dwg_is_accessible( $c_filter_id, $p_user_id ) ) {
 		return null;
 	}
 
@@ -2366,9 +2282,9 @@ function filter_dwg_gpc_get( ?array $p_filter = null ): array {
 	}
 
 	$f_relationship_type = gpc_get_int( FILTER_PROPERTY_RELATIONSHIP_TYPE, $t_filter[FILTER_PROPERTY_RELATIONSHIP_TYPE] );
-	$f_relationship_bug = gpc_get_int( FILTER_PROPERTY_RELATIONSHIP_BUG, $t_filter[FILTER_PROPERTY_RELATIONSHIP_BUG] );
+	$f_relationship_bug = gpc_get_int( FILTER_PROPERTY_RELATIONSHIP_DWG, $t_filter[FILTER_PROPERTY_RELATIONSHIP_DWG] );
 
-	log_event( LOG_FILTERING, 'filter_gpc_get: Update filters' );
+	log_event( LOG_FILTERING, 'filter_dwg_gpc_get: Update filters' );
 	$t_filter_input['_version'] 								= DWG_FILTER_VERSION;
 	$t_filter_input['_view_type'] 							= $f_view_type;
 	$t_filter_input[FILTER_PROPERTY_CATEGORY_ID] 			= $f_show_category;
@@ -2409,7 +2325,7 @@ function filter_dwg_gpc_get( ?array $p_filter = null ): array {
 	$t_filter_input['custom_fields'] 						= $f_custom_fields_data;
 	$t_filter_input[FILTER_PROPERTY_STICKY] 					= $f_sticky_issues;
 	$t_filter_input[FILTER_PROPERTY_RELATIONSHIP_TYPE] 		= $f_relationship_type;
-	$t_filter_input[FILTER_PROPERTY_RELATIONSHIP_BUG] 		= $f_relationship_bug;
+	$t_filter_input[FILTER_PROPERTY_RELATIONSHIP_DWG] 		= $f_relationship_bug;
 	$t_filter_input[FILTER_PROPERTY_PROFILE_ID] 				= $f_show_profile;
 	$t_filter_input[FILTER_PROPERTY_PLATFORM] 				= $f_platform;
 	$t_filter_input[FILTER_PROPERTY_OS] 						= $f_os;
@@ -2441,8 +2357,7 @@ function filter_dwg_gpc_get( ?array $p_filter = null ): array {
  * @param integer $p_columns_target Target view for the columns.
  * @return array Array of filtered columns and order
  */
-#!function filter_dwg_get_visible_sort_properties_array( array $p_filter, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
-function filter_dwg_get_visible_sort_properties_array( array $p_filter, $p_columns_target = COLUMNS_TARGET_DWG_PAGE ) {
+function filter_dwg_get_visible_sort_properties_array( array $p_filter, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	# get visible columns
 	$t_visible_columns = helper_get_dwg_columns_to_view( $p_columns_target );
 	# filter out those that are not sortable

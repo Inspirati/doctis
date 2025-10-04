@@ -1287,7 +1287,7 @@ function dwg_view_button_dwg_assign_to( DwgData $p_bug ) {
 	) {
 		$t_options[] = array(
 			$p_bug->creator_id,
-			'[' . lang_get( 'reporter' ) . ']',
+			'[' . lang_get( 'creator' ) . ']',
 		);
 
 		if( $t_default_assign_to === null ) {

@@ -1016,9 +1016,6 @@ function mc_issue_update( $p_username, $p_password, $p_issue_id, stdClass $p_iss
 	$t_category = $p_issue['category'] ?? null;
 	$t_category_id = mci_get_category_id( $t_category, $t_project_id );
 
-	$t_document = $p_issue['document'] ?? null;
-	//$t_document_id = mci_get_document_id( $t_document, $t_project_id );
-
 	/**
 	 * Retrieve Id of Version to set.
 	 *

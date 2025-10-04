@@ -123,8 +123,8 @@ class DwgAddCommand extends Command {
 		$t_classification		= $t_issue['classification'];
 		$t_revision_date		= $t_issue['revision_date'];
 		$t_release_date			= $t_issue['release_date'];
-		$t_date_submitted		= $t_issue['date_submitted'];
-		$t_last_updated			= $t_issue['last_updated'];
+		// $t_date_submitted		= $t_issue['date_submitted'];
+		// $t_last_updated			= $t_issue['last_updated'];
 
 		// if( !isset( $t_issue['summary'] ) || is_blank( $t_issue['summary'] ) )  {
 		// 	throw new ClientException(
@@ -265,8 +265,8 @@ class DwgAddCommand extends Command {
 		$this->issue->classification = $t_classification;
 		$this->issue->revision_date = $t_revision_date;
 		$this->issue->release_date = $t_release_date;
-		$this->issue->date_submitted = $t_date_submitted;
-		$this->issue->last_updated = $t_last_updated;
+		// $this->issue->date_submitted = $t_date_submitted;
+		// $this->issue->last_updated = $t_last_updated;
 
 		$this->issue->project_id = $t_project_id;
 		$this->issue->creator_id = $t_creator_id;
@@ -404,7 +404,7 @@ class DwgAddCommand extends Command {
 		}
 
 		# Handle the file upload
-		file_attach_files( $t_issue_id, $this->files, /* bugnote_id */ null );
+		file_dwg_attach_files( $t_issue_id, $this->files, /* bugnote_id */ null );
 
 		# Handle custom field submission
 		mci_issue_set_custom_fields( $t_issue_id, $t_issue['custom_fields'], /* history log insert */ false );
@@ -452,7 +452,7 @@ class DwgAddCommand extends Command {
 
 			# copy attachments from parent
 			if( isset( $t_clone_info['copy_files'] ) &&  $t_clone_info['copy_files'] ) {
-				file_copy_attachments( $t_master_issue_id, $t_issue_id );
+				file_dwg_copy_attachments( $t_master_issue_id, $t_issue_id );
 			}
 
 			if( isset( $t_clone_info['relationship_type'] ) &&  $t_clone_info['relationship_type'] > BUG_REL_ANY ) {
@@ -472,7 +472,7 @@ class DwgAddCommand extends Command {
 				$t_note_id = dwgnote_add(
 					$t_issue_id,
 					$t_note['text'],
-					mci_get_time_tracking_from_note( $t_issue_id, $t_note ),
+					mci_dwg_get_time_tracking_from_note( $t_issue_id, $t_note ),
 					$t_view_state_id == VS_PRIVATE,
 					$t_note_type,
 					$t_note_attr,

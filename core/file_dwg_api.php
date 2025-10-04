@@ -689,7 +689,7 @@ function file_dwg_delete_local( $p_filename ) {
  *
  * @return string
  */
-function file_dwg_get_field( $p_file_id, $p_field_name, $p_table = 'bug' ) {
+function file_dwg_get_field( $p_file_id, $p_field_name, $p_table = 'dwg' ) {
 	$t_bug_file_table = db_get_table( $p_table . '_file' );
 	if( !db_field_exists( $p_field_name, $t_bug_file_table ) ) {
 		trigger_error( ERROR_DB_FIELD_NOT_FOUND, ERROR );
@@ -713,7 +713,7 @@ function file_dwg_get_field( $p_file_id, $p_field_name, $p_table = 'bug' ) {
  * @return bool
  * @throws ClientException
  */
-function file_dwg_delete( $p_file_id, $p_table = 'document', $p_bugnote_id = 0 ) {
+function file_dwg_delete( $p_file_id, $p_table = 'dwg', $p_bugnote_id = 0 ) {
 	$t_upload_method = config_get( 'file_upload_method' );
 
 	$c_file_id = (int)$p_file_id;
@@ -857,7 +857,7 @@ function _diskfile_is_name_unique( $p_name, $p_filepath ) {
  *
  * @return bool true if unique
  */
-function file_dwg_is_name_unique( $p_name, $p_bug_id, $p_table = 'document' ) {
+function file_dwg_is_name_unique( $p_name, $p_bug_id, $p_table = 'dwg' ) {
 	$t_file_table = db_get_table( "{$p_table}_file" );
 
 	db_param_push();
@@ -901,7 +901,7 @@ function file_dwg_is_name_unique( $p_name, $p_bug_id, $p_table = 'document' ) {
  * @throws ServiceException
  * @throws Exception
  */
-function file_dwg_add( $p_bug_id, array $p_file, $p_table = 'document', $p_title = '', $p_desc = '', $p_user_id = null, $p_date_added = 0, $p_skip_bug_update = false, $p_bugnote_id = 0 ) {
+function file_dwg_add( $p_bug_id, array $p_file, $p_table = 'dwg', $p_title = '', $p_desc = '', $p_user_id = null, $p_date_added = 0, $p_skip_bug_update = false, $p_bugnote_id = 0 ) {
 	$t_file_info = array();
 
 	if( !isset( $p_file['error'] ) ) {

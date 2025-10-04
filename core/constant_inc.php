@@ -97,6 +97,19 @@ define( 'HIGH', 40 );
 define( 'URGENT', 50 );
 define( 'IMMEDIATE', 60 );
 
+# document
+define( 'PENDING', 10 );
+define( 'RECEIVED', 20 );
+define( 'TRIAGE', 30 );
+define( 'JOS', 40 );
+//define( 'ASSIGNED', 50 );  // BEWARE: this is the same identifier as defined earlier, and hence must keep the same value as the previous definition
+define( 'REVIEW', 60 );
+define( 'REWORK', 65 );
+define( 'INDEPENDENT_REVEIW', 70 );
+define( 'ACCEPTED', 80 );
+define( 'INCORPORATED', 90 );
+define( 'ARCHIVED', 95 );
+
 # severity
 define( 'FEATURE', 10 );
 define( 'TRIVIAL', 20 );
@@ -658,7 +671,7 @@ define( 'COLUMNS_TARGET_VIEW_PAGE', 1 );
 define( 'COLUMNS_TARGET_PRINT_PAGE', 2 );
 define( 'COLUMNS_TARGET_CSV_PAGE', 3 );
 define( 'COLUMNS_TARGET_EXCEL_PAGE', 4 );
-define( 'COLUMNS_TARGET_DWG_PAGE', 5 );
+define( 'COLUMNS_TARGET_VIEW_DWG_PAGE', 5 );
 
 # sponsorship "paid" values
 define( 'SPONSORSHIP_UNPAID', 0 );

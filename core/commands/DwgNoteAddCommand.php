@@ -180,9 +180,9 @@ class DwgNoteAddCommand extends Command {
 		if( $this->reporterId != $this->user_id ) {
 			# Make sure that active user has access level required to specify a different reporter.
 			# This feature is only available in the API and not Web UI.
-			$t_specify_reporter_access_level = config_get( 'webservice_specify_reporter_on_add_access_level_threshold' );
+			$t_specify_reporter_access_level = config_get( 'webservice_specify_creator_on_add_access_level_threshold' );
 			if( !access_has_dwg_level( $t_specify_reporter_access_level, $t_issue_id ) ) {
-				throw new ClientException( 'Access denied to override reporter', ERROR_ACCESS_DENIED );
+				throw new ClientException( 'Access denied to override creator', ERROR_ACCESS_DENIED );
 			}
 		}
 

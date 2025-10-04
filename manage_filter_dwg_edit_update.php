@@ -86,7 +86,7 @@ if( !$t_editable ) {
 	access_denied();
 }
 
-$t_filter = filter_gpc_get( $t_filter );
+$t_filter = filter_dwg_gpc_get( $t_filter );
 
 form_security_purge( 'manage_filter_dwg_edit_update' );
 

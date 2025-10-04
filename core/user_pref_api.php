@@ -97,6 +97,7 @@ class UserPreferences {
 	 * Bugnote order - oldest/newest first
 	 */
 	protected $bugnote_order = null;
+	protected $dwgnote_order = null;
 
 	/**
 	 * Receive email on new bugs
@@ -192,6 +193,7 @@ class UserPreferences {
 	 * Number of bug notes to include in generated emails
 	 */
 	protected $email_bugnote_limit = null;
+	protected $email_dwgnote_limit = null;
 
 	/**
 	 * Users language preference
@@ -222,6 +224,7 @@ class UserPreferences {
 	'refresh_delay' => array( 'default_refresh_delay', 'int' ),
 	'redirect_delay' => array( 'default_redirect_delay', 'int' ),
 	'bugnote_order' => array( 'default_bugnote_order', 'string' ),
+	'dwgnote_order' => array( 'default_dwgnote_order', 'string' ),
 	'email_on_new' => array( 'default_email_on_new', 'int' ),
 	'email_on_assigned' => array(  'default_email_on_assigned', 'int' ),
 	'email_on_feedback' => array(  'default_email_on_feedback', 'int' ),
@@ -241,6 +244,7 @@ class UserPreferences {
 	'email_on_status_min_severity' => array(  'default_email_on_status_minimum_severity', 'int' ),
 	'email_on_priority_min_severity' => array(  'default_email_on_priority_minimum_severity', 'int' ),
 	'email_bugnote_limit' => array(  'default_email_bugnote_limit', 'int' ),
+	'email_dwgnote_limit' => array(  'default_email_dwgnote_limit', 'int' ),
 	'language' => array(  'default_language', 'string' ),
 	'timezone' => array( 'default_timezone', 'string' ),
 	);

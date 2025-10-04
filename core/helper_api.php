@@ -605,6 +605,12 @@ function helper_get_dwg_columns_to_view( $p_columns_target = COLUMNS_TARGET_VIEW
 
 	# get the array values to remove gaps in the array which causes issue
 	# if the array is accessed using an index.
+
+
+	if( $t_columns == null ) {
+		return array();
+	}
+
 	return array_values( $t_columns );
 }
 // END doctis developmental section

@@ -316,7 +316,7 @@ $s_severity_enum_string = '10:feature,20:comment,30:query,40:tweak,50:minor,60:m
 
 $s_reproducibility_enum_string = '10:always,30:sometimes,50:random,70:have not tried,90:unable to reproduce,100:N/A';
 $s_status_enum_string = '10:new,20:feedback,30:acknowledged,40:confirmed,50:assigned,80:resolved,90:closed';
-$s_dwg_status_enum_string = '10:received,20:triage,30:assigned,40:JoS,50:review,60:rework,60:independent review,80:accepted,90:incorported';
+$s_dwg_status_enum_string = '10:pending,20:received,30:triage,40:JoS,50:assigned,60:review,65:rework,70:independent review,80:accepted,90:incorported,95:archived';
 $s_resolution_enum_string = '10:open,20:fixed,30:reopened,40:unable to reproduce,50:not fixable,60:duplicate,70:no change required,80:suspended,90:won\'t fix';
 $s_projection_enum_string = '10:none,30:tweak,50:minor fix,70:major rework,90:redesign';
 $s_eta_enum_string = '10:none,20:< 1 day,30:2-3 days,40:< 1 week,50:< 1 month,60:> 1 month';
@@ -390,11 +390,26 @@ $s_email_notification_title_for_action_relationship_child_closed = 'The RELATED 
 $s_email_notification_title_for_action_related_issue_deleted = 'The RELATED issue %1$s has been DELETED.';
 $s_email_notification_title_for_action_monitor = 'Issue %1$s is now monitored by user %2$s.';
 
+$s_email_notification_title_for_action_dwg_duplicate_of_relationship_added = 'The following document has been set as DUPLICATE OF document %1$s.';
+$s_email_notification_title_for_action_dwg_has_duplicate_relationship_added = 'The document %1$s has been set as DUPLICATE OF the following document.';
+$s_email_notification_title_for_action_dwg_related_to_relationship_added = 'The following document has been set as RELATED TO document %1$s.';
+$s_email_notification_title_for_action_dwg_dependant_on_relationship_added = 'The following document has been set PARENT OF document %1$s.';
+$s_email_notification_title_for_action_dwg_blocks_relationship_added = 'The following document has been set CHILD OF document %1$s.';
+$s_email_notification_title_for_action_dwg_duplicate_of_relationship_deleted = 'The following document has been UNset as DUPLICATE OF document %1$s.';
+$s_email_notification_title_for_action_dwg_has_duplicate_relationship_deleted = 'The document %1$s has been removed as a DUPLICATE OF the following document.';
+$s_email_notification_title_for_action_dwg_related_to_relationship_deleted = 'The following document has been marked as UNRELATED TO document %1$s.';
+$s_email_notification_title_for_action_dwg_dependant_on_relationship_deleted = 'The following document has been removed as the PARENT OF document %1$s.';
+$s_email_notification_title_for_action_dwg_blocks_relationship_deleted = 'The following document has been removed as the CHILD OF document %1$s.';
+$s_email_notification_title_for_action_dwg_relationship_child_resolved = 'The RELATED document %1$s has been RESOLVED.';
+$s_email_notification_title_for_action_dwg_relationship_child_closed = 'The RELATED document %1$s has been CLOSED.';
+$s_email_notification_title_for_action_dwg_related_document_deleted = 'The RELATED document %1$s has been DELETED.';
+$s_email_notification_title_for_action_dwg_monitor = 'document %1$s is now monitored by user %2$s.';
+
 $s_email_reporter = 'Reported By';
 $s_email_handler = 'Assigned To';
 $s_email_project = 'Project';
-$s_email_document = 'Document';
 $s_email_bug = 'Issue ID';
+$s_email_dwg = 'Document';
 $s_email_category = 'Category';
 $s_email_reproducibility = 'Reproducibility';
 $s_email_severity = 'Severity';
@@ -412,6 +427,11 @@ $s_email_additional_information = 'Additional Information';
 $s_email_steps_to_reproduce = 'Steps to Reproduce';
 $s_email_tag = 'Tags';
 $s_email_due_date = 'Due Date';
+
+
+$s_item_id = 'ID';
+$s_project_id = 'Project';
+
 
 # account_delete.php
 $s_account_protected_msg = 'Account protected. Cannot change settings...';
@@ -556,23 +576,29 @@ $s_confirmed_dwg_button = 'Confirm Document';
 // ?
 $s_closed_dwg_title = 'Close Document';
 
+$s_pending_dwg_pending = 'Set to Pending';
 $s_received_dwg_button = 'Set to Received';
 $s_triage_dwg_button = 'Set to Triage Document';
+$s_assigned_dwg_button = 'Set to Assigned';
 $s_JoS_dwg_button = 'Set to JoS required';
 $s_review_dwg_button = 'Set to Review';
-$s_received_dwg_button = 'Set to Received';
 $s_rework_dwg_button = 'Set to Rework';
+$s_independent_review_dwg_button = 'Set to Independent Review';
 $s_accepted_dwg_button = 'Set to Accepted';
-$s_assigned_dwg_button = 'Set to Assigned';
 $s_incorported_dwg_button = 'Set to Incorporated';
+$s_archived_dwg_button = 'Set to Archived';
 
-$s_triage_dwg_button = 'Set Document to Perform Triage';
-$s_JoS_dwg_button = 'Set Document to Assign Judgement of Significance (JoS)';
-$s_review_dwg_title = 'Set Document to Review Required';
+$s_pending_dwg_title = 'Set Document to Pending';
 $s_received_dwg_title = 'Set Document to Received';
+$s_triage_dwg_title = 'Set Document to Perform Triage';
+$s_assigned_dwg_title = 'Set Document to Assigned';
+$s_JoS_dwg_title = 'Set Document to Assign Judgement of Significance (JoS)';
+$s_review_dwg_title = 'Set Document to Review Required';
 $s_rework_dwg_title = 'Set Document to Send for Rework';
+$s_independent_review_title = 'Set Document to Independent Review';
 $s_accepted_dwg_title = 'Set Document to Accepted';
 $s_incorported_dwg_title = 'Set Document to Incorporated';
+$s_archived_dwg_title = 'Set Document to Archived';
 
 # bug_close.php
 $s_bug_close_msg = 'Issue has been closed...';
@@ -751,6 +777,8 @@ $s_dwg_link_url = 'Link URL';
 $s_dwg_release_date = 'Release Date';
 $s_dwg_revision_date = 'Revision Date';
 $s_dwg_classification = 'Classification';
+
+$s_confirm_dwg_revision_drop = 'Are you sure you want to drop this document revision?';
 
 $s_dwg_creator = 'Created by';
 
@@ -1434,6 +1462,8 @@ $s_select_all = 'Select All';
 
 # view_dwg_page.php
 $s_viewing_dwg_title = 'Viewing Documents';
+$s_dwg_sticky = 'Show Sticky Documents';
+$s_dwg_issue_id = 'Document #';
 
 # view_dwg_inc.php
 
@@ -1666,8 +1696,8 @@ $s_download_attachments = 'Download attachments';
 $s_delete_attachments = 'Delete attachments';
 $s_delete_attachment_sure_msg = 'Are you sure you wish to delete this attachment?';
 $s_upload_issue_attachments = 'Upload issue attachments';
-$s_filters = 'Filters';
-$s_dwg_filters = 'Filters (WIP - non functional)';
+$s_filters = 'Issue Filters';
+$s_dwg_filters = 'Document Filters (WIP - non functional)';
 $s_save_filters = 'Save filters';
 $s_save_filters_as_shared = 'Save filters as shared';
 $s_use_saved_filters = 'Use saved filters';
@@ -1776,7 +1806,9 @@ $s_manage_columns_config = 'Manage Columns';
 $s_all_columns_title = 'All Available Columns';
 $s_csv_columns_title = 'CSV Columns';
 $s_view_issues_columns_title = 'View Issues Columns';
+$s_view_document_columns_title = 'View Documents Columns';
 $s_print_issues_columns_title = 'Print Issues Columns';
+$s_print_document_columns_title = 'Print Documents Columns';
 $s_excel_columns_title = 'Excel Columns';
 $s_update_columns_as_global_default = 'Update Columns as Global Default for All Projects';
 $s_update_columns_for_current_project = 'Update Columns For Current Project';

@@ -87,7 +87,6 @@ use Mantis\Exceptions\ClientException;
  * @property int $id
  * @property int $project_id
  * @property int $creator_id
- * @property int $reporter_id
  * @property int $handler_id
  * @property int $duplicate_id
  * @property int $priority
@@ -449,7 +448,7 @@ class DwgData {
 		# NOTE: this is guaranteed to be the correct one.
 		# The value LAST_INSERT_ID is stored on a per-connection basis.
 
-		$t_text_id = db_insert_id( db_get_table( 'bug_text' ) );
+		$t_text_id = db_insert_id( db_get_table( 'dwg_text' ) );
 
 		# check to see if we want to assign this right off
 		$t_original_status = $this->status;
@@ -623,7 +622,7 @@ $this->author = isset($this->author) ? $this->author : '';
 
 		# log changes
 		history_log_event_direct( $c_bug_id, 'project_id', $t_old_data->project_id, $this->project_id );
-		history_log_event_direct( $c_bug_id, 'creator_id', $t_old_data->reporter_id, $this->creator_id );
+		history_log_event_direct( $c_bug_id, 'creator_id', $t_old_data->creator_id, $this->creator_id );
 		history_log_event_direct( $c_bug_id, 'handler_id', $t_old_data->handler_id, $this->handler_id );
 		history_log_event_direct( $c_bug_id, 'priority', $t_old_data->priority, $this->priority );
 		history_log_event_direct( $c_bug_id, 'severity', $t_old_data->severity, $this->severity );
@@ -680,21 +679,21 @@ $this->author = isset($this->author) ? $this->author : '';
 				history_dwg_log_event_special( $c_bug_id, DESCRIPTION_UPDATED, $t_revision_id );
 			}
 
-			if( $t_old_data->steps_to_reproduce != $this->steps_to_reproduce ) {
-				if( dwg_revision_count( $c_bug_id, REV_STEPS_TO_REPRODUCE ) < 1 ) {
-					dwg_revision_add( $c_bug_id, $t_old_data->creator_id, REV_STEPS_TO_REPRODUCE, $t_old_data->steps_to_reproduce, 0, $t_old_data->date_submitted );
-				}
-				$t_revision_id = dwg_revision_add( $c_bug_id, $t_current_user, REV_STEPS_TO_REPRODUCE, $this->steps_to_reproduce );
-				history_dwg_log_event_special( $c_bug_id, STEP_TO_REPRODUCE_UPDATED, $t_revision_id );
-			}
+			// if( $t_old_data->steps_to_reproduce != $this->steps_to_reproduce ) {
+			// 	if( dwg_revision_count( $c_bug_id, REV_STEPS_TO_REPRODUCE ) < 1 ) {
+			// 		dwg_revision_add( $c_bug_id, $t_old_data->creator_id, REV_STEPS_TO_REPRODUCE, $t_old_data->steps_to_reproduce, 0, $t_old_data->date_submitted );
+			// 	}
+			// 	$t_revision_id = dwg_revision_add( $c_bug_id, $t_current_user, REV_STEPS_TO_REPRODUCE, $this->steps_to_reproduce );
+			// 	history_dwg_log_event_special( $c_bug_id, STEP_TO_REPRODUCE_UPDATED, $t_revision_id );
+			// }
 
-			if( $t_old_data->additional_information != $this->additional_information ) {
-				if( dwg_revision_count( $c_bug_id, REV_ADDITIONAL_INFO ) < 1 ) {
-					dwg_revision_add( $c_bug_id, $t_old_data->creator_id, REV_ADDITIONAL_INFO, $t_old_data->additional_information, 0, $t_old_data->date_submitted );
-				}
-				$t_revision_id = dwg_revision_add( $c_bug_id, $t_current_user, REV_ADDITIONAL_INFO, $this->additional_information );
-				history_dwg_log_event_special( $c_bug_id, ADDITIONAL_INFO_UPDATED, $t_revision_id );
-			}
+			// if( $t_old_data->additional_information != $this->additional_information ) {
+			// 	if( dwg_revision_count( $c_bug_id, REV_ADDITIONAL_INFO ) < 1 ) {
+			// 		dwg_revision_add( $c_bug_id, $t_old_data->creator_id, REV_ADDITIONAL_INFO, $t_old_data->additional_information, 0, $t_old_data->date_submitted );
+			// 	}
+			// 	$t_revision_id = dwg_revision_add( $c_bug_id, $t_current_user, REV_ADDITIONAL_INFO, $this->additional_information );
+			// 	history_dwg_log_event_special( $c_bug_id, ADDITIONAL_INFO_UPDATED, $t_revision_id );
+			// }
 		}
 
 		# Update the last update date
@@ -1293,7 +1292,7 @@ function dwg_copy( $p_bug_id, $p_target_project_id = null, $p_copy_custom_fields
 							   ( note )
 							   VALUES ( ' . db_param() . ' )';
 				db_query( $t_query2, array( $t_bugnote_text['note'] ) );
-				$t_bugnote_text_insert_id = db_insert_id( db_get_table( 'bugnote_text' ) );
+				$t_bugnote_text_insert_id = db_insert_id( db_get_table( 'dwgnote_text' ) );
 			}
 
 			db_param_push();
@@ -2365,7 +2364,7 @@ function dwg_cache_columns_data( array $p_bugs, array $p_selected_columns ) {
 	foreach( $p_bugs as $t_bug ) {
 		$t_bug_ids[] = (int)$t_bug->id;
 		$t_user_ids[] = (int)$t_bug->handler_id;
-		$t_user_ids[] = (int)$t_bug->reporter_id;
+		$t_user_ids[] = (int)$t_bug->creator_id;
 		$t_project_ids[] = (int)$t_bug->project_id;
 		$t_category_ids[] = (int)$t_bug->category_id;
 	}

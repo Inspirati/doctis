@@ -66,7 +66,7 @@ function dwg_activity_get_all( $p_bug_id, $p_include_attachments = true ) {
 	$t_result['attachments'] = $t_attachments;
 
 	$t_bugnote_order = current_user_get_pref( 'bugnote_order' );
-	$t_bugnotes = dwgnote_get_all_visible_bugnotes( $p_bug_id, $t_bugnote_order, 0, $t_user_id );
+	$t_bugnotes = dwgnote_get_all_visible_dwgnotes( $p_bug_id, $t_bugnote_order, 0, $t_user_id );
 
 	$t_result['bugnotes'] = $t_bugnotes;
 
@@ -121,7 +121,7 @@ function dwg_activity_get_all( $p_bug_id, $p_include_attachments = true ) {
 			'modified' => $t_bugnote->date_submitted != $t_bugnote->last_modified,
 			'id' => $t_bugnote_id,
 			'id_formatted' => bugnote_format_id( $t_bugnote_id ),
-			'user_id' => $t_bugnote->reporter_id,
+			'user_id' => $t_bugnote->creator_id,
 			'private' => $t_bugnote->view_state != VS_PUBLIC,
 			'style' => 'bugnote-note',
 			'attachments' => array(),

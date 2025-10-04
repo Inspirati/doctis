@@ -493,7 +493,7 @@ function dwgnote_get_latest_id( $p_bug_id ) {
  *
  * @access public
  */
-function dwgnote_get_all_visible_bugnotes( $p_bug_id, $p_user_bugnote_order, $p_user_bugnote_limit, $p_user_id = null ) {
+function dwgnote_get_all_visible_dwgnotes( $p_bug_id, $p_user_bugnote_order, $p_user_bugnote_limit, $p_user_id = null ) {
 	if( $p_user_id === null ) {
 		$t_user_id = auth_get_current_user_id();
 	} else {
@@ -540,7 +540,7 @@ function dwgnote_get_all_visible_bugnotes( $p_bug_id, $p_user_bugnote_order, $p_
  * Build a string that captures all the notes visible to the logged-in user
  * along with their metadata.
  *
- * The string will contain information about each note including reporter,
+ * The string will contain information about each note including creator,
  * timestamp, time tracking, view state. This will result in multi-line string
  * with "\n" as the line separator.
  *
@@ -554,7 +554,7 @@ function dwgnote_get_all_visible_bugnotes( $p_bug_id, $p_user_bugnote_order, $p_
  * @access public
  */
 function dwgnote_get_all_visible_as_string( $p_bug_id, $p_user_bugnote_order, $p_user_bugnote_limit, $p_user_id = null ) {
-	$t_notes = dwgnote_get_all_visible_bugnotes( $p_bug_id, $p_user_bugnote_order, $p_user_bugnote_limit, $p_user_id );
+	$t_notes = dwgnote_get_all_visible_dwgnotes( $p_bug_id, $p_user_bugnote_order, $p_user_bugnote_limit, $p_user_id );
 	$t_date_format = config_get( 'normal_date_format' );
 	$t_show_time_tracking = access_has_dwg_level( config_get( 'time_tracking_view_threshold' ), $p_bug_id );
 

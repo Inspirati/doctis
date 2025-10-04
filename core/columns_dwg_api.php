@@ -574,7 +574,7 @@ function print_dwg_column_title_project_id( $p_sort, $p_dir, $p_columns_target =
 }
 
 /**
- * Print table header for column reporter id
+ * Print table header for column creator id
  *
  * @param string  $p_sort           Sort.
  * @param string  $p_dir            Direction.
@@ -582,10 +582,10 @@ function print_dwg_column_title_project_id( $p_sort, $p_dir, $p_columns_target =
  * @return void
  * @access public
  */
-function print_dwg_column_title_reporter_id( $p_sort, $p_dir, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
-	echo '<th class="column-reporter">';
-	print_view_dwg_sort_link( lang_get( 'reporter' ), 'reporter_id', $p_sort, $p_dir, $p_columns_target );
-	print_sort_icon( $p_dir, $p_sort, 'reporter_id' );
+function print_dwg_column_title_creator_id( $p_sort, $p_dir, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+	echo '<th class="column-creator">';
+	print_view_dwg_sort_link( lang_get( 'creator' ), 'creator_id', $p_sort, $p_dir, $p_columns_target );
+	print_sort_icon( $p_dir, $p_sort, 'creator_id' );
 	echo '</th>';
 }
 
@@ -1455,16 +1455,16 @@ function print_dwg_column_handler_id( DwgData $p_bug, $p_columns_target = COLUMN
 }
 
 /**
- * Print column content for column reporter id
+ * Print column content for column creator id
  *
  * @param DwgData $p_bug            DwgData object.
  * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
  * @return void
  * @access public
  */
-function print_dwg_column_reporter_id( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
-	echo '<td class="column-reporter">';
-	echo prepare_user_name( $p_bug->reporter_id );
+function print_dwg_column_creator_id( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+	echo '<td class="column-creator">';
+	echo prepare_user_name( $p_bug->creator_id );
 	echo '</td>';
 }
 

@@ -51,6 +51,7 @@ define( 'FILTER_PROPERTY_FILTER_BY_LAST_UPDATED_DATE', 'filter_by_last_updated_d
 
 define( 'FILTER_PROPERTY_RELATIONSHIP_TYPE', 'relationship_type' );
 define( 'FILTER_PROPERTY_RELATIONSHIP_BUG', 'relationship_bug' );
+define( 'FILTER_PROPERTY_RELATIONSHIP_DWG', 'relationship_dwg' );
 define( 'FILTER_PROPERTY_TAG_STRING', 'tag_string' );
 define( 'FILTER_PROPERTY_TAG_SELECT', 'tag_select' );
 define( 'FILTER_PROPERTY_MATCH_TYPE', 'match_type' );

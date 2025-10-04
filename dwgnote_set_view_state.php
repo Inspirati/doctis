@@ -74,7 +74,7 @@ if( dwg_is_readonly( $t_bug_id ) ) {
 }
 
 # Check if the current user is allowed to change the view state of this bugnote
-$t_user_id = dwgnote_get_field( $f_bugnote_id, 'reporter_id' );
+$t_user_id = dwgnote_get_field( $f_bugnote_id, 'creator_id' );
 if( $t_user_id == auth_get_current_user_id() ) {
 	access_ensure_dwgnote_level( config_get( 'dwgnote_user_change_view_state_threshold' ), $f_bugnote_id );
 } else {

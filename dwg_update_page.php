@@ -291,7 +291,7 @@ if( $t_show_creator || $t_show_handler || $t_show_due_date ) {
 		# Reporter
 		echo '<th class="category">';
 		if( $f_creator_edit ) echo '<label for="creator_id">';
-		echo lang_get( 'reporter' );
+		echo lang_get( 'creator' );
 		if( $f_creator_edit ) echo '</label>';
 		echo '</th><td>';
 
@@ -646,32 +646,32 @@ event_signal( 'EVENT_UPDATE_DWG_FORM', array( $t_bug_id ) );
 print_table_spacer( 6 );
 
 # Summary
-if( $t_show_summary ) {
-	echo '<tr>';
-	echo '<th class="category">';
-	echo '<span class="required">*</span> ';
-	echo '<label for="summary">' . lang_get( 'summary' ) . '</label>';
-	echo '</th>';
-	echo '<td colspan="5">';
-	echo '<input ', helper_get_tab_index(),
-		' type="text" required id="summary" name="summary" size="105" maxlength="128" value="',
-		$t_summary_attribute, '" />';
-	echo '</td></tr>';
-}
+// if( $t_show_summary ) {
+// 	echo '<tr>';
+// 	echo '<th class="category">';
+// 	echo '<span class="required">*</span> ';
+// 	echo '<label for="summary">' . lang_get( 'summary' ) . '</label>';
+// 	echo '</th>';
+// 	echo '<td colspan="5">';
+// 	echo '<input ', helper_get_tab_index(),
+// 		' type="text" required id="summary" name="summary" size="105" maxlength="128" value="',
+// 		$t_summary_attribute, '" />';
+// 	echo '</td></tr>';
+// }
 
 # Description
-if( $t_show_description ) {
-	echo '<tr>';
-	echo '<th class="category">';
-	echo '<span class="required">*</span> ';
-	echo '<label for="description">' . lang_get( 'description' ) . '</label>';
-	echo '</th>';
-	echo '<td colspan="5">';
-	echo '<textarea class="form-control" required ', helper_get_tab_index(),
-		' cols="80" rows="10" id="description" name="description">', "\n",
-		$t_description_textarea, '</textarea>';
-	echo '</td></tr>';
-}
+// if( $t_show_description ) {
+// 	echo '<tr>';
+// 	echo '<th class="category">';
+// 	echo '<span class="required">*</span> ';
+// 	echo '<label for="description">' . lang_get( 'description' ) . '</label>';
+// 	echo '</th>';
+// 	echo '<td colspan="5">';
+// 	echo '<textarea class="form-control" required ', helper_get_tab_index(),
+// 		' cols="80" rows="10" id="description" name="description">', "\n",
+// 		$t_description_textarea, '</textarea>';
+// 	echo '</td></tr>';
+// }
 
 # Steps to Reproduce
 // if( $t_show_steps_to_reproduce ) {

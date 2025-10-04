@@ -66,7 +66,7 @@ $f_project_id			= gpc_get_int( 'set_project_id', -1 );
 # flags to redirect after changing the filter
 # 'print' will redirect to print_all_bug_page.php
 # 'summary' will redirect to summary_page.php
-# otherwise, the default redirect is to view_all_bug_page.php
+# otherwise, the default redirect is to view_dwg_page.php
 $f_print				= gpc_get_bool( 'print' );
 $f_summary				= gpc_get_bool( 'summary' );
 
@@ -103,7 +103,7 @@ if( ( $f_type == FILTER_ACTION_LOAD ) && ( $f_source_query_id == -1 ) ) {
 }
 
 # If user can't use persistent filters, force the creation of a temporary filter
-if( !filter_user_can_use_persistent( auth_get_current_user_id() ) ) {
+if( !filter_dwg_user_can_use_persistent( auth_get_current_user_id() ) ) {
 	$t_temp_filter = true;
 }
 
@@ -122,18 +122,18 @@ switch( $f_type ) {
 		$t_setting_arr = array();
 		break;
 
-	# Read new filter parameters. (filter_gpc_get reads a new set of parameters)
+	# Read new filter parameters. (filter_dwg_gpc_get reads a new set of parameters)
 	# Parameter that are not submitted, will be reset to defaults.
 	case FILTER_ACTION_PARSE_NEW:
 		log_event( LOG_FILTERING, 'view_dwg_set.php: Parse a new filter' );
-		$t_setting_arr = filter_gpc_get();
+		$t_setting_arr = filter_dwg_gpc_get();
 		break;
 
-	# Read and update filter parameters (filter_gpc_get is called over current filter)
+	# Read and update filter parameters (filter_dwg_gpc_get is called over current filter)
 	# Parameter that are not submitted, will not be modified
 	case FILTER_ACTION_PARSE_ADD:
 		log_event( LOG_FILTERING, 'view_dwg_set.php: Parse incremental filter values' );
-		$t_setting_arr = filter_gpc_get( $t_setting_arr );
+		$t_setting_arr = filter_dwg_gpc_get( $t_setting_arr );
 		break;
 
 	# Fetch a stored filter from database
@@ -167,7 +167,7 @@ switch( $f_type ) {
 		$t_setting_arr[FILTER_PROPERTY_MONITOR_USER_ID] 	= array( META_FILTER_ANY );
 		$t_setting_arr[FILTER_PROPERTY_NOTE_USER_ID]  		= array( META_FILTER_ANY );
 		$t_setting_arr[FILTER_PROPERTY_RELATIONSHIP_TYPE] = -1;
-		$t_setting_arr[FILTER_PROPERTY_RELATIONSHIP_BUG] 	= 0;
+		$t_setting_arr[FILTER_PROPERTY_RELATIONSHIP_DWG] 	= 0;
 
 		$t_custom_fields 		= custom_field_get_ids(); # @@@ (thraxisp) This should really be the linked ids, but we don't know the project
 		$t_custom_fields_data 	= array();
@@ -192,7 +192,7 @@ if( !$t_temp_filter ) {
 	# get project if it was specified
 	$t_project_id = ( $f_project_id >= 0 ) ? $f_project_id : null;
 	# Store the filter in the database as the current filter for the project
-	filter_set_project_filter( $t_setting_arr, $t_project_id );
+	filter_dwg_set_project_filter( $t_setting_arr, $t_project_id );
 }
 
 # evaluate redirect

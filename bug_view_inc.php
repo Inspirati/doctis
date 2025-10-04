@@ -309,6 +309,7 @@ if( true
 
 	// $t_created_at = ApiObjectFactory::datetime( $t_attachment_row['date_added'] );
 //	$t_release_date = ApiObjectFactory::datetime( $t_document['release_date'] );
+	$t_date_format = 'Y-m-d';
 	$t_release_date = date( $t_date_format, strtotime( $t_document['release_date'] ) );
 
 	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['title'] ) ? string_display_line( $t_document['title'] ) : '', '</td>';

@@ -817,6 +817,60 @@ function print_dwg_category_option_list( $p_category_id = 0, $p_project_id = nul
 	}
 }
 
+function print_document_option_list( $p_document_id = 0, $p_project_id = null, $p_enabled_only = false ) {
+	if( null === $p_project_id ) {
+		$t_project_id = helper_get_current_project();
+	} else {
+		$t_project_id = $p_project_id;
+	}
+
+	$t_cat_arr = document_get_all_rows( $t_project_id, null, true, $p_enabled_only );
+
+	# Add the current document if it is not in the list
+	if( $p_document_id != 0
+        && !in_array( $p_document_id, array_column( $t_cat_arr, 'id' ) )
+    ) {
+		$t_document_row = document_get_row( $p_document_id );
+		$t_document_row['project_name'] = project_get_name( $t_document_row['project_id'] );
+		$t_cat_arr[] = $t_document_row;
+	}
+
+	if( config_get( 'allow_no_document' ) ) {
+		echo '<option value="0"';
+		check_selected( $p_document_id, 0 );
+		echo '>';
+		echo document_full_name( 0, false );
+		echo '</option>', PHP_EOL;
+	} else {
+		if( 0 == $p_document_id && count( $t_cat_arr ) == 1 ) {
+			# Single option are selected by default
+			$p_document_id = (int) $t_cat_arr[0]['id'];
+		}
+		echo '<option value="" disabled hidden';
+		check_selected( $p_document_id, 0 );
+		echo '>';
+		echo string_attribute( lang_get( 'select_option' ) );
+		echo '</option>', PHP_EOL;
+	}
+
+	foreach( $t_cat_arr as $t_document_row ) {
+		$t_document_id = (int)$t_document_row['id'];
+		$t_disabled = $t_document_row['status'] == DOCUMENT_STATUS_DISABLED;
+		$t_document_name = document_full_name(
+			$t_document_id,
+			$t_document_row['project_id'] != $t_project_id
+		);
+		if( $t_disabled ) {
+//			$t_document_name .= ' [' . lang_get( 'disabled' ) . ']';
+		}
+		echo '<option value="' . $t_document_id . '"';
+		check_selected( $p_document_id, $t_document_id );
+		check_disabled( $t_disabled );
+		echo '>';
+		echo string_attribute( $t_document_name ), '</option>', PHP_EOL;
+	}
+}
+
 /**
  * Now that categories are identified by numerical ID, we need an old-style name
  * based option list to keep existing filter functionality.
@@ -967,7 +1021,7 @@ function print_dwg_build_option_list( $p_build = '' ) {
 
 	# Get the "found in" build list
 	$t_query = 'SELECT DISTINCT build
-				FROM {bug}
+				FROM {document}
 				WHERE ' . $t_project_where . '
 				ORDER BY build DESC';
 	$t_result = db_query( $t_query );
@@ -1357,13 +1411,6 @@ function print_view_dwg_sort_link( $p_label, $p_sort_field, $p_sort, $p_dir, $p_
 	switch( $p_columns_target ) {
 		case COLUMNS_TARGET_PRINT_PAGE:
 		case COLUMNS_TARGET_VIEW_PAGE:
-////////////////////////////////////////////////////////////////////////////////
-// BEGIN doctis developmental section
-		case COLUMNS_TARGET_DWG_PAGE:  // we are not being called with this value set
-			// NOTE: but lets try forcing it to .._DWG_PAGE from the calling custom_function_default_print_column_title() function
-			// then we could utilise the parameter test below
-// END doctis developmental section
-////////////////////////////////////////////////////////////////////////////////
 			if( $p_sort_field == $p_sort ) {
 				# We toggle between ASC and DESC if the user clicks the same sort order
 				if( 'ASC' == $p_dir ) {
@@ -1383,31 +1430,7 @@ function print_view_dwg_sort_link( $p_label, $p_sort_field, $p_sort, $p_dir, $p_
 			if( $p_columns_target == COLUMNS_TARGET_PRINT_PAGE ) {
 				$t_params['print'] = 1;
 			}
-////////////////////////////////////////////////////////////////////////////////
-// BEGIN doctis developmental section
-
-// @TODO RobD - potential next step will be to duplicate this module as print_dwg_api.php
-
-/*
- @TODO RobD - found it! this is where the url comes from for the documents list column headers hyperlink
- */			
-#!			$t_url = helper_url_combine( 'view_dwg_set.php', $t_params );
-			// $t_url = helper_url_combine( 'view_dwg_set.php', $t_params );
-			// $t_url = helper_url_combine( 'view_all_FOOBAR_set.php', $t_params );
-
-// potential universal solution for integration into the one function as previous (above)
- 			if( $p_columns_target == COLUMNS_TARGET_DWG_PAGE) {
-				$t_url = helper_url_combine( 'view_dwg_set.php', $t_params );
-			} else {
-				// $t_url = helper_url_combine( 'view_all_BARFOOBAR_set.php', $t_params );
-				$t_url = helper_url_combine( 'view_dwg_set.php', $t_params );
-			}
-
-$t_url = helper_url_combine( 'view_dwg_set.php', $t_params );
-
-//
-// END doctis developmental section
-////////////////////////////////////////////////////////////////////////////////
+			$t_url = helper_url_combine( 'view_dwg_set.php', $t_params );
 			if( filter_dwg_is_temporary( $g_dwg_filter ) ) {
 				$t_url .= '&' . filter_dwg_get_temporary_key_param( $g_dwg_filter );
 			}
@@ -1933,7 +1956,8 @@ function print_dwg_recently_visited() {
  * @param boolean      $p_multiple      Whether drop down list allows multiple values to be selected.
  * @return string
  */
-function print_dwg_get_dropdown( array $p_control_array, $p_control_name, $p_match = '', $p_add_any = false, $p_multiple = false ) {
+/*
+function get_dropdown( array $p_control_array, $p_control_name, $p_match = '', $p_add_any = false, $p_multiple = false ) {
 	if( $p_multiple ) {
 		$t_size = ' size="5"';
 		$t_multiple = ' multiple="multiple"';
@@ -1961,7 +1985,7 @@ function print_dwg_get_dropdown( array $p_control_array, $p_control_name, $p_mat
 	$t_info .= "</select>\n";
 	return $t_info;
 }
-
+ */
 /**
  * Prints information about a single attachment including download link, file
  * size, upload timestamp and an expandable preview for text and image file
@@ -2106,7 +2130,7 @@ function print_dwg_attachment_preview_text( array $p_attachment ) {
 			break;
 		case DATABASE:
 			db_param_push();
-			$t_query = 'SELECT * FROM {bug_file} WHERE id=' . db_param();
+			$t_query = 'SELECT * FROM {dwg_file} WHERE id=' . db_param();
 			$t_result = db_query( $t_query, array( (int)$p_attachment['id'] ) );
 			$t_row = db_fetch_array( $t_result );
 			$t_content = $t_row['content'];
@@ -2206,21 +2230,23 @@ function print_dwg_timezone_option_list( $p_timezone ) {
  * @param string  $p_unit File size unit.
  * @return string
  */
-function print_dwg_get_filesize_info( $p_size, $p_unit ) {
+/*
+function get_filesize_info( $p_size, $p_unit ) {
 	return sprintf( lang_get( 'max_file_size_info' ), number_format( $p_size ), $p_unit );
 }
-
+ */
 /**
  * Returns target attribute to be added in attachment links
  * @return string
  */
-function print_dwg_attachment_link_target() {
+/*
+function print_attachment_link_target() {
 	if( config_get( 'attachments_to_new_tab' ) ) {
 		return ' target="_blank"';
 	}
 	return ' target="_self"';
 }
-
+ */
 /**
  * Print maximum file size information.
  *
@@ -2230,8 +2256,8 @@ function print_dwg_attachment_link_target() {
  * @return void
  */
 function print_dwg_max_filesize( $p_size, $p_divider = 1024, $p_unit = 'kib' ) {
-	echo '<span class="small" title="' . print_dwg_get_filesize_info( $p_size, lang_get( 'bytes' ) ) . '">';
-	echo print_dwg_get_filesize_info( $p_size / $p_divider, lang_get( $p_unit ) );
+	echo '<span class="small" title="' . get_filesize_info( $p_size, lang_get( 'bytes' ) ) . '">';
+	echo get_filesize_info( $p_size / $p_divider, lang_get( $p_unit ) );
 	echo '</span>';
 }
 

@@ -1404,8 +1404,10 @@ $g_view_issues_page_columns = array(
  * @global array $g_view_dwg_page_columns
  */
 $g_view_dwg_page_columns = array(
-	'selection', 'edit', 'priority', 'dwg_id', 'status', 'title', 'number', 'revision', 'reference',
-	'date', 'release_date',
+	'selection', 'edit', 'priority',
+	'id',
+	'dwgnotes_count', 'attachment_count',
+	'status', 'title', 'number', 'revision', 'reference', 'date', 'release_date',
 );
 
 /**
@@ -1870,12 +1872,14 @@ $g_default_show_changed = 6;
  * @global int $g_hide_status_default
  */
 $g_hide_status_default = CLOSED;
+$g_dwg_hide_status_default = CLOSED;
 
 /**
  *
  * @global int $g_show_sticky_issues
  */
 $g_show_sticky_issues = ON;
+$g_show_sticky_documents = ON;
 
 /**
  * Minimum delay for automatic page refreshes (in minutes).
@@ -2016,6 +2020,7 @@ $g_default_email_on_priority_minimum_severity = OFF;
  * @global int $g_default_email_bugnote_limit
  */
 $g_default_email_bugnote_limit = 0;
+$g_default_email_dwgnote_limit = 0;
 
 #############################
 # MantisBT Summary Settings #
@@ -3097,6 +3102,12 @@ $g_bug_report_page_fields = array(
 );
 
 $g_dwg_report_page_fields = array(
+	'author',
+	'creator',
+	'version',
+	'revision',
+	'reference',
+	'classification',
 	'additional_info',
 	'attachments',
 	'category_id',
@@ -3109,9 +3120,9 @@ $g_dwg_report_page_fields = array(
 	'priority',
 	'product_build',
 	'product_version',
-	'reproducibility',
+#	'reproducibility',
 	'severity',
-	'steps_to_reproduce',
+#	'steps_to_reproduce',
 	'tags',
 	'target_version',
 	'view_state',
@@ -3823,7 +3834,8 @@ $g_allow_no_category = OFF;
  *
  * @global int $g_allow_no_document
  */
-$g_allow_no_document = OFF;
+// $g_allow_no_document = OFF;
+$g_allow_no_document = OFF;  // turned this off during github workflows development
 
 /**
  * Limit reporters.
@@ -3873,6 +3885,7 @@ $g_limit_view_unless_threshold = ANYBODY;
  * @global int $g_allow_reporter_close
  */
 $g_allow_reporter_close = OFF;
+$g_allow_creator_close = OFF;
 
 /**
  * Reporter can reopen.
@@ -3882,6 +3895,7 @@ $g_allow_reporter_close = OFF;
  * @global int $g_allow_reporter_reopen
  */
 $g_allow_reporter_reopen = ON;
+$g_allow_creator_reopen = ON;
 
 /**
  * Reporter can upload.
@@ -3891,6 +3905,7 @@ $g_allow_reporter_reopen = ON;
  * @global int $g_allow_reporter_upload
  */
 $g_allow_reporter_upload = ON;
+$g_allow_creator_upload = ON;
 
 /**
  * Account delete.
@@ -4219,7 +4234,9 @@ $g_dwg_list_cookie = '%cookie_prefix%_DWG_LIST_COOKIE';
  *
  * @global int $g_filter_by_custom_fields
  */
-$g_filter_by_custom_fields = ON;
+// @TODO RobD - disabled during inital doctis development work
+//$g_filter_by_custom_fields = ON;
+$g_filter_by_custom_fields = OFF;
 
 /**
  * The number of filter fields to display per row.
@@ -4362,7 +4379,7 @@ $g_projection_enum_string = '10:none,30:tweak,50:minor fix,70:major rework,90:re
  *
  * @global string $g_dwg_status_enum_string
  */
-$g_dwg_status_enum_string = '10:received,20:triage,30:assigned,40:JoS,50:review,60:rework,60:independent review,80:accepted,90:incorported';
+$g_dwg_status_enum_string = '10:pending,20:received,30:triage,40:JoS,50:assigned,60:review,65:rework,70:independent review,80:accepted,90:incorported,95:archived';
 
 /**
  * Change Class enumeration.
@@ -5707,6 +5724,7 @@ $g_public_config_names = array(
 	'default_category_for_moves',
 	'default_document_for_moves',
 	'default_email_bugnote_limit',
+	'default_email_dwgnote_limit',
 	'default_email_on_assigned_minimum_severity',
 	'default_email_on_assigned',
 	'default_email_on_bugnote_minimum_severity',
@@ -5794,6 +5812,7 @@ $g_public_config_names = array(
 	'handle_sponsored_bugs_threshold',
 	'handle_sponsored_dwgs_threshold',
 	'hide_status_default',
+	'dwg_hide_status_default',
 	'history_default_visible',
 	'history_order',
 	'html_make_links',
@@ -5926,6 +5945,7 @@ $g_public_config_names = array(
 	'show_realname',
 	'show_roadmap_dates',
 	'show_sticky_issues',
+	'show_sticky_documents',
 	'show_timer',
 	'show_user_email_threshold',
 	'show_user_realname_threshold',
