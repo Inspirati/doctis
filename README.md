@@ -1,7 +1,7 @@
 Doctis - Document Issue Tracking System
 =======================================
 
-[![Build Status](https://github.com/Inspirati/doctis/actions/workflows/doctis.yml/badge.svg?branch=master)](https://github.com/Inspirati/doctis/actions/workflows/doctis.yml)
+[![Build Status](https://github.com/Inspirati/doctis/actions/workflows/mantisbt.yml/badge.svg?branch=master)](https://github.com/Inspirati/doctis/actions/workflows/mantisbt.yml)
 [![Gitter](https://img.shields.io/gitter/room/doctis/doctis.svg?logo=gitter)](https://gitter.im/Inspirati/doctis)
 
 About
