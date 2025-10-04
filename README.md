@@ -1,7 +1,7 @@
 Doctis - Document Issue Tracking System
 =======================================
 
-[![Build Status](https://github.com/Inspirati/doctis/actions/workflows/mantisbt.yml/badge.svg?branch=master)](https://github.com/Inspirati/doctis/actions/workflows/mantisbt.yml)
+[![Build Status](https://github.com/Inspirati/doctis/actions/workflows/mantisbt.yml/badge.svg?branch=dev)](https://github.com/Inspirati/doctis/actions/workflows/mantisbt.yml)
 [![Gitter](https://img.shields.io/gitter/room/doctis/doctis.svg?logo=gitter)](https://gitter.im/Inspirati/doctis)
 
 About
@@ -27,8 +27,8 @@ Design Goals (requirements)
 * bulk import of document data from spreadsheet, csv, tsv
 * add group feature (users can be assigned to groups)
 
-Installing
-----------
+Installation
+------------
 
 1. Install [VirtualBox](https://www.virtualbox.org/) on any system it is supported on.
 
