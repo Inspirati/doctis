@@ -65,26 +65,26 @@ function dwg_activity_get_all( $p_bug_id, $p_include_attachments = true ) {
 
 	$t_result['attachments'] = $t_attachments;
 
-	$t_bugnote_order = current_user_get_pref( 'bugnote_order' );
+	$t_bugnote_order = current_user_get_pref( 'dwgnote_order' );
 	$t_bugnotes = dwgnote_get_all_visible_dwgnotes( $p_bug_id, $t_bugnote_order, 0, $t_user_id );
 
-	$t_result['bugnotes'] = $t_bugnotes;
+	$t_result['dwgnotes'] = $t_bugnotes;
 
 	if( count( $t_attachments ) > 0 || count( $t_bugnotes ) > 0 ) {
 		# access level thresholds
-		$t_bugnote_user_edit_threshold = config_get( 'bugnote_user_edit_threshold' );
-		$t_bugnote_user_delete_threshold = config_get( 'bugnote_user_delete_threshold' );
-		$t_bugnote_user_change_view_state_threshold = config_get( 'bugnote_user_change_view_state_threshold' );
-		$t_can_edit_all_bugnotes = access_has_bug_level( config_get( 'update_bugnote_threshold' ), $p_bug_id );
-		$t_can_delete_all_bugnotes = access_has_bug_level( config_get( 'delete_bugnote_threshold' ), $p_bug_id );
-		$t_can_change_view_state_all_bugnotes = $t_can_edit_all_bugnotes && access_has_bug_level( config_get( 'change_view_status_threshold' ), $p_bug_id );
+		$t_bugnote_user_edit_threshold = config_get( 'dwgnote_user_edit_threshold' );
+		$t_bugnote_user_delete_threshold = config_get( 'dwgnote_user_delete_threshold' );
+		$t_bugnote_user_change_view_state_threshold = config_get( 'dwgnote_user_change_view_state_threshold' );
+		$t_can_edit_all_bugnotes = access_has_dwg_level( config_get( 'update_dwgnote_threshold' ), $p_bug_id );
+		$t_can_delete_all_bugnotes = access_has_dwg_level( config_get( 'delete_dwgnote_threshold' ), $p_bug_id );
+		$t_can_change_view_state_all_bugnotes = $t_can_edit_all_bugnotes && access_has_dwg_level( config_get( 'change_view_status_threshold' ), $p_bug_id );
 	}
 
 	$t_activities = array();
 	$t_bugnote_attachments = array();
 
 	foreach( $t_attachments as $t_attachment ) {
-		$t_bugnote_id = (int)$t_attachment['bugnote_id'];
+		$t_bugnote_id = (int)$t_attachment['dwgnote_id'];
 		if( $t_bugnote_id == 0 ) {
 			$t_activity = array(
 				'type' => ENTRY_TYPE_ATTACHMENT,
@@ -193,7 +193,7 @@ function dwg_activity_get_all( $p_bug_id, $p_include_attachments = true ) {
  * @return void
  */
 function dwg_activity_sort( &$p_entries ) {
-	$t_order = current_user_get_pref( 'bugnote_order' );
+	$t_order = current_user_get_pref( 'dwgnote_order' );
 	usort( $p_entries, function( $a, $b ) use( $t_order ) {
 		if( $a['timestamp'] < $b['timestamp'] ) {
 			return $t_order == 'DESC' ? 1 : -1;

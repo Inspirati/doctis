@@ -102,7 +102,7 @@ if( ( $t_filter_position & FILTER_POSITION_TOP ) == FILTER_POSITION_TOP ) {
 				<h4 class="widget-title lighter">
 <?php
 	print_icon( 'fa-columns', 'ace-icon' );
-	echo lang_get( 'viewing_dwg_title' );
+	echo lang_get( 'viewing_dwgs_title' );
 
 	# Viewing range info
 	$v_start = 0;

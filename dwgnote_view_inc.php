@@ -83,7 +83,7 @@ if( !isset( $t_bug_activity_get_all_result ) ) {
 }
 
 $t_activities = $t_bug_activity_get_all_result['activities'];
-$t_bugnotes = $t_bug_activity_get_all_result['bugnotes'];
+$t_bugnotes = $t_bug_activity_get_all_result['dwgnotes'];
 
 # Pre-cache users
 $t_users_to_cache = array();
@@ -102,7 +102,7 @@ $t_activities_count = count( $t_activities );
 <div class="space-10"></div>
 
 <?php
-$t_collapse_block = is_collapsed( 'bugnotes' );
+$t_collapse_block = is_collapsed( 'dwgnotes' );
 $t_block_css = $t_collapse_block ? 'collapsed' : '';
 $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 
@@ -184,7 +184,7 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 			&#160;
 			<?php if( $t_activity['type'] == ENTRY_TYPE_NOTE ) { ?>
 			<?php print_icon( 'fa-link', 'grey' ); ?>
-			<a rel="bookmark" href="<?php echo string_get_bugnote_view_url( $t_activity['note']->bug_id, $t_activity['note']->id) ?>" class="lighter" title="<?php echo lang_get( 'bugnote_link_title' ) ?>">
+			<a rel="bookmark" href="<?php echo string_get_dwgnote_view_url( $t_activity['note']->dwg_id, $t_activity['note']->id) ?>" class="lighter" title="<?php echo lang_get( 'dwgnote_link_title' ) ?>">
 				<?php echo htmlentities( config_get_global( 'dwgnote_link_tag' ) ) . $t_activity['id_formatted'] ?>
 			</a>
 			<?php } ?>
@@ -235,11 +235,11 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 
 				if( $t_activity['type'] == ENTRY_TYPE_NOTE ) {
 					if ( !isset( $t_security_token_notes_delete ) ) {
-						$t_security_token_notes_delete = form_security_token( 'bugnote_delete' );
+						$t_security_token_notes_delete = form_security_token( 'dwgnote_delete' );
 					}
 
 					print_form_button(
-						'bugnote_delete.php',
+						'dwgnote_delete.php',
 						lang_get( 'delete' ),
 						array( 'bugnote_id' => $t_activity['id'] ),
 						$t_security_token_notes_delete );

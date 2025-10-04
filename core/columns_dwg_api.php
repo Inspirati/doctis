@@ -1348,7 +1348,7 @@ function print_dwg_column_category_id( DwgData $p_bug, $p_columns_target = COLUM
  */
 function print_dwg_column_severity( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	echo '<td class="column-severity">';
-	print_formatted_severity_string( $p_bug );
+	print_dwg_formatted_severity_string( $p_bug );
 	echo '</td>';
 }
 

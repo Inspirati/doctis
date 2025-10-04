@@ -597,7 +597,7 @@ function print_dwg_assign_to_option_list( $p_user_id = '', $p_project_id = null,
  */
 function print_dwg_note_option_list( $p_user_id = '', $p_project_id = null, $p_threshold = null ) {
 	if( null === $p_threshold ) {
-		$p_threshold = config_get( 'add_bugnote_threshold' );
+		$p_threshold = config_get( 'add_dwgnote_threshold' );
 	}
 
 	print_dwg_user_option_list( $p_user_id, $p_project_id, $p_threshold );
