@@ -111,7 +111,7 @@ function history_dwg_log_event_direct( $p_bug_id, $p_field_name, $p_old_value, $
  * @return void
  */
 function history_dwg_log_event( $p_bug_id, $p_field_name, $p_old_value ) {
-	history_dwg_log_event_direct( $p_bug_id, $p_field_name, $p_old_value, bug_get_field( $p_bug_id, $p_field_name ) );
+	history_dwg_log_event_direct( $p_bug_id, $p_field_name, $p_old_value, dwg_get_field( $p_bug_id, $p_field_name ) );
 }
 
 /**
@@ -223,7 +223,7 @@ function history_dwg_query_result( array $p_query_options ) {
 	if( isset( $p_query_options['order'] ) ) {
 		$t_history_order = $p_query_options['order'];
 	} else {
-		$t_history_order = config_get( 'history_dwg_order' );
+		$t_history_order = config_get( 'history_order' );
 	}
 
 	$t_query = new DbQuery();
@@ -355,7 +355,7 @@ function history_dwg_get_event_from_row( $p_result, $p_user_id = null, $p_check_
 	while ( $t_row = db_fetch_array( $p_result ) ) {
 		/**
 		 * @var int $v_user_id
-		 * @var int $v_bug_id
+		 * @var int $v_dwg_id
 		 * @var string $v_field_name
 		 * @var string $v_old_value
 		 * @var string $v_new_value
@@ -365,43 +365,43 @@ function history_dwg_get_event_from_row( $p_result, $p_user_id = null, $p_check_
 		extract( $t_row, EXTR_PREFIX_ALL, 'v' );
 
 		# Ignore entries related to non-existing bugs (see #20727)
-		if( !dwg_exists( $v_bug_id ) ) {
+		if( !dwg_exists( $v_dwg_id ) ) {
 			continue;
 		}
 
 		if( $p_check_access_to_issue ) {
-			if( !isset( $s_bug_visible[$v_bug_id] ) ) {
-				$s_bug_visible[$v_bug_id] = access_has_dwg_level( VIEWER, $v_bug_id );
+			if( !isset( $s_bug_visible[$v_dwg_id] ) ) {
+				$s_bug_visible[$v_dwg_id] = access_has_dwg_level( VIEWER, $v_dwg_id );
 			}
 
-			if( !$s_bug_visible[$v_bug_id] ) {
+			if( !$s_bug_visible[$v_dwg_id] ) {
 				continue;
 			}
 		}
 
-		$t_project_id = bug_get_field( $v_bug_id, 'project_id' );
+		$t_project_id = dwg_get_field( $v_dwg_id, 'project_id' );
 
 		if( $v_type == NORMAL_TYPE ) {
 			if( !in_array( $v_field_name, columns_get_standard() ) ) {
 				# check that the item should be visible to the user
 				$t_field_id = custom_field_get_id_from_name( $v_field_name );
-				if( false !== $t_field_id && !custom_field_has_read_access( $t_field_id, $v_bug_id, $t_user_id ) ) {
+				if( false !== $t_field_id && !custom_field_has_read_access( $t_field_id, $v_dwg_id, $t_user_id ) ) {
 					continue;
 				}
 			}
 
 			if( ( $v_field_name == 'target_version' ) &&
-				!access_has_dwg_level( config_get( 'roadmap_view_threshold', null, $t_user_id, $t_project_id ), $v_bug_id, $t_user_id ) ) {
+				!access_has_dwg_level( config_get( 'roadmap_view_threshold', null, $t_user_id, $t_project_id ), $v_dwg_id, $t_user_id ) ) {
 				continue;
 			}
 
 			if( ( $v_field_name == 'due_date' ) &&
-				!access_has_dwg_level( config_get( 'due_date_view_threshold', null, $t_user_id, $t_project_id ), $v_bug_id, $t_user_id ) ) {
+				!access_has_dwg_level( config_get( 'due_date_view_threshold', null, $t_user_id, $t_project_id ), $v_dwg_id, $t_user_id ) ) {
 				continue;
 			}
 
 			if( ( $v_field_name == 'handler_id' ) &&
-				!access_has_dwg_level( config_get( 'view_handler_threshold', null, $t_user_id, $t_project_id ), $v_bug_id, $t_user_id ) ) {
+				!access_has_dwg_level( config_get( 'view_handler_threshold', null, $t_user_id, $t_project_id ), $v_dwg_id, $t_user_id ) ) {
 				continue;
 			}
 		}
@@ -414,7 +414,7 @@ function history_dwg_get_event_from_row( $p_result, $p_user_id = null, $p_check_
 					continue;
 				}
 
-				if( !access_has_dwg_level( config_get( 'private_bugnote_threshold', null, $t_user_id, $t_project_id ), $v_bug_id, $t_user_id ) && ( dwgnote_get_field( $v_old_value, 'view_state' ) == VS_PRIVATE ) ) {
+				if( !access_has_dwg_level( config_get( 'private_bugnote_threshold', null, $t_user_id, $t_project_id ), $v_dwg_id, $t_user_id ) && ( dwgnote_get_field( $v_old_value, 'view_state' ) == VS_PRIVATE ) ) {
 					continue;
 				}
 			}
@@ -424,7 +424,7 @@ function history_dwg_get_event_from_row( $p_result, $p_user_id = null, $p_check_
 					continue;
 				}
 
-				if( !access_has_dwg_level( config_get( 'private_bugnote_threshold', null, $t_user_id, $t_project_id ), $v_bug_id, $t_user_id ) && ( dwgnote_get_field( $v_new_value, 'view_state' ) == VS_PRIVATE ) ) {
+				if( !access_has_dwg_level( config_get( 'private_bugnote_threshold', null, $t_user_id, $t_project_id ), $v_dwg_id, $t_user_id ) && ( dwgnote_get_field( $v_new_value, 'view_state' ) == VS_PRIVATE ) ) {
 					continue;
 				}
 			}
@@ -432,14 +432,14 @@ function history_dwg_get_event_from_row( $p_result, $p_user_id = null, $p_check_
 
 		# tags
 		if( $v_type == TAG_ATTACHED || $v_type == TAG_DETACHED || $v_type == TAG_RENAMED ) {
-			if( !access_has_dwg_level( config_get( 'tag_view_threshold', null, $t_user_id, $t_project_id ), $v_bug_id, $t_user_id ) ) {
+			if( !access_has_dwg_level( config_get( 'tag_view_threshold', null, $t_user_id, $t_project_id ), $v_dwg_id, $t_user_id ) ) {
 				continue;
 			}
 		}
 
 		# attachments
 		if( $v_type == FILE_ADDED || $v_type == FILE_DELETED ) {
-			if( !access_has_dwg_level( config_get( 'view_attachments_threshold', null, $t_user_id, $t_project_id ), $v_bug_id, $t_user_id ) ) {
+			if( !access_has_dwg_level( config_get( 'view_attachments_threshold', null, $t_user_id, $t_project_id ), $v_dwg_id, $t_user_id ) ) {
 				continue;
 			}
 
@@ -450,7 +450,7 @@ function history_dwg_get_event_from_row( $p_result, $p_user_id = null, $p_check_
 					continue;
 				}
 
-				if( !access_has_dwg_level( config_get( 'private_dwgnote_threshold', null, $t_user_id, $t_project_id ), $v_bug_id, $t_user_id ) && ( dwgnote_get_field( $v_new_value, 'view_state' ) == VS_PRIVATE ) ) {
+				if( !access_has_dwg_level( config_get( 'private_dwgnote_threshold', null, $t_user_id, $t_project_id ), $v_dwg_id, $t_user_id ) && ( dwgnote_get_field( $v_new_value, 'view_state' ) == VS_PRIVATE ) ) {
 					continue;
 				}
 			}
@@ -458,7 +458,7 @@ function history_dwg_get_event_from_row( $p_result, $p_user_id = null, $p_check_
 
 		# monitoring
 		if( $v_type == BUG_MONITOR || $v_type == BUG_UNMONITOR ) {
-			if( !access_has_dwg_level( config_get( 'show_monitor_list_threshold' ), $v_bug_id, $t_user_id ) ) {
+			if( !access_has_dwg_level( config_get( 'show_monitor_list_threshold' ), $v_dwg_id, $t_user_id ) ) {
 				continue;
 			}
 		}
@@ -475,13 +475,13 @@ function history_dwg_get_event_from_row( $p_result, $p_user_id = null, $p_check_
 		}
 
 		if( $v_type == BUG_REVISION_DROPPED || $v_type == DWGNOTE_REVISION_DROPPED ) {
-			if( !access_can_view_dwg_revisions( $v_bug_id ) ) {
+			if( !access_can_view_dwg_revisions( $v_dwg_id ) ) {
 				continue;
 			}
 		}
 
 		$t_event = array();
-		$t_event['dwg_id'] = $v_bug_id;
+		$t_event['dwg_id'] = $v_dwg_id;
 		$t_event['date'] = $v_date_modified;
 		$t_event['userid'] = $v_user_id;
 		$t_event['username'] = user_get_name( $v_user_id );

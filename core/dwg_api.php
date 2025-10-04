@@ -54,8 +54,8 @@
 require_api( 'access_dwg_api.php' );
 require_api( 'antispam_api.php' );
 require_api( 'authentication_api.php' );
-require_api( 'bugnote_api.php' );
-require_api( 'bug_revision_api.php' );
+require_api( 'dwgnote_api.php' );
+require_api( 'dwg_revision_api.php' );
 require_api( 'category_api.php' );
 
 require_api( 'document_api.php' );  // @TODO RobD - just an experiment, may not be needed
@@ -2342,7 +2342,7 @@ function dwg_clear_cache_all( $p_bug_id = null ) {
 	dwg_clear_cache( $p_bug_id );
 	dwg_text_clear_cache( $p_bug_id );
 	file_dwg_attachment_count_clear_cache( $p_bug_id );
-	bugnote_clear_bug_cache( $p_bug_id );
+	dwgnote_clear_bug_cache( $p_bug_id );
 	tag_dwg_clear_cache_bug_tags( $p_bug_id );
 	custom_field_clear_cache_values( $p_bug_id );
 	dwg_attachments_clear_cache( $p_bug_id );

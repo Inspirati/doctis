@@ -1316,7 +1316,7 @@ function email_format_dwg_message( array $p_visible_bug_data ) {
 		$t_message .= $t_email_separator1 . " \n";
 
 		foreach( $p_visible_bug_data['history'] as $t_raw_history_item ) {
-			$t_localized_item = history_localize_item(
+			$t_localized_item = history_dwg_localize_item(
 				$t_raw_history_item['dwg_id'],
 				$t_raw_history_item['field'],
 				$t_raw_history_item['type'],
@@ -1465,7 +1465,7 @@ function email_build_visible_dwg_data( $p_user_id, $p_bug_id, $p_message_id ) {
 
 	# put history data
 	if( ( ON == config_get( 'history_default_visible' ) ) && access_compare_level( $t_user_access_level, config_get( 'view_history_threshold' ) ) ) {
-		$t_bug_data['history'] = history_get_raw_events_array( $p_bug_id, $p_user_id );
+		$t_bug_data['history'] = history_dwg_get_raw_events_array( $p_bug_id, $p_user_id );
 	}
 
 	# Sponsorship Information

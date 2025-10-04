@@ -119,7 +119,7 @@ function show_dwg_revision( array $p_revision ) {
 
 	/**
 	 * @var int    $v_id
-	 * @var int    $v_bug_id
+	 * @var int    $v_dwg_id
 	 * @var int    $v_bugnote_id
 	 * @var int    $v_type
 	 * @var int    $v_user_id
@@ -129,11 +129,11 @@ function show_dwg_revision( array $p_revision ) {
 	extract( $p_revision, EXTR_PREFIX_ALL, 'v' );
 
 	if( is_null( $s_can_drop ) ) {
-		$t_project_id = dwg_get_field( $v_bug_id, 'project_id' );
+		$t_project_id = dwg_get_field( $v_dwg_id, 'project_id' );
 
 		$t_bug_revision_drop_threshold = config_get( 'dwg_revision_drop_threshold', null, null, $t_project_id );
 		$s_view_bug_threshold = config_get( 'view_dwg_threshold', null, null, $t_project_id );
-		$s_can_drop = access_has_dwg_level( $t_bug_revision_drop_threshold, $v_bug_id );
+		$s_can_drop = access_has_dwg_level( $t_bug_revision_drop_threshold, $v_dwg_id );
 		$s_date_format = config_get( 'normal_date_format', null, null, $t_project_id );
 	}
 
