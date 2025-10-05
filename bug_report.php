@@ -269,7 +269,7 @@ form_security_purge( 'bug_report' );
 
 if( $f_report_stay ) {
 	$t_fields = array(
-		'category_id', 'severity', 'reproducibility', 'profile_id', 'platform',
+		'category_id', 'document_id', 'severity', 'priority', 'handler_id', 'reproducibility', 'profile_id', 'platform',
 		'os', 'os_build', 'target_version', 'build', 'view_state', 'due_date'
 	);
 

@@ -61,7 +61,7 @@ $f_copy_attachments_from_parent = gpc_get_bool( 'copy_attachments_from_parent', 
 $f_dwg_entry_stay = gpc_get_bool( 'dwg_entry_stay', false );
 
 $t_clone_info = array(
-	'master_issue_id' => $f_master_bug_id,
+	'master_dwg_id' => $f_master_bug_id,
 	'relationship_type' => $f_rel_type,
 	'copy_notes' => $f_copy_notes_from_parent,
 	'copy_files' => $f_copy_attachments_from_parent

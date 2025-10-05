@@ -81,10 +81,10 @@ if( null === $f_filter_id ) {
 
 $f_for_screen = gpc_get_bool( 'for_screen', true );
 
-$t_action  = 'dwg_view.php?f=3';
+$t_action  = 'view_dwg_set.php?f=3';
 
 if( $f_for_screen == false ) {
-	$t_action  = 'dwg_view.php';
+	$t_action  = 'view_dwg_set.php';
 }
 
 $f_static = gpc_get_bool( 'static', false );

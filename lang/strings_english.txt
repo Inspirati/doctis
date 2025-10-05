@@ -813,14 +813,14 @@ $s_edit_dwgnote_title = 'Edit Note';
 
 # bugnote_inc.php
 $s_no_bugnotes_msg = 'There are no notes attached to this issue.';
-$s_add_bugnote_title = 'Add Note';
-$s_add_bugnote_button = 'Add Note';
+$s_add_bugnote_title = 'Save Note';
+$s_add_bugnote_button = 'Save Note';
 $s_closed_bug_button = 'Close Issue';
 
 # dwgnote_inc.php
 $s_no_dwgnotes_msg = 'There are no notes attached to this document.';
-$s_add_dwgnote_title = 'Add Note';
-$s_add_dwgnote_button = 'Add Note';
+$s_add_dwgnote_title = 'Save Note';
+$s_add_dwgnote_button = 'Save Note';
 $s_closed_dwg_button = 'Close Document';
 
 # bugnote_update.php
@@ -1700,7 +1700,7 @@ $s_delete_attachments = 'Delete attachments';
 $s_delete_attachment_sure_msg = 'Are you sure you wish to delete this attachment?';
 $s_upload_issue_attachments = 'Upload issue attachments';
 $s_filters = 'Issue Filters';
-$s_dwg_filters = 'Document Filters (WIP - non functional)';
+$s_dwg_filters = 'Document Filters';
 $s_save_filters = 'Save filters';
 $s_save_filters_as_shared = 'Save filters as shared';
 $s_use_saved_filters = 'Use saved filters';
@@ -1982,7 +1982,9 @@ $MANTIS_ERROR[ERROR_SPONSORSHIP_ASSIGNER_ACCESS_LEVEL_TOO_LOW] = 'Access Denied:
 $MANTIS_ERROR[ERROR_SPONSORSHIP_SPONSOR_NO_EMAIL] = 'Sponsor has not provided an e-mail address. Please update your profile.';
 $MANTIS_ERROR[ERROR_CONFIG_OPT_INVALID] = 'Configuration option "%1$s" has invalid value "%2$s".';
 $MANTIS_ERROR[ERROR_BUG_READ_ONLY_ACTION_DENIED] = 'The action cannot be performed because issue "%1$d" is read-only.';
+$MANTIS_ERROR[ERROR_DWG_READ_ONLY_ACTION_DENIED] = 'The action cannot be performed because document "%1$d" is read-only.';
 $MANTIS_ERROR[ERROR_BUG_RESOLVE_DEPENDANTS_BLOCKING] = 'This issue cannot be resolved until all dependant issues have been resolved. Ask your system administrator for project access if you do not see any dependant issue.';
+$MANTIS_ERROR[ERROR_DWG_RESOLVE_DEPENDANTS_BLOCKING] = 'This document cannot be resolved until all dependant documents have been resolved. Ask your system administrator for project access if you do not see any dependant document.';
 $MANTIS_ERROR[ERROR_RELATIONSHIP_NOT_FOUND] = 'Relationship not found.';
 $MANTIS_ERROR[ERROR_RELATIONSHIP_ACCESS_LEVEL_TO_DEST_BUG_TOO_LOW] = 'Access denied: The issue %1$d requires higher access level.';
 $MANTIS_ERROR[ERROR_RELATIONSHIP_SAME_BUG] = 'An issue cannot be related to itself.';
@@ -2028,6 +2030,7 @@ $MANTIS_ERROR[ERROR_DEPRECATED_SUPERSEDED] = 'Deprecated functionality: "%1$s", 
 $MANTIS_ERROR[ERROR_DISPLAY_USER_ERROR_INLINE] = 'Warning: The system is configured to display MantisBT errors (E_USER_ERROR) inline. Program execution will continue; this may lead to system/data integrity issues.';
 $MANTIS_ERROR[ERROR_TYPE_MISMATCH] = 'Data Type mismatch. Enable detailed error messages for further information.';
 $MANTIS_ERROR[ERROR_BUG_CONFLICTING_EDIT] = 'This issue has been updated by another user, please return to the issue and submit your changes again.';
+$MANTIS_ERROR[ERROR_DWG_CONFLICTING_EDIT] = 'This document has been updated by another user, please return to the document and submit your changes again.';
 $MANTIS_ERROR[ERROR_SPAM_SUSPECTED] = 'You have reached the allowed activity limit of %d events within the last %d seconds; your action has been blocked to avoid spam, please try again later.';
 $MANTIS_ERROR[ERROR_FIELD_TOO_LONG] = 'Field "%1$s" must be shorter or equal to %2$d characters long.';
 $MANTIS_ERROR[ERROR_API_TOKEN_NAME_NOT_UNIQUE] = 'API token name "%s" is already being used. Please go back and select another one.';

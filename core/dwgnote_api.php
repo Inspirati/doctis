@@ -86,7 +86,7 @@ class DwgnoteData {
 	public $dwg_id;
 
 	/**
-	 * Reporter ID
+	 * Creator ID
 	 */
 	public $creator_id;
 

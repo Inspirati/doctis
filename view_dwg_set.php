@@ -157,7 +157,6 @@ switch( $f_type ) {
 
 		$t_setting_arr[FILTER_PROPERTY_CATEGORY_ID]			= array( META_FILTER_ANY );
 		$t_setting_arr[FILTER_PROPERTY_CREATOR_ID]			= array( META_FILTER_ANY );
-		$t_setting_arr[FILTER_PROPERTY_REPORTER_ID] 		= array( META_FILTER_ANY );
 		$t_setting_arr[FILTER_PROPERTY_HANDLER_ID] 			= array( META_FILTER_ANY );
 		$t_setting_arr[FILTER_PROPERTY_BUILD] 				= array( META_FILTER_ANY );
 		$t_setting_arr[FILTER_PROPERTY_VERSION] 			= array( META_FILTER_ANY );

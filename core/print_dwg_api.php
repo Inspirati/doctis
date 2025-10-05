@@ -332,14 +332,14 @@ function print_dwg_user_option_list( $p_user_id, $p_project_id = null, $p_access
 }
 
 /**
- * This populates the reporter option list with the appropriate users
+ * This populates the creator option list with the appropriate users
  *
  * @todo ugly functions  need to be refactored
  * @todo This function really ought to print out all the users, I think.
  *  I just encountered a situation where a project used to be public and
  *  was made private, so now I can't filter on any of the reporters who
  *  actually reported the bugs at the time. Maybe we could get all user
- *  who are listed as the reporter in any bug?  It would probably be a
+ *  who are listed as the creator in any bug?  It would probably be a
  *  faster query actually.
  * @param integer $p_user_id    A user identifier.
  * @param integer $p_project_id A project identifier.
@@ -781,7 +781,7 @@ function print_dwg_category_option_list( $p_category_id = 0, $p_project_id = nul
 		$t_cat_arr[] = $t_category_row;
 	}
 
-	if( config_get( 'allow_no_document' ) ) {
+	if( config_get( 'allow_no_category' ) ) {
 		echo '<option value="0"';
 		check_selected( $p_category_id, 0 );
 		echo '>';
@@ -1926,7 +1926,7 @@ function print_dwg_rss( $p_feed_url, $p_title = '' ) {
  * @return void
  */
 function print_dwg_recently_visited() {
-	$t_ids = last_visited_get_array();
+	$t_ids = last_visited_dwg_get_array();
 
 	if( count( $t_ids ) == 0 ) {
 		return;
@@ -1957,6 +1957,7 @@ function print_dwg_recently_visited() {
  * @return string
  */
 /*
+// @TODO RobD - already defined in print_api.php
 function get_dropdown( array $p_control_array, $p_control_name, $p_match = '', $p_add_any = false, $p_multiple = false ) {
 	if( $p_multiple ) {
 		$t_size = ' size="5"';

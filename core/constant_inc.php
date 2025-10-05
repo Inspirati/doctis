@@ -23,7 +23,7 @@
  */
 define( 'MANTIS_VERSION', '2.28.0-dev' );
 define( 'FILTER_VERSION', 'v9' );
-define( 'DWG_FILTER_VERSION', 'v9' );
+define( 'DWG_FILTER_VERSION', 'vd1' );
 
 # --- constants -------------------
 # magic numbers
@@ -621,11 +621,13 @@ define( 'TOKEN_AUTHENTICATED', 4 );
 define( 'TOKEN_COLLAPSE', 5 );
 define( 'TOKEN_ACCOUNT_VERIFY', 6 );
 define( 'TOKEN_ACCOUNT_ACTIVATION', 7 );
+define( 'TOKEN_LAST_VISITED_DWG', 8 );
 define( 'TOKEN_USER', 1000 );
 
 # Token expiry durations (in seconds)
 define( 'TOKEN_EXPIRY', 60 * 60 );
 define( 'TOKEN_EXPIRY_LAST_VISITED', 24 * 60 * 60 );
+define( 'TOKEN_EXPIRY_LAST_VISITED_DWG', 24 * 60 * 60 );
 define( 'TOKEN_EXPIRY_AUTHENTICATED', 5 * 60 );
 define( 'TOKEN_EXPIRY_COLLAPSE', 365 * 24 * 60 * 60 );
 define( 'TOKEN_EXPIRY_ACCOUNT_ACTIVATION', 7 * 24 * 60 * 60 );

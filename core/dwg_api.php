@@ -148,7 +148,6 @@ class DwgData {
 	protected $duplicate_id = 0;
 
 // #TODO RobD - the legacy fields from the bug version
-	// protected $reporter_id = 0;
 //	protected $handler_id = 0;
 //	protected $duplicate_id = 0;
 //	protected $priority = NORMAL;
@@ -1502,7 +1501,7 @@ function dwg_delete_all( $p_project_id ) {
 /**
  * Returns the extended record of the specified bug, including bug text fields.
  *
- * @todo include reporter name and handler name, the problem is that
+ * @todo include creator name and handler name, the problem is that
  *      handler can be 0, in this case no corresponding name will be
  *      found.  Use equivalent of (+) in Oracle.
  *

@@ -90,9 +90,8 @@ function access_has_dwg_level( $p_access_level, $p_bug_id, $p_user_id = null ) {
 	# If the level is met, we still need to verify that user has access to the issue
 
 	# Check if the bug is private
-//	$t_bug_is_user_reporter = dwg_is_user_reporter( $p_bug_id, $p_user_id );
-	$t_bug_is_user_reporter = dwg_is_user_creator( $p_bug_id, $p_user_id );
-	if( !$t_bug_is_user_reporter && dwg_get_field( $p_bug_id, 'view_state' ) == VS_PRIVATE ) {
+	$t_bug_is_user_creator = dwg_is_user_creator( $p_bug_id, $p_user_id );
+	if( !$t_bug_is_user_creator && dwg_get_field( $p_bug_id, 'view_state' ) == VS_PRIVATE ) {
 		$t_private_bug_threshold = config_get( 'private_dwg_threshold', null, $p_user_id, $t_project_id );
 		if( !access_compare_level( $t_access_level, $t_private_bug_threshold ) ) {
 			return false;
@@ -102,7 +101,7 @@ function access_has_dwg_level( $p_access_level, $p_bug_id, $p_user_id = null ) {
 	# Check special limits
 	# Limited view means this user can only view the issues they reported, is handling, or monitoring
 	if( access_has_limited_view_dwg( $t_project_id, $p_user_id ) ) {
-		$t_allowed = $t_bug_is_user_reporter;
+		$t_allowed = $t_bug_is_user_creator;
 		if( !$t_allowed ) {
 			$t_allowed = dwg_is_user_handler( $p_bug_id, $p_user_id );
 		}
@@ -171,7 +170,7 @@ function access_has_dwgnote_level( $p_access_level, $p_bugnote_id, $p_user_id = 
 	$t_bug_id = dwgnote_get_field( $p_bugnote_id, 'dwg_id' );
 	$t_project_id = dwg_get_field( $t_bug_id, 'project_id' );
 
-	# If the bug is private and the user is not the reporter, then the
+	# If the bug is private and the user is not the creator, then the
 	# the user must also have higher access than private_bug_threshold
 	if( dwgnote_get_field( $p_bugnote_id, 'view_state' ) == VS_PRIVATE && !dwgnote_is_user_creator( $p_bugnote_id, $p_user_id ) ) {
 		$t_private_bugnote_threshold = config_get( 'private_dwgnote_threshold', null, $p_user_id, $t_project_id );
@@ -233,14 +232,8 @@ function access_can_close_dwg( DwgData $p_bug, $p_user_id = null ) {
 		$p_user_id = auth_get_current_user_id();
 	}
 
-	# If allow_creator_close is enabled, then reporters can close their own bugs
+	# If allow_creator_close is enabled, then creators can close their own bugs
 	# if they are in resolved status
-	// if( ON == config_get( 'allow_creator_close', null, null, $p_bug->project_id )
-	// 	&& dwg_is_user_reporter( $p_bug->id, $p_user_id )
-	// 	&& dwg_is_resolved( $p_bug->id )
-	// ) {
-	// 	return true;
-	// }
 	if( ON == config_get( 'allow_creator_close', null, null, $p_bug->project_id )
 		&& dwg_is_user_creator( $p_bug->id, $p_user_id )
 		&& dwg_is_resolved( $p_bug->id )
@@ -291,8 +284,8 @@ function access_can_reopen_dwg( DwgData $p_bug, $p_user_id = null ) {
 		return false;
 	}
 
-	# If allow_creator_reopen is enabled, then reporters can always reopen
-	# their own bugs as long as their access level is reporter or above
+	# If allow_creator_reopen is enabled, then creators can always reopen
+	# their own bugs as long as their access level is creator or above
 	if( ON == config_get( 'allow_creator_reopen', null, null, $p_bug->project_id )
 		&& dwg_is_user_creator( $p_bug->id, $p_user_id )
 		&& access_has_project_level( config_get( 'create_dwg_threshold', null, $p_user_id, $p_bug->project_id ), $p_bug->project_id, $p_user_id )
@@ -380,7 +373,7 @@ function access_can_see_handler_for_dwg( DwgData $p_bug, $p_user_id = null ) {
  * @return boolean	Whether limited view applies
  *
  * @see $g_limit_view_unless_threshold
- * @see $g_limit_reporters
+ * @see $g_limit_creators
  */
 function access_has_limited_view_dwg( $p_project_id = null, $p_user_id = null ) {
 	$t_user_id = ( null === $p_user_id ) ? auth_get_current_user_id() : $p_user_id;
@@ -388,7 +381,7 @@ function access_has_limited_view_dwg( $p_project_id = null, $p_user_id = null ) 
 
 	# Old 'limit_reporters' option was previously only supported for ALL_PROJECTS,
 	# Use this option if set, otherwise, check the new option for "unlimited view" threshold
-	$t_old_limit_reporters = config_get( 'limit_reporters', null, $t_user_id, ALL_PROJECTS );
+	$t_old_limit_reporters = config_get( 'limit_creators', null, $t_user_id, ALL_PROJECTS );
 	$t_threshold_can_view = NOBODY;
 	if( ON != $t_old_limit_reporters ) {
 		$t_threshold_can_view = config_get( 'limit_view_unless_threshold', null, $t_user_id, $t_project_id );
@@ -417,7 +410,7 @@ function access_has_limited_view_dwg( $p_project_id = null, $p_user_id = null ) 
 /**
  * Return true if user is allowed to view bug revisions.
  *
- * User must have $g_bug_revision_view_threshold or be the bug's reporter.
+ * User must have $g_dwg_revision_view_threshold or be the bug's creator.
  *
  * @param int $p_bug_id
  * @param int $p_user_id
@@ -437,14 +430,13 @@ function access_can_view_dwg_revisions( $p_bug_id, $p_user_id = null ) {
 		$t_user_id
 	);
 
-	// return $t_has_access || dwg_is_user_reporter( $p_bug_id, $t_user_id );
 	return $t_has_access || dwg_is_user_creator( $p_bug_id, $t_user_id );
 }
 
 /**
- * Return true if user is allowed to view bugnote revisions.
+ * Return true if user is allowed to view dwgnote revisions.
  *
- * User must have $g_bug_revision_view_threshold or be the bugnote's reporter.
+ * User must have $g_dwg_revision_view_threshold or be the dwgnote's creator.
  *
  * @param int $p_bugnote_id
  * @param int $p_user_id

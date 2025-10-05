@@ -1158,17 +1158,17 @@ function file_dwg_allow_dwg_upload( $p_bug_id = null, $p_user_id = null, $p_proj
 		# new bug
 		$t_project_id = $p_project_id === null ? helper_get_current_project() : $p_project_id;
 
-		# the user must be the reporter if they're reporting a new bug
-		$t_reporter = true;
+		# the user must be the creator if they're reporting a new bug
+		$t_creator = true;
 	} else {
 		# existing bug
 		$t_project_id = dwg_get_field( $p_bug_id, 'project_id' );
 
-		# check if the user is the reporter of the bug
-		$t_reporter = dwg_is_user_creator( $p_bug_id, $p_user_id );
+		# check if the user is the creator of the bug
+		$t_creator = dwg_is_user_creator( $p_bug_id, $p_user_id );
 	}
 
-	if( $t_reporter && ( ON == config_get( 'allow_creator_upload' ) ) ) {
+	if( $t_creator && ( ON == config_get( 'allow_creator_upload' ) ) ) {
 		return true;
 	}
 

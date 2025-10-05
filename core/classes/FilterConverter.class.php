@@ -108,8 +108,8 @@ class FilterConverter {
 		$this->convertProjectArrayToJson( $t_criteria );
 		$this->convertCategoryArrayToJson( $t_criteria );
 
-		$this->convertUserArrayToJson( $t_criteria, 'reporter' );
 		$this->convertUserArrayToJson( $t_criteria, 'creator' );
+		$this->convertUserArrayToJson( $t_criteria, 'reporter' );
 		$this->convertUserArrayToJson( $t_criteria, 'handler' );
 		$this->convertUserArrayToJson( $t_criteria, 'monitored' );
 		$this->convertUserArrayToJson( $t_criteria, 'commented' );

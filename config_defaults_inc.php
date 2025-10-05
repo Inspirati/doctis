@@ -1407,7 +1407,7 @@ $g_view_dwg_page_columns = array(
 	'selection', 'edit', 'priority',
 	'id',
 	'dwgnotes_count', 'attachment_count',
-	'status', 'title', 'number', 'revision', 'reference', 'date', 'release_date',
+	'status', 'title', 'number', 'revision', 'reference', 'date', 'last_updated', 
 );
 
 /**
@@ -1420,6 +1420,10 @@ $g_view_dwg_page_columns = array(
 $g_print_issues_page_columns = array(
 	'selection', 'priority', 'id', 'bugnotes_count', 'attachment_count',
 	'category_id', 'severity', 'status', 'last_updated', 'summary',
+);
+$g_print_dwg_page_columns = array(
+	'selection', 'priority', 'id', 'title', 'dwgnotes_count', 'attachment_count',
+	'category_id', 'severity', 'status', 'number', 'revision', 'reference', 'date', 'release_date',
 );
 
 /**
@@ -1435,6 +1439,13 @@ $g_csv_columns = array(
 	'date_submitted', 'eta', 'os', 'os_build', 'platform', 'view_state',
 	'last_updated', 'summary', 'status', 'resolution', 'fixed_in_version'
 );
+$g_csv_dwg_columns = array(
+	'id', 'project_id', 'creator_id', 'handler_id', 'priority',
+	'severity', 'reproducibility', 'version', 'projection', 'category_id',
+	'date_submitted', 'eta', 'os', 'os_build', 'platform', 'view_state',
+	'last_updated', 'summary', 'status', 'resolution', 'fixed_in_version',
+	'title', 'number', 'revision', 'reference', 'date', 'release_date',
+);
 
 /**
  * The default columns to be included in the Excel export.
@@ -1449,6 +1460,12 @@ $g_excel_columns = array(
 	'date_submitted', 'eta', 'os', 'os_build', 'platform', 'view_state',
 	'last_updated', 'summary', 'status', 'resolution', 'fixed_in_version'
 );
+$g_excel_dwg_columns = array(
+	'id', 'project_id', 'creator_id', 'handler_id', 'priority', 'severity',
+	'reproducibility', 'version', 'projection', 'category_id',
+	'date_submitted', 'eta', 'os', 'os_build', 'platform', 'view_state',
+	'last_updated', 'summary', 'status', 'resolution', 'fixed_in_version'
+);
 
 /**
  * Show projects when in All Projects mode.
@@ -1456,6 +1473,7 @@ $g_excel_columns = array(
  * @global int $g_show_bug_project_links
  */
 $g_show_bug_project_links = ON;
+$g_show_dwg_project_links = ON;
 
 /**
  * Position of the filter box.
@@ -1831,7 +1849,7 @@ $g_allow_parent_of_unresolved_to_close = OFF;
  * @global int $g_default_bug_relationship
  */
 $g_default_bug_relationship = BUG_RELATED;
-$g_default_dwg_relationship = BUG_RELATED;
+$g_default_dwg_relationship = DWG_RELATED;
 
 /**
  * Default category to use when moving issues.
@@ -2112,18 +2130,6 @@ $g_resolution_multipliers = array(
  * @global string $g_bugnote_order
  */
 $g_bugnote_order = 'DESC';
-
-#############################
-# MantisBT Dwgnote Settings #
-#############################
-
-/**
- * Dwgnote ordering.
- *
- * Change to ASC or DESC
- *
- * @global string $g_dwgnote_order
- */
 $g_dwgnote_order = 'DESC';
 
 #################################
@@ -4272,6 +4278,7 @@ $g_view_dwg_filters = SIMPLE_DEFAULT;
  * @global int $g_use_dynamic_filters
  */
 $g_use_dynamic_filters = ON;
+$g_use_dynamic_filters_dwg = ON;
 
 /**
  * The threshold required for users to be able to create permalinks.
@@ -4982,6 +4989,7 @@ $g_wiki_engine_url = '';
  * @global int $g_recently_visited_count
  */
 $g_recently_visited_count = 5;
+$g_recently_visited_dwg_count = 5;
 
 ###############
 # Bug Tagging #
@@ -5711,6 +5719,7 @@ $g_public_config_names = array(
 	'default_bug_relationship',
 	'default_dwg_relationship',
 	'default_bug_reproducibility',
+	'default_dwg_reproducibility',
 	'default_bug_resolution',
 	'default_dwg_resolution',
 	'default_bug_severity',
@@ -5898,6 +5907,7 @@ $g_public_config_names = array(
 	'reauthentication_expiry',
 	'reauthentication',
 	'recently_visited_count',
+	'recently_visited_dwg_count',
 	'relationship_graph_enable',
 	'relationship_graph_fontname',
 	'relationship_graph_fontsize',
@@ -6006,6 +6016,7 @@ $g_public_config_names = array(
 	'upload_dwg_file_threshold',
 	'upload_project_file_threshold',
 	'use_dynamic_filters',
+	'use_dynamic_filters_dwg',
 	'user_login_valid_regex',
 	'validate_email',
 	'version_suffix',
