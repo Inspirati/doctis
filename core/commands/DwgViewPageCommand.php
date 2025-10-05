@@ -297,7 +297,7 @@ class DwgViewPageCommand extends Command {
 		$t_issue_view['links'] = $t_links;
 
 		# Mark the added issue as visited so that it appears on the last visited list.
-		last_visited_issue( $t_issue_id );
+		last_visited_dwg_issue( $t_issue_id );
 
 		return array(
 			'issue' => $t_issue,

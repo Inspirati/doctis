@@ -193,7 +193,7 @@ function print_filter_dwg_values_creator_id( array $p_filter ) {
 }
 
 /**
- * Print the reporter field.
+ * Print the creator field.
  *
  * @param array|null $p_filter Filter array
  *
@@ -208,7 +208,7 @@ function print_filter_dwg_creator_id( ?array $p_filter = null ) {
 	?>
 		<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_CREATOR_ID;?>[]">
 		<?php
-	# if current user is a reporter, and limited_reporters is set to ON, only display that name
+	# if current user is a creator, and limited_creators is set to ON, only display that name
 	if( access_has_limited_view_dwg() ) {
 		$t_id = auth_get_current_user_id();
 		$t_username = user_get_name( $t_id );
@@ -1830,7 +1830,7 @@ function print_filter_dwg_note_user_id( ?array $p_filter = null ) {
 		$p_filter = $g_dwg_filter;
 	}
 	?>
-	<!-- BUGNOTE REPORTER -->
+	<!-- BUGNOTE CREATOR -->
 	<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_NOTE_USER_ID;?>[]">
 		<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_NOTE_USER_ID], META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
 		<?php if( access_has_project_level( config_get( 'view_handler_threshold' ) ) ) {?>
@@ -2631,8 +2631,8 @@ function filter_dwg_form_draw_inputs( $p_filter, $p_for_screen = true, $p_static
 		);
 	}
 
-	if ( config_get( 'use_dynamic_filters' ) ) {
-		$t_dynamic_filter_expander_class = ' class="dynamic-filter-expander"';
+	if ( config_get( 'use_dynamic_filters_dwg' ) ) {
+		$t_dynamic_filter_expander_class = ' class="dynamic-dwg-filter-expander"';
 	} else {
 		$t_dynamic_filter_expander_class = '';
 	}

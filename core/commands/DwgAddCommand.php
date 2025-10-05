@@ -51,7 +51,7 @@ use Mantis\Exceptions\ClientException;
  *   },
  *   "options: {
  *     "clone_info": {                # Used only in case issue is cloned
- *       "master_issue_id": 1234,
+ *       "master_dwg_id": 1234,
  *       "relationship_type": 1,      # BUG_RELATED
  *       "copy_files": true,
  *       "copy_notes": true,
@@ -100,12 +100,12 @@ class DwgAddCommand extends Command {
 
 		$t_issue = $this->payload( 'issue' );
 
-		if( isset( $t_clone_info['master_issue_id'] ) ) {
-			if( bug_is_readonly( $t_clone_info['master_issue_id'] ) ) {
+		if( isset( $t_clone_info['master_dwg_id'] ) ) {
+			if( dwg_is_readonly( $t_clone_info['master_dwg_id'] ) ) {
 				throw new ClientException(
-					sprintf( "Master issue '%d' is read-only", $t_clone_info['master_issue_id'] ),
-					ERROR_BUG_READ_ONLY_ACTION_DENIED,
-					array( $t_clone_info['master_issue_id'] )
+					sprintf( "Master document '%d' is read-only", $t_clone_info['master_dwg_id'] ),
+					ERROR_DWG_READ_ONLY_ACTION_DENIED,
+					array( $t_clone_info['master_dwg_id'] )
 				);
 			}
 		}
@@ -175,19 +175,19 @@ class DwgAddCommand extends Command {
 
 		if( !access_has_project_level( config_get( 'report_dwg_threshold' ), $t_project_id, $this->user_id ) ) {
 			throw new ClientException(
-				'User does not have access right to report issues',
+				'User does not have access right to report documents',
 				ERROR_ACCESS_DENIED );
 		}
 
 		$t_handler_id = isset( $t_issue['handler'] ) ? mci_get_user_id( $t_issue['handler'] ) : NO_USER;
-		$t_priority_id = isset( $t_issue['priority'] ) ? mci_get_priority_id( $t_issue['priority'] ) : config_get( 'default_bug_priority' );
-		$t_severity_id = isset( $t_issue['severity'] ) ? mci_get_severity_id( $t_issue['severity'] ) : config_get( 'default_bug_severity' );
-		$t_status_id = isset( $t_issue['status'] ) ? mci_get_status_id( $t_issue['status'] ) : config_get( 'bug_submit_status' );
-		$t_reproducibility_id = isset( $t_issue['reproducibility'] ) ? mci_get_reproducibility_id( $t_issue['reproducibility'] ) : config_get( 'default_bug_reproducibility' );
-		$t_resolution_id =  isset( $t_issue['resolution'] ) ? mci_get_resolution_id( $t_issue['resolution'] ) : config_get( 'default_bug_resolution' );
-		$t_projection_id = isset( $t_issue['projection'] ) ? mci_get_projection_id( $t_issue['projection'] ) : config_get( 'default_bug_projection' );
-		$t_eta_id = isset( $t_issue['eta'] ) ? mci_get_eta_id( $t_issue['eta'] ) : config_get( 'default_bug_eta' );
-		$t_view_state_id = isset( $t_issue['view_state'] ) ?  mci_get_view_state_id( $t_issue['view_state'] ) : config_get( 'default_bug_view_status' );
+		$t_priority_id = isset( $t_issue['priority'] ) ? mci_get_priority_id( $t_issue['priority'] ) : config_get( 'default_dwg_priority' );
+		$t_severity_id = isset( $t_issue['severity'] ) ? mci_get_severity_id( $t_issue['severity'] ) : config_get( 'default_dwg_severity' );
+		$t_status_id = isset( $t_issue['status'] ) ? mci_get_status_id( $t_issue['status'] ) : config_get( 'dwg_submit_status' );
+		$t_reproducibility_id = isset( $t_issue['reproducibility'] ) ? mci_get_reproducibility_id( $t_issue['reproducibility'] ) : config_get( 'default_dwg_reproducibility' );
+		$t_resolution_id =  isset( $t_issue['resolution'] ) ? mci_get_resolution_id( $t_issue['resolution'] ) : config_get( 'default_dwg_resolution' );
+		$t_projection_id = isset( $t_issue['projection'] ) ? mci_get_projection_id( $t_issue['projection'] ) : config_get( 'default_dwg_projection' );
+		$t_eta_id = isset( $t_issue['eta'] ) ? mci_get_eta_id( $t_issue['eta'] ) : config_get( 'default_dwg_eta' );
+		$t_view_state_id = isset( $t_issue['view_state'] ) ?  mci_get_view_state_id( $t_issue['view_state'] ) : config_get( 'default_dwg_view_status' );
 
 		# TODO: #17777: Add test case for mc_issue_add() and mc_issue_note_add() reporter override
 		if( isset( $t_issue['creator'] ) ) {
@@ -210,12 +210,12 @@ class DwgAddCommand extends Command {
 		if( $t_handler_id > 0 ) {
 			if ( !access_has_project_level( config_get( 'update_bug_assign_threshold' ) ) ) {
 				throw new ClientException(
-					'User not allowed to assign issues',
+					'User not allowed to assign documents',
 					ERROR_ACCESS_DENIED );
 			}
 		} else {
 			# Ensure that resolved bugs have a handler
-			if( $t_handler_id == NO_USER && $t_status_id >= config_get( 'bug_resolved_status_threshold' ) ) {
+			if( $t_handler_id == NO_USER && $t_status_id >= config_get( 'dwg_resolved_status_threshold' ) ) {
 				$t_handler_id = $this->user_id;
 			}
 		}
@@ -414,21 +414,21 @@ class DwgAddCommand extends Command {
 		}
 
 		$t_clone_info = $this->option( 'clone_info', array() );
-		if( isset( $t_clone_info['master_issue_id'] ) ) {
-			$t_master_issue_id = (int)$t_clone_info['master_issue_id'];
+		if( isset( $t_clone_info['master_dwg_id'] ) ) {
+			$t_master_dwg_id = (int)$t_clone_info['master_dwg_id'];
 
 			# it's a child generation... let's create the relationship and add some lines in the history
 
 			# update master bug last updated
-			bug_update_date( $t_master_issue_id );
+			bug_update_date( $t_master_dwg_id );
 
 			# Add log line to record the cloning action
-			history_log_event_special( $t_issue_id, BUG_CREATED_FROM, '', $t_master_issue_id );
-			history_log_event_special( $t_master_issue_id, BUG_CLONED_TO, '', $t_issue_id );
+			history_log_event_special( $t_issue_id, DWG_CREATED_FROM, '', $t_master_dwg_id );
+			history_log_event_special( $t_master_dwg_id, DWG_CLONED_TO, '', $t_issue_id );
 
 			# copy notes from parent
 			if( isset( $t_clone_info['copy_notes'] ) &&  $t_clone_info['copy_notes'] ) {
-				$t_parent_bugnotes = bugnote_get_all_bugnotes( $t_master_issue_id );
+				$t_parent_bugnotes = bugnote_get_all_bugnotes( $t_master_dwg_id );
 
 				foreach ( $t_parent_bugnotes as $t_parent_bugnote ) {
 					$t_private = $t_parent_bugnote->view_state == VS_PRIVATE;
@@ -452,18 +452,18 @@ class DwgAddCommand extends Command {
 
 			# copy attachments from parent
 			if( isset( $t_clone_info['copy_files'] ) &&  $t_clone_info['copy_files'] ) {
-				file_dwg_copy_attachments( $t_master_issue_id, $t_issue_id );
+				file_dwg_copy_attachments( $t_master_dwg_id, $t_issue_id );
 			}
 
 			if( isset( $t_clone_info['relationship_type'] ) &&  $t_clone_info['relationship_type'] > BUG_REL_ANY ) {
-				dwg_relationship_add( $t_issue_id, $t_master_issue_id, $t_clone_info['relationship_type'], /* email for source */ false );
+				dwg_relationship_add( $t_issue_id, $t_master_dwg_id, $t_clone_info['relationship_type'], /* email for source */ false );
 			}
 		}
 
 		$t_notes = $t_issue['notes'] ?? array();
 		if( isset( $t_notes ) && is_array( $t_notes ) ) {
 			foreach( $t_notes as $t_note ) {
-				$t_view_state = $t_note['view_state'] ?? config_get( 'default_bugnote_view_status' );
+				$t_view_state = $t_note['view_state'] ?? config_get( 'default_dwgnote_view_status' );
 
 				$t_note_type = isset( $t_note['note_type'] ) ? (int)$t_note['note_type'] : BUGNOTE;
 				$t_note_attr = isset( $t_note['note_type'] ) ? $t_note['note_attr'] : '';
@@ -481,16 +481,16 @@ class DwgAddCommand extends Command {
 
 				dwgnote_process_mentions( $t_issue_id, $t_note_id, $t_note['text'] );
 
-				log_event( LOG_WEBSERVICE, 'bugnote id \'' . $t_note_id . '\' added to issue \'' . $t_issue_id . '\'' );
+				log_event( LOG_WEBSERVICE, 'dwgnote id \'' . $t_note_id . '\' added to document \'' . $t_issue_id . '\'' );
 			}
 		}
 
 		# Mark the added issue as visited so that it appears on the last visited list.
-		// last_visited_issue( $t_issue_id );
+		last_visited_dwg_issue( $t_issue_id );
 
 		# Trigger Email Notifications
-		// $this->issue->process_mentions();
-		// email_dwg_added( $t_issue_id );
+		$this->issue->process_mentions();
+		email_dwg_added( $t_issue_id );
 
 		# Trigger extensibility events
 		helper_call_custom_function( 'document_create_notify', array( $t_issue_id ) );  // looks like it calls a default null func

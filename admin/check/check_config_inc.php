@@ -33,7 +33,7 @@ if( !defined( 'CHECK_CONFIG_INC_ALLOW' ) ) {
 require_once( 'check_api.php' );
 
 global $g_config_path, $g_absolute_path, $g_log_level, $g_log_destination,
-	   $g_show_detailed_errors, $g_debug_email, $g_limit_reporters;
+	   $g_show_detailed_errors, $g_debug_email, $g_limit_reporters, $g_limit_creators;
 
 check_print_section_header_row( 'Configuration' );
 
@@ -133,6 +133,12 @@ foreach( $t_field_options as $t_field_option ) {
 # Deprecated Settings
 check_print_test_warn_row( 'Deprecated "limit_reporters" setting should no longer be used',
 	$g_limit_reporters == OFF,
+	array( false => 'Use "limit_view_unless_threshold" instead.' )
+);
+
+# Deprecated Settings
+check_print_test_warn_row( 'Deprecated "limit_creators" setting should no longer be used',
+	$g_limit_creators == OFF,
 	array( false => 'Use "limit_view_unless_threshold" instead.' )
 );
 

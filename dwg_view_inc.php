@@ -1219,9 +1219,9 @@ function dwg_view_button_dwg_change_status( DwgData $p_bug ) {
 		$t_current_access,
 		$p_bug->status,
 		false,
-		# Add close if user is bug's reporter, still has rights to report issues
+		# Add close if user is bug's creator, still has rights to report issues
 		# (to prevent users downgraded to viewers from updating issues) and
-		# reporters are allowed to close their own issues
+		# creators are allowed to close their own issues
 		(  dwg_is_user_creator( $p_bug->id, auth_get_current_user_id() )
 		&& access_has_dwg_level( config_get( 'create_dwg_threshold' ), $p_bug->id )
 		&& ON == config_get( 'allow_creator_close' )
@@ -1313,7 +1313,7 @@ function dwg_view_button_dwg_assign_to( DwgData $p_bug ) {
 		$t_id = (int)$t_entry[0];
 		$t_caption = string_attribute( $t_entry[1] );
 
-		# if current user and reporter can't be selected, then select the first
+		# if current user and creator can't be selected, then select the first
 		# user in the list.
 		if( $t_default_assign_to === null ) {
 			$t_default_assign_to = $t_id;

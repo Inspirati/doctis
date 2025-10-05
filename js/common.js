@@ -232,6 +232,35 @@ $(document).ready( function() {
 		});
 	});
 
+	$('a.dynamic-dwg-filter-expander').click(function(event) {
+		event.preventDefault();
+		var fieldID = $(this).attr('id');
+		var filter_id = $(this).data('filter_id');
+		var filter_tmp_id = $(this).data('filter');
+		var targetID = fieldID + '_target';
+		var viewType = $('#filters_form_open input[name=view_type]').val();
+		$('#' + targetID).html('<span class="dynamic-dwg-filter-loading">' + translations['loading'] + "</span>");
+		var params = 'view_type=' + viewType + '&filter_target=' + fieldID;
+		if( undefined !== filter_id ) {
+			params += '&filter_id=' + filter_id;
+		}
+		if( undefined !== filter_tmp_id ) {
+			params += '&filter=' + filter_tmp_id;
+		}
+		$.ajax({
+			url: 'return_dynamic_filters_dwg.php',
+			data: params,
+			cache: false,
+			context: $('#' + targetID),
+			success: function(html) {
+				$(this).html(html);
+			},
+			error: function(obj,status,error) {
+				$(this).html('<span class="error-msg">' + status + ': ' + error + '</span>');
+			}
+		});
+	});
+
 	$('input.autofocus:first, select.autofocus:first, textarea.autofocus:first').focus();
 
 	var checkAllSelectors = '';

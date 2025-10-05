@@ -61,7 +61,7 @@ require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
-require_api( 'last_visited_api.php' );
+require_api( 'last_visited_dwg_api.php' );
 require_api( 'prepare_api.php' );
 require_api( 'print_dwg_api.php' );
 require_api( 'project_api.php' );
@@ -279,7 +279,7 @@ if( $t_show_id || $t_show_project || $t_show_category || $t_show_view_state || $
 }
 
 #
-# Reporter, Assigned To, Due Date
+# Creator, Assigned To, Due Date
 #
 
 if( $t_show_creator || $t_show_handler || $t_show_due_date ) {
@@ -288,7 +288,7 @@ if( $t_show_creator || $t_show_handler || $t_show_due_date ) {
 	$t_spacer = 0;
 
 	if( $t_show_creator ) {
-		# Reporter
+		# Creator
 		echo '<th class="category">';
 		if( $f_creator_edit ) echo '<label for="creator_id">';
 		echo lang_get( 'creator' );
@@ -796,4 +796,4 @@ define( 'DWGNOTE_VIEW_INC_ALLOW', true );
 include( __DIR__ . '/dwgnote_view_inc.php' );
 layout_page_end();
 
-// last_visited_issue( $t_bug_id );
+last_visited_dwg_issue( $t_bug_id );

@@ -194,8 +194,8 @@ function filter_dwg_get_url( array $p_custom_filter ) {
 		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_CATEGORY_ID, $p_custom_filter[FILTER_PROPERTY_CATEGORY_ID] );
 	}
 
-	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_REPORTER_ID] ) ) {
-		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_REPORTER_ID, $p_custom_filter[FILTER_PROPERTY_REPORTER_ID] );
+	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_CREATOR_ID] ) ) {
+		$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_CREATOR_ID, $p_custom_filter[FILTER_PROPERTY_CREATOR_ID] );
 	}
 
 	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_STATUS] ) ) {
@@ -723,7 +723,6 @@ function filter_dwg_ensure_valid_filter( array $p_filter_arr ) {
 		FILTER_PROPERTY_SEVERITY => 'int',
 		FILTER_PROPERTY_STATUS => 'int',
 		FILTER_PROPERTY_CREATOR_ID => 'int',
-		FILTER_PROPERTY_REPORTER_ID => 'int',
 		FILTER_PROPERTY_HANDLER_ID => 'int',
 		FILTER_PROPERTY_NOTE_USER_ID => 'int',
 		FILTER_PROPERTY_RESOLUTION => 'int',
@@ -893,7 +892,6 @@ function filter_dwg_get_default_array( $p_view_type = null ) {
 		FILTER_PROPERTY_SEVERITY => $t_meta_filter_any_array,
 		FILTER_PROPERTY_STATUS => $t_meta_filter_any_array,
 		FILTER_PROPERTY_HIGHLIGHT_CHANGED => $t_default_show_changed,
-		FILTER_PROPERTY_REPORTER_ID => $t_meta_filter_any_array,
 		FILTER_PROPERTY_CREATOR_ID => $t_meta_filter_any_array,
 		FILTER_PROPERTY_HANDLER_ID => $t_meta_filter_any_array,
 		FILTER_PROPERTY_PROJECT_ID => array( META_FILTER_CURRENT ),
@@ -1294,7 +1292,7 @@ function filter_dwg_draw_selection_area() {
 						</a>
 						<ul class="dropdown-menu dropdown-menu-right dropdown-yellow dropdown-caret dropdown-closer">
 							<?php
-							$t_url = config_get( 'use_dynamic_filters' )
+							$t_url = config_get( 'use_dynamic_filters_dwg' )
 								? 'view_dwg_set.php?type=' . FILTER_ACTION_PARSE_ADD . $t_tmp_filter_param . '&view_type='
 								: 'view_dwg_filters_page.php?view_type=';
 							filter_dwg_print_view_type_toggle( $t_url, $t_filter['_view_type'] );
@@ -1974,17 +1972,6 @@ function filter_dwg_create_assigned_to_unresolved( $p_project_id, $p_user_id ) {
  * @param integer $p_user_id    A valid user identifier.
  * @return array a valid filter.
  */
-function filter_dwg_create_reported_by( $p_project_id, $p_user_id ) {
-	$t_filter = filter_dwg_get_default();
-	$t_filter[FILTER_PROPERTY_REPORTER_ID] = array( '0' => $p_user_id );
-
-	if( $p_project_id != ALL_PROJECTS ) {
-		$t_filter[FILTER_PROPERTY_PROJECT_ID] = array( '0' => $p_project_id );
-	}
-
-	return filter_dwg_ensure_valid_filter( $t_filter );
-}
-
 function filter_dwg_create_created_by( $p_project_id, $p_user_id ) {
 	$t_filter = filter_dwg_get_default();
 	$t_filter[FILTER_PROPERTY_CREATOR_ID] = array( '0' => $p_user_id );
@@ -2052,8 +2039,7 @@ function filter_dwg_gpc_get( ?array $p_filter = null ): array {
 	$f_show_severity = gpc_get( FILTER_PROPERTY_SEVERITY, $t_filter[FILTER_PROPERTY_SEVERITY] );
 	$f_show_status = gpc_get( FILTER_PROPERTY_STATUS, $t_filter[FILTER_PROPERTY_STATUS] );
 	$f_hide_status = gpc_get( FILTER_PROPERTY_HIDE_STATUS, $t_filter[FILTER_PROPERTY_HIDE_STATUS] );
-	$f_creator_id = gpc_get( FILTER_PROPERTY_REPORTER_ID, $t_filter[FILTER_PROPERTY_REPORTER_ID] );
-	$f_reporter_id = gpc_get( FILTER_PROPERTY_REPORTER_ID, $t_filter[FILTER_PROPERTY_REPORTER_ID] );
+	$f_creator_id = gpc_get( FILTER_PROPERTY_CREATOR_ID, $t_filter[FILTER_PROPERTY_CREATOR_ID] );
 	$f_handler_id = gpc_get( FILTER_PROPERTY_HANDLER_ID, $t_filter[FILTER_PROPERTY_HANDLER_ID] );
 	$f_project_id = gpc_get( FILTER_PROPERTY_PROJECT_ID, $t_filter[FILTER_PROPERTY_PROJECT_ID] );
 	$f_projection = gpc_get( FILTER_PROPERTY_PROJECTION, $t_filter[FILTER_PROPERTY_PROJECTION] );
@@ -2285,14 +2271,13 @@ function filter_dwg_gpc_get( ?array $p_filter = null ): array {
 	$f_relationship_bug = gpc_get_int( FILTER_PROPERTY_RELATIONSHIP_DWG, $t_filter[FILTER_PROPERTY_RELATIONSHIP_DWG] );
 
 	log_event( LOG_FILTERING, 'filter_dwg_gpc_get: Update filters' );
-	$t_filter_input['_version'] 								= DWG_FILTER_VERSION;
+	$t_filter_input['_version'] 							= DWG_FILTER_VERSION;
 	$t_filter_input['_view_type'] 							= $f_view_type;
 	$t_filter_input[FILTER_PROPERTY_CATEGORY_ID] 			= $f_show_category;
 	$t_filter_input[FILTER_PROPERTY_SEVERITY] 				= $f_show_severity;
 	$t_filter_input[FILTER_PROPERTY_STATUS] 					= $f_show_status;
 	$t_filter_input[FILTER_PROPERTY_ISSUES_PER_PAGE] 		= $f_per_page;
 	$t_filter_input[FILTER_PROPERTY_HIGHLIGHT_CHANGED] 		= $f_highlight_changed;
-	$t_filter_input[FILTER_PROPERTY_REPORTER_ID] 			= $f_reporter_id;
 	$t_filter_input[FILTER_PROPERTY_CREATOR_ID] 			= $f_creator_id;
 	$t_filter_input[FILTER_PROPERTY_HANDLER_ID] 				= $f_handler_id;
 	$t_filter_input[FILTER_PROPERTY_PROJECT_ID] 				= $f_project_id;
