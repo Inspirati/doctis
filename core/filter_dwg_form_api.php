@@ -2632,7 +2632,7 @@ function filter_dwg_form_draw_inputs( $p_filter, $p_for_screen = true, $p_static
 	}
 
 	if ( config_get( 'use_dynamic_filters_dwg' ) ) {
-		$t_dynamic_filter_expander_class = ' class="dynamic-dwg-filter-expander"';
+		$t_dynamic_filter_expander_class = ' class="dynamic-filter-expander"';
 	} else {
 		$t_dynamic_filter_expander_class = '';
 	}
@@ -2648,7 +2648,8 @@ function filter_dwg_form_draw_inputs( $p_filter, $p_for_screen = true, $p_static
 			} else {
 				$t_data_filter_id = '';
 			}
-			return '<a href="' . $t_filters_url . '" id="' . $p_id . '"' . $t_dynamic_filter_expander_class . $t_data_filter_id . '>' . $p_label . '</a>';
+			$t_callback_url = ' data-callback_url="return_dynamic_filters_dwg.php"';
+			return '<a href="' . $t_filters_url . '" id="' . $p_id . '"' . $t_dynamic_filter_expander_class . $t_data_filter_id . $t_callback_url . '>' . $p_label . '</a>';
 		}
 	};
 
