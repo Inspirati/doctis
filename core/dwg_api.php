@@ -120,7 +120,7 @@ use Mantis\Exceptions\ClientException;
 #[AllowDynamicProperties]
 class DwgData {
 	protected $id;
-	protected $dwg_id;  // @TODO RobD - need to figure this out, include so as reflection class will match up with columns configuration string ie id === dwg_id
+//	protected $dwg_id;  // @TODO RobD - need to figure this out, include so as reflection class will match up with columns configuration string ie id === dwg_id
 	protected $project_id = null;
 	protected $status = NEW_;
 	protected $date_submitted = '';

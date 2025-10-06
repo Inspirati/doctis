@@ -70,7 +70,7 @@ require_api( 'form_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
-require_api( 'last_visited_api.php' );
+require_api( 'last_visited_dwg_api.php' );
 require_api( 'news_api.php' );
 require_api( 'prepare_api.php' );
 require_api( 'profile_api.php' );
