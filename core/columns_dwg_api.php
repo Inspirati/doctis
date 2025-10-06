@@ -236,8 +236,6 @@ function columns_dwg_get_all_active_columns() {
 			columns_dwg_get_custom_fields()
 			);
 	return columns_dwg_filter_disabled( $t_columns );
-//	$t_columns = columns_dwg_get_standard();
-//	return columns_dwg_filter_disabled( $t_columns );
 }
 
 /**
@@ -1277,6 +1275,7 @@ function print_dwg_column_dwgnotes_count( DwgData $p_bug, $p_columns_target = CO
 	} else {
 		echo '&#160;';
 	}
+
 	echo '</td>';
 }
 
@@ -1417,13 +1416,10 @@ function print_dwg_column_status( DwgData $p_bug, $p_columns_target = COLUMNS_TA
 	echo '<td class="column-status">';
 	echo '<div class="align-left">';
 	print_icon( 'fa-square', 'fa-status-box ' . $t_status_css );
-	// printf( ' <span title="%s">%s</span>',
-	// 	get_enum_element( 'resolution', $p_bug->resolution, $t_current_user, $p_bug->project_id ),
-	// 	get_enum_element( 'dwg_status', $p_bug->status, $t_current_user, $p_bug->project_id )
-	// );
-$t_resolution = get_enum_element( 'resolution', $p_bug->resolution, $t_current_user, $p_bug->project_id );
-$t_status = get_enum_element( 'dwg_status', $p_bug->status, $t_current_user, $p_bug->project_id );
-printf( ' <span title="%s">%s</span>', $t_resolution, $t_status );
+	printf( ' <span title="%s">%s</span>',
+		get_enum_element( 'resolution', $p_bug->resolution, $t_current_user, $p_bug->project_id ),
+		get_enum_element( 'dwg_status', $p_bug->status, $t_current_user, $p_bug->project_id )
+	);
 
 	# print handler user next to status
 	if( $p_bug->handler_id > 0
