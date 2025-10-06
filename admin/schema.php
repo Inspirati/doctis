@@ -1073,6 +1073,10 @@ $g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwg_revisi
 $g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_dwg_rev_id_time', db_get_table( 'dwg_revision' ), 'dwg_id, timestamp' ) );
 $g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_dwg_rev_type', db_get_table( 'dwg_revision' ), 'type' ) );
 
+$g_upgrade[$t_idx++] = array( 'AddColumnSQL', array( db_get_table( 'user_pref' ), "
+	dwgnote_order					C(4)	NOTNULL DEFAULT 'ASC',
+	email_dwgnote_limit				I2		NOTNULL DEFAULT '0'	" ) );
+
 # IMPORTANT: keep these entries as the last indexes, as they will be deleted in release versions
 #			 (you will need to bump all the indexes when inserting tables database statements above here)
 # user access_level: '10:viewer,25:reporter,40:updater,55:developer,70:manager,90:administrator'

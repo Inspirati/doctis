@@ -387,8 +387,8 @@ class DwgData {
 		if( $p_update_extended ) {
 			# Description field cannot be empty
 			if( is_blank( $this->description ) ) {  // @TODO RobD:
-				error_parameters( lang_get( 'description' ) );
-				trigger_error( ERROR_EMPTY_FIELD, ERROR );
+//				error_parameters( lang_get( 'description' ) );
+//				trigger_error( ERROR_EMPTY_FIELD, ERROR );
 			}
 		}
 

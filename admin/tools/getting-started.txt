@@ -1,0 +1,29 @@
+
+================== Using Doctis/Mantis ==================
+1. As administrator, select sidebar 'Manage' then tab 'Projects'
+2. Add a new 'test' project
+3. Select sidebar 'Create Document' then submit a new document
+4. Select sidebar 'Report Issue' and submit an issue
+5. Explore and experiment
+
+================ Development Environment ================
+1. If not already open, start vscode and select <File> <Open Folder> /var/www/html/doctis
+2. Start a debug session with menu <Run><Start Debugging> or press <F5>
+3. Open source file view_all_bug_page.php and set a break-point on or around line 50
+    (breakpoints can be set by clicking in the margin to the left of a line number)
+4. If required, start Firefox at 10.0.0.4/doctis
+5. In doctis select the 'View Issues' from the sidebar
+    (observe that execution has halted in vscode at the set breakpoint)
+6. Press <F10> to step through the code, or <F11> to step into function calls
+7. View status (diff) of source file changes from the original Mantis source:
+    $ meld doctis-www mantisbt-www &
+8. Set a tail on the webserver (apache) error log:
+    $ trace
+9. Optionally, set a tail that only reports thrown exceptions:
+    $ tracex
+
+NOTES:
+1. phpMyAdmin username is 'admin', password as per install script ie. default is: 'password'
+2. if you elected to install the VirtualBox Client Tools, a reboot is required for them to take effect
+3. there are accounts for testing which correspond to each access level, being: viewer, user, reporter, updater, developer, and manager - the default password for all these accounts is 'pass'
+

@@ -1,5 +1,4 @@
 #!/bin/bash
-# -ex
 
 PROJECT="doctis"
 
@@ -8,8 +7,6 @@ PROJECT="doctis"
 
 GITHUB_URL="https://raw.githubusercontent.com/Inspirati"
 SCRIPT_LOC="${PROJECT}/refs/heads/dev/admin/tools"
-#REPOSITORY="${PROJECT}/doctis.git"
-#DOCTIS_URL="${GITHUB_URL}/${REPOSITORY}"
 SCRIPT_URL="${GITHUB_URL}/${SCRIPT_LOC}"
 
 INSTALL_SYSTEM_SCRIPT="install-system.sh"
