@@ -127,7 +127,7 @@ foreach( $f_bug_arr as $t_bug_id ) {
 		case 'DELETE':
 			if( access_has_dwg_level( config_get( 'delete_dwg_threshold' ), $t_bug_id ) ) {
 				$t_data = array( 'query' => array( 'id' => $t_bug_id ) );
-				$t_command = new DocumentDeleteCommand( $t_data );
+				$t_command = new DwgDeleteCommand( $t_data );
 				$t_command->execute();
 			} else {
 				$t_failed_ids[$t_bug_id] = lang_get( 'dwg_actiongroup_access' );

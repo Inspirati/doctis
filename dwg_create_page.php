@@ -377,7 +377,7 @@ if( $t_show_attachments ) {
 		</th>
 		<td>
 			<select <?php echo helper_get_tab_index() ?> id="severity" name="severity" class="input-sm">
-				<?php print_enum_string_option_list( 'severity', $f_severity ) ?>
+				<?php print_dwg_enum_string_option_list( 'severity', $f_severity ) ?>
 			</select>
 		</td>
 	</tr>
@@ -392,7 +392,7 @@ if( $t_show_attachments ) {
 		</th>
 		<td>
 			<select <?php echo helper_get_tab_index() ?> id="priority" name="priority" class="input-sm">
-				<?php print_enum_string_option_list( 'priority', $f_priority ) ?>
+				<?php print_dwg_enum_string_option_list( 'priority', $f_priority ) ?>
 			</select>
 		</td>
 	</tr>
@@ -430,7 +430,7 @@ if( $t_show_attachments ) {
 		<td>
 			<select id="status" <?php echo helper_get_tab_index() ?> name="status" class="input-sm">
 			<?php
-			$t_resolution_options = get_status_option_list(
+			$t_resolution_options = print_dwg_get_status_option_list(
 				access_get_project_level( $t_project_id ),
 				config_get( 'dwg_submit_status' ),
 				true,

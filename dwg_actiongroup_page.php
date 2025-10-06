@@ -164,40 +164,40 @@ switch( $f_action ) {
 	# Use a simple confirmation page, if close or delete...
 	case 'CLOSE' :
 		$t_finished 			= true;
-		$t_question_title 		= lang_get( 'close_bugs_conf_msg' );
-		$t_button_title 		= lang_get( 'close_group_bugs_button' );
+		$t_question_title 		= lang_get( 'close_dwgs_conf_msg' );
+		$t_button_title 		= lang_get( 'close_group_dwgs_button' );
 		$t_bugnote				= true;
 		break;
 	case 'DELETE' :
 		$t_finished 			= true;
-		$t_question_title		= lang_get( 'delete_bugs_conf_msg' );
-		$t_button_title 		= lang_get( 'delete_group_bugs_button' );
+		$t_question_title		= lang_get( 'delete_dwgs_conf_msg' );
+		$t_button_title 		= lang_get( 'delete_group_dwgs_button' );
 		break;
 	case 'SET_STICKY' :
 		$t_finished 			= true;
-		$t_question_title		= lang_get( 'set_sticky_bugs_conf_msg' );
-		$t_button_title 		= lang_get( 'set_sticky_group_bugs_button' );
+		$t_question_title		= lang_get( 'set_sticky_dwgs_conf_msg' );
+		$t_button_title 		= lang_get( 'set_sticky_group_dwgs_button' );
 		break;
 	# ...else we define the variables used in the form
 	case 'MOVE' :
-		$t_question_title 		= lang_get( 'move_bugs_conf_msg' );
-		$t_button_title 		= lang_get( 'move_group_bugs_button' );
+		$t_question_title 		= lang_get( 'move_dwgs_conf_msg' );
+		$t_button_title 		= lang_get( 'move_group_dwgs_button' );
 		$t_form					= 'project_id';
 		$t_bugnote				= true;
 		break;
 	case 'COPY' :
-		$t_question_title 		= lang_get( 'copy_bugs_conf_msg' );
-		$t_button_title 		= lang_get( 'copy_group_bugs_button' );
+		$t_question_title 		= lang_get( 'copy_dwgs_conf_msg' );
+		$t_button_title 		= lang_get( 'copy_group_dwgs_button' );
 		$t_form					= 'project_id';
 		break;
 	case 'ASSIGN' :
-		$t_question_title 		= lang_get( 'assign_bugs_conf_msg' );
-		$t_button_title 		= lang_get( 'assign_group_bugs_button' );
+		$t_question_title 		= lang_get( 'assign_dwgs_conf_msg' );
+		$t_button_title 		= lang_get( 'assign_group_dwgs_button' );
 		$t_form 				= 'assign';
 		break;
 	case 'RESOLVE' :
-		$t_question_title 		= lang_get( 'resolve_bugs_conf_msg' );
-		$t_button_title 		= lang_get( 'resolve_group_bugs_button' );
+		$t_question_title 		= lang_get( 'resolve_dwgs_conf_msg' );
+		$t_button_title 		= lang_get( 'resolve_group_dwgs_button' );
 		$t_form 				= 'resolution';
 		if( ALL_PROJECTS != $t_project_id ) {
 			$t_question_title2 = lang_get( 'fixed_in_version' );
@@ -206,44 +206,44 @@ switch( $f_action ) {
 		$t_bugnote				= true;
 		break;
 	case 'UP_PRIOR' :
-		$t_question_title 		= lang_get( 'priority_bugs_conf_msg' );
-		$t_button_title 		= lang_get( 'priority_group_bugs_button' );
+		$t_question_title 		= lang_get( 'priority_dwgs_conf_msg' );
+		$t_button_title 		= lang_get( 'priority_group_dwgs_button' );
 		$t_form 				= 'priority';
 		break;
 	case 'UP_STATUS' :
-		$t_question_title 		= lang_get( 'status_bugs_conf_msg' );
-		$t_button_title 		= lang_get( 'status_group_bugs_button' );
+		$t_question_title 		= lang_get( 'status_dwgs_conf_msg' );
+		$t_button_title 		= lang_get( 'status_group_dwgs_button' );
 		$t_form 				= 'status';
 		$t_bugnote				= true;
 		break;
 	case 'UP_CATEGORY' :
-		$t_question_title		= lang_get( 'category_bugs_conf_msg' );
-		$t_button_title			= lang_get( 'category_group_bugs_button' );
+		$t_question_title		= lang_get( 'category_dwgs_conf_msg' );
+		$t_button_title			= lang_get( 'category_group_dwgs_button' );
 		$t_form					= 'category';
 		break;
 	case 'VIEW_STATUS' :
-		$t_question_title		= lang_get( 'view_status_bugs_conf_msg' );
-		$t_button_title			= lang_get( 'view_status_group_bugs_button' );
+		$t_question_title		= lang_get( 'view_status_dwgs_conf_msg' );
+		$t_button_title			= lang_get( 'view_status_group_dwgs_button' );
 		$t_form					= 'view_status';
 		break;
 	case 'UP_PRODUCT_VERSION':
-		$t_question_title		= lang_get( 'product_version_bugs_conf_msg' );
-		$t_button_title			= lang_get( 'product_version_group_bugs_button' );
+		$t_question_title		= lang_get( 'product_version_dwgs_conf_msg' );
+		$t_button_title			= lang_get( 'product_version_group_dwgs_button' );
 		$t_form					= 'product_version';
 		break;
 	case 'UP_FIXED_IN_VERSION':
-		$t_question_title		= lang_get( 'fixed_in_version_bugs_conf_msg' );
-		$t_button_title			= lang_get( 'fixed_in_version_group_bugs_button' );
+		$t_question_title		= lang_get( 'fixed_in_version_dwgs_conf_msg' );
+		$t_button_title			= lang_get( 'fixed_in_version_group_dwgs_button' );
 		$t_form					= 'fixed_in_version';
 		break;
 	case 'UP_TARGET_VERSION':
-		$t_question_title		= lang_get( 'target_version_bugs_conf_msg' );
-		$t_button_title			= lang_get( 'target_version_group_bugs_button' );
+		$t_question_title		= lang_get( 'target_version_dwgs_conf_msg' );
+		$t_button_title			= lang_get( 'target_version_group_dwgs_button' );
 		$t_form					= 'target_version';
 		break;
 	case 'UP_DUE_DATE':
-		$t_question_title		= lang_get( 'due_date_bugs_conf_msg' );
-		$t_button_title			= lang_get( 'due_date_group_bugs_button' );
+		$t_question_title		= lang_get( 'due_date_dwgs_conf_msg' );
+		$t_button_title			= lang_get( 'due_date_group_dwgs_button' );
 		$t_form					= 'due_date';
 		break;
 	case 'CUSTOM' :
@@ -258,7 +258,7 @@ switch( $f_action ) {
 	default:
 		trigger_error( ERROR_GENERIC, ERROR );
 }
-$t_event_params['has_bugnote'] = $t_bugnote;
+$t_event_params['has_dwgnote'] = $t_bugnote;
 
 dwg_group_action_print_top();
 ?>
@@ -347,19 +347,19 @@ if( $t_multiple_projects ) {
 					print_dwg_assign_to_option_list( 0, $t_project_id );
 					break;
 				case 'RESOLVE':
-					print_enum_string_option_list( 'resolution', config_get( 'dwg_resolution_fixed_threshold' ) );
+					print_dwg_enum_string_option_list( 'resolution', config_get( 'dwg_resolution_fixed_threshold' ) );
 					break;
 				case 'UP_PRIOR':
-					print_enum_string_option_list( 'priority', config_get( 'default_dwg_priority' ) );
+					print_dwg_enum_string_option_list( 'priority', config_get( 'default_dwg_priority' ) );
 					break;
 				case 'UP_STATUS':
-					print_enum_string_option_list( 'dwg_status', config_get( 'dwg_submit_status' ) );
+					print_dwg_enum_string_option_list( 'dwg_status', config_get( 'dwg_submit_status' ) );
 					break;
 				case 'UP_CATEGORY':
 					print_category_option_list( 0, null, true );
 					break;
 				case 'VIEW_STATUS':
-					print_enum_string_option_list( 'view_state', config_get( 'default_dwg_view_status' ) );
+					print_dwg_enum_string_option_list( 'view_state', config_get( 'default_dwg_view_status' ) );
 					break;
 				case 'UP_TARGET_VERSION':
 					print_version_option_list( '', $t_projects, VERSION_FUTURE, true );
@@ -420,7 +420,7 @@ if( $t_multiple_projects ) {
 ?>
 				<tr>
 					<th class="category">
-						<?php echo lang_get( 'add_bugnote_title' ); ?>
+						<?php echo lang_get( 'add_dwgnote_title' ); ?>
 					</th>
 					<td>
 						<textarea name="bugnote_text" id="bugnote_text" class="<?php echo $t_bugnote_class ?>" cols="80" rows="7"></textarea>

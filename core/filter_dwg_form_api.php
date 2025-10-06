@@ -612,7 +612,7 @@ function print_filter_dwg_show_severity( ?array $p_filter = null ) {
 	?><!-- Severity -->
 			<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_SEVERITY;?>[]">
 				<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_SEVERITY], META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
-				<?php print_enum_string_option_list( 'severity', $p_filter[FILTER_PROPERTY_SEVERITY] )?>
+				<?php print_dwg_enum_string_option_list( 'severity', $p_filter[FILTER_PROPERTY_SEVERITY] )?>
 			</select>
 		<?php
 }
@@ -671,7 +671,7 @@ function print_filter_dwg_show_resolution( ?array $p_filter = null ) {
 	?><!-- Resolution -->
 			<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_RESOLUTION;?>[]">
 				<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_RESOLUTION], META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
-				<?php print_enum_string_option_list( 'resolution', $p_filter[FILTER_PROPERTY_RESOLUTION] )?>
+				<?php print_dwg_enum_string_option_list( 'resolution', $p_filter[FILTER_PROPERTY_RESOLUTION] )?>
 			</select>
 		<?php
 }
@@ -730,7 +730,7 @@ function print_filter_dwg_show_status( ?array $p_filter = null ) {
 	?>	<!-- Status -->
 			<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_STATUS;?>[]">
 				<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_STATUS], META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
-				<?php print_enum_string_option_list( 'dwg_status', $p_filter[FILTER_PROPERTY_STATUS] )?>
+				<?php print_dwg_enum_string_option_list( 'dwg_status', $p_filter[FILTER_PROPERTY_STATUS] )?>
 			</select>
 		<?php
 }
@@ -793,7 +793,7 @@ function print_filter_dwg_hide_status( ?array $p_filter = null ) {
 	?><!-- Hide Status -->
 			<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_HIDE_STATUS;?>[]">
 				<option value="<?php echo META_FILTER_NONE?>">[<?php echo lang_get( 'none' )?>]</option>
-				<?php print_enum_string_option_list( 'dwg_status', $p_filter[FILTER_PROPERTY_HIDE_STATUS] )?>
+				<?php print_dwg_enum_string_option_list( 'dwg_status', $p_filter[FILTER_PROPERTY_HIDE_STATUS] )?>
 			</select>
 		<?php
 }
@@ -1107,7 +1107,7 @@ function print_filter_dwg_show_priority( ?array $p_filter = null ) {
 	?><!-- Priority -->
 	<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_PRIORITY;?>[]">
 			<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_PRIORITY], META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
-			<?php print_enum_string_option_list( 'priority', $p_filter[FILTER_PROPERTY_PRIORITY] )?>
+			<?php print_dwg_enum_string_option_list( 'priority', $p_filter[FILTER_PROPERTY_PRIORITY] )?>
 	</select>
 		<?php
 }
@@ -2464,7 +2464,7 @@ function print_filter_dwg_projection( ?array $p_filter = null ) {
 	?><!-- Projection -->
 			<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_PROJECTION;?>[]">
 				<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_PROJECTION], META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
-				<?php print_enum_string_option_list( 'projection', $p_filter[FILTER_PROPERTY_PROJECTION] )?>
+				<?php print_dwg_enum_string_option_list( 'projection', $p_filter[FILTER_PROPERTY_PROJECTION] )?>
 			</select>
 		<?php
 }
