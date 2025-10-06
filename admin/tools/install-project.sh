@@ -185,8 +185,9 @@ configure_project() {
 \$g_bug_update_page_fields = array(${default_page_fields});
 \$g_severity_enum_string = '20:comment,30:query,50:minor,60:major';
 \$g_default_bug_severity = 20; // Set comment as default
-\$g_reproducibility_enum_string = '';
-\$g_enable_profiles = OFF;
+#\$g_reproducibility_enum_string = '';
+#\$g_enable_profiles = OFF;
+\$USE_LOREM_IPSUM = true;
 EOF
     echo -e "${INFO}Project ${project} configured.${OFF}" >&2
 }
@@ -264,7 +265,7 @@ install_dokuwiki() {
         return $?
     fi    
     mv ${project} ${webroot}
-    chown -R $(whoami):www-data ${webroot}/${project}
+    sg www-data "chown -R $(whoami):www-data ${webroot}/${project}"
     chmod -R g+w ${webroot}/${project}
     find ${webroot}/${project} -type d -exec chmod g+ws {} \;
     echo -e "${INFO}Install complete.${OFF}" >&2
@@ -466,6 +467,7 @@ install_project() {
 
 install-project() {
     install_project "$@"
+    echo -e "${DIAG}Done: <ctrl-c> to close${OFF}"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then

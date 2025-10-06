@@ -711,6 +711,18 @@ function email_create_provider() : EmailSender {
 }
 
 /**
+ * Clean up LF to CRLF.
+ *
+ * @param string $p_string String to convert line feeds on.
+ *
+ * @return string
+ */
+function make_lf_crlf( $p_string ) {
+	$t_string = str_replace( "\n", "\r\n", $p_string );
+	return str_replace( "\r\r\n", "\r\n", $t_string );
+}
+
+/**
  * The email sending shutdown function.
  *
  * Will send any queued emails, except when $g_email_send_using_cronjob = ON.

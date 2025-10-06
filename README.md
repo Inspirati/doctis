@@ -57,33 +57,33 @@ Installation
     1. make a working directory, or just change to the existing '~/Documents' directory
 
     ```sh
-         cd Documents
+    cd Documents
     ```
 
     2. copy the provided install script (below) into a file of your choosing, ie. 'install.sh'
        or fetch it online with:
     ```sh
-         wget -O- https://tinyurl.com/get-doctis > install.sh
+    wget -O- https://tinyurl.com/get-doctis > install.sh
     ```
 
     3. customise the configuration options in the install.sh script as needed (optional):
 
     ```sh
-         pico install.sh
+    pico install.sh
     ```
 
     4. enable the executable property on the script and run it:
 
     ```sh
-         chmod +x install.sh
+    chmod +x install.sh
 
-         ./install.sh
+    ./install.sh
     ```
 
     Or, for a default install, simply copy and paste this single statement:
 
     ```sh
-         cd Documents && wget -O- https://tinyurl.com/get-doctis | bash
+    cd Documents && wget -O- https://tinyurl.com/get-doctis | bash
     ```
 
 4. Follow the getting-started tips which should eventually be displayed.
