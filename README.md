@@ -97,6 +97,7 @@ Doctis Install Script
 ---------------------
 
 WARNING: this script should only be used inside your Debian based Linux virtual machine.
+(note this quoted script may be obsolete and you should obtain the lastest online version as per above)
 
 ```sh
 #!/bin/bash

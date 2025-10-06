@@ -259,7 +259,7 @@ if( $t_show_id || $t_show_project || $t_show_category || $t_show_view_state || $
 
 	if( $t_can_change_view_state ) {
 		echo '<select ' . helper_get_tab_index() . ' id="view_state" name="view_state" class="input-sm">';
-		print_enum_string_option_list( 'view_state', (int)$t_bug->view_state );
+		print_dwg_enum_string_option_list( 'view_state', (int)$t_bug->view_state );
 		echo '</select>';
 	} else if( $t_show_view_state ) {
 		echo $t_view_state;
@@ -385,7 +385,7 @@ if( $t_show_priority || $t_show_severity || $t_show_reproducibility ) {
 		# Priority
 		echo '<th class="category"><label for="priority">' . lang_get( 'priority' ) . '</label></th>';
 		echo '<td><select ' . helper_get_tab_index() . ' id="priority" name="priority" class="input-sm">';
-		print_enum_string_option_list( 'priority', $t_bug->priority );
+		print_dwg_enum_string_option_list( 'priority', $t_bug->priority );
 		echo '</select></td>';
 	} else {
 		$t_spacer += 2;
@@ -395,7 +395,7 @@ if( $t_show_priority || $t_show_severity || $t_show_reproducibility ) {
 		# Severity
 		echo '<th class="category"><label for="severity">' . lang_get( 'severity' ) . '</label></th>';
 		echo '<td><select ' . helper_get_tab_index() . ' id="severity" name="severity" class="input-sm">';
-		print_enum_string_option_list( 'severity', $t_bug->severity );
+		print_dwg_enum_string_option_list( 'severity', $t_bug->severity );
 		echo '</select></td>';
 	} else {
 		$t_spacer += 2;
@@ -405,7 +405,7 @@ if( $t_show_priority || $t_show_severity || $t_show_reproducibility ) {
 	// 	# Reproducibility
 	// 	echo '<th class="category"><label for="reproducibility">' . lang_get( 'reproducibility' ) . '</label></th>';
 	// 	echo '<td><select ' . helper_get_tab_index() . ' id="reproducibility" name="reproducibility" class="input-sm">';
-	// 	print_enum_string_option_list( 'reproducibility', $t_bug->reproducibility );
+	// 	print_dwg_enum_string_option_list( 'reproducibility', $t_bug->reproducibility );
 	// 	echo '</select></td>';
 	// } else {
 	// 	$t_spacer += 2;
@@ -438,7 +438,7 @@ if( $t_show_status || $t_show_resolution ) {
 		echo '<td class="bug-status">';
 		print_icon( 'fa-square', 'fa-status-box ' . $t_status_css );
 		echo '&nbsp;';
-		print_status_option_list( 'dwg_status', $t_bug->status,
+		print_dwg_status_option_list( 'dwg_status', $t_bug->status,
 			access_can_close_dwg( $t_bug ),
 			$t_bug->project_id );
 		echo '</td>';
@@ -450,7 +450,7 @@ if( $t_show_status || $t_show_resolution ) {
 		# Resolution
 		echo '<th class="category"><label for="resolution">' . lang_get( 'resolution' ) . '</label></th>';
 		echo '<td><select ' . helper_get_tab_index() . ' id="resolution" name="resolution" class="input-sm">';
-		print_enum_string_option_list( 'resolution', $t_bug->resolution );
+		print_dwg_enum_string_option_list( 'resolution', $t_bug->resolution );
 		echo '</select></td>';
 	} else {
 		$t_spacer += 2;
@@ -477,7 +477,7 @@ if( $t_show_projection || $t_show_eta ) {
 		# Projection
 		echo '<th class="category"><label for="projection">' . lang_get( 'projection' ) . '</label></th>';
 		echo '<td><select ' . helper_get_tab_index() . ' id="projection" name="projection" class="input-sm">';
-		print_enum_string_option_list( 'projection', $t_bug->projection );
+		print_dwg_enum_string_option_list( 'projection', $t_bug->projection );
 		echo '</select></td>';
 	} else {
 		$t_spacer += 2;
@@ -487,7 +487,7 @@ if( $t_show_projection || $t_show_eta ) {
 	if( $t_show_eta ) {
 		echo '<th class="category"><label for="eta">' . lang_get( 'eta' ) . '</label></th>';
 		echo '<td><select ' . helper_get_tab_index() . ' id="eta" name="eta" class="input-sm">';
-		print_enum_string_option_list( 'eta', (int)$t_bug->eta );
+		print_dwg_enum_string_option_list( 'eta', (int)$t_bug->eta );
 		echo '</select></td>';
 	} else {
 		$t_spacer += 2;

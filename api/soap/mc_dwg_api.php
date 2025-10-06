@@ -1296,7 +1296,7 @@ function mc_dwg_delete( $p_username, $p_password, $p_issue_id ) {
 	}
 
 	$t_data = array( 'query' => array( 'id' => $p_issue_id ) );
-	$t_command = new DocumentDeleteCommand( $t_data );
+	$t_command = new DwgDeleteCommand( $t_data );
 	$t_command->execute();
 }
 

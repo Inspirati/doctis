@@ -156,7 +156,7 @@ function dwg_group_action_print_hidden_fields( array $p_bug_ids_array ) {
  * @return void
  */
 function dwg_group_action_print_action_fields( $p_action ) {
-	$t_function_name = 'action_' . $p_action . '_print_fields';
+	$t_function_name = 'dwg_action_' . $p_action . '_print_fields';
 	$t_function_name();
 }
 
@@ -168,7 +168,7 @@ function dwg_group_action_print_action_fields( $p_action ) {
  * @return void
  */
 function dwg_group_action_print_title( $p_action ) {
-	$t_function_name = 'action_' . $p_action . '_print_title';
+	$t_function_name = 'dwg_action_' . $p_action . '_print_title';
 	$t_function_name();
 }
 
@@ -182,7 +182,7 @@ function dwg_group_action_print_title( $p_action ) {
  * @return boolean|array true if action can be applied or array of ( bug_id => reason for failure to validate )
  */
 function dwg_group_action_validate( $p_action, $p_bug_id ) {
-	$t_function_name = 'action_' . $p_action . '_validate';
+	$t_function_name = 'dwg_action_' . $p_action . '_validate';
 	return $t_function_name( $p_bug_id );
 }
 
@@ -195,7 +195,7 @@ function dwg_group_action_validate( $p_action, $p_bug_id ) {
  * @return boolean|array Action can be applied., ( bug_id => reason for failure to process )
  */
 function dwg_group_action_process( $p_action, $p_bug_id ) {
-	$t_function_name = 'action_' . $p_action . '_process';
+	$t_function_name = 'dwg_action_' . $p_action . '_process';
 	return $t_function_name( $p_bug_id );
 }
 

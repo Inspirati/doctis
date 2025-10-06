@@ -61,7 +61,7 @@ use Mantis\Exceptions\ClientException;
 # tag ids that don't exist are stored as 'false', to avoid repeated searches
 $g_cache_tags = array();
 
-# cache the bug tags indexed by [bug_id, tag_id]. Items stored are rows (arrays) fetched from table {bug_tags}
+# cache the bug tags indexed by [dwg_id, tag_id]. Items stored are rows (arrays) fetched from table {bug_tags}
 # bugs with no tags will be stored as 'false'.
 $g_cache_dwg_tags = array();
 
@@ -140,13 +140,13 @@ function tag_dwg_cache_bug_tag_rows( array $p_bug_ids ) {
 		$t_sql_in_params[] = db_param();
 		$t_params[] = $t_id;
 	}
-	$t_query = 'SELECT B.id AS bug_id, BT.tag_id, BT.user_id, BT.date_attached FROM {bug} B LEFT OUTER JOIN {bug_tag} BT ON B.id=BT.bug_id'
+	$t_query = 'SELECT B.id AS dwg_id, BT.tag_id, BT.user_id, BT.date_attached FROM {document} B LEFT OUTER JOIN {dwg_tag} BT ON B.id=BT.dwg_id'
 			. ' WHERE B.id IN (' . implode( ',', $t_sql_in_params ) . ')';
 	$t_result = db_query( $t_query, $t_params );
 
 	$t_found_tags = array();
 	while( $t_row = db_fetch_array( $t_result ) ) {
-		$c_bug_id = (int)$t_row['bug_id'];
+		$c_bug_id = (int)$t_row['dwg_id'];
 		$t_has_tags = !empty( $t_row['tag_id'] );
 		# create a bug index if needed
 		if( !isset( $g_cache_dwg_tags[$c_bug_id] ) ) {
@@ -395,8 +395,8 @@ function tag_dwg_attach_many( $p_bug_id, $p_tag_string, $p_tag_id = 0 ) {
 	}
 
 	foreach( $t_tags_attach as $t_tag_row ) {
-		if( !tag_dwg_bug_is_attached( $t_tag_row['id'], $p_bug_id ) ) {
-			tag_dwg_bug_attach( $t_tag_row['id'], $p_bug_id );
+		if( !tag_dwg_is_attached( $t_tag_row['id'], $p_bug_id ) ) {
+			tag_dwg_attach( $t_tag_row['id'], $p_bug_id );
 		}
 	}
 
@@ -456,7 +456,9 @@ function tag_dwg_parse_filters( $p_string ) {
  *
  * @return ADORecordSet|bool Tags sorted by name, or false if the query failed.
  */
-function tag_dwg_get_all( $p_name_filter, $p_count, $p_offset ) {
+/*
+// @TODO RobD - already defined in tag_api.php
+function tag_get_all( $p_name_filter, $p_count, $p_offset ) {
 	$t_where = '';
 	$t_where_params = array();
 
@@ -467,7 +469,7 @@ function tag_dwg_get_all( $p_name_filter, $p_count, $p_offset ) {
 
 	$t_query = <<<SQL
 		SELECT t.*, num FROM {tag} t
-		LEFT JOIN (SELECT tag_id, COUNT(1) AS num FROM {bug_tag} GROUP BY tag_id) cnt
+		LEFT JOIN (SELECT tag_id, COUNT(1) AS num FROM {dwg_tag} GROUP BY tag_id) cnt
 			ON cnt.tag_id = t.id
 		$t_where
 		ORDER BY name
@@ -475,7 +477,7 @@ function tag_dwg_get_all( $p_name_filter, $p_count, $p_offset ) {
 
 	return db_query( $t_query, $t_where_params, $p_count, $p_offset );
 }
-
+ */
 /**
  * Returns all unused tags (i.e. not linked to any Issue).
  *
@@ -496,7 +498,7 @@ function tag_dwg_get_unused( $p_name_filter, $p_count, $p_offset ) {
 
 	$t_query = <<< SQL
 		SELECT t.*, 0 AS num FROM {tag} t
-		LEFT JOIN {bug_tag} bt ON bt.tag_id = t.id
+		LEFT JOIN {dwg_tag} bt ON bt.tag_id = t.id
 		WHERE bt.tag_id IS NULL $t_where 
 		ORDER BY name
 		SQL;
@@ -525,7 +527,7 @@ function tag_dwg_count( $p_name_filter, $p_unused = false ) {
 		$t_where .= "bt.tag_id IS NULL";
 	}
 
-	$t_query = 'SELECT count(DISTINCT t.id) FROM {tag} t LEFT JOIN {bug_tag} bt ON bt.tag_id = t.id' . $t_where;
+	$t_query = 'SELECT count(DISTINCT t.id) FROM {tag} t LEFT JOIN {dwg_tag} bt ON bt.tag_id = t.id' . $t_where;
 
 	$t_result = db_query( $t_query, $t_where_params );
 	return (int)db_result( $t_result );
@@ -751,7 +753,7 @@ function tag_dwg_delete( $p_tag_id ) {
 
 	$t_bugs = tag_dwg_get_bugs_attached( $p_tag_id );
 	foreach( $t_bugs as $t_bug_id ) {
-		tag_dwg_bug_detach( $p_tag_id, $t_bug_id );
+		tag_dwg_detach( $p_tag_id, $t_bug_id );
 	}
 
 	db_param_push();
@@ -774,7 +776,7 @@ function tag_dwg_get_candidates_for_bug( $p_bug_id ) {
 	$t_params = array();
 
 	if( 0 != $p_bug_id ) {
-		$t_assoc_tags_query = 'SELECT tag_id FROM {bug_tag} WHERE bug_id = ' . db_param();
+		$t_assoc_tags_query = 'SELECT tag_id FROM {dwg_tag} WHERE dwg_id = ' . db_param();
 		$t_params[] = $p_bug_id;
 
 		# Define specific where clause to exclude tags already attached to the bug
@@ -819,9 +821,9 @@ function tag_dwg_get_candidates_for_bug( $p_bug_id ) {
  *
  * @return bool True if the tag is attached
  */
-function tag_dwg_bug_is_attached( $p_tag_id, $p_bug_id ) {
+function tag_dwg_is_attached( $p_tag_id, $p_bug_id ) {
 	db_param_push();
-	$t_query = 'SELECT bug_id FROM {bug_tag} WHERE tag_id=' . db_param() . ' AND bug_id=' . db_param();
+	$t_query = 'SELECT dwg_id FROM {dwg_tag} WHERE tag_id=' . db_param() . ' AND dwg_id=' . db_param();
 	$t_result = db_query( $t_query, array( $p_tag_id, $p_bug_id ) );
 	return( db_result( $t_result ) !== false );
 }
@@ -834,7 +836,7 @@ function tag_dwg_bug_is_attached( $p_tag_id, $p_bug_id ) {
  *
  * @return array Tag attachment row
  */
-function tag_dwg_bug_get_row( $p_tag_id, $p_bug_id ) {
+function tag_dwg_get_row( $p_tag_id, $p_bug_id ) {
 	global $g_cache_dwg_tags;
 
 	$c_bug_id = (int)$p_bug_id;
@@ -856,7 +858,7 @@ function tag_dwg_bug_get_row( $p_tag_id, $p_bug_id ) {
  *
  * @return array Array of tag rows with attachment information.
  */
-function tag_dwg_bug_get_attached( $p_bug_id ) {
+function tag_dwg_get_attached( $p_bug_id ) {
 	global $g_cache_dwg_tags;
 
 	$c_bug_id = (int)$p_bug_id;
@@ -889,12 +891,12 @@ function tag_dwg_bug_get_attached( $p_bug_id ) {
  */
 function tag_dwg_get_bugs_attached( $p_tag_id ) {
 	db_param_push();
-	$t_query = 'SELECT bug_id FROM {bug_tag} WHERE tag_id=' . db_param();
+	$t_query = 'SELECT dwg_id FROM {dwg_tag} WHERE tag_id=' . db_param();
 	$t_result = db_query( $t_query, array( $p_tag_id ) );
 
 	$t_bugs = array();
 	while( $t_row = db_fetch_array( $t_result ) ) {
-		$t_bugs[] = $t_row['bug_id'];
+		$t_bugs[] = $t_row['dwg_id'];
 	}
 
 	return $t_bugs;
@@ -910,14 +912,14 @@ function tag_dwg_get_bugs_attached( $p_tag_id ) {
  * @return bool
  * @throws ClientException
  */
-function tag_dwg_bug_attach( $p_tag_id, $p_bug_id, $p_user_id = null ) {
+function tag_dwg_attach( $p_tag_id, $p_bug_id, $p_user_id = null ) {
 	antispam_check();
 
 	access_ensure_dwg_level( config_get( 'tag_attach_threshold' ), $p_bug_id, $p_user_id );
 
 	tag_ensure_exists( $p_tag_id );
 
-	if( tag_dwg_bug_is_attached( $p_tag_id, $p_bug_id ) ) {
+	if( tag_dwg_is_attached( $p_tag_id, $p_bug_id ) ) {
 		trigger_error( ERROR_TAG_ALREADY_ATTACHED, ERROR );
 	}
 
@@ -928,8 +930,8 @@ function tag_dwg_bug_attach( $p_tag_id, $p_bug_id, $p_user_id = null ) {
 	}
 
 	db_param_push();
-	$t_query = 'INSERT INTO {bug_tag}
-					( tag_id, bug_id, user_id, date_attached )
+	$t_query = 'INSERT INTO {dwg_tag}
+					( tag_id, dwg_id, user_id, date_attached )
 					VALUES
 					( ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ')';
 	db_query( $t_query, array( $p_tag_id, $p_bug_id, $p_user_id, db_now() ) );
@@ -956,7 +958,7 @@ function tag_dwg_bug_attach( $p_tag_id, $p_bug_id, $p_user_id = null ) {
  * @return bool
  * @throws ClientException
  */
-function tag_dwg_bug_detach( $p_tag_id, $p_bug_id, $p_add_history = true, $p_user_id = null ) {
+function tag_dwg_detach( $p_tag_id, $p_bug_id, $p_add_history = true, $p_user_id = null ) {
 	if( $p_user_id === null ) {
 		$t_user_id = auth_get_current_user_id();
 	} else {
@@ -967,7 +969,7 @@ function tag_dwg_bug_detach( $p_tag_id, $p_bug_id, $p_add_history = true, $p_use
 		trigger_error( ERROR_TAG_NOT_ATTACHED, ERROR );
 	}
 
-	$t_tag_row = tag_dwg_bug_get_row( $p_tag_id, $p_bug_id );
+	$t_tag_row = tag_dwg_get_row( $p_tag_id, $p_bug_id );
 	if( $t_user_id == tag_dwg_get_field( $p_tag_id, 'user_id' ) || $t_user_id == $t_tag_row['user_id'] ) {
 		$t_detach_level = config_get( 'tag_detach_own_threshold' );
 	} else {
@@ -982,7 +984,7 @@ function tag_dwg_bug_detach( $p_tag_id, $p_bug_id, $p_add_history = true, $p_use
 	}
 
 	db_param_push();
-	$t_query = 'DELETE FROM {bug_tag} WHERE tag_id=' . db_param() . ' AND bug_id=' . db_param();
+	$t_query = 'DELETE FROM {dwg_tag} WHERE tag_id=' . db_param() . ' AND dwg_id=' . db_param();
 	db_query( $t_query, array( $p_tag_id, $p_bug_id ) );
 
 	tag_dwg_clear_cache_bug_tags( $p_bug_id );
@@ -1008,10 +1010,10 @@ function tag_dwg_bug_detach( $p_tag_id, $p_bug_id, $p_add_history = true, $p_use
  * @return void
  * @throws ClientException
  */
-function tag_dwg_bug_detach_all( $p_bug_id, $p_add_history = true, $p_user_id = null ) {
-	$t_tags = tag_dwg_bug_get_attached( $p_bug_id );
+function tag_dwg_detach_all( $p_bug_id, $p_add_history = true, $p_user_id = null ) {
+	$t_tags = tag_dwg_get_attached( $p_bug_id );
 	foreach( $t_tags as $t_tag_row ) {
-		tag_dwg_bug_detach( $t_tag_row['id'], $p_bug_id, $p_add_history, $p_user_id );
+		tag_dwg_detach( $t_tag_row['id'], $p_bug_id, $p_add_history, $p_user_id );
 	}
 }
 
@@ -1078,7 +1080,7 @@ function tag_dwg_display_link( array $p_tag_row, $p_bug_id = 0 ) {
  * @return bool
  */
 function tag_dwg_display_attached( $p_bug_id ) {
-	$t_tag_rows = tag_dwg_bug_get_attached( $p_bug_id );
+	$t_tag_rows = tag_dwg_get_attached( $p_bug_id );
 
 	if( count( $t_tag_rows ) == 0 ) {
 		echo lang_get( 'tag_none_attached' );
@@ -1101,8 +1103,8 @@ function tag_dwg_display_attached( $p_bug_id ) {
  *
  * @return string tags separated by the configured Tag Separator.
  */
-function tag_dwg_bug_get_all( $p_bug_id ) {
-	$t_tag_rows = tag_dwg_bug_get_attached( $p_bug_id );
+function tag_dwg_get_all( $p_bug_id ) {
+	$t_tag_rows = tag_dwg_get_attached( $p_bug_id );
 	$t_value = '';
 
 	$i = 0;
@@ -1124,7 +1126,7 @@ function tag_dwg_bug_get_all( $p_bug_id ) {
  */
 function tag_dwg_stats_attached( $p_tag_id ) {
 	db_param_push();
-	$t_query = 'SELECT COUNT(*) FROM {bug_tag} WHERE tag_id=' . db_param();
+	$t_query = 'SELECT COUNT(*) FROM {dwg_tag} WHERE tag_id=' . db_param();
 	$t_result = db_query( $t_query, array( $p_tag_id ) );
 
 	return db_result( $t_result );
@@ -1154,8 +1156,8 @@ function tag_dwg_stats_related( $p_tag_id, $p_limit = 5 ) {
 
 	$t_filter_subquery = new DwgFilterQuery( $t_filter, DwgFilterQuery::QUERY_TYPE_IDS );
 
-	$t_sql = 'SELECT tag_id, COUNT(1) AS tag_count FROM {bug_tag}'
-			. ' WHERE bug_id IN :filter AND tag_id <> :tagid'
+	$t_sql = 'SELECT tag_id, COUNT(1) AS tag_count FROM {dwg_tag}'
+			. ' WHERE dwg_id IN :filter AND tag_id <> :tagid'
 			. ' GROUP BY tag_id ORDER BY tag_count DESC';
 	$t_query = new DbQuery( $t_sql );
 	if( $p_limit > 0 ) {

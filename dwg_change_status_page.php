@@ -187,7 +187,7 @@ layout_page_begin();
 					}
 				}
 
-				print_enum_string_option_list( 'resolution', $t_resolution );
+				print_dwg_enum_string_option_list( 'resolution', $t_resolution );
 			?>
 					</select>
 				</td>
