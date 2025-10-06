@@ -15,7 +15,7 @@ INFO=$CYAN
 DIAG=$GREEN
 WARN=$YELLOW
 
-set -euo pipefail
+#set -euo pipefail
 IFS=$'\n\t'
 trap 'echo -e "\033[31m[FAIL]\033[0m on line $LINENO" >&2' ERR
 
