@@ -66,7 +66,7 @@ fetch_and_run() {
     # Remove the first argument
     shift
     # Pass all remaining arguments to script entry function that is identical to the script name
-    ${script_name%.*} "$@"
+    ${script_name%.*} "${@:2}"
     # Since it would get overwritten on the next run of this script, don't leave it around for editing
     rm ${script_name}
 }
