@@ -51,7 +51,7 @@
  * @noinspection PhpUnused, PhpUnusedPrivateFieldInspection
  */
 
-require_api( 'access_bug_api.php' );
+require_api( 'access_api.php' );
 require_api( 'antispam_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'bug_api.php' );
@@ -63,7 +63,7 @@ require_api( 'constant_inc.php' );
 require_api( 'custom_field_api.php' );
 require_api( 'database_api.php' );
 require_api( 'date_api.php' );
-require_api( 'email_bug_api.php' );
+require_api( 'email_api.php' );
 require_api( 'error_api.php' );
 require_api( 'event_api.php' );
 require_api( 'file_api.php' );

@@ -40,13 +40,13 @@
 
 use Mantis\Exceptions\ClientException;
 
-require_api( 'access_bug_api.php' );
+require_api( 'access_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'bug_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
 require_api( 'database_api.php' );
-require_api( 'email_bug_api.php' );
+require_api( 'email_api.php' );
 require_api( 'error_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'history_api.php' );

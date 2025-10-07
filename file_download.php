@@ -42,7 +42,7 @@ $g_bypass_headers = true; # suppress headers as we will send our own later
 define( 'COMPRESSION_DISABLED', true );
 
 require_once( 'core.php' );
-require_api( 'access_bug_api.php' );
+require_api( 'access_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'bug_api.php' );
 require_api( 'config_api.php' );
