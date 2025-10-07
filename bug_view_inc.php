@@ -114,7 +114,6 @@ $t_issue = $t_result['issue'];
 $t_issue_view = $t_result['issue_view'];
 $t_flags = $t_result['flags'];
 
-
 ////////////////////////////////////////////////////////////////////////////////
 $t_document_id = (int)$t_issue['document_id'];
 $t_data = array(

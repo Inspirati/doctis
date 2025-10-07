@@ -120,7 +120,7 @@ $t_creator_id = gpc_get_int( 'creator_id', $t_existing_bug->creator_id );
 # account no longer exists.
 if( $t_creator_id != $t_existing_bug->creator_id ) {
 	user_ensure_exists( $t_creator_id );
-	$t_report_bug_threshold = config_get( 'report_dwg_threshold',
+	$t_report_bug_threshold = config_get( 'create_dwg_threshold',
 		null,
 		$t_creator_id,
 		$t_existing_bug->project_id

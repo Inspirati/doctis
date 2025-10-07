@@ -52,7 +52,7 @@
  * @noinspection PhpMissingReturnTypeInspection, PhpMissingParamTypeInspection
  */
 
-require_api( 'access_dwg_api.php' );
+require_api( 'access_inc_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'dwg_api.php' );
 require_api( 'dwgnote_api.php' );
@@ -62,7 +62,7 @@ require_api( 'constant_inc.php' );
 require_api( 'current_user_api.php' );
 require_api( 'custom_field_api.php' );
 require_api( 'database_api.php' );
-require_api( 'email_api.php' );
+require_api( 'email_inc_api.php' );
 require_api( 'email_queue_api.php' );
 require_api( 'event_api.php' );
 require_api( 'helper_api.php' );

@@ -417,8 +417,8 @@ if( $t_flags['creator_show'] || $t_flags['handler_show'] || $t_flags['classifica
 # Priority, Severity, Reproducibility
 #
 
-// if( $t_flags['priority_show'] || $t_flags['severity_show'] || $t_flags['reproducibility_show'] ) {
-if( false ) {
+if( $t_flags['priority_show'] || $t_flags['severity_show'] || $t_flags['reproducibility_show'] ) {
+//if( false ) {
 	echo '<tr>';
 
 	$t_spacer = 0;
