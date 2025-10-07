@@ -62,7 +62,7 @@ abstract class Command
 	 *
 	 * @return array The results of the command processing that goes into $executionResults
 	 */
-	abstract protected function process();  // invokes the derived class, aka C++ virtual override
+	abstract protected function process();
 
 	/**
 	 * Gets the value of the option or default.
@@ -113,7 +113,7 @@ abstract class Command
 	}
 
 	/**
-	 * Execute the command.  This may throw a CommandException if execution is
+	 * Execute the command.  This may throw a CommandException is execution is
 	 * interrupted. The command is expected to trigger events that are handled
 	 * by plugins as part of execution.
 	 *
@@ -137,6 +137,6 @@ abstract class Command
 		}
 
 		$this->validate();
-		return $this->process();  // invokes the function in the derived class, aka, C++ virtual
+		return $this->process();
 	}
 }
