@@ -28,7 +28,7 @@
  */
 
 require_api( 'bug_api.php' );
-require_api( 'email_bug_api.php' );
+require_api( 'email_api.php' );
 
 /**
  * Check if @ mentions feature is enabled or not.

@@ -40,12 +40,12 @@
  */
 
 require_once( 'core.php' );
-require_api( 'access_bug_api.php' );
+require_api( 'access_api.php' );
 require_api( 'bug_api.php' );
 require_api( 'bugnote_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
-require_api( 'email_bug_api.php' );
+require_api( 'email_api.php' );
 require_api( 'error_api.php' );
 require_api( 'form_api.php' );
 require_api( 'gpc_api.php' );

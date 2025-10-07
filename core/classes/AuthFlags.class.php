@@ -28,7 +28,7 @@
  * @subpackage classes
  */
 
-require_api( 'access_bug_api.php' );
+require_api( 'access_api.php' );
 require_api( 'plugin_api.php' );
 require_api( 'user_api.php' );
 
