@@ -42,7 +42,7 @@
  * @uses history_api.php
  * @uses lang_api.php
  * @uses mention_api.php
- * @uses dwg_relationship_api.php
+ * @uses relationship_api.php
  * @uses sponsorship_api.php
  * @uses tag_dwg_api.php
  * @uses user_api.php
@@ -73,7 +73,7 @@ require_api( 'helper_api.php' );
 require_api( 'history_dwg_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'mention_api.php' );
-require_api( 'dwg_relationship_api.php' );
+require_api( 'relationship_dwg_api.php' );
 require_api( 'sponsorship_api.php' );
 require_api( 'tag_dwg_api.php' );
 require_api( 'user_api.php' );

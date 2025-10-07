@@ -56,7 +56,7 @@ require_api( 'helper_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'print_dwg_api.php' );
-require_api( 'dwg_relationship_api.php' );
+require_api( 'relationship_dwg_api.php' );
 require_api( 'sponsorship_api.php' );
 require_api( 'version_api.php' );
 
