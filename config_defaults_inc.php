@@ -3840,8 +3840,8 @@ $g_allow_no_category = OFF;
  *
  * @global int $g_allow_no_document
  */
-// $g_allow_no_document = OFF;
-$g_allow_no_document = ON;  // turned this off during github workflows development
+$g_allow_no_document = OFF;
+// $g_allow_no_document = ON;  // turned this off during github workflows development
 
 /**
  * Limit reporters.
@@ -5119,7 +5119,8 @@ $g_time_tracking_billing_rate = 0;
  *
  * @global int $g_enable_profiles
  */
-$g_enable_profiles = ON;
+// $g_enable_profiles = ON;
+$g_enable_profiles = OFF;
 
 /**
  * Add profile threshold.

@@ -117,7 +117,7 @@ class DwgAddCommand extends Command {
 		$t_author				= $t_issue['author'];
 		$t_number				= $t_issue['number'];
 		$t_revision				= $t_issue['revision'];
-		$t_category				= $t_issue['category'];
+//		$t_category				= $t_issue['category'];
 		$t_reference			= $t_issue['reference'];
 		$t_link_url				= $t_issue['link_url'];
 		$t_classification		= $t_issue['classification'];
@@ -173,7 +173,7 @@ class DwgAddCommand extends Command {
 		global $g_project_override;
 		$g_project_override = $t_project_id;
 
-		if( !access_has_project_level( config_get( 'report_dwg_threshold' ), $t_project_id, $this->user_id ) ) {
+		if( !access_has_project_level( config_get( 'create_dwg_threshold' ), $t_project_id, $this->user_id ) ) {
 			throw new ClientException(
 				'User does not have access right to report documents',
 				ERROR_ACCESS_DENIED );
@@ -259,7 +259,7 @@ class DwgAddCommand extends Command {
 		$this->issue->author = $t_author;
 		$this->issue->number = $t_number;
 		$this->issue->revision = $t_revision;
-		$this->issue->category = $t_category;
+//		$this->issue->category = $t_category;
 		$this->issue->reference = $t_reference;
 		$this->issue->link_url = $t_link_url;
 		$this->issue->classification = $t_classification;

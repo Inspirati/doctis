@@ -1022,9 +1022,9 @@ function mci_get_document_id( $p_document, $p_project_id ) {
 					);
 				}
 
-				if( document_exists( $t_id ) ) {
-					error_log("mci_get_document_id() PASS - document_exists");
-				}
+				// if( document_exists( $t_id ) ) {
+				// 	error_log("mci_get_document_id() PASS - document_exists");
+				// }
 
 				//settype( $t_id, 'int' );
 				if( $t_id === 0 && $t_allow_no_document ) {
@@ -1070,7 +1070,6 @@ function mci_get_document_id( $p_document, $p_project_id ) {
 	}
 
 	# Make sure the document belongs to the given project's hierarchy
-#!	category_ensure_exists_in_project( $t_document_id, $p_project_id );
 	document_ensure_exists_in_project( $t_document_id, $p_project_id );
 
 	return $t_document_id;

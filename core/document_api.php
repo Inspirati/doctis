@@ -455,7 +455,7 @@ function document_cache_array_rows_by_project( array $p_project_id_array ) {
 				WHERE project_id IN ( ' . implode( ', ', $c_project_id_array ) . ' )
 				ORDER BY c.name ';
 
-	error_log("document_cache_array_rows_by_project() t_query: " . $t_query);
+	// error_log("document_cache_array_rows_by_project() t_query: " . $t_query);
 
 	$t_result = db_query( $t_query );
 
@@ -578,7 +578,7 @@ function document_get_all_rows( $p_project_id, $p_inherit = null, $p_sort_by_pro
 					ON c.project_id=p.id
 				WHERE ' . $t_project_where . ' ORDER BY c.title';
 
-	error_log("document_get_all_rows() t_query: " . $t_query);
+	// error_log("document_get_all_rows() t_query: " . $t_query);
 
 	$t_result = db_query( $t_query );
 	$t_rows = array();
@@ -623,7 +623,7 @@ function document_cache_array_rows( array $p_cat_id_array ) {
 					ON c.project_id=p.id
 				WHERE c.id IN (' . implode( ',', $c_cat_id_array ) . ')';
 
-	error_log("document_cache_array_rows() t_query: " . $t_query);
+	// error_log("document_cache_array_rows() t_query: " . $t_query);
 
 	$t_result = db_query( $t_query );
 

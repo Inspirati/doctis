@@ -137,8 +137,8 @@ if( $f_master_bug_id > 0 ) {
 	$f_priority				= $t_bug->priority;
 	$f_summary				= $t_bug->summary;
 	$f_description			= $t_bug->description;
-	// $f_steps_to_reproduce	= $t_bug->steps_to_reproduce;
-	// $f_additional_info		= $t_bug->additional_information;
+	$f_steps_to_reproduce	= $t_bug->steps_to_reproduce;
+	$f_additional_info		= $t_bug->additional_information;
 	$f_view_state			= (int)$t_bug->view_state;
 	$f_due_date				= $t_bug->due_date;
 
@@ -179,31 +179,6 @@ if( $f_master_bug_id > 0 ) {
 
 	access_ensure_project_level( config_get( 'create_dwg_threshold' ) );
 
-	$f_dwg_version			= gpc_get_string( 'dwg_version', '1.0' );
-if (array_key_exists('USE_LOREM_IPSUM', $GLOBALS)) {
-	$f_dwg_title			= gpc_get_string( 'dwg_title', random_publication_title() );
-	$f_dwg_author			= gpc_get_string( 'dwg_author', random_author_name() );
-	$f_dwg_number			= gpc_get_string( 'dwg_number', random_numeric_string() );
-	$f_dwg_revision			= gpc_get_string( 'dwg_revision', 'Edition ' . random_numeric() );
-	$f_dwg_reference		= gpc_get_string( 'dwg_reference', random_reference() );
-	$f_dwg_discipline		= gpc_get_string( 'dwg_discipline', 'Philopsophy' );
-	$f_dwg_link_url			= gpc_get_string( 'dwg_link_url', 'https://openlibrary.org/books/OL3504254M/The_Tao_of_Pooh' );
-	$f_dwg_classification	= gpc_get_string( 'dwg_classification', 'UNCLASSIFIED' );
-} else {
-	$f_dwg_title			= gpc_get_string( 'dwg_title', '' );
-	$f_dwg_author			= gpc_get_string( 'dwg_author', '' );
-	$f_dwg_number			= gpc_get_string( 'dwg_number', '' );
-	$f_dwg_revision			= gpc_get_string( 'dwg_revision', '' );
-	$f_dwg_reference		= gpc_get_string( 'dwg_reference', '' );
-	$f_dwg_discipline		= gpc_get_string( 'dwg_discipline', '' );
-	$f_dwg_link_url			= gpc_get_string( 'dwg_link_url', '' );
-	$f_dwg_classification	= gpc_get_string( 'dwg_classification', '' );
-}
-	// $f_dwg_revision_date	= gpc_get_string( 'dwg_revision_date', 'nil' );
-	// $f_dwg_release_date		= gpc_get_string( 'dwg_release_date', 'nil' );
-	$f_dwg_revision_date	= gpc_get_string( 'dwg_revision_date', '' );
-	$f_dwg_release_date		= gpc_get_string( 'dwg_release_date', '' );
-
 	$f_build				= gpc_get_string( 'build', '' );
 	$f_platform				= gpc_get_string( 'platform', '' );
 	$f_os					= gpc_get_string( 'os', '' );
@@ -214,16 +189,42 @@ if (array_key_exists('USE_LOREM_IPSUM', $GLOBALS)) {
 	$f_handler_id			= gpc_get_int( 'handler_id', 0 );
 
 	$f_category_id			= gpc_get_int( 'category_id', 0 );
-	$f_reproducibility		= gpc_get_int( 'reproducibility', (int)config_get( 'default_bug_reproducibility' ) );
-	$f_eta					= gpc_get_int( 'eta', (int)config_get( 'default_bug_eta' ) );
-	$f_severity				= gpc_get_int( 'severity', (int)config_get( 'default_bug_severity' ) );
-	$f_priority				= gpc_get_int( 'priority', (int)config_get( 'default_bug_priority' ) );
+	$f_reproducibility		= gpc_get_int( 'reproducibility', (int)config_get( 'default_dwg_reproducibility' ) );
+	$f_eta					= gpc_get_int( 'eta', (int)config_get( 'default_dwg_eta' ) );
+	$f_severity				= gpc_get_int( 'severity', (int)config_get( 'default_dwg_severity' ) );
+	$f_priority				= gpc_get_int( 'priority', (int)config_get( 'default_dwg_priority' ) );
 	$f_summary				= gpc_get_string( 'summary', '' );
-	$f_description			= gpc_get_string( 'description', config_get( 'default_bug_description' ) );
-	// $f_steps_to_reproduce	= gpc_get_string( 'steps_to_reproduce', config_get( 'default_bug_steps_to_reproduce' ) );
-	// $f_additional_info		= gpc_get_string( 'additional_info', config_get( 'default_bug_additional_info' ) );
-	$f_view_state			= gpc_get_int( 'view_state', (int)config_get( 'default_bug_view_status' ) );
+	$f_description			= gpc_get_string( 'description', config_get( 'default_dwg_description' ) );
+	$f_steps_to_reproduce	= gpc_get_string( 'steps_to_reproduce', config_get( 'default_dwg_steps_to_reproduce' ) );
+	$f_additional_info		= gpc_get_string( 'additional_info', config_get( 'default_dwg_additional_info' ) );
+	$f_view_state			= gpc_get_int( 'view_state', (int)config_get( 'default_dwg_view_status' ) );
 	$f_due_date				= gpc_get_string( 'due_date', date_strtotime( config_get( 'due_date_default' ) ) );
+
+if (array_key_exists('USE_LOREM_IPSUM', $GLOBALS)) {
+	$f_dwg_version			= gpc_get_string( 'dwg_version', '1.0' );
+	$f_dwg_title			= gpc_get_string( 'dwg_title', random_publication_title() );
+	$f_dwg_author			= gpc_get_string( 'dwg_author', random_author_name() );
+	$f_dwg_number			= gpc_get_string( 'dwg_number', random_numeric_string() );
+	$f_dwg_revision			= gpc_get_string( 'dwg_revision', 'Edition ' . random_numeric() );
+	$f_dwg_reference		= gpc_get_string( 'dwg_reference', random_reference() );
+	$f_dwg_discipline		= gpc_get_string( 'dwg_discipline', 'Philopsophy' );
+	$f_dwg_link_url			= gpc_get_string( 'dwg_link_url', 'https://openlibrary.org/books/OL3504254M/The_Tao_of_Pooh' );
+	$f_dwg_classification	= gpc_get_string( 'dwg_classification', 'UNCLASSIFIED' );
+	$f_dwg_revision_date	= gpc_get_string( 'dwg_revision_date', '' );
+	$f_dwg_release_date		= gpc_get_string( 'dwg_release_date', '' );
+} else {
+	$f_dwg_version			= gpc_get_string( 'dwg_version', '1.0' );
+	$f_dwg_title			= gpc_get_string( 'dwg_title', '' );
+	$f_dwg_author			= gpc_get_string( 'dwg_author', '' );
+	$f_dwg_number			= gpc_get_string( 'dwg_number', '' );
+	$f_dwg_revision			= gpc_get_string( 'dwg_revision', '' );
+	$f_dwg_reference		= gpc_get_string( 'dwg_reference', '' );
+	$f_dwg_discipline		= gpc_get_string( 'dwg_discipline', '' );
+	$f_dwg_link_url			= gpc_get_string( 'dwg_link_url', '' );
+	$f_dwg_classification	= gpc_get_string( 'dwg_classification', '' );
+	$f_dwg_revision_date	= gpc_get_string( 'dwg_revision_date', '' );
+	$f_dwg_release_date		= gpc_get_string( 'dwg_release_date', '' );
+}
 
 	if( $f_due_date == '' ) {
 		$f_due_date = date_get_null();
@@ -232,7 +233,7 @@ if (array_key_exists('USE_LOREM_IPSUM', $GLOBALS)) {
 	$t_changed_project		= false;
 }
 
-$f_dwg_entry_stay				= gpc_get_bool( 'dwg_entry_stay', false );
+$f_dwg_entry_stay			= gpc_get_bool( 'dwg_entry_stay', false );
 $f_copy_notes_from_parent		= gpc_get_bool( 'copy_notes_from_parent', false );
 $f_copy_attachments_from_parent	= gpc_get_bool( 'copy_attachments_from_parent', false );
 
@@ -250,7 +251,7 @@ $t_show_reproducibility = in_array( 'reproducibility', $t_fields );
 $t_show_eta = in_array( 'eta', $t_fields );
 $t_show_severity = in_array( 'severity', $t_fields );
 $t_show_priority = in_array( 'priority', $t_fields );
-// $t_show_steps_to_reproduce = in_array( 'steps_to_reproduce', $t_fields );
+$t_show_steps_to_reproduce = in_array( 'steps_to_reproduce', $t_fields );
 $t_show_handler = in_array( 'handler', $t_fields )
 	&& access_has_project_level( config_get( 'update_dwg_assign_threshold' ) );
 $t_show_monitors = in_array( 'monitors', $t_fields )
@@ -276,31 +277,29 @@ $t_show_due_date = in_array( 'due_date', $t_fields ) && access_has_project_level
 $t_show_attachments = in_array( 'attachments', $t_fields ) && file_dwg_allow_dwg_upload();
 $t_show_view_state = in_array( 'view_state', $t_fields ) && access_has_project_level( config_get( 'set_view_status_threshold' ) );
 
-
-
-// $t_show_category = false;
-$t_show_reproducibility = false;
-$t_show_eta = false;
+// // $t_show_category = false;
+// $t_show_reproducibility = false;
+// $t_show_eta = false;
 $t_show_severity = false;
 $t_show_priority = false;
-$t_show_steps_to_reproduce = false;
+// $t_show_steps_to_reproduce = false;
 $t_show_handler = false;
-$t_show_monitors = false;
-$t_show_profiles = false;
-$t_show_platform = false;
-$t_show_os = false;
-$t_show_os_build = false;
-$t_show_resolution = false;
-$t_show_status = false;
-$t_show_tags = false;
-$t_show_versions = false;
-$t_show_product_version = false;
-$t_show_product_build = false;
-$t_show_target_version = false;
-$t_show_additional_info = false;
-$t_show_due_date = false;
+// $t_show_monitors = false;
+// $t_show_profiles = false;
+// $t_show_platform = false;
+// $t_show_os = false;
+// $t_show_os_build = false;
+// $t_show_resolution = false;
+// $t_show_status = false;
+// $t_show_tags = false;
+// $t_show_versions = false;
+// $t_show_product_version = false;
+// $t_show_product_build = false;
+// $t_show_target_version = false;
+// $t_show_additional_info = false;
+// $t_show_due_date = false;
 $t_show_attachments = false;
-$t_show_view_state = false;
+// $t_show_view_state = false;
 
 $t_has_profiles = count( profile_get_all_for_user( auth_get_current_user_id() ) ) > 0;
 
@@ -340,13 +339,13 @@ if( $t_show_attachments ) {
 	event_signal( 'EVENT_CREATE_DWG_FORM_TOP', array( $t_project_id ) );
 
 	if( $t_show_category ) {
-		$t_allow_no_category = config_get( 'allow_no_document' );
+		$t_allow_no_category = config_get( 'allow_no_category' );
 ?>
 	<tr>
 		<th class="category width-30">
 			<?php echo $t_allow_no_category ? '' : '<span class="required">*</span> '; ?>
 			<label for="category_id">
-				<?php print_documentation_link( 'category' ); ?>
+				<?php print_dwg_documentation_link( 'category' ); ?>
 			</label>
 		</th>
 		<td>
@@ -366,14 +365,44 @@ if( $t_show_attachments ) {
 	</tr>
 <?php
 	}
+/* ...
+	if( $t_show_reproducibility ) {
 ?>
 
+	<tr>
+		<th class="category">
+			<label for="reproducibility"><?php print_documentation_link( 'reproducibility' ) ?></label>
+		</th>
+		<td>
+			<select <?php echo helper_get_tab_index() ?> id="reproducibility" name="reproducibility" class="input-sm">
+				<?php print_enum_string_option_list( 'reproducibility', $f_reproducibility ) ?>
+			</select>
+		</td>
+	</tr>
 <?php
+	}
+
+	if( $t_show_eta ) {
+?>
+
+	<tr>
+		<th class="category">
+			<label for="eta"><?php print_documentation_link( 'eta' ) ?></label>
+		</th>
+		<td>
+			<select <?php echo helper_get_tab_index() ?> id="eta" name="eta" class="input-sm">
+				<?php print_enum_string_option_list( 'eta', $f_eta ) ?>
+			</select>
+		</td>
+	</tr>
+<?php
+	}
+... */
 	if( $t_show_severity ) {
 ?>
 	<tr>
 		<th class="category">
-			<label for="severity"><?php print_documentation_link( 'severity' ) ?></label>
+			<label for="severity"><?php print_dwg_documentation_link( 'severity' ) ?></label>
 		</th>
 		<td>
 			<select <?php echo helper_get_tab_index() ?> id="severity" name="severity" class="input-sm">
@@ -388,7 +417,7 @@ if( $t_show_attachments ) {
 ?>
 	<tr>
 		<th class="category">
-			<label for="priority"><?php print_documentation_link( 'priority' ) ?></label>
+			<label for="priority"><?php print_dwg_documentation_link( 'priority' ) ?></label>
 		</th>
 		<td>
 			<select <?php echo helper_get_tab_index() ?> id="priority" name="priority" class="input-sm">
@@ -399,17 +428,18 @@ if( $t_show_attachments ) {
 <?php
 	}
 
-	// if( $t_show_due_date ) {
-	if( true ) {
+	if( $t_show_due_date ) {
+	//if( true ) {
 		$t_date_to_display = '';
 
 		if( !date_is_null( $f_due_date ) ) {
 			$t_date_to_display = date( config_get( 'normal_date_format' ), $f_due_date );
 		}
 ?>
+<!--
 	<tr>
 		<th class="category">
-			<label for="due_date"><?php print_documentation_link( 'due_date' ) ?></label>
+			<label for="due_date"><?php print_dwg_documentation_link( 'due_date' ) ?></label>
 		</th>
 		<td>
 			<?php echo '<input ' . helper_get_tab_index() . ' type="text" id="due_date" name="due_date" class="datetimepicker input-sm" ' .
@@ -419,8 +449,146 @@ if( $t_show_attachments ) {
 			<?php print_icon( 'fa-calendar', 'fa-xlg datetimepicker' ); ?>
 		</td>
 	</tr>
+-->
+<?php } ?>
+<?php /* ...
+<?php if( $t_show_platform || $t_show_os || $t_show_os_build ) { ?>
+	<tr>
+		<th class="category">
+			<?php
+			if( $t_has_profiles ) echo '<label for="profile_id">';
+			echo lang_get( 'select_profile' );
+			if( $t_has_profiles ) echo '</label>';
+			?>
+
+		</th>
+		<td>
+			<?php if( $t_has_profiles ) { ?>
+				<select <?php echo helper_get_tab_index() ?> id="profile_id" name="profile_id" class="input-sm">
+					<?php print_profile_option_list( auth_get_current_user_id(), $f_profile_id ) ?>
+				</select>
+			<?php } ?>
+			<?php collapse_open( 'profile' ); ?>
+			<?php echo lang_get( 'or_fill_in' ); collapse_icon( 'profile' ); ?>
+			<table class="table-bordered table-condensed">
+				<tr>
+					<th class="category width-30">
+						<label for="platform"><?php echo lang_get( 'platform' ) ?></label>
+					</th>
+					<td>
+						<?php if( config_get( 'allow_freetext_in_profile_fields' ) == OFF ) { ?>
+						<select id="platform" name="platform" class="input-sm">
+							<option value=""></option>
+							<?php print_platform_option_list( $f_platform ); ?>
+						</select>
+						<?php
+							} else {
+								echo '<input type="text" id="platform" name="platform" class="typeahead input-sm" autocomplete = "off" size="32" maxlength="32" tabindex="' . helper_get_tab_index_value() . '" value="' . string_attribute( $f_platform ) . '" />';
+							}
+						?>
+					</td>
+				</tr>
+				<tr>
+					<th class="category">
+						<label for="os"><?php echo lang_get( 'os' ) ?></label>
+					</th>
+					<td>
+						<?php if( config_get( 'allow_freetext_in_profile_fields' ) == OFF ) { ?>
+						<select id="os" name="os" class="input-sm">
+							<option value=""></option>
+							<?php print_os_option_list( $f_os ); ?>
+						</select>
+						<?php
+							} else {
+								echo '<input type="text" id="os" name="os" class="typeahead input-sm" autocomplete = "off" size="32" maxlength="32" tabindex="' . helper_get_tab_index_value() . '" value="' . string_attribute( $f_os ) . '" />';
+							}
+						?>
+					</td>
+				</tr>
+				<tr>
+					<th class="category">
+						<label for="os_build"><?php echo lang_get( 'os_build' ) ?></label>
+					</th>
+					<td>
+						<?php
+							if( config_get( 'allow_freetext_in_profile_fields' ) == OFF ) {
+						?>
+						<select id="os_build" name="os_build" class="input-sm">
+							<option value=""></option>
+								<?php print_os_build_option_list( $f_os_build ); ?>
+							</select>
+						<?php
+							} else {
+								echo '<input type="text" id="os_build" name="os_build" class="typeahead input-sm" autocomplete = "off" size="16" maxlength="16" tabindex="' . helper_get_tab_index_value() . '" value="' . string_attribute( $f_os_build ) . '" />';
+							}
+						?>
+					</td>
+				</tr>
+			</table>
+			<?php collapse_closed( 'profile' ); ?>
+			<?php echo lang_get( 'or_fill_in' ); collapse_icon( 'profile' ); ?>
+			<?php collapse_end( 'profile' ); ?>
+		</td>
+	</tr>
+<?php } ?>
+<?php
+	if( $t_show_product_version ) {
+		$t_product_version_released_mask = VERSION_RELEASED;
+
+		if( access_has_project_level( config_get( 'report_issues_for_unreleased_versions_threshold' ) ) ) {
+			$t_product_version_released_mask = VERSION_ALL;
+		}
+?>
+	<tr>
+		<th class="category">
+			<label for="product_version"><?php echo lang_get( 'product_version' ) ?></label>
+		</th>
+		<td>
+			<select <?php echo helper_get_tab_index() ?> id="product_version" name="product_version" class="input-sm">
+				<?php print_version_option_list( $f_product_version, $t_project_id, $t_product_version_released_mask ) ?>
+			</select>
+		</td>
+	</tr>
+<?php
+	}
+?>
+<?php if( $t_show_product_build ) { ?>
+	<tr>
+		<th class="category">
+			<label for="build"><?php echo lang_get( 'product_build' ) ?></label>
+		</th>
+		<td>
+			<input <?php echo helper_get_tab_index() ?> type="text" id="build" name="build" size="32" maxlength="32" value="<?php echo string_attribute( $f_build ) ?>" />
+		</td>
+	</tr>
+<?php } ?>
+ */ ?>
+<?php if( $t_show_handler ) { ?>
+	<tr>
+		<th class="category">
+			<label for="handler_id"><?php echo lang_get( 'assign_to' ) ?></label>
+		</th>
+		<td>
+			<select <?php echo helper_get_tab_index() ?> id="handler_id" name="handler_id" class="input-sm">
+				<option value="0" selected="selected">&nbsp;</option>
+				<?php print_assign_to_option_list( $f_handler_id ) ?>
+			</select>
+		</td>
+	</tr>
 <?php } ?>
 
+<?php if( $t_show_monitors ) { ?>
+	<tr>
+		<th class="category">
+			<label for="monitors"><?php echo lang_get( 'monitored_by' ) ?></label>
+		</th>
+		<td>
+			<select <?php echo helper_get_tab_index() ?> id="monitors" name="monitors[]" class="input-sm" multiple>
+				<?php print_user_option_list( NO_USER, $t_project_id, config_get( 'monitor_bug_threshold' ) ) ?>
+			</select>
+		</td>
+	</tr>
+<?php } ?>
 
 <?php if( $t_show_status ) { ?>
 	<tr>
@@ -447,12 +615,40 @@ if( $t_show_attachments ) {
 	</tr>
 <?php } ?>
 
+<?php if( $t_show_resolution ) { ?>
+	<tr>
+		<th class="category">
+			<label for="resolution"><?php echo lang_get( 'resolution' ) ?></label>
+		</th>
+		<td>
+			<select id="resolution" <?php echo helper_get_tab_index() ?> name="resolution" class="input-sm">
+				<?php
+				print_enum_string_option_list( 'resolution', config_get( 'default_bug_resolution' ) );
+				?>
+			</select>
+		</td>
+	</tr>
+<?php } ?>
+
+<?php # Target Version (if permissions allow)
+	if( $t_show_target_version ) { ?>
+	<tr>
+		<th class="category">
+			<label for="target_version"><?php echo lang_get( 'target_version' ) ?></label>
+		</th>
+		<td>
+			<select <?php echo helper_get_tab_index() ?> id="target_version" name="target_version" class="input-sm">
+				<?php print_version_option_list( $f_target_version, null, VERSION_FUTURE ) ?>
+			</select>
+		</td>
+	</tr>
+<?php } ?>
 <?php event_signal( 'EVENT_CREATE_DWG_FORM', array( $t_project_id ) ) ?>
 	<tr>
 	<tr>
 		<th class="category">
 			<span class="required">*</span>
-			<label for="dwg_reference"><?php print_documentation_link( 'dwg_reference' ) ?></label>
+			<label for="dwg_reference"><?php print_dwg_documentation_link( 'dwg_reference' ) ?></label>
 		</th>
 		<td>
 			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_reference" name="dwg_reference" size="105" maxlength="128" value="<?php echo string_attribute( $f_dwg_reference ) ?>" required />
@@ -461,7 +657,7 @@ if( $t_show_attachments ) {
 
 		<th class="category">
 			<span class="required">*</span>
-			<label for="dwg_title"><?php print_documentation_link( 'dwg_title' ) ?></label>
+			<label for="dwg_title"><?php print_dwg_documentation_link( 'dwg_title' ) ?></label>
 		</th>
 		<td>
 			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_title" name="dwg_title" size="105" maxlength="255" value="<?php echo string_attribute( $f_dwg_title ) ?>" required />
@@ -469,7 +665,7 @@ if( $t_show_attachments ) {
 	</tr>
 	<tr>
 		<th class="category">
-			<label for="dwg_author"><?php print_documentation_link( 'dwg_author' ) ?></label>
+			<label for="dwg_author"><?php print_dwg_documentation_link( 'dwg_author' ) ?></label>
 		</th>
 		<td>
 			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_author" name="dwg_author" size="105" maxlength="255" value="<?php echo string_attribute( $f_dwg_author ) ?>" />
@@ -477,61 +673,100 @@ if( $t_show_attachments ) {
 	</tr>
 	<tr>
 		<th class="category">
-			<label for="dwg_number"><?php print_documentation_link( 'dwg_number' ) ?></label>
+			<label for="dwg_number"><?php print_dwg_documentation_link( 'dwg_number' ) ?></label>
 		</th>
 		<td>
 			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_number" name="dwg_number" size="105" maxlength="128" value="<?php echo string_attribute( $f_dwg_number ) ?>" />
 		</td>
 	</tr>
 
+<?php /* ...
+<?php if( $t_show_steps_to_reproduce ) { ?>
+		<tr>
+			<th class="category">
+				<label for="steps_to_reproduce"><?php print_documentation_link( 'steps_to_reproduce' ) ?></label>
+			</th>
+			<td>
+				<?php # Newline after opening textarea tag is intentional, see #25839 ?>
+				<textarea class="form-control" <?php echo helper_get_tab_index() ?> id="steps_to_reproduce" name="steps_to_reproduce" cols="80" rows="10">
+<?php echo string_textarea( $f_steps_to_reproduce ) ?>
+</textarea>
+			</td>
+		</tr>
+<?php } ?>
+
+<?php if( $t_show_additional_info ) { ?>
 	<tr>
 		<th class="category">
-			<label for="dwg_revision"><?php print_documentation_link( 'dwg_revision' ) ?></label>
+			<label for="additional_info"><?php print_documentation_link( 'additional_information' ) ?></label>
+		</th>
+		<td>
+			<?php # Newline after opening textarea tag is intentional, see #25839 ?>
+			<textarea class="form-control" <?php echo helper_get_tab_index() ?> id="additional_info" name="additional_info" cols="80" rows="10">
+<?php echo string_textarea( $f_additional_info ) ?>
+</textarea>
+		</td>
+	</tr>
+<?php } ?>
+<?php if( $t_show_tags ) { ?>
+	<tr>
+		<th class="category">
+			<label for="tag_string"><?php echo lang_get( 'tag_attach_long' ) ?></label>
+		</th>
+		<td>
+			<?php
+				if( $f_master_bug_id > 0 ) {
+					# pre-fill tag string when cloning from master bug
+					$t_tags = [];
+					foreach( tag_bug_get_attached( $f_master_bug_id ) as $t_tag ) {
+						$t_tags[] = $t_tag["name"];
+					}
+					$t_tag_string = implode(
+						config_get( 'tag_separator' ), $t_tags
+					);
+					print_tag_input( 0, $t_tag_string );
+				} else {
+					# otherwise show just the default empty string
+					print_tag_input();
+				}
+			?>
+		</td>
+	</tr>
+ */ ?>
+<?php if( true ) { ?>
+	<tr>
+		<th class="category">
+			<label for="dwg_revision"><?php print_dwg_documentation_link( 'dwg_revision' ) ?></label>
 		</th>
 		<td>
 			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_revision" name="dwg_revision" size="105" maxlength="128" value="<?php echo string_attribute( $f_dwg_revision ) ?>" />
 		</td>
 	</tr>
-
+<!--
 	<tr>
 		<th class="category">
-			<label for="dwg_discipline"><?php print_documentation_link( 'dwg_discipline' ) ?></label>
+			<label for="dwg_discipline"><?php print_dwg_documentation_link( 'dwg_discipline' ) ?></label>
 		</th>
 		<td>
 			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_discipline" name="dwg_discipline" size="105" maxlength="128" value="<?php echo string_attribute( $f_dwg_discipline ) ?>" />
 		</td>
 	</tr>
-
 	<tr>
 		<th class="category">
-			<label for="dwg_link_url"><?php print_documentation_link( 'dwg_link_url' ) ?></label>
+			<label for="dwg_link_url"><?php print_dwg_documentation_link( 'dwg_link_url' ) ?></label>
 		</th>
 		<td>
 			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_link_url" name="dwg_link_url" size="105" maxlength="2048" value="<?php echo string_attribute( $f_dwg_link_url ) ?>" />
 		</td>
 	</tr>
-
-	<!-- <tr>
-		<th class="category">
-			<label for="dwg_revision_date"><?php print_documentation_link( 'dwg_revision_date' ) ?></label>
-		</th>
-		<td>
-			<input <?php echo helper_get_tab_index() ?> type="date" id="dwg_revision_date" name="dwg_revision_date" size="105" maxlength="128" value="', date('Y-m-d\TH:i'), '" />
-		</td>
-	</tr> -->
-
-	<!-- <tr>
-		<th class="category">
-			<label for="dwg_release_date"><?php print_documentation_link( 'dwg_release_date' ) ?></label>
-		</th>
-		<td>
-			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_release_date" name="dwg_release_date" size="105" maxlength="128" value="<?php echo string_attribute( $f_dwg_release_date ) ?>" />
-		</td>
-	</tr> -->
-
+-->
+	<?php
+		// $t_date_to_display = date( config_get( 'normal_date_format' ), $f_due_date );
+		$t_date_to_display = '';
+	?>
 	<tr>
 		<th class="category">
-			<label for="dwg_revision_date"><?php print_documentation_link( 'dwg_revision_date' ) ?></label>
+			<label for="dwg_revision_date"><?php print_dwg_documentation_link( 'dwg_revision_date' ) ?></label>
 		</th>
 		<td>
 			<?php echo '<input ' . helper_get_tab_index() . ' type="text" id="dwg_revision_date" name="dwg_revision_date" class="datetimepicker input-sm" ' .
@@ -541,10 +776,9 @@ if( $t_show_attachments ) {
 			<?php print_icon( 'fa-calendar', 'fa-xlg datetimepicker' ); ?>
 		</td>
 	</tr>
-
 	<tr>
 		<th class="category">
-			<label for="dwg_release_date"><?php print_documentation_link( 'dwg_release_date' ) ?></label>
+			<label for="dwg_release_date"><?php print_dwg_documentation_link( 'dwg_release_date' ) ?></label>
 		</th>
 		<td>
 			<?php echo '<input ' . helper_get_tab_index() . ' type="text" id="dwg_release_date" name="dwg_release_date" class="datetimepicker input-sm" ' .
@@ -554,20 +788,18 @@ if( $t_show_attachments ) {
 			<?php print_icon( 'fa-calendar', 'fa-xlg datetimepicker' ); ?>
 		</td>
 	</tr>
-
-
+<!--
 	<tr>
 		<th class="category">
-			<label for="dwg_classification"><?php print_documentation_link( 'dwg_classification' ) ?></label>
+			<label for="dwg_classification"><?php print_dwg_documentation_link( 'dwg_classification' ) ?></label>
 		</th>
 		<td>
 			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_classification" name="dwg_classification" size="105" maxlength="128" value="<?php echo string_attribute( $f_dwg_classification ) ?>" />
 		</td>
 	</tr>
-
 	<tr>
 		<th class="category">
-			<label for="description"><?php print_documentation_link( 'description' ) ?></label>
+			<label for="description"><?php print_dwg_documentation_link( 'description' ) ?></label>
 		</th>
 		<td>
 			<?php # Newline after opening textarea tag is intentional, see #25839 ?>
@@ -576,8 +808,9 @@ if( $t_show_attachments ) {
 			</textarea>
 		</td>
 	</tr>
-
+ -->
 <?php
+	}
 
 	$t_custom_fields_found = false;
 	$t_related_custom_field_ids = custom_field_get_linked_ids( $t_project_id );
@@ -696,7 +929,7 @@ if( $t_show_attachments ) {
 ?>
 	<tr>
 		<th class="category">
-			<?php print_documentation_link( 'dwg_entry_stay' ) ?>
+			<?php print_dwg_documentation_link( 'dwg_entry_stay' ) ?>
 		</th>
 		<td>
 			<label>

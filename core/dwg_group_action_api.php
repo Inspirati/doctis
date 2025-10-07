@@ -228,7 +228,7 @@ function dwg_group_action_get_commands( array $p_project_ids = [] ) {
 		}
 
 		if( !isset( $t_commands['COPY'] ) &&
-			access_has_any_project_level( 'report_dwg_threshold' ) ) {
+			access_has_any_project_level( 'create_dwg_threshold' ) ) {
 			$t_commands['COPY'] = lang_get( 'actiongroup_menu_copy' );
 		}
 

@@ -39,7 +39,7 @@
  * @uses user_api.php
  */
 
-require_api( 'access_api.php' );
+require_api( 'access_inc_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'dwg_api.php' );
 require_api( 'dwgnote_api.php' );
@@ -393,7 +393,7 @@ function access_has_limited_view_dwg( $p_project_id = null, $p_user_id = null ) 
 		# build a static array holding that threshold for each project
 		static $s_thresholds = array();
 		if( !isset( $s_thresholds[$t_project_id] ) ) {
-			$t_report_dwg_threshold = config_get( 'report_dwg_threshold', null, $t_user_id, $t_project_id );
+			$t_report_dwg_threshold = config_get( 'create_dwg_threshold', null, $t_user_id, $t_project_id );
 			if( empty( $t_report_dwg_threshold ) ) {
 				$s_thresholds[$t_project_id] = NOBODY;
 			} else {

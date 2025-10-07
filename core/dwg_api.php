@@ -120,7 +120,6 @@ use Mantis\Exceptions\ClientException;
 #[AllowDynamicProperties]
 class DwgData {
 	protected $id;
-//	protected $dwg_id;  // @TODO RobD - need to figure this out, include so as reflection class will match up with columns configuration string ie id === dwg_id
 	protected $project_id = null;
 	protected $status = NEW_;
 	protected $date_submitted = '';
@@ -1377,7 +1376,7 @@ function dwg_move( $p_bug_id, $p_target_project_id ) {
 	# Bug has no category
 	if( $t_category_id == 0 ) {
 		# Category is required in target project, set it to default
-		if( ON != config_get( 'allow_no_document', null, null, $p_target_project_id ) ) {
+		if( ON != config_get( 'allow_no_category', null, null, $p_target_project_id ) ) {
 			dwg_set_field( $p_bug_id, 'category_id', config_get( 'default_category_for_moves', null, null, $p_target_project_id ) );
 		}
 	} else {
