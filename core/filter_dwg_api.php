@@ -75,7 +75,7 @@ require_api( 'logging_api.php' );
 require_api( 'print_dwg_api.php' );
 require_api( 'profile_api.php' );
 require_api( 'project_api.php' );
-require_api( 'dwg_relationship_api.php' );
+require_api( 'relationship_dwg_api.php' );
 require_api( 'session_api.php' );
 require_api( 'string_api.php' );
 require_api( 'tag_dwg_api.php' );

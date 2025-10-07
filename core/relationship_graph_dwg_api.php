@@ -51,7 +51,7 @@ require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
 require_api( 'graphviz_api.php' );
 require_api( 'helper_api.php' );
-require_api( 'dwg_relationship_api.php' );
+require_api( 'relationship_dwg_api.php' );
 require_api( 'string_api.php' );
 require_api( 'utility_api.php' );
 

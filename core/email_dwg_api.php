@@ -70,7 +70,7 @@ require_api( 'history_dwg_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'logging_api.php' );
 require_api( 'project_api.php' );
-require_api( 'dwg_relationship_api.php' );
+require_api( 'relationship_dwg_api.php' );
 require_api( 'sponsorship_api.php' );
 require_api( 'string_api.php' );
 require_api( 'user_api.php' );

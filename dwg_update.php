@@ -59,7 +59,7 @@ require_api( 'helper_api.php' );
 require_api( 'history_dwg_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'print_dwg_api.php' );
-require_api( 'dwg_relationship_api.php' );
+require_api( 'relationship_dwg_api.php' );
 
 /**
  * Retrieves a version from form data and ensures it is valid.

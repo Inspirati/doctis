@@ -29,7 +29,7 @@ require_api( 'helper_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'last_visited_dwg_api.php' );
 require_api( 'profile_api.php' );
-require_api( 'dwg_relationship_api.php' );
+require_api( 'relationship_dwg_api.php' );
 require_api( 'string_api.php' );
 require_api( 'user_api.php' );
 

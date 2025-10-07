@@ -48,7 +48,7 @@ require_api( 'helper_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'print_dwg_api.php' );
-require_api( 'relationship_graph_api.php' );
+require_api( 'relationship_graph_dwg_api.php' );
 
 require_css( 'status_config.php' );
 

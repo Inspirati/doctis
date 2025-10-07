@@ -41,7 +41,7 @@ require_api( 'compress_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
 require_api( 'gpc_api.php' );
-require_api( 'relationship_graph_api.php' );
+require_api( 'relationship_graph_dwg_api.php' );
 
 # If relationship graphs were made disabled, we disallow any access to
 # this script.
