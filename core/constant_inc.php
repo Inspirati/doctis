@@ -614,7 +614,7 @@ define( 'REMINDER', 1 );
 define( 'TIME_TRACKING', 2 );
 
 # dwgnote types
-define( 'DWGNOTE', 0 );
+define( 'DWGNOTE', 0 );  // @TODO RobD - bump this up to index 4 ?
 
 # token types
 define( 'TOKEN_UNKNOWN', 0 );
