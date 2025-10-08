@@ -117,7 +117,7 @@ function dwg_relgraph_generate_rel_graph( $p_bug_id, $p_show_summary = false ) {
 
 		$t_relationships = dwg_relationship_get_all_src( $t_id );
 		foreach( $t_relationships as $t_relationship ) {
-			$t_dst = $t_relationship->dest_bug_id;
+			$t_dst = $t_relationship->dest_dwg_id;
 			if( DWG_DEPENDANT == $t_relationship->type ) {
 				$v_rel_list[$t_id][$t_dst] = DWG_DEPENDANT;
 				$v_rel_list[$t_dst][$t_id] = DWG_BLOCKS;
@@ -133,7 +133,7 @@ function dwg_relgraph_generate_rel_graph( $p_bug_id, $p_show_summary = false ) {
 
 		$t_relationships = dwg_relationship_get_all_dest( $t_id );
 		foreach( $t_relationships as $t_relationship ) {
-			$t_dst = $t_relationship->src_bug_id;
+			$t_dst = $t_relationship->src_dwg_id;
 			if( DWG_DEPENDANT == $t_relationship->type ) {
 				$v_rel_list[$t_id][$t_dst] = DWG_BLOCKS;
 				$v_rel_list[$t_dst][$t_id] = DWG_DEPENDANT;
@@ -264,8 +264,8 @@ function dwg_relgraph_generate_dep_graph( $p_bug_id, $p_horizontal = false, $p_s
 			continue;
 		}
 
-		$v_bug_list[$p_bug_id]->parents[] = $t_relationship->src_bug_id;
-		dwg_relgraph_add_parent( $v_bug_list, $t_relationship->src_bug_id );
+		$v_bug_list[$p_bug_id]->parents[] = $t_relationship->src_dwg_id;
+		dwg_relgraph_add_parent( $v_bug_list, $t_relationship->src_dwg_id );
 	}
 
 	$t_relationships = dwg_relationship_get_all_src( $p_bug_id );
@@ -274,8 +274,8 @@ function dwg_relgraph_generate_dep_graph( $p_bug_id, $p_horizontal = false, $p_s
 			continue;
 		}
 
-		$v_bug_list[$p_bug_id]->children[] = $t_relationship->dest_bug_id;
-		dwg_relgraph_add_child( $v_bug_list, $t_relationship->dest_bug_id );
+		$v_bug_list[$p_bug_id]->children[] = $t_relationship->dest_dwg_id;
+		dwg_relgraph_add_child( $v_bug_list, $t_relationship->dest_dwg_id );
 	}
 
 	# We have already collected all the information we need to generate
@@ -386,8 +386,8 @@ function dwg_relgraph_add_parent( array &$p_bug_list, $p_bug_id ) {
 			continue;
 		}
 
-		$p_bug_list[$p_bug_id]->parents[] = $t_relationship->src_bug_id;
-		dwg_relgraph_add_parent( $p_bug_list, $t_relationship->src_bug_id );
+		$p_bug_list[$p_bug_id]->parents[] = $t_relationship->src_dwg_id;
+		dwg_relgraph_add_parent( $p_bug_list, $t_relationship->src_dwg_id );
 	}
 
 	# Add all child issues to the list of children. Do not visit them
@@ -399,7 +399,7 @@ function dwg_relgraph_add_parent( array &$p_bug_list, $p_bug_id ) {
 			continue;
 		}
 
-		$p_bug_list[$p_bug_id]->children[] = $t_relationship->dest_bug_id;
+		$p_bug_list[$p_bug_id]->children[] = $t_relationship->dest_dwg_id;
 	}
 
 	return true;
@@ -460,7 +460,7 @@ function dwg_relgraph_add_child( array &$p_bug_list, $p_bug_id ) {
 				continue;
 			}
 
-			$p_bug_list[$p_bug_id]->parents[] = $t_relationship->src_bug_id;
+			$p_bug_list[$p_bug_id]->parents[] = $t_relationship->src_dwg_id;
 		}
 
 		# Add all child issues to the list of children and visit them
@@ -471,8 +471,8 @@ function dwg_relgraph_add_child( array &$p_bug_list, $p_bug_id ) {
 				continue;
 			}
 
-			$p_bug_list[$p_bug_id]->children[] = $t_relationship->dest_bug_id;
-			dwg_relgraph_add_child( $p_bug_list, $t_relationship->dest_bug_id );
+			$p_bug_list[$p_bug_id]->children[] = $t_relationship->dest_dwg_id;
+			dwg_relgraph_add_child( $p_bug_list, $t_relationship->dest_dwg_id );
 		}
 	}
 

@@ -65,7 +65,7 @@ foreach( $t_dest_bug_id_array as $t_dest_bug_id ) {
 		)
 	);
 
-	$t_command = new DocumentRelationshipAddCommand( $t_data );
+	$t_command = new DwgRelationshipAddCommand( $t_data );
 	$t_command->execute();
 }
 

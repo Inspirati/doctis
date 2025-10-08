@@ -1625,7 +1625,7 @@ function mc_dwg_relationship_delete( $p_username, $p_password, $p_issue_id, $p_r
 	}
 
 	# retrieve the destination bug of the relationship
-	$t_dest_issue_id = dwg_relationship_get_linked_bug_id( $p_relationship_id, $p_issue_id );
+	$t_dest_issue_id = dwg_relationship_get_linked_dwg_id( $p_relationship_id, $p_issue_id );
 
 	# user can access to the related bug at least as viewer, if it's exist...
 	if( dwg_exists( $t_dest_issue_id ) ) {

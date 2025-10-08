@@ -111,7 +111,7 @@ class DwgRelationshipData {
 	/**
 	 * @var int Source Bug id
 	 */
-	public $src_bug_id;
+	public $src_dwg_id;
 
 	/**
 	 * @var int Source project id
@@ -121,7 +121,7 @@ class DwgRelationshipData {
 	/**
 	 * @var int Destination Bug id
 	 */
-	public $dest_bug_id;
+	public $dest_dwg_id;
 
 	/**
 	 * @var int Destination project id
@@ -368,8 +368,8 @@ function dwg_relationship_delete( $p_relationship_id, $p_send_email = true ) {
 	$t_query = 'DELETE FROM {dwg_relationship} WHERE id=' . db_param();
 	db_query( $t_query, array( (int)$p_relationship_id ) );
 
-	$t_src_bug_id = $t_relationship->src_bug_id;
-	$t_dest_bug_id = $t_relationship->dest_bug_id;
+	$t_src_bug_id = $t_relationship->src_dwg_id;
+	$t_dest_bug_id = $t_relationship->dest_dwg_id;
 	$t_rel_type = $t_relationship->type;
 
 	dwg_update_date( $t_src_bug_id );
@@ -420,7 +420,7 @@ function dwg_relationship_copy_all( $p_bug_id, $p_new_bug_id ) {
 	foreach( $t_relationships as $t_relationship ) {
 		dwg_relationship_add(
 			$p_new_bug_id,
-			$t_relationship->dest_bug_id,
+			$t_relationship->dest_dwg_id,
 			$t_relationship->type,
 			/* email_for_source */ false );
 	}
@@ -429,7 +429,7 @@ function dwg_relationship_copy_all( $p_bug_id, $p_new_bug_id ) {
 	foreach( $t_relationships as $t_relationship ) {
 		dwg_relationship_add(
 			$p_new_bug_id,
-			$t_relationship->src_bug_id,
+			$t_relationship->src_dwg_id,
 			dwg_relationship_get_complementary_type( $t_relationship->type ),
 			/* email_for_source */ false );
 	}
@@ -453,8 +453,8 @@ function dwg_relationship_get( $p_relationship_id ) {
 	if( $t_relationship ) {
 		$t_bug_relationship_data = new DwgRelationshipData;
 		$t_bug_relationship_data->id = $t_relationship['id'];
-		$t_bug_relationship_data->src_bug_id = $t_relationship['source_dwg_id'];
-		$t_bug_relationship_data->dest_bug_id = $t_relationship['destination_dwg_id'];
+		$t_bug_relationship_data->src_dwg_id = $t_relationship['source_dwg_id'];
+		$t_bug_relationship_data->dest_dwg_id = $t_relationship['destination_dwg_id'];
 		$t_bug_relationship_data->type = $t_relationship['relationship_type'];
 	} else {
 		throw new ClientException(
@@ -478,9 +478,9 @@ function dwg_relationship_get_all_src( $p_src_bug_id ) {
 	db_param_push();
 	$t_query = 'SELECT {dwg_relationship}.id, {dwg_relationship}.relationship_type,
 				{dwg_relationship}.source_dwg_id, {dwg_relationship}.destination_dwg_id,
-				{bug}.project_id
+				{document}.project_id
 				FROM {dwg_relationship}
-				INNER JOIN {bug} ON {dwg_relationship}.destination_dwg_id = {bug}.id
+				INNER JOIN {document} ON {dwg_relationship}.destination_dwg_id = {document}.id
 				WHERE source_dwg_id=' . db_param() . '
 				ORDER BY relationship_type, {dwg_relationship}.id';
 	$t_result = db_query( $t_query, array( $p_src_bug_id ) );
@@ -494,9 +494,9 @@ function dwg_relationship_get_all_src( $p_src_bug_id ) {
 	while( $t_row = db_fetch_array( $t_result ) ) {
 		$t_bug_relationship_data[$i] = new DwgRelationshipData;
 		$t_bug_relationship_data[$i]->id = $t_row['id'];
-		$t_bug_relationship_data[$i]->src_bug_id = $t_row['source_dwg_id'];
+		$t_bug_relationship_data[$i]->src_dwg_id = $t_row['source_dwg_id'];
 		$t_bug_relationship_data[$i]->src_project_id = $t_src_project_id;
-		$t_bug_relationship_data[$i]->dest_bug_id = $t_row['destination_dwg_id'];
+		$t_bug_relationship_data[$i]->dest_dwg_id = $t_row['destination_dwg_id'];
 		$t_bug_relationship_data[$i]->dest_project_id = $t_row['project_id'];
 		$t_bug_relationship_data[$i]->type = $t_row['relationship_type'];
 		$t_bug_array[] = $t_row['destination_dwg_id'];
@@ -522,9 +522,9 @@ function dwg_relationship_get_all_dest( $p_dest_bug_id ) {
 	db_param_push();
 	$t_query = 'SELECT {dwg_relationship}.id, {dwg_relationship}.relationship_type,
 				{dwg_relationship}.source_dwg_id, {dwg_relationship}.destination_dwg_id,
-				{bug}.project_id
+				{document}.project_id
 				FROM {dwg_relationship}
-				INNER JOIN {bug} ON {dwg_relationship}.source_dwg_id = {bug}.id
+				INNER JOIN {document} ON {dwg_relationship}.source_dwg_id = {document}.id
 				WHERE destination_dwg_id=' . db_param() . '
 				ORDER BY relationship_type, {dwg_relationship}.id';
 	$t_result = db_query( $t_query, array( (int)$p_dest_bug_id ) );
@@ -538,9 +538,9 @@ function dwg_relationship_get_all_dest( $p_dest_bug_id ) {
 	while( $t_row = db_fetch_array( $t_result ) ) {
 		$t_bug_relationship_data[$i] = new DwgRelationshipData;
 		$t_bug_relationship_data[$i]->id = $t_row['id'];
-		$t_bug_relationship_data[$i]->src_bug_id = $t_row['source_dwg_id'];
+		$t_bug_relationship_data[$i]->src_dwg_id = $t_row['source_dwg_id'];
 		$t_bug_relationship_data[$i]->src_project_id = $t_row['project_id'];
-		$t_bug_relationship_data[$i]->dest_bug_id = $t_row['destination_dwg_id'];
+		$t_bug_relationship_data[$i]->dest_dwg_id = $t_row['destination_dwg_id'];
 		$t_bug_relationship_data[$i]->dest_project_id = $t_dest_project_id;
 		$t_bug_relationship_data[$i]->type = $t_row['relationship_type'];
 		$t_bug_array[] = $t_row['source_dwg_id'];
@@ -628,7 +628,7 @@ function dwg_relationship_same_type_exists( $p_src_bug_id, $p_dest_bug_id, $p_re
 		/** @noinspection PhpUnhandledExceptionInspection */
 		$t_relationship = dwg_relationship_get( $t_id_relationship );
 
-		if( $t_relationship->src_bug_id == $p_src_bug_id && $t_relationship->dest_bug_id == $p_dest_bug_id ) {
+		if( $t_relationship->src_dwg_id == $p_src_bug_id && $t_relationship->dest_dwg_id == $p_dest_bug_id ) {
 			if( $t_relationship->type == $p_rel_type ) {
 				$t_id_relationship = -1;
 			}
@@ -653,15 +653,15 @@ function dwg_relationship_same_type_exists( $p_src_bug_id, $p_dest_bug_id, $p_re
  *
  * @throws ClientException If the relationship does not exist.
  */
-function dwg_relationship_get_linked_bug_id( $p_relationship_id, $p_bug_id ) {
+function dwg_relationship_get_linked_dwg_id( $p_relationship_id, $p_bug_id ) {
 	$t_bug_relationship_data = dwg_relationship_get( $p_relationship_id );
 
-	if( $t_bug_relationship_data->src_bug_id == $p_bug_id ) {
-		return $t_bug_relationship_data->dest_bug_id;
+	if( $t_bug_relationship_data->src_dwg_id == $p_bug_id ) {
+		return $t_bug_relationship_data->dest_dwg_id;
 	}
 
-	if( $t_bug_relationship_data->dest_bug_id == $p_bug_id ) {
-		return $t_bug_relationship_data->src_bug_id;
+	if( $t_bug_relationship_data->dest_dwg_id == $p_bug_id ) {
+		return $t_bug_relationship_data->src_dwg_id;
 	}
 
 	throw new ClientException(
@@ -783,7 +783,7 @@ function dwg_relationship_can_resolve_dwg( $p_bug_id ) {
 	foreach( $t_relationships as $t_relationship ) {
 		# verify if each bug in relation DWG_DEPENDANT is already marked as resolved
 		if( $t_relationship->type == DWG_DEPENDANT ) {
-			$t_status = dwg_get_field( $t_relationship->dest_bug_id, 'status' );
+			$t_status = dwg_get_field( $t_relationship->dest_dwg_id, 'status' );
 
 			if( $t_status < config_get( 'dwg_resolved_status_threshold', null, null, $t_relationship->dest_project_id ) ) {
 				# the bug is NOT marked as resolved/closed
