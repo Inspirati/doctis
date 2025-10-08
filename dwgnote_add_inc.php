@@ -147,7 +147,7 @@ require_api( 'file_dwg_api.php' );
 
 	if( $t_allow_file_upload ) {
 		$t_file_upload_max_num = max( 1, config_get( 'file_upload_max_num' ) );
-		$t_max_file_size = file_get_max_file_size();
+		$t_max_file_size = file_dwg_get_max_file_size();
 ?>
 			<tr id="bugnote-attach-files">
 				<th class="category">

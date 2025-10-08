@@ -65,7 +65,7 @@ if( !defined( 'DWG_VIEW_INC_ALLOW' ) ) {
 require_api( 'access_dwg_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'dwg_api.php' );
-//require_api( 'dwg_activity_api.php' );
+require_api( 'dwg_activity_api.php' );
 require_api( 'category_api.php' );
 require_api( 'columns_api.php' );
 require_api( 'compress_api.php' );

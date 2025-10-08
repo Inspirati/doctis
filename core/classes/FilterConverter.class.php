@@ -94,6 +94,7 @@ class FilterConverter {
 		$this->renameField( $t_criteria, FILTER_PROPERTY_HANDLER_ID, 'handler' );
 		$this->renameField( $t_criteria, FILTER_PROPERTY_CREATOR_ID, 'creator' );
 		$this->renameField( $t_criteria, FILTER_PROPERTY_REPORTER_ID, 'reporter' );
+		$this->renameField( $t_criteria, FILTER_PROPERTY_DOCUMENT_ID, 'document' );
 		$this->renameField( $t_criteria, FILTER_PROPERTY_MONITOR_USER_ID, 'monitored' );
 		$this->renameField( $t_criteria, FILTER_PROPERTY_NOTE_USER_ID, 'commented' );
 		$this->renameField( $t_criteria, FILTER_PROPERTY_CATEGORY_ID, 'category' );

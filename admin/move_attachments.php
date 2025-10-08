@@ -60,6 +60,14 @@ function move_attachments_to_db( $p_type, $p_projects ) {
 				  AND b.project_id = " . db_param() . "
 				ORDER BY f.bug_id, f.filename";
 			break;
+		case 'dwg':
+			$t_query = "SELECT f.*
+				FROM {dwg_file} f
+				JOIN {document} b ON b.id = f.dwg_id
+				WHERE content = ''
+				  AND b.project_id = " . db_param() . "
+				ORDER BY f.dwg_id, f.filename";
+			break;
 	}
 
 	# Process projects list
@@ -127,6 +135,9 @@ function move_attachments_to_db( $p_type, $p_projects ) {
 				if( $p_type == 'bug' ) {
 					$t_file['bug_id'] = $t_row['bug_id'];
 				}
+				if( $p_type == 'dwg' ) {
+					$t_file['dwg_id'] = $t_row['dwg_id'];
+				}
 				$t_data[] = $t_file;
 			}
 		}
@@ -171,6 +182,14 @@ function move_attachments_to_disk( $p_type, array $p_projects ) {
 				  AND b.project_id = ' . db_param() . '
 				ORDER BY f.bug_id, f.filename';
 			break;
+		case 'dwg':
+			$t_query = 'SELECT f.*
+				FROM {dwg_file} f
+				JOIN {document} b ON b.id = f.dwg_id
+				WHERE content <> \'\'
+				  AND b.project_id = ' . db_param() . '
+				ORDER BY f.dwg_id, f.filename';
+			break;
 	}
 
 	# Process projects list
@@ -214,6 +233,11 @@ function move_attachments_to_disk( $p_type, array $p_projects ) {
 									SET folder = ' . db_param() . ', content = \'\'
 									WHERE id = ' . db_param();
 								break;
+							case 'dwg':
+								$t_update_query = 'UPDATE {dwg_file}
+									SET folder = ' . db_param() . ', content = \'\'
+									WHERE id = ' . db_param();
+								break;
 						}
 						$t_update_result = db_query(
 							$t_update_query,
@@ -240,6 +264,9 @@ function move_attachments_to_disk( $p_type, array $p_projects ) {
 				);
 				if( $p_type == 'bug' ) {
 					$t_file['bug_id'] = $t_row['bug_id'];
+				}
+				if( $p_type == 'dwg' ) {
+					$t_file['dwg_id'] = $t_row['dwg_id'];
 				}
 				$t_data[] = $t_file;
 			}
@@ -327,16 +354,27 @@ if( null == $f_project_to_move ) {
 				echo '<div class="table-responsive">';
 				echo '<table class="table table-bordered table-condensed table-hover table-striped">';
 				echo '<thead>';
-				echo '<tr>',
-					$f_file_type == 'bug' ? '<td width="5%">Bug ID</td>' : '',
-					'<td width="3%">File ID</td><th width="15%">Filename</td><td width="25%">Status</td>',
-					'</tr>';
+					if( $f_file_type == 'bug' ) {
+						echo '<tr>',
+							$f_file_type == 'bug' ? '<td width="5%">Bug ID</td>' : '',
+							'<td width="3%">File ID</td><th width="15%">Filename</td><td width="25%">Status</td>',
+							'</tr>';
+					}
+					if( $f_file_type == 'dwg' ) {
+						echo '<tr>',
+							$f_file_type == 'dwg' ? '<td width="5%">Document ID</td>' : '',
+							'<td width="3%">File ID</td><th width="15%">Filename</td><td width="25%">Status</td>',
+							'</tr>';
+					}
 				echo '</thead>';
 				echo '<tbody>';
 				foreach( $t_row['data'] as $t_data ) {
 					echo '<tr>';
 					if( $f_file_type == 'bug' ) {
 						printf( '<td>%s</td>', bug_format_id( $t_data['bug_id'] ) );
+					}
+					if( $f_file_type == 'dwg' ) {
+						printf( '<td>%s</td>', dwg_format_id( $t_data['dwg_id'] ) );
 					}
 					printf( '<td>%s</td><td>%s</td><td>%s</td></tr>',
 						$t_data['id'],

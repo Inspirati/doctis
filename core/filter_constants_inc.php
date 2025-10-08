@@ -65,6 +65,7 @@ define( 'FILTER_PROPERTY_SEVERITY', 'severity' ); #show_severity
 define( 'FILTER_PROPERTY_STATUS', 'status' ); #show_status
 define( 'FILTER_PROPERTY_PRIORITY', 'priority' ); #show_priority
 define( 'FILTER_PROPERTY_REPORTER_ID', 'reporter_id' );
+define( 'FILTER_PROPERTY_DOCUMENT_ID', 'document_id' );
 define( 'FILTER_PROPERTY_HANDLER_ID', 'handler_id' );
 define( 'FILTER_PROPERTY_PROJECT_ID', 'project_id' );
 define( 'FILTER_PROPERTY_PROJECTION', 'projection' );

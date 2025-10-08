@@ -846,7 +846,7 @@ if( $t_show_attachments ) {
 <?php
 	# File Upload (if enabled)
 	if( $t_show_attachments ) {
-		$t_max_file_size = file_get_max_file_size();
+		$t_max_file_size = file_dwg_get_max_file_size();
 		$t_file_upload_max_num = max( 1, config_get( 'file_upload_max_num' ) );
 ?>
 	<tr>

@@ -1312,7 +1312,7 @@ function dwg_copy( $p_bug_id, $p_target_project_id = null, $p_copy_custom_fields
 
 	# Copy attachments
 	if( $p_copy_attachments ) {
-	    file_copy_attachments( $t_bug_id, $t_new_bug_id );
+	    file_dwg_copy_attachments( $t_bug_id, $t_new_bug_id );
 	}
 
 	# Copy users monitoring bug
@@ -1807,9 +1807,9 @@ function dwg_get_attachments( $p_bug_id ) {
 
 	db_param_push();
 
-	$t_query = 'SELECT id, title, diskfile, filename, filesize, file_type, date_added, user_id, bugnote_id
-		                FROM {bug_file}
-		                WHERE bug_id=' . db_param() . '
+	$t_query = 'SELECT id, title, diskfile, filename, filesize, file_type, date_added, user_id, dwgnote_id
+		                FROM {dwg_file}
+		                WHERE dwg_id=' . db_param() . '
 		                ORDER BY date_added';
 	$t_db_result = db_query( $t_query, array( $p_bug_id ) );
 

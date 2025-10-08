@@ -197,6 +197,10 @@ function filter_get_url( array $p_custom_filter ) {
 		$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_REPORTER_ID, $p_custom_filter[FILTER_PROPERTY_REPORTER_ID] );
 	}
 
+	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_DOCUMENT_ID] ) ) {
+		$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_DOCUMENT_ID, $p_custom_filter[FILTER_PROPERTY_DOCUMENT_ID] );
+	}
+
 	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_STATUS] ) ) {
 		$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_STATUS, $p_custom_filter[FILTER_PROPERTY_STATUS] );
 	}
@@ -722,6 +726,7 @@ function filter_ensure_valid_filter( array $p_filter_arr ) {
 		FILTER_PROPERTY_SEVERITY => 'int',
 		FILTER_PROPERTY_STATUS => 'int',
 		FILTER_PROPERTY_REPORTER_ID => 'int',
+		FILTER_PROPERTY_DOCUMENT_ID => 'int',
 		FILTER_PROPERTY_HANDLER_ID => 'int',
 		FILTER_PROPERTY_NOTE_USER_ID => 'int',
 		FILTER_PROPERTY_RESOLUTION => 'int',
@@ -892,6 +897,7 @@ function filter_get_default_array( $p_view_type = null ) {
 		FILTER_PROPERTY_STATUS => $t_meta_filter_any_array,
 		FILTER_PROPERTY_HIGHLIGHT_CHANGED => $t_default_show_changed,
 		FILTER_PROPERTY_REPORTER_ID => $t_meta_filter_any_array,
+		FILTER_PROPERTY_DOCUMENT_ID => $t_meta_filter_any_array,
 		FILTER_PROPERTY_HANDLER_ID => $t_meta_filter_any_array,
 		FILTER_PROPERTY_PROJECT_ID => array( META_FILTER_CURRENT ),
 		FILTER_PROPERTY_PROJECTION => $t_meta_filter_any_array,
@@ -1982,6 +1988,17 @@ function filter_create_reported_by( $p_project_id, $p_user_id ) {
 	return filter_ensure_valid_filter( $t_filter );
 }
 
+function filter_create_document( $p_project_id, $p_document_id ) {
+	$t_filter = filter_get_default();
+	$t_filter[FILTER_PROPERTY_DOCUMENT_ID] = array( '0' => $p_document_id );
+
+	if( $p_project_id != ALL_PROJECTS ) {
+		$t_filter[FILTER_PROPERTY_PROJECT_ID] = array( '0' => $p_project_id );
+	}
+
+	return filter_ensure_valid_filter( $t_filter );
+}
+
 /**
  * Create a filter for getting issues monitored by the specified project and user.
  * @param integer $p_project_id The project id or ALL_PROJECTS.
@@ -2039,6 +2056,7 @@ function filter_gpc_get( ?array $p_filter = null ): array {
 	$f_show_status = gpc_get( FILTER_PROPERTY_STATUS, $t_filter[FILTER_PROPERTY_STATUS] );
 	$f_hide_status = gpc_get( FILTER_PROPERTY_HIDE_STATUS, $t_filter[FILTER_PROPERTY_HIDE_STATUS] );
 	$f_reporter_id = gpc_get( FILTER_PROPERTY_REPORTER_ID, $t_filter[FILTER_PROPERTY_REPORTER_ID] );
+	$f_document_id = gpc_get( FILTER_PROPERTY_DOCUMENT_ID, $t_filter[FILTER_PROPERTY_DOCUMENT_ID] );
 	$f_handler_id = gpc_get( FILTER_PROPERTY_HANDLER_ID, $t_filter[FILTER_PROPERTY_HANDLER_ID] );
 	$f_project_id = gpc_get( FILTER_PROPERTY_PROJECT_ID, $t_filter[FILTER_PROPERTY_PROJECT_ID] );
 	$f_projection = gpc_get( FILTER_PROPERTY_PROJECTION, $t_filter[FILTER_PROPERTY_PROJECTION] );
@@ -2278,6 +2296,7 @@ function filter_gpc_get( ?array $p_filter = null ): array {
 	$t_filter_input[FILTER_PROPERTY_ISSUES_PER_PAGE] 		= $f_per_page;
 	$t_filter_input[FILTER_PROPERTY_HIGHLIGHT_CHANGED] 		= $f_highlight_changed;
 	$t_filter_input[FILTER_PROPERTY_REPORTER_ID] 			= $f_reporter_id;
+	$t_filter_input[FILTER_PROPERTY_DOCUMENT_ID] 			= $f_document_id;
 	$t_filter_input[FILTER_PROPERTY_HANDLER_ID] 				= $f_handler_id;
 	$t_filter_input[FILTER_PROPERTY_PROJECT_ID] 				= $f_project_id;
 	$t_filter_input[FILTER_PROPERTY_PROJECTION] 				= $f_projection;
@@ -2627,6 +2646,9 @@ function filter_standard_get( $p_filter_name, $p_user_id = null, $p_project_id =
 			break;
 		case FILTER_STANDARD_REPORTED:
 			$t_filter = filter_create_reported_by( $t_project_id, $t_user_id );
+			break;
+		case FILTER_STANDARD_DOCUMENT:
+			$t_filter = filter_create_document( $t_project_id, NO_USER );
 			break;
 		case FILTER_STANDARD_MONITORED:
 			$t_filter = filter_create_monitored_by( $t_project_id, $t_user_id );

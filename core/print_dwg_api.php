@@ -1900,7 +1900,7 @@ function print_dwg_lost_password_link() {
  * @return void
  */
 function print_dwg_file_icon( $p_filename ) {
-	$t_icon = file_get_icon_url( $p_filename );
+	$t_icon = file_dwg_get_icon_url( $p_filename );
 	print_icon(
 		string_attribute( $t_icon['url'] ),
 		'',

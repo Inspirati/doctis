@@ -1393,7 +1393,7 @@ $g_severity_significant_threshold = MAJOR;
  */
 $g_view_issues_page_columns = array(
 	'selection', 'edit', 'priority', 'id', 'bugnotes_count', 'attachment_count',
-	'category_id', 'severity', 'status', 'last_updated', 'summary',
+	'category_id', 'severity', 'status', 'last_updated', 'summary', 'document_id'
 );
 
 /**

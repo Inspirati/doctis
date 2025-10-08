@@ -416,6 +416,9 @@ class BugFilterQuery extends DbQuery {
 				case FILTER_PROPERTY_REPORTER_ID:
 					$this->build_prop_reporter();
 					break;
+				case FILTER_PROPERTY_DOCUMENT_ID:
+					$this->build_prop_document();
+					break;
 				case FILTER_PROPERTY_HANDLER_ID:
 					$this->build_prop_handler();
 					break;
@@ -814,6 +817,23 @@ class BugFilterQuery extends DbQuery {
 		return $t_new_array;
 	}
 
+	protected function helper_process_documents_property( array $p_document_array ) {
+		$t_new_array = array();
+		foreach( $p_document_array as $t_document ) {
+			if( filter_field_is_none( $t_document ) ) {
+				$t_new_array[] = 0;
+			} else {
+				$c_document_id = (int)$t_document;
+				// if( filter_field_is_myself( $c_document_id ) ) {
+				// 	$t_new_array[] = $this->user_id;
+				// } else {
+					$t_new_array[] = $c_document_id;
+				// }
+			}
+		}
+		return $t_new_array;
+	}
+
 	/**
 	 * Build the query parts for the filter property "reporter"
 	 * @return void
@@ -826,6 +846,16 @@ class BugFilterQuery extends DbQuery {
 		$t_users_query = $this->sql_in( '{bug}.reporter_id', $t_user_ids );
 		log_event( LOG_FILTERING, 'reporter query = ' . $t_users_query );
 		$this->add_where( $t_users_query );
+	}
+
+	protected function build_prop_document() {
+		if( filter_field_is_any( $this->filter[FILTER_PROPERTY_DOCUMENT_ID] ) ) {
+			return;
+		}
+		$t_document_ids = $this->helper_process_documents_property( $this->filter[FILTER_PROPERTY_DOCUMENT_ID] );
+		$t_document_query = $this->sql_in( '{bug}.document_id', $t_document_ids );
+		log_event( LOG_FILTERING, 'document query = ' . $t_document_query );
+		$this->add_where( $t_document_query );
 	}
 
 	/**

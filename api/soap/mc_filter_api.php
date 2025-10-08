@@ -39,6 +39,7 @@ $g_soap_api_to_filter_names = array(
 	'status_id' => FILTER_PROPERTY_STATUS,
 	'priority_id' => FILTER_PROPERTY_PRIORITY,
 	'reporter_id' => FILTER_PROPERTY_REPORTER_ID,
+	'document_id' => FILTER_PROPERTY_DOCUMENT_ID,
 	'handler_id' => FILTER_PROPERTY_HANDLER_ID,
 	'note_user_id' => FILTER_PROPERTY_NOTE_USER_ID,
 	'resolution_id' => FILTER_PROPERTY_RESOLUTION,
