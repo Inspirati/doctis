@@ -587,6 +587,7 @@ define( 'FILTER_STANDARD_ASSIGNED', 'assigned' );
 define( 'FILTER_STANDARD_UNASSIGNED', 'unassigned' );
 define( 'FILTER_STANDARD_REPORTED', 'reported' );
 define( 'FILTER_STANDARD_MONITORED', 'monitored' );
+define( 'FILTER_STANDARD_DOCUMENT', 'document' );
 
 # Filter actions, refactored from view_all_set.php
 define( 'FILTER_ACTION_RESET', 0 );

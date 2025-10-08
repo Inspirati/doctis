@@ -202,6 +202,9 @@ function mci_file_get( $p_file_id, $p_type, $p_user_id ) {
 		case 'bug':
 			$t_query = 'SELECT * FROM {bug_file} WHERE id=' . db_param();
 			break;
+		case 'dwg':
+			$t_query = 'SELECT * FROM {dwg_file} WHERE id=' . db_param();
+			break;
 		case 'doc':
 			$t_query = 'SELECT * FROM {project_file} WHERE id=' . db_param();
 			break;

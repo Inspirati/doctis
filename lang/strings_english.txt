@@ -189,6 +189,8 @@ $s_dwg_deleted = 'Document Deleted';
 $s_make_private = 'Make Private';
 $s_make_public = 'Make Public';
 
+$s_document_id = 'Document';
+
 $s_create_new_project_link = 'Create New Project';
 
 # Browser Search - %s is the Search Engine title (@see $g_search_title)

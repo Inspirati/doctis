@@ -945,7 +945,6 @@ $g_upgrade[$t_idx++] = array( 'CreateTableSQL',
 		due_date		I		UNSIGNED NOTNULL DEFAULT '1',
 		dwg_text_id		I		UNSIGNED NOTNULL DEFAULT '0',
 
-	bug_text_id				I		UNSIGNED NOTNULL DEFAULT '0',
 	profile_id				I		UNSIGNED NOTNULL DEFAULT '0',
 	fixed_in_version		C(64)	NOTNULL DEFAULT \" '' \",
 	sticky					L		$t_notnull DEFAULT  \"'0'\" ",
@@ -954,10 +953,23 @@ $g_upgrade[$t_idx++] = array( 'CreateTableSQL',
 $g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_document_number', db_get_table( 'document' ), 'number' ) );
 $g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_document_category', db_get_table( 'document' ), 'category_id' ) );
 
-$g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'document' ), "
-	( title, category_id )
+$g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwg_text' ), "
+	id						I		PRIMARY UNSIGNED NOTNULL AUTOINCREMENT,
+	description				XL		$t_notnull,
+	steps_to_reproduce		XL		$t_notnull,
+	additional_information	XL		$t_notnull",
+	$t_table_options
+	) );
+
+$g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'dwg_text' ), "
+	( description, steps_to_reproduce, additional_information )
 	VALUES
-	( 'Empty', '0' )" ) );
+	( 'Empty', 'Empty', 'Empty' )" ) );
+
+$g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'document' ), "
+	( title, category_id, dwg_text_id )
+	VALUES
+	( 'Empty', '1', '1' )" ) );
 
 # @TODO RobD - extract from dwg_api.php ~line number 1982:
 #    "log changes except for duplicate_id which is obsolete and should be removed in MantisBT 1.3"
@@ -969,14 +981,6 @@ $g_upgrade[$t_idx++] = array( 'AddColumnSQL', array( db_get_table( 'bug' ), "
 # @TODO RobD: add field for project classification
 $g_upgrade[$t_idx++] = array( 'AddColumnSQL', array( db_get_table( 'project' ), "
 	classification		C(255)	NOTNULL DEFAULT \" '' \" " ) );
-
-$g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwg_text' ), "
-	id						I		PRIMARY UNSIGNED NOTNULL AUTOINCREMENT,
-	description				XL		$t_notnull,
-	steps_to_reproduce		XL		$t_notnull,
-	additional_information	XL		$t_notnull",
-	$t_table_options
-	) );
 
 $g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwgnote' ), "
 	id						I		UNSIGNED PRIMARY NOTNULL AUTOINCREMENT,

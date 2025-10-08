@@ -45,6 +45,7 @@ require_once( 'core.php' );
 require_api( 'access_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'bug_api.php' );
+require_api( 'dwg_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
 require_api( 'database_api.php' );
@@ -86,6 +87,9 @@ switch( $f_type ) {
 	case 'bug':
 		$t_query = 'SELECT * FROM {bug_file} WHERE id=' . db_param();
 		break;
+	case 'dwg':
+		$t_query = 'SELECT * FROM {dwg_file} WHERE id=' . db_param();
+		break;
 	case 'doc':
 		$t_query = 'SELECT * FROM {project_file} WHERE id=' . db_param();
 		break;
@@ -115,6 +119,8 @@ extract( $t_row, EXTR_PREFIX_ALL, 'v' );
 
 if( $f_type == 'bug' ) {
 	$t_project_id = bug_get_field( $v_bug_id, 'project_id' );
+} else if( $f_type == 'dwg' ) {
+	$t_project_id = dwg_get_field( $v_dwg_id, 'project_id' );
 } else {
 	$t_project_id = $v_project_id;
 }
@@ -124,6 +130,13 @@ switch( $f_type ) {
 	case 'bug':
 		if( !file_can_download_bug_attachments( $v_bug_id, $v_user_id )
 		|| !file_can_download_bugnote_attachments( $v_bugnote_id, $v_user_id )
+		) {
+			access_denied();
+		}
+		break;
+	case 'dwg':
+		if( !file_dwg_can_download_dwg_attachments( $v_dwg_id, $v_user_id )
+		|| !file_dwg_can_download_dwgnote_attachments( $v_dwgnote_id, $v_user_id )
 		) {
 			access_denied();
 		}

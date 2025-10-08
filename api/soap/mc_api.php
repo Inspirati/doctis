@@ -1003,8 +1003,8 @@ function mci_get_document_id( $p_document, $p_project_id ) {
 	 * @param string|array|null $p_document
 	 * @param int               $p_project_id
 	 *
-	 * @return int|false Category Id (0 = no category) or false if unspecified.
-	 * @throws ClientException if Category does not exist.
+	 * @return int|false Document Id (0 = no document) or false if unspecified.
+	 * @throws ClientException if Document does not exist.
 	 */
 	$fn_get_document_id_internal = function( $p_document, int $p_project_id ) use ( $t_allow_no_document ) {
 		if( $p_document === null ) {
@@ -1037,8 +1037,8 @@ function mci_get_document_id( $p_document, $p_project_id ) {
 						ERROR_DOCUMENT_NOT_FOUND
 					);
 				}
-			} elseif( isset( $p_document['name'] ) ) {
-				$t_document_name = $p_document['name'];
+			} elseif( isset( $p_document['title'] ) ) {
+				$t_document_name = $p_document['title'];
 			} else {
 				return false;
 			}
@@ -1049,7 +1049,7 @@ function mci_get_document_id( $p_document, $p_project_id ) {
 		# Retrieve Document Id from Name
 		$t_cat_array = document_get_all_rows( $p_project_id );
 		foreach( $t_cat_array as $t_category_row ) {
-			if( strcasecmp( $t_category_row['name'], $t_document_name ) == 0 ) {
+			if( strcasecmp( $t_category_row['title'], $t_document_name ) == 0 ) {
 				return $t_category_row['id'];
 			}
 		}
@@ -1065,7 +1065,7 @@ function mci_get_document_id( $p_document, $p_project_id ) {
 		throw new ClientException(
 			'Document field must be supplied.',
 			ERROR_EMPTY_FIELD,
-			array( 'category' )
+			array( 'document' )
 		);
 	}
 

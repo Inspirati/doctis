@@ -76,11 +76,11 @@ function file_dwg_attach_files( $p_bug_id, $p_files, $p_bugnote_id = 0 ) {
 	$t_file_infos = array();
 	foreach( $p_files as $t_file ) {
 		if( !empty( $t_file['name'] ) ) {
-			# $p_bug_id, array $p_file, $p_table = 'bug', $p_title = '', $p_desc = '', $p_user_id = null, $p_date_added = 0, $p_skip_bug_update = false, $p_bugnote_id = 0
+			# $p_bug_id, array $p_file, $p_table = 'dwg', $p_title = '', $p_desc = '', $p_user_id = null, $p_date_added = 0, $p_skip_bug_update = false, $p_bugnote_id = 0
 			$t_file_infos[] = file_dwg_add(
 				$p_bug_id,
 				$t_file,
-				'document',
+				'dwg',
 				'', /* title */
 				'', /* desc */
 				null, /* user_id */
@@ -223,9 +223,9 @@ function file_dwg_has_attachments( $p_bug_id ) {
  *
  * Generic call used by
  * - {@see file_dwg_can_view_dwg_attachments()}
- * - {@see file_dwg_can_view_bugnote_attachments}
- * - {@see file_dwg_can_download_bug_attachments()}
- * - {@see file_can_download_bugnote_attachments}
+ * - {@see file_dwg_can_view_dwgnote_attachments}
+ * - {@see file_dwg_can_download_dwg_attachments()}
+ * - {@see file_dwg_can_download_dwgnote_attachments}
  *
  * @param string   $p_action           'view' or 'download'
  * @param int      $p_bug_id           A bug identifier
@@ -293,7 +293,7 @@ function file_dwg_can_view_dwg_attachments( $p_bug_id, $p_uploader_user_id = nul
  * @return bool
  * @throws ClientException
  */
-function file_dwg_can_view_bugnote_attachments( $p_bugnote_id, $p_uploader_user_id = null, $p_bug_id = null ) {
+function file_dwg_can_view_dwgnote_attachments( $p_bugnote_id, $p_uploader_user_id = null, $p_bug_id = null ) {
 	if( $p_bugnote_id == 0 ) {
 		return true;
 	}
@@ -316,7 +316,7 @@ function file_dwg_can_view_bugnote_attachments( $p_bugnote_id, $p_uploader_user_
  * @return bool
  * @throws ClientException
  */
-function file_dwg_can_download_bug_attachments( $p_bug_id, $p_uploader_user_id = null ) {
+function file_dwg_can_download_dwg_attachments( $p_bug_id, $p_uploader_user_id = null ) {
 	return file_dwg_can_view_or_download( 'download', $p_bug_id, $p_uploader_user_id );
 }
 
@@ -329,7 +329,7 @@ function file_dwg_can_download_bug_attachments( $p_bug_id, $p_uploader_user_id =
  * @return bool
  * @throws ClientException
  */
-function file_dwg_can_download_bugnote_attachments( $p_bugnote_id, $p_uploader_user_id = null ) {
+function file_dwg_can_download_dwgnote_attachments( $p_bugnote_id, $p_uploader_user_id = null ) {
 	if( $p_bugnote_id == 0 ) {
 		return true;
 	}
@@ -346,7 +346,7 @@ function file_dwg_can_download_bugnote_attachments( $p_bugnote_id, $p_uploader_u
  * @return bool
  * @throws ClientException
  */
-function file_dwg_can_delete_bug_attachments( $p_bug_id, $p_uploader_user_id = null ) {
+function file_dwg_can_delete_dwg_attachments( $p_bug_id, $p_uploader_user_id = null ) {
 	if( dwg_is_readonly( $p_bug_id ) ) {
 		return false;
 	}
@@ -493,10 +493,10 @@ function file_dwg_get_visible_attachments( $p_bug_id ) {
 
 	foreach( $t_attachment_rows as $t_row ) {
 		$t_user_id = (int)$t_row['user_id'];
-		$t_attachment_note_id = (int)$t_row['bugnote_id'];
+		$t_attachment_note_id = (int)$t_row['dwgnote_id'];
 
 		if( !file_dwg_can_view_dwg_attachments( $p_bug_id, $t_user_id )
-		|| !file_dwg_can_view_bugnote_attachments( $t_attachment_note_id, $t_user_id, $p_bug_id )
+		|| !file_dwg_can_view_dwgnote_attachments( $t_attachment_note_id, $t_user_id, $p_bug_id )
 		) {
 			continue;
 		}
@@ -515,13 +515,13 @@ function file_dwg_get_visible_attachments( $p_bug_id ) {
 		$t_attachment['date_added'] = $t_date_added;
 		$t_attachment['diskfile'] = $t_diskfile;
 		$t_attachment['file_type'] = $t_row['file_type'];
-		$t_attachment['bugnote_id'] = $t_attachment_note_id;
+		$t_attachment['dwgnote_id'] = $t_attachment_note_id;
 
-		$t_attachment['can_download'] = file_dwg_can_download_bug_attachments( $p_bug_id, $t_user_id );
-		$t_attachment['can_delete'] = file_dwg_can_delete_bug_attachments( $p_bug_id, $t_user_id );
+		$t_attachment['can_download'] = file_dwg_can_download_dwg_attachments( $p_bug_id, $t_user_id );
+		$t_attachment['can_delete'] = file_dwg_can_delete_dwg_attachments( $p_bug_id, $t_user_id );
 
 		if( $t_attachment['can_download'] ) {
-			$t_attachment['download_url'] = 'file_download.php?file_id=' . $t_id . '&type=bug';
+			$t_attachment['download_url'] = 'file_download.php?file_id=' . $t_id . '&type=dwg';
 		}
 
 		$t_attachment['exists'] = config_get( 'file_upload_method' ) != DISK || file_exists( $t_diskfile );
@@ -978,7 +978,7 @@ function file_dwg_add( $p_bug_id, array $p_file, $p_table = 'dwg', $p_title = ''
 			ERROR_FILE_TOO_BIG );
 	}
 
-	if( 'bug' == $p_table ) {
+	if( 'dwg' == $p_table ) {
 		$t_project_id = dwg_get_field( $p_bug_id, 'project_id' );
 		$t_id = (int)$p_bug_id;
 	} else {
@@ -1085,7 +1085,7 @@ function file_dwg_add( $p_bug_id, array $p_file, $p_table = 'dwg', $p_title = ''
 		db_update_blob( $t_file_table, 'content', $c_content, "diskfile='$t_unique_name'" );
 	}
 
-	if( 'bug' == $p_table ) {
+	if( 'dwg' == $p_table ) {
 		# update the last_updated date
 		if( !$p_skip_bug_update ) {
 			dwg_update_date( $p_bug_id );
@@ -1285,12 +1285,12 @@ function file_dwg_get_mime_type_for_content( $p_content ) {
  *                    failure to retrieve file
  * @throws ClientException
  */
-function file_dwg_get_content( $p_file_id, $p_type = 'document' ) {
+function file_dwg_get_content( $p_file_id, $p_type = 'dwg' ) {
 	# we handle the case where the file is attached to a bug
 	# or attached to a project as a project doc.
 	db_param_push();
 	switch( $p_type ) {
-		case 'document':
+		case 'dwg':
 			$t_query = 'SELECT * FROM {dwg_file} WHERE id=' . db_param();
 			break;
 		case 'doc':
@@ -1303,7 +1303,7 @@ function file_dwg_get_content( $p_file_id, $p_type = 'document' ) {
 	$t_result = db_query( $t_query, array( $p_file_id ) );
 	$t_row = db_fetch_array( $t_result );
 
-	if( $p_type == 'bug' ) {
+	if( $p_type == 'dwg' ) {
 		$t_project_id = dwg_get_field( $t_row['dwg_id'], 'project_id' );
 	} else {
 		$t_project_id = $t_row['dwg_id'];
@@ -1350,7 +1350,7 @@ function file_dwg_get_content( $p_file_id, $p_type = 'document' ) {
  * @throws ServiceException
  * @todo: this function can't cope with source or target storing attachments in DB
  */
-function file_dwg_move_bug_attachments( $p_bug_id, $p_project_id_to ) {
+function file_dwg_move_dwg_attachments( $p_bug_id, $p_project_id_to ) {
 	$t_project_id_from = dwg_get_field( $p_bug_id, 'project_id' );
 	if( $t_project_id_from == $p_project_id_to ) {
 		return;

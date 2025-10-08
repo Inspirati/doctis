@@ -62,7 +62,7 @@ function mc_dwg_exists( $p_username, $p_password, $p_issue_id ) {
  * @param string  $p_password The password of the user.
  * @param integer $p_issue_id The id of the issue to retrieve.
  * @param array|null The list of fields to include in the result or null for all.
- * @return array that represents an DocumentData structure
+ * @return array that represents an DwgData structure
  */
 function mc_dwg_get( $p_username, $p_password, $p_issue_id, $p_fields = null ) {
 	$t_user_id = mci_check_login( $p_username, $p_password );
@@ -559,68 +559,68 @@ function mci_dwg_get_attachments( $p_issue_id, $p_note_id = null ) {
  * @return array that represents an RelationShipData structure
  */
 function mci_dwg_get_relationships( $p_issue_id, $p_user_id ) {
-	// $t_relationships = array();
+	$t_relationships = array();
 
-	// $t_src_relationships = dwg_relationship_get_all_src( $p_issue_id );
-	// foreach( $t_src_relationships as $t_relship_row ) {
-	// 	if( access_has_dwg_level( config_get( 'webservice_readonly_access_level_threshold' ), $t_relship_row->dest_bug_id, $p_user_id ) ) {
-	// 		$t_related_issue_id = (int)$t_relship_row->dest_bug_id;
+	$t_src_relationships = dwg_relationship_get_all_src( $p_issue_id );
+	foreach( $t_src_relationships as $t_relship_row ) {
+		if( access_has_dwg_level( config_get( 'webservice_readonly_access_level_threshold' ), $t_relship_row->dest_dwg_id, $p_user_id ) ) {
+			$t_related_issue_id = (int)$t_relship_row->dest_dwg_id;
 
-	// 		$t_relationship = array();
-	// 		$t_reltype = array();
-	// 		$t_relationship['id'] = (int)$t_relship_row->id;
-	// 		$t_reltype['id'] = (int)$t_relship_row->type;
+			$t_relationship = array();
+			$t_reltype = array();
+			$t_relationship['id'] = (int)$t_relship_row->id;
+			$t_reltype['id'] = (int)$t_relship_row->type;
 
-	// 		if( ApiObjectFactory::$soap ) {
-	// 			$t_reltype['name'] = dwg_relationship_get_description_src_side( $t_relship_row->type );
-	// 		} else {
-	// 			$t_reltype['name'] = dwg_relationship_get_name_for_api( $t_relship_row->type );
-	// 			$t_reltype['label'] = dwg_relationship_get_description_src_side( $t_relship_row->type );
-	// 		}
+			if( ApiObjectFactory::$soap ) {
+				$t_reltype['name'] = dwg_relationship_get_description_src_side( $t_relship_row->type );
+			} else {
+				$t_reltype['name'] = dwg_relationship_get_name_for_api( $t_relship_row->type );
+				$t_reltype['label'] = dwg_relationship_get_description_src_side( $t_relship_row->type );
+			}
 
-	// 		$t_relationship['type'] = $t_reltype;
+			$t_relationship['type'] = $t_reltype;
 
-	// 		if( ApiObjectFactory::$soap ) {
-	// 			$t_relationship['target_id'] = $t_related_issue_id;
-	// 		} else {
-	// 			$t_relationship['issue'] = mci_related_issue_as_array_by_id( $t_related_issue_id );
-	// 		}
+			if( ApiObjectFactory::$soap ) {
+				$t_relationship['target_id'] = $t_related_issue_id;
+			} else {
+				$t_relationship['issue'] = mci_related_issue_as_array_by_id( $t_related_issue_id );
+			}
 
-	// 		$t_relationships[] = $t_relationship;
-	// 	}
-	// }
+			$t_relationships[] = $t_relationship;
+		}
+	}
 
-	// $t_dest_relationships = dwg_relationship_get_all_dest( $p_issue_id );
-	// foreach( $t_dest_relationships as $t_relship_row ) {
-	// 	if( access_has_dwg_level( config_get( 'webservice_readonly_access_level_threshold' ), $t_relship_row->src_bug_id, $p_user_id ) ) {
-	// 		$t_relationship = array();
-	// 		$t_relationship['id'] = (int)$t_relship_row->id;
-	// 		$t_reltype = array();
-	// 		$t_complementary_type_id = (int)dwg_relationship_get_complementary_type( $t_relship_row->type );
-	// 		$t_reltype['id'] = $t_complementary_type_id;
+	$t_dest_relationships = dwg_relationship_get_all_dest( $p_issue_id );
+	foreach( $t_dest_relationships as $t_relship_row ) {
+		if( access_has_dwg_level( config_get( 'webservice_readonly_access_level_threshold' ), $t_relship_row->src_dwg_id, $p_user_id ) ) {
+			$t_relationship = array();
+			$t_relationship['id'] = (int)$t_relship_row->id;
+			$t_reltype = array();
+			$t_complementary_type_id = (int)dwg_relationship_get_complementary_type( $t_relship_row->type );
+			$t_reltype['id'] = $t_complementary_type_id;
 
-	// 		if( ApiObjectFactory::$soap ) {
-	// 			$t_reltype['name'] = dwg_relationship_get_description_dest_side( $t_relship_row->type );
-	// 		} else {
-	// 			$t_reltype['name'] = dwg_relationship_get_name_for_api( $t_complementary_type_id );
-	// 			$t_reltype['label'] = dwg_relationship_get_description_dest_side( $t_relship_row->type );
-	// 		}
+			if( ApiObjectFactory::$soap ) {
+				$t_reltype['name'] = dwg_relationship_get_description_dest_side( $t_relship_row->type );
+			} else {
+				$t_reltype['name'] = dwg_relationship_get_name_for_api( $t_complementary_type_id );
+				$t_reltype['label'] = dwg_relationship_get_description_dest_side( $t_relship_row->type );
+			}
 
-	// 		$t_relationship['type'] = $t_reltype;
-	// 		$t_related_issue_id = (int)$t_relship_row->src_bug_id;
+			$t_relationship['type'] = $t_reltype;
+			$t_related_issue_id = (int)$t_relship_row->src_dwg_id;
 
-	// 		if( ApiObjectFactory::$soap ) {
-	// 			$t_relationship['target_id'] = $t_related_issue_id;
-	// 		} else {
-	// 			$t_relationship['issue'] = mci_related_issue_as_array_by_id( $t_related_issue_id );
-	// 		}
+			if( ApiObjectFactory::$soap ) {
+				$t_relationship['target_id'] = $t_related_issue_id;
+			} else {
+				$t_relationship['issue'] = mci_related_issue_as_array_by_id( $t_related_issue_id );
+			}
 
-	// 		$t_relationships[] = $t_relationship;
-	// 	}
-	// }
+			$t_relationships[] = $t_relationship;
+		}
+	}
 
-	// return (count( $t_relationships ) == 0 ? null : $t_relationships );
-	return array();
+	return (count( $t_relationships ) == 0 ? null : $t_relationships );
+//	return array();
 }
 
 /**
@@ -631,7 +631,7 @@ function mci_dwg_get_relationships( $p_issue_id, $p_user_id ) {
 function mci_dwg_note_data_as_array( $p_bugnote_row ) {
 	$t_user_id = auth_get_current_user_id();
 	$t_lang = mci_get_user_lang( $t_user_id );
-	$t_has_time_tracking_access = access_has_dwg_level( config_get( 'time_tracking_view_threshold' ), $p_bugnote_row->bug_id );
+	$t_has_time_tracking_access = access_has_dwg_level( config_get( 'time_tracking_view_threshold' ), $p_bugnote_row->dwg_id );
 
 	$t_bugnote = array();
 	$t_bugnote['id'] = (int)$p_bugnote_row->id;
@@ -650,7 +650,7 @@ function mci_dwg_note_data_as_array( $p_bugnote_row ) {
 		$t_bugnote['date_submitted'] = $t_created_at;
 		$t_bugnote['last_modified'] = $t_modified_at;
 	} else {
-		$t_bugnote['attachments'] = mci_dwg_get_attachments( $p_bugnote_row->bug_id, $p_bugnote_row->id );
+		$t_bugnote['attachments'] = mci_dwg_get_attachments( $p_bugnote_row->dwg_id, $p_bugnote_row->id );
 
 		switch( $p_bugnote_row->note_type ) {
 			case REMINDER:
@@ -690,19 +690,18 @@ function mci_dwg_note_data_as_array( $p_bugnote_row ) {
  * Get all visible notes for a specific issue
  *
  * @param integer $p_issue_id The id of the issue to retrieve the notes for.
- * @return array that represents an SOAP DocumentNoteData structure
+ * @return array that represents an SOAP DwgNoteData structure
  */
 function mci_dwg_get_notes( $p_issue_id ) {
-	// $t_user_bugnote_order = 'ASC'; # always get the notes in ascending order for consistency to the calling application.
+	$t_user_bugnote_order = 'ASC'; # always get the notes in ascending order for consistency to the calling application.
 
-	// $t_result = array();
-	// foreach( dwgnote_get_all_visible_dwgnotes( $p_issue_id, $t_user_bugnote_order, 0 ) as $t_value ) {
-	// 	$t_bugnote = mci_dwg_note_data_as_array( $t_value );
-	// 	$t_result[] = $t_bugnote;
-	// }
+	$t_result = array();
+	foreach( dwgnote_get_all_visible_dwgnotes( $p_issue_id, $t_user_bugnote_order, 0 ) as $t_value ) {
+		$t_bugnote = mci_dwg_note_data_as_array( $t_value );
+		$t_result[] = $t_bugnote;
+	}
 
-	// return count( $t_result ) == 0 ? null : $t_result;
-	return array();
+	return count( $t_result ) == 0 ? null : $t_result;
 }
 
 /**
@@ -965,7 +964,7 @@ function mc_dwg_add( $p_username, $p_password, $p_issue ) {
  * @param string   $p_username The name of the user trying to update the issue.
  * @param string   $p_password The password of the user.
  * @param integer  $p_issue_id The issue id of the existing issue being updated.
- * @param stdClass $p_issue    A DocumentData structure containing information
+ * @param stdClass $p_issue    A DwgData structure containing information
  *                             about the new issue.
  *
  * @return true|RestFault|SoapFault
@@ -1013,7 +1012,7 @@ function mc_dwg_update( $p_username, $p_password, $p_issue_id, stdClass $p_issue
 	$t_description = $p_issue['description'] ?? '';
 
 	if( !access_has_dwg_level( config_get( 'update_dwg_threshold' ), $p_issue_id, $t_user_id ) ) {
-		return mci_fault_access_denied( $t_user_id, 'Not enough rights to update issues' );
+		return mci_fault_access_denied( $t_user_id, 'Not enough rights to update documents' );
 	}
 
 	$t_category = $p_issue['category'] ?? null;
@@ -1098,7 +1097,7 @@ function mc_dwg_update( $p_username, $p_password, $p_issue_id, stdClass $p_issue
 			!relationship_can_resolve_dwg( $p_issue_id ) &&
 			OFF == config_get( 'allow_parent_of_unresolved_to_close' )
 		) {
-			return ApiObjectFactory::faultBadRequest( 'Unresolved child issues.' );
+			return ApiObjectFactory::faultBadRequest( 'Unresolved child documents.' );
 		}
 		$t_bug_data->status = $t_new_status;
 	}
@@ -1525,7 +1524,7 @@ function mc_dwg_note_update( $p_username, $p_password, stdClass $p_note ) {
 		dwgnote_set_view_state( $t_issue_note_id, $t_view_state_id == VS_PRIVATE );
 	}
 
-	log_event( LOG_WEBSERVICE, 'updating bugnote id \'' . $t_issue_note_id . '\'' );
+	log_event( LOG_WEBSERVICE, 'updating dwgnote id \'' . $t_issue_note_id . '\'' );
 	dwgnote_set_text( $t_issue_note_id, $p_note['text'] );
 
 	return dwgnote_date_update( $t_issue_note_id );
@@ -1675,21 +1674,6 @@ function mci_dwg_data_as_array( DwgData $p_issue_data, $p_user_id, $p_lang, $p_f
 
 	$t_issue = array();
 
-	if( $t_fields === null || isset( $t_fields['id'] ) ) {
-		$t_issue['id'] = $t_id;
-	}
-
-	// if( $t_fields === null || isset( $t_fields['version'] ) ) {
-	// 	$t_issue['creator'] = mci_sanitize_xml_string( $p_issue_data->creator );
-	// }
-
-	if( $t_fields === null || isset( $t_fields['creator'] ) ) {
-		$t_issue['creator'] = mci_account_get_array_by_id( $p_issue_data->creator_id );
-	}
-
-	if( $t_fields === null || isset( $t_fields['version'] ) ) {
-		$t_issue['version'] = mci_sanitize_xml_string( $p_issue_data->version );
-	}
 	if( $t_fields === null || isset( $t_fields['title'] ) ) {
 		$t_issue['title'] = mci_sanitize_xml_string( $p_issue_data->title );
 	}
@@ -1699,12 +1683,15 @@ function mci_dwg_data_as_array( DwgData $p_issue_data, $p_user_id, $p_lang, $p_f
 	if( $t_fields === null || isset( $t_fields['number'] ) ) {
 		$t_issue['number'] = mci_sanitize_xml_string( $p_issue_data->number );
 	}
+	if( $t_fields === null || isset( $t_fields['creator'] ) ) {
+		$t_issue['creator'] = mci_account_get_array_by_id( $p_issue_data->creator_id );
+	}
+	if( $t_fields === null || isset( $t_fields['version'] ) ) {
+		$t_issue['version'] = mci_sanitize_xml_string( $p_issue_data->version );
+	}
 	if( $t_fields === null || isset( $t_fields['revision'] ) ) {
 		$t_issue['revision'] = mci_sanitize_xml_string( $p_issue_data->revision );
 	}
-	// if( $t_fields === null || isset( $t_fields['category'] ) ) {
-	// 	$t_issue['category'] = mci_sanitize_xml_string( $p_issue_data->category );
-	// }
 	if( $t_fields === null || isset( $t_fields['reference'] ) ) {
 		$t_issue['reference'] = mci_sanitize_xml_string( $p_issue_data->reference );
 	}
@@ -1720,6 +1707,7 @@ function mci_dwg_data_as_array( DwgData $p_issue_data, $p_user_id, $p_lang, $p_f
 	if( $t_fields === null || isset( $t_fields['release_date'] ) ) {
 		$t_issue['release_date'] = mci_sanitize_xml_string( $p_issue_data->release_date );
 	}
+
 	// if( $t_fields === null || isset( $t_fields['date_submitted'] ) ) {
 	// 	$t_issue['date_submitted'] = mci_sanitize_xml_string( $p_issue_data->date_submitted );
 	// }
@@ -1727,6 +1715,10 @@ function mci_dwg_data_as_array( DwgData $p_issue_data, $p_user_id, $p_lang, $p_f
 	// if( $t_fields === null || isset( $t_fields['last_updated'] ) ) {
 	// 	$t_issue['last_updated'] = mci_sanitize_xml_string( $p_issue_data->last_updated );
 	// }
+
+	if( $t_fields === null || isset( $t_fields['id'] ) ) {
+		$t_issue['id'] = $t_id;
+	}
 
 	if( $t_fields === null || isset( $t_fields['summary'] ) ) {
 		$t_issue['summary'] = mci_sanitize_xml_string( $p_issue_data->summary );
@@ -1943,20 +1935,17 @@ function mci_dwg_get_tags_for_bug_id( $p_bug_id, $p_user_id ) {
 		return array();
 	}
 
-// @TODO RobD - are we going to support 'tags' on documents?
+	$t_tag_rows = tag_dwg_get_attached( $p_bug_id );
+	$t_result = array();
 
-	// $t_tag_rows = tag_dwg_get_attached( $p_bug_id );
-	// $t_result = array();
+	foreach ( $t_tag_rows as $t_tag_row ) {
+		$t_result[] = array (
+			'id' => $t_tag_row['id'],
+			'name' => $t_tag_row['name']
+		);
+	}
 
-	// foreach ( $t_tag_rows as $t_tag_row ) {
-	// 	$t_result[] = array (
-	// 		'id' => $t_tag_row['id'],
-	// 		'name' => $t_tag_row['name']
-	// 	);
-	// }
-
-	// return $t_result;
-	return array();
+	return $t_result;
 }
 
 /**

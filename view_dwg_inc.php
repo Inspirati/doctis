@@ -297,6 +297,10 @@ function write_dwg_rows( array $p_rows ) {
 	for( $i = 0; $i < $t_rows; $i++ ) {
 		$t_row = $p_rows[$i];
 
+		if( 1 == $t_row->id ) {
+			continue;
+		}
+
 		if( ( 0 == $t_row->sticky ) && ( 0 == $i ) ) {
 			$t_in_stickies = false;
 		}
