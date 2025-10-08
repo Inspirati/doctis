@@ -978,16 +978,16 @@ layout_page_end();
  * @throws ClientException
  */
 function dwg_view_relationship_get_details( $p_bug_id, DwgRelationshipData $p_relationship, $p_html_preview = false, $p_show_project = false ) {
-	if( $p_bug_id == $p_relationship->src_bug_id ) {
+	if( $p_bug_id == $p_relationship->src_dwg_id ) {
 		# root bug is in the source side, related bug in the destination side
-		$t_related_project_id = $p_relationship->dest_bug_id;
+		$t_related_project_id = $p_relationship->dest_dwg_id;
 		$t_related_project_name = project_get_name( $p_relationship->dest_project_id );
-		$t_related_bug_id = $p_relationship->dest_bug_id;
+		$t_related_bug_id = $p_relationship->dest_dwg_id;
 		$t_relationship_descr = dwg_relationship_get_description_src_side( $p_relationship->type );
 	} else {
 		# root bug is in the dest side, related bug in the source side
-		$t_related_project_id = $p_relationship->src_bug_id;
-		$t_related_bug_id = $p_relationship->src_bug_id;
+		$t_related_project_id = $p_relationship->src_dwg_id;
+		$t_related_bug_id = $p_relationship->src_dwg_id;
 		$t_related_project_name = project_get_name( $p_relationship->src_project_id );
 		$t_relationship_descr = dwg_relationship_get_description_dest_side( $p_relationship->type );
 	}
@@ -1086,7 +1086,7 @@ function dwg_view_relationship_get_summary_html( $p_bug_id ) {
 	}
 
 	if( !is_blank( $t_summary ) ) {
-		if( !dwg_relationship_can_resolve_bug( $p_bug_id ) ) {
+		if( !dwg_relationship_can_resolve_dwg( $p_bug_id ) ) {
 			$t_summary .= '<tr><td colspan="' . ( 5 + $t_show_project ) . '"><strong>' .
 				lang_get( 'relationship_warning_blocking_bugs_not_resolved' ) . '</strong></td></tr>';
 		}

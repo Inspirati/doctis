@@ -567,8 +567,8 @@ function email_dwg_relationship_dwg_deleted( $p_bug_id ) {
 	log_event( LOG_EMAIL, sprintf( 'Document #%d has been deleted, sending notifications to related documents', $p_bug_id ) );
 
 	foreach( $t_relationships as $t_relationship ) {
-		$t_related_bug_id = $p_bug_id == $t_relationship->src_bug_id ?
-			$t_relationship->dest_bug_id : $t_relationship->src_bug_id;
+		$t_related_bug_id = $p_bug_id == $t_relationship->src_dwg_id ?
+			$t_relationship->dest_dwg_id : $t_relationship->src_dwg_id;
 
 		$t_opt = array();
 		$t_opt[] = dwg_format_id( $p_bug_id );
@@ -1500,15 +1500,15 @@ function email_build_visible_dwg_data( $p_user_id, $p_bug_id, $p_message_id ) {
 function email_dwg_relationship_get_details( $p_bug_id, DwgRelationshipData $p_relationship ) {
 	$t_summary_wrap_at = mb_strlen( config_get( 'email_separator2' ) ) - 28;
 
-	if( $p_bug_id == $p_relationship->src_bug_id ) {
+	if( $p_bug_id == $p_relationship->src_dwg_id ) {
 		# root bug is in the source side, related bug in the destination side
-		$t_related_project_id = $p_relationship->dest_bug_id;
-		$t_related_bug_id = $p_relationship->dest_bug_id;
+		$t_related_project_id = $p_relationship->dest_dwg_id;
+		$t_related_bug_id = $p_relationship->dest_dwg_id;
 		$t_relationship_descr = dwg_relationship_get_description_src_side( $p_relationship->type );
 	} else {
 		# root bug is in the dest side, related bug in the source side
-		$t_related_project_id = $p_relationship->src_bug_id;
-		$t_related_bug_id = $p_relationship->src_bug_id;
+		$t_related_project_id = $p_relationship->src_dwg_id;
+		$t_related_bug_id = $p_relationship->src_dwg_id;
 		$t_relationship_descr = dwg_relationship_get_description_dest_side( $p_relationship->type );
 	}
 
