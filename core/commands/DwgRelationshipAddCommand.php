@@ -111,7 +111,7 @@ class DwgRelationshipAddCommand extends Command {
 		if( $t_source_issue_id == $t_target_issue_id ) {
 			throw new ClientException(
 				"Document can't have relationship to itself",
-				ERROR_RELATIONSHIP_SAME_BUG
+				ERROR_RELATIONSHIP_SAME_DWG
 			);
 		}
 
@@ -129,10 +129,10 @@ class DwgRelationshipAddCommand extends Command {
 
 		# Ensure that user can view target issue
 		$t_view_threshold = config_get( 'view_dwg_threshold', null, null, $this->targetIssue->project_id );
-		if( !access_has_bug_level( $t_view_threshold, $t_target_issue_id ) ) {
+		if( !access_has_dwg_level( $t_view_threshold, $t_target_issue_id ) ) {
 			throw new ClientException(
-				sprintf( "Access denied to docuemnt %d", $t_target_issue_id ),
-				ERROR_RELATIONSHIP_ACCESS_LEVEL_TO_DEST_BUG_TOO_LOW,
+				sprintf( "Access denied to document %d", $t_target_issue_id ),
+				ERROR_RELATIONSHIP_ACCESS_LEVEL_TO_DEST_DWG_TOO_LOW,
 				array( $t_target_issue_id )
 			);
 		}
