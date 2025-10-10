@@ -94,7 +94,23 @@ set_webroot() {
         webroot="/var/www/html"   # safe default
         echo -e "${WARN}webroot default:${OFF}" "$webroot"
     fi
-}    
+}
+
+set_headless() {
+    # Check if a display server is available (X11 or Wayland)
+    if [ -z "$DISPLAY" ] && [ -z "$WAYLAND_DISPLAY" ]; then
+        echo -e "${INFO}Headless environment detected (no GUI display).${OFF}"
+        HEADLESS=true
+    else
+        echo -e "${INFO}GUI environment detected.${OFF}"
+        HEADLESS=false
+    fi
+    # Optionally, check for X11 libraries to confirm
+    if ! command -v xrandr >/dev/null 2>&1 && ! command -v gnome-shell >/dev/null 2>&1; then
+        echo -e "${INFO}No GUI libraries found — likely a headless server.${OFF}"
+        HEADLESS=true
+    fi
+}
 
 ################################################################################
 # Part two:  Install and config the various apps for a doctis development system
@@ -192,8 +208,8 @@ fi
 if [ "$2" = "nodbprepostfix" ]; then
     sed -i "/\$g_db_type[[:space:]]*=[[:space:]]*'mysqli';/a\\
 \$g_db_table_prefix = '';\\
-\$g_db_table_suffix = '';"\\
- ${config_dst}
+\$g_db_table_suffix = '';
+" ${config_dst}
 fi
     echo -e "${INFO}Project ${project} configured.${OFF}" >&2
 }
@@ -302,7 +318,10 @@ fetch_project() {
 }
 
 setup_project() {
-    configure_vscode "$@"
+    set_headless
+    if [ $HEADLESS = false ]; then
+        configure_vscode "$@"
+    fi
     configure_project "$@"
     configure_database "$@"
     publish_project "$@"
@@ -416,8 +435,11 @@ install_doctis() {
     setup_project ${project} "nodbprepostfix"
     run_mantis_install_log ${project}
     load_doctis_example_data ${project}
-    launch_project ${project}
-    meld doctis-www mantisbt-www &
+    set_headless
+    if [ $HEADLESS = false ]; then
+        launch_project ${project}
+        meld doctis-www mantisbt-www &
+    fi
     show_parameters
     echo -e "${DIAG}Finished installing doctis.${OFF}"
 }

@@ -68,6 +68,22 @@ set_webroot() {
     webroot=${webroot//\"/}
 }
 
+set_headless() {
+    # Check if a display server is available (X11 or Wayland)
+    if [ -z "$DISPLAY" ] && [ -z "$WAYLAND_DISPLAY" ]; then
+        echo -e "${INFO}Headless environment detected (no GUI display).${OFF}"
+        HEADLESS=true
+    else
+        echo -e "${INFO}GUI environment detected.${OFF}"
+        HEADLESS=false
+    fi
+    # Optionally, check for X11 libraries to confirm
+    if ! command -v xrandr >/dev/null 2>&1 && ! command -v gnome-shell >/dev/null 2>&1; then
+        echo -e "${INFO}No GUI libraries found — likely a headless server.${OFF}"
+        HEADLESS=true
+    fi
+}
+
 ################################################################################
 # Part one: Perform all the system install and configure steps that require sudo
 #   install LAMP apps required to host the project - Linux(Apache,Mariadb,PHP)
@@ -138,7 +154,10 @@ install_tools_gui() {
 install_tools() {
     echo -e "${INFO}Installing developer tools...${OFF}"
     install_tools_cli
-    install_tools_gui
+    set_headless
+    if [ $HEADLESS = false ]; then
+        install_tools_gui
+    fi
     echo -e "${INFO}Developer tools installed.${OFF}" >&2
 }
 
