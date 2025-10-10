@@ -3840,8 +3840,8 @@ $g_allow_no_category = OFF;
  *
  * @global int $g_allow_no_document
  */
-$g_allow_no_document = OFF;
-// $g_allow_no_document = ON;  // turned this off during github workflows development
+//$g_allow_no_document = OFF;
+$g_allow_no_document = ON;  // turned this on during github workflows development
 
 /**
  * Limit reporters.
