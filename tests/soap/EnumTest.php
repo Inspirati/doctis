@@ -174,10 +174,10 @@ class EnumTest extends SoapBase {
 
 		$this->assertEquals( 8, count( $t_severities ) );
 		$this->assertEquals( 'feature', $t_severities[10] );
-		// $this->assertEquals( 'comment', $t_severities[20] );
-		$this->assertEquals( 'trivial', $t_severities[20] );
-		// $this->assertEquals( 'query', $t_severities[30] );
-		$this->assertEquals( 'text', $t_severities[30] );
+		$this->assertEquals( 'comment', $t_severities[20] );
+		// $this->assertEquals( 'trivial', $t_severities[20] );
+		$this->assertEquals( 'query', $t_severities[30] );
+		// $this->assertEquals( 'text', $t_severities[30] );
 		$this->assertEquals( 'tweak', $t_severities[40] );
 		$this->assertEquals( 'minor', $t_severities[50] );
 		$this->assertEquals( 'major', $t_severities[60] );
@@ -315,7 +315,7 @@ class EnumTest extends SoapBase {
 	public function testEnumGet() {
 		$t_result = $this->client->mc_enum_get( $this->userName, $this->password, 'severity' );
 
-		$this->assertEquals( '10:feature,20:trivial,30:text,40:tweak,50:minor,60:major,70:crash,80:block', $t_result );
-		// $this->assertEquals( '10:feature,20:comment,30:query,40:tweak,50:minor,60:major,70:crash,80:block', $t_result );
+		// $this->assertEquals( '10:feature,20:trivial,30:text,40:tweak,50:minor,60:major,70:crash,80:block', $t_result );
+		$this->assertEquals( '10:feature,20:comment,30:query,40:tweak,50:minor,60:major,70:crash,80:block', $t_result );
 	}
 }

@@ -4345,8 +4345,8 @@ $g_priority_enum_string = '10:none,20:low,30:normal,40:high,50:urgent,60:immedia
  *
  * @global string $g_severity_enum_string
  */
-$g_severity_enum_string = '10:feature,20:trivial,30:text,40:tweak,50:minor,60:major,70:crash,80:block';
-//$g_severity_enum_string = '10:feature,20:comment,30:query,40:tweak,50:minor,60:major,70:crash,80:block';
+// $g_severity_enum_string = '10:feature,20:trivial,30:text,40:tweak,50:minor,60:major,70:crash,80:block';
+$g_severity_enum_string = '10:feature,20:comment,30:query,40:tweak,50:minor,60:major,70:crash,80:block';
 
 /**
  * Reproducibility enumeration.
