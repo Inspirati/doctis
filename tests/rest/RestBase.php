@@ -190,6 +190,14 @@ abstract class RestBase extends MantisTestCase {
 	}
 
 	/**
+	 * Gets the default document used for testing.
+	 * @return string
+	 */
+	protected function getDocument() {
+		return 'Empty';
+	}
+
+	/**
 	 * Returns a minimal data structure for tests to create a new Issue.
 	 *
 	 * The Issue Summary is set to TestClass::TestCase with an optional
@@ -208,7 +216,8 @@ abstract class RestBase extends MantisTestCase {
 			'summary' => $t_summary . ': test issue ' . rand( 1, 1000000 ),
 			'description' => 'description of test issue.',
 			'project' => array( 'id' => $this->getProjectId() ),
-			'category' => array( 'name' => $this->getCategory() )
+			'category' => array( 'name' => $this->getCategory() ),
+			'document' => array( 'title' => $this->getDocument() )
 		);
 	}
 

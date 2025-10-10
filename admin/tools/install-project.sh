@@ -170,8 +170,6 @@ configure_project() {
     sed -i "s|#[[:space:]]*\$g_logo_image[[:space:]]*=[[:space:]]*'images/mantis_logo.png'|\$g_logo_image = 'images/doctis_logo.png'|" ${config_dst}
     sed -i "s|#[[:space:]]*\$g_favicon_image[[:space:]]*=[[:space:]]*'images/favicon.ico'|\$g_favicon_image = 'images/doctis_icon.ico'|" ${config_dst}
     sed -i "/\$g_db_type[[:space:]]*=[[:space:]]*'mysqli';/a\\
-\$g_db_table_prefix = '';\\
-\$g_db_table_suffix = '';\\
 \$g_wiki_enable = ON;\\
 \$g_wiki_engine = 'dokuwiki';\\
 \$g_wiki_root_namespace = 'doctis';\\
@@ -189,6 +187,12 @@ configure_project() {
 #\$g_enable_profiles = OFF;
 \$USE_LOREM_IPSUM = true;
 EOF
+if [ "$3" = "nodbprepostfix" ]; then
+    sed -i "/\$g_db_type[[:space:]]*=[[:space:]]*'mysqli';/a\\
+\$g_db_table_prefix = '';\\
+\$g_db_table_suffix = '';"\\
+ ${config_dst}
+fi
     echo -e "${INFO}Project ${project} configured.${OFF}" >&2
 }
 
@@ -295,12 +299,11 @@ fetch_project() {
     echo -e "${INFO}Cloning complete.${OFF}" >&2
 }
 
-install_projx() {
-    local project="$1"
-    configure_vscode ${project}
-    configure_project ${project}
-    configure_database ${project}
-    publish_project ${project}
+setup_project() {
+    configure_vscode "$@"
+    configure_project "$@"
+    configure_database "$@"
+    publish_project "$@"
 }
 
 run_mantis_install() {
@@ -431,42 +434,55 @@ show_parameters() {
 
 # === Main entry ===
 
-install_project() {
-    domain_idname="${1:-localhost}"
-    mysqlpassword="${2:-password}"
-    email_address="${3:-root@localhost}"
-    email_hashtag="${4:-password}"
-    show_parameters
-    echo -e "${DIAG}Started installing project..${OFF}"
-# Fetch and install the projects into the webroot
+install_webkit() {
+    echo -e "${DIAG}Started installing webtools..${OFF}"
     set_webroot
     install_phpmyadmin "phpMyAdmin" &
     install_dokuwiki "doctis-wiki" "stable" "https://github.com/dokuwiki/dokuwiki.git" &
-# Specify the project(s) & git branch for installation, either mantisbt and/or doctis
+    echo -e "${DIAG}Finished installing webtools.${OFF}"
+}
+
+install_mantis() {
+    echo -e "${DIAG}Started installing mantis..${OFF}"
     project="mantisbt"
     branch="original"
     fetch_project ${project} ${branch}
-    install_projx ${project}
+    setup_project ${project}
+    echo -e "${DIAG}Finished installing mantis.${OFF}"
+}
+
+install_doctis() {
+    echo -e "${DIAG}Started installing doctis..${OFF}"
     project="doctis"
     branch="dev"
     fetch_project ${project} ${branch}
-    install_projx ${project}
+    setup_project ${project} "nodbprepostfix"
     run_mantis_install_log ${project}
     load_mantis_example_data ${project}
     load_mantis_testing_user ${project}
-# Launch selected targets for demonstration
+# Launch doctis and various tools for demonstration
     launch_project ${project}
     meld doctis-www mantisbt-www &
     getting_started ${project}
     show_parameters
-    echo -e "${DIAG}Finished installing project.${OFF}"
+    echo -e "${DIAG}Finished installing doctis.${OFF}"
 }
 
 ################################################################################
 # Function entry point of the same name as the script, useful when source'd
 
 install-project() {
-    install_project "$@"
+    domain_idname="${1:-localhost}"
+    mysqlpassword="${2:-password}"
+    email_address="${3:-root@localhost}"
+    email_hashtag="${4:-password}"
+    show_parameters
+    set_webroot
+    install_mantis
+    if [ "$5" = "doctis" ]; then
+        install_webkit
+        install_doctis
+    fi
     echo -e "${DIAG}Done: <ctrl-c> to close${OFF}"
 }
 

@@ -36,16 +36,18 @@ function echo_pass() { echo -e "${PASS}[PASS] $@${OFF}"; }
 
 fetch_and_run() {
     local script_name="$1"
-    wget --quiet -O ${script_name} ${SCRIPT_URL}/${script_name}
-    chmod +x ${script_name}
-    # Include the newly fetched script
+    if [ ! -f ${script_name} ]; then
+        wget --quiet -O ${script_name} ${SCRIPT_URL}/${script_name}
+        chmod +x ${script_name}
+    fi
+    # Include the (perhaps newly fetched) script
     . ${script_name}
     # Remove the first argument
     shift
     # Pass all remaining arguments to script entry function that is identical to the script name
     ${script_name%.*} "$@"
     # Since it would get overwritten on the next run of this script, don't leave it around for editing
-    rm ${script_name}
+#    rm ${script_name}
 }
  
 function print_usage() {
