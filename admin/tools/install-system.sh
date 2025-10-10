@@ -128,7 +128,7 @@ install_tools_gui() {
         sudo sh -c 'echo "deb [arch=amd64,arm64,armhf signed-by=/usr/share/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
         sudo apt-get update -y
         sudo apt-get install -y code
-        code --install-extension vscodevim.vim
+#        code --install-extension vscodevim.vim
         code --install-extension xdebug.php-debug
         code --install-extension muhammedrashid.stain
         code --install-extension oleg-shilo.favorites

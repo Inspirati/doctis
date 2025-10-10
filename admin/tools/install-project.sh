@@ -166,15 +166,16 @@ configure_project() {
     sed -i "s|#[[:space:]]*\$g_email_receive_own[[:space:]]*=[[:space:]]*OFF|\$g_smtp_port = 587|" ${config_dst}
     sed -i "s|#[[:space:]]*\$g_email_send_using_cronjob[[:space:]]*=[[:space:]]*OFF|\$g_smtp_connection_mode = 'tls'|" ${config_dst}
     sed -i "s|#[[:space:]]*\$g_max_file_size[[:space:]]*=[[:space:]]*5000000|\$g_max_file_size = 2 * 1024 * 1024|" ${config_dst}
-    sed -i "s|#[[:space:]]*\$g_window_title[[:space:]]*=[[:space:]]*'MantisBT'|\$g_window_title = '${project^}'|" ${config_dst}
-    sed -i "s|#[[:space:]]*\$g_logo_image[[:space:]]*=[[:space:]]*'images/mantis_logo.png'|\$g_logo_image = 'images/doctis_logo.png'|" ${config_dst}
-    sed -i "s|#[[:space:]]*\$g_favicon_image[[:space:]]*=[[:space:]]*'images/favicon.ico'|\$g_favicon_image = 'images/doctis_icon.ico'|" ${config_dst}
     sed -i "/\$g_db_type[[:space:]]*=[[:space:]]*'mysqli';/a\\
 \$g_wiki_enable = ON;\\
 \$g_wiki_engine = 'dokuwiki';\\
 \$g_wiki_root_namespace = 'doctis';\\
 \$g_wiki_engine_url = '../doctis-wiki/';
 " ${config_dst}
+if [ ${project} = "doctis" ]; then
+    sed -i "s|#[[:space:]]*\$g_window_title[[:space:]]*=[[:space:]]*'MantisBT'|\$g_window_title = '${project^}'|" ${config_dst}
+    sed -i "s|#[[:space:]]*\$g_logo_image[[:space:]]*=[[:space:]]*'images/mantis_logo.png'|\$g_logo_image = 'images/doctis_logo.png'|" ${config_dst}
+    sed -i "s|#[[:space:]]*\$g_favicon_image[[:space:]]*=[[:space:]]*'images/favicon.ico'|\$g_favicon_image = 'images/doctis_icon.ico'|" ${config_dst}
     cat >> ${config_dst} << EOF
 \$g_reauthentication = OFF;
 \$g_reauthentication_expiry = 86400;
@@ -187,7 +188,8 @@ configure_project() {
 #\$g_enable_profiles = OFF;
 \$USE_LOREM_IPSUM = true;
 EOF
-if [ "$3" = "nodbprepostfix" ]; then
+fi
+if [ "$2" = "nodbprepostfix" ]; then
     sed -i "/\$g_db_type[[:space:]]*=[[:space:]]*'mysqli';/a\\
 \$g_db_table_prefix = '';\\
 \$g_db_table_suffix = '';"\\
@@ -320,26 +322,23 @@ run_mantis_install() {
 run_mantis_install_log() {
     local project="$1"
     local install_url="http://${domain_idname}/${project}/admin/install.php"
-    local logfile="mantis_install_$(date +%Y%m%d_%H%M%S).html"
-
-    echo -e "${INFO}Running MantisBT database install/upgrade...${OFF}"
-
+    local logfile="${project}_install_log_$(date +%Y%m%d_%H%M%S).html"
+    echo -e "${INFO}Running ${project^} database install/upgrade...${OFF}"
     # Capture the full output with tee, then grep separately
     if curl -fsS -d "install=2" "$install_url" \
         | tee "$logfile" \
         | grep -q "installed successfully"; then
-        echo -e "${INFO}✔ MantisBT database install successful.${OFF}"
-        echo "  → Full installer output saved to $logfile"
+        echo -e "${INFO}✔ ${project^} database install successful.${OFF}"
     else
-        echo -e "${FAIL}⚠ MantisBT installer did not confirm success. Check logs.${OFF}"
-        echo "  → Full installer output saved to $logfile"
+        echo -e "${FAIL}⚠ ${project^} installer did not confirm success. Check logs.${OFF}"
     fi
+    echo "  → Full installer output saved to $logfile"
 }
 
-load_mantis_example_data() {
+load_doctis_example_data() {
     local project="$1"
     local mysqldatabase="${project}${dbdatapostfix}"
-    echo -e "${INFO}Loading example data into ${mysqldatabase}...${OFF}"
+    echo -e "${INFO}Loading example data into '${mysqldatabase}'...${OFF}"
     ${database} <<EOF
 USE ${mysqldatabase};
 $(cat <<'SQL'
@@ -348,13 +347,6 @@ VALUES (1, 'example', 10, 1, 10, 10, '', '', 1, 1, '');
 SQL
 )
 EOF
-    echo -e "${INFO}Database ${mysqldatabase} loaded.${OFF}" >&2
-}
-
-load_mantis_testing_user() {
-    local project="$1"
-    local mysqldatabase="${project}${dbdatapostfix}"
-    echo -e "${INFO}Loading example data into ${mysqldatabase}...${OFF}"
     ${database} <<EOF
 USE ${mysqldatabase};
 $(cat <<'SQL'
@@ -369,49 +361,15 @@ INSERT INTO `user` (`username`, `realname`, `email`, `password`, `enabled`, `pro
 SQL
 )
 EOF
-    echo -e "${INFO}Database ${mysqldatabase} loaded.${OFF}" >&2
+    echo -e "${INFO}Database '${mysqldatabase}' loaded.${OFF}" >&2
 }
 
 launch_project() {
     local project="$1"
     code ${webroot}/${project} &
     firefox "http://${domain_idname}/phpMyAdmin" &
-#    firefox "http://${domain_idname}/doctis-wiki" &
     firefox "http://${domain_idname}/${project}" &
-}
-
-getting_started() {
-    local project="$1"
-    # Generate and display the getting started hints:
-    cat > getting-started.txt << EOF
-
-================== Using Doctis/Mantis ==================
-1. As administrator, select sidebar 'Manage' then tab 'Projects'
-2. Add a new 'test' project
-3. Select sidebar 'Create Document' then submit a new document
-4. Select sidebar 'Report Issue' and submit an issue
-5. Explore and experiment
-
-================ Development Environment ================
-1. If not already open, start vscode and select <File> <Open Folder> ${webroot}/${project}
-2. Start a debug session with menu <Run><Start Debugging> or press <F5>
-3. Open source file view_all_bug_page.php and set a break-point on or around line 50
-    (breakpoints can be set by clicking in the margin to the left of a line number)
-4. If required, start Firefox at ${domain_idname}/${project}
-5. In ${project} select the 'View Issues' from the sidebar
-    (observe that execution has halted in vscode at the set breakpoint)
-6. Press <F10> to step through the code, or <F11> to step into function calls
-7. View status (diff) of source file changes from the original Mantis source:
-    $ meld doctis-www mantisbt-www &
-8. Set a tail on the webserver (apache) error log:
-    $ trace
-9. Optionally, set a tail that only reports thrown exceptions:
-    $ tracex
-
-NOTES: phpMyAdmin username is 'admin', password as per install script ie. default is: 'password'
-       if you elected to install the VirtualBox Client Tools, a reboot is required for them to take effect
-EOF
-    xdg-open getting-started.txt &
+    xdg-open ${webroot}/${project}/admin/tools/getting-started.txt &
 }
 
 show_parameters() {
@@ -432,8 +390,6 @@ show_parameters() {
     echo ""
 }
 
-# === Main entry ===
-
 install_webkit() {
     echo -e "${DIAG}Started installing webtools..${OFF}"
     set_webroot
@@ -448,6 +404,7 @@ install_mantis() {
     branch="original"
     fetch_project ${project} ${branch}
     setup_project ${project}
+    run_mantis_install_log ${project}
     echo -e "${DIAG}Finished installing mantis.${OFF}"
 }
 
@@ -458,12 +415,9 @@ install_doctis() {
     fetch_project ${project} ${branch}
     setup_project ${project} "nodbprepostfix"
     run_mantis_install_log ${project}
-    load_mantis_example_data ${project}
-    load_mantis_testing_user ${project}
-# Launch doctis and various tools for demonstration
+    load_doctis_example_data ${project}
     launch_project ${project}
     meld doctis-www mantisbt-www &
-    getting_started ${project}
     show_parameters
     echo -e "${DIAG}Finished installing doctis.${OFF}"
 }
