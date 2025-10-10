@@ -620,7 +620,6 @@ function mci_dwg_get_relationships( $p_issue_id, $p_user_id ) {
 	}
 
 	return (count( $t_relationships ) == 0 ? null : $t_relationships );
-//	return array();
 }
 
 /**

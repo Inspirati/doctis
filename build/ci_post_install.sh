@@ -6,6 +6,7 @@
 MANTIS_BOOTSTRAP=tests/bootstrap.php
 MANTIS_CONFIG=config/config_inc.php
 MANTIS_ANONYMOUS=anonymous
+DB_CMD="mysql mantisbt -e"
 
 # Reference date/time for seed data (unix timestamp)
 TIMESTAMP=$(date "+%s")
