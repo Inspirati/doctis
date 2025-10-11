@@ -170,7 +170,7 @@ function document_can_remove( $p_document_id ) {
  */
 function document_ensure_can_remove( $p_document_id ) {
 	if( !document_can_remove( $p_document_id ) ) {
-		error_parameters( document_get_name( $p_document_id) );
+		error_parameters( document_get_title( $p_document_id) );
 		trigger_error( ERROR_DOCUMENT_CANNOT_UPDATE_DEFAULT, ERROR );
 	}
 }
@@ -342,7 +342,7 @@ function document_remove_all( $p_project_id, $p_new_document_id = 0 ) {
 	$t_result = db_query( $t_query );
 
 	while( $t_bug_row = db_fetch_array( $t_result ) ) {
-		history_log_event_direct( $t_bug_row['id'], 'document', document_full_name( $t_bug_row['document_id'], false ), document_full_name( $p_new_document_id, false ) );
+		history_log_event_direct( $t_bug_row['id'], 'document', document_full_title( $t_bug_row['document_id'], false ), document_full_title( $p_new_document_id, false ) );
 	}
 
 	# update bug data
@@ -453,7 +453,7 @@ function document_cache_array_rows_by_project( array $p_project_id_array ) {
 				LEFT JOIN {project} p
 					ON c.project_id=p.id
 				WHERE project_id IN ( ' . implode( ', ', $c_project_id_array ) . ' )
-				ORDER BY c.name ';
+				ORDER BY c.title ';
 
 	// error_log("document_cache_array_rows_by_project() t_query: " . $t_query);
 
@@ -506,8 +506,8 @@ function document_get_filter_list( $p_project_id = null ) {
 
 	$t_unique = array();
 	foreach( $t_documents as $t_document ) {
-		if( !in_array( $t_document['name'], $t_unique ) ) {
-			$t_unique[] = $t_document['name'];
+		if( !in_array( $t_document['title'], $t_unique ) ) {
+			$t_unique[] = $t_document['title'];
 		}
 	}
 
@@ -646,31 +646,31 @@ function document_get_field( $p_document_id, $p_field_name ) {
 }
 
 /**
- * Given a document id, this function returns the document name.
+ * Given a document id, this function returns the document title.
  * An error will be triggered for a non-existent document id or document id = 0.
  * @param integer $p_document_id A document identifier.
- * @return string document name
+ * @return string document title
  * @access public
  */
-function document_get_name( $p_document_id ) {
-	return document_get_field( $p_document_id, 'name' );
+function document_get_title( $p_document_id ) {
+	return document_get_field( $p_document_id, 'title' );
 }
 
 /**
- * Given a document name and project, this function returns the document id.
+ * Given a document title and project, this function returns the document id.
  * An error will be triggered if the specified project does not have a
- * document with that name.
- * @param string  $p_document_name  Document name to retrieve.
+ * document with that title.
+ * @param string  $p_document_name  Document title to retrieve.
  * @param integer $p_project_id     A project identifier.
  * @param boolean $p_trigger_errors Whether to trigger error on failure.
  * @return boolean
  * @access public
  */
-function document_get_id_by_name( $p_document_name, $p_project_id, $p_trigger_errors = true ) {
+function document_get_id_by_title( $p_document_name, $p_project_id, $p_trigger_errors = true ) {
 	$t_project_name = project_get_name( $p_project_id );
 
 	db_param_push();
-	$t_query = 'SELECT id FROM {document} WHERE name=' . db_param() . ' AND project_id=' . db_param();
+	$t_query = 'SELECT id FROM {document} WHERE title=' . db_param() . ' AND project_id=' . db_param();
 	$t_result = db_query( $t_query, array( $p_document_name, (int)$p_project_id ) );
 	$t_id = db_result( $t_result );
 	if( $t_id === false ) {
@@ -686,14 +686,14 @@ function document_get_id_by_name( $p_document_name, $p_project_id, $p_trigger_er
 }
 
 /**
- * Retrieves document name (including project name if required)
+ * Retrieves document title (including project name if required)
  * @param string  $p_document_id     Document identifier.
  * @param boolean $p_show_project    Show project details.
  * @param integer $p_current_project Current project id override.
- * @return string document full name
+ * @return string document full title
  * @access public
  */
-function document_full_name( $p_document_id, $p_show_project = true, $p_current_project = null ) {
+function document_full_title( $p_document_id, $p_show_project = true, $p_current_project = null ) {
 	if( 0 == $p_document_id ) {
 		# No Document
 		return lang_get( 'no_document' );
@@ -709,47 +709,50 @@ function document_full_name( $p_document_id, $p_show_project = true, $p_current_
 			return '[' . project_get_name( $t_project_id ) . '] ' . $t_row['title'];
 		}
 
-		return $t_row['title'];
+		// return $t_row['title'];
+		// return dwg_format_id($p_document_id) . ': ' . $t_row['title'];
+		// @TODO RobD - provide configuratable options for how to print the document for selection?
+		return $t_row['title'] . ' ['. dwg_format_id($p_document_id) . ']';
 	}
 }
 
 /**
- * Check category can be deleted 
- * @param string $p_document_id Category identifier.
- * @return boolean Return true if the category valid for delete, otherwise false
+ * Check document can be deleted 
+ * @param string $p_document_id Document identifier.
+ * @return boolean Return true if the document valid for delete, otherwise false
  * @access public
  */
 function document_can_delete( $p_document_id ) {
 	db_param_push();
-	$t_query = 'SELECT COUNT(id) FROM {bug} WHERE category_id=' . db_param();
+	$t_query = 'SELECT COUNT(id) FROM {document} WHERE id=' . db_param();
 	$t_bug_count = db_result( db_query( $t_query, array( $p_document_id ) ) );
 	return $t_bug_count == 0;
 }
 
 /**
- * Ensure category can be deleted, otherwise raise an error.
- * @param string $p_document_id Category identifier.
+ * Ensure document can be deleted, otherwise raise an error.
+ * @param string $p_document_id Document identifier.
  * @return void
  * @access public
  */
 function document_ensure_can_delete( $p_document_id ) {
 	if( !document_can_delete( $p_document_id ) ) {
-		$t_document_name = document_get_name( $p_document_id );
+		$t_document_name = document_get_title( $p_document_id );
 		error_parameters( $t_document_name );
 		trigger_error( ERROR_DOCUMENT_CANNOT_DELETE_HAS_ISSUES, ERROR );
 	}
 }
 
 /**
- * Check if category is enabled.
+ * Check if document is enabled.
  *
- * Category 0 (no category) is always considered as enabled.
+ * Document 0 (no document) is always considered as enabled.
  *
- * @param int $p_document_id Category identifier.
+ * @param int $p_document_id Document identifier.
  *
  * @return bool True if enabled, false otherwise
  */
 function document_is_enabled( $p_document_id ) {
 	return $p_document_id == 0
-		|| document_get_field( $p_document_id, 'status' ) == DOCUMENT_STATUS_ENABLED;
+		|| document_get_field( $p_document_id, 'enabled' ) == DOCUMENT_STATUS_ENABLED;
 }

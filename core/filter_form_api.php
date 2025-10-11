@@ -205,16 +205,17 @@ function print_filter_values_document_id( array $p_filter ) {
 			echo '<input type="hidden" name="', FILTER_PROPERTY_DOCUMENT_ID, '[]" value="', string_attribute( $t_current ), '" />';
 			if( filter_field_is_any( $t_current ) ) {
 				$t_any_found = true;
-			} else if( filter_field_is_myself( $t_current ) ) {
-				if( access_has_project_level( config_get( 'report_dwg_threshold' ) ) ) {
-					$t_this_name = '[' . lang_get( 'myself' ) . ']';
-				} else {
-					$t_any_found = true;
-				}
+			// } else if( filter_field_is_myself( $t_current ) ) {
+			// 	// if( access_has_project_level( config_get( 'report_dwg_threshold' ) ) ) {
+			// 	if( access_has_project_level( config_get( 'create_dwg_threshold' ) ) ) {
+			// 		$t_this_name = '[' . lang_get( 'myself' ) . ']';
+			// 	} else {
+			// 		$t_any_found = true;
+			// 	}
 			} else if( filter_field_is_none( $t_current ) ) {
 				$t_this_name = lang_get( 'none' );
 			} else {
-				$t_this_name = user_get_name( $t_current );
+				$t_this_name = document_get_title( $t_current );
 			}
 			if( !$t_first_flag ) {
 				$t_output .= '<br />';
@@ -268,6 +269,7 @@ function print_filter_reporter_id( ?array $p_filter = null ) {
 		<?php
 }
 
+// function print_filter_document( ?array $p_filter = null ) {
 function print_filter_document_id( ?array $p_filter = null ) {
 	global $g_filter;
 	if( null === $p_filter ) {
@@ -277,22 +279,23 @@ function print_filter_document_id( ?array $p_filter = null ) {
 		<select class="input-xs" <?php echo filter_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_DOCUMENT_ID;?>[]">
 		<?php
 	# if current user is a reporter, and limited_reporters is set to ON, only display that name
-	if( access_has_limited_view_bug() ) {
-		$t_id = auth_get_current_user_id();
-		$t_username = user_get_name( $t_id );
-		$t_display_name = string_attribute( $t_username );
-		echo '<option value="' . $t_id . '" selected="selected">' . $t_display_name . '</option>';
-	} else {
+	// if( access_has_limited_view_bug() ) {
+	// 	$t_id = auth_get_current_user_id();
+	// 	$t_username = user_get_name( $t_id );
+	// 	$t_display_name = string_attribute( $t_username );
+	// 	echo '<option value="' . $t_id . '" selected="selected">' . $t_display_name . '</option>';
+	// } else {
 		?>
 		<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_DOCUMENT_ID], META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
 		<?php
-			if( access_has_project_level( config_get( 'report_dwg_threshold' ) ) ) {
-				echo '<option value="' . META_FILTER_MYSELF . '" ';
-				check_selected( $p_filter[FILTER_PROPERTY_DOCUMENT_ID], META_FILTER_MYSELF );
-				echo '>[' . lang_get( 'myself' ) . ']</option>';
-			}
-		print_reporter_option_list( $p_filter[FILTER_PROPERTY_DOCUMENT_ID] );
-	}?>
+			// if( access_has_project_level( config_get( 'create_dwg_threshold' ) ) ) {
+			// 	echo '<option value="' . META_FILTER_MYSELF . '" ';
+			// 	check_selected( $p_filter[FILTER_PROPERTY_DOCUMENT_ID], META_FILTER_MYSELF );
+			// 	echo '>[' . lang_get( 'myself' ) . ']</option>';
+			// }
+		print_document_option_list( $p_filter[FILTER_PROPERTY_DOCUMENT_ID] );
+	// }
+		?>
 		</select>
 		<?php
 }
@@ -501,6 +504,42 @@ function print_filter_values_show_category( array $p_filter ) {
 	}
 }
 
+function print_filter_values_show_document( array $p_filter ) {
+	$t_filter = $p_filter;
+	$t_output = '';
+	$t_any_found = false;
+	$t_none_found = false;
+	if( count( $t_filter[FILTER_PROPERTY_DOCUMENT_ID] ) == 0 ) {
+		echo lang_get( 'any' );
+	} else {
+		$t_first_flag = true;
+		foreach( $t_filter[FILTER_PROPERTY_DOCUMENT_ID] as $t_current ) {
+			echo '<input type="hidden" name="', FILTER_PROPERTY_DOCUMENT_ID, '[]" value="', string_attribute( $t_current ), '" />';
+			$t_this_string = '';
+			if( filter_field_is_any( $t_current ) ) {
+				$t_any_found = true;
+			} elseif( filter_field_is_none( $t_current ) ) {
+				$t_none_found = true;
+			} else {
+				$t_this_string = $t_current;
+			}
+			if( !$t_first_flag ) {
+				$t_output .= '<br />';
+			} else {
+				$t_first_flag = false;
+			}
+			$t_output .= string_display_line( $t_this_string );
+		}
+		if( $t_any_found ) {
+			echo lang_get( 'any' );
+		} elseif( $t_none_found ) {
+			echo lang_get( 'none' );
+		} else {
+			echo $t_output;
+		}
+	}
+}
+
 /**
  * Print the category field.
  *
@@ -520,6 +559,21 @@ function print_filter_show_category( ?array $p_filter = null ) {
 			<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_CATEGORY_ID], (string)META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
 			<option value="<?php echo META_FILTER_NONE?>"<?php check_selected( $p_filter[FILTER_PROPERTY_CATEGORY_ID], (string)META_FILTER_NONE );?>>[<?php echo lang_get( 'none' )?>]</option>
 			<?php print_category_filter_option_list( $p_filter[FILTER_PROPERTY_CATEGORY_ID] )?>
+		</select>
+		<?php
+}
+
+function print_filter_show_document( ?array $p_filter = null ) {
+	global $g_filter;
+	if( null === $p_filter ) {
+		$p_filter = $g_filter;
+	}
+	?>
+		<!-- Document -->
+		<select class="input-xs" <?php echo filter_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_DOCUMENT_ID;?>[]">
+			<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_DOCUMENT_ID], (string)META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
+			<option value="<?php echo META_FILTER_NONE?>"<?php check_selected( $p_filter[FILTER_PROPERTY_DOCUMENT_ID], (string)META_FILTER_NONE );?>>[<?php echo lang_get( 'none' )?>]</option>
+			<?php print_document_filter_option_list( $p_filter[FILTER_PROPERTY_DOCUMENT_ID] )?>
 		</select>
 		<?php
 }
@@ -2921,6 +2975,13 @@ function filter_form_draw_inputs( $p_filter, $p_for_screen = true, $p_static = f
 				'tag_string_filter_target' /* content id */
 				));
 	}
+	$t_row3->add_item( new TableFieldsItem(
+			$get_field_header( 'document_id_filter', lang_get( 'document' ) ),
+			filter_form_get_input( $t_filter, 'document_id', $t_show_inputs ),
+			1 /* colspan */,
+			null /* class */,
+			'document_id_filter_target' /* content id */
+			));
 
 	# plugin filters & custom fields
 

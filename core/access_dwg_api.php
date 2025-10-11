@@ -393,11 +393,11 @@ function access_has_limited_view_dwg( $p_project_id = null, $p_user_id = null ) 
 		# build a static array holding that threshold for each project
 		static $s_thresholds = array();
 		if( !isset( $s_thresholds[$t_project_id] ) ) {
-			$t_report_dwg_threshold = config_get( 'create_dwg_threshold', null, $t_user_id, $t_project_id );
-			if( empty( $t_report_dwg_threshold ) ) {
+			$t_create_dwg_threshold = config_get( 'create_dwg_threshold', null, $t_user_id, $t_project_id );
+			if( empty( $t_create_dwg_threshold ) ) {
 				$s_thresholds[$t_project_id] = NOBODY;
 			} else {
-				$s_thresholds[$t_project_id] = access_threshold_min_level( $t_report_dwg_threshold ) + 1;
+				$s_thresholds[$t_project_id] = access_threshold_min_level( $t_create_dwg_threshold ) + 1;
 			}
 		}
 		$t_threshold_can_view = $s_thresholds[$t_project_id];

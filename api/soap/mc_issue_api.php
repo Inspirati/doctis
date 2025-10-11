@@ -791,6 +791,9 @@ function mc_issue_get_biggest_id( $p_username, $p_password, $p_project_id ) {
 		'category_id' => array(
 			'0' => $t_any,
 		),
+		'document_id' => array(
+			'0' => $t_any,
+		),
 		'severity' => array(
 			'0' => $t_any,
 		),
@@ -1064,6 +1067,7 @@ function mc_issue_update( $p_username, $p_password, $p_issue_id, stdClass $p_iss
 	}
 
 	$t_bug_data->category_id = $t_category_id;
+	$t_bug_data->document_id = $t_document_id;
 	$t_bug_data->summary = $t_summary;
 	$t_bug_data->description = $t_description;
 
@@ -1699,9 +1703,8 @@ function mci_issue_data_as_array( BugData $p_issue_data, $p_user_id, $p_lang, $p
 
 	if( $t_fields === null || isset( $t_fields['document'] ) ) {
 		// @TODO RobD - this is probably not what we need, as it is just a copy of how categories are handled
-		// $t_issue['document'] = mci_get_document( $p_issue_data->document_id );
+		$t_issue['document'] = mci_get_document( $p_issue_data->document_id );
 		$t_issue['document_id'] = $p_issue_data->document_id;
-		$t_issue['document'] = "dummy document name";
 
 		// this is where we can return an array of documents which this issue relates to - in an array of structures with id, name, etc..
 	}
@@ -1925,6 +1928,8 @@ function mci_issue_data_as_header_array( BugData $p_issue_data ) {
 
 		$t_issue['project'] = $p_issue_data->project_id;
 		$t_issue['category'] = mci_get_category( $p_issue_data->category_id );
+		$t_issue['document'] = mci_get_document( $p_issue_data->document_id );
+		$t_issue['document_id'] = $p_issue_data->document_id;
 		$t_issue['priority'] = $p_issue_data->priority;
 		$t_issue['severity'] = $p_issue_data->severity;
 		$t_issue['status'] = $p_issue_data->status;

@@ -11,7 +11,7 @@
 2. Start a debug session with menu <Run><Start Debugging> or press <F5>
 3. Open source file view_all_bug_page.php and set a break-point on or around line 50
     (breakpoints can be set by clicking in the margin to the left of a line number)
-4. If required, start Firefox at 10.0.0.4/doctis
+4. If required, start Firefox at <FQDM>/doctis (insert Fully Qualified Domain Name, or server IP address)
 5. In doctis select the 'View Issues' from the sidebar
     (observe that execution has halted in vscode at the set breakpoint)
 6. Press <F10> to step through the code, or <F11> to step into function calls

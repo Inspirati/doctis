@@ -827,19 +827,19 @@ function print_document_option_list( $p_document_id = 0, $p_project_id = null, $
 	$t_cat_arr = document_get_all_rows( $t_project_id, null, true, $p_enabled_only );
 
 	# Add the current document if it is not in the list
-	if( $p_document_id != 0
-        && !in_array( $p_document_id, array_column( $t_cat_arr, 'id' ) )
-    ) {
-		$t_document_row = document_get_row( $p_document_id );
-		$t_document_row['project_name'] = project_get_name( $t_document_row['project_id'] );
-		$t_cat_arr[] = $t_document_row;
-	}
+	// if( $p_document_id != 0
+    //     && !in_array( $p_document_id, array_column( $t_cat_arr, 'id' ) )
+    // ) {
+	// 	$t_document_row = document_get_row( $p_document_id );
+	// 	$t_document_row['project_name'] = project_get_name( $t_document_row['project_id'] );
+	// 	$t_cat_arr[] = $t_document_row;
+	// }
 
 	if( config_get( 'allow_no_document' ) ) {
 		echo '<option value="0"';
 		check_selected( $p_document_id, 0 );
 		echo '>';
-		echo document_full_name( 0, false );
+		echo document_full_title( 0, false );
 		echo '</option>', PHP_EOL;
 	} else {
 		if( 0 == $p_document_id && count( $t_cat_arr ) == 1 ) {
@@ -855,19 +855,21 @@ function print_document_option_list( $p_document_id = 0, $p_project_id = null, $
 
 	foreach( $t_cat_arr as $t_document_row ) {
 		$t_document_id = (int)$t_document_row['id'];
-		$t_disabled = $t_document_row['status'] == DOCUMENT_STATUS_DISABLED;
-		$t_document_name = document_full_name(
-			$t_document_id,
-			$t_document_row['project_id'] != $t_project_id
-		);
-		if( $t_disabled ) {
-//			$t_document_name .= ' [' . lang_get( 'disabled' ) . ']';
+		if ( 1 != $t_document_id) {
+			$t_disabled = $t_document_row['status'] == DOCUMENT_STATUS_DISABLED;
+			$t_document_name = document_full_title(
+				$t_document_id,
+				$t_document_row['project_id'] != $t_project_id
+			);
+			if( $t_disabled ) {
+	//			$t_document_name .= ' [' . lang_get( 'disabled' ) . ']';
+			}
+			echo '<option value="' . $t_document_id . '"';
+			check_selected( $p_document_id, $t_document_id );
+			check_disabled( $t_disabled );
+			echo '>';
+			echo string_attribute( $t_document_name ), '</option>', PHP_EOL;
 		}
-		echo '<option value="' . $t_document_id . '"';
-		check_selected( $p_document_id, $t_document_id );
-		check_disabled( $t_disabled );
-		echo '>';
-		echo string_attribute( $t_document_name ), '</option>', PHP_EOL;
 	}
 }
 

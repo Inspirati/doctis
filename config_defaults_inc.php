@@ -3181,6 +3181,7 @@ $g_bug_view_page_fields = array(
 	'additional_info',
 	'attachments',
 	'category_id',
+	'document_id',
 	'date_submitted',
 	'description',
 	'due_date',
@@ -3285,6 +3286,7 @@ $g_dwg_view_page_fields = array(
 $g_bug_update_page_fields = array(
 	'additional_info',
 	'category_id',
+	'document_id',
 	'date_submitted',
 	'description',
 	'due_date',
@@ -3840,7 +3842,7 @@ $g_allow_no_category = OFF;
  *
  * @global int $g_allow_no_document
  */
-//$g_allow_no_document = OFF;
+// $g_allow_no_document = OFF;
 $g_allow_no_document = ON;  // turned this on during github workflows development
 
 /**
@@ -4345,7 +4347,7 @@ $g_priority_enum_string = '10:none,20:low,30:normal,40:high,50:urgent,60:immedia
  *
  * @global string $g_severity_enum_string
  */
-// $g_severity_enum_string = '10:feature,20:trivial,30:text,40:tweak,50:minor,60:major,70:crash,80:block';
+// $g_severity_enum_string = '10:feature,20:trivial,30:text,40:tweak,50:minor,60:major,70:crash,80:block';  // this is the mantisbt original (default)
 $g_severity_enum_string = '10:feature,20:comment,30:query,40:tweak,50:minor,60:major,70:crash,80:block';
 
 /**

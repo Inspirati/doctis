@@ -50,21 +50,25 @@ class ImportXml_Issue implements ImportXml_Interface {
 	 * @var bool
 	 */
 	private $keepCategory_;
+	private $keepDocument_;
 	/**
 	 * default category
 	 * @var int
 	 */
 	private $defaultCategory_;
+	private $defaultDocument_;
 
 	/**
 	 * Default Constructor
 	 * @param boolean $p_keep_category    Whether to keep existing category.
 	 * @param integer $p_default_category Identifier of default category.
 	 */
-	public function __construct( $p_keep_category, $p_default_category ) {
+	public function __construct( $p_keep_category, $p_default_category, $p_keep_document, $p_default_document ) {
 		$this->newbug_ = new BugData;
 		$this->keepCategory_ = $p_keep_category;
+		$this->keepDocument_ = $p_keep_document;
 		$this->defaultCategory_ = $p_default_category;
+		$this->defaultDocument_ = $p_default_document;
 	}
 
 	/**
@@ -123,6 +127,29 @@ class ImportXml_Issue implements ImportXml_Interface {
 							}
 
 							# echo "new id = {$this->newbug_->category_id}\n";
+						}
+						break;
+
+					case 'document':
+						$this->newbug_->document_id = $this->defaultDocument_;
+
+						if( version_compare( MANTIS_VERSION, '1.2', '>' ) === true ) {
+							$t_reader->read( );
+
+							if( $this->keepDocument_ ) {
+								# Check for the document's existence in the current project
+								# well as its parents (if any)
+								$t_projects_hierarchy = project_hierarchy_inheritance( $t_project_id );
+								foreach( $t_projects_hierarchy as $t_project ) {
+									$t_document_id = document_get_id_by_name( $t_reader->value, $t_project, false );
+									if( $t_document_id !== false ) {
+										$this->newbug_->document_id = $t_document_id;
+										break;
+									}
+								}
+							}
+
+							# echo "new id = {$this->newbug_->document_id}\n";
 						}
 						break;
 

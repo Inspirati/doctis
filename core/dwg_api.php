@@ -482,20 +482,20 @@ $this->author = isset($this->author) ? $this->author : '';
 						  version, title, author, number,
 						  revision, discipline, reference, link_url,
 						  classification, revision_date, release_date, date_submitted,
-						  last_updated, dwg_text_id
+						  last_updated, dwg_text_id, category_id
 						)
 					  VALUES
 						( ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
 						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
 						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
 						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
-						  ' . db_param() . ',' . db_param() . ')';
+						  ' . db_param() . ',' . db_param() . ',' . db_param() . ')';
 		db_query( $t_query, array(
 		  $this->project_id, $this->creator_id, $this->status, $this->enabled,
 		  $this->version, $this->title, $this->author, $this->number,
 		  $this->revision, $this->discipline, $this->reference, $this->link_url,
 		  $this->classification, $this->revision_date, $this->release_date, $this->date_submitted,
-		  $this->last_updated, $t_text_id ) );
+		  $this->last_updated, $t_text_id, $this->category_id ) );
 
 		$this->id = db_insert_id( db_get_table( 'document' ) );
 

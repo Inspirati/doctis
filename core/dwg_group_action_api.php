@@ -86,10 +86,10 @@ function dwg_group_action_print_bottom() {
  * @param array $p_bug_ids_array An array of issue ids.
  * @return void
  */
-function dwg_group_action_print_bug_list( array $p_bug_ids_array ) {
+function dwg_group_action_print_dwg_list( array $p_bug_ids_array ) {
 	echo '<tr>';
 	echo '<th class="category" colspan="2">';
-	echo lang_get( 'actiongroup_bugs' );
+	echo lang_get( 'actiongroup_dwgs' );
 	echo '</th>';
 	echo '</tr>';
 

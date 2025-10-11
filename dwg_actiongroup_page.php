@@ -451,7 +451,7 @@ if( $t_multiple_projects ) {
 	}
 ?>
 		<tr class="spacer"></tr>
-		<?php dwg_group_action_print_bug_list( $f_bug_arr ); ?>
+		<?php dwg_group_action_print_dwg_list( $f_bug_arr ); ?>
 		<tr class="spacer"></tr>
 			</tbody>
 		</table>

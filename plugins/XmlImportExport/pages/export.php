@@ -121,6 +121,17 @@ foreach( $t_result as $t_row ) {
 				$t_writer->endElement( );
 				break;
 
+			case 'document_id':
+
+				$t_element_name = 'document';
+				$t_element_data = document_get_title( $t_value );
+
+				$t_writer->startElement( $t_element_name );
+				$t_writer->writeAttribute( 'id', $t_value );
+				$t_writer->text( $t_element_data );
+				$t_writer->endElement( );
+				break;
+
 			case 'project_id':
 				$t_element_name = 'project';
 				$t_element_data = project_get_name( $t_value );
