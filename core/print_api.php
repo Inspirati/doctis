@@ -836,6 +836,18 @@ function print_category_filter_option_list( $p_category_name = '', $p_project_id
 	}
 }
 
+function print_document_filter_option_list( $p_document_name = '', $p_project_id = null ) {
+	$t_cat_arr = document_get_filter_list( $p_project_id );
+
+	natcasesort( $t_cat_arr );
+	foreach( $t_cat_arr as $t_cat ) {
+		$t_name = string_attribute( $t_cat );
+		echo '<option value="' . $t_name . '"';
+		check_selected( $p_document_name, $t_cat );
+		echo '>' . $t_name . '</option>';
+	}
+}
+
 /**
  * Print the option list for platforms accessible for the specified user.
  * @param string  $p_platform The current platform value.

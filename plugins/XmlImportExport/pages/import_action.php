@@ -34,11 +34,13 @@ $f_strategy = gpc_get_string( 'strategy' );
 $f_fallback = gpc_get_string( 'fallback' );
 $f_project = gpc_get_int( 'project_id' ); # not used, but ensures a project is selected
 $f_keepcategory = gpc_get_bool( 'keepcategory' );
+$f_keepdocument = gpc_get_bool( 'keepdocument' );
 $f_defaultcategory = gpc_get_int( 'defaultcategory' );
+$f_defaultdocument = gpc_get_int( 'defaultdocument' );
 
 file_ensure_uploaded( $f_file );
 
-$t_importer = new ImportXML( $f_file, $f_strategy, $f_fallback, $f_keepcategory, $f_defaultcategory );
+$t_importer = new ImportXML( $f_file, $f_strategy, $f_fallback, $f_keepcategory, $f_defaultdocument, $f_keepcategory, $f_defaultdocument );
 
 form_security_purge( 'plugin_xml_import_action' );
 

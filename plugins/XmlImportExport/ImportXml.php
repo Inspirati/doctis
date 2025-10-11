@@ -105,11 +105,13 @@ class ImportXML {
 	 * @access private
 	 */
 	private $keepCategory_;
+	private $keepDocument_;
 	/**
 	 * default category
 	 * @access private
 	 */
 	private $defaultCategory_;
+	private $defaultDocument_;
 
 	/**
 	  * Constructor
@@ -120,14 +122,16 @@ class ImportXML {
 	  * @param string $p_keep_category    Keep category.
 	  * @param string $p_default_category Default category.
 	  */
-	public function __construct( $p_filename, $p_strategy, $p_fallback, $p_keep_category, $p_default_category ) {
+	public function __construct( $p_filename, $p_strategy, $p_fallback, $p_keep_category, $p_default_category, $p_keep_document, $p_default_document ) {
 		$this->source_ = new SourceData;
 		$this->reader_ = new XMLReader( );
 		$this->itemsMap_ = new ImportXml_Mapper;
 		$this->strategy_ = $p_strategy;
 		$this->fallback_ = $p_fallback;
 		$this->keepCategory_ = $p_keep_category;
+		$this->keepDocument_ = $p_keep_document;
 		$this->defaultCategory_ = $p_default_category;
+		$this->defaultDocument_ = $p_default_document;
 
 		$this->reader_->open( $p_filename['tmp_name'] );
 	}
@@ -273,8 +277,11 @@ class ImportXML {
 		$t_importer = null;
 		switch( $p_element_name ) {
 			case 'issue':
-				$t_importer = new ImportXml_Issue( $this->keepCategory_, $this->defaultCategory_ );
+				$t_importer = new ImportXml_Issue( $this->keepCategory_, $this->defaultCategory_, $this->keepDocument_, $this->defaultDocument_ );
 				break;
+			// case 'document':
+			// 	$t_importer = new ImportXml_Issue( $this->keepCategory_, $this->defaultCategory_, $this->keepDocument_, $this->defaultDocument_ );
+			// 	break;
 		}
 		return $t_importer;
 	}

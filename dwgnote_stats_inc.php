@@ -55,7 +55,7 @@ if( OFF == config_get( 'time_tracking_enabled' ) ) {
 
 <?php
 
-$t_bugnote_stats_from_def = date( 'd:m:Y', $t_bug->date_submitted );
+$t_bugnote_stats_from_def = date( 'd:m:Y', $t_dwg->date_submitted );
 $t_bugnote_stats_from_def_ar = explode( ':', $t_bugnote_stats_from_def );
 $t_bugnote_stats_from_def_d = $t_bugnote_stats_from_def_ar[0];
 $t_bugnote_stats_from_def_m = $t_bugnote_stats_from_def_ar[1];

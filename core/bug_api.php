@@ -178,9 +178,8 @@ class BugData {
 	protected $category_id = 1;
 
 	/**
-	 * Category ID
+	 * Document ID
 	 */
-	// protected $document_id = 0;
 	protected $document_id = 1;
 
 	/**
@@ -516,7 +515,14 @@ class BugData {
 			category_ensure_exists( $this->category_id );
 		}
 
+		# Make sure a document is set
+		if( 0 == $this->document_id && !config_get( 'allow_no_document' ) ) {
+			error_parameters( lang_get( 'document' ) );
+			trigger_error( ERROR_EMPTY_FIELD, ERROR );
+		}
+
 		# Ensure that document_id is a valid document
+		$this->document_id = $this->document_id ? $this->document_id : '1';
 		if( $this->document_id > 0 ) {
 			document_ensure_exists( $this->document_id );
 		}
@@ -709,7 +715,8 @@ class BugData {
 						category_id=' . db_param() . ', eta=' . db_param() . ',
 						os=' . db_param() . ', os_build=' . db_param() . ',
 						platform=' . db_param() . ', version=' . db_param() . ',
-						build=' . db_param() . ', fixed_in_version=' . db_param() . ',';
+						build=' . db_param() . ', fixed_in_version=' . db_param() . ',
+						document_id=' . db_param() . ',';
 
 		$t_fields = array(
 			$this->project_id, $this->reporter_id,
@@ -721,6 +728,7 @@ class BugData {
 			$this->os, $this->os_build,
 			$this->platform, $this->version,
 			$this->build, $this->fixed_in_version,
+			$this->document_id,
 		);
 		$t_roadmap_updated = false;
 		if( access_has_project_level( config_get( 'roadmap_update_threshold' ) ) ) {
@@ -759,6 +767,7 @@ class BugData {
 		history_log_event_direct( $c_bug_id, 'resolution', $t_old_data->resolution, $this->resolution );
 		history_log_event_direct( $c_bug_id, 'projection', $t_old_data->projection, $this->projection );
 		history_log_event_direct( $c_bug_id, 'category', category_full_name( $t_old_data->category_id, false ), category_full_name( $this->category_id, false ) );
+		history_log_event_direct( $c_bug_id, 'document', document_full_title( $t_old_data->document_id, false ), document_full_title( $this->document_id, false ) );
 		history_log_event_direct( $c_bug_id, 'eta', $t_old_data->eta, $this->eta );
 		history_log_event_direct( $c_bug_id, 'os', $t_old_data->os, $this->os );
 		history_log_event_direct( $c_bug_id, 'os_build', $t_old_data->os_build, $this->os_build );
@@ -1970,6 +1979,7 @@ function bug_set_field( $p_bug_id, $p_field_name, $p_value ) {
 		case 'resolution':
 		case 'projection':
 		case 'category_id':
+		case 'document_id':
 		case 'eta':
 		case 'view_state':
 		case 'profile_id':
@@ -2032,6 +2042,10 @@ function bug_set_field( $p_bug_id, $p_field_name, $p_value ) {
 
 		case 'category_id':
 			history_log_event_direct( $p_bug_id, 'category', category_full_name( $t_current_value, false ), category_full_name( $c_value, false ) );
+			break;
+
+		case 'document_id':
+			history_log_event_direct( $p_bug_id, 'document', document_full_name( $t_current_value, false ), document_full_name( $c_value, false ) );
 			break;
 
 		default:
@@ -2480,16 +2494,19 @@ function bug_cache_columns_data( array $p_bugs, array $p_selected_columns ) {
 	$t_user_ids = array();
 	$t_project_ids = array();
 	$t_category_ids = array();
+	$t_document_ids = array();
 	foreach( $p_bugs as $t_bug ) {
 		$t_bug_ids[] = (int)$t_bug->id;
 		$t_user_ids[] = (int)$t_bug->handler_id;
 		$t_user_ids[] = (int)$t_bug->reporter_id;
 		$t_project_ids[] = (int)$t_bug->project_id;
 		$t_category_ids[] = (int)$t_bug->category_id;
+		$t_document_ids[] = (int)$t_bug->document_id;
 	}
 	$t_user_ids = array_unique( $t_user_ids );
 	$t_project_ids = array_unique( $t_project_ids );
 	$t_category_ids = array_unique( $t_category_ids );
+	$t_document_ids = array_unique( $t_document_ids );
 
 	$t_custom_field_ids = array();
 	$t_users_cached = false;
@@ -2527,6 +2544,9 @@ function bug_cache_columns_data( array $p_bugs, array $p_selected_columns ) {
 				break;
 			case 'category_id':
 				category_cache_array_rows( $t_category_ids );
+				break;
+			case 'document_id':
+				document_cache_array_rows( $t_document_ids );
 				break;
 			case 'tags':
 				tag_cache_bug_tag_rows( $t_bug_ids );

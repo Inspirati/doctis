@@ -99,6 +99,7 @@ $t_updated_bug = clone $t_existing_bug;
 $t_updated_bug->additional_information = gpc_get_string( 'additional_information', $t_existing_bug->additional_information );
 $t_updated_bug->build = gpc_get_string( 'build', $t_existing_bug->build );
 $t_updated_bug->category_id = gpc_get_int( 'category_id', $t_existing_bug->category_id );
+$t_updated_bug->document_id = gpc_get_int( 'document_id', $t_existing_bug->document_id );
 $t_updated_bug->description = gpc_get_string( 'description', $t_existing_bug->description );
 $t_due_date = gpc_get_string( 'due_date', null );
 if( $t_due_date !== null ) {
@@ -296,6 +297,21 @@ if( $t_existing_bug->category_id != $t_updated_bug->category_id ) {
 	# Make sure the category belongs to the given project's hierarchy
 	category_ensure_exists_in_project(
 		$t_updated_bug->category_id,
+		$t_updated_bug->project_id
+	);
+}
+
+if( $t_existing_bug->document_id != $t_updated_bug->document_id ) {
+	if( $t_updated_bug->document_id == 0 &&
+		!config_get( 'allow_no_category' )
+	) {
+		error_parameters( lang_get( 'document' ) );
+		trigger_error( ERROR_EMPTY_FIELD, ERROR );
+	}
+
+	# Make sure the document belongs to the given project's hierarchy
+	document_ensure_exists_in_project(
+		$t_updated_bug->document_id,
 		$t_updated_bug->project_id
 	);
 }

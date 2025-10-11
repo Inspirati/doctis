@@ -83,7 +83,7 @@ dwg_group_action_print_top();
 	event_signal( 'EVENT_DWG_ACTIONGROUP_FORM', array( $t_event_params ) );
 ?>
 	<tr class="spacer"></tr>
-	<?php dwg_group_action_print_bug_list( $f_bug_arr ); ?>
+	<?php dwg_group_action_print_dwg_list( $f_bug_arr ); ?>
 	<tr class="spacer"></tr>
 	</tbody>
 	</table>

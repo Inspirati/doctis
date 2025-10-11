@@ -68,12 +68,12 @@ $t_clone_info = array(
 );
 
 if( $f_master_bug_id > 0 ) {
-	bug_ensure_exists( $f_master_bug_id );
+	dwg_ensure_exists( $f_master_bug_id );
 
 	# User can view the master bug
 	access_ensure_dwg_level( config_get( 'view_dwg_threshold' ), $f_master_bug_id );
 
-	if( bug_is_readonly( $f_master_bug_id ) ) {
+	if( dwg_is_readonly( $f_master_bug_id ) ) {
 		error_parameters( $f_master_bug_id );
 		trigger_error( ERROR_DWG_READ_ONLY_ACTION_DENIED, ERROR );
 	}
@@ -203,10 +203,10 @@ if( $t_category_id != 0 ) {
 // 	$t_issue['reproducibility'] = array( 'id' => $t_reproducibility );
 // }
 
-// $t_severity = gpc_get_int( 'severity', 0 );
-// if( $t_severity != 0 ) {
-// 	$t_issue['severity'] = array( 'id' => $t_severity );
-// }
+$t_severity = gpc_get_int( 'severity', 0 );
+if( $t_severity != 0 ) {
+	$t_issue['severity'] = array( 'id' => $t_severity );
+}
 
 $t_priority = gpc_get_int( 'priority', 0 );
 if( $t_priority != 0 ) {
@@ -275,9 +275,9 @@ $t_data = array(
 	'payload' => array( 'issue' => $t_issue ),
 );
 
-// if( $f_master_bug_id > 0 ) {
-// 	$t_data['options'] = array( 'clone_info' => $t_clone_info );
-// }
+if( $f_master_bug_id > 0 ) {
+	$t_data['options'] = array( 'clone_info' => $t_clone_info );
+}
 
 $t_command = new DwgAddCommand( $t_data );
 $t_result = $t_command->execute();

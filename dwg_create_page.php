@@ -83,10 +83,10 @@ $f_master_bug_id = gpc_get_int( 'm_dwg_id', 0 );
 
 if( $f_master_bug_id > 0 ) {
 	# master bug exists...
-	bug_ensure_exists( $f_master_bug_id );
+	dwg_ensure_exists( $f_master_bug_id );
 
 	# master bug is not read-only...
-	if( bug_is_readonly( $f_master_bug_id ) ) {
+	if( dwg_is_readonly( $f_master_bug_id ) ) {
 		error_parameters( $f_master_bug_id );
 		trigger_error( ERROR_DWG_READ_ONLY_ACTION_DENIED, ERROR );
 	}
