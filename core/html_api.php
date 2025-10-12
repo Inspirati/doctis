@@ -809,6 +809,24 @@ function print_manage_menu( $p_page = '' ) {
 	print_menu( $t_pages, $p_page, 'EVENT_MENU_MANAGE' );
 }
 
+function print_my_view_menu( $p_page = '' ) {
+	$t_pages = array();
+
+	if( access_has_global_level( config_get( 'manage_site_threshold' ) ) ) {
+		$t_pages['my_view_bug_page.php'] = array( 'url'   => 'my_view_bug_page.php', 'label' => 'my_view_bug_link' );
+	}
+	if( access_has_global_level( config_get( 'manage_user_threshold' ) ) ) {
+		$t_pages['my_view_dwg_page.php'] = array( 'url'   => 'my_view_dwg_page.php', 'label' => 'my_view_dwg_link' );
+	}
+	if( access_has_global_level( config_get( 'manage_user_threshold' ) ) ) {
+		$t_pages['my_view_cnf_page.php'] = array( 'url'   => 'my_view_cnf_page.php', 'label' => 'my_view_cnf_link' );
+	}
+	print_menu( $t_pages, $p_page, 'EVENT_MENU_MY_VIEW' );
+	?>
+	<div class="space-10"></div>
+	<?php
+}
+
 /**
  * Print the menu for the manage configuration section
  * @param string $p_page Specifies the current page name so its link can be disabled.

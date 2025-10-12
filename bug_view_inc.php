@@ -115,6 +115,7 @@ $t_issue_view = $t_result['issue_view'];
 $t_flags = $t_result['flags'];
 
 ////////////////////////////////////////////////////////////////////////////////
+$t_flags['document_show'] = false;
 $t_document_id = (int)$t_issue['document_id'];
 if ( $t_document_id ) {
 

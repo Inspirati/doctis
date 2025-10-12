@@ -928,6 +928,9 @@ $s_create_filter_link = 'Create Permalink'; # Permalink = Permanent Link
 $s_create_short_link = 'Create Short Link';
 $s_filter_permalink = 'Following is a permanent link to the currently configured filter:';
 $s_manage_users_link = 'Users';
+$s_my_view_bug_link = 'My Issues View';
+$s_my_view_dwg_link = 'My Documents View';
+$s_my_view_cnf_link = 'My Configuration View';
 $s_manage_projects_link = 'Projects';
 $s_manage_import_link = 'Import Data';
 $s_manage_custom_field_link = 'Custom Fields';
@@ -1225,7 +1228,6 @@ $s_summary_link = 'Summary';
 $s_account_link = 'My Account';
 $s_users_link = 'Users';
 $s_manage_link = 'Manage';
-$s_manage_my_view_link = 'Manage My View';
 $s_edit_news_link = 'Edit News';
 $s_docs_link = 'Help';
 $s_logout_link = 'Logout';
