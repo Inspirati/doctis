@@ -4748,6 +4748,7 @@ $g_sort_icon_arr = array(
  * @global int $g_my_view_bug_count
  */
 $g_my_view_bug_count = 10;
+$g_my_view_dwg_count = 10;
 
 /**
  * Boxes to be shown and their order.
@@ -5880,6 +5881,7 @@ $g_public_config_names = array(
 	'move_dwg_threshold',
 	'my_view_boxes',
 	'my_view_bug_count',
+	'my_view_dwg_count',
 	'news_enabled',
 	'news_limit_method',
 	'news_view_limit_days',

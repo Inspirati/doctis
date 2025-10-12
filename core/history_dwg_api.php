@@ -231,7 +231,7 @@ function history_dwg_query_result( array $p_query_options ) {
 
 	# With bug filter
 	if( isset( $p_query_options['filter'] ) ) {
-		$t_subquery = new BugFilterQuery( $p_query_options['filter'], BugFilterQuery::QUERY_TYPE_IDS );
+		$t_subquery = new DwgFilterQuery( $p_query_options['filter'], DwgFilterQuery::QUERY_TYPE_IDS );
 		$t_where[] = '{dwg_history}.dwg_id IN ' . $t_query->param( $t_subquery );
 	}
 

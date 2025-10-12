@@ -728,12 +728,15 @@ function layout_print_sidebar( $p_active_sidebar_page = null ) {
 			);
 		}
 
-		# My View
-		$t_sidebar_items[] = array(
-			'url' => 'my_view_page.php',
-			'title' => 'my_view_link',
-			'icon' => 'fa-dashboard'
-		);
+		# My View Page
+		$t_link = layout_my_view_link();
+		if( !is_blank( $t_link ) ) {
+			$t_sidebar_items[] = array(
+				'url' => $t_link,
+				'title' => 'my_view_link',
+				'icon' => 'fa-dashboard',
+			);
+		}
 
 		# View Bugs
 		$t_sidebar_items[] = array(
@@ -1366,6 +1369,33 @@ function layout_manage_menu_link() {
 				}
 			}
 		}
+	}
+	return $t_link;
+}
+
+function layout_my_view_link() {
+	static $t_link = null;
+	if( access_has_global_level( config_get( 'manage_site_threshold' ) ) ) {
+		$t_link = 'my_view_overview_page.php';
+	} else {
+		// if( access_has_global_level( config_get( 'manage_user_threshold' ) ) ) {
+		// 	$t_link = 'manage_user_page.php';
+		// } else {
+		// 	if( access_has_any_project_level( 'manage_project_threshold' ) ) {
+		// 		$t_current_project = helper_get_current_project();
+		// 		if( $t_current_project == ALL_PROJECTS ) {
+		// 			$t_link = 'manage_proj_page.php';
+		// 		} else {
+		// 			if( access_has_project_level( config_get( 'manage_project_threshold' ), $t_current_project ) ) {
+		// 				$t_link = 'manage_proj_edit_page.php?project_id=' . $t_current_project;
+		// 			} else {
+		// 				if ( access_has_global_level( config_get( 'manage_custom_fields_threshold' ) ) ) {
+		// 					$t_link = 'manage_custom_field_page.php';
+		// 				}
+		// 			}
+		// 		}
+		// 	}
+		// }
 	}
 	return $t_link;
 }

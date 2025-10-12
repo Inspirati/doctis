@@ -2632,9 +2632,6 @@ function filter_dwg_standard_get( $p_filter_name, $p_user_id = null, $p_project_
 		case FILTER_STANDARD_UNASSIGNED:
 			$t_filter = filter_dwg_create_assigned_to_unresolved( $t_project_id, NO_USER );
 			break;
-		case FILTER_STANDARD_REPORTED:
-			$t_filter = filter_dwg_create_reported_by( $t_project_id, $t_user_id );
-			break;
 		case FILTER_STANDARD_CREATED:
 			$t_filter = filter_dwg_create_created_by( $t_project_id, $t_user_id );
 			break;
