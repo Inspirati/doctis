@@ -65,21 +65,21 @@ function timeline_events( $p_start_time, $p_end_time, $p_max_events, $p_filter =
 		$t_type = $t_history_event['type'];
 
 		switch( $t_type ) {
-			case NEW_BUG:
-				$t_event = new IssueCreatedTimelineEvent( $t_timestamp, $t_user_id, $t_issue_id );
+			case NEW_DWG:
+				$t_event = new DwgCreatedTimelineEvent( $t_timestamp, $t_user_id, $t_issue_id );
 				break;
-			case BUGNOTE_ADDED:
+			case DWGNOTE_ADDED:
 				$t_bugnote_id = $t_history_event['old_value'];
 				$t_event = new DwgNoteCreatedTimelineEvent( $t_timestamp, $t_user_id, $t_issue_id, $t_bugnote_id );
 				break;
-			case BUG_MONITOR:
+			case DWG_MONITOR:
 				# Skip monitors added for others due to reminders, only add monitor events where added
 				# user is the same as the logged in user.
 				if( (int)$t_history_event['old_value'] == $t_user_id ) {
 					$t_event = new DwgMonitorTimelineEvent( $t_timestamp, $t_user_id, $t_issue_id, true );
 				}
 				break;
-			case BUG_UNMONITOR:
+			case DWG_UNMONITOR:
 				# Skip removing other users from monitoring list, only add unmonitor events where removed
 				# user is the same as the logged in user.
 				if( (int)$t_history_event['old_value'] == $t_user_id ) {
