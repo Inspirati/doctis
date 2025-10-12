@@ -313,7 +313,9 @@ if( $t_flags['id_show'] || $t_flags['project_show'] || $t_flags['category_show']
 	echo '<td class="bug-view-status">', $t_flags['view_state_show'] && isset( $t_issue['dwg_discipline'] ) ? string_display_line( $t_issue['discipline'] ) : '', '</td>';
 
 	# Date Submitted
-	echo '<td class="bug-date-submitted">', $t_flags['created_at_show'] ? $t_issue_view['created_at'] : '', '</td>';
+	if( isset( $t_issue_view['created_at'] ) ) {
+		echo '<td class="bug-date-submitted">', $t_flags['created_at_show'] ? $t_issue_view['created_at'] : '', '</td>';
+	}
 
 	# Date Updated
 	echo '<td class="bug-last-modified">',  $t_flags['updated_at_show'] ? $t_issue_view['updated_at'] : '', '</td>';

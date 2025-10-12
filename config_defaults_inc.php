@@ -264,6 +264,10 @@ $g_path	= '';
  */
 $g_short_path = '';
 
+$g_reference_url1 = 'http://objcdc5/id:';
+$g_reference_url2 = 'http://siepd42xyz31415.foo.example.com:3000/#/com.siemens.splm.clientfx.tcui.xrt.showObject?uid=';
+$g_reference_url3 = '';
+
 /**
  * Used to link to manual for User Documentation.
  *
@@ -5589,6 +5593,9 @@ $g_global_settings = array(
 	'wiki_engine',
 	'wiki_engine_url',
 	'wiki_root_namespace',
+	'reference_url1',
+	'reference_url2',
+	'reference_url3',
 );
 
 /**

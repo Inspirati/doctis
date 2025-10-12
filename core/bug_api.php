@@ -523,6 +523,7 @@ class BugData {
 
 		# Ensure that document_id is a valid document
 		$this->document_id = $this->document_id ? $this->document_id : '1';
+		$this->document_id = ( 0 != $this->document_id ) ? $this->document_id : '1';
 		if( $this->document_id > 0 ) {
 			document_ensure_exists( $this->document_id );
 		}

@@ -186,7 +186,11 @@ configure_project() {
 \$g_wiki_enable = ON;\\
 \$g_wiki_engine = 'dokuwiki';\\
 \$g_wiki_root_namespace = 'doctis';\\
-\$g_wiki_engine_url = '../doctis-wiki/';
+\$g_wiki_engine_url = '../doctis-wiki/';\\
+\$g_display_bug_padding = 5;\\
+\$g_display_dwg_padding = 4;\\
+\$g_display_bugnote_padding = 5;\\
+\$g_display_dwgnote_padding = 4;
 " ${config_dst}
 if [ ${project} = "doctis" ]; then
     sed -i "s|#[[:space:]]*\$g_window_title[[:space:]]*=[[:space:]]*'MantisBT'|\$g_window_title = '${project^}'|" ${config_dst}

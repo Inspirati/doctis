@@ -95,18 +95,25 @@ $t_fields = columns_filter_disabled( $t_fields );
 $t_bug_id = $f_bug_id;
 
 ////////////////////////////////////////////////////////////////////////////////
-// $t_force_readonly = $this->option( 'force_readonly', false );
-$t_force_readonly = true;
+// $t_flags['document_show'] = false;
+$t_show_document = false;
+// $t_document_id = (int)$t_issue['document_id'];
 $t_document_id = (int)$t_bug->document_id;
-$t_data = array(
-	'query' => array( 'id' => $t_document_id ),
-	'options' => array( 'force_readonly' => $t_force_readonly )
-);
-$t_cmd = new DwgViewPageCommand( $t_data );
-$t_dwgresult = $t_cmd->execute();
-$t_document = $t_dwgresult['issue'];
-$t_document_view = $t_dwgresult['issue_view'];
-$t_document_flags = $t_dwgresult['flags'];
+if ( $t_document_id ) {
+	// $t_force_readonly = $this->option( 'force_readonly', false );
+	$t_force_readonly = true;
+	$t_document_id = (int)$t_bug->document_id;
+	$t_data = array(
+		'query' => array( 'id' => $t_document_id ),
+		'options' => array( 'force_readonly' => $t_force_readonly )
+	);
+	$t_cmd = new DwgViewPageCommand( $t_data );
+	$t_dwgresult = $t_cmd->execute();
+	$t_document = $t_dwgresult['issue'];
+	$t_document_view = $t_dwgresult['issue_view'];
+	$t_document_flags = $t_dwgresult['flags'];
+$t_show_document = in_array( 'document_id', $t_fields );
+}
 ////////////////////////////////////////////////////////////////////////////////
 
 $t_action_button_position = config_get( 'action_button_position' );
@@ -117,7 +124,7 @@ $t_bottom_buttons_enabled = $t_action_button_position == POSITION_BOTTOM || $t_a
 $t_show_id = in_array( 'id', $t_fields );
 $t_show_project = in_array( 'project', $t_fields );
 $t_show_category = in_array( 'category_id', $t_fields );
-$t_show_document = in_array( 'document_id', $t_fields );
+// $t_show_document = in_array( 'document_id', $t_fields );
 $t_show_view_state = in_array( 'view_state', $t_fields );
 $t_view_state = $t_show_view_state ? string_display_line( get_enum_element( 'view_state', $t_bug->view_state ) ) : '';
 $t_show_date_submitted = in_array( 'date_submitted', $t_fields );
@@ -293,6 +300,7 @@ if( $t_show_id || $t_show_project || $t_show_category || $t_show_view_state || $
 # Document, Reference, Author
 #
 
+// if( $t_flags['document_show'] & $t_show_document ) {
 if( $t_show_document ) {
 
 	# Labels

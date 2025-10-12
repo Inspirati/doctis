@@ -56,9 +56,9 @@ class DwgNoteDeleteCommand extends Command {
             throw new ClientException( "'id' must be >= 1", ERROR_INVALID_FIELD_VALUE, array( 'id' ) );
         }
 
-        bugnote_ensure_exists( $this->id );
+        dwgnote_ensure_exists( $this->id );
 
-        $this->issueId = bugnote_get_field( $this->id, 'bug_id' );
+        $this->issueId = dwgnote_get_field( $this->id, 'dwg_id' );
         $t_specified_issue_id = $this->query( 'issue_id' );
         if( $t_specified_issue_id !== null && $t_specified_issue_id != $this->issueId ) {
             throw new ClientException( "Document note doesn't belong to document", ERROR_INVALID_FIELD_VALUE, array( 'id' ) );
@@ -73,17 +73,17 @@ class DwgNoteDeleteCommand extends Command {
             $g_project_override = $t_project_id;
         }
 
-        $t_reporter_id = dwgnote_get_field( $this->id, 'creator_id' );
+        $t_creator_id = dwgnote_get_field( $this->id, 'creator_id' );
         $t_user_id = auth_get_current_user_id();
 
         # mirrors check from bugnote_delete.php
-        if( $t_user_id == $t_reporter_id ) {
+        if( $t_user_id == $t_creator_id ) {
             $t_threshold_config_name =  'dwgnote_user_delete_threshold';
         } else {
             $t_threshold_config_name =  'delete_dwgnote_threshold';
         }
 
-        if( !access_has_bugnote_level( config_get( $t_threshold_config_name ), $this->id ) ) {
+        if( !access_has_dwgnote_level( config_get( $t_threshold_config_name ), $this->id ) ) {
             throw new ClientException( 'Access denied', ERROR_ACCESS_DENIED );
         }
 

@@ -2049,9 +2049,7 @@ function filter_gpc_get( ?array $p_filter = null ): array {
 	# If a single value is provided, it will be normalized to an array with 'filter_ensure_valid_filter()'
 
 	$f_show_category = gpc_get( FILTER_PROPERTY_CATEGORY_ID, $t_filter[FILTER_PROPERTY_CATEGORY_ID] );
-
 	$f_show_document = gpc_get( FILTER_PROPERTY_DOCUMENT_ID, $t_filter[FILTER_PROPERTY_DOCUMENT_ID] );
-
 	$f_platform = gpc_get( FILTER_PROPERTY_PLATFORM, $t_filter[FILTER_PROPERTY_PLATFORM] );
 	$f_os = gpc_get( FILTER_PROPERTY_OS, $t_filter[FILTER_PROPERTY_OS] );
 	$f_os_build = gpc_get( FILTER_PROPERTY_OS_BUILD, $t_filter[FILTER_PROPERTY_OS_BUILD] );
@@ -2059,9 +2057,7 @@ function filter_gpc_get( ?array $p_filter = null ): array {
 	$f_show_status = gpc_get( FILTER_PROPERTY_STATUS, $t_filter[FILTER_PROPERTY_STATUS] );
 	$f_hide_status = gpc_get( FILTER_PROPERTY_HIDE_STATUS, $t_filter[FILTER_PROPERTY_HIDE_STATUS] );
 	$f_reporter_id = gpc_get( FILTER_PROPERTY_REPORTER_ID, $t_filter[FILTER_PROPERTY_REPORTER_ID] );
-
 	$f_document_id = gpc_get( FILTER_PROPERTY_DOCUMENT_ID, $t_filter[FILTER_PROPERTY_DOCUMENT_ID] );
-	
 	$f_handler_id = gpc_get( FILTER_PROPERTY_HANDLER_ID, $t_filter[FILTER_PROPERTY_HANDLER_ID] );
 	$f_project_id = gpc_get( FILTER_PROPERTY_PROJECT_ID, $t_filter[FILTER_PROPERTY_PROJECT_ID] );
 	$f_projection = gpc_get( FILTER_PROPERTY_PROJECTION, $t_filter[FILTER_PROPERTY_PROJECTION] );
