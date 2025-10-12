@@ -803,6 +803,34 @@ function string_get_dwg_view_link( $p_bug_id, $p_detail_info = true, $p_fqdn = f
 	return $t_link;
 }
 
+function string_get_dwg_view_reference_url( $p_urlbase ) {
+	return $p_urlbase . '/document/versions/latest';
+}
+
+
+function string_get_dwg_view_reference_link( $p_bug_id, $p_dwg_reference, $p_detail_info = true, $p_fqdn = false ) {
+	if( dwg_exists( $p_bug_id ) ) {
+		$t_project_id = dwg_get_field( $p_bug_id, 'project_id' );
+		// 	$t_status = string_attribute( get_enum_element( 'status', dwg_get_field( $p_bug_id, 'status' ), $t_project_id ) );
+		// 	$t_link .= ' title="[' . $t_status . '] ' . $t_summary . '"';
+
+		$t_link = '<a href="';
+		if (preg_match('/[A-Z]{1,3}[0-9]{6,9}/', $p_dwg_reference)) {
+			$t_link .= config_get_global( 'reference_url1' );
+			$t_link .= string_get_dwg_view_reference_url( $p_dwg_reference ) . '"';
+		} else {
+			$t_link .= config_get_global( 'reference_url2' );
+			$t_link .= $p_dwg_reference;
+		}		
+		$t_link .= '"';
+		$t_link .= '>' . $p_dwg_reference . '</a>';
+	} else {
+		$t_link = $p_dwg_reference;
+	}
+
+	return $t_link;
+}
+
 /**
  * return an href anchor that links to a bug VIEW page for the given bug
  * @param integer $p_bug_id      A bug identifier.

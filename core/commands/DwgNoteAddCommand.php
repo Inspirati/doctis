@@ -266,7 +266,7 @@ class DwgNoteAddCommand extends Command {
 		if( config_get( 'reassign_on_feedback' ) &&
 			$this->issue->status === config_get( 'dwg_feedback_status' ) &&
 			$this->issue->handler_id !== $this->reporterId &&
-			$this->issue->reporter_id === $this->reporterId ) {
+			$this->issue->creator_id === $this->reporterId ) {
 			if( $this->issue->handler_id !== NO_USER ) {
 				dwg_set_field( $this->issue->id, 'status', config_get( 'dwg_assigned_status' ) );
 			} else {

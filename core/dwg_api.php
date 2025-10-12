@@ -1005,11 +1005,13 @@ function dwg_exists( $p_bug_id ) {
  * @access public
  */
 function dwg_ensure_exists( $p_bug_id ) {
-	if( !dwg_exists( $p_bug_id ) ) {
-		throw new ClientException(
-			"Document #$p_bug_id not found",
-			ERROR_DWG_NOT_FOUND,
-			array( $p_bug_id ) );
+	if( $p_bug_id > 0 ) {
+		if( !dwg_exists( $p_bug_id ) ) {
+			throw new ClientException(
+				"Document #$p_bug_id not found",
+				ERROR_DWG_NOT_FOUND,
+				array( $p_bug_id ) );
+		}
 	}
 }
 

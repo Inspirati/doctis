@@ -633,27 +633,27 @@ class DwgFilterQuery extends DbQuery {
 			if( !empty( $t_private_is_reporter_project_ids ) ) {
 				$t_query_projects_or[] = $this->sql_in( '{document}.project_id', $t_private_is_reporter_project_ids )
 						. ' AND {document}.view_state <> ' . $this->param( VS_PUBLIC )
-						. ' AND {document}.reporter_id = ' . $this->param( $t_user_id );
+						. ' AND {document}.creator_id = ' . $this->param( $t_user_id );
 			}
 
 			# for these projects, search any issue (public or private) valid for the old 'limit_reporters' configuration
 			if( !empty( $t_old_limit_public_and_private_project_ids ) ) {
 				$t_query_projects_or[] = $this->sql_in( '{document}.project_id', $t_old_limit_public_and_private_project_ids )
-						. ' AND {document}.reporter_id = ' . $this->param( $t_user_id );
+						. ' AND {document}.creator_id = ' . $this->param( $t_user_id );
 			}
 
 			# for these projects, search public issues valid for the old 'limit_reporters' configuration
 			if( !empty( $t_old_limit_public_only_project_ids ) ) {
 				$t_query_projects_or[] = $this->sql_in( '{document}.project_id', $t_old_limit_public_only_project_ids )
 						. ' AND {document}.view_state = ' . $this->param( VS_PUBLIC )
-						. ' AND {document}.reporter_id = ' . $this->param( $t_user_id );
+						. ' AND {document}.creator_id = ' . $this->param( $t_user_id );
 			}
 
 			# for these projects, search any issue (public or private) valid for limited view
 			if( !empty( $t_limited_public_and_private_project_ids ) ) {
 				$t_query_projects_or[] = $this->sql_in( '{document}.project_id', $t_limited_public_and_private_project_ids )
 						. ' AND ('
-						. ' {document}.reporter_id = ' . $this->param( $t_user_id )
+						. ' {document}.creator_id = ' . $this->param( $t_user_id )
 						. ' OR {document}.handler_id = ' . $this->param( $t_user_id )
 						. ' OR EXISTS ( SELECT 1 FROM {dwg_monitor} bm'
 						. ' WHERE bm.user_id = ' . $this->param( $t_user_id )
@@ -666,7 +666,7 @@ class DwgFilterQuery extends DbQuery {
 				$t_query_projects_or[] = $this->sql_in( '{document}.project_id', $t_limited_public_only_project_ids )
 						. ' AND {document}.view_state = ' . $this->param( VS_PUBLIC )
 						. ' AND ('
-						. ' {document}.reporter_id = ' . $this->param( $t_user_id )
+						. ' {document}.creator_id = ' . $this->param( $t_user_id )
 						. ' OR {document}.handler_id = ' . $this->param( $t_user_id )
 						. ' OR EXISTS ( SELECT 1 FROM {dwg_monitor} bm'
 						. ' WHERE bm.user_id = ' . $this->param( $t_user_id )
@@ -1152,7 +1152,7 @@ class DwgFilterQuery extends DbQuery {
 	// 		$t_view_condition = null;
 	// 	} else {
 	// 		$t_view_condition = $t_table_alias . '.view_state = ' . $this->param( VS_PUBLIC )
-	// 				. ' OR ' . $t_table_alias . '.reporter_id = ' . $this->param( $this->user_id );
+	// 				. ' OR ' . $t_table_alias . '.creator_id = ' . $this->param( $this->user_id );
 	// 		if( !empty( $t_projects_can_view_private ) ) {
 	// 			$t_view_condition .= ' OR ' . $this->sql_in( '{document}.project_id', $t_projects_can_view_private );
 	// 		}
@@ -1183,9 +1183,9 @@ class DwgFilterQuery extends DbQuery {
 	// 	$t_table_alias = $this->helper_table_alias_for_bugnote();
 
 	// 	if( $t_use_none ) {
-	// 		$t_alias = 'COALESCE( ' . $t_table_alias . '.reporter_id, 0 )';
+	// 		$t_alias = 'COALESCE( ' . $t_table_alias . '.creator_id, 0 )';
 	// 	} else {
-	// 		$t_alias = $t_table_alias . '.reporter_id';
+	// 		$t_alias = $t_table_alias . '.creator_id';
 	// 	}
 
 	// 	$t_where = $this->sql_in( $t_alias, $t_user_ids );

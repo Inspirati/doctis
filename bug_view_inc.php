@@ -116,15 +116,20 @@ $t_flags = $t_result['flags'];
 
 ////////////////////////////////////////////////////////////////////////////////
 $t_document_id = (int)$t_issue['document_id'];
-$t_data = array(
-	'query' => array( 'id' => $t_document_id ),
-	'options' => array( 'force_readonly' => $t_force_readonly )
-);
-$t_cmd = new DwgViewPageCommand( $t_data );
-$t_dwgresult = $t_cmd->execute();
-$t_document = $t_dwgresult['issue'];
-$t_document_view = $t_dwgresult['issue_view'];
-$t_document_flags = $t_dwgresult['flags'];
+if ( $t_document_id ) {
+
+	$t_data = array(
+		'query' => array( 'id' => $t_document_id ),
+		'options' => array( 'force_readonly' => $t_force_readonly )
+	);
+	$t_cmd = new DwgViewPageCommand( $t_data );
+	$t_dwgresult = $t_cmd->execute();
+	$t_document = $t_dwgresult['issue'];
+	// $t_document_view = $t_dwgresult['issue_view'];
+	$t_document_flags = $t_dwgresult['flags'];
+
+	$t_flags['document_show'] = $t_document_flags['project_show'];
+}
 ////////////////////////////////////////////////////////////////////////////////
 
 compress_enable();
@@ -289,8 +294,7 @@ if( $t_flags['id_show'] || $t_flags['project_show'] || $t_flags['category_show']
 # Document, Reference, Author
 #
 
-if( true
-) {
+if( $t_flags['document_show'] ) {
 
 	# Labels
 	echo '<tr class="bug-header">';

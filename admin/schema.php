@@ -974,12 +974,14 @@ $g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'document' ), "
 # @TODO RobD - extract from dwg_api.php ~line number 1982:
 #    "log changes except for duplicate_id which is obsolete and should be removed in MantisBT 1.3"
 
-# @TODO RobD: or we could instead  rename the project_id field, as it should become unused
+# @TODO RobD: or we could instead rename the project_id field, as it should become unused
 $g_upgrade[$t_idx++] = array( 'AddColumnSQL', array( db_get_table( 'bug' ), "
 	document_id			I		UNSIGNED NOTNULL DEFAULT '0' " ) );
 
-# @TODO RobD: add field for project classification
+# @TODO RobD: add field for project classification and reference url (for making references into hyperlinks to a data store)
 $g_upgrade[$t_idx++] = array( 'AddColumnSQL', array( db_get_table( 'project' ), "
+	reference_url1		C(255)	NOTNULL DEFAULT \" '' \",
+	reference_url2		C(255)	NOTNULL DEFAULT \" '' \",
 	classification		C(255)	NOTNULL DEFAULT \" '' \" " ) );
 
 $g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwgnote' ), "

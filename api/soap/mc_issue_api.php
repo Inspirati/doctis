@@ -1928,6 +1928,7 @@ function mci_issue_data_as_header_array( BugData $p_issue_data ) {
 
 		$t_issue['project'] = $p_issue_data->project_id;
 		$t_issue['category'] = mci_get_category( $p_issue_data->category_id );
+		// @TODO RobD - we probably don't need both of these (cleanup)
 		$t_issue['document'] = mci_get_document( $p_issue_data->document_id );
 		$t_issue['document_id'] = $p_issue_data->document_id;
 		$t_issue['priority'] = $p_issue_data->priority;

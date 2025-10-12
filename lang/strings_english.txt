@@ -900,7 +900,7 @@ $s_rss = 'RSS';
 
 # manage_overview_page
 $s_site_information = 'Site Information';
-$s_mantis_version = 'MantisBT Version';
+$s_mantis_version = 'Doctis Version';
 $s_schema_version = 'Database Schema Version';
 $s_site_path = 'Site Path';
 $s_core_path = 'Core Path';
@@ -1225,6 +1225,7 @@ $s_summary_link = 'Summary';
 $s_account_link = 'My Account';
 $s_users_link = 'Users';
 $s_manage_link = 'Manage';
+$s_manage_my_view_link = 'Manage My View';
 $s_edit_news_link = 'Edit News';
 $s_docs_link = 'Help';
 $s_logout_link = 'Logout';

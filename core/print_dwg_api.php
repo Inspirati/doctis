@@ -1348,6 +1348,10 @@ function print_dwg_link( $p_bug_id, $p_detail_info = true ) {
 	echo string_get_dwg_view_link( $p_bug_id, $p_detail_info );
 }
 
+function print_dwg_reference_link( $p_bug_id, $p_dwg_reference, $p_detail_info = true ) {
+	echo string_get_dwg_view_reference_link( $p_bug_id, $p_dwg_reference, $p_detail_info );
+}
+
 /**
  * formats the priority given the status
  * shows the priority in BOLD if the bug is NOT closed and is of significant priority

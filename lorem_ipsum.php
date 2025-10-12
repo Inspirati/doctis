@@ -233,11 +233,43 @@ function random_numeric_string() {
 	return $digits;
 }
 
-function random_reference() {
+function generate_reference() {
 	$digits = 'AB';
 	for( $i = 0; $i < 8; $i++ ) {
 		$digits .= random_int(0, 9);
 	}
 	return $digits;
+}
+
+function random_reference() {
+    if (mt_rand(0, 1) === 0) {
+        // --- Type 1: [A-Z]{1,3}[0-9]{6,9} ---
+        $prefixLength = mt_rand(1, 3);
+        $numberLength = mt_rand(6, 9);
+        $prefix = '';
+        for ($i = 0; $i < $prefixLength; $i++) {
+            $prefix .= chr(mt_rand(65, 90)); // A–Z
+        }
+        $number = '';
+        for ($i = 0; $i < $numberLength; $i++) {
+            $number .= mt_rand(0, 9);
+        }
+        return $prefix . $number;
+    } else {
+        // --- Type 2: random alphanumeric, starts with a letter ---
+        $length = mt_rand(13, 15);
+        $letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+        $chars = $letters . '0123456789';
+
+        // Start with a letter
+        $ref = $letters[mt_rand(0, strlen($letters) - 1)];
+
+        // Fill the rest with alphanumerics
+        for ($i = 1; $i < $length; $i++) {
+            $ref .= $chars[mt_rand(0, strlen($chars) - 1)];
+        }
+
+        return $ref;
+    }
 }
 

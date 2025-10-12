@@ -1215,7 +1215,7 @@ function print_dwg_column_id( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET
 	echo '</td>';
 }
 
-#@ NOTE: called via a run-time generated function name
+#@ NOTE: called via a run-time generated function name (@TODO RobD - possibly deprecated/unused)
 function print_dwg_column_dwg_id( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	echo '<td class="column-id">';
 	print_dwg_link( $p_bug->id, false );
@@ -1226,6 +1226,12 @@ function print_dwg_column_dwg_id( DwgData $p_bug, $p_columns_target = COLUMNS_TA
 function print_column_document_id( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	echo '<td class="column-id">';
 	print_dwg_link( $p_bug->document_id, false );
+	echo '</td>';
+}
+
+function print_dwg_column_reference( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+	echo '<td class="column-id">';
+	print_dwg_reference_link( $p_bug->id, $p_bug->reference, false );
 	echo '</td>';
 }
 

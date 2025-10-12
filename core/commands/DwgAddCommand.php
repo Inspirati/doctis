@@ -329,7 +329,7 @@ class DwgAddCommand extends Command {
 
 		# if a profile was selected then let's use that information
 		if( $this->issue->profile_id != 0 ) {
-			$t_profile = user_get_profile( $this->issue->reporter_id, $this->issue->profile_id );
+			$t_profile = user_get_profile( $this->issue->creator_id, $this->issue->profile_id );
 
 			if( is_blank( $this->issue->platform ) ) {
 				$this->issue->platform = $t_profile->platform;
@@ -440,7 +440,7 @@ class DwgAddCommand extends Command {
 						$t_private,
 						$t_parent_bugnote->note_type,
 						$t_parent_bugnote->note_attr,
-						$t_parent_bugnote->reporter_id,
+						$t_parent_bugnote->creator_id,
 						false,
 						0,
 						0,
