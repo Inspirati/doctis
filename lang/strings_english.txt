@@ -1886,6 +1886,22 @@ $s_timeline_no_activity = 'No activity within time range.';
 $s_timeline_title = 'Timeline';
 $s_timeline_more = 'More events...';
 
+# Document Timeline Feature Strings
+$s_timeline_document_created = '<span class="username">%1$s</span> created document <span class="document_id">%2$s</span>';
+$s_timeline_document_file_added = '<span class="username">%1$s</span> attached file <em>%3$s</em> to document <span class="document_id">%2$s</span>';
+$s_timeline_document_file_deleted = '<span class="username">%1$s</span> removed file <em>%3$s</em> from document <span class="document_id">%2$s</span>';
+$s_timeline_document_note_created = '<span class="username">%1$s</span> commented on document <span class="document_id">%2$s</span>';
+$s_timeline_document_monitor = '<span class="username">%1$s</span> is monitoring document <span class="document_id">%2$s</span>';
+$s_timeline_document_unmonitor = '<span class="username">%1$s</span> stopped monitoring document <span class="document_id">%2$s</span>';
+$s_timeline_document_tagged = '<span class="username">%1$s</span> tagged document <span class="document_id">%2$s</span> with <span class="tag_name">%3$s</span>';
+$s_timeline_document_untagged = '<span class="username">%1$s</span> removed tag <span class="tag_name">%3$s</span> from document <span class="document_id">%2$s</span>';
+$s_timeline_document_resolved = '<span class="username">%1$s</span> resolved document <span class="document_id">%2$s</span>';
+$s_timeline_document_closed = '<span class="username">%1$s</span> closed document <span class="document_id">%2$s</span>';
+$s_timeline_document_reopened = '<span class="username">%1$s</span> reopened document <span class="document_id">%2$s</span>';
+$s_timeline_document_assigned = '<span class="username">%1$s</span> assigned document <span class="document_id">%2$s</span> to <span class="username">%3$s</span>';
+$s_timeline_document_assigned_to_self = '<span class="username">%1$s</span> picked up document <span class="document_id">%2$s</span>';
+$s_timeline_document_unassigned = '<span class="username">%1$s</span> unassigned document <span class="document_id">%2$s</span>';
+
 /**
  * ERROR strings
  */
