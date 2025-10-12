@@ -70,41 +70,41 @@ function timeline_events( $p_start_time, $p_end_time, $p_max_events, $p_filter =
 				break;
 			case BUGNOTE_ADDED:
 				$t_bugnote_id = $t_history_event['old_value'];
-				$t_event = new IssueNoteCreatedTimelineEvent( $t_timestamp, $t_user_id, $t_issue_id, $t_bugnote_id );
+				$t_event = new DwgNoteCreatedTimelineEvent( $t_timestamp, $t_user_id, $t_issue_id, $t_bugnote_id );
 				break;
 			case BUG_MONITOR:
 				# Skip monitors added for others due to reminders, only add monitor events where added
 				# user is the same as the logged in user.
 				if( (int)$t_history_event['old_value'] == $t_user_id ) {
-					$t_event = new IssueMonitorTimelineEvent( $t_timestamp, $t_user_id, $t_issue_id, true );
+					$t_event = new DwgMonitorTimelineEvent( $t_timestamp, $t_user_id, $t_issue_id, true );
 				}
 				break;
 			case BUG_UNMONITOR:
 				# Skip removing other users from monitoring list, only add unmonitor events where removed
 				# user is the same as the logged in user.
 				if( (int)$t_history_event['old_value'] == $t_user_id ) {
-					$t_event = new IssueMonitorTimelineEvent( $t_timestamp, $t_user_id, $t_issue_id, false );
+					$t_event = new DwgMonitorTimelineEvent( $t_timestamp, $t_user_id, $t_issue_id, false );
 				}
 				break;
 			case TAG_ATTACHED:
-				$t_event = new IssueTagTimelineEvent( $t_timestamp, $t_user_id, $t_issue_id, $t_history_event['old_value'], true );
+				$t_event = new DwgTagTimelineEvent( $t_timestamp, $t_user_id, $t_issue_id, $t_history_event['old_value'], true );
 				break;
 			case TAG_DETACHED:
-				$t_event = new IssueTagTimelineEvent( $t_timestamp, $t_user_id, $t_issue_id, $t_history_event['old_value'], false );
+				$t_event = new DwgTagTimelineEvent( $t_timestamp, $t_user_id, $t_issue_id, $t_history_event['old_value'], false );
 				break;
 			case NORMAL_TYPE:
 				switch( $t_history_event['field'] ) {
 					case 'status':
-						$t_event = new IssueStatusChangeTimelineEvent( $t_timestamp, $t_user_id, $t_issue_id, $t_history_event['old_value'], $t_history_event['new_value'] );
+						$t_event = new DwgStatusChangeTimelineEvent( $t_timestamp, $t_user_id, $t_issue_id, $t_history_event['old_value'], $t_history_event['new_value'] );
 						break;
 					case 'handler_id':
-						$t_event = new IssueAssignedTimelineEvent( $t_timestamp, $t_user_id, $t_issue_id, $t_history_event['new_value'] );
+						$t_event = new DwgAssignedTimelineEvent( $t_timestamp, $t_user_id, $t_issue_id, $t_history_event['new_value'] );
 						break;
 				}
 				break;
 			case FILE_ADDED:
 			case FILE_DELETED:
-				$t_event = new IssueAttachmentTimelineEvent(
+				$t_event = new DwgAttachmentTimelineEvent(
 					$t_timestamp,
 					$t_user_id,
 					$t_issue_id,
