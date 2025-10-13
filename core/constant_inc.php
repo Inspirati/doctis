@@ -60,6 +60,8 @@ define( 'VIEWER', 10 );
 define( 'REPORTER', 25 );
 define( 'UPDATER', 40 );
 define( 'DEVELOPER', 55 );
+define( 'APPROVER', 60 );
+define( 'ACCEPTOR', 65 );
 define( 'MANAGER', 70 );
 define( 'ADMINISTRATOR', 90 );
 define( 'NOBODY', 100 );

@@ -308,7 +308,7 @@ html_robots_noindex();
 
 layout_page_header( lang_get( 'create_dwg_link' ) );
 
-layout_page_begin( __FILE__ );
+layout_page_begin( __FILE__, true );
 
 $t_form_encoding = '';
 if( $t_show_attachments ) {

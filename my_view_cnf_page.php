@@ -15,27 +15,22 @@
 # along with MantisBT.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * My View Page
+ * Overview Page
  *
  * @package MantisBT
- * @copyright Copyright 2000 - 2002  Kenzaburo Ito - kenito@300baud.org
  * @copyright Copyright 2002  MantisBT Team - mantisbt-dev@lists.sourceforge.net
  * @link http://www.mantisbt.org
  *
  * @uses core.php
  * @uses access_api.php
  * @uses authentication_api.php
- * @uses category_api.php
- * @uses compress_api.php
  * @uses config_api.php
  * @uses constant_inc.php
  * @uses current_user_api.php
- * @uses gpc_api.php
+ * @uses event_api.php
  * @uses helper_api.php
  * @uses html_api.php
  * @uses lang_api.php
- * @uses print_api.php
- * @uses user_api.php
  */
 
 require_once( 'core.php' );
@@ -47,6 +42,8 @@ require_api( 'compress_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
 require_api( 'current_user_api.php' );
+require_api( 'event_api.php' );
+require_api( 'filter_api.php' );
 require_api( 'filter_dwg_api.php' );
 require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
@@ -58,7 +55,11 @@ require_api( 'user_api.php' );
 require_api( 'layout_api.php' );
 require_css( 'status_config.php' );
 
+const TIMELINE_INC_ALLOW = true;
 const TIMELINE_DWG_INC_ALLOW = true;
+
+//auth_reauthenticate();
+//access_ensure_global_level( config_get( 'manage_site_threshold' ) );
 
 auth_ensure_user_authenticated();
 
@@ -73,9 +74,9 @@ compress_enable();
 # don't index my view page
 html_robots_noindex();
 
-// layout_page_header( lang_get( 'manage_projects_link' ) );
-// layout_page_begin( 'manage_overview_page.php', true );
-//print_manage_menu( 'manage_proj_page.php' );
+// layout_page_header( lang_get( 'my_view_link' ) );
+// layout_page_begin( __FILE__ );
+// // print_my_view_menu( 'my_view_overview_page.php' );
 
 layout_page_header_begin( lang_get( 'my_view_link' ) );
 
@@ -88,13 +89,13 @@ layout_page_header_end();
 
 layout_page_begin( __FILE__, true );
 
-// print_my_view_menu( 'my_view_dwg_page.php' );
+// print_my_view_menu( 'my_view_cnf_page.php' );
 print_my_view_menu( __FILE__ );
 
 $f_page_number = gpc_get_int( 'page_number', 1 );
 
 $t_per_page = config_get( 'my_view_dwg_count' );
-// $t_bug_count = null;
+$t_bug_count = null;
 $t_dwg_count = null;
 $t_page_count = null;
 
@@ -146,10 +147,120 @@ asort( $t_boxes );
 $t_timeline_view_threshold_access = access_has_any_project_level( config_get( 'timeline_view_threshold' ), $t_project_ids_to_check, $t_current_user_id );
 $t_timeline_view_class = ( $t_timeline_view_threshold_access ) ? "col-md-7" : "col-md-6";
 ?>
-<div class="col-xs-12 <?php echo $t_timeline_view_class ?>">
+
+<div class="col-md-12 col-xs-12">
+	<div class="space-10"></div>
+	<div class="widget-box widget-color-blue2">
+	<div class="widget-header widget-header-small">
+		<h4 class="widget-title lighter">
+			<?php print_icon( 'fa-info', 'ace-icon' ); ?>
+			<?php echo lang_get('user_status') ?>
+		</h4>
+	</div>
+	<div class="widget-body">
+	<div class="widget-main no-padding">
+	<div class="table-responsive">
+	<table id="manage-overview-table" class="table table-hover table-bordered table-condensed">
+<?php
+echo '<div class="col-md-6 col-xs-12">';
+if( !current_user_is_anonymous() ) {
+	$t_current_user_id = auth_get_current_user_id();
+	$t_hide_status = config_get( 'bug_resolved_status_threshold' );
+	echo '<span class="bigger-120">';
+	echo lang_get( 'open_and_assigned_to_me_label' ) . lang_get( 'word_separator' );
+	print_link( "view_all_set.php?type=" . FILTER_ACTION_PARSE_NEW
+		. "&handler_id=$t_current_user_id&hide_status=$t_hide_status",
+		current_user_get_assigned_open_bug_count()
+	);
+	echo '<br />';
+	echo lang_get( 'dwg_open_and_assigned_to_me_label' ) . lang_get( 'word_separator' );
+	print_link( "view_dwg_set.php?type=" . FILTER_ACTION_PARSE_NEW
+		. "&handler_id=$t_current_user_id&hide_status=$t_hide_status",
+		current_user_get_assigned_open_dwg_count()
+	);
+	echo '<br />';
+	echo lang_get( 'open_and_reported_to_me_label' ) . lang_get( 'word_separator' );
+	print_link( "view_all_set.php?type=" . FILTER_ACTION_PARSE_NEW
+		. "&reporter_id=$t_current_user_id&hide_status=$t_hide_status",
+		current_user_get_reported_open_bug_count()
+	);
+	echo '<br />';
+	echo lang_get( 'dwg_open_and_created_to_me_label' ) . lang_get( 'word_separator' );
+	print_link( "view_dwg_set.php?type=" . FILTER_ACTION_PARSE_NEW
+		. "&reporter_id=$t_current_user_id&hide_status=$t_hide_status",
+		current_user_get_created_open_dwg_count()
+	);
+	echo '<br />';
+	echo lang_get( 'last_visit_label' ) . lang_get( 'word_separator' );
+	echo date( config_get( 'normal_date_format' ), current_user_get_field( 'last_visit' ) );
+	echo '</span>';
+}
+echo '</div>';
+?>
+
+	<?php
+	// print_table_spacer( 2 );
+	$t_is_admin = !current_user_is_anonymous();
+	?>
+	</table>
+	</div>
+	</div>
+	</div>
+	</div>
+</div>
+
+<div class="col-md-12 col-xs-12">
+	<div class="space-10"></div>
+	<div class="widget-box widget-color-blue2">
+	<div class="widget-header widget-header-small">
+		<h4 class="widget-title lighter">
+			<?php print_icon( 'fa-info', 'ace-icon' ); ?>
+			<?php echo lang_get('user_configuration') ?>
+		</h4>
+	</div>
+	<div class="widget-body">
+	<div class="widget-main no-padding">
+	<div class="table-responsive">
+	<table id="manage-overview-table" class="table table-hover table-bordered table-condensed">
+<?php /* ...
+		<tr>
+			<th class="category"><?php echo lang_get( 'mantis_version' ) ?></th>
+			<td><?php echo MANTIS_VERSION . config_get_global( 'version_suffix' ) ?></td>
+		</tr>
+		<tr>
+			<th class="category"><?php echo lang_get( 'schema_version' ) ?></th>
+			<td><?php echo config_get( 'database_version', 0, ALL_USERS, ALL_PROJECTS ) ?></td>
+		</tr>
+ */ ?>
+ TODO:<br>
+   add timelines for only events pertinent to the user, both Issues and Documents<br>
+   add Projects list which allows user to enable/disable participation in each project<br>
+	<?php
+	print_table_spacer( 2 );
+	$t_is_admin = !current_user_is_anonymous();
+	if( $t_is_admin ) {
+	?>
+<?php /* ...
+		<tr>
+			<th class="category"><?php echo lang_get( 'php_version' ) ?></th>
+			<td><?php echo phpversion() ?></td>
+		</tr>
+ */ ?>
+	<?php
+		print_table_spacer( 2 );
+	}
+
+	// event_signal( 'EVENT_MANAGE_OVERVIEW_INFO', array( $t_is_admin ) )
+	?>
+	</table>
+	</div>
+	</div>
+	</div>
+	</div>
+</div>
 
 <?php
-define( 'MY_VIEW_DWG_INC_ALLOW', true );
+define( 'MY_VIEW_CNF_INC_ALLOW', true );
 
 # Determine the box number where column 2 should start
 # Use shift-right bitwise operator to divide by 2 as integer
@@ -163,22 +274,41 @@ foreach( $t_boxes as $t_box_title => $t_box_display ) {
         echo '</div>';
         echo '<div class="col-xs-12 col-md-6">';
     }
-    include( __DIR__ . '/my_view_dwg_inc.php' );
+    // include( __DIR__ . '/my_view_cnf_inc.php' );
     echo '<div class="space-10"></div>';
 }
 ?>
 </div>
 
+<?php /*
 <?php if( $t_timeline_view_threshold_access ) { ?>
 <div class="col-xs-12 col-md-5">
 	<?php
 		# Build a simple filter that gets all bugs for current project
 		$g_timeline_filter = array();
 		$g_timeline_filter[FILTER_PROPERTY_HIDE_STATUS] = array( META_FILTER_NONE );
+		$g_timeline_filter[FILTER_PROPERTY_HANDLER_ID] = $t_current_user_id;
+//		FILTER_PROPERTY_PROJECT_ID => array( ALL_PROJECTS ),
+		$g_timeline_filter = filter_ensure_valid_filter( $g_timeline_filter );
+		include( 'timeline_inc.php' );
+	?>
+	<div class="space-10"></div>
+</div>
+<?php } ?>
+ */ ?>
+<?php if( $t_timeline_view_threshold_access ) { ?>
+<div class="col-xs-12 col-md-5">
+	<?php
+		# Build a simple filter that gets all dwgs for current project
+		$g_timeline_filter = array();
+		$g_timeline_filter[FILTER_PROPERTY_HIDE_STATUS] = array( META_FILTER_NONE );
+		$g_timeline_filter[FILTER_PROPERTY_HANDLER_ID] = $t_current_user_id;
 		$g_timeline_filter = filter_dwg_ensure_valid_filter( $g_timeline_filter );
 		include( 'timeline_dwg_inc.php' );
 	?>
 	<div class="space-10"></div>
 </div>
+
 <?php }
+
 layout_page_end();

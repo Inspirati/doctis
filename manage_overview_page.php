@@ -52,6 +52,39 @@ layout_page_header( lang_get( 'manage_link' ) );
 layout_page_begin( __FILE__ );
 
 print_manage_menu( 'manage_overview_page.php' );
+
+function doctis_get_git_version_info() {
+	$info = array(
+		'branch' => null,
+		'commit' => null,
+		'tag'    => null,
+		'dirty'  => false,
+		'repo'   => null,
+	);
+
+	$git_dir = __DIR__ . '/.git';
+	if( is_dir( $git_dir ) ) {
+		# requires:
+		# sudo git config --system --add safe.directory /var/www/html/doctis
+		$info['repo'] = realpath( dirname( $git_dir ) );
+		$info['branch'] = trim( @shell_exec( 'git rev-parse --abbrev-ref HEAD 2>/dev/null' ) );
+		$info['commit'] = trim( @shell_exec( 'git rev-parse --short=10 HEAD 2>/dev/null' ) );
+		$info['tag']    = trim( @shell_exec( 'git describe --tags --always --dirty 2>/dev/null' ) );
+		$dirty_output   = trim( @shell_exec( 'git status --porcelain 2>/dev/null' ) );
+		$info['dirty']  = ( $dirty_output !== '' );
+	}
+	if ( ! $info['branch'] ) {
+		$ver_file = __DIR__ . '/version.json';
+		if( file_exists( $ver_file ) ) {
+			$json = json_decode( file_get_contents( $ver_file ), true );
+			if( is_array( $json ) ) {
+				$info = array_merge( $info, $json );
+			}
+		}
+	}
+
+	return $info;
+}
 ?>
 
 <div class="col-md-12 col-xs-12">
@@ -115,6 +148,15 @@ print_manage_menu( 'manage_overview_page.php' );
 		</tr>
 	<?php
 		print_table_spacer( 2 );
+		$t_git_info = doctis_get_git_version_info();
+		if( $t_git_info['commit'] ) {
+			echo '<tr><td class="category">Git Repository</td><td>' . htmlspecialchars($t_git_info['repo']) . '</td></tr>';
+			echo '<tr><td class="category">Branch</td><td>' . htmlspecialchars($t_git_info['branch']) . '</td></tr>';
+			echo '<tr><td class="category">Commit</td><td>' . htmlspecialchars($t_git_info['commit']) . '</td></tr>';
+			echo '<tr><td class="category">Tag</td><td>' . htmlspecialchars($t_git_info['tag']) . '</td></tr>';
+			echo '<tr><td class="category">Dirty</td><td>' . ( $t_git_info['dirty'] ? 'Yes' : 'No' ) . '</td></tr>';
+			print_table_spacer( 2 );
+		}
 	}
 
 	event_signal( 'EVENT_MANAGE_OVERVIEW_INFO', array( $t_is_admin ) )

@@ -69,7 +69,7 @@ unset( $t_url_params['all'] );
 	<div class="widget-header widget-header-small">
 		<h4 class="widget-title lighter">
 			<?php print_icon( 'fa-clock-o', 'ace-icon' ); ?>
-			<?php echo lang_get( 'timeline_title' ) ?>
+			<?php echo lang_get( 'timeline_document_title' ) ?>
 		</h4>
 		<div class="widget-toolbar">
 			<a data-action="collapse" href="#">

@@ -145,7 +145,8 @@ function layout_page_header_end( $p_page_id = null) {
  * @param string $p_active_sidebar_page sidebar page where the current page lives under
  * @return void
  */
-function layout_page_begin( $p_active_sidebar_page = null ) {
+// function layout_page_begin( $p_active_sidebar_page = null ) {
+function layout_page_begin( $p_active_sidebar_page = null, $p_is_dwg_page = false ) {
 	if( !db_is_connected() ) {
 		return;
 	}
@@ -161,7 +162,7 @@ function layout_page_begin( $p_active_sidebar_page = null ) {
 
 	layout_main_content_begin();
 
-	layout_breadcrumbs();
+	layout_breadcrumbs($p_is_dwg_page);
 
 	layout_page_content_begin();
 
@@ -1078,7 +1079,7 @@ function layout_page_content_end() {
  * Render breadcrumbs bar.
  * @return void
  */
-function layout_breadcrumbs() {
+function layout_breadcrumbs($p_is_dwg_page = false) {
 	if( !auth_is_user_authenticated() ) {
 		return;
 	}
@@ -1124,7 +1125,11 @@ function layout_breadcrumbs() {
 
 	# Recently visited
 	if( last_visited_enabled() ) {
-		$t_ids = last_visited_get_array();
+		if ( $p_is_dwg_page ) {
+			$t_ids = last_visited_dwg_get_array();
+		} else {
+			$t_ids = last_visited_get_array();
+		}
 
 		if( count( $t_ids ) > 0 ) {
 			echo '<div class="nav-recent hidden-xs">' . lang_get( 'recently_visited' ) . ': ';
@@ -1136,8 +1141,11 @@ function layout_breadcrumbs() {
 				} else {
 					$t_first = false;
 				}
-
-				echo string_get_bug_view_link( $t_id );
+				if ( $p_is_dwg_page ) {
+					echo string_get_dwg_view_link( $t_id );
+				} else {
+					echo string_get_bug_view_link( $t_id );
+				}
 			}
 			echo '</div>';
 		}
@@ -1375,8 +1383,9 @@ function layout_manage_menu_link() {
 
 function layout_my_view_link() {
 	static $t_link = null;
-	if( access_has_global_level( config_get( 'manage_site_threshold' ) ) ) {
-		$t_link = 'my_view_overview_page.php';
+	if( access_has_global_level( config_get( 'project_user_threshold' ) ) ) {
+		// $t_link = 'my_view_cnf_page.php';
+		$t_link = 'my_view_bug_page.php';
 	} else {
 		// if( access_has_global_level( config_get( 'manage_user_threshold' ) ) ) {
 		// 	$t_link = 'manage_user_page.php';

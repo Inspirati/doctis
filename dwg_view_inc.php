@@ -118,7 +118,7 @@ compress_enable();
 
 if( $t_show_page_header ) {
 	layout_page_header( dwg_format_summary( $f_issue_id, SUMMARY_CAPTION ), null, 'view-issue-page', 'dwg_view.php?id=' . $f_issue_id );
-	layout_page_begin( 'view_dwg_page.php' );
+	layout_page_begin( 'view_dwg_page.php', true );
 }
 
 $t_action_button_position = config_get( 'action_button_position' );

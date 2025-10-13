@@ -14,12 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with MantisBT.  If not, see <http://www.gnu.org/licenses/>.
 
-if( !defined( 'TIMELINE_INC_ALLOW' ) ) {
+if( !defined( 'TIMELINE_CNF_INC_ALLOW' ) ) {
 	return;
 }
 
 require_api( 'helper_api.php' );
-require_api( 'timeline_api.php' );
+require_api( 'timeline_bug_api.php' );
+require_api( 'timeline_dwg_api.php' );
 
 define( 'MAX_EVENTS', 50 );
 
@@ -69,7 +70,7 @@ unset( $t_url_params['all'] );
 	<div class="widget-header widget-header-small">
 		<h4 class="widget-title lighter">
 			<?php print_icon( 'fa-clock-o', 'ace-icon' ); ?>
-			<?php echo lang_get( 'timeline_issue_title' ) ?>
+			<?php echo lang_get( 'timeline_document_title' ) ?>
 		</h4>
 		<div class="widget-toolbar">
 			<a data-action="collapse" href="#">

@@ -1621,6 +1621,22 @@ function user_get_assigned_open_bug_count( $p_user_id, $p_project_id = ALL_PROJE
 	return db_result( $t_result );
 }
 
+function user_get_assigned_open_dwg_count( $p_user_id, $p_project_id = ALL_PROJECTS ) {
+	$t_where_prj = helper_project_specific_where( $p_project_id, $p_user_id ) . ' AND';
+
+	$t_resolved = config_get( 'dwg_resolved_status_threshold' );
+
+	db_param_push();
+	$t_query = 'SELECT COUNT(*)
+				  FROM {document}
+				  WHERE ' . $t_where_prj . '
+						status<' . db_param() . ' AND
+						handler_id=' . db_param();
+	$t_result = db_query( $t_query, array( $t_resolved, $p_user_id ) );
+
+	return db_result( $t_result );
+}
+
 /**
  * Return the number of open reported bugs by a user in a project.
  *
@@ -1639,6 +1655,21 @@ function user_get_reported_open_bug_count( $p_user_id, $p_project_id = ALL_PROJE
 				  WHERE ' . $t_where_prj . '
 						  status<' . db_param() . ' AND
 						  reporter_id=' . db_param();
+	$t_result = db_query( $t_query, array( $t_resolved, $p_user_id ) );
+
+	return db_result( $t_result );
+}
+
+function user_get_created_open_dwg_count( $p_user_id, $p_project_id = ALL_PROJECTS ) {
+	$t_where_prj = helper_project_specific_where( $p_project_id, $p_user_id ) . ' AND';
+
+	$t_resolved = config_get( 'dwg_resolved_status_threshold' );
+
+	db_param_push();
+	$t_query = 'SELECT COUNT(*) FROM {document}
+				  WHERE ' . $t_where_prj . '
+						  status<' . db_param() . ' AND
+						  creator_id=' . db_param();
 	$t_result = db_query( $t_query, array( $t_resolved, $p_user_id ) );
 
 	return db_result( $t_result );

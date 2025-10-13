@@ -124,7 +124,7 @@ $t_status_label = str_replace( ' ', '_', MantisEnum::getLabel( config_get( 'dwg_
 
 layout_page_header( dwg_format_summary( $f_bug_id, SUMMARY_CAPTION ) );
 
-layout_page_begin();
+layout_page_begin(null, true);
 ?>
 
 <div class="col-md-12 col-xs-12">

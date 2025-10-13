@@ -101,7 +101,7 @@ access_ensure_dwg_level( config_get( 'view_dwg_threshold' ), $f_bug_id );
 compress_enable();
 
 layout_page_header( dwg_format_summary( $f_bug_id, SUMMARY_CAPTION ) );
-layout_page_begin();
+layout_page_begin(null, true);
 ?>
 
 <div class="col-md-12 col-xs-12">

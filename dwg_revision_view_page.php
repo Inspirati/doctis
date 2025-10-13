@@ -196,7 +196,7 @@ function show_dwg_revision( array $p_revision ) {
 } # End show_revision()
 
 layout_page_header( dwg_format_summary( $t_bug_id, SUMMARY_CAPTION ) );
-layout_page_begin();
+layout_page_begin(null, true);
 
 ?>
 

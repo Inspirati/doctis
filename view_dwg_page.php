@@ -106,7 +106,7 @@ if( $t_refresh_delay > 0 ) {
 
 layout_page_header_end();
 
-layout_page_begin( __FILE__ );
+layout_page_begin( __FILE__, true );
 
 define( 'VIEW_DWG_INC_ALLOW', true );
 include( __DIR__ . '/view_dwg_inc.php' );

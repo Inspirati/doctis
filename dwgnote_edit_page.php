@@ -108,7 +108,7 @@ $t_redirect_url = string_get_dwg_view_url( $t_bug_id );
 
 layout_page_header( dwg_format_summary( $t_bug_id, SUMMARY_CAPTION ) );
 
-layout_page_begin();
+layout_page_begin(null, true);
 
 $t_bugnote_class = dwgnote_get_field( $f_bugnote_id, 'view_state' ) == VS_PUBLIC ? '' : 'bugnote-private';
 ?>

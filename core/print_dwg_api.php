@@ -101,7 +101,7 @@ function print_dwg_header_redirect( $p_url, $p_die = true, $p_sanitize = false, 
 		# of $g_stop_on_errors setting which is actually handled in
 		# html_meta_redirect(), called by layout_page_header().
 		layout_page_header( null, $p_url );
-		layout_page_begin();
+		layout_page_begin(null, true);
 		html_operation_successful( $p_url );
 		layout_page_end();
 		return false;

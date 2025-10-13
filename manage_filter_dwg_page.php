@@ -50,7 +50,7 @@ auth_ensure_user_authenticated();
 
 layout_page_header( lang_get('manage_filter_page_title' ) );
 
-layout_page_begin( 'manage_filter_dwg_page.php' );
+layout_page_begin( 'manage_filter_dwg_page.php', true );
 
 $t_project_id = helper_get_current_project();
 $t_user_id = auth_get_current_user_id();

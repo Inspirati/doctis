@@ -68,7 +68,7 @@ if( dwg_is_readonly( $f_bug_id ) ) {
 access_ensure_dwg_level( config_get( 'dwg_reminder_threshold' ), $f_bug_id );
 
 layout_page_header( dwg_format_summary( $f_bug_id, SUMMARY_CAPTION ) );
-layout_page_begin();
+layout_page_begin(null, true);
 ?>
 
 <?php # Send reminder Form BEGIN ?>
