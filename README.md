@@ -32,9 +32,9 @@ Installation
 
 1. Install [VirtualBox](https://www.virtualbox.org/) on any system it is supported on.
 
-2. Create a Debian based Linux virtual machine using the ISO image at [Debian-13.1.0-amd64-netinst.iso](https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-13.1.0-amd64-netinst.iso). Debian 12 or recent Ubuntu distribution should also work. (limited testing has been performed)
+2. Create a Debian based Linux virtual machine using the ISO image at [Debian-13.1.0-amd64-netinst.iso](https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-13.1.0-amd64-netinst.iso) Debian 12 or recent Ubuntu distribution should also work. (limited testing has been performed)
 
-    1. select the VirtualBox default automated install option (results in a GNOME[^1] desktop environment)
+    1. select the VirtualBox default 'unattended' install option, other options leave as default (results in a GNOME[^1] desktop environment)
 
     2. upon initial login, open a terminal window (click top-left corner and then find the black terminal icon)
 
@@ -48,11 +48,23 @@ Installation
          # shutdown now
     ```
 
-    4. create a clone (backup) of this virtual machine as a reference baseline (recommended)
+    4. create a clone (backup) of this virtual machine as a reference baseline (recommended) From here on we shall refer to this as your baseline image.
 
-    5. start the virtual machine and login to your user account
+    5. start a virtual machine and login to your account
 
 3. Download and install the Doctis project.
+
+    SIMPLE:
+
+    For a default install, simply copy and paste this single statement:
+
+    ```sh
+    cd Documents && wget -O- https://tinyurl.com/get-doctis | bash
+    ```
+
+    or,
+
+    ADVANCED:
 
     1. make a working directory, or just change to the existing '~/Documents' directory
 
@@ -80,15 +92,9 @@ Installation
     ./install.sh
     ```
 
-    Or, for a default install, simply copy and paste this single statement:
-
-    ```sh
-    cd Documents && wget -O- https://tinyurl.com/get-doctis | bash
-    ```
-
 4. Follow the getting-started tips which should eventually be displayed.
 
-NOTE: in order to create new users in mantisbt/doctis, the ability to send smtp emails is required and perhaps the most-difficult way to achieve this is to create an App Password for a gmail account. However the system can still be used in single administrator mode without being able to send email. The default account is 'administrator' with password 'root'.
+NOTE: in order to create new users in mantisbt/doctis, the ability to send email is required and perhaps the most-difficult way to achieve this is to create an App Password for a gmail account. However the system can still be used with predefined user accounts without being able to send email. These accounts can be modified when logged into Doctis with an administrator account. The default account is 'administrator' with password 'root'.
 
 [^1]: for alternative desktop environments, perform a manual Debian setup process. (this has undergone minimal testing)
 [^2]: a system restart seems to be required to ensure sudo is enabled upon next login
