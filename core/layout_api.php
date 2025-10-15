@@ -145,7 +145,6 @@ function layout_page_header_end( $p_page_id = null) {
  * @param string $p_active_sidebar_page sidebar page where the current page lives under
  * @return void
  */
-// function layout_page_begin( $p_active_sidebar_page = null ) {
 function layout_page_begin( $p_active_sidebar_page = null, $p_is_dwg_page = false ) {
 	if( !db_is_connected() ) {
 		return;

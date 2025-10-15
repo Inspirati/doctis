@@ -1281,7 +1281,7 @@ function print_dwg_column_dwgnotes_count( DwgData $p_bug, $p_columns_target = CO
 		if( $t_show_in_bold ) {
 			echo '<span class="bold">';
 		}
-		print_dwg_link( string_get_dwg_view_url( $p_bug->id ) . '&nbn=' . $t_bugnote_count . '#bugnotes', $t_bugnote_count );
+		print_hyperlink( string_get_dwg_view_url( $p_bug->id ) . '&nbn=' . $t_bugnote_count . '#bugnotes', $t_bugnote_count );
 		if( $t_show_in_bold ) {
 			echo '</span>';
 		}

@@ -827,9 +827,8 @@ function print_document_option_list( $p_document_id = 0, $p_project_id = null, $
 	$t_cat_arr = document_get_all_rows( $t_project_id, null, true, $p_enabled_only );
 
 	# Add the current document if it is not in the list
-	// if( $p_document_id != 0
-    //     && !in_array( $p_document_id, array_column( $t_cat_arr, 'id' ) )
-    // ) {
+	// if( $p_document_id != 0 && !in_array( $p_document_id, array_column( $t_cat_arr, 'id' ) )
+	// ) {
 	// 	$t_document_row = document_get_row( $p_document_id );
 	// 	$t_document_row['project_name'] = project_get_name( $t_document_row['project_id'] );
 	// 	$t_cat_arr[] = $t_document_row;
@@ -1355,7 +1354,7 @@ function print_dwg_reference_link( $p_bug_id, $p_dwg_reference, $p_detail_info =
 /**
  * formats the priority given the status
  * shows the priority in BOLD if the bug is NOT closed and is of significant priority
- * @param DwgData $p_bug Bug Object.
+ * @param BugData $p_bug Bug Object.
  * @return void
  */
 function print_dwg_formatted_priority_string( DwgData $p_bug ) {
@@ -1374,7 +1373,7 @@ function print_dwg_formatted_priority_string( DwgData $p_bug ) {
 /**
  * formats the severity given the status
  * shows the severity in BOLD if the bug is NOT closed and is of significant severity
- * @param DwgData $p_bug Bug Object.
+ * @param BugData $p_bug Bug Object.
  * @return void
  */
 function print_dwg_formatted_severity_string( DwgData $p_bug ) {
@@ -1440,7 +1439,7 @@ function print_view_dwg_sort_link( $p_label, $p_sort_field, $p_sort, $p_dir, $p_
 			if( filter_dwg_is_temporary( $g_dwg_filter ) ) {
 				$t_url .= '&' . filter_dwg_get_temporary_key_param( $g_dwg_filter );
 			}
-			print_dwg_link( $t_url, $p_label, false, '', $p_icon );
+			print_hyperlink( $t_url, $p_label, false, '', $p_icon );
 			break;
 		default:
 			echo $p_label;
@@ -1474,7 +1473,7 @@ function print_dwg_manage_user_sort_link( $p_page, $p_string, $p_field, $p_dir, 
 		$t_dir = 'ASC';
 	}
 
-	print_dwg_link(
+	print_hyperlink(
 		helper_url_combine( $p_page, [
 			'sort' => $p_field,
 			'dir' => $t_dir,
@@ -1512,7 +1511,7 @@ function print_dwg_manage_project_sort_link( $p_page, $p_string, $p_field, $p_di
 		$t_dir = 'ASC';
 	}
 
-	print_dwg_link(
+	print_hyperlink(
 		helper_url_combine( $p_page, [
 			'sort' => $p_field,
 			'dir' => $t_dir
@@ -1606,30 +1605,30 @@ function print_dwg_bracket_link_prepared( $p_link ) {
  *
  * @return void
  */
-// @TODO RobD - already defined in print_api.php
-// function print_dwg_link( $p_link, $p_url_text, $p_new_window = false, $p_class = '', $p_icon = '' ) {
-// 	if( $p_icon ) {
-// 		$t_url_text = icon_get( $p_icon, '', $p_url_text );
-// 	} else {
-// 		$t_url_text = string_attribute( $p_url_text );
-// 	}
+/* @TODO RobD - already defined in print_api.php
+function print_hyperlink( $p_link, $p_url_text, $p_new_window = false, $p_class = '', $p_icon = '' ) {
+	if( $p_icon ) {
+		$t_url_text = icon_get( $p_icon, '', $p_url_text );
+	} else {
+		$t_url_text = string_attribute( $p_url_text );
+	}
 
-// 	if( is_blank( $p_link ) ) {
-// 		echo $t_url_text;
-// 	} else {
-// 		$t_link = htmlspecialchars( $p_link );
-// 		if( $p_new_window === true ) {
-// 			echo '<a class="new-window ' . $p_class . '" href="' . $t_link . '" target="_blank">' . $t_url_text . '</a>';
-// 		} else {
-// 			if( $p_class !== '' ) {
-// 				echo '<a class="' . $p_class . '" href="' . $t_link . '">' . $t_url_text . '</a>';
-// 			} else {
-// 				echo '<a href="' . $t_link . '">' . $t_url_text . '</a>';
-// 			}
-// 		}
-// 	}
-// }
-
+	if( is_blank( $p_link ) ) {
+		echo $t_url_text;
+	} else {
+		$t_link = htmlspecialchars( $p_link );
+		if( $p_new_window === true ) {
+			echo '<a class="new-window ' . $p_class . '" href="' . $t_link . '" target="_blank">' . $t_url_text . '</a>';
+		} else {
+			if( $p_class !== '' ) {
+				echo '<a class="' . $p_class . '" href="' . $t_link . '">' . $t_url_text . '</a>';
+			} else {
+				echo '<a href="' . $t_link . '">' . $t_url_text . '</a>';
+			}
+		}
+	}
+}
+ */
 /**
  * print a HTML link with a button look
  * @param string  $p_link       The page URL.
@@ -1684,9 +1683,9 @@ function print_dwg_page_link( $p_page_url, $p_text = '', $p_page_no = 0, $p_page
 		echo '<li class="pull-right"> ';
 		$t_delimiter = ( strpos( $p_page_url, '?' ) ? '&' : '?' );
 		if( $p_temp_filter_key ) {
-			print_dwg_link( $p_page_url . $t_delimiter . 'filter=' . $p_temp_filter_key . '&page_number=' . $p_page_no, $p_text );
+			print_hyperlink( $p_page_url . $t_delimiter . 'filter=' . $p_temp_filter_key . '&page_number=' . $p_page_no, $p_text );
 		} else {
-			print_dwg_link( $p_page_url . $t_delimiter . 'page_number=' . $p_page_no, $p_text );
+			print_hyperlink( $p_page_url . $t_delimiter . 'page_number=' . $p_page_no, $p_text );
 		}
 		echo ' </li>';
 	} else {
@@ -1962,8 +1961,7 @@ function print_dwg_recently_visited() {
  * @param boolean      $p_multiple      Whether drop down list allows multiple values to be selected.
  * @return string
  */
-/*
-// @TODO RobD - already defined in print_api.php
+/* @TODO RobD - already defined in print_api.php
 function get_dropdown( array $p_control_array, $p_control_name, $p_match = '', $p_add_any = false, $p_multiple = false ) {
 	if( $p_multiple ) {
 		$t_size = ' size="5"';
@@ -2237,7 +2235,7 @@ function print_dwg_timezone_option_list( $p_timezone ) {
  * @param string  $p_unit File size unit.
  * @return string
  */
-/*
+/* @TODO RobD - already defined in print_api.php
 function get_filesize_info( $p_size, $p_unit ) {
 	return sprintf( lang_get( 'max_file_size_info' ), number_format( $p_size ), $p_unit );
 }
@@ -2246,7 +2244,7 @@ function get_filesize_info( $p_size, $p_unit ) {
  * Returns target attribute to be added in attachment links
  * @return string
  */
-/*
+/* @TODO RobD - already defined in print_api.php
 function print_attachment_link_target() {
 	if( config_get( 'attachments_to_new_tab' ) ) {
 		return ' target="_blank"';

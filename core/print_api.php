@@ -1392,7 +1392,7 @@ function print_view_bug_sort_link( $p_label, $p_sort_field, $p_sort, $p_dir, $p_
 			if( filter_is_temporary( $g_filter ) ) {
 				$t_url .= '&' . filter_get_temporary_key_param( $g_filter );
 			}
-			print_link( $t_url, $p_label, false, '', $p_icon );
+			print_hyperlink( $t_url, $p_label, false, '', $p_icon );
 			break;
 		default:
 			echo $p_label;
@@ -1426,7 +1426,7 @@ function print_manage_user_sort_link( $p_page, $p_string, $p_field, $p_dir, $p_s
 		$t_dir = 'ASC';
 	}
 
-	print_link(
+	print_hyperlink(
 		helper_url_combine( $p_page, [
 			'sort' => $p_field,
 			'dir' => $t_dir,
@@ -1464,7 +1464,7 @@ function print_manage_project_sort_link( $p_page, $p_string, $p_field, $p_dir, $
 		$t_dir = 'ASC';
 	}
 
-	print_link(
+	print_hyperlink(
 		helper_url_combine( $p_page, [
 			'sort' => $p_field,
 			'dir' => $t_dir
@@ -1558,7 +1558,7 @@ function print_bracket_link_prepared( $p_link ) {
  *
  * @return void
  */
-function print_link( $p_link, $p_url_text, $p_new_window = false, $p_class = '', $p_icon = '' ) {
+function print_hyperlink( $p_link, $p_url_text, $p_new_window = false, $p_class = '', $p_icon = '' ) {
 	if( $p_icon ) {
 		$t_url_text = icon_get( $p_icon, '', $p_url_text );
 	} else {
@@ -1635,9 +1635,9 @@ function print_page_link( $p_page_url, $p_text = '', $p_page_no = 0, $p_page_cur
 		echo '<li class="pull-right"> ';
 		$t_delimiter = ( strpos( $p_page_url, '?' ) ? '&' : '?' );
 		if( $p_temp_filter_key ) {
-			print_link( $p_page_url . $t_delimiter . 'filter=' . $p_temp_filter_key . '&page_number=' . $p_page_no, $p_text );
+			print_hyperlink( $p_page_url . $t_delimiter . 'filter=' . $p_temp_filter_key . '&page_number=' . $p_page_no, $p_text );
 		} else {
-			print_link( $p_page_url . $t_delimiter . 'page_number=' . $p_page_no, $p_text );
+			print_hyperlink( $p_page_url . $t_delimiter . 'page_number=' . $p_page_no, $p_text );
 		}
 		echo ' </li>';
 	} else {

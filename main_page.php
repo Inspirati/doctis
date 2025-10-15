@@ -76,7 +76,7 @@ if( !current_user_is_anonymous() ) {
 	$t_hide_status = config_get( 'bug_resolved_status_threshold' );
 	echo '<span class="bigger-120">';
 	echo lang_get( 'open_and_assigned_to_me_label' ) . lang_get( 'word_separator' );
-	print_link( "view_all_set.php?type=" . FILTER_ACTION_PARSE_NEW
+	print_hyperlink( "view_all_set.php?type=" . FILTER_ACTION_PARSE_NEW
 		. "&handler_id=$t_current_user_id&hide_status=$t_hide_status",
 		current_user_get_assigned_open_bug_count()
 	);
@@ -84,7 +84,7 @@ if( !current_user_is_anonymous() ) {
 	echo '<br />';
 
 	echo lang_get( 'dwg_open_and_assigned_to_me_label' ) . lang_get( 'word_separator' );
-	print_link( "view_dwg_set.php?type=" . FILTER_ACTION_PARSE_NEW
+	print_hyperlink( "view_dwg_set.php?type=" . FILTER_ACTION_PARSE_NEW
 		. "&handler_id=$t_current_user_id&hide_status=$t_hide_status",
 		current_user_get_assigned_open_dwg_count()
 	);
@@ -92,7 +92,7 @@ if( !current_user_is_anonymous() ) {
 	echo '<br />';
 
 	echo lang_get( 'open_and_reported_to_me_label' ) . lang_get( 'word_separator' );
-	print_link( "view_all_set.php?type=" . FILTER_ACTION_PARSE_NEW
+	print_hyperlink( "view_all_set.php?type=" . FILTER_ACTION_PARSE_NEW
 		. "&reporter_id=$t_current_user_id&hide_status=$t_hide_status",
 		current_user_get_reported_open_bug_count()
 	);
@@ -100,7 +100,7 @@ if( !current_user_is_anonymous() ) {
 	echo '<br />';
 
 	echo lang_get( 'dwg_open_and_created_to_me_label' ) . lang_get( 'word_separator' );
-	print_link( "view_dwg_set.php?type=" . FILTER_ACTION_PARSE_NEW
+	print_hyperlink( "view_dwg_set.php?type=" . FILTER_ACTION_PARSE_NEW
 		. "&reporter_id=$t_current_user_id&hide_status=$t_hide_status",
 		current_user_get_created_open_dwg_count()
 	);
