@@ -261,13 +261,13 @@ function filter_dwg_get_url( array $p_custom_filter ) {
 	}
 
 	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_ISSUES_PER_PAGE] ) ) {
-		if( $p_custom_filter[FILTER_PROPERTY_ISSUES_PER_PAGE] != config_get( 'default_limit_view' ) ) {
+		if( $p_custom_filter[FILTER_PROPERTY_ISSUES_PER_PAGE] != config_get( 'default_dwg_limit_view' ) ) {
 			$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_ISSUES_PER_PAGE, $p_custom_filter[FILTER_PROPERTY_ISSUES_PER_PAGE] );
 		}
 	}
 
 	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_HIGHLIGHT_CHANGED] ) ) {
-		if( $p_custom_filter[FILTER_PROPERTY_HIGHLIGHT_CHANGED] != config_get( 'default_show_changed' ) ) {
+		if( $p_custom_filter[FILTER_PROPERTY_HIGHLIGHT_CHANGED] != config_get( 'default_dwg_show_changed' ) ) {
 			$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_HIGHLIGHT_CHANGED, $p_custom_filter[FILTER_PROPERTY_HIGHLIGHT_CHANGED] );
 		}
 	}
@@ -903,7 +903,7 @@ function filter_dwg_get_default_array( $p_view_type = null ) {
 		FILTER_PROPERTY_MONITOR_USER_ID => $t_meta_filter_any_array,
 		FILTER_PROPERTY_SORT_FIELD_NAME => 'last_updated',
 		FILTER_PROPERTY_SORT_DIRECTION => 'DESC',
-		FILTER_PROPERTY_ISSUES_PER_PAGE => config_get( 'default_limit_view' ),
+		FILTER_PROPERTY_ISSUES_PER_PAGE => config_get( 'default_dwg_limit_view' ),
 		FILTER_PROPERTY_MATCH_TYPE => FILTER_MATCH_ALL,
 		FILTER_PROPERTY_PLATFORM => $t_meta_filter_any_array,
 		FILTER_PROPERTY_OS => $t_meta_filter_any_array,

@@ -66,8 +66,8 @@ $t_sort = $t_filter['sort'];
 $t_dir = $t_filter['dir'];
 
 $t_bug_resolved_status_threshold = config_get( 'dwg_resolved_status_threshold' );
-$t_hide_status_default = config_get( 'hide_status_default' );
-$t_default_show_changed = config_get( 'default_show_changed' );
+$t_hide_status_default = config_get( 'dwg_hide_status_default' );
+$t_default_show_changed = config_get( 'default_dwg_show_changed' );
 
 $c_filter['assigned'] = filter_dwg_create_assigned_to_unresolved( helper_get_current_project(), $t_current_user_id );
 $t_url_link_parameters['assigned'] = [
@@ -310,7 +310,7 @@ $t_bug_string = $t_bug_count == 1 ? 'document' : 'documents';
 #-- Box title
 $t_box_url = helper_url_combine( html_entity_decode( config_get( 'dwg_count_hyperlink_prefix' ) ),
 	$t_url_link_parameters[$t_box_title] );
-print_link( $t_box_url, $t_box_title_label, false, 'white' );
+print_dwg_link( $t_box_url, $t_box_title_label, false, 'white' );
 
 # -- Viewing range info
 if( count( $t_rows ) > 0 ) {
@@ -375,13 +375,13 @@ for( $i = 0;$i < $t_count; $i++ ) {
 	# -- Bug ID and details link + Pencil shortcut --?>
 	<td class="nowrap width-13 my-buglist-id">
 		<?php
-			print_bug_link( $t_bug->id, false );
+			print_dwg_link( $t_bug->id, false );
 
 			echo '<br />';
 
 			# choose color based on status
 			$t_status_css = html_get_status_css_fg( $t_bug->status, auth_get_current_user_id(), $t_bug->project_id );
-			$t_status = string_attribute( get_enum_element( 'status', dwg_get_field( $t_bug->id, 'status' ), $t_bug->project_id ) );
+			$t_status = string_attribute( get_enum_element( 'dwg_status', dwg_get_field( $t_bug->id, 'status' ), $t_bug->project_id ) );
 			print_icon( 'fa-square', 'fa-status-box ' . $t_status_css, $t_status );
 			echo ' ';
 

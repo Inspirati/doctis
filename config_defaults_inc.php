@@ -1882,19 +1882,21 @@ $g_default_document_for_moves = 1;
  * @global int $g_default_limit_view
  */
 $g_default_limit_view = 50;
+$g_default_dwg_limit_view = 50;
 
 /**
  *
  * @global int $g_default_show_changed
  */
 $g_default_show_changed = 6;
+$g_default_dwg_show_changed = 6;
 
 /**
  *
  * @global int $g_hide_status_default
  */
 $g_hide_status_default = CLOSED;
-$g_dwg_hide_status_default = CLOSED;
+$g_dwg_hide_status_default = ARCHIVED;
 
 /**
  *
@@ -4095,6 +4097,7 @@ $g_set_configuration_threshold = ADMINISTRATOR;
  *
  * @global array $g_status_colors
  */
+# Default MantisBT Tones
 $g_status_colors = array(
 	'new'          => '#fcbdbd', # red    (scarlet red #ef2929)
 	'feedback'     => '#e3b7eb', # purple (plum        #75507b)
@@ -4102,8 +4105,68 @@ $g_status_colors = array(
 	'confirmed'    => '#fff494', # yellow (butter      #fce94f)
 	'assigned'     => '#c2dfff', # blue   (sky blue    #729fcf)
 	'resolved'     => '#d2f5b0', # green  (chameleon   #8ae234)
-	'closed'       => '#c9ccc4'  # grey   (aluminum    #babdb6)
+	'closed'       => '#c9ccc4', # grey   (aluminum    #babdb6)
+
+	# ---- Document-specific statuses (calmer, modern palette) ----
+	'pending'             => '#f5a6a6', # soft coral red
+	'received'            => '#a7c7e7', # light steel blue
+	'triage'              => '#d9b3e6', # soft lavender
+	'JoS'                 => '#f7e49b', # warm pastel yellow
+	'review'              => '#f9c97a', # mellow apricot
+	'rework'              => '#b5e7a0', # pale green
+	'accepted'            => '#a2b9bc', # muted teal-grey
+	'archived'            => '#d0d0d0', # soft neutral grey
+	'incorporated'        => '#b8d8ba', # gentle sage
+	'independent review'  => '#b0e0e6', # powder blue
 );
+/*
+# Material-Inspired Tones
+$g_status_colors = array(
+    'new'          => '#e53935', // material red 600
+    'feedback'     => '#8e24aa', // material purple 600
+    'acknowledged' => '#fb8c00', // material orange 600
+    'confirmed'    => '#fdd835', // material yellow 600
+    'assigned'     => '#1e88e5', // material blue 600
+    'resolved'     => '#43a047', // material green 600
+    'closed'       => '#757575', // material grey 600
+
+    # ---- Document-specific statuses ----
+    'pending'             => '#ef5350', // material red 400
+    'received'            => '#42a5f5', // material blue 400
+    'triage'              => '#ab47bc', // material purple 400
+    'JoS'                 => '#fdd835', // material yellow 500
+    'review'              => '#ffb74d', // material orange 300
+    'rework'              => '#66bb6a', // material green 400
+    'accepted'            => '#26c6da', // material cyan 400
+    'archived'            => '#bdbdbd', // material grey 400
+    'incorporated'        => '#9ccc65', // material light green 400
+    'independent review'  => '#29b6f6', // material light blue 400
+);
+ */
+/*
+# Desaturated Neon
+$g_status_colors = array(
+    'new'          => '#ff6b6b', // neon red
+    'feedback'     => '#b085f5', // neon purple
+    'acknowledged' => '#ffb86c', // neon orange
+    'confirmed'    => '#f1f94f', // neon yellow
+    'assigned'     => '#6fc2ff', // neon blue
+    'resolved'     => '#7df57d', // neon green
+    'closed'       => '#c0c0c0', // soft grey
+
+    # ---- Document-specific statuses ----
+    'pending'             => '#ff7f7f', // soft neon coral
+    'received'            => '#85bfff', // soft neon azure
+    'triage'              => '#c9a0f5', // soft neon violet
+    'JoS'                 => '#f4f18b', // soft neon yellow
+    'review'              => '#ffbd75', // soft neon orange
+    'rework'              => '#9df5a0', // soft neon green
+    'accepted'            => '#7fc1c4', // muted neon teal
+    'archived'            => '#bdbdbd', // gentle grey
+    'incorporated'        => '#a8d4a4', // soft mint
+    'independent review'  => '#90e0f0', // powder neon blue
+);
+ */
 
 /**
  * The padding level when displaying bug ids.
@@ -4393,7 +4456,8 @@ $g_projection_enum_string = '10:none,30:tweak,50:minor fix,70:major rework,90:re
  *
  * @global string $g_dwg_status_enum_string
  */
-$g_dwg_status_enum_string = '10:pending,20:received,30:triage,40:JoS,50:assigned,60:review,65:rework,70:independent review,80:accepted,90:incorported,95:archived';
+// $g_dwg_status_enum_string = '10:pending,20:received,30:triage,40:JoS,50:assigned,60:review,65:rework,70:independent review,80:accepted,90:incorporated,95:archived';
+$g_dwg_status_enum_string = '110:pending,120:received,130:triage,140:JoS,150:assigned to,160:review,165:rework,170:independent review,180:accepted,190:incorporated,195:archived';
 
 /**
  * Change Class enumeration.
@@ -4483,6 +4547,7 @@ $g_bottom_include_page = '';
  * @global string $g_css_include_file
  */
 $g_css_include_file = 'default.css';
+$g_active_theme = 'default';
 
 /**
  * RTL CSS file.
@@ -5502,6 +5567,7 @@ $g_global_settings = array(
 	'core_path',
 	'crypto_master_salt',
 	'css_include_file',
+	'active_theme',
 	'css_rtl_include_file',
 	'custom_headers',
 	'database_name',
@@ -5767,6 +5833,7 @@ $g_public_config_names = array(
 	'default_home_page',
 	'default_language',
 	'default_limit_view',
+	'default_dwg_limit_view',
 	'default_manage_tag_prefix',
 	'default_new_account_access_level',
 	'default_notify_flags',
@@ -5775,6 +5842,7 @@ $g_public_config_names = array(
 	'default_refresh_delay',
 	'default_reminder_view_status',
 	'default_show_changed',
+	'default_dwg_show_changed',
 	'default_timezone',
 	'delete_bug_threshold',
 	'delete_dwg_threshold',

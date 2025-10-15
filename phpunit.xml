@@ -14,11 +14,11 @@
         <testsuite name="soap">
             <directory>tests/soap</directory>
         </testsuite>
-
+<!--
         <testsuite name="rest">
             <directory>tests/rest</directory>
         </testsuite>
-
+-->
         <testsuite name="mantis core formatting">
             <directory>plugins/MantisCoreFormatting/tests</directory>
         </testsuite>

@@ -100,17 +100,18 @@ define( 'URGENT', 50 );
 define( 'IMMEDIATE', 60 );
 
 # document
-define( 'PENDING', 10 );
-define( 'RECEIVED', 20 );
-define( 'TRIAGE', 30 );
-define( 'JOS', 40 );
+define( 'PENDING', 110 );
+define( 'RECEIVED', 120 );
+define( 'TRIAGE', 130 );
+define( 'JOS', 140 );
 //define( 'ASSIGNED', 50 );  // BEWARE: this is the same identifier as defined earlier, and hence must keep the same value as the previous definition
-define( 'REVIEW', 60 );
-define( 'REWORK', 65 );
-define( 'INDEPENDENT_REVEIW', 70 );
-define( 'ACCEPTED', 80 );
-define( 'INCORPORATED', 90 );
-define( 'ARCHIVED', 95 );
+define( 'ASSIGNED_TO', 150 );
+define( 'REVIEW', 160 );
+define( 'REWORK', 165 );
+define( 'INDEPENDENT_REVIEW', 170 );
+define( 'ACCEPTED', 180 );
+define( 'INCORPORATED', 190 );
+define( 'ARCHIVED', 195 );
 
 # severity
 define( 'FEATURE', 10 );
@@ -121,6 +122,9 @@ define( 'MINOR', 50 );
 define( 'MAJOR', 60 );
 define( 'CRASH', 70 );
 define( 'BLOCK', 80 );
+
+define( 'COMMENT', 20 );
+define( 'QUERY', 30 );
 
 # reproducibility
 define( 'REPRODUCIBILITY_ALWAYS', 10 );

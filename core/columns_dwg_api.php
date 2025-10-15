@@ -936,7 +936,7 @@ function print_dwg_column_title_severity( $p_sort, $p_dir, $p_columns_target = C
  */
 function print_dwg_column_title_status( $p_sort, $p_dir, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	echo '<th class="column-status">';
-	print_view_dwg_sort_link( lang_get( 'status' ), 'status', $p_sort, $p_dir, $p_columns_target );
+	print_view_dwg_sort_link( lang_get( 'status' ), 'dwg_status', $p_sort, $p_dir, $p_columns_target );
 	print_sort_icon( $p_dir, $p_sort, 'status' );
 	echo '</th>';
 }
@@ -1281,7 +1281,7 @@ function print_dwg_column_dwgnotes_count( DwgData $p_bug, $p_columns_target = CO
 		if( $t_show_in_bold ) {
 			echo '<span class="bold">';
 		}
-		print_link( string_get_dwg_view_url( $p_bug->id ) . '&nbn=' . $t_bugnote_count . '#bugnotes', $t_bugnote_count );
+		print_dwg_link( string_get_dwg_view_url( $p_bug->id ) . '&nbn=' . $t_bugnote_count . '#bugnotes', $t_bugnote_count );
 		if( $t_show_in_bold ) {
 			echo '</span>';
 		}
@@ -1425,7 +1425,7 @@ function print_dwg_column_resolution( DwgData $p_bug, $p_columns_target = COLUMN
 function print_dwg_column_status( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	$t_current_user = auth_get_current_user_id();
 	# choose color based on status
-	$t_status_css = html_dwg_get_status_css_fg( $p_bug->status, $t_current_user, $p_bug->project_id );
+	$t_status_css = html_get_status_css_fg( $p_bug->status, $t_current_user, $p_bug->project_id );
 	echo '<td class="column-status">';
 	echo '<div class="align-left">';
 	print_icon( 'fa-square', 'fa-status-box ' . $t_status_css );

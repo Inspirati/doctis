@@ -32,9 +32,9 @@ Installation
 
 1. Install [VirtualBox](https://www.virtualbox.org/) on any system it is supported on.
 
-2. Create a Debian based Linux virtual machine using the ISO image at [Debian-13.1.0-amd64-netinst.iso](https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-13.1.0-amd64-netinst.iso) Debian 12 or recent Ubuntu distribution should also work. (limited testing has been performed)
+2. Create a Debian based Linux virtual machine using the ISO image at [Debian-13.1.0-amd64-netinst.iso](https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-13.1.0-amd64-netinst.iso) Debian 12 or recent Ubuntu distribution should also work.
 
-    1. select the VirtualBox default 'unattended' install option, other options leave as default (results in a GNOME[^1] desktop environment)
+    1. select the VirtualBox default 'unattended' install option, leave other options as default (this results in a GNOME[^1] desktop environment)
 
     2. upon initial login, open a terminal window (click top-left corner and then find the black terminal icon)
 
@@ -48,7 +48,7 @@ Installation
          # shutdown now
     ```
 
-    4. create a clone (backup) of this virtual machine as a reference baseline (recommended) From here on we shall refer to this as your baseline image.
+    4. create a clone (backup) of this virtual machine as a reference baseline (recommended)
 
     5. start a virtual machine and login to your account
 
@@ -56,7 +56,7 @@ Installation
 
     SIMPLE:
 
-    For a default install, simply copy and paste this single statement:
+    For a default install, enter this single statement into a command shell:
 
     ```sh
     cd Documents && wget -O- https://tinyurl.com/get-doctis | bash
@@ -113,16 +113,16 @@ email_addr="my.email@gmail.com"
 email_hash="GmailAppPassword"
 mysql_pass="password"
 
-# Do we want a local machine only server (localhost)
-# or one available to a Local Area Network (LAN) via ip address
-# or Fully Qualified Domain Name (FQDN), for public internet server - advanced user
+# Do we want a local machine (localhost) only server
+# or one available to a Local Area Network (LAN) via ip address (recommended)
+# or Fully Qualified Domain Name (FQDN), for public internet server (advanced)
 #domain="locahost"
 domain=$(ip r get 1 | grep -Eo 'src [^ ]+' | awk '{print $2}')
 #domain="my.domain.com"
 
-wget https://gist.githubusercontent.com/Inspirati/8f17b0799fdaf0ab7b201a5cfd1775a1/raw/install-doctis.sh
+wget --quiet https://raw.githubusercontent.com/Inspirati/doctis/refs/heads/dev/admin/tools/install-doctis.sh
 chmod +x install-doctis.sh
-./install-doctis.sh ${domain} ${mysql_pass} ${email_addr} ${email_hash} | tee logfile.txt
+./install-doctis.sh install all ${domain} ${mysql_pass} ${email_addr} ${email_hash} "doctis" | tee logfile.txt```
 ```
 
 Documentation

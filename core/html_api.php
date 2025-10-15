@@ -812,13 +812,13 @@ function print_manage_menu( $p_page = '' ) {
 function print_my_view_menu( $p_page = '' ) {
 	$t_pages = array();
 
-	if( access_has_global_level( config_get( 'manage_site_threshold' ) ) ) {
+	if( access_has_global_level( config_get( 'timeline_view_threshold' ) ) ) {
 		$t_pages['my_view_bug_page.php'] = array( 'url'   => 'my_view_bug_page.php', 'label' => 'my_view_bug_link' );
 	}
-	if( access_has_global_level( config_get( 'manage_user_threshold' ) ) ) {
+	if( access_has_global_level( config_get( 'timeline_view_threshold' ) ) ) {
 		$t_pages['my_view_dwg_page.php'] = array( 'url'   => 'my_view_dwg_page.php', 'label' => 'my_view_dwg_link' );
 	}
-	if( access_has_global_level( config_get( 'manage_user_threshold' ) ) ) {
+	if( access_has_global_level( config_get( 'timeline_view_threshold' ) ) ) {
 		$t_pages['my_view_cnf_page.php'] = array( 'url'   => 'my_view_cnf_page.php', 'label' => 'my_view_cnf_link' );
 	}
 	print_menu( $t_pages, $p_page, 'EVENT_MENU_MY_VIEW' );
@@ -1100,16 +1100,12 @@ function html_get_status_css_fg( $p_status, $p_user = null, $p_project = null ) 
 	if( MantisEnum::hasValue( $t_status_enum, $p_status ) ) {
 		return 'status-' . $p_status . '-fg';
 	} else {
-		return '';
-	}
-}
-
-function html_dwg_get_status_css_fg( $p_status, $p_user = null, $p_project = null ) {
-	$t_status_enum = config_get( 'dwg_status_enum_string', null, $p_user, $p_project );
-	if( MantisEnum::hasValue( $t_status_enum, $p_status ) ) {
-		return 'status-' . $p_status . '-fg';
-	} else {
-		return '';
+		$t_status_enum = config_get( 'dwg_status_enum_string', null, $p_user, $p_project );
+		if( MantisEnum::hasValue( $t_status_enum, $p_status ) ) {
+			return 'status-' . $p_status . '-fg';
+		} else {
+			return '';
+		}
 	}
 }
 
@@ -1128,7 +1124,12 @@ function html_get_status_css_bg( $p_status, $p_user = null, $p_project = null ) 
 	if( MantisEnum::hasValue( $t_status_enum, $p_status ) ) {
 		return 'status-' . $p_status . '-bg';
 	} else {
-		return '';
+		$t_status_enum = config_get( 'dwg_status_enum_string', null, $p_user, $p_project );
+		if( MantisEnum::hasValue( $t_status_enum, $p_status ) ) {
+			return 'status-' . $p_status . '-bg';
+		} else {
+			return '';
+		}
 	}
 }
 
