@@ -94,7 +94,7 @@ function table_print_filter_row( $p_filter_id ) {
 	# Filter name
 	echo '<td>';
 	$t_name = filter_dwg_get_field( $p_filter_id, 'name' );
-	print_dwg_link( 'view_dwg_filters_page.php?filter_id=' . $p_filter_id, $t_name );
+	print_hyperlink( 'view_dwg_filters_page.php?filter_id=' . $p_filter_id, $t_name );
 	echo '</td>';
 	# RSS
 	if( $t_rss_enabled ) {

@@ -2742,7 +2742,7 @@ $g_ldap_simulation_file_path = '';
  * @global int $g_bug_submit_status
  */
 $g_bug_submit_status = NEW_;
-$g_dwg_submit_status = NEW_;
+$g_dwg_submit_status = PENDING;
 
 /**
  * Status to assign to the bug when assigned.

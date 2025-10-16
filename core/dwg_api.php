@@ -121,7 +121,7 @@ use Mantis\Exceptions\ClientException;
 class DwgData {
 	protected $id;
 	protected $project_id = null;
-	protected $status = NEW_;
+	protected $status = PENDING;
 	protected $date_submitted = '';
 	protected $last_updated = '';
 	protected $summary = 'nil';
