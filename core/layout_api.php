@@ -778,6 +778,14 @@ function layout_print_sidebar( $p_active_sidebar_page = null ) {
 			'access_level' => config_get( 'view_changelog_threshold' )
 		);
 
+		# Documents Changelog Page
+		// $t_sidebar_items[] = array(
+		// 	'url' => 'dwg_changelog_page.php',
+		// 	'title' => 'changelog_link',
+		// 	'icon' => 'fa-retweet',
+		// 	'access_level' => config_get( 'view_changelog_threshold' )
+		// );
+
 		# Roadmap Page
 		$t_sidebar_items[] = array(
 			'url' => 'roadmap_page.php',

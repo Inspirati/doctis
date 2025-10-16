@@ -590,7 +590,7 @@ $s_review_dwg_button = 'Set to Review';
 $s_rework_dwg_button = 'Set to Rework';
 $s_independent_review_dwg_button = 'Set to Independent Review';
 $s_accepted_dwg_button = 'Set to Accepted';
-$s_incorported_dwg_button = 'Set to Incorporated';
+$s_incorporated_dwg_button = 'Set to Incorporated';
 $s_archived_dwg_button = 'Set to Archived';
 
 $s_pending_dwg_title = 'Set Document to Pending';
@@ -602,7 +602,7 @@ $s_review_dwg_title = 'Set Document to Review Required';
 $s_rework_dwg_title = 'Set Document to Send for Rework';
 $s_independent_review_dwg_title = 'Set Document to Independent Review';
 $s_accepted_dwg_title = 'Set Document to Accepted';
-$s_incorported_dwg_title = 'Set Document to Incorporated';
+$s_incorporated_dwg_title = 'Set Document to Incorporated';
 $s_archived_dwg_title = 'Set Document to Archived';
 
 # bug_close.php

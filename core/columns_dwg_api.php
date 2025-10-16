@@ -1225,7 +1225,10 @@ function print_dwg_column_dwg_id( DwgData $p_bug, $p_columns_target = COLUMNS_TA
 #@ NOTE: called via a run-time generated function name
 function print_column_document_id( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	echo '<td class="column-id">';
-	print_dwg_link( $p_bug->document_id, false );
+	// print_dwg_link( $p_bug->document_id, false );
+	if ( $p_bug->document_id > 1 ) {
+		print_dwg_link( $p_bug->document_id, true );
+	}
 	echo '</td>';
 }
 

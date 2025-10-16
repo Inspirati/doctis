@@ -172,17 +172,17 @@ if( ( $t_filter_position & FILTER_POSITION_TOP ) == FILTER_POSITION_TOP ) {
 						<div class="btn-group pull-left">
 <?php
 		if( $t_can_print_reports ) {
-			print_small_button(
+			print_dwg_small_button(
 				'print_dwg_page.php' . $t_filter_param,
 				lang_get( 'print_dwg_page_link' )
 			);
 		}
 		if( $t_can_export_issues ) {
-			print_small_button( 'csv_export.php' . $t_filter_param, lang_get( 'csv_export' ) );
-			print_small_button( 'excel_xml_export.php' . $t_filter_param, lang_get( 'excel_export' ) );
+			print_dwg_small_button( 'csv_export.php' . $t_filter_param, lang_get( 'csv_export' ) );
+			print_dwg_small_button( 'excel_xml_export.php' . $t_filter_param, lang_get( 'excel_export' ) );
 		}
 		if( $t_can_view_summary ) {
-			print_small_button( $t_summary_link, lang_get( 'summary_link' ) );
+			print_dwg_small_button( $t_summary_link, lang_get( 'summary_link' ) );
 		}
 
 		echo $t_plugin_menu_items;

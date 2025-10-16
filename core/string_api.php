@@ -785,9 +785,9 @@ function string_get_dwg_view_link( $p_bug_id, $p_detail_info = true, $p_fqdn = f
 		}
 		$t_link .= string_get_dwg_view_url( $p_bug_id ) . '"';
 		if( $p_detail_info ) {
-			$t_summary = string_attribute( dwg_get_field( $p_bug_id, 'summary' ) );
+			$t_summary = string_attribute( dwg_get_field( $p_bug_id, 'title' ) );
 			$t_project_id = dwg_get_field( $p_bug_id, 'project_id' );
-			$t_status = string_attribute( get_enum_element( 'status', dwg_get_field( $p_bug_id, 'status' ), $t_project_id ) );
+			$t_status = string_attribute( get_enum_element( 'dwg_status', dwg_get_field( $p_bug_id, 'status' ), $t_project_id ) );
 			$t_link .= ' title="[' . $t_status . '] ' . $t_summary . '"';
 
 			$t_resolved = dwg_get_field( $p_bug_id, 'status' ) >= config_get( 'dwg_resolved_status_threshold', null, null, $t_project_id );

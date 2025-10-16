@@ -1635,7 +1635,7 @@ function dwg_get_text_field( $p_bug_id, $p_field_name ) {
  * @access public
  */
 function dwg_format_summary( $p_bug_id, $p_context ) {
-	return helper_call_custom_function( 'format_dwg_summary', array( $p_bug_id, $p_context ) );
+	return helper_call_custom_function( 'format_document_summary', array( $p_bug_id, $p_context ) );
 }
 
 /**

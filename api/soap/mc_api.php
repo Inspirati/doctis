@@ -996,6 +996,15 @@ function mci_get_category_id( $p_category, $p_project_id ) {
 	return $t_category_id;
 }
 
+/**
+ * Convert a document name or object reference to a document id.
+ *
+ * @param string|array $p_category   Document name or array with id and/or title.
+ * @param int          $p_project_id Project id.
+ *
+ * @return int document id or error.
+ * @throws ClientException if document is not set or does not exist.
+ */
 function mci_get_document_id( $p_document, $p_project_id ) {
 	$t_allow_no_document = config_get( 'allow_no_document' );
 

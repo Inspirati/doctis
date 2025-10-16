@@ -1819,11 +1819,7 @@ function mci_issue_data_as_array( BugData $p_issue_data, $p_user_id, $p_lang, $p
 
 		$t_issue['sticky'] = $p_issue_data->sticky;
 		$t_issue['date_submitted'] = $t_created_at;
-
-
 		$t_issue['created_at'] = $t_created_at;
-
-
 		$t_issue['last_updated'] = $t_updated_at;
 	} else {
 		if( $t_fields === null || isset( $t_fields['profile'] ) ) {

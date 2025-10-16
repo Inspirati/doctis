@@ -239,10 +239,17 @@ class IssueAddCommand extends Command {
 		$t_category = $t_issue['category'] ?? null;
 		$t_category_id = mci_get_category_id( $t_category, $t_project_id );
 
-		// @TODO RobD - note we are finding the document_id via the document name from the UI which is far from ideal, as it may not be unique
-		//              what we really want is for the id to be returned from the UI selector
-		$t_document = $t_issue['document'] ?? null;
-		$t_document_id = mci_get_document_id( $t_document, $t_project_id );
+//		$t_document = $t_issue['document'] ?? null;
+//		$t_document_id = mci_get_document_id( $t_document, $t_project_id );  // this ensures the document exists and is in the specified project - probably not superfluous
+		
+		$t_document_id = $t_issue['document']['id'] ?? null;
+		if ( $t_handler_id == NO_USER ) {
+			if ( $t_document_id > 1 ) {
+				if ( config_get( 'auto_assign_issue_to_document_handler' ) ) {
+					$t_handler_id = document_get_field( $t_document_id, 'handler_id' );
+				}
+			}
+		}
 
 		$this->issue = new BugData;
 		$this->issue->project_id = $t_project_id;

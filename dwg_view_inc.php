@@ -148,11 +148,11 @@ echo '<div class="btn-group pull-left">';
 
 # Send Bug Reminder
 if( $t_flags['reminder_can_add'] ) {
-	print_small_button( 'dwg_reminder_page.php?dwg_id=' . $f_issue_id, lang_get( 'dwg_reminder' ) );
+	print_dwg_small_button( 'dwg_reminder_page.php?dwg_id=' . $f_issue_id, lang_get( 'dwg_reminder' ) );
 }
 
 if( isset( $t_issue_view['wiki_link'] ) ) {
-	print_small_button( $t_issue_view['wiki_link'], lang_get( 'wiki' ) );
+	print_dwg_small_button( $t_issue_view['wiki_link'], lang_get( 'wiki' ) );
 }
 
 # TODO: should be moved to command
@@ -161,19 +161,19 @@ foreach ( $t_issue_view['links'] as $t_plugin => $t_hooks ) {
 		if( is_array( $t_hook ) ) {
 			foreach( $t_hook as $t_label => $t_href ) {
 				if( is_numeric( $t_label ) ) {
-					print_bracket_link_prepared( $t_href );
+					print_dwg_bracket_link_prepared( $t_href );
 				} else {
-					print_small_button( $t_href, $t_label );
+					print_dwg_small_button( $t_href, $t_label );
 				}
 			}
 		} elseif( !empty( $t_hook ) ) {
-			print_bracket_link_prepared( $t_hook );
+			print_dwg_bracket_link_prepared( $t_hook );
 		}
 	}
 }
 
 # Jump to Bugnotes
-print_small_button( '#dwgnotes', lang_get( 'jump_to_dwgnotes' ) );
+print_dwg_small_button( '#dwgnotes', lang_get( 'jump_to_dwgnotes' ) );
 
 # Display or Jump to History
 if( $t_flags['history_show'] ) {
@@ -184,7 +184,7 @@ if( $t_flags['history_show'] ) {
 		$t_history_link = 'dwg_view.php?id=' . $f_issue_id . '&history=1#history';
 		$t_history_label = lang_get( 'display_history' );
 	}
-	print_small_button( $t_history_link, $t_history_label );
+	print_dwg_small_button( $t_history_link, $t_history_label );
 }
 
 echo '</div>';
@@ -196,11 +196,11 @@ if( $t_dwgslist ) {
 	$t_index = array_search( $f_issue_id, $t_dwgslist );
 	if( false !== $t_index ) {
 		if( isset( $t_dwgslist[$t_index-1] ) ) {
-			print_small_button( 'dwg_view.php?id='.$t_dwgslist[$t_index-1], '&lt;&lt;' );
+			print_dwg_small_button( 'dwg_view.php?id='.$t_dwgslist[$t_index-1], '&lt;&lt;' );
 		}
 
 		if( isset( $t_dwgslist[$t_index+1] ) ) {
-			print_small_button( 'dwg_view.php?id='.$t_dwgslist[$t_index+1], '&gt;&gt;' );
+			print_dwg_small_button( 'dwg_view.php?id='.$t_dwgslist[$t_index+1], '&gt;&gt;' );
 		}
 	}
 }
@@ -1165,7 +1165,7 @@ function dwg_view_relationship_view_box( $p_bug_id, $p_can_update ) {
 <?php
 		# Print the buttons, if any
 		foreach( $t_buttons as $t_label => $t_url ) {
-			print_small_button( $t_url, $t_label );
+			print_dwg_small_button( $t_url, $t_label );
 		}
 ?>
 		</div>

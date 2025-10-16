@@ -2758,7 +2758,7 @@ $g_dwg_assigned_status = ASSIGNED;
  * @global int $g_bug_reopen_status
  */
 $g_bug_reopen_status = FEEDBACK;
-$g_dwg_reopen_status = FEEDBACK;
+$g_dwg_reopen_status = REWORK;
 
 /**
  * Status to assign to the bug when feedback is required from the issue reporter.
@@ -2769,7 +2769,7 @@ $g_dwg_reopen_status = FEEDBACK;
  * @global int $g_bug_feedback_status
  */
 $g_bug_feedback_status = FEEDBACK;
-$g_dwg_feedback_status = FEEDBACK;
+$g_dwg_feedback_status = REWORK;
 
 /**
  * Automatically reassign issue when feedback has been provided.
@@ -2811,7 +2811,7 @@ $g_dwg_duplicate_resolution = DUPLICATE;
  * @global int $g_bug_readonly_status_threshold
  */
 $g_bug_readonly_status_threshold = RESOLVED;
-$g_dwg_readonly_status_threshold = RESOLVED;
+$g_dwg_readonly_status_threshold = ARCHIVED;
 
 /**
  * Bug is resolved, ready to be closed or reopened.
@@ -2822,7 +2822,7 @@ $g_dwg_readonly_status_threshold = RESOLVED;
  * @global int $g_bug_resolved_status_threshold
  */
 $g_bug_resolved_status_threshold = RESOLVED;
-$g_dwg_resolved_status_threshold = RESOLVED;
+$g_dwg_resolved_status_threshold = ACCEPTED;
 
 /**
  * Threshold resolution which denotes that a bug has been resolved and
@@ -2835,7 +2835,7 @@ $g_dwg_resolved_status_threshold = RESOLVED;
  * @global int $g_bug_resolution_fixed_threshold
  */
 $g_bug_resolution_fixed_threshold = FIXED;
-$g_dwg_resolution_fixed_threshold = FIXED;
+$g_dwg_resolution_fixed_threshold = ACCEPTED;
 
 /**
  * Threshold resolution which denotes that a bug has been resolved without
@@ -2858,7 +2858,7 @@ $g_dwg_resolution_not_fixed_threshold = UNABLE_TO_REPRODUCE;
  * @global int $g_bug_closed_status_threshold
  */
 $g_bug_closed_status_threshold = CLOSED;
-$g_dwg_closed_status_threshold = CLOSED;
+$g_dwg_closed_status_threshold = INCORPORATED;
 
 /**
  * Automatically set status to ASSIGNED whenever a bug is assigned to a person.
@@ -2869,6 +2869,13 @@ $g_dwg_closed_status_threshold = CLOSED;
  * @global int $g_auto_set_status_to_assigned
  */
 $g_auto_set_status_to_assigned = ON;
+
+/**
+ * Automatically assign new issues to the current document handler, if set.
+ *
+ * @global int $g_auto_assign_issue_to_document_handler
+ */
+$g_auto_assign_issue_to_document_handler = ON;
 
 /**
  * Status Workflow definition.
@@ -5705,6 +5712,7 @@ $g_public_config_names = array(
 	'assign_sponsored_bugs_threshold',
 	'assign_sponsored_dwgs_threshold',
 	'attachments_to_new_tab',
+	'auto_assign_issue_to_document_handler',
 	'auto_set_status_to_assigned',
 	'backward_year_count',
 	'bottom_include_page',

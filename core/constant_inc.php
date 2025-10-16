@@ -110,6 +110,7 @@ define( 'REVIEW', 160 );
 define( 'REWORK', 165 );
 define( 'INDEPENDENT_REVIEW', 170 );
 define( 'ACCEPTED', 180 );
+define( 'REJECTED', 185 );
 define( 'INCORPORATED', 190 );
 define( 'ARCHIVED', 195 );
 

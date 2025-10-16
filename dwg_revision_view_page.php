@@ -215,9 +215,9 @@ layout_page_begin(null, true);
 					<div class="btn-group pull-right">
 <?php
 if( !$f_bug_id && !$f_bugnote_id ) {
-	print_small_button( '?bug_id=' . $t_bug_id, lang_get( 'all_revisions' ) );
+	print_dwg_small_button( '?bug_id=' . $t_bug_id, lang_get( 'all_revisions' ) );
 }
-print_small_button( 'view.php?id=' . $t_bug_id, lang_get( 'back_to_issue' ) );
+print_dwg_small_button( 'view.php?id=' . $t_bug_id, lang_get( 'back_to_issue' ) );
 ?>
 					</div>
 				</div>

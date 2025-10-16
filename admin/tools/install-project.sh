@@ -389,7 +389,7 @@ EOF
 
 launch_project() {
     local project="$1"
-#    code ${webroot}/${project} &
+#    codium ${webroot}/${project} &
 #    firefox "http://${domain_idname}/phpMyAdmin" &
     firefox "http://${domain_idname}/${project}" &
     xdg-open ${webroot}/${project}/admin/tools/getting-started.txt &
@@ -446,7 +446,7 @@ install_doctis() {
     fi
     show_parameters
     echo -e "${DIAG}Finished installing doctis.${OFF}"
-    echo -e "${DIAG}Login wiht username 'administrator' password 'root'.${OFF}"
+    echo -e "${DIAG}Login with username 'administrator' password 'root'.${OFF}"
 }
 
 ################################################################################
