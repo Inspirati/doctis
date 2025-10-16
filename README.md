@@ -32,7 +32,9 @@ Installation
 
 1. Install [VirtualBox](https://www.virtualbox.org/) on any system it is supported on.
 
-2. Create a Debian based Linux virtual machine using the ISO image at [Debian-13.1.0-amd64-netinst.iso](https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-13.1.0-amd64-netinst.iso) Debian 12 or recent Ubuntu distribution should also work.
+2. Create a new virtual machine, configured with 4GB Memory (RAM), 10+ GB disk, bridged network adaptor.
+
+3. Install a Debian based Linux virtual machine using the ISO image at [Debian-13.1.0-amd64-netinst.iso](https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-13.1.0-amd64-netinst.iso) Debian 12 or recent Ubuntu distribution should also work.
 
     1. select the VirtualBox default 'unattended' install option, leave other options as default (this results in a GNOME[^1] desktop environment)
 
@@ -52,7 +54,7 @@ Installation
 
     5. start a virtual machine and login to your account
 
-3. Download and install the Doctis project.
+4. Download and install the Doctis project.
 
     SIMPLE:
 
@@ -92,7 +94,7 @@ Installation
     ./install.sh
     ```
 
-4. Follow the getting-started tips which should eventually be displayed.
+5. Follow the getting-started tips which should eventually be displayed.
 
 NOTE: in order to create new users in mantisbt/doctis, the ability to send email is required and perhaps the most-difficult way to achieve this is to create an App Password for a gmail account. However the system can still be used with predefined user accounts without being able to send email. These accounts can be modified when logged into Doctis with an administrator account. The default account is 'administrator' with password 'root'.
 

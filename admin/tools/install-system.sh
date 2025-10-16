@@ -132,9 +132,7 @@ install_tools_cli() {
     fi
 }
 
-install_tools_gui() {
-    echo -e "${INFO}Installing GUI developer tools...${OFF}"
-    sudo apt-get install -y meld
+install_vscode() {
     # Optional: install VS Code if not present
     if ! command -v code >/dev/null 2>&1; then
         echo "Installing VS Code..."
@@ -149,6 +147,19 @@ install_tools_gui() {
         code --install-extension muhammedrashid.stain
         code --install-extension oleg-shilo.favorites
     fi
+}
+
+install_tools_gui() {
+    echo -e "${INFO}Installing GUI developer tools...${OFF}"
+    sudo apt-get install -y meld
+
+    wget https://github.com/VSCodium/vscodium/releases/download/1.105.06922/codium_1.105.06922_amd64.deb
+    sudo dpkg -i codium_1.105.06922_amd64.deb
+    codium --install-extension xdebug.php-debug
+    codium --install-extension muhammedrashid.stain
+    codium --install-extension oleg-shilo.favorites
+    
+    # install_vscode
 }
 
 install_tools() {

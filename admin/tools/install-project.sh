@@ -389,8 +389,8 @@ EOF
 
 launch_project() {
     local project="$1"
-    code ${webroot}/${project} &
-    firefox "http://${domain_idname}/phpMyAdmin" &
+#    code ${webroot}/${project} &
+#    firefox "http://${domain_idname}/phpMyAdmin" &
     firefox "http://${domain_idname}/${project}" &
     xdg-open ${webroot}/${project}/admin/tools/getting-started.txt &
 }
@@ -442,10 +442,11 @@ install_doctis() {
     set_headless
     if [ $HEADLESS = false ]; then
         launch_project ${project}
-        meld doctis-www mantisbt-www &
+#        meld doctis-www mantisbt-www &
     fi
     show_parameters
     echo -e "${DIAG}Finished installing doctis.${OFF}"
+    echo -e "${DIAG}Login wiht username 'administrator' password 'root'.${OFF}"
 }
 
 ################################################################################
