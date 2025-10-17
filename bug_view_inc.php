@@ -117,7 +117,7 @@ $t_flags = $t_result['flags'];
 ////////////////////////////////////////////////////////////////////////////////
 $t_flags['document_show'] = false;
 $t_document_id = (int)$t_issue['document_id'];
-if ( $t_document_id ) {
+if ( $t_document_id > 1 ) {
 
 	$t_data = array(
 		'query' => array( 'id' => $t_document_id ),
