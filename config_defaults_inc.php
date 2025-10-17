@@ -1411,6 +1411,7 @@ $g_view_dwg_page_columns = array(
 	'selection', 'edit', 'priority',
 	'id',
 	'dwgnotes_count', 'attachment_count',
+	'issue_count',
 	'category_id', 'status', 'title', 'number', 'revision', 'reference', 'date', 'last_updated', 
 );
 

@@ -1603,7 +1603,9 @@ $s_attachment_missing = 'Attachment missing';
 $s_attachment_count = 'Attachment count';
 $s_bugnotes_count = 'Issue Notes count';
 $s_dwgnotes_count = 'Document Notes count';
+$s_issue_count = 'Issue Count';
 $s_view_attachments_for_issue = 'View %1$d attachment(s) for issue #%2$d';
+$s_view_issues_for_document = 'View %1$d issue(s) for document #%2$d';
 $s_warning_update_custom_field_type = '<strong>Warning:</strong> Custom field "%1$s" already has stored values. Changing field type may cause errors and unexpected behaviour if existing values are not consistent with the field\'s new type. To proceed, click the button below';
 
 # PHPMailer

@@ -907,8 +907,16 @@ function string_get_dwgnote_view_link( $p_bug_id, $p_bugnote_id, $p_detail_info 
  * @return string
  */
 function string_get_bug_view_url( $p_bug_id ) {
-//	error_log("string_get_bug_view_url()");
 	return 'view.php?id=' . $p_bug_id;
+}
+
+/**
+ * return the name and GET parameters of all bug VIEW page for the given document
+ * @param integer $p_bug_id A bug identifier.
+ * @return string
+ */
+function string_get_all_bug_page_url( $p_dwg_id ) {
+	return 'view_all_bug_page.php?dwg_id=' . $p_dwg_id;
 }
 
 /**

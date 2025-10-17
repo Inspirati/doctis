@@ -863,6 +863,21 @@ function print_dwg_column_title_attachment_count( $p_sort, $p_dir, $p_columns_ta
 }
 
 /**
+ * Print table header for column document issue count
+ *
+ * @param string  $p_sort           Sort.
+ * @param string  $p_dir            Direction.
+ * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
+ * @return void
+ * @access public
+ */
+function print_dwg_column_title_issue_count( $p_sort, $p_dir, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+	$t_attachment_count_text = lang_get( 'issue_count' );
+	$t_attachment_count_icon = icon_get( 'fa-bug', 'blue', $t_attachment_count_text );
+	echo "\t" . '<th class="column-issue_count">' . $t_attachment_count_icon . '</th>' . "\n";
+}
+
+/**
  * Print table header for column category
  *
  * @param string  $p_sort           Sort.
@@ -936,7 +951,7 @@ function print_dwg_column_title_severity( $p_sort, $p_dir, $p_columns_target = C
  */
 function print_dwg_column_title_status( $p_sort, $p_dir, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	echo '<th class="column-status">';
-	print_view_dwg_sort_link( lang_get( 'status' ), 'dwg_status', $p_sort, $p_dir, $p_columns_target );
+	print_view_dwg_sort_link( lang_get( 'status' ), 'status', $p_sort, $p_dir, $p_columns_target );
 	print_sort_icon( $p_dir, $p_sort, 'status' );
 	echo '</th>';
 }
@@ -1317,6 +1332,32 @@ function print_dwg_column_attachment_count( DwgData $p_bug, $p_columns_target = 
 		$t_href = string_get_dwg_view_url( $p_bug->id ) . '#attachments';
 		$t_href_title = sprintf( lang_get( 'view_attachments_for_issue' ), $t_attachment_count, $p_bug->id );
 		echo '<a href="' . $t_href . '" title="' . $t_href_title . '">' . $t_attachment_count . '</a>';
+	} else {
+		echo ' &#160; ';
+	}
+
+	echo "</td>\n";
+}
+
+/**
+ * Print column content for column issue_count count
+ *
+ * @param DwgData $p_dwg            DwgData object.
+ * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
+ * @return void
+ * @access public
+ */
+function print_dwg_column_issue_count( DwgData $p_dwg, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+
+	# Check for issues
+	$t_issue_count = dwg_get_issue_count( $p_dwg->id );
+
+	echo '<td class="column-issue_count">';
+
+	if( $t_issue_count > 0 ) {
+		$t_href = string_get_all_bug_page_url( $p_dwg->id ) . '#document';
+		$t_href_title = sprintf( lang_get( 'view_issues_for_document' ), $t_issue_count, $p_dwg->id );
+		echo '<a href="' . $t_href . '" title="' . $t_href_title . '">' . $t_issue_count . '</a>';
 	} else {
 		echo ' &#160; ';
 	}

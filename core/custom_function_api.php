@@ -455,8 +455,6 @@ function custom_function_default_get_dwg_columns_to_view( $p_columns_target = CO
 		$t_columns = columns_dwg_remove_invalid( $t_columns, columns_dwg_get_all( $t_project_id ) );
 	} else if( $p_columns_target == COLUMNS_TARGET_VIEW_PAGE ) {
 		$t_columns = config_get( 'view_dwg_page_columns', '', $p_user_id, $t_project_id );
-
-// @TODO RobD - calling this causes most of the column text to not be displayed?
 		$t_columns = columns_dwg_remove_invalid( $t_columns, columns_dwg_get_all( $t_project_id ) );
 	} else {
 		$t_columns = config_get( 'print_dwg_page_columns', '', $p_user_id, $t_project_id );
@@ -719,9 +717,9 @@ function custom_function_default_print_dwg_column_value( $p_column, DwgData $p_b
 	// if ($p_column == "date") {
 	// 	error_log("custom_function_default_print_dwg_column_value: " . $p_column);
 	// }
-//	if ($p_column == "attachment_count") {
-//		error_log("custom_function_default_print_dwg_column_value: " . $p_column);
-//	}
+	// if ($p_column == "attachment_count") {
+	// 	error_log("custom_function_default_print_dwg_column_value: " . $p_column);
+	// }
 	$t_custom_field = column_get_custom_field_name( $p_column );
 	if( $t_custom_field !== null ) {
 		$t_class = custom_field_css_name( $t_custom_field );

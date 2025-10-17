@@ -380,7 +380,7 @@ INSERT INTO `user` (`username`, `realname`, `email`, `password`, `enabled`, `pro
 ('updater', '', 'doctis.updater@gmail.com', '1a1dc91c907325c69271ddf0c944bc72', 1, 0, 40, 3, 0, 0, '63f66ba20df9c98303fc2ed9b7708fc06ae8ca98185bd228469f5ce4478346f9', 1757927188, 1757927188),
 ('developer', '', 'doctis.developer@gmail.com', '1a1dc91c907325c69271ddf0c944bc72', 1, 0, 55, 3, 0, 0, '716bd2ac4467b24752348d1772b4baee6ae8ca98185bd228469f5ce4478346f9', 1757927188, 1757927188),
 ('manager', '', 'doctis.manager@gmail.com', '1a1dc91c907325c69271ddf0c944bc72', 1, 0, 70, 3, 0, 0, '9f7dc77b274b9a7466466da2007ef1a26ae8ca98185bd228469f5ce4478346f9', 1757927188, 1757927188),
-('admin', '', 'doctis.admin@gmail.com', '1a1dc91c907325c69271ddf0c944bc72', 1, 0, 90, 3, 0, 0, 'f79e4810068402b52f4856cd8953f8976ae8ca98185bd228469f5ce4478346f9', 1757927188, 1757927188);
+('admin', '', 'doctis.owner@gmail.com', '1a1dc91c907325c69271ddf0c944bc72', 1, 0, 90, 3, 0, 0, 'f79e4810068402b52f4856cd8953f8976ae8ca98185bd228469f5ce4478346f9', 1757927188, 1757927188);
 SQL
 )
 EOF

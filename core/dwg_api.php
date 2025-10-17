@@ -146,6 +146,8 @@ class DwgData {
 	protected $category_id = 1;
 	protected $duplicate_id = 0;
 
+	protected $issue_count = 0;
+
 // #TODO RobD - the legacy fields from the bug version
 //	protected $handler_id = 0;
 //	protected $duplicate_id = 0;
@@ -2422,4 +2424,18 @@ function dwg_cache_columns_data( array $p_bugs, array $p_selected_columns ) {
 	if( !empty( $t_custom_field_ids ) ) {
 		custom_field_cache_values( $t_bug_ids, $t_custom_field_ids );
 	}
+}
+
+/**
+ * Returns the number of issues for the given dwg_id.
+ *
+ * @return int Number of bugnotes
+ */
+function dwg_get_issue_count($p_dwg_id) {
+	db_param_push();
+	$t_query = 'SELECT COUNT(*) FROM {bug}
+					WHERE document_id =' . db_param();
+	$t_result = db_query( $t_query, array( $p_dwg_id ) );
+	$t_count = db_result( $t_result );
+	return $t_count;
 }

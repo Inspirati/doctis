@@ -98,6 +98,8 @@ use Mantis\Exceptions\ClientException;
  */
 $g_filter = null;
 
+// @TODO RobD - temporary quick'n'dirty hack to avoid changing the parameters to the existing filter_get_bug_rows function throughout the codebase
+$g_filter_document_id = 0;
 
 # ==========================================================================
 # CACHING
@@ -1143,10 +1145,17 @@ function filter_get_field( $p_filter_id, $p_field_name ) {
 function filter_get_bug_rows( &$p_page_number, &$p_per_page, &$p_page_count, &$p_bug_count, $p_custom_filter = null, $p_project_id = null, $p_user_id = null, $p_show_sticky = null ) {
 	# assigning to $p_* for this function writes the values back in case the caller wants to know
 
+	global $g_filter_document_id;
+
 	if( $p_custom_filter === null ) {
 		$t_filter = filter_get_bug_rows_filter( $p_project_id, $p_user_id );
 	} else {
 		$t_filter = filter_ensure_valid_filter( $p_custom_filter );
+	}
+
+	// @TODO RobD - temporary quick'n'dirty hack to avoid changing the parameters to the existing filter_get_bug_rows function throughout the codebase
+	if ( $g_filter_document_id > 0 ) {
+		$t_filter['document_id'][0] = $g_filter_document_id;
 	}
 
 	# build a filter query, here for counting results
@@ -1179,6 +1188,19 @@ function filter_get_bug_rows( &$p_page_number, &$p_per_page, &$p_page_count, &$p
 	# Return the processed rows: cache data, convert to bug objects
 	return filter_cache_result( $t_rows, $t_bug_id_array );
 }
+
+// @TODO RobD - temporary quick'n'dirty hack to avoid changing the parameters to the existing filter_get_bug_rows function throughout the codebase
+function filter_get_bug_rows_dwg( &$p_page_number, &$p_per_page, &$p_page_count, &$p_bug_count, $p_document_id = 0 ) {
+
+	global $g_filter_document_id;
+
+	$g_filter_document_id = $p_document_id;
+	$t_rows = filter_get_bug_rows( $f_page_number, $t_per_page, $t_page_count, $t_bug_count, null, null, null, true );
+	$g_filter_document_id = 0;
+
+	return $t_rows;
+}
+
 
 /**
  * Get the filter defined by user and project.

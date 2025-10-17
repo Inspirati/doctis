@@ -55,6 +55,8 @@ require_css( 'status_config.php' );
 auth_ensure_user_authenticated();
 
 $f_page_number		= gpc_get_int( 'page_number', 1 );
+$f_dwg_id = gpc_get_int( 'dwg_id', 0 );
+
 # Get Project Id and set it as current
 $t_project_id = gpc_get_int( 'project_id', helper_get_current_project() );
 if( ( ALL_PROJECTS == $t_project_id || project_exists( $t_project_id ) ) && $t_project_id != helper_get_current_project() ) {
@@ -68,7 +70,9 @@ $t_per_page = 0;
 $t_bug_count = 0;
 $t_page_count = 0;
 
-$t_rows = filter_get_bug_rows( $f_page_number, $t_per_page, $t_page_count, $t_bug_count, null, null, null, true );
+// $t_rows = filter_get_bug_rows( $f_page_number, $t_per_page, $t_page_count, $t_bug_count, null, null, null, true );
+$t_rows = filter_get_bug_rows_dwg( $f_page_number, $t_per_page, $t_page_count, $t_bug_count, $f_dwg_id );
+
 if( $t_rows === false ) {
 	print_header_redirect( 'view_all_set.php?type=0' );
 }
