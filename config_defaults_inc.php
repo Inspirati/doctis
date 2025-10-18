@@ -1412,7 +1412,8 @@ $g_view_dwg_page_columns = array(
 	'id',
 	'dwgnotes_count', 'attachment_count',
 	'issue_count',
-	'category_id', 'status', 'title', 'number', 'revision', 'reference', 'date', 'last_updated', 
+	'category_id', 'status', 'last_updated', 'title', 'number', 'revision', 'reference',
+	'date', // @TODO RobD - for some reason 'date' needs to be here to avoid error on bug_update_page.php 'Undefined array key "updated_at"' in '/var/www/html/doctis/core/commands/DwgViewPageCommand.php' line 184
 );
 
 /**
@@ -4788,10 +4789,12 @@ $g_file_download_content_type_overrides = array(
 /**
  * Icon associative arrays.
  *
- * Status to icon mapping.
+ * Priority to icon mapping.
  *
  * @global array $g_status_icon_arr
  */
+// @TODO RobD - this would be better being called g_priority_icon_arr
+//$g_priority_icon_arr = array(
 $g_status_icon_arr = array(
 	NONE      => '',
 	LOW       => 'fa-chevron-down fa-lg green',

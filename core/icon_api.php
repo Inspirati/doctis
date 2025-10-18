@@ -76,6 +76,7 @@ function print_icon( $p_icon, $p_classes = '', $p_title = '', $p_inner_html = ''
  * @return string html img tag containing status icon
  * @access public
  */
+// @TODO RobD - this would be better being called icon_get_priority_icon
 function icon_get_status_icon( $p_icon ) {
 	$t_status_icon_arr = config_get( 'status_icon_arr' );
 	$t_priotext = get_enum_element( 'priority', $p_icon );
@@ -92,6 +93,7 @@ function icon_get_status_icon( $p_icon ) {
  * @return void
  * @access public
  */
+// @TODO RobD - this would be better being called print_priority_icon
 function print_status_icon( $p_icon ) {
 	echo icon_get_status_icon( $p_icon );
 }

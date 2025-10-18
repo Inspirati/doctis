@@ -1478,6 +1478,7 @@ function print_column_project_id( BugData $p_bug, $p_columns_target = COLUMNS_TA
  * @return void
  * @access public
  */
+/*
 function print_column_last_updated( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	global $g_filter;
 
@@ -1490,6 +1491,14 @@ function print_column_last_updated( BugData $p_bug, $p_columns_target = COLUMNS_
 		echo $t_last_updated;
 	}
 	echo '</td>';
+}
+ */
+function print_column_last_updated( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+	global $g_filter;
+	echo format_last_updated_display(
+		$p_bug->last_updated,
+		$g_filter[FILTER_PROPERTY_HIGHLIGHT_CHANGED]
+	);
 }
 
 /**

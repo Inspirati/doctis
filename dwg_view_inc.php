@@ -435,7 +435,15 @@ if( $t_flags['priority_show'] || $t_flags['severity_show'] || $t_flags['reproduc
 	# Priority
 	if( $t_flags['priority_show'] ) {
 		echo '<th class="bug-priority category">', lang_get( 'priority' ), '</th>';
-		echo '<td class="bug-priority">', string_display_line( $t_issue['priority']['label'] ), '</td>';
+		echo '<td class="bug-priority">';
+		$t_icon = $t_dwg->priority;
+		$t_status_icon_arr = config_get( 'status_icon_arr' );
+		$t_priotext = get_enum_element( 'priority', $t_icon );
+		if( isset( $t_status_icon_arr[$t_icon] ) && !is_blank( $t_status_icon_arr[$t_icon] ) ) {
+			echo '&nbsp' . icon_get( $t_status_icon_arr[$t_icon] ) . '&nbsp';
+		}
+//		echo ' ' . string_display_line( $t_issue['priority']['label'] ), '</td>';
+		echo ' ' . string_display_line( $t_priotext ), '</td>';
 	} else {
 		$t_spacer += 2;
 	}

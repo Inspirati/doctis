@@ -1543,6 +1543,7 @@ function print_dwg_column_project_id( DwgData $p_bug, $p_columns_target = COLUMN
  * @return void
  * @access public
  */
+/*
 function print_dwg_column_last_updated( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	global $g_dwg_filter;
 
@@ -1555,6 +1556,15 @@ function print_dwg_column_last_updated( DwgData $p_bug, $p_columns_target = COLU
 		echo $t_last_updated;
 	}
 	echo '</td>';
+}
+ */
+function print_dwg_column_last_updated( DwgData $p_dwg, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+	global $g_dwg_filter;
+
+	echo format_last_updated_display(
+		$p_dwg->last_updated,
+		$g_dwg_filter[FILTER_PROPERTY_HIGHLIGHT_CHANGED]
+	);
 }
 
 /**

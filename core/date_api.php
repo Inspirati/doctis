@@ -307,3 +307,38 @@ function print_date_selection_set( $p_name, $p_format, $p_date = 0, $p_default_d
 		}
 	}
 }
+
+/**
+ * Format a timestamp for display in "Last Updated" column.
+ * - Shows time if the update was today, otherwise short date.
+ * - Applies bold styling if within highlight window.
+ *
+ * @param int $p_timestamp        UNIX timestamp of last update
+ * @param int $p_highlight_hours  Number of hours to highlight recent updates
+ * @param int|null $p_now         Current timestamp (from db_now()), optional
+ * @return string HTML-safe <td> content
+ */
+function format_last_updated_display( int $p_timestamp, int $p_highlight_hours, int $p_now = null ) {
+	if( $p_now === null ) {
+		$p_now = db_now();
+	}
+
+	# Determine whether timestamp is from today
+	$t_today_start = strtotime( 'today', $p_now );
+
+	if( $p_timestamp >= $t_today_start ) {
+		$t_display_value = date( 'H:i T', $p_timestamp );
+	} else {
+		$t_display_value = date( config_get( 'short_date_format' ), $p_timestamp );
+	}
+
+	$t_display_value = string_display_line( $t_display_value );
+
+	# Bold recent updates
+	$t_highlight_cutoff = strtotime( '-' . $p_highlight_hours . ' hours', $p_now );
+	if( $p_timestamp > $t_highlight_cutoff ) {
+		$t_display_value = sprintf( '<span class="bold">%s</span>', $t_display_value );
+	}
+
+	return sprintf( '<td class="column-last-modified">%s</td>', $t_display_value );
+}
