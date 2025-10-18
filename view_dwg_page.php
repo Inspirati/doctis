@@ -89,7 +89,7 @@ compress_enable();
 # don't index view documents pages
 html_robots_noindex();
 
-layout_page_header_begin( lang_get( 'view_dwg_link' ) );
+layout_page_header_begin( lang_get( 'view_dwgs_link' ) );
 
 $t_refresh_delay = current_user_get_pref( 'refresh_delay' );
 if( $t_refresh_delay > 0 ) {

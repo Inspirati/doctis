@@ -757,7 +757,7 @@ function layout_print_sidebar( $p_active_sidebar_page = null ) {
 		# View Documents
 		$t_sidebar_items[] = array(
 			'url' => 'view_dwg_page.php',
-			'title' => 'view_dwg_link',
+			'title' => 'view_dwgs_link',
 			'icon' => 'fa-list-alt'
 		);
 

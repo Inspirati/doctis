@@ -969,7 +969,7 @@ $g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'dwg_text' ), "
 $g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'document' ), "
 	( title, category_id, dwg_text_id, status )
 	VALUES
-	( 'Empty', '1', '1' '110' )" ) );
+	( 'Empty', '1', '1', '110' )" ) );
 
 # @TODO RobD - extract from dwg_api.php ~line number 1982:
 #    "log changes except for duplicate_id which is obsolete and should be removed in MantisBT 1.3"

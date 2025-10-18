@@ -1224,7 +1224,7 @@ $s_email_user_updated_msg = 'Your account has been updated by an administrator. 
 # menu_inc.php
 $s_main_link = 'Main';
 $s_view_bugs_link = 'View Issues';
-$s_view_dwg_link = 'View Documents';
+$s_view_dwgs_link = 'View Documents';
 $s_report_bug_link = 'Report Issue';
 $s_create_dwg_link = 'Create Document';
 $s_changelog_link = 'Change Log';
