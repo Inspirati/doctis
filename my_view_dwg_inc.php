@@ -331,6 +331,7 @@ echo '<span class="badge"> ' . " $v_start - $v_end / $t_bug_count " . ' </span>'
 		<div class="widget-toolbar no-border hidden-xs">
 			<div class="widget-menu">
 				<?php print_extra_small_button( $t_box_url, lang_get( 'view_dwgs_link' ) ); ?>
+				<?php /* print_dwg_extra_small_button( $t_box_url, lang_get( 'view_dwgs_link' ) ); */ ?>
 			</div>
 		</div>
 	</div>

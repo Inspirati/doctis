@@ -456,7 +456,7 @@ function tag_parse_filters( $p_string ) {
  *
  * @return ADORecordSet|bool Tags sorted by name, or false if the query failed.
  */
-function tag_get_all( $p_name_filter, $p_count, $p_offset ) {
+function tag_get_all_bug_tag( $p_name_filter, $p_count, $p_offset ) {
 	$t_where = '';
 	$t_where_params = array();
 

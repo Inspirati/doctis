@@ -1719,7 +1719,7 @@ function print_dwg_column_tags( DwgData $p_bug, $p_columns_target = COLUMNS_TARG
 	echo '<td class="column-tags">';
 
 	if( access_has_dwg_level( config_get( 'tag_view_threshold' ), $p_bug->id ) ) {
-		echo string_display_line( tag_bug_get_all( $p_bug->id ) );
+		echo string_display_line( tag_dwg_get_all( $p_bug->id ) );
 	}
 
 	echo '</td>';

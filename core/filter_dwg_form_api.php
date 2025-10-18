@@ -1734,7 +1734,7 @@ function print_filter_dwg_values_tag_string( array $p_filter ) {
 	$t_tag_string = $t_filter[FILTER_PROPERTY_TAG_STRING];
 	if( $t_filter[FILTER_PROPERTY_TAG_SELECT] != 0 && tag_exists( $t_filter[FILTER_PROPERTY_TAG_SELECT] ) ) {
 		$t_tag_string .= ( is_blank( $t_tag_string ) ? '' : config_get( 'tag_separator' ) );
-		$t_tag_string .= tag_get_field( $t_filter[FILTER_PROPERTY_TAG_SELECT], 'name' );
+		$t_tag_string .= tag_dwg_get_field( $t_filter[FILTER_PROPERTY_TAG_SELECT], 'name' );
 	}
 	echo string_html_entities( $t_tag_string );
 	echo '<input type="hidden" name="', FILTER_PROPERTY_TAG_STRING, '" value="', string_attribute( $t_tag_string ), '" />';
@@ -1759,7 +1759,7 @@ function print_filter_dwg_tag_string( ?array $p_filter = null ) {
 	$t_tag_string = $p_filter[FILTER_PROPERTY_TAG_STRING];
 	if( $p_filter[FILTER_PROPERTY_TAG_SELECT] != 0 && tag_exists( $p_filter[FILTER_PROPERTY_TAG_SELECT] ) ) {
 		$t_tag_string .= ( is_blank( $t_tag_string ) ? '' : config_get( 'tag_separator' ) );
-		$t_tag_string .= tag_get_field( $p_filter[FILTER_PROPERTY_TAG_SELECT], 'name' );
+		$t_tag_string .= tag_dwg_get_field( $p_filter[FILTER_PROPERTY_TAG_SELECT], 'name' );
 	}
 	?>
 		<input type="hidden" id="tag_separator" value="<?php echo config_get( 'tag_separator' )?>" />

@@ -411,6 +411,7 @@ $s_email_notification_title_for_action_dwg_related_document_deleted = 'The RELAT
 $s_email_notification_title_for_action_dwg_monitor = 'document %1$s is now monitored by user %2$s.';
 
 $s_email_reporter = 'Reported By';
+$s_email_creator = 'Created By';
 $s_email_handler = 'Assigned To';
 $s_email_project = 'Project';
 $s_email_bug = 'Issue ID';

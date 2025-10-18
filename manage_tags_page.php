@@ -106,7 +106,7 @@ if( $f_page_number < 1 ) {
 if( $f_filter == TAGS_UNUSED ) {
 	$t_result = tag_get_unused( $t_name_filter, $t_per_page, $t_offset );
 } else {
-	$t_result = tag_get_all( $t_name_filter, $t_per_page, $t_offset );
+	$t_result = tag_get_all_bug_tag( $t_name_filter, $t_per_page, $t_offset );
 }
 
 layout_page_header( lang_get( 'manage_tags_link' ) );

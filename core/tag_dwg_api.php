@@ -456,9 +456,7 @@ function tag_dwg_parse_filters( $p_string ) {
  *
  * @return ADORecordSet|bool Tags sorted by name, or false if the query failed.
  */
-/*
-// @TODO RobD - already defined in tag_api.php
-function tag_get_all( $p_name_filter, $p_count, $p_offset ) {
+function tag_dwg_get_all_dwg_tag( $p_name_filter, $p_count, $p_offset ) {
 	$t_where = '';
 	$t_where_params = array();
 
@@ -477,7 +475,7 @@ function tag_get_all( $p_name_filter, $p_count, $p_offset ) {
 
 	return db_query( $t_query, $t_where_params, $p_count, $p_offset );
 }
- */
+
 /**
  * Returns all unused tags (i.e. not linked to any Issue).
  *

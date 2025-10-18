@@ -257,7 +257,15 @@ if( true
 	echo '</tr>';
 
 	echo '<tr class="bug-header-data">';
-	echo '<td class="bug-project">', $t_flags['project_show'] && isset( $t_issue['reference'] ) ? string_display_line( $t_issue['reference'] ) : '', '</td>';
+//	echo '<td class="bug-project">', $t_flags['project_show'] && isset( $t_issue['reference'] ) ? string_display_line( $t_issue['reference'] ) : '', '</td>';
+
+	# Reference
+	if( $t_flags['project_show'] ) {
+		echo '<td class="bug-project">';
+//		echo string_display_line( $t_issue['reference'] );
+		print_dwg_reference_link( $t_dwg->id, $t_dwg->reference, false );
+		echo '</td>';
+	}
 	echo '<td class="bug-project">', $t_flags['project_show'] && isset( $t_issue['number'] ) ? string_display_line( $t_issue['number'] ) : '', '</td>';
 	echo '<td class="bug-project">', $t_flags['project_show'] && isset( $t_issue['revision'] ) ? string_display_line( $t_issue['revision'] ) : '', '</td>';
 	echo '<td class="bug-project">', $t_flags['project_show'] && isset( $t_issue['version'] ) ? string_display_line( $t_issue['version'] ) : '', '</td>';

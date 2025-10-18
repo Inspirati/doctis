@@ -178,7 +178,7 @@ layout_page_begin(null, true);
 			</h4>
 			<div class="widget-toolbar no-border">
 				<div class="widget-menu">
-					<?php print_extra_small_button( string_get_dwg_view_url( $t_bug_id ), lang_get( 'back_to_dwg_link' ) ); ?>
+					<?php print_dwg_extra_small_button( string_get_dwg_view_url( $t_bug_id ), lang_get( 'back_to_dwg_link' ) ); ?>
 				</div>
 			</div>
 		</div>

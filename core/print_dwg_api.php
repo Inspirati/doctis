@@ -432,7 +432,7 @@ function print_dwg_tagging_errors_table( $p_tags_failed ) {
  * @return void
  */
 function print_dwg_tag_option_list( $p_bug_id = 0 ) {
-	$t_rows = tag_get_candidates_for_bug( $p_bug_id );
+	$t_rows = tag_dwg_get_candidates_for_bug( $p_bug_id );
 
 	echo '<option value="0">', string_html_specialchars( lang_get( 'tag_existing' ) ), '</option>';
 	foreach ( $t_rows as $t_row ) {
@@ -1290,7 +1290,7 @@ function print_dwg_custom_field_projects_list( $p_field_id ) {
 	foreach( $t_project_ids as $t_project_id ) {
 		$t_project_name = project_get_field( $t_project_id, 'name' );
 		echo '<strong>', string_display_line( $t_project_name ), '</strong>: ';
-		print_extra_small_button( 'manage_proj_custom_field_remove.php?field_id=' . $c_field_id . '&project_id=' . $t_project_id . '&return=custom_field' . $t_security_token, lang_get( 'remove_link' ) );
+		print_dwg_extra_small_button( 'manage_proj_custom_field_remove.php?field_id=' . $c_field_id . '&project_id=' . $t_project_id . '&return=custom_field' . $t_security_token, lang_get( 'remove_link' ) );
 		echo '<br />- ';
 
 		$t_linked_field_ids = custom_field_get_linked_ids( $t_project_id );

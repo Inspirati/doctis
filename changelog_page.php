@@ -405,6 +405,7 @@ foreach( $t_project_ids as $t_project_id ) {
 
 			echo '<li>';
 			helper_call_custom_function( 'changelog_print_issue', array( $t_issue_set_id, $t_issue_set_level ) );
+//			helper_call_custom_function( 'changelog_print_document', array( $t_issue_set_id, $t_issue_set_level ) );
 			echo '</li>' . PHP_EOL;
 
 			$t_issues_found = true;

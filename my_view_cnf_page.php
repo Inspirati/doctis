@@ -76,7 +76,6 @@ html_robots_noindex();
 
 // layout_page_header( lang_get( 'my_view_link' ) );
 // layout_page_begin( __FILE__ );
-// // print_my_view_menu( 'my_view_overview_page.php' );
 
 layout_page_header_begin( lang_get( 'my_view_link' ) );
 
@@ -89,8 +88,7 @@ layout_page_header_end();
 
 layout_page_begin( __FILE__, true );
 
-// print_my_view_menu( 'my_view_cnf_page.php' );
-print_my_view_menu( __FILE__ );
+print_my_view_menu( 'my_view_cnf_page.php' );
 
 $f_page_number = gpc_get_int( 'page_number', 1 );
 
@@ -234,7 +232,8 @@ echo '</div>';
  */ ?>
  TODO:<br>
    add timelines for only events pertinent to the user, both Issues and Documents<br>
-   add Projects list which allows user to enable/disable participation in each project<br>
+   add projects list which allows user to enable/disable participation in each project<br>
+   add checkbox to enable dark theme (after implementing a dark theme)<br>
 	<?php
 	print_table_spacer( 2 );
 	$t_is_admin = !current_user_is_anonymous();

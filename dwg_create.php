@@ -117,7 +117,7 @@ if( $t_release_date !== null ) {
 $t_tag_string = '';
 $f_tag_select = gpc_get_int( 'tag_select', 0 );
 if( $f_tag_select != 0 ) {
-	$t_tag_string = tag_get_name( $f_tag_select );
+	$t_tag_string = tag_dwg_get_name( $f_tag_select );
 }
 
 $f_tag_string = gpc_get_string( 'tag_string', '' );

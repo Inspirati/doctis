@@ -88,8 +88,7 @@ layout_page_header_end();
 
 layout_page_begin( __FILE__, true );
 
-// print_my_view_menu( 'my_view_dwg_page.php' );
-print_my_view_menu( __FILE__ );
+print_my_view_menu( 'my_view_dwg_page.php' );
 
 $f_page_number = gpc_get_int( 'page_number', 1 );
 

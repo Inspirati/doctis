@@ -282,14 +282,15 @@ function email_dwg_collect_recipients( $p_bug_id, $p_notify_type, array $p_extra
 			} else {
 				# Users can define the severity of an issue before they are emailed for
 				# each type of notification
-				$t_min_sev_pref_field = $t_pref_field . '_min_severity';
-				$t_min_sev_notify = user_pref_get_pref( $t_id, $t_min_sev_pref_field );
-				$t_bug_severity = dwg_get_field( $p_bug_id, 'severity' );
+				// @TODO RobD - documents do not have severity field
+				// $t_min_sev_pref_field = $t_pref_field . '_min_severity';
+				// $t_min_sev_notify = user_pref_get_pref( $t_id, $t_min_sev_pref_field );
+				// $t_bug_severity = dwg_get_field( $p_bug_id, 'severity' );
 
-				if( $t_bug_severity < $t_min_sev_notify ) {
-					log_event( LOG_EMAIL_RECIPIENT, 'Document = #%d, drop @U%d (pref threshold)', $p_bug_id, $t_id );
-					continue;
-				}
+				// if( $t_bug_severity < $t_min_sev_notify ) {
+				// 	log_event( LOG_EMAIL_RECIPIENT, 'Document = #%d, drop @U%d (pref threshold)', $p_bug_id, $t_id );
+				// 	continue;
+				// }
 			}
 		}
 
@@ -1211,15 +1212,17 @@ function email_format_dwg_message( array $p_visible_bug_data ) {
 		$t_message .= email_dwg_format_attribute( $p_visible_bug_data, 'email_tag' );
 	}
 
-	if ( isset( $p_visible_bug_data[ 'email_reproducibility' ] ) ) {
-		$p_visible_bug_data['email_reproducibility'] = get_enum_element( 'reproducibility', $p_visible_bug_data['email_reproducibility'] );
-		$t_message .= email_dwg_format_attribute( $p_visible_bug_data, 'email_reproducibility' );
-	}
+	// @TODO RobD - documents do not have a reproducibility field
+	// if ( isset( $p_visible_bug_data[ 'email_reproducibility' ] ) ) {
+	// 	$p_visible_bug_data['email_reproducibility'] = get_enum_element( 'reproducibility', $p_visible_bug_data['email_reproducibility'] );
+	// 	$t_message .= email_dwg_format_attribute( $p_visible_bug_data, 'email_reproducibility' );
+	// }
 		
-	if ( isset( $p_visible_bug_data[ 'email_severity' ] ) ) {
-		$p_visible_bug_data['email_severity'] = get_enum_element( 'severity', $p_visible_bug_data['email_severity'] );
-		$t_message .= email_dwg_format_attribute( $p_visible_bug_data, 'email_severity' );
-	}
+	// @TODO RobD - documents do not have a severity field
+	// if ( isset( $p_visible_bug_data[ 'email_severity' ] ) ) {
+	// 	$p_visible_bug_data['email_severity'] = get_enum_element( 'severity', $p_visible_bug_data['email_severity'] );
+	// 	$t_message .= email_dwg_format_attribute( $p_visible_bug_data, 'email_severity' );
+	// }
 
 	if ( isset( $p_visible_bug_data[ 'email_priority' ] ) ) {
 		$p_visible_bug_data['email_priority'] = get_enum_element( 'priority', $p_visible_bug_data['email_priority'] );
@@ -1232,25 +1235,27 @@ function email_format_dwg_message( array $p_visible_bug_data ) {
 		$t_message .= email_dwg_format_attribute( $p_visible_bug_data, 'email_status' );
 	}
 
-	if ( isset( $p_visible_bug_data[ 'email_target_version' ] ) ) {	
-		$t_message .= email_dwg_format_attribute( $p_visible_bug_data, 'email_target_version' );
-	}
+	// @TODO RobD - documents do not have a target_version field
+	// if ( isset( $p_visible_bug_data[ 'email_target_version' ] ) ) {	
+	// 	$t_message .= email_dwg_format_attribute( $p_visible_bug_data, 'email_target_version' );
+	// }
 
 	# custom fields formatting
-	foreach( $p_visible_bug_data['custom_fields'] as $t_custom_field_name => $t_custom_field_data ) {
-		$t_message .= utf8_str_pad( lang_get_defaulted( $t_custom_field_name ) . ': ', $t_email_padding_length );
-		$t_message .= string_custom_field_value_for_email( $t_custom_field_data['value'], $t_custom_field_data['type'] );
-		$t_message .= " \n";
-	}
+	// foreach( $p_visible_bug_data['custom_fields'] as $t_custom_field_name => $t_custom_field_data ) {
+	// 	$t_message .= utf8_str_pad( lang_get_defaulted( $t_custom_field_name ) . ': ', $t_email_padding_length );
+	// 	$t_message .= string_custom_field_value_for_email( $t_custom_field_data['value'], $t_custom_field_data['type'] );
+	// 	$t_message .= " \n";
+	// }
 
 	# end foreach custom field
 
 	if( isset( $t_status ) && config_get( 'dwg_resolved_status_threshold' ) <= $t_status ) {
 		
-		if ( isset( $p_visible_bug_data[ 'email_resolution' ] ) ) {
-			$p_visible_bug_data['email_resolution'] = get_enum_element( 'resolution', $p_visible_bug_data['email_resolution'] );
-			$t_message .= email_dwg_format_attribute( $p_visible_bug_data, 'email_resolution' );
-		}
+		// @TODO RobD - documents do not have a resolution field
+		// if ( isset( $p_visible_bug_data[ 'email_resolution' ] ) ) {
+		// 	$p_visible_bug_data['email_resolution'] = get_enum_element( 'resolution', $p_visible_bug_data['email_resolution'] );
+		// 	$t_message .= email_dwg_format_attribute( $p_visible_bug_data, 'email_resolution' );
+		// }
 			
 		$t_message .= email_dwg_format_attribute( $p_visible_bug_data, 'email_fixed_in_version' );
 	}
@@ -1267,7 +1272,7 @@ function email_format_dwg_message( array $p_visible_bug_data ) {
 
 	$t_message .= email_dwg_format_attribute( $p_visible_bug_data, 'email_summary' );
 
-	$t_message .= lang_get( 'email_description' ) . ": \n" . $p_visible_bug_data['email_description'] . "\n";
+	// $t_message .= lang_get( 'email_description' ) . ": \n" . $p_visible_bug_data['email_description'] . "\n";
 
 	// if( isset( $p_visible_bug_data[ 'email_steps_to_reproduce' ] ) && !is_blank( $p_visible_bug_data['email_steps_to_reproduce'] ) ) {
 	// 	$t_message .= "\n" . lang_get( 'email_steps_to_reproduce' ) . ": \n" . $p_visible_bug_data['email_steps_to_reproduce'] . "\n";
@@ -1402,8 +1407,7 @@ function email_build_visible_dwg_data( $p_user_id, $p_bug_id, $p_message_id ) {
 	$t_category_name = category_full_name( $t_row['category_id'], false );
 	$t_bug_data['email_category'] = $t_category_name;
 
-	$t_tag_rows = tag_get_attached( $p_bug_id );
-	// $t_tag_rows = tag_dwg_get_attached( $p_bug_id );
+	$t_tag_rows = tag_dwg_get_attached( $p_bug_id );
 	if( in_array( 'tags', $t_bug_view_fields ) && !empty( $t_tag_rows ) && access_compare_level( $t_user_access_level, config_get( 'tag_view_threshold' ) ) ) {
 		$t_bug_data['email_tag'] = '';
 
@@ -1424,35 +1428,41 @@ function email_build_visible_dwg_data( $p_user_id, $p_bug_id, $p_message_id ) {
 	if ( in_array( 'status', $t_bug_view_fields ) ) {	
 		$t_bug_data['email_status'] = $t_row['status'];
 	}
-	
-	if ( in_array( 'severity', $t_bug_view_fields ) ) {	
-		$t_bug_data['email_severity'] = $t_row['severity'];
-	}
+
+	// @TODO RobD - documents do not have a severity field
+	// if ( in_array( 'severity', $t_bug_view_fields ) ) {	
+	// 	$t_bug_data['email_severity'] = $t_row['severity'];
+	// }
 	
 	if ( in_array( 'priority', $t_bug_view_fields ) ) {	
 		$t_bug_data['email_priority'] = $t_row['priority'];
 	}
 
-	if ( in_array( 'reproducibility', $t_bug_view_fields ) ) {
-		$t_bug_data['email_reproducibility'] = $t_row['reproducibility'];
-	}
+	// @TODO RobD - documents do not have a reproducibility field
+	// if ( in_array( 'reproducibility', $t_bug_view_fields ) ) {
+	// 	$t_bug_data['email_reproducibility'] = $t_row['reproducibility'];
+	// }
 	
-	if ( in_array( 'resolution', $t_bug_view_fields ) ) {	
-		$t_bug_data['email_resolution'] = $t_row['resolution'];
-	}
+	// @TODO RobD - documents do not have a resolution field
+	// if ( in_array( 'resolution', $t_bug_view_fields ) ) {	
+	// 	$t_bug_data['email_resolution'] = $t_row['resolution'];
+	// }
 		
 	$t_bug_data['email_fixed_in_version'] = $t_row['fixed_in_version'];
 
-	if( in_array( 'target_version', $t_bug_view_fields ) && !is_blank( $t_row['target_version'] ) && access_compare_level( $t_user_access_level, config_get( 'roadmap_view_threshold' ) ) ) {
-		$t_bug_data['email_target_version'] = $t_row['target_version'];
-	}
+	// @TODO RobD - documents do not have a target_version field
+	// if( in_array( 'target_version', $t_bug_view_fields ) && !is_blank( $t_row['target_version'] ) && access_compare_level( $t_user_access_level, config_get( 'roadmap_view_threshold' ) ) ) {
+	// 	$t_bug_data['email_target_version'] = $t_row['target_version'];
+	// }
 
 	$t_bug_data['email_summary'] = $t_row['summary'];
-	$t_bug_data['email_description'] = $t_row['description'];
+	// @TODO RobD - investigate run-time failure on 'assign to' as documents do have a description field
+	// $t_bug_data['email_description'] = $t_row['description'];
 
-	if( in_array( 'additional_info', $t_bug_view_fields ) ) {
-		$t_bug_data['email_additional_information'] = $t_row['additional_information'];
-	}
+	// @TODO RobD - investigate run-time failure on 'assign to' : do documents do have an additional_information field?
+	// if( in_array( 'additional_info', $t_bug_view_fields ) ) {
+	// 	$t_bug_data['email_additional_information'] = $t_row['additional_information'];
+	// }
 	
 	// if ( in_array( 'steps_to_reproduce', $t_bug_view_fields ) ) {
 	// 	$t_bug_data['email_steps_to_reproduce'] = $t_row['steps_to_reproduce'];
@@ -1460,7 +1470,7 @@ function email_build_visible_dwg_data( $p_user_id, $p_bug_id, $p_message_id ) {
 
 	$t_bug_data['set_category'] = '[' . $t_bug_data['email_project'] . '] ' . $t_category_name;
 
-	$t_bug_data['custom_fields'] = custom_field_get_linked_fields( $p_bug_id, $t_user_access_level );
+	// $t_bug_data['custom_fields'] = custom_field_get_linked_fields( $p_bug_id, $t_user_access_level );
 	$t_bug_data['dwgnotes'] = dwgnote_get_all_visible_dwgnotes( $p_bug_id, $t_user_bugnote_order, $t_user_bugnote_limit, $p_user_id );
 
 	# put history data
