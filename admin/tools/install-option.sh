@@ -1,16 +1,17 @@
 #!/bin/bash
 
-PROJECT="doctis"
+TARGET="doctis"
+GITHUB_USR="Inspirati"
 
 # https://raw.githubusercontent.com/Inspirati/doctis/refs/heads/dev/admin/tools/install-system.sh
-# https://raw.githubusercontent.com/Inspirati/doctis/refs/heads/dev/admin/tools/install-project.sh
+# https://raw.githubusercontent.com/Inspirati/doctis/refs/heads/dev/admin/tools/install-target.sh
 
-GITHUB_URL="https://raw.githubusercontent.com/Inspirati"
-SCRIPT_LOC="${PROJECT}/refs/heads/dev/admin/tools"
+GITHUB_URL="https://raw.githubusercontent.com/${GITHUB_USR}"
+SCRIPT_LOC="${TARGET}/refs/heads/dev/admin/tools"
 SCRIPT_URL="${GITHUB_URL}/${SCRIPT_LOC}"
 
 INSTALL_SYSTEM_SCRIPT="install-system.sh"
-INSTALL_DOCTIS_SCRIPT="install-project.sh"
+INSTALL_TARGET_SCRIPT="install-target.sh"
 
 pushd . > /dev/null
 cd "$(dirname $0)"
@@ -54,11 +55,15 @@ function print_usage() {
     echo "Usage:"
     echo ""
     echo " To install:"
-    echo "   $SCRIPT_DIR install <mysql root password> <database name> <database user> <database password>"
+    echo "   $SCRIPT_DIR install 'option' <mysql root password> <database name> <database user> <database password> <target>"
+    echo "    where option = 'all', 'system', or <target>"
+    echo "    where target = 'doctis' or 'mantisbt'"
     echo ""
     echo " To uninstall:"
     echo "   $SCRIPT_DIR uninstall --really"
     echo ""
+    echo " Example:"
+    echo '   ./install-option.sh install all "localhost" "password" "root@localhost" "gmailapppassword" "doctis"'
     exit
 }
 
@@ -70,17 +75,20 @@ fi
 
 if [ "$1" = "remove" ]; then
     # remove all the application directories, local and webroot
-    echo_info "Removing ${PROJECT}"
+    echo_info "Removing ${TARGET}"
+    # todo: work in progress
 
 elif [ "$1" = "reload" ]; then
     # purge the entire database and create a fresh one
-    echo_info "Reloading ${PROJECT}"
+    echo_info "Reloading ${TARGET}"
+    # todo: work in progress
 
 elif [ "$1" = "refresh" ]; then
     # update the application directories
-    echo_info "Refreshing ${PROJECT}"
+    echo_info "Refreshing ${TARGET}"
     # Pass remaining arguments starting from the second
 #    fetch_and_run ${REFRESH_SYSTEM_SCRIPT} "${@:2}"
+    # todo: work in progress
 
 elif [ "$1" = "install" ]; then
     if [ "$#" -lt 2 ]; then
@@ -90,13 +98,13 @@ elif [ "$1" = "install" ]; then
     fi
     if [ "$2" = "system" ]; then
         fetch_and_run ${INSTALL_SYSTEM_SCRIPT} "${@:3}"
-    elif [ "$2" = "project" ]; then
-        fetch_and_run ${INSTALL_DOCTIS_SCRIPT} "${@:3}"
+    elif [ "$2" = "target" ]; then
+        fetch_and_run ${INSTALL_TARGET_SCRIPT} "${@:3}"
     elif [ "$2" = "all" ]; then
         # Install everything from the system services through to the application launcher
         # Pass remaining arguments starting from the third
         fetch_and_run ${INSTALL_SYSTEM_SCRIPT} "${@:3}"
-        fetch_and_run ${INSTALL_DOCTIS_SCRIPT} "${@:3}"
+        fetch_and_run ${INSTALL_TARGET_SCRIPT} "${@:3}"
 
     else
         echo_info "Invalid install target '$2'"
@@ -106,5 +114,6 @@ else
     exit
 fi
 
-# ./install-doctis.sh install all "localhost" "password" "root@localhost" "gmailapppassword"
+# Example invocation command:
+# ./install-option.sh install all "localhost" "password" "root@localhost" "gmailapppassword" "doctis"
 

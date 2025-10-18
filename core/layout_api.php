@@ -1161,9 +1161,17 @@ function layout_breadcrumbs($p_is_dwg_page = false) {
 	# Bug Jump form
 	# CSRF protection not required here - form does not result in modifications
 	echo '<div id="nav-search" class="nav-search">';
-	echo '<form class="form-search" method="post" action="' . helper_mantis_url( 'jump_to_bug.php' ) . '">';
+	if ( $p_is_dwg_page ) {
+		echo '<form class="form-search" method="post" action="' . helper_mantis_url( 'jump_to_dwg.php' ) . '">';
+	} else {
+		echo '<form class="form-search" method="post" action="' . helper_mantis_url( 'jump_to_bug.php' ) . '">';
+	}
 	echo '<span class="input-icon">';
-	echo '<input type="text" name="bug_id" autocomplete="off" class="nav-search-input" placeholder="' . lang_get( 'issue_id' ) . '">';
+	if ( $p_is_dwg_page ) {
+		echo '<input type="text" name="bug_id" autocomplete="off" class="nav-search-input" placeholder="' . lang_get( 'dwg_issue_id' ) . '">';
+	} else {
+		echo '<input type="text" name="bug_id" autocomplete="off" class="nav-search-input" placeholder="' . lang_get( 'issue_id' ) . '">';
+	}
 	print_icon( 'fa-search', 'ace-icon nav-search-icon' );
 	echo '</span>';
 	echo '</form>';

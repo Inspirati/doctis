@@ -66,7 +66,7 @@ if( $f_bug_id ) {
 	$t_bugnote_id = false;
 	$t_bug_revisions = dwg_revision_list( $t_bug_id );
 
-	$t_title = lang_get( 'issue_id' ) . $t_bug_id;
+	$t_title = lang_get( 'dwg_issue_id' ) . $t_bug_id;
 
 } elseif( $f_bugnote_id ) {
 	$t_bugnote_id = (int)$f_bugnote_id;
@@ -87,7 +87,7 @@ if( $f_bug_id ) {
 	$t_bug_id = $t_rev['dwg_id'];
 	$t_bugnote_id = $t_rev['dwgnote_id'];
 
-	$t_title = lang_get( 'issue_id' ) . $t_bug_id;
+	$t_title = lang_get( 'dwg_issue_id' ) . $t_bug_id;
 
 } else {
 	trigger_error( ERROR_GENERIC, ERROR );

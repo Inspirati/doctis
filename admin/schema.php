@@ -925,7 +925,7 @@ $g_upgrade[$t_idx++] = array( 'CreateTableSQL',
 		duplicate_id	I		UNSIGNED NOTNULL DEFAULT '0',
 		category_id		I		UNSIGNED NOTNULL DEFAULT '1',
 		enabled			L		NOTNULL DEFAULT \" '1' \",
-		status			I2		NOTNULL DEFAULT '10',
+		status			I2		NOTNULL DEFAULT '110',
 		priority		I2		NOTNULL DEFAULT '30',
 		view_state		I2		NOTNULL DEFAULT '10',
 		title			C(255)	NOTNULL,
@@ -967,9 +967,9 @@ $g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'dwg_text' ), "
 	( 'Empty', 'Empty', 'Empty' )" ) );
 
 $g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'document' ), "
-	( title, category_id, dwg_text_id )
+	( title, category_id, dwg_text_id, status )
 	VALUES
-	( 'Empty', '1', '1' )" ) );
+	( 'Empty', '1', '1' '110' )" ) );
 
 # @TODO RobD - extract from dwg_api.php ~line number 1982:
 #    "log changes except for duplicate_id which is obsolete and should be removed in MantisBT 1.3"
