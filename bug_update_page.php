@@ -99,7 +99,7 @@ $t_bug_id = $f_bug_id;
 $t_show_document = false;
 // $t_document_id = (int)$t_issue['document_id'];
 $t_document_id = (int)$t_bug->document_id;
-if ( $t_document_id ) {
+if ( $t_document_id > 1 ) {
 	// $t_force_readonly = $this->option( 'force_readonly', false );
 	$t_force_readonly = true;
 	$t_document_id = (int)$t_bug->document_id;

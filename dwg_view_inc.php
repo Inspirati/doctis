@@ -1106,7 +1106,7 @@ function dwg_view_relationship_get_summary_html( $p_bug_id ) {
 	if( !is_blank( $t_summary ) ) {
 		if( !dwg_relationship_can_resolve_dwg( $p_bug_id ) ) {
 			$t_summary .= '<tr><td colspan="' . ( 5 + $t_show_project ) . '"><strong>' .
-				lang_get( 'relationship_warning_blocking_bugs_not_resolved' ) . '</strong></td></tr>';
+				lang_get( 'relationship_warning_blocking_dwgs_not_resolved' ) . '</strong></td></tr>';
 		}
 		$t_summary = '<table class="table table-bordered table-condensed table-hover">' . $t_summary . '</table>';
 	}

@@ -388,7 +388,7 @@ function filter_dwg_get_url( array $p_custom_filter ) {
 
 	if( count( $t_query ) > 0 ) {
 		$t_query_str = implode( '&', $t_query );
-		$t_url = config_get_global( 'path' ) . 'search.php?' . $t_query_str;
+		$t_url = config_get_global( 'path' ) . 'dwg_search.php?' . $t_query_str;
 	} else {
 		$t_url = '';
 	}
@@ -1956,7 +1956,7 @@ function filter_dwg_create_assigned_to_unresolved( $p_project_id, $p_user_id ) {
 		$t_filter[FILTER_PROPERTY_HANDLER_ID] = array( '0' => $p_user_id );
 	}
 
-	$t_bug_resolved_status_threshold = config_get( 'bug_resolved_status_threshold', null, $p_user_id, $p_project_id );
+	$t_bug_resolved_status_threshold = config_get( 'dwg_resolved_status_threshold', null, $p_user_id, $p_project_id );
 	$t_filter[FILTER_PROPERTY_HIDE_STATUS] = array( '0' => $t_bug_resolved_status_threshold );
 
 	if( $p_project_id != ALL_PROJECTS ) {

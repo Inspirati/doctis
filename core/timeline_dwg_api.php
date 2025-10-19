@@ -41,7 +41,7 @@ require_api( 'history_dwg_api.php' );
  * @param integer $p_user_id	A user id, to limit timeline to a user's history, or null for no limit.
  * @return array
  */
-function timeline_events( $p_start_time, $p_end_time, $p_max_events, $p_filter = null, $p_user_id = null ) {
+function timeline_dwg_events( $p_start_time, $p_end_time, $p_max_events, $p_filter = null, $p_user_id = null ) {
 	$t_timeline_events = array();
 
 	$t_query_options = array();
@@ -133,7 +133,7 @@ function timeline_events( $p_start_time, $p_end_time, $p_max_events, $p_filter =
  * @param array $p_events   Array of events to display
  * @return void
  */
-function timeline_print_events( array $p_events ) {
+function timeline_dwg_print_events( array $p_events ) {
 	if( empty( $p_events ) ) {
 		echo '<h6 class="padding-4">' . lang_get( 'timeline_no_activity' ) . '</h6>';
 	} else {

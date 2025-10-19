@@ -1839,9 +1839,10 @@ $g_default_dwg_eta = ETA_NONE;
  *
  * @global int $g_default_bug_relationship_clone
  */
-$g_default_bug_relationship_clone = BUG_REL_NONE;
-$g_default_dwg_relationship_clone = DWG_REL_NONE;
-
+//$g_default_bug_relationship_clone = BUG_REL_NONE;
+$g_default_bug_relationship_clone = BUG_DUPLICATE;
+//$g_default_dwg_relationship_clone = DWG_REL_NONE;
+$g_default_dwg_relationship_clone = BUG_DUPLICATE;
 /**
  * Allow parent bug to close regardless of child status.
  *

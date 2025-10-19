@@ -130,10 +130,22 @@ function get_status_color( $p_status, $p_user = null, $p_project = null, $p_defa
 	return $p_default_color;
 }
 
+function get_dwg_status_color( $p_status, $p_user = null, $p_project = null, $p_default_color = '#ffffff' ) {
+	$t_status_enum = config_get( 'dwg_status_enum_string', null, $p_user, $p_project );
+	$t_status_colors = config_get( 'status_colors', null, $p_user, $p_project );
+	$t_status_label = MantisEnum::getLabel( $t_status_enum, $p_status );
+
+	if( isset( $t_status_colors[$t_status_label] ) ) {
+		return $t_status_colors[$t_status_label];
+	}
+	return $p_default_color;
+}
+
 /**
  * get the status percentages
  * @return array key is the status value, value is the percentage of bugs for the status
  */
+// @TODO RobD - seemingly unused?
 function get_percentage_by_status() {
 	$t_project_id = helper_get_current_project();
 	$t_user_id = auth_get_current_user_id();

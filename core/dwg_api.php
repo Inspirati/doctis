@@ -504,9 +504,9 @@ $this->author = isset($this->author) ? $this->author : '';
 		# log new bug
 		history_dwg_log_event_special( $this->id, NEW_DWG );
 
-		# log changes, if any (compare happens in history_log_event_direct)
-		history_log_event_direct( $this->id, 'status', $t_original_status, $t_status );
-		history_log_event_direct( $this->id, 'handler_id', 0, $this->handler_id );
+		# log changes, if any (compare happens in history_dwg_log_event_direct)
+		history_dwg_log_event_direct( $this->id, 'status', $t_original_status, $t_status );
+		history_dwg_log_event_direct( $this->id, 'handler_id', 0, $this->handler_id );
 
 		return $this->id;
 	}
@@ -625,32 +625,32 @@ $this->author = isset($this->author) ? $this->author : '';
 		dwg_clear_cache( $this->id );
 
 		# log changes
-		history_log_event_direct( $c_bug_id, 'project_id', $t_old_data->project_id, $this->project_id );
-		history_log_event_direct( $c_bug_id, 'creator_id', $t_old_data->creator_id, $this->creator_id );
-		history_log_event_direct( $c_bug_id, 'handler_id', $t_old_data->handler_id, $this->handler_id );
-		history_log_event_direct( $c_bug_id, 'priority', $t_old_data->priority, $this->priority );
-		history_log_event_direct( $c_bug_id, 'severity', $t_old_data->severity, $this->severity );
-		history_log_event_direct( $c_bug_id, 'reproducibility', $t_old_data->reproducibility, $this->reproducibility );
-		history_log_event_direct( $c_bug_id, 'status', $t_old_data->status, $this->status );
-		history_log_event_direct( $c_bug_id, 'resolution', $t_old_data->resolution, $this->resolution );
-		history_log_event_direct( $c_bug_id, 'projection', $t_old_data->projection, $this->projection );
-		history_log_event_direct( $c_bug_id, 'category', category_full_name( $t_old_data->category_id, false ), category_full_name( $this->category_id, false ) );
-		history_log_event_direct( $c_bug_id, 'eta', $t_old_data->eta, $this->eta );
-		history_log_event_direct( $c_bug_id, 'os', $t_old_data->os, $this->os );
-		history_log_event_direct( $c_bug_id, 'os_build', $t_old_data->os_build, $this->os_build );
-		history_log_event_direct( $c_bug_id, 'platform', $t_old_data->platform, $this->platform );
-		history_log_event_direct( $c_bug_id, 'version', $t_old_data->version, $this->version );
-		history_log_event_direct( $c_bug_id, 'build', $t_old_data->build, $this->build );
-		history_log_event_direct( $c_bug_id, 'fixed_in_version', $t_old_data->fixed_in_version, $this->fixed_in_version );
+		history_dwg_log_event_direct( $c_bug_id, 'project_id', $t_old_data->project_id, $this->project_id );
+		history_dwg_log_event_direct( $c_bug_id, 'creator_id', $t_old_data->creator_id, $this->creator_id );
+		history_dwg_log_event_direct( $c_bug_id, 'handler_id', $t_old_data->handler_id, $this->handler_id );
+		history_dwg_log_event_direct( $c_bug_id, 'priority', $t_old_data->priority, $this->priority );
+		history_dwg_log_event_direct( $c_bug_id, 'severity', $t_old_data->severity, $this->severity );
+		history_dwg_log_event_direct( $c_bug_id, 'reproducibility', $t_old_data->reproducibility, $this->reproducibility );
+		history_dwg_log_event_direct( $c_bug_id, 'status', $t_old_data->status, $this->status );
+		history_dwg_log_event_direct( $c_bug_id, 'resolution', $t_old_data->resolution, $this->resolution );
+		history_dwg_log_event_direct( $c_bug_id, 'projection', $t_old_data->projection, $this->projection );
+		history_dwg_log_event_direct( $c_bug_id, 'category', category_full_name( $t_old_data->category_id, false ), category_full_name( $this->category_id, false ) );
+		history_dwg_log_event_direct( $c_bug_id, 'eta', $t_old_data->eta, $this->eta );
+		history_dwg_log_event_direct( $c_bug_id, 'os', $t_old_data->os, $this->os );
+		history_dwg_log_event_direct( $c_bug_id, 'os_build', $t_old_data->os_build, $this->os_build );
+		history_dwg_log_event_direct( $c_bug_id, 'platform', $t_old_data->platform, $this->platform );
+		history_dwg_log_event_direct( $c_bug_id, 'version', $t_old_data->version, $this->version );
+		history_dwg_log_event_direct( $c_bug_id, 'build', $t_old_data->build, $this->build );
+		history_dwg_log_event_direct( $c_bug_id, 'fixed_in_version', $t_old_data->fixed_in_version, $this->fixed_in_version );
 		// if( $t_roadmap_updated ) {
-		// 	history_log_event_direct( $c_bug_id, 'target_version', $t_old_data->target_version, $this->target_version );
+		// 	history_dwg_log_event_direct( $c_bug_id, 'target_version', $t_old_data->target_version, $this->target_version );
 		// }
-		history_log_event_direct( $c_bug_id, 'view_state', $t_old_data->view_state, $this->view_state );
-		history_log_event_direct( $c_bug_id, 'summary', $t_old_data->summary, $this->summary );
-		history_log_event_direct( $c_bug_id, 'sponsorship_total', $t_old_data->sponsorship_total, $this->sponsorship_total );
-		history_log_event_direct( $c_bug_id, 'sticky', $t_old_data->sticky, $this->sticky );
+		history_dwg_log_event_direct( $c_bug_id, 'view_state', $t_old_data->view_state, $this->view_state );
+		history_dwg_log_event_direct( $c_bug_id, 'summary', $t_old_data->summary, $this->summary );
+		history_dwg_log_event_direct( $c_bug_id, 'sponsorship_total', $t_old_data->sponsorship_total, $this->sponsorship_total );
+		history_dwg_log_event_direct( $c_bug_id, 'sticky', $t_old_data->sticky, $this->sticky );
 
-		history_log_event_direct( $c_bug_id, 'due_date',
+		history_dwg_log_event_direct( $c_bug_id, 'due_date',
 			( $t_old_data->due_date != date_get_null() ) ? $t_old_data->due_date : null,
 			( $this->due_date != date_get_null() ) ? $this->due_date : null
 		);
@@ -1918,11 +1918,11 @@ function dwg_set_field( $p_bug_id, $p_field_name, $p_value ) {
 			break;
 
 		case 'category_id':
-			history_log_event_direct( $p_bug_id, 'category', category_full_name( $t_current_value, false ), category_full_name( $c_value, false ) );
+			history_dwg_log_event_direct( $p_bug_id, 'category', category_full_name( $t_current_value, false ), category_full_name( $c_value, false ) );
 			break;
 
 		default:
-			history_log_event_direct( $p_bug_id, $p_field_name, $t_current_value, $c_value );
+			history_dwg_log_event_direct( $p_bug_id, $p_field_name, $t_current_value, $c_value );
 	}
 
 	dwg_clear_cache( $p_bug_id );
@@ -1973,8 +1973,8 @@ function dwg_assign( $p_bug_id, $p_user_id, $p_bugnote_text = '', $p_bugnote_pri
 		db_query( $t_query, array( $p_user_id, $t_ass_val, $p_bug_id ) );
 
 		# log changes
-		history_log_event_direct( $p_bug_id, 'status', $h_status, $t_ass_val );
-		history_log_event_direct( $p_bug_id, 'handler_id', $h_handler_id, $p_user_id );
+		history_dwg_log_event_direct( $p_bug_id, 'status', $h_status, $t_ass_val );
+		history_dwg_log_event_direct( $p_bug_id, 'handler_id', $h_handler_id, $p_user_id );
 
 		# Add bugnote if supplied ignore false return
 		if( !is_blank( $p_bugnote_text ) ) {

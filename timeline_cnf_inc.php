@@ -22,7 +22,7 @@ require_api( 'helper_api.php' );
 require_api( 'timeline_bug_api.php' );
 require_api( 'timeline_dwg_api.php' );
 
-define( 'MAX_EVENTS', 50 );
+define( 'MAX_CNF_EVENTS', 50 );
 
 # Variables that are defined in parent script:
 #
@@ -41,7 +41,7 @@ if( !isset( $g_timeline_user ) ) {
 
 $f_days = gpc_get_int( 'days', 0 );
 $f_all = gpc_get_int( 'all', 0 );
-$t_max_events = $f_all ? 0 : MAX_EVENTS + 1;
+$t_max_events = $f_all ? 0 : MAX_CNF_EVENTS + 1;
 
 $t_end_time = time() - ( $f_days * SECONDS_PER_DAY );
 $t_start_time = $t_end_time - ( 7 * SECONDS_PER_DAY );
@@ -113,8 +113,8 @@ unset( $t_url_params['all'] );
 		</div>
 
 <?php
-	if( !$f_all && count( $t_events ) > MAX_EVENTS ) {
-		$t_events = array_slice( $t_events, 0, MAX_EVENTS );
+	if( !$f_all && count( $t_events ) > MAX_CNF_EVENTS ) {
+		$t_events = array_slice( $t_events, 0, MAX_CNF_EVENTS );
 		timeline_print_events( $t_events );
 		echo '<div class="widget-toolbox">';
 		echo '<div class="btn-toolbar">';

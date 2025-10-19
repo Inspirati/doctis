@@ -427,9 +427,9 @@ class DwgFilterQuery extends DbQuery {
 				case FILTER_PROPERTY_MONITOR_USER_ID:
 					$this->build_prop_monitor_by();
 					break;
-		// 		case FILTER_PROPERTY_NOTE_USER_ID:
-		// 			$this->build_prop_note_by();
-		// 			break;
+				case FILTER_PROPERTY_NOTE_USER_ID:
+					$this->build_prop_note_by();
+					break;
 				case FILTER_PROPERTY_FILTER_BY_DATE_SUBMITTED:
 					$this->build_prop_date_created();
 					break;
@@ -442,12 +442,12 @@ class DwgFilterQuery extends DbQuery {
 				case FILTER_PROPERTY_VERSION:
 					$this->build_prop_version();
 					break;
-		// 		case FILTER_PROPERTY_FIXED_IN_VERSION:
-		// 			$this->build_prop_fixed_version();
-		// 			break;
-		// 		case FILTER_PROPERTY_TARGET_VERSION:
-		// 			$this->build_prop_target_version();
-		// 			break;
+				case FILTER_PROPERTY_FIXED_IN_VERSION:
+					$this->build_prop_fixed_version();
+					break;
+				case FILTER_PROPERTY_TARGET_VERSION:
+					$this->build_prop_target_version();
+					break;
 				case FILTER_PROPERTY_VIEW_STATE:
 					$this->build_prop_view_state();
 					break;
@@ -457,12 +457,12 @@ class DwgFilterQuery extends DbQuery {
 		// 		case FILTER_PROPERTY_SEVERITY:
 		// 			$this->build_prop_severity();
 		// 			break;
-		// 		case FILTER_PROPERTY_RESOLUTION:
-		// 			$this->build_prop_resolution();
-		// 			break;
-		// 		case FILTER_PROPERTY_PRIORITY:
-		// 			$this->build_prop_priority();
-		// 			break;
+				case FILTER_PROPERTY_RESOLUTION:
+					$this->build_prop_resolution();
+					break;
+				case FILTER_PROPERTY_PRIORITY:
+					$this->build_prop_priority();
+					break;
 				case FILTER_PROPERTY_PROFILE_ID:
 					$this->build_prop_profile();
 					break;
@@ -478,9 +478,9 @@ class DwgFilterQuery extends DbQuery {
 		// 		case FILTER_PROPERTY_SEARCH:
 		// 			$this->build_prop_search();
 		// 			break;
-		// 		case FILTER_PROPERTY_RELATIONSHIP_TYPE:
-		// 			$this->build_prop_relationship();
-		// 			break;
+				case FILTER_PROPERTY_RELATIONSHIP_TYPE:
+					$this->build_prop_relationship();
+					break;
 		// 		case FILTER_PROPERTY_PROJECTION:
 		// 			$this->build_prop_projection();
 		// 			break;
@@ -908,29 +908,29 @@ class DwgFilterQuery extends DbQuery {
 	// 	$this->add_where( $t_query );
 	// }
 
-	// /**
-	//  * Build the query parts for the filter property "resolution"
-	//  * @return void
-	//  */
-	// protected function build_prop_resolution() {
-	// 	if( filter_dwg_field_is_any( $this->filter[FILTER_PROPERTY_RESOLUTION] ) ) {
-	// 		return;
-	// 	}
-	// 	$t_query = $this->sql_in( '{document}.resolution', $this->filter[FILTER_PROPERTY_RESOLUTION] );
-	// 	$this->add_where( $t_query );
-	// }
+	/**
+	 * Build the query parts for the filter property "resolution"
+	 * @return void
+	 */
+	protected function build_prop_resolution() {
+		if( filter_dwg_field_is_any( $this->filter[FILTER_PROPERTY_RESOLUTION] ) ) {
+			return;
+		}
+		$t_query = $this->sql_in( '{document}.resolution', $this->filter[FILTER_PROPERTY_RESOLUTION] );
+		$this->add_where( $t_query );
+	}
 
-	// /**
-	//  * Build the query parts for the filter property "priority"
-	//  * @return void
-	//  */
-	// protected function build_prop_priority() {
-	// 	if( filter_dwg_field_is_any( $this->filter[FILTER_PROPERTY_PRIORITY] ) ) {
-	// 		return;
-	// 	}
-	// 	$t_query = $this->sql_in( '{document}.priority', $this->filter[FILTER_PROPERTY_PRIORITY] );
-	// 	$this->add_where( $t_query );
-	// }
+	/**
+	 * Build the query parts for the filter property "priority"
+	 * @return void
+	 */
+	protected function build_prop_priority() {
+		if( filter_dwg_field_is_any( $this->filter[FILTER_PROPERTY_PRIORITY] ) ) {
+			return;
+		}
+		$t_query = $this->sql_in( '{document}.priority', $this->filter[FILTER_PROPERTY_PRIORITY] );
+		$this->add_where( $t_query );
+	}
 
 	// /**
 	//  * Build the query parts for the filter property "projection"
@@ -1063,31 +1063,31 @@ class DwgFilterQuery extends DbQuery {
 	// 	$this->add_where( $t_query );
 	// }
 
-	// /**
-	//  * Build the query parts for the filter property "fixed in version"
-	//  * @return void
-	//  */
-	// protected function build_prop_fixed_version() {
-	// 	if( filter_dwg_field_is_any( $this->filter[FILTER_PROPERTY_FIXED_IN_VERSION] ) ) {
-	// 		return;
-	// 	}
-	// 	$t_array = $this->helper_process_string_property( $this->filter[FILTER_PROPERTY_FIXED_IN_VERSION] );
-	// 	$t_query = $this->sql_in( '{document}.fixed_in_version', $t_array );
-	// 	$this->add_where( $t_query );
-	// }
+	/**
+	 * Build the query parts for the filter property "fixed in version"
+	 * @return void
+	 */
+	protected function build_prop_fixed_version() {
+		if( filter_dwg_field_is_any( $this->filter[FILTER_PROPERTY_FIXED_IN_VERSION] ) ) {
+			return;
+		}
+		$t_array = $this->helper_process_string_property( $this->filter[FILTER_PROPERTY_FIXED_IN_VERSION] );
+		$t_query = $this->sql_in( '{document}.fixed_in_version', $t_array );
+		$this->add_where( $t_query );
+	}
 
-	// /**
-	//  * Build the query parts for the filter property "target version"
-	//  * @return void
-	//  */
-	// protected function build_prop_target_version() {
-	// 	if( filter_dwg_field_is_any( $this->filter[FILTER_PROPERTY_TARGET_VERSION] ) ) {
-	// 		return;
-	// 	}
-	// 	$t_array = $this->helper_process_string_property( $this->filter[FILTER_PROPERTY_TARGET_VERSION] );
-	// 	$t_query = $this->sql_in( '{document}.target_version', $t_array );
-	// 	$this->add_where( $t_query );
-	// }
+	/**
+	 * Build the query parts for the filter property "target version"
+	 * @return void
+	 */
+	protected function build_prop_target_version() {
+		if( filter_dwg_field_is_any( $this->filter[FILTER_PROPERTY_TARGET_VERSION] ) ) {
+			return;
+		}
+		$t_array = $this->helper_process_string_property( $this->filter[FILTER_PROPERTY_TARGET_VERSION] );
+		$t_query = $this->sql_in( '{document}.target_version', $t_array );
+		$this->add_where( $t_query );
+	}
 
 	/**
 	 * Build the query parts for the filter property "monitor by"
@@ -1138,135 +1138,135 @@ class DwgFilterQuery extends DbQuery {
 	 *
 	 * @return string	A table alias for this join clause
 	 */
-	// protected function helper_table_alias_for_bugnote() {
-	// 	if( $this->rt_table_alias_bugnote ) {
-	// 		return $this->rt_table_alias_bugnote;
-	// 	}
-	// 	# Build a condition for determining note visibility, the user can view:
-	// 	# - public notes
-	// 	# - his own private notes
-	// 	# - private notes if meets access level for 'private_bugnote_threshold'
-	// 	$t_projects_can_view_private = $this->helper_filter_projects_using_access( 'private_bugnote_threshold' );
-	// 	$t_table_alias = 'visible_bugnote';
-	// 	if( ALL_PROJECTS == $t_projects_can_view_private ) {
-	// 		$t_view_condition = null;
-	// 	} else {
-	// 		$t_view_condition = $t_table_alias . '.view_state = ' . $this->param( VS_PUBLIC )
-	// 				. ' OR ' . $t_table_alias . '.creator_id = ' . $this->param( $this->user_id );
-	// 		if( !empty( $t_projects_can_view_private ) ) {
-	// 			$t_view_condition .= ' OR ' . $this->sql_in( '{document}.project_id', $t_projects_can_view_private );
-	// 		}
-	// 	}
-	// 	if( $t_view_condition ) {
-	// 		$t_view_condition = ' AND (' . $t_view_condition . ')';
-	// 	}
-	// 	$t_join = 'LEFT JOIN {dwgnote} ' . $t_table_alias
-	// 			. ' ON {document}.id = ' . $t_table_alias . '.dwg_id'
-	// 			. $t_view_condition;
+	protected function helper_table_alias_for_bugnote() {
+		if( $this->rt_table_alias_bugnote ) {
+			return $this->rt_table_alias_bugnote;
+		}
+		# Build a condition for determining note visibility, the user can view:
+		# - public notes
+		# - his own private notes
+		# - private notes if meets access level for 'private_bugnote_threshold'
+		$t_projects_can_view_private = $this->helper_filter_projects_using_access( 'private_dwgnote_threshold' );
+		$t_table_alias = 'visible_dwgnote';
+		if( ALL_PROJECTS == $t_projects_can_view_private ) {
+			$t_view_condition = null;
+		} else {
+			$t_view_condition = $t_table_alias . '.view_state = ' . $this->param( VS_PUBLIC )
+					. ' OR ' . $t_table_alias . '.creator_id = ' . $this->param( $this->user_id );
+			if( !empty( $t_projects_can_view_private ) ) {
+				$t_view_condition .= ' OR ' . $this->sql_in( '{document}.project_id', $t_projects_can_view_private );
+			}
+		}
+		if( $t_view_condition ) {
+			$t_view_condition = ' AND (' . $t_view_condition . ')';
+		}
+		$t_join = 'LEFT JOIN {dwgnote} ' . $t_table_alias
+				. ' ON {document}.id = ' . $t_table_alias . '.dwg_id'
+				. $t_view_condition;
 
-	// 	$this->add_join( $t_join );
-	// 	$this->rt_table_alias_bugnote = $t_table_alias;
-	// 	return $this->rt_table_alias_bugnote;
-	// }
+		$this->add_join( $t_join );
+		$this->rt_table_alias_bugnote = $t_table_alias;
+		return $this->rt_table_alias_bugnote;
+	}
 
 	/**
 	 * Build the query parts for the filter property "note by"
 	 * @return void
 	 */
-	// protected function build_prop_note_by() {
-	// 	if( filter_dwg_field_is_any( $this->filter[FILTER_PROPERTY_NOTE_USER_ID] ) ) {
-	// 		return;
-	// 	}
-	// 	$t_user_ids = $this->helper_process_users_property( $this->filter[FILTER_PROPERTY_NOTE_USER_ID] );
-	// 	$t_use_none = ( in_array( 0, $t_user_ids ) );
+	protected function build_prop_note_by() {
+		if( filter_dwg_field_is_any( $this->filter[FILTER_PROPERTY_NOTE_USER_ID] ) ) {
+			return;
+		}
+		$t_user_ids = $this->helper_process_users_property( $this->filter[FILTER_PROPERTY_NOTE_USER_ID] );
+		$t_use_none = ( in_array( 0, $t_user_ids ) );
 
-	// 	$t_table_alias = $this->helper_table_alias_for_bugnote();
+		$t_table_alias = $this->helper_table_alias_for_bugnote();
 
-	// 	if( $t_use_none ) {
-	// 		$t_alias = 'COALESCE( ' . $t_table_alias . '.creator_id, 0 )';
-	// 	} else {
-	// 		$t_alias = $t_table_alias . '.creator_id';
-	// 	}
+		if( $t_use_none ) {
+			$t_alias = 'COALESCE( ' . $t_table_alias . '.creator_id, 0 )';
+		} else {
+			$t_alias = $t_table_alias . '.creator_id';
+		}
 
-	// 	$t_where = $this->sql_in( $t_alias, $t_user_ids );
-	// 	$this->add_where( $t_where );
-	// }
+		$t_where = $this->sql_in( $t_alias, $t_user_ids );
+		$this->add_where( $t_where );
+	}
 
 	/**
 	 * Build the query parts for the filter property "relationship"
 	 * @return void
 	 */
-	// protected function build_prop_relationship() {
-	// 	$c_rel_type = (int)$this->filter[FILTER_PROPERTY_RELATIONSHIP_TYPE];
-	// 	$c_rel_bug = (int)$this->filter[FILTER_PROPERTY_RELATIONSHIP_DWG];
-	// 	if( BUG_REL_ANY == $c_rel_type && META_FILTER_ANY == $c_rel_bug ) {
-	// 		return;
-	// 	}
-	// 	# use the complementary type
-	// 	if( $c_rel_type >= 0 ) {
-	// 		$t_comp_type = relationship_get_complementary_type( $c_rel_type );
-	// 	}
-	// 	$t_table_dst = 'rel_dst';
-	// 	$t_table_src = 'rel_src';
-	// 	$t_use_join = true;
+	protected function build_prop_relationship() {
+		$c_rel_type = (int)$this->filter[FILTER_PROPERTY_RELATIONSHIP_TYPE];
+		$c_rel_bug = (int)$this->filter[FILTER_PROPERTY_RELATIONSHIP_DWG];
+		if( DWG_REL_ANY == $c_rel_type && META_FILTER_ANY == $c_rel_bug ) {
+			return;
+		}
+		# use the complementary type
+		if( $c_rel_type >= 0 ) {
+			$t_comp_type = relationship_get_complementary_type( $c_rel_type );
+		}
+		$t_table_dst = 'rel_dst';
+		$t_table_src = 'rel_src';
+		$t_use_join = true;
 
-	// 	# build conditions for relation type and bug match
-	// 	if( BUG_REL_NONE == $c_rel_type ) {
-	// 		if( META_FILTER_NONE == $c_rel_bug
-	// 			|| META_FILTER_ANY == $c_rel_bug ) {
-	// 			# rel NONE, bug ANY/NONE, those bugs that are not related in any way to another
-	// 			$t_where = $t_table_dst . '.relationship_type IS NULL AND ' . $t_table_src . '.relationship_type IS NULL';
-	// 		} else {
-	// 			# rel NONE, bug ID, those bugs that are not related in any way to bug ID
-	// 			# also, exclude target id from results
-	// 			$t_where = 'NOT EXISTS ( SELECT 1 FROM {bug_relationship} WHERE source_dwg_id = ' . $this->param( $c_rel_bug )
-	// 					. ' AND destination_dwg_id = {document}.id'
-	// 					. ' OR destination_dwg_id = ' . $this->param( $c_rel_bug )
-	// 					. ' AND source_dwg_id = {document}.id )'
-	// 					. ' AND NOT {document}.id = ' . $this->param( $c_rel_bug );
-	// 			$t_use_join = false;
-	// 		}
-	// 	} elseif( BUG_REL_ANY == $c_rel_type ) {
-	// 		if( META_FILTER_NONE == $c_rel_bug ) {
-	// 			# rel ANY, bug NONE, bugs that are not related in any way to another
-	// 			$t_where = $t_table_dst . '.relationship_type IS NULL AND ' . $t_table_src . '.relationship_type IS NULL';
-	// 		} elseif ( META_FILTER_ANY == $c_rel_bug ) {
-	// 			# rel ANY, bug ANY, do nothing
-	// 			return;
-	// 		} else {
-	// 			# rel ANY, bug ID, those bugs that have any relation to bug ID
-	// 			$t_where = '(' . $t_table_dst . '.source_dwg_id = ' . $this->param( $c_rel_bug )
-	// 					. ' OR ' . $t_table_src . '.destination_dwg_id = ' . $this->param( $c_rel_bug ) . ')';
-	// 		}
-	// 	} else {
-	// 		# relation is specified
-	// 		if( META_FILTER_NONE == $c_rel_bug ) {
-	// 			# rel REL, bug NONE, those bugs that don't have any REL relation (may have other types)
-	// 			# map to a non-existent relation type -1 to include nulls
-	// 			$t_where = 'COALESCE(' . $t_table_dst . '.relationship_type, -1) <> ' . $this->param( $t_comp_type )
-	// 					. ' AND COALESCE(' . $t_table_src . '.relationship_type, -1) <> ' . $this->param( $c_rel_type );
-	// 		} elseif( META_FILTER_ANY == $c_rel_bug ) {
-	// 			# rel REL, bug ANY, those bugs that are related by REL to any bug
-	// 			$t_where = '(' . $t_table_dst . '.relationship_type=' . $this->param( $t_comp_type )
-	// 					. ' OR ' . $t_table_src . '.relationship_type=' . $this->param( $c_rel_type ) . ')';
-	// 		} else {
-	// 			# rel REL, bug ID, those bugs that are related by REL to bug ID
-	// 			$t_where = '('
-	// 					. $t_table_dst . '.relationship_type=' . $this->param( $t_comp_type )
-	// 					. ' AND ' . $t_table_dst . '.source_dwg_id=' . $this->param( $c_rel_bug )
-	// 					. ' OR '
-	// 					. $t_table_src . '.relationship_type=' . $this->param( $c_rel_type )
-	// 					. ' AND ' . $t_table_src . '.destination_dwg_id=' . $this->param( $c_rel_bug )
-	// 					. ')';
-	// 		}
-	// 	}
+		# build conditions for relation type and bug match
+		if( BUG_REL_NONE == $c_rel_type ) {
+			if( META_FILTER_NONE == $c_rel_bug
+				|| META_FILTER_ANY == $c_rel_bug ) {
+				# rel NONE, bug ANY/NONE, those bugs that are not related in any way to another
+				$t_where = $t_table_dst . '.relationship_type IS NULL AND ' . $t_table_src . '.relationship_type IS NULL';
+			} else {
+				# rel NONE, bug ID, those bugs that are not related in any way to bug ID
+				# also, exclude target id from results
+				$t_where = 'NOT EXISTS ( SELECT 1 FROM {dwg_relationship} WHERE source_dwg_id = ' . $this->param( $c_rel_bug )
+						. ' AND destination_dwg_id = {document}.id'
+						. ' OR destination_dwg_id = ' . $this->param( $c_rel_bug )
+						. ' AND source_dwg_id = {document}.id )'
+						. ' AND NOT {document}.id = ' . $this->param( $c_rel_bug );
+				$t_use_join = false;
+			}
+		} elseif( DWG_REL_ANY == $c_rel_type ) {
+			if( META_FILTER_NONE == $c_rel_bug ) {
+				# rel ANY, bug NONE, bugs that are not related in any way to another
+				$t_where = $t_table_dst . '.relationship_type IS NULL AND ' . $t_table_src . '.relationship_type IS NULL';
+			} elseif ( META_FILTER_ANY == $c_rel_bug ) {
+				# rel ANY, bug ANY, do nothing
+				return;
+			} else {
+				# rel ANY, bug ID, those bugs that have any relation to bug ID
+				$t_where = '(' . $t_table_dst . '.source_dwg_id = ' . $this->param( $c_rel_bug )
+						. ' OR ' . $t_table_src . '.destination_dwg_id = ' . $this->param( $c_rel_bug ) . ')';
+			}
+		} else {
+			# relation is specified
+			if( META_FILTER_NONE == $c_rel_bug ) {
+				# rel REL, bug NONE, those bugs that don't have any REL relation (may have other types)
+				# map to a non-existent relation type -1 to include nulls
+				$t_where = 'COALESCE(' . $t_table_dst . '.relationship_type, -1) <> ' . $this->param( $t_comp_type )
+						. ' AND COALESCE(' . $t_table_src . '.relationship_type, -1) <> ' . $this->param( $c_rel_type );
+			} elseif( META_FILTER_ANY == $c_rel_bug ) {
+				# rel REL, bug ANY, those bugs that are related by REL to any bug
+				$t_where = '(' . $t_table_dst . '.relationship_type=' . $this->param( $t_comp_type )
+						. ' OR ' . $t_table_src . '.relationship_type=' . $this->param( $c_rel_type ) . ')';
+			} else {
+				# rel REL, bug ID, those bugs that are related by REL to bug ID
+				$t_where = '('
+						. $t_table_dst . '.relationship_type=' . $this->param( $t_comp_type )
+						. ' AND ' . $t_table_dst . '.source_dwg_id=' . $this->param( $c_rel_bug )
+						. ' OR '
+						. $t_table_src . '.relationship_type=' . $this->param( $c_rel_type )
+						. ' AND ' . $t_table_src . '.destination_dwg_id=' . $this->param( $c_rel_bug )
+						. ')';
+			}
+		}
 
-	// 	if( $t_use_join ) {
-	// 		$this->add_join( 'LEFT JOIN {bug_relationship} ' . $t_table_dst . ' ON ' . $t_table_dst . '.destination_dwg_id = {document}.id' );
-	// 		$this->add_join( 'LEFT JOIN {bug_relationship} ' . $t_table_src . ' ON ' . $t_table_src . '.source_dwg_id = {document}.id' );
-	// 	}
-	// 	$this->add_where( $t_where );
-	// }
+		if( $t_use_join ) {
+			$this->add_join( 'LEFT JOIN {dwg_relationship} ' . $t_table_dst . ' ON ' . $t_table_dst . '.destination_dwg_id = {document}.id' );
+			$this->add_join( 'LEFT JOIN {dwg_relationship} ' . $t_table_src . ' ON ' . $t_table_src . '.source_dwg_id = {document}.id' );
+		}
+		$this->add_where( $t_where );
+	}
 
 	/**
 	 * Utility function to return the projects, from the current filter scope, that meets some

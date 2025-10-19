@@ -1491,12 +1491,12 @@ function email_build_visible_bug_data( $p_user_id, $p_bug_id, $p_message_id ) {
  * Return formatted string with all the details on the requested relationship.
  *
  * @param int                 $p_bug_id       A bug identifier.
- * @param DwgRelationshipData $p_relationship A bug relationship object.
+ * @param BugRelationshipData $p_relationship A bug relationship object.
  *
  * @return string
  * @throws ClientException
  */
-function email_relationship_get_details( $p_bug_id, DwgRelationshipData $p_relationship ) {
+function email_relationship_get_details( $p_bug_id, BugRelationshipData $p_relationship ) {
 	$t_summary_wrap_at = mb_strlen( config_get( 'email_separator2' ) ) - 28;
 
 	if( $p_bug_id == $p_relationship->src_bug_id ) {

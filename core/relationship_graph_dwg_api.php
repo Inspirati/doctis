@@ -533,7 +533,7 @@ function dwg_relgraph_add_bug_to_graph( Graph &$p_graph, $p_bug_id, BugData $p_b
 		$t_node_attributes['style'] = 'filled';
 	}
 
-	$t_node_attributes['fillcolor'] = get_status_color( $p_bug->status );
+	$t_node_attributes['fillcolor'] = get_dwg_status_color( $p_bug->status );
 
 	if( null !== $p_url ) {
 		$t_node_attributes['URL'] = $p_url;

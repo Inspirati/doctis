@@ -37,11 +37,11 @@ require_once( 'core.php' );
 require_api( 'authentication_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
-require_api( 'filter_api.php' );
+require_api( 'filter_dwg_api.php' );
 require_api( 'filter_constants_inc.php' );
 require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
-require_api( 'print_api.php' );
+require_api( 'print_dwg_api.php' );
 
 auth_ensure_user_authenticated();
 
@@ -50,7 +50,7 @@ $f_print = gpc_get_bool( 'print' );
 gpc_make_array( FILTER_PROPERTY_CATEGORY_ID );
 gpc_make_array( FILTER_PROPERTY_SEVERITY );
 gpc_make_array( FILTER_PROPERTY_STATUS );
-gpc_make_array( FILTER_PROPERTY_REPORTER_ID );
+gpc_make_array( FILTER_PROPERTY_CREATOR_ID );
 gpc_make_array( FILTER_PROPERTY_HANDLER_ID );
 gpc_make_array( FILTER_PROPERTY_PROJECT_ID );
 gpc_make_array( FILTER_PROPERTY_PROJECTION );
@@ -68,14 +68,14 @@ gpc_make_array( FILTER_PROPERTY_MONITOR_USER_ID );
 gpc_make_array( FILTER_PROPERTY_VIEW_STATE );
 gpc_make_array( FILTER_PROPERTY_NOTE_USER_ID );
 
-$t_my_filter = filter_get_default();
+$t_my_filter = filter_dwg_get_default();
 
 # gpc_get_*_array functions expect 2nd param to be an array
 $t_meta_filter_any_array = array( META_FILTER_ANY );
 
 $t_my_filter[FILTER_PROPERTY_SEARCH] = gpc_get_string( FILTER_PROPERTY_SEARCH, '' );
 $t_my_filter[FILTER_PROPERTY_CATEGORY_ID] = gpc_get_string_array( FILTER_PROPERTY_CATEGORY_ID, $t_meta_filter_any_array );
-$t_my_filter[FILTER_PROPERTY_REPORTER_ID] = gpc_get_string_array( FILTER_PROPERTY_REPORTER_ID, $t_meta_filter_any_array );
+$t_my_filter[FILTER_PROPERTY_CREATOR_ID] = gpc_get_string_array( FILTER_PROPERTY_CREATOR_ID, $t_meta_filter_any_array );
 $t_my_filter[FILTER_PROPERTY_HANDLER_ID] = gpc_get_string_array( FILTER_PROPERTY_HANDLER_ID, $t_meta_filter_any_array );
 $t_my_filter[FILTER_PROPERTY_SEVERITY] = gpc_get_string_array( FILTER_PROPERTY_SEVERITY, $t_meta_filter_any_array );
 
@@ -121,7 +121,7 @@ $t_my_filter[FILTER_PROPERTY_LAST_UPDATED_END_YEAR] = gpc_get_int( FILTER_PROPER
 $t_my_filter[FILTER_PROPERTY_RELATIONSHIP_TYPE] = gpc_get_int( FILTER_PROPERTY_RELATIONSHIP_TYPE, -1 );
 $t_my_filter[FILTER_PROPERTY_RELATIONSHIP_BUG] = gpc_get_int( FILTER_PROPERTY_RELATIONSHIP_BUG, 0 );
 
-$t_my_filter[FILTER_PROPERTY_HIDE_STATUS] = gpc_get_int( FILTER_PROPERTY_HIDE_STATUS, config_get( 'hide_status_default' ) );
+$t_my_filter[FILTER_PROPERTY_HIDE_STATUS] = gpc_get_int( FILTER_PROPERTY_HIDE_STATUS, config_get( 'dwg_hide_status_default' ) );
 $t_my_filter[FILTER_PROPERTY_STICKY] = gpc_get_bool( FILTER_PROPERTY_STICKY, config_get( 'show_sticky_issues' ) );
 
 $t_my_filter[FILTER_PROPERTY_SORT_FIELD_NAME] = gpc_get_string( FILTER_PROPERTY_SORT_FIELD_NAME, '' );
@@ -145,7 +145,7 @@ foreach( $_GET as $t_var_name => $t_var_value ) {
 $t_my_filter['custom_fields'] = $t_custom_fields;
 
 # Handle class-based filters defined by plugins
-$t_plugin_filters = filter_get_plugin_filters();
+$t_plugin_filters = filter_dwg_get_plugin_filters();
 foreach( $t_plugin_filters as $t_field_name => $t_filter_object ) {
     switch( $t_filter_object->type ) {
         case FILTER_TYPE_STRING:
@@ -170,18 +170,18 @@ foreach( $t_plugin_filters as $t_field_name => $t_filter_object ) {
 # selections are handled.
 $t_my_filter['_view_type'] = FILTER_VIEW_TYPE_ADVANCED;
 
-$t_setting_arr = filter_ensure_valid_filter( $t_my_filter );
+$t_setting_arr = filter_dwg_ensure_valid_filter( $t_my_filter );
 
 # set the filter for use, for current user
 # Note: This will overwrite the filter in use/default for current project and user.
-$t_temporary_key = filter_temporary_set( $t_setting_arr );
+$t_temporary_key = filter_dwg_temporary_set( $t_setting_arr );
 
 # redirect to print_all or view_all page
 if( $f_print ) {
-	$t_redirect_url = 'print_all_bug_page.php';
+	$t_redirect_url = 'print_dwg_page.php';
 } else {
-	$t_redirect_url = 'view_all_bug_page.php';
+	$t_redirect_url = 'view_dwg_page.php';
 }
-$t_redirect_url .= '?' . filter_get_temporary_key_param( $t_temporary_key );
+$t_redirect_url .= '?' . filter_dwg_get_temporary_key_param( $t_temporary_key );
 
-print_header_redirect( $t_redirect_url );
+print_dwg_header_redirect( $t_redirect_url );
