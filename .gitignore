@@ -56,6 +56,7 @@ composer.phar
 # PHPUnit
 .phpunit.result.cache
 
+version.json
 
 # Settings below are for convenience when switching branches on Dev machines
 

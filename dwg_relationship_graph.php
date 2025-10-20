@@ -64,7 +64,7 @@ if( ON != config_get( 'relationship_graph_enable' ) ) {
 $f_bug_id		= gpc_get_int( 'bug_id' );
 $f_type			= gpc_get_string( 'graph', 'relation' );
 $f_orientation	= gpc_get_string( 'orientation', config_get( 'relationship_graph_orientation' ) );
-$f_show_summary	= gpc_get_bool( 'summary', false );
+$f_show_summary	= gpc_get_bool( 'summary', true );
 
 if( 'relation' == $f_type ) {
 	$t_graph_type = 'relation';
@@ -146,7 +146,7 @@ layout_page_begin(null, true);
 		. '&graph=' . $t_graph_type
 		. '&orientation=' . $t_graph_orientation
 		. '&summary=' . !$f_show_summary,
-		lang_get( $f_show_summary ? 'hide_summary' : 'show_summary' )
+		lang_get( $f_show_summary ? 'hide_title' : 'show_title' )
 	);
 ?>
 				</div>

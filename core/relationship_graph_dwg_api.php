@@ -66,7 +66,7 @@ require_api( 'utility_api.php' );
  * @param integer $p_bug_id ID of the bug to pretty format.
  * @return string Pretty formatted bug ID
  */
-function dwg_relgraph_bug_format_id( $p_bug_id ) {
+function dwg_relgraph_dwg_format_id( $p_bug_id ) {
 	$t_pretty_bug_id = dwg_format_id( $p_bug_id );
 	if( !preg_match( '/^(([a-zA-z_][0-9a-zA-Z_]*)|(\d+))$/', $t_pretty_bug_id ) ) {
 		$t_pretty_bug_id = $p_bug_id;
@@ -151,7 +151,7 @@ function dwg_relgraph_generate_rel_graph( $p_bug_id, $p_show_summary = false ) {
 	# We have already collected all the information we need to generate
 	# the graph. Now it is the matter to create a Digraph object and
 	# store the information there, along with graph formatting attributes.
-	$t_id_string = dwg_relgraph_bug_format_id( $p_bug_id );
+	$t_id_string = dwg_relgraph_dwg_format_id( $p_bug_id );
 	$t_graph_fontname = config_get( 'relationship_graph_fontname' );
 	$t_graph_fontsize = config_get( 'relationship_graph_fontsize' );
 	$t_graph_fontpath = get_font_path();
@@ -183,13 +183,13 @@ function dwg_relgraph_generate_rel_graph( $p_bug_id, $p_show_summary = false ) {
 			'dir'		=> 'none'
 	) );
 
-	$t_url_format = 'bug_relationship_graph.php?bug_id=%d&graph=relation'
+	$t_url_format = 'dwg_relationship_graph.php?bug_id=%d&graph=relation'
 		. ( $p_show_summary ? '&summary=1' : '' );
 
 	# Add all issue nodes and edges to the graph.
 	ksort( $v_bug_list );
 	foreach( $v_bug_list as $t_id => $t_bug ) {
-		$t_id_string = dwg_relgraph_bug_format_id( $t_id );
+		$t_id_string = dwg_relgraph_dwg_format_id( $t_id );
 
 		if( $t_view_on_click ) {
 			$t_url = string_get_dwg_view_url( $t_id );
@@ -197,7 +197,7 @@ function dwg_relgraph_generate_rel_graph( $p_bug_id, $p_show_summary = false ) {
 			$t_url = sprintf( $t_url_format, $t_id );
 		}
 
-		dwg_relgraph_add_bug_to_graph( $t_graph, $t_id_string, $t_bug, $t_url, $t_id == $p_bug_id, $p_show_summary );
+		dwg_relgraph_add_dwg_to_graph( $t_graph, $t_id_string, $t_bug, $t_url, $t_id == $p_bug_id, $p_show_summary );
 
 		# Now add all relationship edges to the graph.
 		if( isset( $v_rel_list[$t_id] ) ) {
@@ -213,7 +213,7 @@ function dwg_relgraph_generate_rel_graph( $p_bug_id, $p_show_summary = false ) {
 					continue;
 				}
 
-				$t_related_id = dwg_relgraph_bug_format_id( $t_dst );
+				$t_related_id = dwg_relgraph_dwg_format_id( $t_dst );
 
 				global $g_relationships;
 				if( isset( $g_relationships[$t_relation] ) && isset( $g_relationships[$t_relation]['#edge_style'] ) ) {
@@ -281,7 +281,7 @@ function dwg_relgraph_generate_dep_graph( $p_bug_id, $p_horizontal = false, $p_s
 	# We have already collected all the information we need to generate
 	# the graph. Now it is the matter to create a Digraph object and
 	# store the information there, along with graph formatting attributes.
-	$t_id_string = dwg_relgraph_bug_format_id( $p_bug_id );
+	$t_id_string = dwg_relgraph_dwg_format_id( $p_bug_id );
 	$t_graph_fontname = config_get( 'relationship_graph_fontname' );
 	$t_graph_fontsize = config_get( 'relationship_graph_fontsize' );
 	$t_graph_fontpath = get_font_path();
@@ -317,12 +317,12 @@ function dwg_relgraph_generate_dep_graph( $p_bug_id, $p_horizontal = false, $p_s
 			'dir'		=> 'back'
 	) );
 
-	$t_url_format = 'bug_relationship_graph.php?bug_id=%d&graph=dependency&orientation=' . $t_graph_orientation
+	$t_url_format = 'dwg_relationship_graph.php?bug_id=%d&graph=dependency&orientation=' . $t_graph_orientation
 		. ( $p_show_summary ? '&summary=1' : '' );
 
 	# Add all issue nodes and edges to the graph.
 	foreach( $v_bug_list as $t_related_bug_id => $t_related_bug ) {
-		$t_id_string = dwg_relgraph_bug_format_id( $t_related_bug_id );
+		$t_id_string = dwg_relgraph_dwg_format_id( $t_related_bug_id );
 
 		if( $t_view_on_click ) {
 			$t_url = string_get_dwg_view_url( $t_related_bug_id );
@@ -330,7 +330,7 @@ function dwg_relgraph_generate_dep_graph( $p_bug_id, $p_horizontal = false, $p_s
 			$t_url = sprintf( $t_url_format, $t_related_bug_id );
 		}
 
-		dwg_relgraph_add_bug_to_graph( $t_graph, $t_id_string, $t_related_bug, $t_url, $t_related_bug_id == $p_bug_id, $p_show_summary );
+		dwg_relgraph_add_dwg_to_graph( $t_graph, $t_id_string, $t_related_bug, $t_url, $t_related_bug_id == $p_bug_id, $p_show_summary );
 
 		# Now add all relationship edges to the graph.
 		foreach( $v_bug_list[$t_related_bug_id]->parents as $t_parent_id ) {
@@ -340,7 +340,7 @@ function dwg_relgraph_generate_dep_graph( $p_bug_id, $p_horizontal = false, $p_s
 				continue;
 			}
 
-			$t_parent_node = dwg_relgraph_bug_format_id( $t_parent_id );
+			$t_parent_node = dwg_relgraph_dwg_format_id( $t_parent_id );
 			$t_graph->add_edge( $t_parent_node, $t_id_string );
 		}
 	}
@@ -513,7 +513,7 @@ function dwg_relgraph_output_map( Graph $p_graph, $p_name ) {
  * @param boolean $p_show_summary Whether to include the Summary in the nodes
  * @return void
  */
-function dwg_relgraph_add_bug_to_graph( Graph &$p_graph, $p_bug_id, DwgData $p_bug, $p_url = null, $p_highlight = false, $p_show_summary = false ) {
+function dwg_relgraph_add_dwg_to_graph( Graph &$p_graph, $p_bug_id, DwgData $p_bug, $p_url = null, $p_highlight = false, $p_show_summary = false ) {
 	$t_status = get_enum_element( 'dwg_status', $p_bug->status );
 	$t_label = $p_bug_id;
 	if( $p_show_summary ) {
