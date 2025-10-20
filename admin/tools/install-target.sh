@@ -427,23 +427,21 @@ version_info() {
     local output="$repo/version.json"
     echo -e "${DIAG}Generating version information file ${output}.${OFF}"
     # Check if repo is dirty
-    local dirty_output=$(git -C "$repo" status --porcelain 2>/dev/null || true)
-    if [[ -n "$dirty_output" ]]; then
-        local dirty=true
-    else
-        local dirty=false
-    fi
+    local dirty_output
+    dirty_output=$(git -C "$repo" status --porcelain 2>/dev/null || true)
+    local dirty=false
+    [[ -n "$dirty_output" ]] && dirty=true
     # Generate version.json inside the repository
-    cat > "$output" <<EOF
-    {
-      "version": "$(git -C "$repo" describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")",
-      "commit": "$(git -C "$repo" rev-parse --short=10 HEAD 2>/dev/null || echo "unknown")",
-      "branch": "$(git -C "$repo" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")",
-      "tag": "$(git -C "$repo" describe --tags --always --dirty 2>/dev/null || echo "unknown")",
-      "build_date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-      "dirty": $dirty
-    }
-    EOF
+    cat > "${output}" <<EOF
+{
+  "version": "$(git -C "$repo" describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")",
+  "commit": "$(git -C "$repo" rev-parse --short=10 HEAD 2>/dev/null || echo "unknown")",
+  "branch": "$(git -C "$repo" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")",
+  "tag": "$(git -C "$repo" describe --tags --always --dirty 2>/dev/null || echo "unknown")",
+  "build_date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "dirty": ${dirty}
+}
+EOF
     echo -e "${DIAG}Finished generating version information file ${output}.${OFF}"
 }
 
