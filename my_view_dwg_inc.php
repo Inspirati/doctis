@@ -96,7 +96,7 @@ $t_url_link_parameters['reported'] = [
 ];
 
 // @TODO RobD - need to change the user_id to document_id, along with whatever else this implies
-// $c_filter['document'] = filter_create_document( helper_get_current_project(), $t_current_user_id );
+// $c_filter['document'] = filter_dwg_create_document( helper_get_current_project(), $t_current_user_id );
 // $t_url_link_parameters['document'] = [
 // 	FILTER_PROPERTY_DOCUMENT_ID => $t_current_user_id,
 // 	FILTER_PROPERTY_HIDE_STATUS => $t_hide_status_default,
@@ -141,7 +141,7 @@ $t_url_link_parameters['resolved'] = [
 	FILTER_PROPERTY_HIDE_STATUS => $t_hide_status_default,
 ];
 
-$c_filter['unassigned'] = filter_create_assigned_to_unresolved( helper_get_current_project(), 0 );
+$c_filter['unassigned'] = filter_dwg_create_assigned_to_unresolved( helper_get_current_project(), 0 );
 $t_url_link_parameters['unassigned'] = [
 	FILTER_PROPERTY_HANDLER_ID => '[none]',
 	FILTER_PROPERTY_HIDE_STATUS => $t_hide_status_default,
@@ -149,7 +149,7 @@ $t_url_link_parameters['unassigned'] = [
 
 # TODO: check. handler value looks wrong
 
-$c_filter['monitored'] = filter_create_monitored_by( helper_get_current_project(), $t_current_user_id );
+$c_filter['monitored'] = filter_dwg_create_monitored_by( helper_get_current_project(), $t_current_user_id );
 $t_url_link_parameters['monitored'] = [
 	FILTER_PROPERTY_MONITOR_USER_ID => $t_current_user_id,
 	FILTER_PROPERTY_HIDE_STATUS => $t_hide_status_default,

@@ -199,10 +199,6 @@ function filter_get_url( array $p_custom_filter ) {
 		$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_REPORTER_ID, $p_custom_filter[FILTER_PROPERTY_REPORTER_ID] );
 	}
 
-	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_DOCUMENT_ID] ) ) {
-		$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_DOCUMENT_ID, $p_custom_filter[FILTER_PROPERTY_DOCUMENT_ID] );
-	}
-
 	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_STATUS] ) ) {
 		$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_STATUS, $p_custom_filter[FILTER_PROPERTY_STATUS] );
 	}
@@ -371,6 +367,10 @@ function filter_get_url( array $p_custom_filter ) {
 
 	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_TAG_SELECT] ) ) {
 		$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_TAG_SELECT, $p_custom_filter[FILTER_PROPERTY_TAG_SELECT] );
+	}
+
+	if( !filter_field_is_any( $p_custom_filter[FILTER_PROPERTY_DOCUMENT_ID] ) ) {
+		$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_DOCUMENT_ID, $p_custom_filter[FILTER_PROPERTY_DOCUMENT_ID] );
 	}
 
 	$t_query[] = filter_encode_field_and_value( FILTER_PROPERTY_MATCH_TYPE, $p_custom_filter[FILTER_PROPERTY_MATCH_TYPE] );

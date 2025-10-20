@@ -384,8 +384,16 @@ if( $t_show_priority || $t_show_severity || $t_show_reproducibility ) {
 	if( $t_show_priority ) {
 		# Priority
 		echo '<th class="category"><label for="priority">' . lang_get( 'priority' ) . '</label></th>';
-		echo '<td><select ' . helper_get_tab_index() . ' id="priority" name="priority" class="input-sm">';
-		print_dwg_enum_string_option_list( 'priority', $t_bug->priority );
+		$t_icon = $t_bug->priority;
+		$t_status_icon_arr = config_get( 'status_icon_arr' );
+		$t_priotext = get_enum_element( 'priority', $t_icon );
+		echo '<td class="bug-priority">';
+		if( isset( $t_status_icon_arr[$t_icon] ) && !is_blank( $t_status_icon_arr[$t_icon] ) ) {
+			echo '&nbsp' . icon_get( $t_status_icon_arr[$t_icon] ) . '&nbsp';
+		}
+		echo '&nbsp;';
+		echo '<select ' . helper_get_tab_index() . ' id="priority" name="priority" class="input-sm">';
+		print_enum_string_option_list( 'priority', $t_bug->priority );
 		echo '</select></td>';
 	} else {
 		$t_spacer += 2;

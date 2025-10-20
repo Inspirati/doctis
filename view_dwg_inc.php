@@ -236,7 +236,7 @@ if( ( $t_filter_position & FILTER_POSITION_TOP ) == FILTER_POSITION_TOP ) {
 				<div class="widget-toolbox padding-8 clearfix">
 <?php
 # -- ====================== MASS BUG MANIPULATION =================== --
-# @@@ ideally buglist-footer would be in <tfoot>, but that's not possible due to global g_checkboxes_exist set via write_dwg_rows()
+# @@@ ideally buglist-footer would be in <tfoot>, but that's not possible due to global g_checkboxes_exist set via write_bug_rows()
 ?>
 					<div class="form-inline pull-left">
 <?php
@@ -282,7 +282,7 @@ if( ( $t_filter_position & FILTER_POSITION_BOTTOM ) == FILTER_POSITION_BOTTOM ) 
 # -- ====================== end of FILTER FORM ================== --
 
 /**
- * Output Rows
+ * Output Dwg Rows
  *
  * @param array $p_rows An array of objects.
  * @return void
@@ -292,11 +292,12 @@ function write_dwg_rows( array $p_rows ) {
 
 	$t_in_stickies = ( $g_dwg_filter && ( 'on' == $g_dwg_filter[FILTER_PROPERTY_STICKY] ) );
 
-	# Loop over rows
+	# Loop over bug rows
 	$t_rows = count( $p_rows );
 	for( $i = 0; $i < $t_rows; $i++ ) {
 		$t_row = $p_rows[$i];
 
+		# Don't display the default 'Empty' document
 		if( 1 == $t_row->id ) {
 			continue;
 		}

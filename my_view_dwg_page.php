@@ -107,8 +107,8 @@ if( $t_current_project_id == ALL_PROJECTS ) {
 } else {
 	# this creates a filter with the specific project informes, in the same way that
 	# those that will be used later for the boxes
-	$t_test_filter = filter_ensure_valid_filter( array( FILTER_PROPERTY_PROJECT_ID => [$t_current_project_id]) );
-	$t_project_ids_to_check = filter_get_included_projects( $t_test_filter );
+	$t_test_filter = filter_dwg_ensure_valid_filter( array( FILTER_PROPERTY_PROJECT_ID => [$t_current_project_id]) );
+	$t_project_ids_to_check = filter_dwg_get_included_projects( $t_test_filter );
 }
 
 # Retrieve the boxes to display

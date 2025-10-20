@@ -228,7 +228,7 @@ publish_target() {
     if [[ $? -gt 0 ]]; then
         echo -e "${FAIL}Target ${publish_dir} exists, aborting.${OFF}"
         return $?
-    fi    
+    fi
     echo -e "${INFO}Copying ${target} to ${publish_dir}${OFF}" >&2
     cp -R ${target} ${publish_dir}
     echo -e "${INFO}Setting owner to $(whoami):www-data${OFF}" >&2
@@ -248,7 +248,7 @@ install_phpmyadmin() {
     if [[ $? -gt 0 ]]; then
         echo -e "${FAIL}Target ${target} exists, aborting.${OFF}"
         return $?
-    fi    
+    fi
     mv phpMyAdmin-${phpMyAdmin_ver}-english ${target}
     local config_src=${target}/"config.sample.inc.php"
     local config_dst=${target}/"config.inc.php"
@@ -260,7 +260,7 @@ install_phpmyadmin() {
     if [[ $? -gt 0 ]]; then
         echo -e "${FAIL}Target ${webroot}/${target} exists, aborting.${OFF}"
         return $?
-    fi    
+    fi
     mv ${target} ${webroot}
     sg www-data "chown -R $(whoami):www-data ${webroot}/${target}"
     chmod -R g+w ${webroot}/${target}
@@ -279,7 +279,7 @@ install_dokuwiki() {
     if [[ $? -gt 0 ]]; then
         echo -e "${FAIL}Target ${target} exists, aborting.${OFF}"
         return $?
-    fi    
+    fi
     git clone --recurse-submodules -b ${branch} --single-branch ${repository} ${target}
     echo -e "${INFO}Configuring ${target} instance at ${config_dst}${OFF}"
     echo -e "${INFO}config_src:${OFF}" "$config_src"
@@ -290,7 +290,7 @@ install_dokuwiki() {
     if [[ $? -gt 0 ]]; then
         echo -e "${FAIL}Target ${webroot}/${target} exists, aborting.${OFF}"
         return $?
-    fi    
+    fi
     mv ${target} ${webroot}
     sg www-data "chown -R $(whoami):www-data ${webroot}/${target}"
     chmod -R g+w ${webroot}/${target}
@@ -307,7 +307,7 @@ fetch_target() {
     if [[ $? -gt 0 ]]; then
         echo -e "${FAIL}Target ${target} exists, aborting.${OFF}"
         return $?
-    fi    
+    fi
     # Clone the specified target branch from git, then compose the php dependencies:
     git clone --recurse-submodules -b ${branch} --single-branch ${repository} ${target}
     cd ${target}
@@ -343,7 +343,7 @@ run_mantis_install() {
     fi
 }
 
-run_mantis_install_log() {
+exec_install() {
     local target="$1"
     local install_url="http://${domain_idname}/${target}/admin/install.php"
     local logfile="${target}_install_log_$(date +%Y%m%d_%H%M%S).html"
@@ -359,7 +359,7 @@ run_mantis_install_log() {
     echo "  → Full installer output saved to $logfile"
 }
 
-load_doctis_example_data() {
+load_example() {
     local target="$1"
     local mysqldatabase="${target}${dbdatapostfix}"
     echo -e "${INFO}Loading example data into '${mysqldatabase}'...${OFF}"
@@ -422,13 +422,38 @@ install_webkit() {
     echo -e "${DIAG}Finished installing webtools.${OFF}"
 }
 
+version_info() {
+    local repo="$1"  # Path to the git repository
+    local output="$repo/version.json"
+    echo -e "${DIAG}Generating version information file ${output}.${OFF}"
+    # Check if repo is dirty
+    local dirty_output=$(git -C "$repo" status --porcelain 2>/dev/null || true)
+    if [[ -n "$dirty_output" ]]; then
+        local dirty=true
+    else
+        local dirty=false
+    fi
+    # Generate version.json inside the repository
+    cat > "$output" <<EOF
+    {
+      "version": "$(git -C "$repo" describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")",
+      "commit": "$(git -C "$repo" rev-parse --short=10 HEAD 2>/dev/null || echo "unknown")",
+      "branch": "$(git -C "$repo" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")",
+      "tag": "$(git -C "$repo" describe --tags --always --dirty 2>/dev/null || echo "unknown")",
+      "build_date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+      "dirty": $dirty
+    }
+    EOF
+    echo -e "${DIAG}Finished generating version information file ${output}.${OFF}"
+}
+
 install_mantis() {
     echo -e "${DIAG}Started installing mantis..${OFF}"
     local target="mantisbt"
     local branch="original"
     fetch_target ${target} ${branch}
     setup_target ${target}
-    run_mantis_install_log ${target}
+    exec_install ${target}
     echo -e "${DIAG}Finished installing mantis.${OFF}"
 }
 
@@ -438,8 +463,9 @@ install_doctis() {
     local branch="dev"
     fetch_target ${target} ${branch}
     setup_target ${target} "nodbprepostfix"
-    run_mantis_install_log ${target}
-    load_doctis_example_data ${target}
+    version_info ${target}
+    exec_install ${target}
+    load_example ${target}
     set_headless
     if [ $HEADLESS = false ]; then
         launch_target ${target}
@@ -475,10 +501,4 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 else
     echo -e "${DIAG}This script is being sourced from ${0}.${OFF}"
 fi
-
-#echo -e "${DIAG}Script 'install-target.sh' included${OFF}"
-#show_parameters
-#main "$@"
-#show_parameters
-#echo -e "${DIAG}Finished: <ctrl-c> to close${OFF}"
 

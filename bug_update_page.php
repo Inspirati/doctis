@@ -306,9 +306,9 @@ if( $t_show_document ) {
 	# Labels
 	echo '<tr class="bug-header">';
 	echo '<th class="bug-project category width-15">', $t_document_flags['project_show'] ? lang_get( 'dwg_title' ) : '', '</th>';
+	echo '<th class="bug-project category width-15">', $t_document_flags['project_show'] ? lang_get( 'dwg_reference' ) : '', '</th>';
 	echo '<th class="bug-project category width-20">', $t_document_flags['project_show'] ? lang_get( 'dwg_number' ) : '', '</th>';
 	echo '<th class="bug-project category width-15">', $t_document_flags['project_show'] ? lang_get( 'dwg_revision' ) : '', '</th>';
-	echo '<th class="bug-project category width-15">', $t_document_flags['project_show'] ? lang_get( 'dwg_reference' ) : '', '</th>';
 	echo '<th class="bug-project category width-15">', $t_document_flags['project_show'] ? lang_get( 'dwg_release_date' ) : '', '</th>';
 	echo '<th class="bug-project category width-15">', $t_document_flags['project_show'] ? lang_get( 'dwg_classification' ) : '', '</th>';
 	echo '</tr>';
@@ -343,9 +343,16 @@ if( $t_show_document ) {
 	}
 	echo '</td>';
 
+	// echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['reference'] ) ? string_display_line( $t_document['reference'] ) : '', '</td>';
+	# Reference
+	if( $t_document_flags['project_show'] ) {
+		echo '<td class="bug-project">';
+//		echo string_display_line( $t_document['reference'] );
+		print_dwg_reference_link( $t_document['id'], $t_document['reference'], false );
+		echo '</td>';
+	}
 	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['number'] ) ? string_display_line( $t_document['number'] ) : '', '</td>';
 	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['revision'] ) ? string_display_line( $t_document['revision'] ) : '', '</td>';
-	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['reference'] ) ? string_display_line( $t_document['reference'] ) : '', '</td>';
 	//echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['release_date'] ) ? string_display_line( $t_document['release_date'] ) : '', '</td>';
 	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['release_date'] ) ? $t_release_date : '', '</td>';
 	// echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['release_date'] ) ? string_display_line( date( $t_date_format, strtotime( $t_document['release_date'] ) ) ) : '', '</td>';
@@ -460,7 +467,17 @@ if( $t_show_priority || $t_show_severity || $t_show_reproducibility ) {
 	if( $t_show_priority ) {
 		# Priority
 		echo '<th class="category"><label for="priority">' . lang_get( 'priority' ) . '</label></th>';
-		echo '<td><select ' . helper_get_tab_index() . ' id="priority" name="priority" class="input-sm">';
+		$t_icon = $t_bug->priority;
+		$t_status_icon_arr = config_get( 'status_icon_arr' );
+		// $t_priotext = get_enum_element( 'priority', $t_icon );
+		echo '<td class="bug-priority">';
+		if( isset( $t_status_icon_arr[$t_icon] ) && !is_blank( $t_status_icon_arr[$t_icon] ) ) {
+			echo '&nbsp' . icon_get( $t_status_icon_arr[$t_icon] ) . '&nbsp';
+		}
+		// echo ' ' . string_display_line( $t_priotext ), '</td>';
+		echo '&nbsp;';
+		echo '&nbsp;';
+		echo '<select ' . helper_get_tab_index() . ' id="priority" name="priority" class="input-sm">';
 		print_enum_string_option_list( 'priority', $t_bug->priority );
 		echo '</select></td>';
 	} else {
@@ -513,6 +530,7 @@ if( $t_show_status || $t_show_resolution ) {
 
 		echo '<td class="bug-status">';
 		print_icon( 'fa-square', 'fa-status-box ' . $t_status_css );
+		echo '&nbsp;';
 		echo '&nbsp;';
 		print_status_option_list( 'status', $t_bug->status,
 			access_can_close_bug( $t_bug ),
