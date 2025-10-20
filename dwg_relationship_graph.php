@@ -120,10 +120,10 @@ layout_page_begin(null, true);
 <?php
 	# View Issue
 
-	print_link_button( 'view.php?id=' . $f_bug_id, lang_get( 'view_issue' ) );
+	print_dwg_link_button( 'dwg_view.php?id=' . $f_bug_id, lang_get( 'view_document' ) );
 
 	# Relation/Dependency Graph Switch
-	print_link_button(
+	print_dwg_link_button(
 		'dwg_relationship_graph.php?bug_id=' . $f_bug_id
 		. '&graph=' . $t_graph_type_switch
 		. '&summary=' . $f_show_summary,
@@ -132,7 +132,7 @@ layout_page_begin(null, true);
 
 	# Horizontal/Vertical Switch
 	if( !$t_graph_relation ) {
-		print_link_button(
+		print_dwg_link_button(
 			'dwg_relationship_graph.php?bug_id=' . $f_bug_id
 			. '&graph=' . $t_graph_type
 			. '&orientation=' . $t_graph_orientation_switch
@@ -141,7 +141,7 @@ layout_page_begin(null, true);
 		);
 	}
 
-	print_link_button(
+	print_dwg_link_button(
 		'dwg_relationship_graph.php?bug_id=' . $f_bug_id
 		. '&graph=' . $t_graph_type
 		. '&orientation=' . $t_graph_orientation
@@ -156,13 +156,13 @@ layout_page_begin(null, true);
 			<div class="center padding-8">
 <?php
 	if( $t_graph_relation ) {
-		$t_graph = relgraph_generate_rel_graph( $f_bug_id, $f_show_summary );
+		$t_graph = dwg_relgraph_generate_rel_graph( $f_bug_id, $f_show_summary );
 	} else {
-		$t_graph = relgraph_generate_dep_graph( $f_bug_id, $t_graph_horizontal, $f_show_summary );
+		$t_graph = dwg_relgraph_generate_dep_graph( $f_bug_id, $t_graph_horizontal, $f_show_summary );
 	}
 
 	$t_map_name = 'relationship_graph_map';
-	relgraph_output_map( $t_graph, $t_map_name );
+	dwg_relgraph_output_map( $t_graph, $t_map_name );
 
 	$t_graph_src = "dwg_relationship_graph_img.php?bug_id=$f_bug_id&graph=$t_graph_type&orientation=$t_graph_orientation&summary=$f_show_summary";
 ?>

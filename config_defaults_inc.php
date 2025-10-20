@@ -4876,7 +4876,8 @@ $g_rss_enabled = ON;
  *
  * @global int $g_relationship_graph_enable
  */
-$g_relationship_graph_enable = OFF;
+// $g_relationship_graph_enable = OFF;
+$g_relationship_graph_enable = ON;
 
 /**
  * Complete path to the Graphviz tools.

@@ -269,7 +269,7 @@ function mci_dwg_get_history( $p_issue_id, $p_user_id, $p_lang ) {
 
 			switch( $p_field ) {
 				case 'status':
-					$t_value = mci_enum_get_array_by_id( (int)$p_value, 'status', $p_lang );
+					$t_value = mci_enum_get_array_by_id( (int)$p_value, 'dwg_status', $p_lang );
 					break;
 				case 'priority':
 					$t_value = mci_enum_get_array_by_id( (int)$p_value, 'priority', $p_lang );

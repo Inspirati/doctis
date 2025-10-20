@@ -41,7 +41,7 @@ $user ALL=(ALL:ALL) NOPASSWD:/usr/bin/apt-get, \
 /bin/mv, \
 /bin/rm
 EOF
-    # sudo won't read it with the correct permission set
+    # sudo won't read it without the correct permission set
     sudo chmod 440 "$sudoers_file"
     # Arrange for cleanup on exit (normal or error)
     trap cleanup_sudo EXIT
@@ -115,6 +115,8 @@ phpinfo();
 xdebuginfo();
 ?>
 EOF
+    # Get and install the libraries and tools needed for mantis extended features:
+    sudo apt-get install -y graphviz
     echo -e "${INFO}Extras installed.${OFF}" >&2
 }
 

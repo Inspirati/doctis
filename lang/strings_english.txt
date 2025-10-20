@@ -1653,6 +1653,7 @@ $s_no_relationship = 'no relationship';
 $s_relationship_replaced = 'Relationship replaced';
 $s_replace_relationship_button = 'Replace';
 $s_relationship_with_parent = 'Relationship with the parent issue';
+$s_relationship_with_parent_dwg = 'Relationship with the parent document';
 $s_delete_relationship_sure_msg = 'Are you sure you wish to delete this relationship?';
 $s_relationship_warning_blocking_bugs_not_resolved = 'Not all the children of this issue are yet resolved or closed.';
 $s_relationship_warning_blocking_dwgs_not_resolved = 'Not all the children of this document are yet resolved or closed.';
@@ -1676,6 +1677,7 @@ $s_dependency_graph = 'Dependency Graph';
 $s_vertical = 'Vertical';
 $s_horizontal = 'Horizontal';
 $s_view_issue = 'View Issue';
+$s_view_document = 'View Document';
 $s_show_summary = 'Show Summary';
 $s_hide_summary = 'Hide Summary';
 

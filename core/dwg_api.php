@@ -504,7 +504,7 @@ $this->author = isset($this->author) ? $this->author : '';
 		# log new bug
 		history_dwg_log_event_special( $this->id, NEW_DWG );
 
-		# log changes, if any (compare happens in history_dwg_log_event_direct)
+		# log changes, if any (compare happens in history_log_event_direct)
 		history_dwg_log_event_direct( $this->id, 'status', $t_original_status, $t_status );
 		history_dwg_log_event_direct( $this->id, 'handler_id', 0, $this->handler_id );
 

@@ -513,17 +513,17 @@ function dwg_relgraph_output_map( Graph $p_graph, $p_name ) {
  * @param boolean $p_show_summary Whether to include the Summary in the nodes
  * @return void
  */
-function dwg_relgraph_add_bug_to_graph( Graph &$p_graph, $p_bug_id, BugData $p_bug, $p_url = null, $p_highlight = false, $p_show_summary = false ) {
+function dwg_relgraph_add_bug_to_graph( Graph &$p_graph, $p_bug_id, DwgData $p_bug, $p_url = null, $p_highlight = false, $p_show_summary = false ) {
 	$t_status = get_enum_element( 'dwg_status', $p_bug->status );
 	$t_label = $p_bug_id;
 	if( $p_show_summary ) {
 		# Truncate summary to 30 chars, to avoid nodes being too wide
-		$t_label .= "\n" . string_attribute( mb_strimwidth( $p_bug->summary, 0, 30, "..." ) );
+		$t_label .= "\n" . string_attribute( mb_strimwidth( $p_bug->title, 0, 30, "..." ) );
 	}
 
 	$t_node_attributes = array();
 	$t_node_attributes['label'] = $t_label;
-	$t_node_attributes['tooltip'] = '[' . $t_status . '] ' . string_attribute( $p_bug->summary );
+	$t_node_attributes['tooltip'] = '[' . $t_status . '] ' . string_attribute( $p_bug->title );
 
 	if( $p_highlight ) {
 		$t_node_attributes['color'] = '#0000FF';

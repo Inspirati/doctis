@@ -900,7 +900,7 @@ if( $t_show_attachments ) {
 ?>
 	<tr>
 		<th class="category">
-			<?php echo lang_get( 'relationship_with_parent' ) ?>
+			<?php echo lang_get( 'relationship_with_parent_dwg' ) ?>
 		</th>
 		<td>
 			<?php print_dwg_relationship_list_box( config_get( 'default_dwg_relationship_clone' ), "rel_type", false, true ) ?>

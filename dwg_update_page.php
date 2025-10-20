@@ -446,6 +446,7 @@ if( $t_show_status || $t_show_resolution ) {
 		echo '<td class="bug-status">';
 		print_icon( 'fa-square', 'fa-status-box ' . $t_status_css );
 		echo '&nbsp;';
+		echo '&nbsp;';
 		print_dwg_status_option_list( 'status', $t_bug->status,
 			access_can_close_dwg( $t_bug ),
 			$t_bug->project_id );

@@ -2421,8 +2421,8 @@ function filter_dwg_is_accessible( $p_filter_id, $p_user_id = null ) {
  *                            FILTER_VIEW_TYPE_ADVANCED)
  */
 function filter_dwg_print_view_type_toggle( $p_url, $p_view_type ) {
-	$t_view_dwg_filters = config_get( 'view_dwg_filters' );
-	if( $t_view_dwg_filters == SIMPLE_ONLY || $t_view_dwg_filters == ADVANCED_ONLY ) {
+	$t_view_filters = config_get( 'view_dwg_filters' );
+	if( $t_view_filters == SIMPLE_ONLY || $t_view_filters == ADVANCED_ONLY ) {
 		return;
 	}
 
@@ -2459,12 +2459,6 @@ function filter_dwg_print_view_type_toggle( $p_url, $p_view_type ) {
  * @return array|integer	Array of project ids, or ALL_PROJECTS if applicable.
  */
 function filter_dwg_get_included_projects( array $p_filter, $p_project_id = null, $p_user_id = null, $p_return_all_projects = false ) {
-
-	// @TODO RobD - during development, i used a null filter (no filter), and this is then needed to avoid throwing an exception below
-//	if (count( $p_filter ) == 0) {
-//		return null;
-//	}
-
 	if( null === $p_project_id ) {
 		$t_project_id = helper_get_current_project();
 	} else {

@@ -745,7 +745,6 @@ function string_get_dwg_page( $p_action ) {
  * @return string
  */
 function string_get_bug_view_link( $p_bug_id, $p_detail_info = true, $p_fqdn = false ) {
-//	error_log("string_get_bug_view_link $p_bug_id = " . print_r($p_bug_id, true));
 	if( bug_exists( $p_bug_id ) ) {
 		$t_link = '<a href="';
 		if( $p_fqdn ) {
@@ -774,8 +773,6 @@ function string_get_bug_view_link( $p_bug_id, $p_detail_info = true, $p_fqdn = f
 }
 
 function string_get_dwg_view_link( $p_bug_id, $p_detail_info = true, $p_fqdn = false ) {
-
-//	error_log("string_get_dwg_view_link $p_bug_id = " . print_r($p_bug_id, true));
 	if( dwg_exists( $p_bug_id ) ) {
 		$t_link = '<a href="';
 		if( $p_fqdn ) {
@@ -806,7 +803,6 @@ function string_get_dwg_view_link( $p_bug_id, $p_detail_info = true, $p_fqdn = f
 function string_get_dwg_view_reference_url( $p_urlbase ) {
 	return $p_urlbase . '/document/versions/latest';
 }
-
 
 function string_get_dwg_view_reference_link( $p_bug_id, $p_dwg_reference, $p_detail_info = true, $p_fqdn = false ) {
 	if( dwg_exists( $p_bug_id ) ) {
@@ -842,7 +838,6 @@ function string_get_dwg_view_reference_link( $p_bug_id, $p_dwg_reference, $p_det
 function string_get_bugnote_view_link( $p_bug_id, $p_bugnote_id, $p_detail_info = true, $p_fqdn = false ) {
 	$t_bug_id = (int)$p_bug_id;
 
-//	error_log("string_get_bugnote_view_link $p_bug_id = " . print_r($p_bug_id, true));
 	if( bug_exists( $t_bug_id ) && bugnote_exists( $p_bugnote_id ) ) {
 		$t_link = '<a href="';
 		if( $p_fqdn ) {
@@ -873,7 +868,6 @@ function string_get_bugnote_view_link( $p_bug_id, $p_bugnote_id, $p_detail_info 
 function string_get_dwgnote_view_link( $p_bug_id, $p_bugnote_id, $p_detail_info = true, $p_fqdn = false ) {
 	$t_bug_id = (int)$p_bug_id;
 
-//	error_log("string_dwt_bugnote_view_link $p_bug_id = " . print_r($p_bug_id, true));
 	if( dwg_exists( $t_bug_id ) && dwgnote_exists( $p_bugnote_id ) ) {
 		$t_link = '<a href="';
 		if( $p_fqdn ) {
@@ -925,7 +919,6 @@ function string_get_all_bug_page_url( $p_dwg_id ) {
  * @return string
  */
 function string_get_dwg_view_url( $p_bug_id ) {
-//	error_log("string_get_dwg_view_url()");
 	return 'dwg_view.php?id=' . $p_bug_id;
 }
 
@@ -936,12 +929,10 @@ function string_get_dwg_view_url( $p_bug_id ) {
  * @return string
  */
 function string_get_bugnote_view_url( $p_bug_id, $p_bugnote_id ) {
-//	error_log("string_get_bugnote_view_url()");
 	return 'view.php?id=' . $p_bug_id . '#c' . $p_bugnote_id;
 }
 
 function string_get_dwgnote_view_url( $p_bug_id, $p_bugnote_id ) {
-//	error_log("string_get_dwgnote_view_url()");
 	return 'dwg_view.php?id=' . $p_bug_id . '#c' . $p_bugnote_id;
 }
 
@@ -955,7 +946,6 @@ function string_get_dwgnote_view_url( $p_bug_id, $p_bugnote_id ) {
  * @return string
  */
 function string_get_bugnote_view_url_with_fqdn( $p_bug_id, $p_bugnote_id ) {
-//	error_log("string_get_bugnote_view_url_with_fqdn()");
 	return config_get_global( 'path' ) . string_get_bug_view_url( $p_bug_id ) . '#c' . $p_bugnote_id;
 }
 
@@ -969,7 +959,6 @@ function string_get_bugnote_view_url_with_fqdn( $p_bug_id, $p_bugnote_id ) {
  * @return string
  */
 function string_get_dwgnote_view_url_with_fqdn( $p_bug_id, $p_bugnote_id ) {
-//	error_log("string_get_dwgnote_view_url_with_fqdn()");
 	return config_get_global( 'path' ) . string_get_dwg_view_url( $p_bug_id ) . '#c' . $p_bugnote_id;
 }
 
@@ -981,7 +970,6 @@ function string_get_dwgnote_view_url_with_fqdn( $p_bug_id, $p_bugnote_id ) {
  * @return string
  */
 function string_get_bug_view_url_with_fqdn( $p_bug_id ) {
-//	error_log("string_get_bug_view_url_with_fqdn()");
 	return config_get_global( 'path' ) . string_get_bug_view_url( $p_bug_id );
 }
 
@@ -993,7 +981,6 @@ function string_get_bug_view_url_with_fqdn( $p_bug_id ) {
  * @return string
  */
 function string_get_dwg_view_url_with_fqdn( $p_bug_id ) {
-//	error_log("string_get_dwg_view_url_with_fqdn()");
 	return config_get_global( 'path' ) . string_get_dwg_view_url( $p_bug_id );
 }
 
@@ -1003,7 +990,6 @@ function string_get_dwg_view_url_with_fqdn( $p_bug_id ) {
  * @return string
  */
 function string_get_bug_update_link( $p_bug_id ) {
-//	error_log("string_get_bug_update_link()");
 	$t_summary = string_attribute( bug_get_field( $p_bug_id, 'summary' ) );
 	return '<a href="' . helper_mantis_url( string_get_bug_update_url( $p_bug_id ) ) . '" title="' . $t_summary . '">' . bug_format_id( $p_bug_id ) . '</a>';
 }
@@ -1014,7 +1000,6 @@ function string_get_bug_update_link( $p_bug_id ) {
  * @return string
  */
 function string_get_bug_update_url( $p_bug_id ) {
-//	error_log("string_get_bug_update_url()");
 	return string_get_bug_update_page() . '?bug_id=' . $p_bug_id;
 }
 
@@ -1024,7 +1009,6 @@ function string_get_bug_update_url( $p_bug_id ) {
  * @return string
  */
 function string_get_dwg_update_url( $p_bug_id ) {
-//	error_log("string_get_dwg_update_url()");
 	return string_get_dwg_update_page() . '?bug_id=' . $p_bug_id;
 }
 
@@ -1033,7 +1017,6 @@ function string_get_dwg_update_url( $p_bug_id ) {
  * @return string
  */
 function string_get_bug_update_page() {
-//	error_log("string_get_bug_update_page()");
 	return string_get_bug_page( 'update' );
 }
 
@@ -1042,7 +1025,6 @@ function string_get_bug_update_page() {
  * @return string
  */
 function string_get_dwg_update_page() {
-//	error_log("string_get_dwg_update_page()");
 	return string_get_dwg_page( 'update' );
 }
 
@@ -1051,7 +1033,6 @@ function string_get_dwg_update_page() {
  * @return string
  */
 function string_get_bug_report_link() {
-//	error_log("string_get_bug_report_link()");
 	return '<a href="' . helper_mantis_url( string_get_bug_report_url() ) . '">' . lang_get( 'report_bug_link' ) . '</a>';
 }
 
@@ -1060,7 +1041,6 @@ function string_get_bug_report_link() {
  * @return string
  */
 function string_get_dwg_report_link() {
-//	error_log("string_get_dwg_report_link()");
 	return '<a href="' . helper_mantis_url( string_get_dwg_create_url() ) . '">' . lang_get( 'create_dwg_link' ) . '</a>';
 }
 
@@ -1069,7 +1049,6 @@ function string_get_dwg_report_link() {
  * @return string
  */
 function string_get_bug_report_url() {
-//	error_log("string_get_bug_report_url()");
 	return string_get_bug_page( 'report' );
 }
 
@@ -1078,7 +1057,6 @@ function string_get_bug_report_url() {
  * @return string
  */
 function string_get_dwg_create_url() {
-//	error_log("string_get_dwg_create_url()");
 	return string_get_dwg_page( 'create' );
 }
 
