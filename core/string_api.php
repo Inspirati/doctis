@@ -800,13 +800,42 @@ function string_get_dwg_view_link( $p_bug_id, $p_detail_info = true, $p_fqdn = f
 	return $t_link;
 }
 
+function string_get_dwg_view_title_link( $p_bug_id, $p_dwg_title, $p_detail_info = true, $p_fqdn = false ) {
+	if( dwg_exists( $p_bug_id ) ) {
+		$t_link = '<a href="';
+		if( $p_fqdn ) {
+			$t_link .= config_get_global( 'path' );
+		} else {
+			$t_link .= config_get_global( 'short_path' );
+		}
+		$t_link .= string_get_dwg_view_url( $p_bug_id ) . '"';
+		// if( $p_detail_info ) {
+		// 	$t_summary = string_attribute( dwg_get_field( $p_bug_id, 'title' ) );
+		// 	$t_project_id = dwg_get_field( $p_bug_id, 'project_id' );
+		// 	$t_status = string_attribute( get_enum_element( 'dwg_status', dwg_get_field( $p_bug_id, 'status' ), $t_project_id ) );
+		// 	$t_link .= ' title="[' . $t_status . '] ' . $t_summary . '"';
+
+		// 	$t_resolved = dwg_get_field( $p_bug_id, 'status' ) >= config_get( 'dwg_resolved_status_threshold', null, null, $t_project_id );
+		// 	if( $t_resolved ) {
+		// 		$t_link .= ' class="resolved"';
+		// 	}
+		// }
+		$t_link .= '>' . $p_dwg_title . '</a>';
+	} else {
+		$t_link = $p_dwg_title;
+	}
+
+	return $t_link;
+}
+
+
 function string_get_dwg_view_reference_url( $p_urlbase ) {
 	return $p_urlbase . '/document/versions/latest';
 }
 
 function string_get_dwg_view_reference_link( $p_bug_id, $p_dwg_reference, $p_detail_info = true, $p_fqdn = false ) {
 	if( dwg_exists( $p_bug_id ) ) {
-		$t_project_id = dwg_get_field( $p_bug_id, 'project_id' );
+		// $t_project_id = dwg_get_field( $p_bug_id, 'project_id' );
 		// 	$t_status = string_attribute( get_enum_element( 'status', dwg_get_field( $p_bug_id, 'status' ), $t_project_id ) );
 		// 	$t_link .= ' title="[' . $t_status . '] ' . $t_summary . '"';
 

@@ -475,9 +475,9 @@ class DwgFilterQuery extends DbQuery {
 		// 		case FILTER_PROPERTY_OS_BUILD:
 		// 			$this->build_prop_os_build();
 		// 			break;
-		// 		case FILTER_PROPERTY_SEARCH:
-		// 			$this->build_prop_search();
-		// 			break;
+				case FILTER_PROPERTY_SEARCH:
+					$this->build_prop_search();
+					break;
 				case FILTER_PROPERTY_RELATIONSHIP_TYPE:
 					$this->build_prop_relationship();
 					break;
@@ -1138,7 +1138,7 @@ class DwgFilterQuery extends DbQuery {
 	 *
 	 * @return string	A table alias for this join clause
 	 */
-	protected function helper_table_alias_for_bugnote() {
+	protected function helper_table_alias_for_dwgnote() {
 		if( $this->rt_table_alias_bugnote ) {
 			return $this->rt_table_alias_bugnote;
 		}
@@ -1180,7 +1180,7 @@ class DwgFilterQuery extends DbQuery {
 		$t_user_ids = $this->helper_process_users_property( $this->filter[FILTER_PROPERTY_NOTE_USER_ID] );
 		$t_use_none = ( in_array( 0, $t_user_ids ) );
 
-		$t_table_alias = $this->helper_table_alias_for_bugnote();
+		$t_table_alias = $this->helper_table_alias_for_dwgnote();
 
 		if( $t_use_none ) {
 			$t_alias = 'COALESCE( ' . $t_table_alias . '.creator_id, 0 )';
@@ -1204,7 +1204,7 @@ class DwgFilterQuery extends DbQuery {
 		}
 		# use the complementary type
 		if( $c_rel_type >= 0 ) {
-			$t_comp_type = relationship_get_complementary_type( $c_rel_type );
+			$t_comp_type = dwg_relationship_get_complementary_type( $c_rel_type );
 		}
 		$t_table_dst = 'rel_dst';
 		$t_table_src = 'rel_src';
@@ -1545,65 +1545,66 @@ class DwgFilterQuery extends DbQuery {
 	 * Build the query parts for the filter property "text search"
 	 * @return void
 	 */
-	// protected function build_prop_search() {
-	// 	if( is_blank( $this->filter[FILTER_PROPERTY_SEARCH] ) ) {
-	// 		return;
-	// 	}
+	protected function build_prop_search() {
+		if( is_blank( $this->filter[FILTER_PROPERTY_SEARCH] ) ) {
+			return;
+		}
 
-	// 	# break up search terms by spacing or quoting
-	// 	preg_match_all( "/-?([^'\"\s]+|\"[^\"]+\"|'[^']+')/", $this->filter[FILTER_PROPERTY_SEARCH], $t_matches, PREG_SET_ORDER );
+		# break up search terms by spacing or quoting
+		preg_match_all( "/-?([^'\"\s]+|\"[^\"]+\"|'[^']+')/", $this->filter[FILTER_PROPERTY_SEARCH], $t_matches, PREG_SET_ORDER );
 
-	// 	# organize terms without quoting, paying attention to negation
-	// 	$t_search_terms = array();
-	// 	foreach( $t_matches as $t_match ) {
-	// 		$t_search_terms[trim( $t_match[1], "\'\"" )] = ( $t_match[0][0] == '-' );
-	// 	}
+		# organize terms without quoting, paying attention to negation
+		$t_search_terms = array();
+		foreach( $t_matches as $t_match ) {
+			$t_search_terms[trim( $t_match[1], "\'\"" )] = ( $t_match[0][0] == '-' );
+		}
 
-	// 	// $t_bugnote_table = $this->helper_table_alias_for_bugnote();
+		$t_dwgnote_table = $this->helper_table_alias_for_dwgnote();
 
-	// 	# build a big where-clause and param list for all search terms, including negations
-	// 	$t_first = true;
-	// 	$t_textsearch_where_clause = '( ';
-	// 	foreach( $t_search_terms as $t_search_term => $t_negate ) {
-	// 		if( !$t_first ) {
-	// 			$t_textsearch_where_clause .= ' AND ';
-	// 		}
+		# build a big where-clause and param list for all search terms, including negations
+		$t_first = true;
+		$t_textsearch_where_clause = '( ';
+		foreach( $t_search_terms as $t_search_term => $t_negate ) {
+			if( !$t_first ) {
+				$t_textsearch_where_clause .= ' AND ';
+			}
 
-	// 		if( $t_negate ) {
-	// 			$t_textsearch_where_clause .= 'NOT ';
-	// 		}
+			if( $t_negate ) {
+				$t_textsearch_where_clause .= 'NOT ';
+			}
 
-	// 		$c_search = '%' . $t_search_term . '%';
-	// 		$t_textsearch_where_clause .= '( ' . $this->sql_like( '{document}.summary', $c_search )
-	// 				. ' OR ' . $this->sql_like( '{dwg_text}.description', $c_search )
-	// 				. ' OR ' . $this->sql_like( '{dwg_text}.steps_to_reproduce', $c_search )
-	// 				. ' OR ' . $this->sql_like( '{dwg_text}.additional_information', $c_search )
-	// 				. ' OR ' . $this->sql_like( '{dwgnote_text}.note', $c_search );
+			$c_search = '%' . $t_search_term . '%';
+			$t_textsearch_where_clause .= '( ' . $this->sql_like( '{document}.summary', $c_search )
+					. ' OR ' . $this->sql_like( '{document}.title', $c_search )
+					. ' OR ' . $this->sql_like( '{dwg_text}.description', $c_search )
+					. ' OR ' . $this->sql_like( '{dwg_text}.steps_to_reproduce', $c_search )
+					. ' OR ' . $this->sql_like( '{dwg_text}.additional_information', $c_search )
+					. ' OR ' . $this->sql_like( '{dwgnote_text}.note', $c_search );
 
-	// 		if( is_numeric( $t_search_term ) ) {
-	// 			# Note: no need to test negative values, '-' sign has been removed
-	// 			if( $t_search_term <= DB_MAX_INT ) {
-	// 				$c_search_int = (int)$t_search_term;
-	// 				$t_textsearch_where_clause .= ' OR {document}.id = ' . $this->param( $c_search_int );
-	// 				$t_textsearch_where_clause .= ' OR ' . $t_dwgnote_table . '.id = ' . $this->param( $c_search_int );
-	// 			}
-	// 		}
+			if( is_numeric( $t_search_term ) ) {
+				# Note: no need to test negative values, '-' sign has been removed
+				if( $t_search_term <= DB_MAX_INT ) {
+					$c_search_int = (int)$t_search_term;
+					$t_textsearch_where_clause .= ' OR {document}.id = ' . $this->param( $c_search_int );
+					$t_textsearch_where_clause .= ' OR ' . $t_dwgnote_table . '.id = ' . $this->param( $c_search_int );
+				}
+			}
 
-	// 		$t_textsearch_where_clause .= ' )';
-	// 		$t_first = false;
-	// 	}
-	// 	$t_textsearch_where_clause .= ' )';
+			$t_textsearch_where_clause .= ' )';
+			$t_first = false;
+		}
+		$t_textsearch_where_clause .= ' )';
 
-	// 	# add text query elements to arrays
-	// 	if( !$t_first ) {
-	// 		# join with dwgnote table has already been created or reused
-	// 		$this->add_join( 'JOIN {dwg_text} ON {document}.dwg_text_id = {dwg_text}.id' );
-	// 		# Outer join required otherwise we don't retrieve issues without notes
-	// 		$this->add_join( 'LEFT JOIN {dwgnote_text} ON ' . $t_dwgnote_table . '.dwgnote_text_id = {dwgnote_text}.id' );
-	// 		$this->add_where( $t_textsearch_where_clause );
-	// 	}
+		# add text query elements to arrays
+		if( !$t_first ) {
+			# join with dwgnote table has already been created or reused
+			$this->add_join( 'JOIN {dwg_text} ON {document}.dwg_text_id = {dwg_text}.id' );
+			# Outer join required otherwise we don't retrieve issues without notes
+			$this->add_join( 'LEFT JOIN {dwgnote_text} ON ' . $t_dwgnote_table . '.dwgnote_text_id = {dwgnote_text}.id' );
+			$this->add_where( $t_textsearch_where_clause );
+		}
 
-	// }
+	}
 
 	/**
 	 * Translates a sql string created with legacy db_param() syntax, into
@@ -1634,7 +1635,7 @@ class DwgFilterQuery extends DbQuery {
 	 * @return void
 	 */
 	protected function build_prop_plugin_filters() {
-		$t_plugin_filters = filter_get_plugin_filters();
+		$t_plugin_filters = filter_dwg_get_plugin_filters();
 		foreach( $t_plugin_filters as $t_field_name => $t_filter_object ) {
 			if( !filter_dwg_field_is_any( $this->filter[$t_field_name] ) || $t_filter_object->type == FILTER_TYPE_BOOLEAN ) {
 				$t_filter_query = $t_filter_object->query( $this->filter[$t_field_name] );

@@ -1347,8 +1347,12 @@ function print_dwg_link( $p_bug_id, $p_detail_info = true ) {
 	echo string_get_dwg_view_link( $p_bug_id, $p_detail_info );
 }
 
-function print_dwg_reference_link( $p_bug_id, $p_dwg_reference, $p_detail_info = true ) {
-	echo string_get_dwg_view_reference_link( $p_bug_id, $p_dwg_reference, $p_detail_info );
+function print_dwg_title_link( $p_dwg_id, $p_dwg_title, $p_detail_info = true ) {
+	echo string_get_dwg_view_title_link( $p_dwg_id, $p_dwg_title, $p_detail_info );
+}
+
+function print_dwg_reference_link( $p_dwg_id, $p_dwg_reference, $p_detail_info = true ) {
+	echo string_get_dwg_view_reference_link( $p_dwg_id, $p_dwg_reference, $p_detail_info );
 }
 
 /**

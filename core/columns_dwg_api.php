@@ -555,6 +555,13 @@ function print_dwg_column_title_id( $p_sort, $p_dir, $p_columns_target = COLUMNS
 	echo '</th>';
 }
 
+function print_dwg_column_title_title( $p_sort, $p_dir, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+	echo '<th class="column-id">';
+	print_view_dwg_sort_link( lang_get( 'title' ), 'title', $p_sort, $p_dir, $p_columns_target );
+	print_sort_icon( $p_dir, $p_sort, 'title' );
+	echo '</th>';
+}
+
 /**
  * Print table header for column project id
  *
@@ -873,7 +880,8 @@ function print_dwg_column_title_attachment_count( $p_sort, $p_dir, $p_columns_ta
  */
 function print_dwg_column_title_issue_count( $p_sort, $p_dir, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	$t_attachment_count_text = lang_get( 'issue_count' );
-	$t_attachment_count_icon = icon_get( 'fa-bug', 'blue', $t_attachment_count_text );
+//	$t_attachment_count_icon = icon_get( 'fa-bug', 'blue', $t_attachment_count_text );
+	$t_attachment_count_icon = icon_get( 'fa-info', 'blue', $t_attachment_count_text );
 	echo "\t" . '<th class="column-issue_count">' . $t_attachment_count_icon . '</th>' . "\n";
 }
 
@@ -1230,7 +1238,7 @@ function print_dwg_column_id( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET
 	echo '</td>';
 }
 
-#@ NOTE: called via a run-time generated function name (@TODO RobD - possibly deprecated/unused)
+#@ NOTE: called via a run-time generated function name (@TODO RobD - possibly deprecated/unused) (development legacy from when the column identifier was 'dwg_id' instead of 'id')
 function print_dwg_column_dwg_id( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	echo '<td class="column-id">';
 	print_dwg_link( $p_bug->id, false );
@@ -1247,9 +1255,15 @@ function print_column_document_id( BugData $p_bug, $p_columns_target = COLUMNS_T
 	echo '</td>';
 }
 
-function print_dwg_column_reference( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function print_dwg_column_title( DwgData $p_dwg, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	echo '<td class="column-id">';
-	print_dwg_reference_link( $p_bug->id, $p_bug->reference, false );
+	print_dwg_title_link( $p_dwg->id, $p_dwg->title, false );
+	echo '</td>';
+}
+
+function print_dwg_column_reference( DwgData $p_dwg, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+	echo '<td class="column-id">';
+	print_dwg_reference_link( $p_dwg->id, $p_dwg->reference, false );
 	echo '</td>';
 }
 

@@ -137,24 +137,24 @@ function filter_dwg_get_plugin_filters() {
 	if( is_null( $s_field_array ) ) {
 		$s_field_array = array();
 
-		$t_all_plugin_filters = event_signal( 'EVENT_FILTER_FIELDS' );
-		foreach( $t_all_plugin_filters as $t_plugin => $t_plugin_filters ) {
-			foreach( $t_plugin_filters as $t_callback => $t_plugin_filter_array ) {
-				if( is_array( $t_plugin_filter_array ) ) {
-					foreach( $t_plugin_filter_array as $t_filter_item ) {
-						if( is_object( $t_filter_item ) && $t_filter_item instanceof MantisFilter ) {
-							$t_filter_object = $t_filter_item;
-						} elseif( class_exists( $t_filter_item ) && is_subclass_of( $t_filter_item, 'MantisFilter' ) ) {
-							$t_filter_object = new $t_filter_item();
-						} else {
-							continue;
-						}
-						$t_filter_name = mb_strtolower( $t_plugin . '_' . $t_filter_object->field );
-						$s_field_array[$t_filter_name] = $t_filter_object;
-					}
-				}
-			}
-		}
+		// $t_all_plugin_filters = event_signal( 'EVENT_FILTER_FIELDS' );
+		// foreach( $t_all_plugin_filters as $t_plugin => $t_plugin_filters ) {
+		// 	foreach( $t_plugin_filters as $t_callback => $t_plugin_filter_array ) {
+		// 		if( is_array( $t_plugin_filter_array ) ) {
+		// 			foreach( $t_plugin_filter_array as $t_filter_item ) {
+		// 				if( is_object( $t_filter_item ) && $t_filter_item instanceof MantisFilter ) {
+		// 					$t_filter_object = $t_filter_item;
+		// 				} elseif( class_exists( $t_filter_item ) && is_subclass_of( $t_filter_item, 'MantisFilter' ) ) {
+		// 					$t_filter_object = new $t_filter_item();
+		// 				} else {
+		// 					continue;
+		// 				}
+		// 				$t_filter_name = mb_strtolower( $t_plugin . '_' . $t_filter_object->field );
+		// 				$s_field_array[$t_filter_name] = $t_filter_object;
+		// 			}
+		// 		}
+		// 	}
+		// }
 	}
 
 	return $s_field_array;

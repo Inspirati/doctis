@@ -966,10 +966,11 @@ $g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'dwg_text' ), "
 	VALUES
 	( 'Empty', 'Empty', 'Empty' )" ) );
 
+# Create a default 'Empty' document with status 'Archived' for issues which refer to documents which are to be deleted
 $g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'document' ), "
 	( title, category_id, dwg_text_id, status )
 	VALUES
-	( 'Empty', '1', '1', '110' )" ) );
+	( 'Empty', '1', '1', '195' )" ) );
 
 # @TODO RobD - extract from dwg_api.php ~line number 1982:
 #    "log changes except for duplicate_id which is obsolete and should be removed in MantisBT 1.3"
@@ -1056,11 +1057,11 @@ $g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwg_histor
 	id						I		UNSIGNED NOTNULL PRIMARY AUTOINCREMENT,
 	user_id					I		UNSIGNED NOTNULL DEFAULT '0',
 	dwg_id					I		UNSIGNED NOTNULL DEFAULT '0',
-	date_modified			I		UNSIGNED NOTNULL DEFAULT '1',
 	field_name				C(64)	$t_notnull,
 	old_value				C(255)	$t_notnull,
 	new_value				C(255)	$t_notnull,
-	type					I2		NOTNULL DEFAULT '0'",
+	type					I2		NOTNULL DEFAULT '0',
+	date_modified			I		UNSIGNED NOTNULL DEFAULT '1'",
 	$t_table_options
 	) );
 $g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_dwg_history_dwg_id', db_get_table( 'dwg_history' ), 'dwg_id' ) );

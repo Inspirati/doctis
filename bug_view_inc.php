@@ -309,16 +309,19 @@ if( $t_flags['document_show'] ) {
 
 	echo '<tr class="bug-header-data">';
 
-	# Document
+	# Document Title
+//	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['title'] ) ? string_display_line( $t_document['title'] ) : '', '</td>';
+	echo '<td class="bug-project">';
+	if( $t_document_flags['project_show'] ) {
+		if ( isset( $t_document['title'] )) {
+			// echo string_display_line( $t_document['title'] );
+			print_dwg_title_link( $t_document['id'], $t_document['title'], false );
+		}
+	}
+	echo '</td>';
 
-	// $t_created_at = ApiObjectFactory::datetime( $t_attachment_row['date_added'] );
-//	$t_release_date = ApiObjectFactory::datetime( $t_document['release_date'] );
-	$t_date_format = 'Y-m-d';
-	$t_release_date = date( $t_date_format, strtotime( $t_document['release_date'] ) );
-
-	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['title'] ) ? string_display_line( $t_document['title'] ) : '', '</td>';
 //	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['reference'] ) ? string_display_line( $t_document['reference'] ) : '', '</td>';
-	# Reference
+	# Document Reference
 	if( $t_document_flags['project_show'] ) {
 		echo '<td class="bug-project">';
 //		echo string_display_line( $t_issue['reference'] );
@@ -327,6 +330,10 @@ if( $t_flags['document_show'] ) {
 	}
 	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['number'] ) ? string_display_line( $t_document['number'] ) : '', '</td>';
 	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['revision'] ) ? string_display_line( $t_document['revision'] ) : '', '</td>';
+	// $t_created_at = ApiObjectFactory::datetime( $t_attachment_row['date_added'] );
+//	$t_release_date = ApiObjectFactory::datetime( $t_document['release_date'] );
+	$t_date_format = 'Y-m-d';
+	$t_release_date = date( $t_date_format, strtotime( $t_document['release_date'] ) );
 	//echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['release_date'] ) ? string_display_line( $t_document['release_date'] ) : '', '</td>';
 	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['release_date'] ) ? $t_release_date : '', '</td>';
 	// echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['release_date'] ) ? string_display_line( date( $t_date_format, strtotime( $t_document['release_date'] ) ) ) : '', '</td>';
@@ -742,7 +749,8 @@ if( $t_flags['relationships_show'] ) {
 
 # User list monitoring the bug
 if( $t_flags['monitor_show'] ) {
-	$t_collapse_block = is_collapsed( 'monitoring' );
+	// $t_collapse_block = is_collapsed( 'monitoring' ); // @TODO RobD - possible bug in original code
+	$t_collapse_block = is_collapsed( 'monitors' );
 	$t_block_css = $t_collapse_block ? 'collapsed' : '';
 	$t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 ?>

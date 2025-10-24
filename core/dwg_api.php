@@ -1345,7 +1345,7 @@ function dwg_copy( $p_bug_id, $p_target_project_id = null, $p_copy_custom_fields
 		}
 	} else {
 		# Create a "New Issue" history entry
-		history_dwg_log_event_special( $t_new_bug_id, NEW_BUG );
+		history_dwg_log_event_special( $t_new_bug_id, NEW_DWG );
 	}
 
 	# Create history entries to reflect the copy operation

@@ -287,17 +287,17 @@ function history_dwg_query_result( array $p_query_options ) {
  * @param  array $p_filter           Filter array
  * @param  integer $p_start_time     The start time to filter by, or null for all.
  * @param  integer $p_end_time       The end time to filter by, or null for all.
- * @param  string  $p_history__order  The sort order.
+ * @param  string  $p_history_order  The sort order.
  * @return IteratorAggregate|boolean database result to pass into history_dwg_get_event_from_row().
  * @deprecated		Use history_dwg_query_result() instead
  */
-function history_dwg_get_range_result_filter( $p_filter, $p_start_time = null, $p_end_time = null, $p_history__order = null ) {
+function history_dwg_get_range_result_filter( $p_filter, $p_start_time = null, $p_end_time = null, $p_history_order = null ) {
 	error_parameters( __FUNCTION__ . '()', 'history_dwg_query_result()' );
 	trigger_error( ERROR_DEPRECATED_SUPERSEDED, DEPRECATED );
 
 	$t_query_options = array();
-	if ( $p_history__order !== null ) {
-		$t_query_options['order'] = $p_history__order;
+	if ( $p_history_order !== null ) {
+		$t_query_options['order'] = $p_history_order;
 	}
 	if ( $p_start_time !== null ) {
 		$t_query_options['start_time'] = $p_start_time;
@@ -316,17 +316,17 @@ function history_dwg_get_range_result_filter( $p_filter, $p_start_time = null, $
  * @param  integer $p_bug_id         The bug id or null for matching any bug.
  * @param  integer $p_start_time     The start time to filter by, or null for all.
  * @param  integer $p_end_time       The end time to filter by, or null for all.
- * @param  string  $p_history__order  The sort order.
+ * @param  string  $p_history_order  The sort order.
  * @return IteratorAggregate|boolean database result to pass into history_dwg_get_event_from_row().
  * @deprecated		Use history_dwg_query_result() instead
  */
-function history_dwg_get_range_result( $p_bug_id = null, $p_start_time = null, $p_end_time = null, $p_history__order = null ) {
+function history_dwg_get_range_result( $p_bug_id = null, $p_start_time = null, $p_end_time = null, $p_history_order = null ) {
 	error_parameters( __FUNCTION__ . '()', 'history_dwg_query_result()' );
 	trigger_error( ERROR_DEPRECATED_SUPERSEDED, DEPRECATED );
 
 	$t_query_options = array();
-	if ( $p_history__order !== null ) {
-		$t_query_options['order'] = $p_history__order;
+	if ( $p_history_order !== null ) {
+		$t_query_options['order'] = $p_history_order;
 	}
 	if ( $p_start_time !== null ) {
 		$t_query_options['start_time'] = $p_start_time;
@@ -643,7 +643,7 @@ function history_dwg_get_type_name( $p_type ) {
 		case NORMAL_TYPE:
 			$t_type_name = 'field-updated';
 			break;
-		case NEW_BUG:
+		case NEW_DWG:
 			$t_type_name = 'issue-new';
 			break;
 		case DWGNOTE_ADDED:
@@ -759,6 +759,9 @@ function history_dwg_localize_item( $p_bug_id, $p_field_name, $p_type, $p_old_va
 	$t_field_localized = history_dwg_localize_field_name( $p_field_name );
 	switch( $p_field_name ) {
 		case 'status':
+			$p_old_value = get_enum_element( 'dwg_status', $p_old_value );
+			$p_new_value = get_enum_element( 'dwg_status', $p_new_value );
+			break;
 		case 'severity':
 		case 'reproducibility':
 		case 'resolution':
@@ -830,8 +833,8 @@ function history_dwg_localize_item( $p_bug_id, $p_field_name, $p_type, $p_old_va
 
 	if( NORMAL_TYPE != $p_type ) {
 		switch( $p_type ) {
-			case NEW_BUG:
-				$t_note = lang_get( 'new_bug' );
+			case NEW_DWG:
+				$t_note = lang_get( 'new_dwg' );
 				break;
 			case DWGNOTE_ADDED:
 				$t_note = lang_get( 'dwgnote_added' ) . ': ' . $p_old_value;
@@ -891,44 +894,44 @@ function history_dwg_localize_item( $p_bug_id, $p_field_name, $p_type, $p_old_va
 				$p_old_value = get_enum_element( 'view_state', $p_old_value );
 				$t_note = lang_get( 'dwgnote_view_state' ) . ': ' . $p_new_value . ': ' . $p_old_value;
 				break;
-			case BUG_MONITOR:
+			case DWG_MONITOR:
 				$p_old_value = user_get_name( $p_old_value );
 				$t_note = lang_get( 'dwg_monitor' ) . ': ' . $p_old_value;
 				break;
-			case BUG_UNMONITOR:
+			case DWG_UNMONITOR:
 				if( $p_old_value !== '' ) {
 					$p_old_value = user_get_name( $p_old_value );
 				}
 				$t_note = lang_get( 'dwg_end_monitor' ) . ': ' . $p_old_value;
 				break;
-			case BUG_DELETED:
+			case DWG_DELETED:
 				$t_note = lang_get( 'dwg_deleted' ) . ': ' . $p_old_value;
 				break;
-			case BUG_ADD_SPONSORSHIP:
+			case DWG_ADD_SPONSORSHIP:
 				$t_note = lang_get( 'sponsorship_added' );
 				$t_change = user_get_name( $p_old_value ) . ': ' . sponsorship_format_amount( $p_new_value );
 				break;
-			case BUG_UPDATE_SPONSORSHIP:
+			case DWG_UPDATE_SPONSORSHIP:
 				$t_note = lang_get( 'sponsorship_updated' );
 				$t_change = user_get_name( $p_old_value ) . ': ' . sponsorship_format_amount( $p_new_value );
 				break;
-			case BUG_DELETE_SPONSORSHIP:
+			case DWG_DELETE_SPONSORSHIP:
 				$t_note = lang_get( 'sponsorship_deleted' );
 				$t_change = user_get_name( $p_old_value ) . ': ' . sponsorship_format_amount( $p_new_value );
 				break;
-			case BUG_PAID_SPONSORSHIP:
+			case DWG_PAID_SPONSORSHIP:
 				$t_note = lang_get( 'sponsorship_paid' );
 				$t_change = user_get_name( $p_old_value ) . ': ' . get_enum_element( 'sponsorship', $p_new_value );
 				break;
-			case BUG_ADD_RELATIONSHIP:
+			case DWG_ADD_RELATIONSHIP:
 				$t_note = lang_get( 'relationship_added' );
 				$t_change = relationship_get_description_for_history( $p_old_value ) . ' ' . dwg_format_id( $p_new_value );
 				break;
-			case BUG_REPLACE_RELATIONSHIP:
+			case DWG_REPLACE_RELATIONSHIP:
 				$t_note = lang_get( 'relationship_replaced' );
 				$t_change = relationship_get_description_for_history( $p_old_value ) . ' ' . dwg_format_id( $p_new_value );
 				break;
-			case BUG_DEL_RELATIONSHIP:
+			case DWG_DEL_RELATIONSHIP:
 				$t_note = lang_get( 'relationship_deleted' );
 
 				# Fix for #7846: There are some cases where old value is empty, this may be due to an old bug.
@@ -938,10 +941,10 @@ function history_dwg_localize_item( $p_bug_id, $p_field_name, $p_type, $p_old_va
 					$t_change = dwg_format_id( $p_new_value );
 				}
 				break;
-			case BUG_CLONED_TO:
+			case DWG_CLONED_TO:
 				$t_note = lang_get( 'dwg_cloned_to' ) . ': ' . dwg_format_id( $p_new_value );
 				break;
-			case BUG_CREATED_FROM:
+			case DWG_CREATED_FROM:
 				$t_note = lang_get( 'dwg_created_from' ) . ': ' . dwg_format_id( $p_new_value );
 				break;
 			case TAG_ATTACHED:
@@ -954,7 +957,7 @@ function history_dwg_localize_item( $p_bug_id, $p_field_name, $p_type, $p_old_va
 				$t_note = lang_get( 'tag_history_dwg_renamed' );
 				$t_change = $p_old_value . ' => ' . $p_new_value;
 				break;
-			case BUG_REVISION_DROPPED:
+			case DWG_REVISION_DROPPED:
 				$t_note = lang_get( 'dwg_revision_dropped_history' ) . ': '
 					. bug_revision_get_type_name( $p_new_value ) . ': '
 					. $p_old_value;
