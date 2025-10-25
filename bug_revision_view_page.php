@@ -228,7 +228,7 @@ print_small_button( 'view.php?id=' . $t_bug_id, lang_get( 'back_to_issue' ) );
 					<table class="table table-bordered table-condensed table-striped">
 						<tr>
 							<th class="category width-20">
-								<?php echo lang_get( 'summary' ) ?>
+								<?php echo lang_get( 'issue_summary' ) ?>
 							</th>
 							<td>
 								<?php echo bug_format_summary( $t_bug_id, SUMMARY_FIELD ) ?>

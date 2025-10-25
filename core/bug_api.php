@@ -492,7 +492,7 @@ class BugData {
 	public function validate( $p_update_extended = true ) {
 		# Summary cannot be blank
 		if( is_blank( $this->summary ) ) {
-			error_parameters( lang_get( 'summary' ) );
+			error_parameters( lang_get( 'issue_summary' ) );
 			trigger_error( ERROR_EMPTY_FIELD, ERROR );
 		}
 

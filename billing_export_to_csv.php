@@ -57,7 +57,7 @@ csv_start( csv_get_default_filename() );
 echo csv_escape_string( lang_get( 'issue_id' ) ) . $t_separator;
 echo csv_escape_string( lang_get( 'project_name' ) ) . $t_separator;
 echo csv_escape_string( lang_get( 'category' ) ) . $t_separator;
-echo csv_escape_string( lang_get( 'summary' ) ) . $t_separator;
+echo csv_escape_string( lang_get( 'issue_summary' ) ) . $t_separator;
 echo csv_escape_string( lang_get( 'username' ) ) . $t_separator;
 echo csv_escape_string( lang_get( 'timestamp' ) ) . $t_separator;
 echo csv_escape_string( lang_get( 'minutes' ) ) . $t_separator;

@@ -73,10 +73,6 @@ compress_enable();
 # don't index my view page
 html_robots_noindex();
 
-// layout_page_header( lang_get( 'manage_projects_link' ) );
-// layout_page_begin( 'manage_overview_page.php', true );
-//print_manage_menu( 'manage_proj_page.php' );
-
 layout_page_header_begin( lang_get( 'my_view_link' ) );
 
 $t_refresh_delay = current_user_get_pref( 'refresh_delay' );
@@ -86,14 +82,14 @@ if( $t_refresh_delay > 0 ) {
 
 layout_page_header_end();
 
-layout_page_begin( __FILE__, true );
+// layout_page_begin( __FILE__, true );
+layout_page_begin( 'my_view_page.php', true );
 
 print_my_view_menu( 'my_view_dwg_page.php' );
 
 $f_page_number = gpc_get_int( 'page_number', 1 );
 
 $t_per_page = config_get( 'my_view_dwg_count' );
-// $t_bug_count = null;
 $t_dwg_count = null;
 $t_page_count = null;
 

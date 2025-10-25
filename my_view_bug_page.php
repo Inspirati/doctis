@@ -81,7 +81,8 @@ if( $t_refresh_delay > 0 ) {
 
 layout_page_header_end();
 
-layout_page_begin( __FILE__ );
+// layout_page_begin( __FILE__ );
+layout_page_begin( 'my_view_page.php' );
 
 print_my_view_menu( 'my_view_bug_page.php' );
 
@@ -89,7 +90,6 @@ $f_page_number = gpc_get_int( 'page_number', 1 );
 
 $t_per_page = config_get( 'my_view_bug_count' );
 $t_bug_count = null;
-$t_dwg_count = null;
 $t_page_count = null;
 
 # The projects that need to be evaluated are those that will be included in the filters

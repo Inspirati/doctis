@@ -38,7 +38,7 @@
  */
 
 require_once( 'core.php' );
-require_api( 'access_api.php' );
+require_api( 'access_dwg_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
@@ -47,8 +47,8 @@ require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
-require_api( 'print_api.php' );
-require_api( 'summary_api.php' );
+require_api( 'print_dwg_api.php' );
+require_api( 'summary_dwg_api.php' );
 require_api( 'user_api.php' );
 
 $f_project_id = gpc_get_int( 'project_id', helper_get_current_project() );
@@ -71,12 +71,20 @@ foreach ( $t_summary_header_arr as $t_summary_header_name ) {
 	$t_summary_header .= '</th>';
 }
 
-layout_page_header( lang_get( 'issue_summary' ) );
+layout_page_header( lang_get( 'document_summary' ) );
 
-layout_page_begin( __FILE__ );
+// layout_page_header_begin( lang_get( 'document_summary' ) );
+// $t_refresh_delay = current_user_get_pref( 'refresh_delay' );
+// if( $t_refresh_delay > 0 ) {
+// 	html_meta_redirect( 'summary_dwg_page.php?refresh=true', $t_refresh_delay * 60 );
+// }
+// layout_page_header_end();
 
-print_summary_menu( 'summary_page.php', $t_filter );
-print_summary_submenu();
+
+layout_page_begin( 'summary_page.php', true );
+
+print_summary_menu( 'summary_dwg_page.php', $t_filter );
+//print_summary_submenu();
 ?>
 
 <div class="col-md-12 col-xs-12">
@@ -86,7 +94,7 @@ print_summary_submenu();
 <div class="widget-header widget-header-small">
 	<h4 class="widget-title lighter">
 		<?php print_icon( 'fa-bar-chart-o', 'ace-icon' ); ?>
-		<?php echo lang_get('summary_title') ?>
+		<?php echo lang_get('summary_dwg_title') ?>
 	</h4>
 </div>
 
@@ -126,6 +134,7 @@ print_summary_submenu();
 	</div>
 
 	<!-- BY SEVERITY -->
+<?php /* 
 	<div class="space-10"></div>
 	<div class="widget-box table-responsive">
 		<table class="table table-hover table-bordered table-condensed table-striped">
@@ -138,7 +147,7 @@ print_summary_submenu();
 		<?php summary_print_by_enum( 'severity', $t_filter ) ?>
 	</table>
 	</div>
-
+*/ ?>
 	<!-- BY CATEGORY -->
 	<div class="space-10"></div>
 	<div class="widget-box table-responsive">
@@ -159,14 +168,14 @@ print_summary_submenu();
 		<table class="table table-hover table-bordered table-condensed table-striped">
 		<thead>
 			<tr>
-				<th colspan="2"><?php echo lang_get( 'time_stats' ) ?></th>
+				<th colspan="2"><?php echo lang_get( 'dwg_time_stats' ) ?></th>
 			</tr>
 		</thead>
 		<tr>
 			<td><?php echo lang_get( 'longest_open_bug' ) ?></td>
 			<td class="align-right"><?php
-				if( $t_time_stats['bug_id'] > 0 )  {
-					print_bug_link( $t_time_stats['bug_id'] );
+				if( $t_time_stats['dwg_id'] > 0 )  {
+					print_bug_link( $t_time_stats['dwg_id'] );
 				}
 			?></td>
 		</tr>
@@ -248,6 +257,7 @@ print_summary_submenu();
 	</div>
 
 	<!-- BY RESOLUTION -->
+<?php /*
 	<div class="space-10"></div>
 	<div class="widget-box table-responsive">
 		<table class="table table-hover table-bordered table-condensed table-striped">
@@ -260,7 +270,7 @@ print_summary_submenu();
 		<?php summary_print_by_enum( 'resolution', $t_filter ) ?>
 	</table>
 	</div>
-
+*/ ?>
 	<!-- BY PRIORITY -->
 	<div class="space-10"></div>
 	<div class="widget-box table-responsive">
@@ -281,7 +291,7 @@ print_summary_submenu();
 		<table class="table table-hover table-bordered table-condensed table-striped">
 		<thead>
 			<tr>
-				<th class="width-35"><?php echo lang_get( 'reporter_stats' ) ?></th>
+				<th class="width-35"><?php echo lang_get( 'creator_stats' ) ?></th>
 				<?php echo $t_summary_header ?>
 			</tr>
 		</thead>
@@ -295,13 +305,13 @@ print_summary_submenu();
 		<table class="table table-hover table-bordered table-condensed table-striped">
 		<thead>
 			<tr>
-				<th class="width-35"><?php echo lang_get( 'reporter_effectiveness' ) ?></th>
+				<th class="width-35"><?php echo lang_get( 'creator_effectiveness' ) ?></th>
 				<th class="align-right"><?php echo lang_get( 'severity' ); ?></th>
 				<th class="align-right"><?php echo lang_get( 'errors' ); ?></th>
 				<th class="align-right"><?php echo lang_get( 'total' ); ?></th>
 			</tr>
 		</thead>
-		<?php summary_print_reporter_effectiveness( config_get( 'severity_enum_string' ), config_get( 'resolution_enum_string' ), $t_filter ) ?>
+		<?php /* summary_print_creator_effectiveness( config_get( 'severity_enum_string' ), config_get( 'resolution_enum_string' ), $t_filter ) */ ?>
 	</table>
 	</div>
 
@@ -316,7 +326,7 @@ print_summary_submenu();
 		<table class="table table-hover table-bordered table-condensed table-striped">
 		<thead>
 			<tr>
-				<th class="width-15"><?php echo lang_get( 'reporter_by_resolution' ) ?></th>
+				<th class="width-15"><?php echo lang_get( 'creator_by_resolution' ) ?></th>
 				<?php
 					$t_resolutions = MantisEnum::getValues( config_get( 'resolution_enum_string' ) );
 
@@ -329,7 +339,7 @@ print_summary_submenu();
 				?>
 			</tr>
 		</thead>
-		<?php summary_print_reporter_resolution( config_get( 'resolution_enum_string' ), $t_filter ) ?>
+		<?php /* summary_print_reporter_resolution( config_get( 'resolution_enum_string' ), $t_filter ) */ ?>
 	</table>
 	</div>
 
@@ -352,7 +362,7 @@ print_summary_submenu();
 				?>
 			</tr>
 		</thead>
-		<?php summary_print_developer_resolution( config_get( 'resolution_enum_string' ), $t_filter ) ?>
+		<?php /* summary_print_developer_resolution( config_get( 'resolution_enum_string' ), $t_filter ) */ ?>
 	</table>
 	</div>
 

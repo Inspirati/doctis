@@ -659,7 +659,7 @@ print_table_spacer( 6 );
 // 	echo '<tr>';
 // 	echo '<th class="category">';
 // 	echo '<span class="required">*</span> ';
-// 	echo '<label for="summary">' . lang_get( 'summary' ) . '</label>';
+// 	echo '<label for="summary">' . lang_get( 'document_summary' ) . '</label>';
 // 	echo '</th>';
 // 	echo '<td colspan="5">';
 // 	echo '<input ', helper_get_tab_index(),

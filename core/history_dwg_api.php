@@ -610,7 +610,7 @@ function history_dwg_localize_field_name( $p_field_name ) {
 			$t_field_localized = lang_get( 'platform' );
 			break;
 		case 'summary':
-			$t_field_localized = lang_get( 'summary' );
+			$t_field_localized = lang_get( 'document_summary' );
 			break;
 		case 'duplicate_id':
 			$t_field_localized = lang_get( 'duplicate_id' );

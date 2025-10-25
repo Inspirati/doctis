@@ -991,7 +991,7 @@ function print_dwg_column_title_last_updated( $p_sort, $p_dir, $p_columns_target
  */
 function print_dwg_column_title_summary( $p_sort, $p_dir, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	echo '<th class="column-summary">';
-	print_view_dwg_sort_link( lang_get( 'summary' ), 'summary', $p_sort, $p_dir, $p_columns_target );
+	print_view_dwg_sort_link( lang_get( 'document_summary' ), 'summary', $p_sort, $p_dir, $p_columns_target );
 	print_sort_icon( $p_dir, $p_sort, 'summary' );
 	echo '</th>';
 }

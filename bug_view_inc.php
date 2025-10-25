@@ -632,7 +632,7 @@ print_table_spacer( 6 );
 # Summary
 if( $t_flags['summary_show'] && isset( $t_issue['summary'] ) ) {
 	echo '<tr>';
-	echo '<th class="bug-summary category">', lang_get( 'summary' ), '</th>';
+	echo '<th class="bug-summary category">', lang_get( 'issue_summary' ), '</th>';
 	echo '<td class="bug-summary" colspan="5">', bug_format_summary( $f_issue_id, SUMMARY_FIELD ), '</td>';
 	echo '</tr>';
 }

@@ -573,7 +573,7 @@ function email_dwg_relationship_dwg_deleted( $p_bug_id ) {
 
 		$t_opt = array();
 		$t_opt[] = dwg_format_id( $p_bug_id );
-		email_dwg_generic( $t_related_bug_id, 'handler', 'email_notification_title_for_action_dwg_related_issue_deleted', $t_opt );
+		email_dwg_generic( $t_related_bug_id, 'handler', 'email_notification_title_for_action_dwg_related_document_deleted', $t_opt );
 	}
 }
 
@@ -620,14 +620,14 @@ function email_dwg_relationship_child_resolved_closed( $p_bug_id, $p_message_id 
 	}
 
 	if( $p_message_id == 'email_notification_title_for_action_dwg_relationship_child_closed' ) {
-		log_event( LOG_EMAIL, sprintf( 'Document #%d child issue closed', $p_bug_id ) );
+		log_event( LOG_EMAIL, sprintf( 'Document #%d child document closed', $p_bug_id ) );
 	} else {
-		log_event( LOG_EMAIL, sprintf( 'Document #%d child issue resolved', $p_bug_id ) );
+		log_event( LOG_EMAIL, sprintf( 'Document #%d child document resolved', $p_bug_id ) );
 	}
 
 	for( $i = 0;$i < $t_relationship_count;$i++ ) {
 		if( $t_relationship[$i]->type == DWG_DEPENDANT ) {
-			$t_src_bug_id = $t_relationship[$i]->src_bug_id;
+			$t_src_bug_id = $t_relationship[$i]->src_dwg_id;
 			$t_status = dwg_get_field( $t_src_bug_id, 'status' );
 			if( $t_status < config_get( 'dwg_resolved_status_threshold' ) ) {
 
@@ -689,7 +689,7 @@ function email_dwg_sponsorship_deleted( $p_bug_id ) {
  */
 function email_dwg_added( $p_bug_id ) {
 	log_event( LOG_EMAIL, sprintf( 'Document #%d created', $p_bug_id ) );
-	email_dwg_generic( $p_bug_id, 'new', 'email_notification_title_for_action_dwg_dwg_submitted' );
+	email_dwg_generic( $p_bug_id, 'new', 'email_notification_title_for_action_dwg_submitted' );
 }
 
 /**
@@ -702,7 +702,7 @@ function email_dwg_added( $p_bug_id ) {
  */
 function email_dwg_updated( $p_bug_id ) {
 	log_event( LOG_EMAIL, sprintf( 'Document #%d updated', $p_bug_id ) );
-	email_dwg_generic( $p_bug_id, 'updated', 'email_notification_title_for_action_dwg_dwg_updated' );
+	email_dwg_generic( $p_bug_id, 'updated', 'email_notification_title_for_action_dwg_updated' );
 }
 
 /**
@@ -800,7 +800,7 @@ function email_dwgnote_add( $p_bugnote_id, $p_files = array(), $p_exclude_user_i
 		email_store( $t_user_email, $t_subject, $t_contents, $t_mail_headers );
 
 		log_event( LOG_EMAIL_VERBOSE, 'queued dwgnote email for note ~' . $p_bugnote_id .
-			' issue #' . $t_bugnote->dwg_id . ' by U' . $t_user_id );
+			' document #' . $t_bugnote->dwg_id . ' by U' . $t_user_id );
 
 		lang_pop();
 	}
@@ -850,7 +850,7 @@ function email_dwg_close( $p_bug_id ) {
  */
 function email_dwg_reopened( $p_bug_id ) {
 	log_event( LOG_EMAIL, sprintf( 'Document #%d reopened', $p_bug_id ) );
-	email_dwg_generic( $p_bug_id, 'reopened', 'email_notification_title_for_action_dwg_dwg_reopened' );
+	email_dwg_generic( $p_bug_id, 'reopened', 'email_notification_title_for_action_dwg_reopened' );
 }
 
 /**
@@ -880,8 +880,8 @@ function email_dwg_owner_changed($p_bug_id, $p_prev_handler_id, $p_new_handler_i
 	}
 
 	$t_message_id = $p_new_handler_id == NO_USER ?
-			'email_notification_title_for_action_dwg_dwg_unassigned' :
-			'email_notification_title_for_action_dwg_dwg_assigned';
+			'email_notification_title_for_action_dwg_unassigned' :
+			'email_notification_title_for_action_dwg_assigned';
 
 	$t_extra_user_ids_to_email = array();
 	if ( $p_prev_handler_id !== NO_USER && $p_prev_handler_id != $p_new_handler_id ) {
@@ -917,7 +917,7 @@ function email_dwg_status_changed( $p_bug_id, $p_new_status_label ) {
  */
 function email_dwg_deleted( $p_bug_id ) {
 	log_event( LOG_EMAIL, sprintf( 'Document #%d deleted', $p_bug_id ) );
-	email_dwg_generic( $p_bug_id, 'deleted', 'email_notification_title_for_action_dwg_dwg_deleted' );
+	email_dwg_generic( $p_bug_id, 'deleted', 'email_notification_title_for_action_dwg_deleted' );
 }
 
 /**
@@ -1028,7 +1028,7 @@ function email_dwg_user_mention( $p_bug_id, $p_mention_user_ids, $p_message, $p_
 	$t_users_processed = array();
 
 	foreach( $p_removed_mention_user_ids as $t_removed_mention_user_id ) {
-		log_event( LOG_EMAIL_VERBOSE, 'skipped mention email for U' . $t_removed_mention_user_id . ' (no access to issue or note).' );
+		log_event( LOG_EMAIL_VERBOSE, 'skipped mention email for U' . $t_removed_mention_user_id . ' (no access to document or note).' );
 	}
 
 	$t_result = array();
@@ -1284,7 +1284,7 @@ function email_format_dwg_message( array $p_visible_bug_data ) {
 
 	if( isset( $p_visible_bug_data['relations'] ) ) {
 		if( $p_visible_bug_data['relations'] != '' ) {
-			$t_message .= $t_email_separator1 . "\n" . utf8_str_pad( lang_get( 'dwg_relationships' ), 20 ) . utf8_str_pad( lang_get( 'id' ), 8 ) . lang_get( 'summary' ) . "\n" . $t_email_separator2 . "\n" . $p_visible_bug_data['relations'];
+			$t_message .= $t_email_separator1 . "\n" . utf8_str_pad( lang_get( 'dwg_relationships' ), 20 ) . utf8_str_pad( lang_get( 'id' ), 8 ) . lang_get( 'document_summary' ) . "\n" . $t_email_separator2 . "\n" . $p_visible_bug_data['relations'];
 		}
 	}
 
@@ -1388,7 +1388,7 @@ function email_build_visible_dwg_data( $p_user_id, $p_bug_id, $p_message_id ) {
 
 	$t_bug_data['email_dwg'] = $p_bug_id;
 
-	if( $p_message_id !== 'email_notification_title_for_action_dwg_dwg_deleted' ) {
+	if( $p_message_id !== 'email_notification_title_for_action_dwg_deleted' ) {
 		$t_bug_data['email_bug_view_url'] = string_get_dwg_view_url_with_fqdn( $p_bug_id );
 	}
 

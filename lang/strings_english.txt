@@ -741,7 +741,7 @@ $s_build = 'Build';
 $s_fixed_in_version = 'Fixed in Version';
 $s_target_version = 'Target Version';
 $s_votes = 'Votes';
-$s_summary = 'Issue Summary';
+$s_issue_summary = 'Issue Summary';
 $s_synthesis = 'Synthesis';
 $s_description = 'Description';
 $s_steps_to_reproduce = 'Steps To Reproduce';
@@ -756,6 +756,7 @@ $s_updating_bug_simple_title = 'Updating Issue Information';
 $s_back_to_dwg_link = 'Back To Document';
 $s_updating_dwg_advanced_title = 'Updating Document Information (WIP)';
 $s_document = 'Document';
+$s_document_summary = 'Document Summary';
 
 # bug_view*
 $s_view_revisions = 'View Revisions';
@@ -1401,7 +1402,7 @@ $s_site_settings_link = 'Site Settings';
 $s_site_settings_updated_msg = 'Site settings have been updated';
 
 # summary_page.php
-$s_summary_title = 'Summary';
+$s_summary_title = 'Issue Summary';
 $s_summary_advanced_link = 'Advanced summary';
 $s_by_project = 'By Project';
 $s_by_status = 'By Status';
@@ -1435,6 +1436,19 @@ $s_reporter_stats = 'Reporter Stats';
 $s_orct = '(open/resolved/closed/total)';
 $s_summary_header = 'open/resolved/closed/total/resolved ratio/ratio';
 $s_summary_notice_filter_is_applied = 'A filter has been applied';
+
+# summary_dwg_page.php
+$s_summary_dwg_title = 'Document Summary';
+$s_by_creator = 'By Creator';
+$s_creator_by_resolution = 'Creator By Resolution';
+$s_creator_effectiveness = 'Creator Effectiveness';
+$s_dwg_time_stats = 'Time Stats For Accepted Documents (days)';
+$s_creator_stats = 'Creator Stats';
+
+$s_by_reporter = 'By Creator';
+$s_reporter_by_resolution = 'Creator By Resolution';
+$s_reporter_effectiveness = 'Creator Effectiveness';
+$s_reporter_stats = 'Creator Stats';
 
 # view_all_bug_page.php
 $s_any = 'any';

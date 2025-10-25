@@ -380,7 +380,7 @@ class DwgData {
 	public function validate( $p_update_extended = true ) {
 		# Summary cannot be blank
 		if( is_blank( $this->summary ) ) {  // @TODO RobD:
-			// error_parameters( lang_get( 'summary' ) );
+			// error_parameters( lang_get( 'document_summary' ) );
 			// trigger_error( ERROR_EMPTY_FIELD, ERROR );
 			// error_log("Summary cannot be blank - BUT CURRENTLY IT IS !!");
 		}

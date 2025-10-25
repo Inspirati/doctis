@@ -798,7 +798,6 @@ function print_manage_menu( $p_page = '' ) {
 	if( access_has_global_level( config_get( 'manage_plugin_threshold' ) ) ) {
 		$t_pages['manage_plugin_page.php'] = array( 'url'   => 'manage_plugin_page.php', 'label' => 'manage_plugin_link' );
 	}
-
 	if( access_has_project_level( config_get( 'manage_configuration_threshold' ) ) ) {
 		$t_pages['adm_permissions_report.php'] = array(
 			'url'   => 'adm_permissions_report.php',
@@ -981,15 +980,24 @@ function print_doc_menu( $p_page = '' ) {
  * @return void
  */
 function print_summary_menu( $p_page = '', ?array $p_filter = null ): void {
-	$t_link = 'summary_page.php';
-	$t_filter_param = $p_filter ? filter_get_temporary_key_param( $p_filter ) : '';
-	if( $t_filter_param ) {
-		$t_link = helper_url_combine( $t_link, $t_filter_param );
-	}
-	$t_pages['summary_page.php'] = array(
-		'url' => $t_link,
-		'label' => 'summary_link',
-	);
+	$t_pages = array();
+
+	// if( $p_page == 'summary_page.php' )  {
+		$t_link = 'summary_page.php';
+		$t_filter_param = $p_filter ? filter_get_temporary_key_param( $p_filter ) : '';
+		if( $t_filter_param ) {
+			$t_link = helper_url_combine( $t_link, $t_filter_param );
+		}
+		$t_pages['summary_page.php'] = array( 'url' => $t_link, 'label' => 'issue_summary' );
+	// }
+	// if( $p_page == 'summary_dwg_page.php' )  {
+		$t_link = 'summary_dwg_page.php';
+		$t_filter_param = $p_filter ? filter_dwg_get_temporary_key_param( $p_filter ) : '';
+		if( $t_filter_param ) {
+			$t_link = helper_url_combine( $t_link, $t_filter_param );
+		}
+		$t_pages['summary_dwg_page.php'] = array( 'url' => $t_link, 'label' => 'document_summary' );
+	// }
 
 	print_menu( $t_pages, $p_page, 'EVENT_MENU_SUMMARY' );
 

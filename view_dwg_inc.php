@@ -124,7 +124,7 @@ if( ( $t_filter_position & FILTER_POSITION_TOP ) == FILTER_POSITION_TOP ) {
 		$t_summary_link = 'view_dwg_set.php?summary=1&temporary=y';
 	} else {
 		$t_filter_param = '?' . $t_filter_param;
-		$t_summary_link = 'summary_page.php' . $t_filter_param;
+		$t_summary_link = 'summary_dwg_page.php' . $t_filter_param;
 	}
 
 	$t_can_print_reports = access_has_project_level( config_get( 'print_reports_threshold' ), $t_current_project );
