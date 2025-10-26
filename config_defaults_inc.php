@@ -4846,6 +4846,20 @@ $g_my_view_boxes = array(
 	'my_comments'   => '0'
 );
 
+$g_my_view_dwg_boxes = array(
+	'assigned'      => '1',
+	'unassigned'    => '2',
+	// 'reported'      => '3',  // @TODO RobD - change to 'created'?
+	'created'       => '3',  // @TODO RobD - change to 'created'?
+	'resolved'      => '0',  // not a valid document status
+	'recent_mod'    => '5',
+	'monitored'     => '6',
+	'accepted'      => '7',
+	'feedback'      => '0',
+	'verify'        => '0',
+	'my_comments'   => '0'
+);
+
 
 #############
 # RSS Feeds #

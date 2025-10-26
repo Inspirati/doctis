@@ -89,8 +89,14 @@ $t_url_link_parameters['recent_mod'] = [
 	FILTER_PROPERTY_LAST_UPDATED_START_YEAR => $c_filter['recent_mod'][FILTER_PROPERTY_LAST_UPDATED_START_YEAR],
 ];
 
-$c_filter['reported'] = filter_dwg_create_created_by( helper_get_current_project(), $t_current_user_id );
-$t_url_link_parameters['reported'] = [
+// $c_filter['reported'] = filter_dwg_create_created_by( helper_get_current_project(), $t_current_user_id );
+// $t_url_link_parameters['reported'] = [
+// 	FILTER_PROPERTY_CREATOR_ID => $t_current_user_id,
+// 	FILTER_PROPERTY_HIDE_STATUS => $t_hide_status_default,
+// ];
+
+$c_filter['created'] = filter_dwg_create_created_by( helper_get_current_project(), $t_current_user_id );
+$t_url_link_parameters['created'] = [
 	FILTER_PROPERTY_CREATOR_ID => $t_current_user_id,
 	FILTER_PROPERTY_HIDE_STATUS => $t_hide_status_default,
 ];
@@ -140,6 +146,49 @@ $t_url_link_parameters['resolved'] = [
 	FILTER_PROPERTY_STATUS => $t_bug_resolved_status_threshold,
 	FILTER_PROPERTY_HIDE_STATUS => $t_hide_status_default,
 ];
+
+
+
+$c_filter['accepted'] = array(
+	FILTER_PROPERTY_CATEGORY_ID => array(
+		'0' => META_FILTER_ANY,
+	),
+	FILTER_PROPERTY_SEVERITY => array(
+		'0' => META_FILTER_ANY,
+	),
+	FILTER_PROPERTY_STATUS => array(
+		'0' => $t_bug_resolved_status_threshold,
+	),
+	FILTER_PROPERTY_HIGHLIGHT_CHANGED => $t_default_show_changed,
+	FILTER_PROPERTY_CREATOR_ID => array(
+		'0' => META_FILTER_ANY,
+	),
+	FILTER_PROPERTY_HANDLER_ID => array(
+		'0' => META_FILTER_ANY,
+	),
+	FILTER_PROPERTY_RESOLUTION => array(
+		'0' => META_FILTER_ANY,
+	),
+	FILTER_PROPERTY_BUILD => array(
+		'0' => META_FILTER_ANY,
+	),
+	FILTER_PROPERTY_VERSION => array(
+		'0' => META_FILTER_ANY,
+	),
+	FILTER_PROPERTY_HIDE_STATUS => array(
+		'0' => $t_hide_status_default,
+	),
+	FILTER_PROPERTY_MONITOR_USER_ID => array(
+		'0' => META_FILTER_ANY,
+	),
+);
+$t_url_link_parameters['accepted'] = [
+	FILTER_PROPERTY_STATUS => $t_bug_resolved_status_threshold,
+	FILTER_PROPERTY_HIDE_STATUS => $t_hide_status_default,
+];
+
+
+
 
 $c_filter['unassigned'] = filter_dwg_create_assigned_to_unresolved( helper_get_current_project(), 0 );
 $t_url_link_parameters['unassigned'] = [

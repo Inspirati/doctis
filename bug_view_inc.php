@@ -116,6 +116,9 @@ $t_flags = $t_result['flags'];
 
 ////////////////////////////////////////////////////////////////////////////////
 $t_flags['document_show'] = false;
+// @TODO RobD - we really don't need both a document array and the document_id
+//$t_document = $t_issue['document'];
+//$t_document_id = (int)$t_document['id'];
 $t_document_id = (int)$t_issue['document_id'];
 if ( $t_document_id > 1 ) {
 

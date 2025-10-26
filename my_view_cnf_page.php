@@ -74,19 +74,16 @@ compress_enable();
 # don't index my view page
 html_robots_noindex();
 
-// layout_page_header( lang_get( 'my_view_link' ) );
-// layout_page_begin( __FILE__ );
+layout_page_header( lang_get( 'my_view_link' ) );
 
-layout_page_header_begin( lang_get( 'my_view_link' ) );
+//layout_page_header_begin( lang_get( 'my_view_link' ) );
+//$t_refresh_delay = current_user_get_pref( 'refresh_delay' );
+//if( $t_refresh_delay > 0 ) {
+//	html_meta_redirect( 'my_view_cnf_page.php?refresh=true', $t_refresh_delay * 60 );
+//}
+//layout_page_header_end();
 
-$t_refresh_delay = current_user_get_pref( 'refresh_delay' );
-if( $t_refresh_delay > 0 ) {
-	html_meta_redirect( 'my_view_dwg_page.php?refresh=true', $t_refresh_delay * 60 );
-}
-
-layout_page_header_end();
-
-layout_page_begin( __FILE__, true );
+layout_page_begin( 'my_view_bug_page.php', true );
 
 print_my_view_menu( 'my_view_cnf_page.php' );
 
@@ -309,5 +306,4 @@ foreach( $t_boxes as $t_box_title => $t_box_display ) {
 </div>
 
 <?php }
-
 layout_page_end();
