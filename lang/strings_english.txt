@@ -571,9 +571,10 @@ $s_feedback_dwg_title = 'Request Feedback on Document';
 $s_acknowledged_dwg_title = 'Acknowledge Document';
 $s_confirmed_dwg_title = 'Confirm Document';
 $s_assigned_dwg_title = 'Assign Document';
+$s_assigned_to_dwg_title = 'Assign Document';
 $s_new_dwg_button = 'New Document';
 
-// @TODO RobD - all the strings in this block are probably not required
+// @TODO RobD - all the strings in this block are possibly not required
 $s_feedback_dwg_button = 'Request Feedback';
 $s_acknowledged_dwg_button = 'Acknowledge Document';
 $s_confirmed_dwg_button = 'Confirm Document';
@@ -586,6 +587,7 @@ $s_pending_dwg_button = 'Set to Pending';
 $s_received_dwg_button = 'Set to Received';
 $s_triage_dwg_button = 'Set to Triage Document';
 $s_assigned_dwg_button = 'Set to Assigned';
+$s_assigned_to_dwg_button = 'Set to Assigned';
 $s_JoS_dwg_button = 'Set to JoS required';
 $s_review_dwg_button = 'Set to Review';
 $s_rework_dwg_button = 'Set to Rework';
@@ -741,6 +743,7 @@ $s_build = 'Build';
 $s_fixed_in_version = 'Fixed in Version';
 $s_target_version = 'Target Version';
 $s_votes = 'Votes';
+$s_summary = 'Summary';
 $s_issue_summary = 'Issue Summary';
 $s_synthesis = 'Synthesis';
 $s_description = 'Description';

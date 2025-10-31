@@ -396,7 +396,8 @@ $g_notify_new_user_created_threshold_min = ADMINISTRATOR;
  *
  * @global int $g_send_reset_password
  */
-$g_send_reset_password = ON;
+// $g_send_reset_password = ON;
+$g_send_reset_password = OFF;
 
 /**
  * Use captcha image to validate subscription it requires GD library installed.

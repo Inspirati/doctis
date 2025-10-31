@@ -81,7 +81,8 @@ if( $t_refresh_delay > 0 ) {
 
 layout_page_header_end();
 
-layout_page_begin( __FILE__ );
+// layout_page_begin( __FILE__ );
+layout_page_begin( 'my_view_page.php' );
 
 $f_page_number = gpc_get_int( 'page_number', 1 );
 
