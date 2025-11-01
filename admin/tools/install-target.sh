@@ -94,6 +94,7 @@ set_webroot() {
         webroot="/var/www/html"   # safe default
         echo -e "${WARN}webroot default:${OFF}" "$webroot"
     fi
+    webroot=${webroot//\"/}
 }
 
 set_headless() {
