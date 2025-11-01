@@ -13,9 +13,9 @@ Documents can be any set of electronic files or physical objects that can have s
 
 The documents themselves do not need to be contained within the system, but rather their leading particulars will include a reference number, and/or a URL to their location.
 
-The easiest way to try Doctis is to duplicate the developers test environment, hosted in a VirtualBox running Debian Linux.
+The easiest way to try Doctis right now is to duplicate the developers test environment, hosted in a VirtualBox running Debian Linux.
 
-A script to automatically clone, install, and configure Doctis is under development and is currently undergoing beta testing.
+A script (below) will automatically clone, install, and configure Doctis (under development and currently undergoing beta testing).
 
 Design Goals (requirements)
 ---------------------------
@@ -30,17 +30,17 @@ Design Goals (requirements)
 Installation
 ------------
 
-1. Install [VirtualBox](https://www.virtualbox.org/) on any system it is supported on.
+1. Install [VirtualBox](https://www.virtualbox.org/) on any system it is supported on. (or VMWare if preferred)
 
-2. Create a new virtual machine, configured with 4GB Memory (RAM), 10+ GB disk, bridged network adaptor.
+2. Create a new virtual machine, configured with 4GB Memory (RAM), 10+ GB disk, and bridged network adaptor.
 
-3. Install a Debian based Linux virtual machine using the ISO image at [Debian-13.1.0-amd64-netinst.iso](https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-13.1.0-amd64-netinst.iso) Debian 12 or recent Ubuntu distribution should also work.
+3. Install a Debian[^1] based Linux virtual machine. (the ISO image at [Debian-13.1.0-amd64-netinst.iso](https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-13.1.0-amd64-netinst.iso) is recommended) however Debian 12, and recent Ubuntu and KDE-Neon distributions have also been tried successfully.
 
-    1. select the VirtualBox default 'unattended' install option, leave other options as default (this results in a GNOME[^1] desktop environment)
+    1. select the VirtualBox default 'unattended' install option, leave other options as default (this results in a GNOME[^2] desktop environment on Debian)
 
     2. upon initial login, open a terminal window (click top-left corner and then find the black terminal icon)
 
-    3. enable sudo (where \<username\> is your login username) and shutdown[^2]
+    3. if using Debian, enable sudo (where \<username\> is your login username) and shutdown[^3]
 
     ```sh
          $ su -
@@ -50,7 +50,7 @@ Installation
          # shutdown now
     ```
 
-    4. create a clone (backup) of this virtual machine as a reference baseline (recommended)
+    4. create a clone (backup) of your new virtual machine as a reference baseline (recommended)
 
     5. start a virtual machine and login to your account
 
@@ -58,7 +58,7 @@ Installation
 
     SIMPLE:
 
-    For a default install, enter this single statement into a command shell:
+    For a default install, enter this single statement into a bash command shell:
 
     ```sh
     cd Documents && wget -O- https://tinyurl.com/get-doctis | bash
@@ -98,8 +98,9 @@ Installation
 
 NOTE: in order to create new users in mantisbt/doctis, the ability to send email is required and perhaps the most-difficult way to achieve this is to create an App Password for a gmail account. However the system can still be used with predefined user accounts without being able to send email. These accounts can be modified when logged into Doctis with an administrator account. The default account is 'administrator' with password 'root'.
 
-[^1]: for alternative desktop environments, perform a manual Debian setup process. (this has undergone minimal testing)
-[^2]: a system restart seems to be required to ensure sudo is enabled upon next login
+[^1]: the install script utilises the 'apt' package manager for installing system services and tools
+[^2]: for alternative desktop environments, perform a manual Debian setup process. (this has undergone minimal testing)
+[^3]: a system restart seems to be required to ensure sudo is enabled upon next login
 
 Doctis Install Script
 ---------------------
@@ -140,7 +141,7 @@ There is currently no built-in user interface support for bulk adding documents 
 Style Guide / Naming Convention
 -------------------------------
 
-Guidance on keeping this fork standarised with is origins, MantisBT.
+A primary goal of Doctis is keeping the fork standarised with is origins, MantisBT.
 
 More detailed documentation can be found at https://www.mantisbt.org/docs/
 
@@ -152,14 +153,16 @@ More detailed documentation can be found at https://www.mantisbt.org/docs/
     will not be overwritten when you upgrade, but config_defaults_inc.php will.
     Look at `config/config_inc.php.sample` for an example.
 
-* `core/*_api.php` - these files contains all the API library functions.
+* `core/*_api.php` - these files contain all the API library functions.
 
 * global variables are prefixed by `g_`
 * parameters in functions are prefixed with `p_` -- parameters shouldn't be modified within the function.
 * form variables are prefixed with `f_`
-* variables that have been cleaned for db insertiong are prefixed with `c_`
+* variables that have been cleaned for db insertion are prefixed with `c_`
 * temporary variables are prefixed with `t_`.
 * count variables have the word `count` in the variable name
+
+The Doctis fork has not renamed most local variables from the original MantisBT code. This is in the interests of keeping the 'diff' of the fork to a minimum in order to simplify future syncronisation with ongoing mantis development. This is a trade-off between readability and maintainability.
 
 More detail can be seen in the coding guidelines at:
 https://www.mantisbt.org/guidelines.php
@@ -168,8 +171,7 @@ https://www.mantisbt.org/guidelines.php
   include files and pure scripts. Examining the viewable pages (suffix `_page`)
   should make the basic file format fairly easy to see. The file names
   themselves should make their purpose apparent. The approach used is to break the
-  work into many small files rather than have a small number of really
-  large files.
+  work into many small files rather than have a small number of large files.
 
 * For legacy and namespace reasons, there are a few naming anomolies.
   In particular:
@@ -177,7 +179,7 @@ https://www.mantisbt.org/guidelines.php
 	- 'dwg' and 'document' should be considered analogous
 		('doc' and 'document' are keywords which tend to be seriously overloaded)
 
-* All files are to be edited with TAB SPACES set to 4.
+* All files are to be edited with TAB SPACES set to 4. Please be professional and use tabs for indentation, spaces for alignment.
 
 Contributing
 ------------
