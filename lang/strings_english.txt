@@ -1452,11 +1452,6 @@ $s_creator_effectiveness = 'Creator Effectiveness';
 $s_dwg_time_stats = 'Time Stats For Accepted Documents (days)';
 $s_creator_stats = 'Creator Stats';
 
-$s_by_reporter = 'By Creator';
-$s_reporter_by_resolution = 'Creator By Resolution';
-$s_reporter_effectiveness = 'Creator Effectiveness';
-$s_reporter_stats = 'Creator Stats';
-
 # view_all_bug_page.php
 $s_any = 'any';
 $s_all = 'all';

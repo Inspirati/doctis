@@ -70,11 +70,13 @@ $f_project_id			= gpc_get_int( 'set_project_id', -1 );
 $f_print				= gpc_get_bool( 'print' );
 $f_summary				= gpc_get_bool( 'summary' );
 
+$f_dwg_id = gpc_get_int( 'dwg_id', 0 );
+
 # Get the filter in use
 $t_setting_arr = current_user_get_bug_filter();
 
 # If there is an explicit "temporary" parameter true/false, will force the new filter
-# to be termporary (true) or persistent (false), according to its value.
+# to be temporary (true) or persistent (false), according to its value.
 # If the parameter is not present, the filter will be kept the same as original.
 if( $f_isset_temporary ) {
 	# when only changing the temporary status of a filter and no action is specified

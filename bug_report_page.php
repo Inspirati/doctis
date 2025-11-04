@@ -196,7 +196,7 @@ if( $f_master_bug_id > 0 ) {
 
 	$t_changed_project		= false;
 
-	if (array_key_exists('USE_LOREM_IPSUM', $GLOBALS)) {
+	if ( array_key_exists('USE_LOREM_IPSUM', $GLOBALS) && use_random_example_data($t_current_project) ) {
 		$f_summary = generate_random_lorem(50, 100);
 		$f_description = generate_random_lorem(200, 2500);
 	}

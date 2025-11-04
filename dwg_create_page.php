@@ -200,7 +200,7 @@ if( $f_master_bug_id > 0 ) {
 	$f_view_state			= gpc_get_int( 'view_state', (int)config_get( 'default_dwg_view_status' ) );
 	$f_due_date				= gpc_get_string( 'due_date', date_strtotime( config_get( 'due_date_default' ) ) );
 
-if (array_key_exists('USE_LOREM_IPSUM', $GLOBALS)) {
+if ( array_key_exists('USE_LOREM_IPSUM', $GLOBALS) && use_random_example_data($t_current_project) ) {
 	$f_dwg_version			= gpc_get_string( 'dwg_version', '1.0' );
 	$f_dwg_title			= gpc_get_string( 'dwg_title', random_publication_title() );
 	$f_dwg_author			= gpc_get_string( 'dwg_author', random_author_name() );

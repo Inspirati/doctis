@@ -15,6 +15,15 @@
 # along with MantisBT.  If not, see <http://www.gnu.org/licenses/>.
 
 
+function use_random_example_data($p_current_project): bool {
+    // if( ALL_PROJECTS == $p_current_project ) {}
+    // if ( 1 == $p_current_project ) {
+    if ( 'example' == project_get_field( $p_current_project, 'name' ) ) {
+        return true;
+    }
+    return false;
+}
+
 /**
  * Fetch Lorem Ipsum (tries remote services, then falls back to local generator).
  *

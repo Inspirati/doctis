@@ -285,7 +285,7 @@ print_summary_menu( 'summary_dwg_page.php', $t_filter );
 	</table>
 	</div>
 
-	<!-- REPORTER STATS -->
+	<!-- CREATOR STATS -->
 	<div class="space-10"></div>
 	<div class="widget-box table-responsive">
 		<table class="table table-hover table-bordered table-condensed table-striped">
@@ -295,11 +295,11 @@ print_summary_menu( 'summary_dwg_page.php', $t_filter );
 				<?php echo $t_summary_header ?>
 			</tr>
 		</thead>
-		<?php summary_print_by_reporter( $t_filter ) ?>
+		<?php summary_print_by_creator( $t_filter ) ?>
 	</table>
 	</div>
 
-	<!-- REPORTER EFFECTIVENESS -->
+	<!-- CREATOR EFFECTIVENESS -->
 	<div class="space-10"></div>
 	<div class="widget-box table-responsive">
 		<table class="table table-hover table-bordered table-condensed table-striped">

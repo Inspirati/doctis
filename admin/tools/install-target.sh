@@ -465,8 +465,8 @@ install_doctis() {
     local target="doctis"
     local branch="dev"
     fetch_target ${target} ${branch}
-    setup_target ${target} "nodbprepostfix"
     version_info ${target}
+    setup_target ${target} "nodbprepostfix"
     exec_install ${target}
     load_example ${target}
     set_headless

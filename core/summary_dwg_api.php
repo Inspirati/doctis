@@ -492,7 +492,7 @@ function summary_print_by_developer( array $p_filter = [] ) {
  *
  * @return void
  */
-function summary_print_by_reporter( array $p_filter = [] ) {
+function summary_print_by_creator( array $p_filter = [] ) {
 	$t_reporter_summary_limit = config_get( 'reporter_summary_limit' );
 
 	$t_project_id = helper_get_current_project();
@@ -1032,7 +1032,7 @@ function summary_print_reporter_resolution( $p_resolution_enum_string, array $p_
 }
 
 /**
- * Print reporter effectiveness report.
+ * Print creator effectiveness report.
  *
  * @param string $p_severity_enum_string   Severity enumeration string.
  * @param string $p_resolution_enum_string Resolution enumeration string.
@@ -1041,7 +1041,7 @@ function summary_print_reporter_resolution( $p_resolution_enum_string, array $p_
  * @return void
  */
 /*
-// function summary_print_reporter_effectiveness( $p_severity_enum_string, $p_resolution_enum_string, array $p_filter = [] ) {
+// function summary_print_creator_effectiveness( $p_severity_enum_string, $p_resolution_enum_string, array $p_filter = [] ) {
 // 	$t_reporter_summary_limit = config_get( 'reporter_summary_limit' );
 
 // 	$t_project_id = helper_get_current_project();

@@ -442,8 +442,15 @@ if( config_get( 'allow_file_upload' ) == ON ) {
 	get_section_end();
 }
 
-# Filters
+# Issue Filters
 get_section_begin_mcwt( lang_get( 'filters' ) );
+get_capability_row( lang_get( 'save_filters' ), 'stored_query_create_threshold' );
+get_capability_row( lang_get( 'save_filters_as_shared' ), 'stored_query_create_shared_threshold' );
+get_capability_row( lang_get( 'use_saved_filters' ), 'stored_query_use_threshold' );
+get_section_end();
+
+# Document Filters
+get_section_begin_mcwt( lang_get( 'dwg_filters' ) );
 get_capability_row( lang_get( 'save_filters' ), 'stored_query_create_threshold' );
 get_capability_row( lang_get( 'save_filters_as_shared' ), 'stored_query_create_shared_threshold' );
 get_capability_row( lang_get( 'use_saved_filters' ), 'stored_query_use_threshold' );

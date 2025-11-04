@@ -1365,6 +1365,7 @@ function print_view_bug_sort_link( $p_label, $p_sort_field, $p_sort, $p_dir, $p_
 	# rely on this global variable, but at the moment is not possible without
 	# a rewrite of these print functions.
 	global $g_filter;
+	global $t_dwg_id;
 
 	switch( $p_columns_target ) {
 		case COLUMNS_TARGET_PRINT_PAGE:
@@ -1392,6 +1393,9 @@ function print_view_bug_sort_link( $p_label, $p_sort_field, $p_sort, $p_dir, $p_
 			if( filter_is_temporary( $g_filter ) ) {
 				$t_url .= '&' . filter_get_temporary_key_param( $g_filter );
 			}
+
+$t_url = $t_url . '&dwg_id=' . $t_dwg_id . '#document';
+
 			print_hyperlink( $t_url, $p_label, false, '', $p_icon );
 			break;
 		default:
