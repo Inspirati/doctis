@@ -16,12 +16,12 @@
 
 
 function use_random_example_data($p_current_project): bool {
-    // if( ALL_PROJECTS == $p_current_project ) {}
-    // if ( 1 == $p_current_project ) {
-    if ( 'example' == project_get_field( $p_current_project, 'name' ) ) {
-        return true;
-    }
-    return false;
+	// if( ALL_PROJECTS == $p_current_project ) {}
+	// if ( 1 == $p_current_project ) {
+	if ( 'example' == project_get_field( $p_current_project, 'name' ) ) {
+		return true;
+	}
+	return false;
 }
 
 /**
@@ -32,109 +32,109 @@ function use_random_example_data($p_current_project): bool {
  * @return string       Lorem Ipsum text truncated to $max_bytes bytes (UTF-8 safe when possible).
  */
 function get_lorem_ipsum( int $max_bytes, int $paras = 5 ): string {
-    if ( $max_bytes <= 0 ) {
-        return '';
-    }
+	if ( $max_bytes <= 0 ) {
+		return '';
+	}
 
-    // endpoints to try (BaconIpsum supports HTTPS; Loripsum is HTTP-only)
-    $endpoints = [
-        "https://baconipsum.com/api/?type=meat-and-filler&paras={$paras}&format=text",
-        // Loripsum tends to be HTTP-only; still useful as a fallback
-        "http://loripsum.net/api/{$paras}/plaintext",
-        // small alternative service (if available) — uncomment/edit if you prefer:
-        // "https://lorem-api.com/api/..." 
-    ];
+	// endpoints to try (BaconIpsum supports HTTPS; Loripsum is HTTP-only)
+	$endpoints = [
+		"https://baconipsum.com/api/?type=meat-and-filler&paras={$paras}&format=text",
+		// Loripsum tends to be HTTP-only; still useful as a fallback
+		"http://loripsum.net/api/{$paras}/plaintext",
+		// small alternative service (if available) — uncomment/edit if you prefer:
+		// "https://lorem-api.com/api/..." 
+	];
 
-    foreach ( $endpoints as $url ) {
-        $body = lorem_fetch_url( $url, 5 );
-        if ( $body !== false ) {
-            $body = trim( $body );
-            if ( $body !== '' ) {
-                return lorem_truncate_bytes( $body, $max_bytes );
-            }
-        }
-    }
+	foreach ( $endpoints as $url ) {
+		$body = lorem_fetch_url( $url, 5 );
+		if ( $body !== false ) {
+			$body = trim( $body );
+			if ( $body !== '' ) {
+				return lorem_truncate_bytes( $body, $max_bytes );
+			}
+		}
+	}
 
-    // Last resort: local generated paragraphs (guaranteed to work offline)
-    $local = lorem_generate_local( $paras );
-    return lorem_truncate_bytes( $local, $max_bytes );
+	// Last resort: local generated paragraphs (guaranteed to work offline)
+	$local = lorem_generate_local( $paras );
+	return lorem_truncate_bytes( $local, $max_bytes );
 }
 
 /* --- helpers --- */
 
 function lorem_fetch_url( string $url, int $timeout = 5 ) {
-    // prefer cURL
-    if ( function_exists( 'curl_version' ) ) {
-        $ch = curl_init( $url );
-        curl_setopt_array( $ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_CONNECTTIMEOUT => $timeout,
-            CURLOPT_TIMEOUT => $timeout,
-            CURLOPT_USERAGENT => 'PHP LoremFetcher/1.0',
-            CURLOPT_ENCODING => '', // accept gzip
-        ]);
-        $data = curl_exec( $ch );
-        $code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
-        curl_close( $ch );
-        if ( $data !== false && $code >= 200 && $code < 300 ) {
-            return $data;
-        }
-        return false;
-    }
+	// prefer cURL
+	if ( function_exists( 'curl_version' ) ) {
+		$ch = curl_init( $url );
+		curl_setopt_array( $ch, [
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_FOLLOWLOCATION => true,
+			CURLOPT_CONNECTTIMEOUT => $timeout,
+			CURLOPT_TIMEOUT => $timeout,
+			CURLOPT_USERAGENT => 'PHP LoremFetcher/1.0',
+			CURLOPT_ENCODING => '', // accept gzip
+		]);
+		$data = curl_exec( $ch );
+		$code = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
+		curl_close( $ch );
+		if ( $data !== false && $code >= 200 && $code < 300 ) {
+			return $data;
+		}
+		return false;
+	}
 
-    // fallback to file_get_contents (may be disabled on some hosts)
-    $ctx = stream_context_create([
-        'http' => ['timeout' => $timeout, 'user_agent' => 'PHP LoremFetcher/1.0'],
-        'https' => ['timeout' => $timeout, 'user_agent' => 'PHP LoremFetcher/1.0'],
-    ]);
-    $data = @file_get_contents( $url, false, $ctx );
-    return $data === false ? false : $data;
+	// fallback to file_get_contents (may be disabled on some hosts)
+	$ctx = stream_context_create([
+		'http' => ['timeout' => $timeout, 'user_agent' => 'PHP LoremFetcher/1.0'],
+		'https' => ['timeout' => $timeout, 'user_agent' => 'PHP LoremFetcher/1.0'],
+	]);
+	$data = @file_get_contents( $url, false, $ctx );
+	return $data === false ? false : $data;
 }
 
 /**
  * Truncate a string to at most $max_bytes bytes while preserving UTF-8 validity when possible.
  */
 function lorem_truncate_bytes( string $text, int $max_bytes ): string {
-    if ( strlen( $text ) <= $max_bytes ) {
-        return $text;
-    }
+	if ( strlen( $text ) <= $max_bytes ) {
+		return $text;
+	}
 
-    // Best: mb_strcut (cuts by bytes but preserves valid multibyte characters)
-    if ( function_exists( 'mb_strcut' ) ) {
-        return mb_strcut( $text, 0, $max_bytes, 'UTF-8' );
-    }
+	// Best: mb_strcut (cuts by bytes but preserves valid multibyte characters)
+	if ( function_exists( 'mb_strcut' ) ) {
+		return mb_strcut( $text, 0, $max_bytes, 'UTF-8' );
+	}
 
-    // Fallback: naive cut + attempt to remove broken tail bytes
-    $cut = substr( $text, 0, $max_bytes );
+	// Fallback: naive cut + attempt to remove broken tail bytes
+	$cut = substr( $text, 0, $max_bytes );
 
-    // If mb_check_encoding is available, drop trailing bytes until valid UTF-8
-    if ( function_exists( 'mb_check_encoding' ) ) {
-        while ( $cut !== '' && !mb_check_encoding( $cut, 'UTF-8' ) ) {
-            $cut = substr( $cut, 0, -1 );
-        }
-        return $cut;
-    }
+	// If mb_check_encoding is available, drop trailing bytes until valid UTF-8
+	if ( function_exists( 'mb_check_encoding' ) ) {
+		while ( $cut !== '' && !mb_check_encoding( $cut, 'UTF-8' ) ) {
+			$cut = substr( $cut, 0, -1 );
+		}
+		return $cut;
+	}
 
-    // Worst case: return raw substring (may break a multibyte char)
-    return $cut;
+	// Worst case: return raw substring (may break a multibyte char)
+	return $cut;
 }
 
 /**
  * Very small local lorem generator (used when remote services fail).
  */
 function lorem_generate_local( int $paras ): string {
-    // A reasonably sized paragraph (public domain Lorem Ipsum)
-    $sample = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. "
-            . "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. "
-            . "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.";
+	// A reasonably sized paragraph (public domain Lorem Ipsum)
+	$sample = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. "
+			. "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. "
+			. "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.";
 
-    $out = [];
-    for ( $i = 0; $i < max(1, $paras); $i++ ) {
-        // Slightly vary paragraphs so they don't look identical:
-        $out[] = $sample . ' (' . ($i+1) . ')';
-    }
-    return implode( "\n\n", $out );
+	$out = [];
+	for ( $i = 0; $i < max(1, $paras); $i++ ) {
+		// Slightly vary paragraphs so they don't look identical:
+		$out[] = $sample . ' (' . ($i+1) . ')';
+	}
+	return implode( "\n\n", $out );
 }
 
 /**
@@ -145,38 +145,38 @@ function lorem_generate_local( int $paras ): string {
  * @return string          Generated Lorem Ipsum text.
  */
 function generate_random_lorem($min_length = 100, $max_length = 500) {
-    // Base Lorem Ipsum sentences
-    $sentences = [
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-        "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-        "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-        "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
-        "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-        "Curabitur pretium tincidunt lacus.",
-        "Nulla gravida orci a odio.",
-        "Nullam varius, turpis et commodo pharetra, est eros bibendum elit, nec luctus magna felis sollicitudin mauris.",
-        "Integer in mauris eu nibh euismod gravida.",
-        "Aliquam erat volutpat.",
-    ];
+	// Base Lorem Ipsum sentences
+	$sentences = [
+		"Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+		"Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+		"Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+		"Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
+		"Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+		"Curabitur pretium tincidunt lacus.",
+		"Nulla gravida orci a odio.",
+		"Nullam varius, turpis et commodo pharetra, est eros bibendum elit, nec luctus magna felis sollicitudin mauris.",
+		"Integer in mauris eu nibh euismod gravida.",
+		"Aliquam erat volutpat.",
+	];
 
-    // Normalize whitespace
-    $sentences = array_map('trim', $sentences);
+	// Normalize whitespace
+	$sentences = array_map('trim', $sentences);
 
-    // Decide random target length
-    $target_length = rand($min_length, $max_length);
+	// Decide random target length
+	$target_length = rand($min_length, $max_length);
 
-    // Shuffle repeatedly and append until length reached
-    $output = '';
-    while (strlen($output) < $target_length) {
-        shuffle($sentences);
-        $output .= ' ' . implode(' ', $sentences);
-    }
+	// Shuffle repeatedly and append until length reached
+	$output = '';
+	while (strlen($output) < $target_length) {
+		shuffle($sentences);
+		$output .= ' ' . implode(' ', $sentences);
+	}
 
-    // Trim to target length, but don’t cut off mid-word
-    $output = substr($output, 0, $target_length);
-    $output = preg_replace('/\s+\S*$/', '', $output); // trim partial word at end
+	// Trim to target length, but don’t cut off mid-word
+	$output = substr($output, 0, $target_length);
+	$output = preg_replace('/\s+\S*$/', '', $output); // trim partial word at end
 
-    return trim($output);
+	return trim($output);
 }
 
 
@@ -186,22 +186,22 @@ function generate_random_lorem($min_length = 100, $max_length = 500) {
  * @return string
  */
 function random_publication_title() {
-    $titles = [
-        "Winnie-the-Pooh",
-        "The House at Pooh Corner",
-        "Now We Are Six",
-        "When We Were Very Young",
-        "Return to the Hundred Acre Wood",
-        "The Best Bear in All the World",
-        "Pooh and Piglet Go Hunting",
-        "Eeyore Loses a Tail",
-        "Pooh Invents a New Game",
-        "The Tao of Pooh",
-        "The Te of Piglet",
-        "The World of Pooh"
-    ];
+	$titles = [
+		"Winnie-the-Pooh",
+		"The House at Pooh Corner",
+		"Now We Are Six",
+		"When We Were Very Young",
+		"Return to the Hundred Acre Wood",
+		"The Best Bear in All the World",
+		"Pooh and Piglet Go Hunting",
+		"Eeyore Loses a Tail",
+		"Pooh Invents a New Game",
+		"The Tao of Pooh",
+		"The Te of Piglet",
+		"The World of Pooh"
+	];
 
-    return $titles[array_rand($titles)];
+	return $titles[array_rand($titles)];
 }
 
 /**
@@ -210,18 +210,18 @@ function random_publication_title() {
  * @return string
  */
 function random_author_name() {
-    $authors = [
-        "A. A. Milne",         // Original Pooh stories
-        "E. H. Shepard",       // Illustrator
-        "David Benedictus",    // 'Return to the Hundred Acre Wood'
-        "Jeanne Willis",       // Contributed to 'The Best Bear in All the World'
-        "Kate Saunders",       // Ditto
-        "Brian Sibley",        // Pooh historian/adaptor
-        "Paul Bright",         // Ditto
-        "Benjamin Hoff"        // 'The Tao of Pooh', 'The Te of Piglet'
-    ];
+	$authors = [
+		"A. A. Milne",         // Original Pooh stories
+		"E. H. Shepard",       // Illustrator
+		"David Benedictus",    // 'Return to the Hundred Acre Wood'
+		"Jeanne Willis",       // Contributed to 'The Best Bear in All the World'
+		"Kate Saunders",       // Ditto
+		"Brian Sibley",        // Pooh historian/adaptor
+		"Paul Bright",         // Ditto
+		"Benjamin Hoff"        // 'The Tao of Pooh', 'The Te of Piglet'
+	];
 
-    return $authors[array_rand($authors)];
+	return $authors[array_rand($authors)];
 }
 
 function random_numeric() {
@@ -251,34 +251,34 @@ function generate_reference() {
 }
 
 function random_reference() {
-    if (mt_rand(0, 1) === 0) {
-        // --- Type 1: [A-Z]{1,3}[0-9]{6,9} ---
-        $prefixLength = mt_rand(1, 3);
-        $numberLength = mt_rand(6, 9);
-        $prefix = '';
-        for ($i = 0; $i < $prefixLength; $i++) {
-            $prefix .= chr(mt_rand(65, 90)); // A–Z
-        }
-        $number = '';
-        for ($i = 0; $i < $numberLength; $i++) {
-            $number .= mt_rand(0, 9);
-        }
-        return $prefix . $number;
-    } else {
-        // --- Type 2: random alphanumeric, starts with a letter ---
-        $length = mt_rand(13, 15);
-        $letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-        $chars = $letters . '0123456789';
+	if (mt_rand(0, 1) === 0) {
+		// --- Type 1: [A-Z]{1,3}[0-9]{6,9} ---
+		$prefixLength = mt_rand(1, 3);
+		$numberLength = mt_rand(6, 9);
+		$prefix = '';
+		for ($i = 0; $i < $prefixLength; $i++) {
+			$prefix .= chr(mt_rand(65, 90)); // A–Z
+		}
+		$number = '';
+		for ($i = 0; $i < $numberLength; $i++) {
+			$number .= mt_rand(0, 9);
+		}
+		return $prefix . $number;
+	} else {
+		// --- Type 2: random alphanumeric, starts with a letter ---
+		$length = mt_rand(13, 15);
+		$letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+		$chars = $letters . '0123456789';
 
-        // Start with a letter
-        $ref = $letters[mt_rand(0, strlen($letters) - 1)];
+		// Start with a letter
+		$ref = $letters[mt_rand(0, strlen($letters) - 1)];
 
-        // Fill the rest with alphanumerics
-        for ($i = 1; $i < $length; $i++) {
-            $ref .= $chars[mt_rand(0, strlen($chars) - 1)];
-        }
+		// Fill the rest with alphanumerics
+		for ($i = 1; $i < $length; $i++) {
+			$ref .= $chars[mt_rand(0, strlen($chars) - 1)];
+		}
 
-        return $ref;
-    }
+		return $ref;
+	}
 }
 

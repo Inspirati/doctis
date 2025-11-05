@@ -1369,7 +1369,7 @@ function print_dwg_column_issue_count( DwgData $p_dwg, $p_columns_target = COLUM
 	echo '<td class="column-issue_count">';
 
 	if( $t_issue_count > 0 ) {
-		$t_href = string_get_all_bug_page_url( $p_dwg->id ) . '#document';
+		$t_href = string_get_all_bug_page_url( $p_dwg->id );
 		$t_href_title = sprintf( lang_get( 'view_issues_for_document' ), $t_issue_count, $p_dwg->id );
 		echo '<a href="' . $t_href . '" title="' . $t_href_title . '">' . $t_issue_count . '</a>';
 	} else {

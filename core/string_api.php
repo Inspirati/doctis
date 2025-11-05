@@ -939,7 +939,7 @@ function string_get_bug_view_url( $p_bug_id ) {
  * @return string
  */
 function string_get_all_bug_page_url( $p_dwg_id ) {
-	return 'view_all_bug_page.php?dwg_id=' . $p_dwg_id;
+	return 'view_all_set.php?type=1&temporary=y&document_id=' . $p_dwg_id;
 }
 
 /**

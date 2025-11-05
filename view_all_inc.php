@@ -62,9 +62,6 @@ require_api( 'print_api.php' );
  * @var int $t_page_count
  * @var int $t_bug_count
  */
-
-global $t_dwg_id;
-
 $t_filter = current_user_get_bug_filter();
 filter_init( $t_filter );
 
@@ -218,9 +215,6 @@ if( ( $t_filter_position & FILTER_POSITION_TOP ) == FILTER_POSITION_TOP ) {
 	$t_title_function = 'print_column_title';
 	$t_sort_properties = filter_get_visible_sort_properties_array( $t_filter, COLUMNS_TARGET_VIEW_PAGE );
 	foreach( $g_columns as $t_column ) {
-
-$t_dwg_id = $f_dwg_id;
-
 		helper_call_custom_function( $t_title_function, array( $t_column, COLUMNS_TARGET_VIEW_PAGE, $t_sort_properties ) );
 	}
 ?>
