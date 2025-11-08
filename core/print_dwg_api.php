@@ -817,14 +817,14 @@ function print_dwg_category_option_list( $p_category_id = 0, $p_project_id = nul
 	}
 }
 
-function print_document_option_list( $p_document_id = 0, $p_project_id = null, $p_enabled_only = false ) {
+function print_document_option_list( $p_document_id = 0, $p_project_id = null, $p_enabled_only = false, $p_with_issues = false ) {
 	if( null === $p_project_id ) {
 		$t_project_id = helper_get_current_project();
 	} else {
 		$t_project_id = $p_project_id;
 	}
 
-	$t_cat_arr = document_get_all_rows( $t_project_id, null, true, $p_enabled_only );
+	$t_cat_arr = document_get_all_rows( $t_project_id, null, true, $p_enabled_only, $p_with_issues );
 
 	# Add the current document if it is not in the list
 	// if( $p_document_id != 0 && !in_array( $p_document_id, array_column( $t_cat_arr, 'id' ) )

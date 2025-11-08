@@ -892,7 +892,8 @@ function mci_get_category( $p_category_id ) {
 	);
 }
 
-// @TODO RobD - unused, it is probably not the right approach to getting the document (to be continued...)
+// @TODO RobD - unused, it is probably not the right approach to getting the document (to be continued...) : update, is used
+// @TODO RobD - need to test if the document still exists
 function mci_get_document( $p_document_id ) {
 	if( ApiObjectFactory::$soap ) {
 		if( $p_document_id == 0 ) {
@@ -999,7 +1000,7 @@ function mci_get_category_id( $p_category, $p_project_id ) {
 /**
  * Convert a document name or object reference to a document id.
  *
- * @param string|array $p_category   Document name or array with id and/or title.
+ * @param string|array $p_document   Document name or array with id and/or title.
  * @param int          $p_project_id Project id.
  *
  * @return int document id or error.
@@ -1055,11 +1056,11 @@ function mci_get_document_id( $p_document, $p_project_id ) {
 			$t_document_name = $p_document;
 		}
 
-		# Retrieve Document Id from Name
-		$t_cat_array = document_get_all_rows( $p_project_id );
-		foreach( $t_cat_array as $t_category_row ) {
-			if( strcasecmp( $t_category_row['title'], $t_document_name ) == 0 ) {
-				return $t_category_row['id'];
+		# Retrieve Document Id from Title
+		$t_document_array = document_get_all_rows( $p_project_id );
+		foreach( $t_document_array as $t_document_row ) {
+			if( strcasecmp( $t_document_row['title'], $t_document_name ) == 0 ) {
+				return $t_document_row['id'];
 			}
 		}
 

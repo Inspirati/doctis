@@ -120,19 +120,20 @@ $t_flags['document_show'] = false;
 //$t_document = $t_issue['document'];
 //$t_document_id = (int)$t_document['id'];
 $t_document_id = (int)$t_issue['document_id'];
-if ( $t_document_id > 1 ) {
+if( $t_document_id > 1 ) {
+	if( $t_issue['document']['name'] ) {
+		$t_data = array(
+			'query' => array( 'id' => $t_document_id ),
+			'options' => array( 'force_readonly' => $t_force_readonly )
+		);
+		$t_cmd = new DwgViewPageCommand( $t_data );
+		$t_dwgresult = $t_cmd->execute();
+		$t_document = $t_dwgresult['issue'];
+		// $t_document_view = $t_dwgresult['issue_view'];
+		$t_document_flags = $t_dwgresult['flags'];
 
-	$t_data = array(
-		'query' => array( 'id' => $t_document_id ),
-		'options' => array( 'force_readonly' => $t_force_readonly )
-	);
-	$t_cmd = new DwgViewPageCommand( $t_data );
-	$t_dwgresult = $t_cmd->execute();
-	$t_document = $t_dwgresult['issue'];
-	// $t_document_view = $t_dwgresult['issue_view'];
-	$t_document_flags = $t_dwgresult['flags'];
-
-	$t_flags['document_show'] = $t_document_flags['project_show'];
+		$t_flags['document_show'] = $t_document_flags['project_show'];
+	}
 }
 ////////////////////////////////////////////////////////////////////////////////
 

@@ -472,12 +472,12 @@ function document_cache_array_rows_by_project( array $p_project_id_array ) {
 }
 
 /**
- *	Get a distinct array of categories accessible to the current user for
+ *	Get a distinct array of documents accessible to the current user for
  *	the specified projects.  If no project is specified, use the current project.
- *	If the current project is ALL_PROJECTS get all categories for all accessible projects.
- *	For all cases, get global categories and subproject categories according to configured inheritance settings.
+ *	If the current project is ALL_PROJECTS get all documents for all accessible projects.
+ *	For all cases, get global documents and subproject documents according to configured inheritance settings.
  *	@param integer|null $p_project_id A specific project or null.
- *	@return array A unique array of category names
+ *	@return array A unique array of documents names
  */
 function document_get_filter_list( $p_project_id = null ) {
 	if( null === $p_project_id ) {
@@ -528,7 +528,7 @@ function document_get_filter_list( $p_project_id = null ) {
  * @return array array of documents
  * @access public
  */
-function document_get_all_rows( $p_project_id, $p_inherit = null, $p_sort_by_project = false, $p_enabled_only = false ) {
+function document_get_all_rows( $p_project_id, $p_inherit = null, $p_sort_by_project = false, $p_enabled_only = false, $p_issues_only = false ) {
 	global $g_document_cache, $g_cache_document_project;
 
 	if( isset( $g_cache_document_project[(int)$p_project_id] ) ) {
@@ -563,20 +563,27 @@ function document_get_all_rows( $p_project_id, $p_inherit = null, $p_sort_by_pro
 
 	if( $t_inherit ) {
 		$t_project_ids = project_hierarchy_inheritance( $p_project_id );
-		$t_project_where = ' project_id IN ( ' . implode( ', ', $t_project_ids ) . ' ) ';
+		$t_project_where = ' d.project_id IN ( ' . implode( ', ', $t_project_ids ) . ' ) ';
 	} else {
-		$t_project_where = ' project_id=' . $p_project_id . ' ';
+		$t_project_where = ' d.project_id=' . $p_project_id . ' ';
 	}
 
 	// @TODO RobD - beware, we have mixed up the use of the table status fields between re-use of the 'bug' table meaning and that of the 'category' table
 	if( $p_enabled_only ) {
-		// $t_project_where .= ' and c.status = ' . DOCUMENT_STATUS_ENABLED;  // NOTE: not a valud STATUS flag for the projects table
+		// $t_project_where .= ' and d.status = ' . DOCUMENT_STATUS_ENABLED;  // NOTE: not a valud STATUS flag for the projects table
 	}
-	
-	$t_query = 'SELECT c.*, p.name AS project_name FROM {document} c
+
+	if( $p_issues_only ) {
+		$t_issues_only = 'INNER JOIN {bug} b ON b.document_id=d.id';
+	} else {
+		$t_issues_only = '';
+	}
+
+	$t_query = 'SELECT DISTINCT d.*, p.name AS project_name FROM {document} d
+				' . $t_issues_only . '
 				LEFT JOIN {project} p
-					ON c.project_id=p.id
-				WHERE ' . $t_project_where . ' ORDER BY c.title';
+					ON d.project_id=p.id
+				WHERE ' . $t_project_where . ' ORDER BY d.title';
 
 	// error_log("document_get_all_rows() t_query: " . $t_query);
 
@@ -641,8 +648,11 @@ function document_cache_array_rows( array $p_cat_id_array ) {
  * @access public
  */
 function document_get_field( $p_document_id, $p_field_name ) {
-	$t_row = document_get_row( $p_document_id );
-	return $t_row[$p_field_name];
+	$t_row = document_get_row( $p_document_id, false );
+	if( $t_row ) {
+		return $t_row[$p_field_name];
+	}
+	return "";
 }
 
 /**
@@ -711,7 +721,7 @@ function document_full_title( $p_document_id, $p_show_project = true, $p_current
 
 		// return $t_row['title'];
 		// return dwg_format_id($p_document_id) . ': ' . $t_row['title'];
-		// @TODO RobD - provide configuratable options for how to print the document for selection?
+		// @TODO RobD - provide configurable options for how to print the document for selection?
 		return $t_row['title'] . ' ['. dwg_format_id($p_document_id) . ']';
 	}
 }

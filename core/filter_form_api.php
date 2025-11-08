@@ -293,7 +293,7 @@ function print_filter_document_id( ?array $p_filter = null ) {
 			// 	check_selected( $p_filter[FILTER_PROPERTY_DOCUMENT_ID], META_FILTER_MYSELF );
 			// 	echo '>[' . lang_get( 'myself' ) . ']</option>';
 			// }
-		print_document_option_list( $p_filter[FILTER_PROPERTY_DOCUMENT_ID] );
+		print_document_option_list( $p_filter[FILTER_PROPERTY_DOCUMENT_ID], null, false, true );
 	// }
 		?>
 		</select>
