@@ -48,6 +48,7 @@
  * @author Maroen1990
  * @author Meno25
  * @author Mido
+ * @author Mohammed Qays
  * @author NEHAOUA
  * @author OsamaK
  * @author Tarawneh
@@ -238,6 +239,7 @@ $s_reset_request_msg = 'شخص ما (على الأرجح أنت) طلب تغيي
 لو أنك طلبت هذا التحقيق، زر المسار التالي لتغيير كلمة سرك:';
 $s_reset_request_admin_msg = 'كلمة السر الخاصة بك تم إعادة ضبطها. من فضلك زر المسار التالي لتعيين واحدة جديدة:';
 $s_reset_request_in_progress_msg = 'لو أنك وفرت اسم المستخدم وعنوان البريد الإلكتروني الصحيح لحسابك، سنكون قد أرسلنا الآن رسالة تأكيد إلى عنوان البريد الإلكتروني هذا. متى تم تلقي الرسالة، اتبع الإجراءات الموفرة لتغيير كلمة السر لحسابك.';
+$s_verify_email_msg = 'قام شخص ما (على الأرجح أنت) بتعديل عنوان البريد الإلكتروني المرتبط بالحساب المذكور أدناه. سيبقى عنوان البريد الإلكتروني القديم نشطًا حتى تؤكد هذا التغيير. للتحقق من صحة البريد الإلكتروني الجديد، يُرجى زيارة الرابط التالي:';
 $s_email_notification_title_for_status_bug_new = 'القضية التالية الآن في الحالة جديد (مجددا)';
 $s_email_notification_title_for_status_bug_feedback = 'القضية التالية تتطلب ردك.';
 $s_email_notification_title_for_status_bug_acknowledged = 'القضية التالية تم تعريفها.';
@@ -267,7 +269,7 @@ $s_email_notification_title_for_action_dependant_on_relationship_deleted = 'ال
 $s_email_notification_title_for_action_blocks_relationship_deleted = 'القضية التالية تمت إزالتها كابن للقضية %1$s.';
 $s_email_notification_title_for_action_relationship_child_resolved = 'القضية المرتبطة %1$s تم حلها.';
 $s_email_notification_title_for_action_relationship_child_closed = 'القضية المرتبطة %1$s تم إغلاقها.';
-$s_email_notification_title_for_action_related_issue_deleted = 'تم حذف المشكلة ذات الصلة %1$s.';
+$s_email_notification_title_for_action_related_issue_deleted = 'حذفت المشكلة ذات الصلة %1$s.';
 $s_email_notification_title_for_action_monitor = 'القضية %1$s متابعة الآن بواسطة المستخدم %1$s.';
 $s_email_reporter = 'تم الإبلاغ بواسطة';
 $s_email_handler = 'تم إيكالها إلى';
@@ -527,6 +529,10 @@ $s_lost_password_done_title = 'رسالة كلمة السر تم إرسالها'
 $s_lost_password_subject = 'إعادة ضبط كلمة السر';
 $s_lost_password_info = 'لاسترجاع كلمة سرك المفقودة، من فضلك وفر الاسم وعنوان البريد الإلكتروني للحساب.<br /><br />لو أن البيانات تطابق حسابا صحيحا، سيتم إرسال مسار خاص إليك من خلال البريد الإلكتروني يحتوي على كود تحقيق. من فضلك اتبع هذه الوصلة لتغيير كلمة سرك.';
 $s_lost_password_confirm_hash_OK = 'تأكيدك تم قبوله. من فضلك حدث كلمة السر الخاصة بك.';
+$s_verify_email_title = 'التحقق من عنوان البريد الإلكتروني';
+$s_verify_email_pending = 'عنوان البريد الإلكتروني الجديد " %1$s " قيد الانتظار للتحقق.';
+$s_verify_email_warning = 'لقد تم التحقق من عنوان بريدك الإلكتروني الجديد " %1$s ".';
+$s_verify_email_confirm_msg = 'لتأكيد تغيير عنوان البريد الإلكتروني، تم إرسال رسالة تأكيد إلى " %1$s ". سيبقى العنوان القديم نشطًا حتى يتم التحقق من العنوان الجديد.';
 $s_open_and_assigned_to_me_label = 'فتح وتعيينها لي:';
 $s_open_and_reported_to_me_label = 'تم فتحه و التبليغ عنه من قبلي:';
 $s_newer_news_link = 'أحدث الأخبار';
@@ -1077,7 +1083,7 @@ $s_relationship_warning_blocking_bugs_not_resolved = 'ليس كل أطفال ه�
 $s_relationship_warning_blocking_bugs_not_resolved_2 = '<b>انتباه</b>. ليس كل أطفال هذه القضية تم حلهم أو إغلاقهم.<br />قبل <b>حل/إغلاق</b> قضية أساسية، كل القضايا المرتبطة بأبناء لهذه الواحدة ينبغي أن يتم حلهم أو إغلاقهم.';
 $s_create_child_bug_button = 'استنسخ';
 $s_bug_cloned_to = 'القضية تم تكرارها';
-$s_bug_created_from = 'القضية تم توليدها من';
+$s_bug_created_from = 'المشكلة ناتجة من';
 $s_copy_from_parent = 'أنسخ بيانات ممتدة من مشكلة مشابهة';
 $s_copy_notes_from_parent = 'أنسخ ملاحظات الخلل';
 $s_copy_attachments_from_parent = 'أنسخ المرفقات';
@@ -1280,7 +1286,7 @@ $MANTIS_ERROR[ERROR_FILE_DISALLOWED] = 'نوع الملف غير مسموح به
 $MANTIS_ERROR[ERROR_NO_DIRECTORY] = 'المجلد غير موجود. من فضلك تحقق من إعدادات المشروع.';
 $MANTIS_ERROR[ERROR_DUPLICATE_PROJECT] = 'هناك مشروع بهذا الاسم بالفعل.';
 $MANTIS_ERROR[ERROR_EMPTY_FIELD] = 'حقل ضروري "%1$s" كان فارغا. من فضلك تحقق مرة أخرى من مدخلاتك.';
-$MANTIS_ERROR[ERROR_INVALID_FIELD_VALUE] = 'قيمة غير صالحة لـ\'%1$s\'';
+$MANTIS_ERROR[ERROR_INVALID_FIELD_VALUE] = 'قيمة غير صالحة لـ "%1$s"';
 $MANTIS_ERROR[ERROR_PROTECTED_ACCOUNT] = 'هذا الحساب محمي. أنت غير مسموح لك بعمل العملية المطلوبة حتى يتم رفع حماية الحساب.';
 $MANTIS_ERROR[ERROR_ACCESS_DENIED] = 'السماح مرفوض.';
 $MANTIS_ERROR[ERROR_UPLOAD_FAILURE] = 'رفع الملف فشل. الملف لا يمكن قراءته بواسطة مانتيس بي تي. من فضلك تحقق من إعدادات المشروع.';
@@ -1290,7 +1296,7 @@ $MANTIS_ERROR[ERROR_GPC_VAR_NOT_FOUND] = 'محدد مطلوب لهذه الصف�
 $MANTIS_ERROR[ERROR_USER_NAME_NOT_UNIQUE] = 'اسم المستخدم هذا يتم استعماله بالفعل. من فضلك عد واختر واحدا آخر.';
 $MANTIS_ERROR[ERROR_USER_EMAIL_NOT_UNIQUE] = 'هذا البريد الإلكتروني مستخدم بالفعل; الرجاء الرجوع واختيار واحد آخر.';
 $MANTIS_ERROR[ERROR_CONFIG_OPT_NOT_FOUND] = 'خيار الضبط "%1$s" لم يتم العثور عليه.';
-$MANTIS_ERROR[ERROR_CONFIG_OPT_CANT_BE_SET_IN_DB] = 'خيار الضبط "%1$s" لم يمكن ضبطه في قاعدة البيانات. يجب ضبطه في config_inc.php.';
+$MANTIS_ERROR[ERROR_CONFIG_OPT_CANT_BE_SET_IN_DB] = 'لا يمكن ضبط خيار التكوين " %1$s " في قاعدة البيانات. يجب تعريفه في ملف config_inc.php.';
 $MANTIS_ERROR[ERROR_CONFIG_OPT_BAD_SYNTAX] = 'يتعذر تعيين خيار التكوين "%1$s": %2$s';
 $MANTIS_ERROR[ERROR_LANG_STRING_NOT_FOUND] = 'السلسلة "%1$s" لم يتم العثور عليها.';
 $MANTIS_ERROR[ERROR_BUGNOTE_NOT_FOUND] = 'الملاحظة لم يتم العثور عليها.';
@@ -1373,7 +1379,7 @@ $MANTIS_ERROR[ERROR_SIGNUP_NOT_MATCHING_CAPTCHA] = 'هاش التأكيد لا �
 $MANTIS_ERROR[ERROR_LOST_PASSWORD_NOT_ENABLED] = 'خاصية "فقدت كلمة سرك" غير متوفرة.';
 $MANTIS_ERROR[ERROR_LOST_PASSWORD_NO_EMAIL_SPECIFIED] = 'يجب أن توفر عنوان بريد إلكتروني لتعيد ضبط كلمة السر.';
 $MANTIS_ERROR[ERROR_LOST_PASSWORD_NOT_MATCHING_DATA] = 'المعلومات الموفرة لا تطابق أي حساب مسجل!';
-$MANTIS_ERROR[ERROR_LOST_PASSWORD_CONFIRM_HASH_INVALID] = 'مسار التأكيد غير صحيح أو تم استخدامه بالفعل. من فضلك سجل حسابا مرة أخرى.';
+$MANTIS_ERROR[ERROR_LOST_PASSWORD_CONFIRM_HASH_INVALID] = 'عنوان URL للتأكيد غير صالح أو تم استخدامه بالفعل.';
 $MANTIS_ERROR[ERROR_LOST_PASSWORD_MAX_IN_PROGRESS_ATTEMPTS_REACHED] = 'العدد الأقصى من طلبات العمق تم الوصول إليه. من فضلك اتصل بإداري النظام.';
 $MANTIS_ERROR[ERROR_USER_CHANGE_LAST_ADMIN] = 'أنت لا يمكنك إزالة آخر حساب إداري. لتنفيذ الفعل الذي طلبته، تحتاج إلى إنشاء حساب إداري آخر.';
 $MANTIS_ERROR[ERROR_PAGE_REDIRECTION] = 'خطأ تحويل صفحة، تأكد من أنه لا توجد فراغات خارج قطعة PHP (&lt;?php ?&gt;) في ملفات config_inc.php أو custom_*.php.';
@@ -1412,7 +1418,7 @@ $MANTIS_ERROR[ERROR_DISPLAY_USER_ERROR_INLINE] = 'تحذير: تم تكوين ن
 $MANTIS_ERROR[ERROR_TYPE_MISMATCH] = 'نوع البيانات غير متطابق.تمكين رسائل خطأ مفصلة للحصول على مزيد من المعلومات.';
 $MANTIS_ERROR[ERROR_BUG_CONFLICTING_EDIT] = 'تم تحديث هذه القضية بواسطة مستخدم آخر، يرجى العودة إلى هذه القضية، وتقديم تعديلاتك مرة أخرى.';
 $MANTIS_ERROR[ERROR_SPAM_SUSPECTED] = 'لقد وصلت إلى حد النشاط المسموح به لالأحداث %d ضمن ال %d ثواني الأخيرة. تم حظر العمل الخاصة بك لتجنب السخام; يرجى المحاولة مرة أخرى في وقت لاحق.';
-$MANTIS_ERROR[ERROR_FIELD_TOO_LONG] = 'الحقل "%1$s" يجب أن يكون أقصر أو يساوي %2$d حرفا.';
+$MANTIS_ERROR[ERROR_FIELD_TOO_LONG] = 'الحد الأقصى لطول الحقل " %1$s " هو %2$d حرف.';
 $MANTIS_ERROR[ERROR_API_TOKEN_NAME_NOT_UNIQUE] = 'اسم رمز API "%s" قيد الاستخدام بالفعل; تُرجَى العودة واختيار واحد آخر.';
 $MANTIS_ERROR[ERROR_LOGFILE_NOT_WRITABLE] = 'الملف المحدد في $g_log_destination "%s" غير قابل للكتابة عليه.';
 $MANTIS_ERROR[ERROR_MONITOR_ACCESS_TOO_LOW] = 'لا يمتلك المستخدم المضاف حقوق وصول كافية لمراقبة هذه المشكلة.';

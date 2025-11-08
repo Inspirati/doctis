@@ -30,7 +30,7 @@
  * ** http://www.mantisbt.org/wiki/doku.php/mantisbt:translationshowto **
  * **********************************************************************
  */
-/** Japanese (日本語)
+/** Pashto (پښتو)
  * 
  * See the qqq 'language' for message documentation incl. usage of parameters
  * To improve a translation please visit https://translatewiki.net
@@ -38,26 +38,20 @@
  * @ingroup Language
  * @file
  *
- * @author Aotake
- * @author Fryed-peach
- * @author Gulpin
- * @author Largestone
- * @author Mirinano
- * @author Omotecho
- * @author Shirayuki
+ * @author Ahmed-Najib-Biabani-Ibrahimkhel
+ * @author شاه زمان پټان
  */
 
-$s_plugin_format_title = 'MantisBT フォーマッティング';
-$s_plugin_format_description = '公式のテキストの処理および整形のプラグイン。';
-$s_plugin_format_config = '設定';
-$s_plugin_format_process_text = 'テキスト処理';
-$s_plugin_format_process_text_warning_notice = '何をしているかを完全には理解していない場合は OFF にしないでください。OFF の状態ではクロス サイト スクリプティング (XSS) 攻撃ができてしまいます。';
-$s_plugin_format_process_urls = 'URL 処理';
-$s_plugin_format_process_buglinks = 'MantisBT 内部リンク (課題と課題コメント)';
-$s_plugin_format_process_buglinks_info = 'あなたの設定により<em>Issue</em>タグは「%s」と、<em>Issue Note</em>タグは「%s」と定義されました。';
-$s_plugin_format_process_markdown = 'Markdown処理';
-$s_plugin_format_process_markdown_info = 'Markdownをサポートし、スタイル付けすることができます。MarkdownはHTMLに変換できるように設計されたテキスト形式です。';
-$s_plugin_format_enabled = 'ON';
-$s_plugin_format_disabled = 'OFF';
-$s_plugin_format_syntax_highlighting_plugin_copy_to_clipboard_copy = 'コピー';
-$s_plugin_format_syntax_highlighting_plugin_copy_to_clipboard_success = '✓ コピー済み';
+$s_plugin_MantisGraph_title = 'د مانټېس ګرافونه';
+$s_plugin_MantisGraph_tab_label = 'گراپونه';
+$s_plugin_MantisGraph_status_link = 'د دريځ له مخې';
+$s_plugin_MantisGraph_priority_link = 'د لومړيتوب له مخې';
+$s_plugin_MantisGraph_category_link = 'د وېشنيزې له مخې';
+$s_plugin_MantisGraph_graph_imp_priority_title = 'د لومړيتوب گراپونو له مخې';
+$s_plugin_MantisGraph_graph_reporter_title = 'د راپورگر گراپونو له مخې';
+$s_plugin_MantisGraph_period_this_week = 'دا اوونۍ';
+$s_plugin_MantisGraph_period_last_week = 'تېره اوونۍ';
+$s_plugin_MantisGraph_period_two_weeks = 'تېرې دوه اوونۍ';
+$s_plugin_MantisGraph_period_this_month = 'دا مياشت';
+$s_plugin_MantisGraph_period_last_month = 'تېره مياشت';
+$s_plugin_MantisGraph_period_last_year = 'تېر کال';

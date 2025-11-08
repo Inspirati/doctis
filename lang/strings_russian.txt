@@ -68,8 +68,10 @@
  * @author Okras
  * @author Ole Yves
  * @author Pacha Tchernof
+ * @author Pavel200071
  * @author Redredsonia
  * @author Sabbah
+ * @author SaldırganSincap
  * @author Semen
  * @author Thothsum
  * @author Vlad5250
@@ -680,7 +682,7 @@ $s_plugin = 'Плагин';
 $s_plugins_installed = 'Установленные плагины';
 $s_plugins_available = 'Доступные плагины';
 $s_plugins_missing = 'Отсутствующие или неверные плагины';
-$s_plugins_missing_description = 'Плагины в списке ниже зарегистрированы, но их исходный код не может быть найден или загружен из «%s».<br>Попробуйте переустановить или удалить их.';
+$s_plugins_missing_description = 'Плагины в приведенном ниже списке либо <ul><li>зарегистрированы, но их исходный код не удалось найти в "%s", либо загружены из "%s".</li><li>установлены, но их не удалось инициализировать.</li></ul>Попробуйте переустановить или удалить они.';
 $s_plugin_description = 'Описание';
 $s_plugin_problem_description = 'Описание проблемы';
 $s_plugin_author = 'Автор: %1$s';
@@ -706,7 +708,9 @@ $s_plugin_invalid_status_message = 'Следующие обязательные 
 $s_plugin_missing_description = 'Отсутствующий плагин';
 $s_plugin_missing_status_message = 'Плагин установлен в базе данных Mantis, но не может быть загружен.';
 $s_plugin_missing_class_description = 'Отсутствует базовый класс плагина';
-$s_plugin_missing_class_status_message = 'Был найден каталог для этого подключаемого модуля, но внутри него не было соответствующего кода подключаемого модуля. Убедитесь, что имя каталога соответствует базовому имени плагина (с учетом регистра)';
+$s_plugin_missing_class_status_message = 'Был найден каталог для этого плагина, но в нем нет соответствующего кода плагина. Убедитесь, что: имя каталога совпадает с базовым именем плагина "%1$s" (с учетом регистра), в каталоге существует PHP-файл с таким же именем, и он определяет класс с именем "%2$s", расширяющий MantisPlugin.';
+$s_plugin_missing_event = 'Пропущенные события';
+$s_plugin_missing_event_status_message = 'Плагин пытается перехватить необъявленные события: %s.';
 $s_project_added_msg = 'Проект добавлен...';
 $s_category_added_msg = 'Категория добавлена...';
 $s_category_deleted_msg = 'Категория удалена...';
@@ -1293,7 +1297,7 @@ $MANTIS_ERROR[ERROR_FILE_DISALLOWED] = 'Этот тип файлов запре�
 $MANTIS_ERROR[ERROR_NO_DIRECTORY] = 'Каталог не существует. Проверьте настройки проекта.';
 $MANTIS_ERROR[ERROR_DUPLICATE_PROJECT] = 'Проект с таким названием уже существует.';
 $MANTIS_ERROR[ERROR_EMPTY_FIELD] = 'Обязательное поле \'%1$s\' не заполнено. Пожалуйста, проверьте правильность заполнения.';
-$MANTIS_ERROR[ERROR_INVALID_FIELD_VALUE] = 'Неверное значение для \'%1$s\'';
+$MANTIS_ERROR[ERROR_INVALID_FIELD_VALUE] = 'Неверное значение для "%1$s"';
 $MANTIS_ERROR[ERROR_PROTECTED_ACCOUNT] = 'Эта учётная запись защищена. Вы не можете выполнить запрашиваемое действие, пока защита применена к учётной записи.';
 $MANTIS_ERROR[ERROR_ACCESS_DENIED] = 'Доступ запрещён.';
 $MANTIS_ERROR[ERROR_UPLOAD_FAILURE] = 'Загрузка файла не удалась. Файл недоступен для MantisBT. Проверьте настройки проекта.';
@@ -1303,7 +1307,7 @@ $MANTIS_ERROR[ERROR_GPC_VAR_NOT_FOUND] = 'Не найден параметр "%1
 $MANTIS_ERROR[ERROR_USER_NAME_NOT_UNIQUE] = 'Это регистрационное имя пользователя уже задействовано. Пожалуйста, вернитесь назад и выберите другое.';
 $MANTIS_ERROR[ERROR_USER_EMAIL_NOT_UNIQUE] = 'Этот адрес электронной почты уже используется. Пожалуйста, вернитесь назад и выберите другой.';
 $MANTIS_ERROR[ERROR_CONFIG_OPT_NOT_FOUND] = 'Параметр конфигурации \'%1$s\' не найден.';
-$MANTIS_ERROR[ERROR_CONFIG_OPT_CANT_BE_SET_IN_DB] = 'Параметр конфигурации \'%1$s\' нельзя устанавливать в базе данных. Его следует установить в config_inc.php.';
+$MANTIS_ERROR[ERROR_CONFIG_OPT_CANT_BE_SET_IN_DB] = 'Параметр конфигурации "%1$s" не может быть задан в базе данных. Он должен быть определен в config_inc.php.';
 $MANTIS_ERROR[ERROR_CONFIG_OPT_BAD_SYNTAX] = 'Не удалось установить настройки параметра «%1$s»: %2$s';
 $MANTIS_ERROR[ERROR_LANG_STRING_NOT_FOUND] = 'Строка «%1$s» не найдена.';
 $MANTIS_ERROR[ERROR_BUGNOTE_NOT_FOUND] = 'Комментарий не найден.';
@@ -1430,6 +1434,7 @@ $MANTIS_ERROR[ERROR_API_TOKEN_NAME_NOT_UNIQUE] = 'Имя API token "%s" уже �
 $MANTIS_ERROR[ERROR_LOGFILE_NOT_WRITABLE] = 'Файл, указанный в переменной $g_log_destination "%s", недоступен для записи.';
 $MANTIS_ERROR[ERROR_MONITOR_ACCESS_TOO_LOW] = 'Добавленный пользователь не имеет достаточных прав доступа для отслеживания этой задачи.';
 $MANTIS_ERROR[ERROR_USER_TOKEN_NOT_FOUND] = 'Токен пользовательского API с идентификатором «%d» не найден.';
+$MANTIS_ERROR[ERROR_GRAPH_TOOL_NOT_FOUND] = 'Инструмент Graphviz "%s" не найден или произошел сбой при запуске. Убедитесь, что библиотека установлена и $g_graphviz_path задан правильно.';
 $s_dropzone_default_message = 'Добавьте файлы перетащив их или выделив и вставив.';
 $s_dropzone_fallback_message = 'Ваш браузер не поддерживает загрузку файлов через перетаскивание.';
 $s_dropzone_file_too_big = 'Файл слишком большой ({{filesize}} MiB). Максимальный размер файла: {{maxFilesize}} MiB.';
