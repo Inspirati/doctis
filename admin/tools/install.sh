@@ -10,7 +10,31 @@ mysql_pass="password"
 # or Fully Qualified Domain Name (FQDN), for public internet server - advanced user
 #domain="locahost"
 #domain=$(ip -4 addr show dev "$(ip route show default | awk '{print $5}' | head -n1)" | awk '/inet / {print $2}' | cut -d/ -f1)
-domain=$(ip r get 1 | grep -Eo 'src [^ ]+' | awk '{print $2}')
+#domain=$(ip r get 1 | grep -Eo 'src [^ ]+' | awk '{print $2}')
+
+# Try DigitalOcean metadata first (timeout 0.5 sec)
+domain=$(curl -s --max-time 0.5 http://169.254.169.254/metadata/v1/interfaces/public/0/ipv4/address)
+
+# If metadata failed or empty, fall back to interface parsing
+if [ -z "$domain" ]; then
+    iface=$(ip route show default 2>/dev/null | awk '{print $5}' | head -n1)
+    domain=$(ip -4 -o addr show dev "$iface" 2>/dev/null \
+             | awk '{print $4}' \
+             | cut -d/ -f1 \
+             | grep -Ev '^(10\.|172\.1[6-9]\.|172\.2[0-9]\.|172\.3[0-1]\.|192\.168\.)' \
+             | head -n1)
+fi
+
+# If still empty (local network only), allow private IP last
+if [ -z "$domain" ]; then
+    domain=$(ip -4 -o addr show dev "$iface" 2>/dev/null \
+             | awk '{print $4}' \
+             | cut -d/ -f1 \
+             | head -n1)
+fi
+
+echo "$domain"
+
 #domain="my.domain.com"
 
 ##wget https://gist.githubusercontent.com/Inspirati/8f17b0799fdaf0ab7b201a5cfd1775a1/raw/install-doctis.sh

@@ -1,8 +1,9 @@
 #!/bin/bash
 
 mysqladminname="admin"
-sudoers_file="/etc/sudoers.d/34_install-doctis"
+sudoers_file="/etc/sudoers.d/34_installer"
 database="mariadb"
+db_cmd="mysql"
 #database="mysql"
 
 OFF="\033[0m"
@@ -26,7 +27,7 @@ silence_sudo() {
     local user="$(whoami)"
     echo -e "${INFO}Configuring sudo for user:${OFF} $user"
     sudo tee "$sudoers_file" >/dev/null <<EOF
-# this file was created by the doctis installer and should be deleted
+# this file was created by the an installer and should be deleted
 $user ALL=(ALL:ALL) NOPASSWD:/usr/bin/apt-get, \
 /lib/systemd/systemd-sysv-install, \
 /usr/bin/mariadb, /bin/mariadb, \
@@ -187,6 +188,10 @@ EOF
     echo -e "${INFO}Xdebug configured.${OFF}"
 }
 
+
+# CREATE USER IF NOT EXISTS 'admin'@'localhost' IDENTIFIED BY 'password';
+# GRANT ALL PRIVILEGES ON *.* TO 'admin'@'localhost' WITH GRANT OPTION;
+
 init_database() {
     echo -e "${INFO}Initialising ${database} database...${OFF}"
     # Ensure MySQL/MariaDB is running and enabled
@@ -198,11 +203,15 @@ init_database() {
         echo "Starting ${database} service..."
         sudo systemctl start "${database}"
     fi
-    sudo ${database} <<EOF
+#    sudo ${database} <<EOF
+#    sudo ${db_cmd} <<EOF
+    sudo mysql -u root <<EOF
 CREATE USER IF NOT EXISTS '${mysqladminname}'@'localhost' IDENTIFIED BY '${mysqladminpass}';
 GRANT ALL PRIVILEGES ON *.* TO '${mysqladminname}'@'localhost' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 EOF
+# CREATE USER IF NOT EXISTS 'mantisbt'@'localhost' IDENTIFIED BY 'password';
+# GRANT ALL PRIVILEGES ON *.* TO 'mantisbt'@'localhost' WITH GRANT OPTION;
     # So the database cli mysql client doesn't keep prompting for a password
     # Optional convenience: drop a client config file (dev only)
     cat > ~/.my.cnf << EOF
@@ -320,7 +329,7 @@ install_system() {
     mysqladminpass="${2:-password}"
     echo -e "${GREEN}Started installing services..${OFF}"
     silence_sudo
-    install_vbox
+#    install_vbox
     install_lamp
     install_tools
     install_extra

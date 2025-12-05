@@ -439,6 +439,8 @@ version_info() {
     # Generate version.json inside the repository
     cat > "${output}" <<EOF
 {
+  "repo": "${repo}",
+  "origin": "$(git -C "$repo" config --get remote.origin.url 2>/dev/null || echo "unknown")",
   "version": "$(git -C "$repo" describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")",
   "commit": "$(git -C "$repo" rev-parse --short=10 HEAD 2>/dev/null || echo "unknown")",
   "branch": "$(git -C "$repo" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")",
