@@ -880,7 +880,7 @@ function filter_dwg_get_default_array( $p_view_type = null ) {
 	}
 
 	if( $t_view_type == FILTER_VIEW_TYPE_SIMPLE ) {
-		$t_hide_status_default = config_get( 'dwg_hide_status_default' );
+		$t_hide_status_default = config_get( 'hide_dwg_status_default' );
 	} else {
 		$t_hide_status_default = META_FILTER_NONE;
 	}

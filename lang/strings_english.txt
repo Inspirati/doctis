@@ -92,7 +92,12 @@ $s_actiongroup_error_issue_is_readonly = 'Issue is readonly.';
 $s_actiongroup_error_document_is_readonly = 'Document is readonly.';
 
 # new strings:
+// $s_copy_citation_to_clipboard = 'Copy Citation';
+$s_copy_citation = 'Copy Citation';
+$s_copied = 'Copied';
+
 $s_all_projects = 'All Projects';
+$s_all_licenses = 'All Licenses';
 $s_move_bugs = 'Move Issues';
 $s_move_dwgs = 'Move Documents';
 $s_operation_successful = 'Operation successful.';
@@ -124,6 +129,8 @@ $s_copy_versions_from = 'Copy Versions From';
 $s_copy_versions_to = 'Copy Versions To';
 $s_copy_users_from = 'Copy Users From';
 $s_copy_users_to = 'Copy Users To';
+$s_copy_licenses_from = 'Copy Licenses From';
+$s_copy_licenses_to = 'Copy Licenses To';
 $s_bug_history = 'Issue History';
 $s_dwg_history = 'Document History';
 $s_field = 'Field';
@@ -192,6 +199,7 @@ $s_make_public = 'Make Public';
 $s_document_id = 'Document';
 
 $s_create_new_project_link = 'Create New Project';
+$s_create_new_license_link = 'Create New License';
 
 # Browser Search - %s is the Search Engine title (@see $g_search_title)
 $s_opensearch_id_short = '%s Id';
@@ -310,7 +318,10 @@ $s_issue_status_percentage = 'Issue Status Percentage';
 $s_access_levels_enum_string = '10:viewer,25:reporter,40:updater,55:developer,70:manager,90:administrator';
 $s_no_access = 'no access';
 $s_project_status_enum_string = '10:development,30:release,50:stable,70:obsolete';
+$s_license_status_enum_string = '10:active,30:suspended,50:deprecated,70:obsolete';
+
 $s_project_view_state_enum_string = '10:public,50:private';
+$s_license_view_state_enum_string = '10:public,50:private';
 $s_view_state_enum_string = '10:public,50:private';
 
 #$s_priority_enum_string = '10:none,20:low,30:normal,40:high,50:urgent,60:immediate';
@@ -753,6 +764,7 @@ $s_synthesis = 'Synthesis';
 $s_description = 'Description';
 $s_steps_to_reproduce = 'Steps To Reproduce';
 $s_update_information_button = 'Update Information';
+$s_edit_document_button = 'Edit Document Details';
 $s_sticky_issue = 'Sticky Issue';
 $s_profile = 'Profile';
 
@@ -781,8 +793,10 @@ $s_activities_title = 'Activities';
 # documents_view*
 $s_dwg_title = 'Document Title';
 $s_dwg_author = 'Author';
+$s_dwg_publisher = 'Publisher';
 $s_dwg_number = 'Number';
 $s_dwg_version = 'Version';
+$s_dwg_edition = 'Edition';
 $s_dwg_revision = 'Revision';
 $s_dwg_reference = 'Reference';
 $s_dwg_discipline = 'Discipline';
@@ -794,7 +808,7 @@ $s_dwg_classification = 'Classification';
 
 $s_confirm_dwg_revision_drop = 'Are you sure you want to drop this document revision?';
 
-$s_dwg_creator = 'Created by';
+$s_dwg_creator = 'Owned by';
 
 # @TODO RobD - these are still needed by the listview on view_dwg_page.php (and since some were inherited, probably someplace else too)
 $s_reference = 'Reference';
@@ -952,6 +966,7 @@ $s_my_view_bug_link = 'My Issues View';
 $s_my_view_dwg_link = 'My Documents View';
 $s_my_view_cnf_link = 'My Configuration View';
 $s_manage_projects_link = 'Projects';
+$s_manage_licenses_link = 'Licenses';
 $s_manage_import_link = 'Import Data';
 $s_manage_custom_field_link = 'Custom Fields';
 $s_manage_global_profiles_link = 'Global Profiles';
@@ -965,6 +980,7 @@ $s_manage_workflow_graph = 'Workflow Graph';
 $s_manage_tags_link = 'Tags';
 $s_create_new_account_link = 'Create New Account';
 $s_projects_link = 'Projects';
+$s_licenses_link = 'Licenses';
 $s_documentation_link = 'Documentation';
 $s_new_accounts_title = 'New Accounts';
 $s_1_week_title = '1 Week';
@@ -973,6 +989,7 @@ $s_prune_accounts = 'Prune Accounts';
 $s_hide_inactive = 'Hide Inactive';
 $s_show_disabled = 'Show Disabled';
 $s_manage_accounts_title = 'Manage Accounts';
+$s_manage_licenses_title = 'Manage Licenses';
 $s_p = 'p';
 $s_date_created = 'Date Created';
 $s_last_visit = 'Last Visit';
@@ -1133,9 +1150,29 @@ $s_add_subproject_title = 'Add Subproject';
 # manage_proj_delete.php
 $s_project_deleted_msg = 'Project successfully removed...';
 
+# manage_license_delete_page.php
+$s_license_delete_msg = 'Are you sure you want to delete license "%1$s"?<br>This will also remove license from %2$s users.';
+$s_license_delete_button = 'Delete License';
+
+$s_license_request_access = 'Request Access';
+$s_license_apply_access = 'Apply Access';
+
 # manage_proj_delete_page.php
 $s_project_delete_msg = 'Are you sure you want to delete project "%1$s"?<br>This will also delete %2$s attached issue reports.';
 $s_project_delete_button = 'Delete Project';
+
+# manage_license_edit_page.php
+$s_edit_license_title = 'Edit License';
+$s_license_name = 'License Name';
+$s_license_name_label = 'License Name:';
+$s_update_license_button = 'Update License';
+$s_delete_license_button = 'Delete License';
+
+$s_add_user_license_title = 'Add User to License';
+$s_add_document_license_title = 'Add Document to License';
+$s_add_document_button = 'Add Document';
+$s_document = 'Document';
+$s_license_selection_title = 'License Selection';
 
 # manage_proj_edit_page.php
 $s_edit_project_title = 'Edit Project';
@@ -1169,7 +1206,13 @@ $s_review_changes = 'Review Changes';
 $s_review_changes_confirmation = 'Are you sure you want to apply the following changes?';
 $s_review_changes_empty = 'There are no changes selected';
 
-# manage_proj_menu_page.php
+# manage_license_page.php
+$s_add_license_title = 'Add License';
+$s_add_license_button = 'Add License';
+$s_licenses_title = 'Licenses';
+$s_licenses_title_label = 'Licenses';
+
+# manage_proj_page.php
 $s_add_project_title = 'Add Project';
 $s_upload_file_path = 'Upload File Path';
 $s_add_project_button = 'Add Project';
@@ -1254,7 +1297,7 @@ $s_logout_link = 'Logout';
 $s_my_view_link = 'My View';
 $s_invite_users = 'Invite Users';
 
-# my_view_page.php / my_view_bug_page.php
+# my_view_page.php deprecated in favour of my_view_bug_page.php
 $s_my_view_title_unassigned = 'Unassigned';
 $s_my_view_title_recent_mod = 'Recently Modified';
 $s_my_view_title_reported = 'Reported by Me';
@@ -1266,7 +1309,7 @@ $s_my_view_title_verify = 'Awaiting Confirmation of Resolution from Me';
 $s_my_view_title_my_comments = 'Issues I Have Commented On';
 
 # my_view_dwg_page.php
-$s_my_view_title_created = 'Created by Me';
+$s_my_view_title_created = 'Owned by Me';
 $s_my_view_title_accepted = 'Accepted by Me';
 
 # news_add.php
@@ -1341,7 +1384,7 @@ $s_remove_all_users_sure_msg = 'Are you sure you wish to remove all the users of
 $s_remove_all_users_button = 'Remove All Users';
 
 # proj_user_menu_page.php
-$s_add_user_title = 'Add user to project';
+$s_add_user_title = 'Add User to Project';
 $s_add_user_button = 'Add User';
 $s_project_selection_title = 'Project Selection';
 $s_remove_link = 'Remove';
@@ -1561,6 +1604,11 @@ $s_dwg_view_title = 'View Document Details';
 $s_no_users_monitoring_dwg = 'There are no users monitoring this document.';
 $s_users_monitoring_dwg = 'Users monitoring this document';
 $s_monitoring_dwg_user_list = 'User List';
+
+$s_no_licenses_dwg = 'There are no licenses applied to this document.';
+$s_licenses_applied_dwg = 'Licenses applied to this document';
+$s_licenses_dwg_list = 'License List';
+$s_licenses_dwg_mine = 'My Licenses';
 
 $s_dwg_id = 'ID';
 
@@ -1975,8 +2023,11 @@ $MANTIS_ERROR[ERROR_DB_FIELD_NOT_FOUND] = 'Database field "%1$s" not found.';
 $MANTIS_ERROR[ERROR_HANDLER_ACCESS_TOO_LOW] = 'Issue handler does not have sufficient access rights to handle issue at this status.';
 $MANTIS_ERROR[ERROR_PROJECT_HIERARCHY_DISABLED] = 'Project hierarchy (subprojects) is disabled.';
 $MANTIS_ERROR[ERROR_PROJECT_NOT_FOUND] = 'Project "%1$s" not found.';
+$MANTIS_ERROR[ERROR_LICENSE_NOT_FOUND] = 'License "%1$s" not found.';
 $MANTIS_ERROR[ERROR_PROJECT_NAME_NOT_UNIQUE] = 'A project with that name already exists. Please go back and enter a different name.';
+$MANTIS_ERROR[ERROR_LICENSE_NAME_NOT_UNIQUE] = 'A license with that name already exists. Please go back and enter a different name.';
 $MANTIS_ERROR[ERROR_PROJECT_NAME_INVALID] = 'Invalid project name specified. Project names cannot be blank.';
+$MANTIS_ERROR[ERROR_LICENSE_NAME_INVALID] = 'Invalid license name specified. License names cannot be blank.';
 $MANTIS_ERROR[ERROR_PROJECT_RECURSIVE_HIERARCHY] = 'That operation would create a loop in the subproject hierarchy.';
 $MANTIS_ERROR[ERROR_PROJECT_SUBPROJECT_DUPLICATE] = 'Project "%1$s" is already a subproject of "%2$s".';
 $MANTIS_ERROR[ERROR_PROJECT_SUBPROJECT_NOT_FOUND] = 'Project "%1$s" is not a subproject of "%2$s".';

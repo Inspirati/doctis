@@ -223,7 +223,7 @@ EOF
     echo -e "${INFO}Database initialised.${OFF}" >&2
 }
 
-# Deprecated - no long used
+# Deprecated - no longer used
 check_vbox_addin() {
     local running=0
     local installed=0

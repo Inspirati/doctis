@@ -58,7 +58,7 @@ function get_attachment_stats( $p_file_type, $p_in_db ) {
 		case 'dwg':
 			$t_query = "SELECT p.id, p.name, COUNT(f.id) stats
 				FROM {dwg_file} f
-				JOIN {document} b ON b.id = f.dwg_id
+				JOIN {dwg} b ON b.id = f.dwg_id
 				JOIN {project} p ON p.id = b.project_id
 				WHERE content $t_compare
 				GROUP BY p.id, p.name

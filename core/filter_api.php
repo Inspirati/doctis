@@ -2010,6 +2010,12 @@ function filter_create_reported_by( $p_project_id, $p_user_id ) {
 	return filter_ensure_valid_filter( $t_filter );
 }
 
+/**
+ * Create a filter for getting issues associated with the specified project and user.
+ * @param integer $p_project_id The project id or ALL_PROJECTS.
+ * @param integer $p_user_id    A valid user identifier.
+ * @return array a valid filter.
+ */
 function filter_create_document( $p_project_id, $p_document_id ) {
 	$t_filter = filter_get_default();
 	$t_filter[FILTER_PROPERTY_DOCUMENT_ID] = array( '0' => $p_document_id );

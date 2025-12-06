@@ -1022,7 +1022,7 @@ function print_dwg_build_option_list( $p_build = '' ) {
 
 	# Get the "found in" build list
 	$t_query = 'SELECT DISTINCT build
-				FROM {document}
+				FROM {dwg}
 				WHERE ' . $t_project_where . '
 				ORDER BY build DESC';
 	$t_result = db_query( $t_query );

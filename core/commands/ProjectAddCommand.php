@@ -69,6 +69,12 @@ class ProjectAddCommand extends Command {
 	private $file_path;
 
 	/**
+	 * Project Due Date
+	 * @var string
+	 */
+	private $due_date;
+
+	/**
 	 * Constructor
 	 *
 	 * @param array $p_data The command data.
@@ -107,6 +113,13 @@ class ProjectAddCommand extends Command {
 		$this->view_state = isset( $t_project['view_state'] ) ?  mci_get_project_view_state_id( $t_project['view_state'] ) : config_get( 'default_project_view_status' );
 		$this->status = isset( $t_project['status'] ) ? mci_get_project_status_id( $t_project['status'] ) : 10 /* development */;
 		$this->enabled = $this->payload( 'enabled', true );
+
+		$this->due_date = $this->payload( 'due_date' );
+		if( ! empty( $this->due_date ) ) {
+			$this->due_date = strtotime( $this->due_date );
+		} else {
+			$this->due_date = 1;
+		}
 
 		if( !project_is_name_unique( $this->name ) ) {
 			throw new ClientException(
@@ -155,7 +168,8 @@ class ProjectAddCommand extends Command {
 			$this->view_state,
 			$this->file_path,
 			$this->enabled,
-			$this->inherit_global
+			$this->inherit_global,
+			$this->due_date
 		);
 
 		# If user doesn't have management access to project, then user is not an ADMINISTRATOR.

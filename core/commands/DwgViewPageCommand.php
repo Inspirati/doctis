@@ -250,6 +250,27 @@ class DwgViewPageCommand extends Command {
 			$t_flags['can_unmonitor'] = false;
 		}
 
+
+		$t_flags['license_show'] =
+			!$t_force_readonly &&
+			access_has_dwg_level( config_get( 'show_license_list_threshold' ), $t_issue_id );
+
+		if( $t_flags['license_show'] ) {
+			$t_flags['license_can_delete'] = access_has_license_level( config_get( 'license_delete_others_dwg_threshold' ), $t_issue_id );
+			$t_flags['license_can_add'] = access_has_license_level( config_get( 'license_add_others_dwg_threshold' ), $t_issue_id );
+		}
+
+		if( !$t_force_readonly && !$t_anonymous_user ) {
+			$t_is_licensed = document_is_licensed( $t_issue_id );
+			$t_flags['can_license'] =  !$t_is_licensed &&
+				access_has_dwg_level( config_get( 'license_dwg_threshold' ), $t_issue_id );
+			$t_flags['can_unlicense'] = $t_is_licensed;
+		} else {
+			$t_flags['can_license'] = false;
+			$t_flags['can_unlicense'] = false;
+		}
+
+
 		$t_flags['reference_show'] = in_array( 'reference', $t_fields ) && isset( $t_issue['reference'] );
 		$t_flags['classification_show'] = in_array( 'classification', $t_fields ) && isset( $t_issue['classification'] );
 
@@ -259,6 +280,14 @@ class DwgViewPageCommand extends Command {
 		$t_flags['handler_show'] = in_array( 'handler', $t_fields );
 		$t_flags['priority_show'] = in_array( 'priority', $t_fields ) && isset( $t_issue['priority'] );
 		$t_flags['project_show'] = in_array( 'project', $t_fields ) && isset( $t_issue['project'] );
+
+		$t_flags['number_show'] = in_array( 'number', $t_fields ) && isset( $t_issue['number'] );
+		$t_flags['version_show'] = in_array( 'version', $t_fields ) && isset( $t_issue['version'] );
+		$t_flags['edition_show'] = in_array( 'edition', $t_fields ) && isset( $t_issue['edition'] );
+		$t_flags['revision_show'] = in_array( 'revision', $t_fields ) && isset( $t_issue['revision'] );
+		$t_flags['author_show'] = in_array( 'author', $t_fields ) && isset( $t_issue['author'] );
+		$t_flags['publisher_show'] = in_array( 'publisher', $t_fields ) && isset( $t_issue['publisher'] );
+
 		$t_flags['projection_show'] = in_array( 'projection', $t_fields ) && isset( $t_issue['projection'] );
 		$t_flags['creator_show'] = in_array( 'creator', $t_fields ) && isset( $t_issue['creator'] );
 		$t_flags['reproducibility_show'] = in_array( 'reproducibility', $t_fields ) && isset( $t_issue['reproducibility'] );

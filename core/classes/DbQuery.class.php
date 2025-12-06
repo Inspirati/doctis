@@ -32,14 +32,6 @@ require_api( 'constant_inc.php' );
 require_api( 'database_api.php' );
 require_api( 'logging_api.php' );
 
-function clean_sql($sql) {
-    // replace newlines + optional whitespace with a single space
-    $sql = preg_replace('/\s*[\r\n]+[\t]*/', ' ', $sql);
-    // collapse multiple spaces
-    $sql = preg_replace('/ {2,}/', ' ', $sql);
-    return trim($sql);
-}
-
 /**
  * Database Query abstraction class.
  *

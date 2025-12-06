@@ -53,6 +53,14 @@ layout_page_begin( __FILE__ );
 
 print_manage_menu( 'manage_overview_page.php' );
 
+function trim_check( $p_string ) {
+	if( $p_string ) {
+		return trim( $p_string );  // 'trim' does not like being passed a nullstring
+	} else {
+		return "";
+	}
+}
+
 function doctis_get_git_version_info() {
 	$info = array(
 		'origin' => null,
@@ -68,14 +76,14 @@ function doctis_get_git_version_info() {
 		# requires:
 		# sudo git config --system --add safe.directory /var/www/html/doctis
 		$info['repo'] = realpath( dirname( $git_dir ) );
-		$info['origin'] = trim( @shell_exec( 'git config --get remote.origin.url 2>/dev/null' ) );
-		$info['branch'] = trim( @shell_exec( 'git rev-parse --abbrev-ref HEAD 2>/dev/null' ) );
-		$info['commit'] = trim( @shell_exec( 'git rev-parse --short=10 HEAD 2>/dev/null' ) );
-		$info['tag']    = trim( @shell_exec( 'git describe --tags --always --dirty 2>/dev/null' ) );
-		$dirty_output   = trim( @shell_exec( 'git status --porcelain 2>/dev/null' ) );
+		$info['origin'] = trim_check( @shell_exec( 'git config --get remote.origin.url 2>/dev/null' ) );
+		$info['branch'] = trim_check( @shell_exec( 'git rev-parse --abbrev-ref HEAD 2>/dev/null' ) );
+		$info['commit'] = trim_check( @shell_exec( 'git rev-parse --short=10 HEAD 2>/dev/null' ) );
+		$info['tag']    = trim_check( @shell_exec( 'git describe --tags --always --dirty 2>/dev/null' ) );
+		$dirty_output   = trim_check( @shell_exec( 'git status --porcelain 2>/dev/null' ) );
 		$info['dirty']  = ( $dirty_output !== '' );
 	}
-	if ( ! $info['branch'] ) {
+	if( ! $info['branch'] ) {
 		$ver_file = __DIR__ . '/version.json';
 		if( file_exists( $ver_file ) ) {
 			$json = json_decode( file_get_contents( $ver_file ), true );
@@ -152,8 +160,12 @@ function doctis_get_git_version_info() {
 		print_table_spacer( 2 );
 		$t_git_info = doctis_get_git_version_info();
 		if( $t_git_info['commit'] ) {
-			echo '<tr><td class="category">Repository</td><td>' . htmlspecialchars($t_git_info['repo']) . '</td></tr>';
-			echo '<tr><td class="category">Origin</td><td>' . htmlspecialchars($t_git_info['origin']) . '</td></tr>';
+			if( $t_git_info['repo'] ) {
+				echo '<tr><td class="category">Repository</td><td>' . htmlspecialchars($t_git_info['repo']) . '</td></tr>';
+			}
+			if( $t_git_info['origin'] ) {
+				echo '<tr><td class="category">Origin</td><td>' . htmlspecialchars($t_git_info['origin']) . '</td></tr>';
+			}
 			echo '<tr><td class="category">Branch</td><td>' . htmlspecialchars($t_git_info['branch']) . '</td></tr>';
 			echo '<tr><td class="category">Commit</td><td>' . htmlspecialchars($t_git_info['commit']) . '</td></tr>';
 			echo '<tr><td class="category">Tag</td><td>' . htmlspecialchars($t_git_info['tag']) . '</td></tr>';

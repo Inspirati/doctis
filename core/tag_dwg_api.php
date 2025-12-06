@@ -140,7 +140,7 @@ function tag_dwg_cache_bug_tag_rows( array $p_bug_ids ) {
 		$t_sql_in_params[] = db_param();
 		$t_params[] = $t_id;
 	}
-	$t_query = 'SELECT B.id AS dwg_id, BT.tag_id, BT.user_id, BT.date_attached FROM {document} B LEFT OUTER JOIN {dwg_tag} BT ON B.id=BT.dwg_id'
+	$t_query = 'SELECT B.id AS dwg_id, BT.tag_id, BT.user_id, BT.date_attached FROM {dwg} B LEFT OUTER JOIN {dwg_tag} BT ON B.id=BT.dwg_id'
 			. ' WHERE B.id IN (' . implode( ',', $t_sql_in_params ) . ')';
 	$t_result = db_query( $t_query, $t_params );
 

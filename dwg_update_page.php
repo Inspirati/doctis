@@ -100,7 +100,9 @@ $t_top_buttons_enabled = $t_action_button_position == POSITION_TOP || $t_action_
 $t_bottom_buttons_enabled = $t_action_button_position == POSITION_BOTTOM || $t_action_button_position == POSITION_BOTH;
 
 $t_show_author = in_array( 'author', $t_fields );
+$t_show_publisher = in_array( 'publisher', $t_fields );
 $t_show_creator = in_array( 'creator', $t_fields );
+$t_show_edition = in_array( 'edition', $t_fields );
 $t_show_revision = in_array( 'revision', $t_fields );
 $t_show_reference = in_array( 'reference', $t_fields );
 $t_show_classification = in_array( 'classification', $t_fields );
@@ -193,6 +195,9 @@ if( $t_top_buttons_enabled ) {
 					<input <?php echo helper_get_tab_index(); ?>
 						type="submit" class="btn btn-primary btn-white btn-round"
 						value="<?php echo lang_get( 'update_information_button' ); ?>" />
+					<input <?php echo helper_get_tab_index(); ?>
+						type="submit" class="btn btn-primary btn-white btn-round"
+						value="<?php echo lang_get( 'edit_document_button' ); ?>" />
 				</div>
 <?php
 }
@@ -447,7 +452,8 @@ if( $t_show_status || $t_show_resolution ) {
 		print_icon( 'fa-square', 'fa-status-box ' . $t_status_css );
 		echo '&nbsp;';
 		echo '&nbsp;';
-		print_dwg_status_option_list( 'status', $t_bug->status,
+		// print_dwg_status_option_list( 'dwg_status', $t_bug->status, // @NOTE RobD - wrong
+		print_dwg_status_option_list( 'status', $t_bug->status, // @NOTE RobD - correct, this needs to be 'status'
 			access_can_close_dwg( $t_bug ),
 			$t_bug->project_id );
 		echo '</td>';
@@ -790,6 +796,10 @@ if( $t_bottom_buttons_enabled ) {
 		<input <?php echo helper_get_tab_index(); ?>
 			type="submit" class="btn btn-primary btn-white btn-round"
 			value="<?php echo lang_get( 'update_information_button' ); ?>" />
+		<button class="btn btn-primary btn-white btn-round"
+				formaction="dwg_edit_page.php">
+			<?php echo lang_get( 'edit_document_button' ) ?>
+		</button>
 	</div>
 <?php
 }

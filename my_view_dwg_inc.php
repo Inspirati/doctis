@@ -66,7 +66,7 @@ $t_sort = $t_filter['sort'];
 $t_dir = $t_filter['dir'];
 
 $t_bug_resolved_status_threshold = config_get( 'dwg_resolved_status_threshold' );
-$t_hide_status_default = config_get( 'dwg_hide_status_default' );
+$t_hide_status_default = config_get( 'hide_dwg_status_default' );
 $t_default_show_changed = config_get( 'default_dwg_show_changed' );
 
 $c_filter['assigned'] = filter_dwg_create_assigned_to_unresolved( helper_get_current_project(), $t_current_user_id );
@@ -104,7 +104,8 @@ $t_url_link_parameters['created'] = [
 // @TODO RobD - need to change the user_id to document_id, along with whatever else this implies
 // $c_filter['document'] = filter_dwg_create_document( helper_get_current_project(), $t_current_user_id );
 // $t_url_link_parameters['document'] = [
-// 	FILTER_PROPERTY_DOCUMENT_ID => $t_current_user_id,
+// 	// FILTER_PROPERTY_DOCUMENT_ID => $t_current_user_id,
+// 	FILTER_PROPERTY_DOCUMENT_ID => META_FILTER_ANY,
 // 	FILTER_PROPERTY_HIDE_STATUS => $t_hide_status_default,
 // 	FILTER_PROPERTY_CREATOR_ID => $t_current_user_id,
 // ];

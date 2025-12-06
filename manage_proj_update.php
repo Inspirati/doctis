@@ -45,6 +45,7 @@ $f_view_state 	= gpc_get_int( 'view_state' );
 $f_file_path 	= gpc_get_string( 'file_path', '' );
 $f_enabled	 	= gpc_get_bool( 'enabled' );
 $f_inherit_global = gpc_get_bool( 'inherit_global', 0 );
+$f_due_date		= gpc_get_string( 'due_date', null );
 
 $t_data = array(
 	'query' => array(
@@ -57,7 +58,8 @@ $t_data = array(
 		'view_state' => array( 'id' => $f_view_state ),
 		'file_path' => $f_file_path,
 		'enabled' => $f_enabled,
-		'inherit_global' => $f_inherit_global
+		'inherit_global' => $f_inherit_global,
+		'due_date' => $f_due_date
 	)
 );
 

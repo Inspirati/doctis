@@ -187,7 +187,62 @@ if( $t_flags['history_show'] ) {
 	print_dwg_small_button( $t_history_link, $t_history_label );
 }
 
-echo '</div>';
+# Build both plain-text and HTML versions of the citation
+$t_url = helper_mantis_url( 'dwg_view.php?id=' . $t_dwg->id );
+
+$t_citation_text = sprintf(
+    '%s (%s, Rev %s, Ver %s) by %s – %s – Doctis – %s',
+    string_display_line( $t_issue['title'] ?? '' ),
+    string_display_line( $t_issue['number'] ?? '' ),
+    string_display_line( $t_issue['revision'] ?? '' ),
+    string_display_line( $t_issue['version'] ?? '' ),
+    string_display_line( $t_issue['author'] ?? '' ),
+    string_display_line( $t_release_date ?? '' ),
+    $t_url
+);
+
+$t_citation_html = sprintf(
+    '%s (%s, Rev %s, Ver %s) by %s – %s – <a href="%s">Doctis</a>',
+    string_display_line( $t_issue['title'] ?? '' ),
+    string_display_line( $t_issue['number'] ?? '' ),
+    string_display_line( $t_issue['revision'] ?? '' ),
+    string_display_line( $t_issue['version'] ?? '' ),
+    string_display_line( $t_issue['author'] ?? '' ),
+    string_display_line( $t_release_date ?? '' ),
+    $t_url
+);
+
+$author = $t_issue['author'] ?? 'Unknown';
+$title = $t_issue['title'] ?? '';
+$year = $t_issue['release_date'] ? date('Y', $t_issue['release_date']) : 'n.d.';
+$reference = $t_dwg->reference ?? '';
+$number = $t_issue['number'] ?? '';
+$revision = $t_issue['revision'] ?? '';
+$version = $t_issue['version'] ?? '';
+$url = string_get_bug_view_url($t_dwg->id);
+
+// Plain text APA-style citation
+$apa_text = "{$author} ({$year}). {$title} [{$reference}";
+if ($number) $apa_text .= ", No. {$number}";
+if ($version) $apa_text .= ", Version {$version}";
+if ($revision) $apa_text .= ", Rev {$revision}";
+$apa_text .= "]. Available at: {$url}";
+
+// HTML version (for Word) with hyperlink
+$apa_html = "{$author} ({$year}). {$title} [{$reference}";
+if ($number) $apa_html .= ", No. {$number}";
+if ($version) $apa_html .= ", Version {$version}";
+if ($revision) $apa_html .= ", Rev {$revision}";
+$apa_html .= "]. Available at: <a href=\"{$url}\">{$url}</a>";
+
+echo '<a href="#" class="btn btn-primary btn-white btn-round btn-sm js-copy-citation" '
+   . 'data-citation="' . htmlspecialchars($apa_text) . '" '
+   . 'data-citation-html="' . htmlspecialchars($apa_html) . '">'
+   . lang_get('copy_citation') 
+   . '</a>';
+
+////////////////////////////////////////////////////////////////////////////////
+echo '</div>'; // end of presenting buttons on left of row
 
 # prev/next links
 echo '<div class="btn-group pull-right">';
@@ -204,8 +259,8 @@ if( $t_dwgslist ) {
 		}
 	}
 }
-echo '</div>';
-echo '</div>';
+echo '</div>'; // end of presenting buttons on right of row
+echo '</div>'; // end of presenting buttons row
 
 echo '<div class="widget-main no-padding">';
 echo '<div class="table-responsive">';
@@ -248,11 +303,26 @@ if( true
 ) {
 	# Labels
 	echo '<tr class="bug-header">';
-	echo '<th class="bug-project category width-15">', $t_flags['project_show'] ? lang_get( 'dwg_reference' ) : '', '</th>';
-	echo '<th class="bug-project category width-20">', $t_flags['project_show'] ? lang_get( 'dwg_number' ) : '', '</th>';
-	echo '<th class="bug-project category width-15">', $t_flags['project_show'] ? lang_get( 'dwg_revision' ) : '', '</th>';
-	echo '<th class="bug-project category width-15">', $t_flags['project_show'] ? lang_get( 'dwg_version' ) : '', '</th>';
-	echo '<th class="bug-project category width-15">', $t_flags['project_show'] ? lang_get( 'dwg_author' ) : '', '</th>';
+	// echo '<th class="bug-project category width-15">', $t_flags['reference_show'] ? lang_get( 'dwg_reference' ) : '', '</th>';
+	echo '<th class="bug-project category width-15">', lang_get( 'dwg_reference' ), '</th>';
+	if( $t_flags['number_show'] ) {
+		echo '<th class="bug-project category width-20">', $t_flags['number_show'] ? lang_get( 'dwg_number' ) : '', '</th>';
+	}
+	if( $t_flags['edition_show'] ) {
+		echo '<th class="bug-project category width-15">', $t_flags['edition_show'] ? lang_get( 'dwg_edition' ) : '', '</th>';
+	}
+	if( $t_flags['revision_show'] ) {
+		echo '<th class="bug-project category width-15">', $t_flags['revision_show'] ? lang_get( 'dwg_revision' ) : '', '</th>';
+	}
+	if( $t_flags['version_show'] ) {
+		echo '<th class="bug-project category width-15">', $t_flags['version_show'] ? lang_get( 'dwg_version' ) : '', '</th>';
+	}
+	if( $t_flags['author_show'] ) {
+		echo '<th class="bug-project category width-15">', $t_flags['author_show'] ? lang_get( 'dwg_author' ) : '', '</th>';
+	}
+	if( $t_flags['publisher_show'] ) {
+		echo '<th class="bug-project category width-15">', $t_flags['publisher_show'] ? lang_get( 'dwg_publisher' ) : '', '</th>';
+	}
 	echo '<th class="bug-project category width-15">', $t_flags['project_show'] ? lang_get( 'dwg_release_date' ) : '', '</th>';
 	echo '</tr>';
 
@@ -260,16 +330,31 @@ if( true
 //	echo '<td class="bug-project">', $t_flags['project_show'] && isset( $t_issue['reference'] ) ? string_display_line( $t_issue['reference'] ) : '', '</td>';
 
 	# Reference
-	if( $t_flags['project_show'] ) {
+	// if( $t_flags['project_show'] ) {
+	if( true ) { // the reference is a mandatory field so we always show it
 		echo '<td class="bug-project">';
 //		echo string_display_line( $t_issue['reference'] );
 		print_dwg_reference_link( $t_dwg->id, $t_dwg->reference, false );
 		echo '</td>';
 	}
-	echo '<td class="bug-project">', $t_flags['project_show'] && isset( $t_issue['number'] ) ? string_display_line( $t_issue['number'] ) : '', '</td>';
-	echo '<td class="bug-project">', $t_flags['project_show'] && isset( $t_issue['revision'] ) ? string_display_line( $t_issue['revision'] ) : '', '</td>';
-	echo '<td class="bug-project">', $t_flags['project_show'] && isset( $t_issue['version'] ) ? string_display_line( $t_issue['version'] ) : '', '</td>';
-	echo '<td class="bug-project">', $t_flags['project_show'] && isset( $t_issue['author'] ) ? string_display_line( $t_issue['author'] ) : '', '</td>';
+	if( $t_flags['number_show'] ) {
+		echo '<td class="bug-project">', $t_flags['number_show'] && isset( $t_issue['number'] ) ? string_display_line( $t_issue['number'] ) : '', '</td>';
+	}
+	if( $t_flags['edition_show'] ) {
+		echo '<td class="bug-project">', $t_flags['edition_show'] && isset( $t_issue['edition'] ) ? string_display_line( $t_issue['edition'] ) : '', '</td>';
+	}
+	if( $t_flags['revision_show'] ) {
+		echo '<td class="bug-project">', $t_flags['revision_show'] && isset( $t_issue['revision'] ) ? string_display_line( $t_issue['revision'] ) : '', '</td>';
+	}
+	if( $t_flags['version_show'] ) {
+		echo '<td class="bug-project">', $t_flags['version_show'] && isset( $t_issue['version'] ) ? string_display_line( $t_issue['version'] ) : '', '</td>';
+	}
+	if( $t_flags['author_show'] ) {
+		echo '<td class="bug-project">', $t_flags['author_show'] && isset( $t_issue['author'] ) ? string_display_line( $t_issue['author'] ) : '', '</td>';
+	}
+	if( $t_flags['publisher_show'] ) {
+		echo '<td class="bug-project">', $t_flags['publisher_show'] && isset( $t_issue['publisher'] ) ? string_display_line( $t_issue['publisher'] ) : '', '</td>';
+	}
 	$t_date_format = 'Y-m-d';
 	$t_release_date = date( $t_date_format, $t_issue['release_date'] );
 	$t_release_date = string_display_line( date( $t_date_format, $t_issue['release_date'] ) );
@@ -793,7 +878,7 @@ if( $t_flags['relationships_show'] ) {
 	dwg_view_relationship_view_box( $f_issue_id, /* can_update */ $t_flags['relationships_can_update'] );
 }
 
-# User list monitoring the bug
+# User list monitoring the dwg
 if( $t_flags['monitor_show'] ) {
 	// $t_collapse_block = is_collapsed( 'monitoring' );
 	$t_collapse_block = is_collapsed( 'monitors' );
@@ -861,6 +946,198 @@ if( $t_flags['monitor_show'] ) {
 				<input type="hidden" name="bug_id" value="<?php echo (integer)$f_issue_id; ?>" />
 				<!--suppress HtmlFormInputWithoutLabel -->
 				<input type="text" class="input-sm" id="dwg_monitor_list_user_to_add" name="user_to_add" />
+				<input type="submit" class="btn btn-primary btn-sm btn-white btn-round" value="<?php echo lang_get( 'add' ) ?>" />
+			</form>
+			<?php } ?>
+		</td>
+	</tr>
+					</table>
+				</div>
+			</div>
+		</div>
+	</div>
+	</div>
+<?php
+}
+
+# Licenses applied to the dwg
+if( $t_flags['license_show'] ) {
+	$t_collapse_block = is_collapsed( 'licenses' );
+	$t_block_css = $t_collapse_block ? 'collapsed' : '';
+	$t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
+?>
+	<div class="col-md-12 col-xs-12">
+	<div class="space-10"></div>
+
+	<div id="licenses" class="widget-box widget-color-blue2 <?php echo $t_block_css ?>">
+		<div class="widget-header widget-header-small">
+			<h4 class="widget-title lighter">
+				<?php print_icon( 'fa-users', 'ace-icon' ); ?>
+				<?php echo lang_get( 'licenses_applied_dwg' ) ?>
+			</h4>
+			<div class="widget-toolbar">
+				<a data-action="collapse" href="#">
+					<?php print_icon( $t_block_icon, '1 ace-icon bigger-125' ); ?>
+				</a>
+			</div>
+		</div>
+
+		<div class="widget-body">
+			<div class="widget-main no-padding">
+
+				<div class="table-responsive">
+					<table class="table table-bordered table-condensed table-striped">
+	<tr>
+		<th class="category width-15">
+			<label for="dwg_license_list_license_to_add">
+				<?php echo lang_get( 'licenses_dwg_list' ); ?>
+			</label>
+		</th>
+		<td class="width-85">
+	<?php
+
+$t_license_applied = array();
+$t_license_apply_for = array();
+$t_license_applied_name = array();
+$t_license_apply_for_name = array();
+
+$t_can_manage_licenses = false;
+$t_show_request_license = false;
+$t_show_apply_license = false;
+			if( !isset( $t_issue['licenses'] ) || count( $t_issue['licenses'] ) == 0 ) {
+				echo lang_get( 'no_licenses_dwg' );
+			} else {
+$t_current_user_id = auth_get_current_user_id();
+$t_current_project = helper_get_current_project();
+$t_can_manage_licenses = access_has_license_level( config_get( 'manage_license_threshold', null, $t_current_user_id, $t_current_project ) );
+// $t_can_manage_licenses = access_has_license_level( config_get( 'manage_license_threshold', null, $t_user_id, null ) );
+$t_show_link = $t_can_manage_licenses;
+
+				$t_first = true;
+				foreach( $t_issue['licenses'] as $t_license ) {
+
+// $t_show_link = access_has_license_level( config_get( 'license_user_threshold' ), $t_license['id'], );
+
+					if( $t_first ) {
+						$t_first = false;
+					} else {
+						if( $t_show_link ) {
+							echo ' ';
+						} else {
+							echo ', ';
+						}
+					}
+
+					// $t_show_link = config_get( 'manage_license_threshold' );
+					if( license_user_has_applied($t_license['id'], 20) ) {
+						print_license( $t_license['id'], $t_show_link );
+					} else {
+						// print_license( $t_license['id'], true, '#cc0000' );
+						if( license_user_has_applied($t_license['id'], 10) ) {
+							print_license( $t_license['id'], $t_show_link, 'brown' );
+
+	// foreach( $p_user_ids as $t_id ) {
+	// 	$t_user_ids[] = (int)$t_id;
+	// }
+
+$t_license_applied[] = $t_license['id'];
+$t_license_applied_name[] = license_get_name( $t_license['id'] );
+$t_show_apply_license = true;
+
+						} else {
+							print_license( $t_license['id'], $t_show_link, 'red' );
+
+$t_license_apply_for[] = $t_license['id'];
+$t_license_apply_for_name[] = license_get_name( $t_license['id'] );
+$t_show_request_license = true;
+
+						}
+					}
+
+					if( $t_can_manage_licenses || $t_flags['license_can_delete'] ) {
+						echo ' <a class="btn btn-xs btn-primary btn-white btn-round" '
+							. 'href="' . helper_mantis_url( 'dwg_license_delete.php' )
+							. '?bug_id=' . $f_issue_id . '&amp;user_id=' . $t_license['id']
+							. htmlspecialchars(form_security_param( 'dwg_license_delete' ))
+							. '">'
+							. icon_get( 'fa-times' )
+							. '</a>';
+					}
+				 }
+			}
+
+			if( $t_show_request_license ) {
+
+$t_license_list = implode( ", ", $t_license_apply_for_name );
+?>
+			<form method="post" action="dwg_license_update.php" class="form-inline noprint">
+				<?php echo form_security_field( 'dwg_license_update' ) ?>
+				<input type="hidden" name="bug_id" value="<?php echo (integer)$f_issue_id; ?>" />
+				<input type="hidden" name="user_id" value="<?php echo (integer)$t_current_user_id; ?>" />
+				<input type="hidden" name="project_id" value="<?php echo (integer)$t_issue['project']; ?>" />
+				<input type="hidden" name="access_level" value="10" />
+				<?php
+					foreach( $t_license_apply_for as $t_license ) {
+						echo '<input type="hidden" name="license_id[]" value="' . $t_license . '" />' . "\n";
+					}
+				?>
+				<!--suppress HtmlFormInputWithoutLabel -->
+				<!-- <input type="text" class="input-sm" id="dwg_license_list_license_to_add" name="license_to_add" /> -->
+				<input type="submit" class="btn btn-primary btn-sm btn-white btn-round" value="<?php echo lang_get( 'license_request_access' ) ?>" />
+				<input type="text" class="input-sm" id="dwg_license_list_license_to_add" name="license_to_add" size="64" maxlength="256" value="<?php echo $t_license_list ?>" />
+			</form>
+<?php
+			}
+
+// function dwg_group_action_print_hidden_fields( array $p_bug_ids_array ) {
+// 	foreach( $p_bug_ids_array as $t_bug_id ) {
+// 		echo '<input type="hidden" name="dwg_arr[]" value="' . $t_bug_id . '" />' . "\n";
+// 	}
+// }
+
+			if( $t_show_apply_license ) {
+
+// $t_license_list = implode( ", ", $t_license_applied );
+$t_license_list = implode( ", ", $t_license_applied_name );
+
+
+?>
+			<form method="post" action="dwg_license_update.php" class="form-inline noprint">
+				<?php echo form_security_field( 'dwg_license_update' ) ?>
+
+				<input type="hidden" name="bug_id" value="<?php echo (integer)$f_issue_id; ?>" />
+				<input type="hidden" name="user_id" value="<?php echo (integer)$t_current_user_id; ?>" />
+				<input type="hidden" name="project_id" value="<?php echo (integer)$t_issue['project']; ?>" />
+				<input type="hidden" name="access_level" value="20" />
+				<?php
+					foreach( $t_license_applied as $t_license ) {
+						echo '<input type="hidden" name="license_id[]" value="' . $t_license . '" />' . "\n";
+					}
+				?>
+				<!--suppress HtmlFormInputWithoutLabel -->
+				<!-- <input type="text" class="input-sm" id="dwg_license_list_license_to_add" name="license_to_add" /> -->
+				<input type="submit" class="btn btn-primary btn-sm btn-white btn-round" value="<?php echo lang_get( 'license_apply_access' ) ?>" />
+
+<?php /*				<input type="text" class="input-sm" id="dwg_license_list_license_to_add" name="license_to_add" value="<?php echo license_get_name( $t_license ) ?>" /> */ ?>
+
+				<input type="text" class="input-sm" id="dwg_license_list_license_to_add" name="license_to_add" size="64" maxlength="256" value="<?php echo $t_license_list ?>" />
+
+<?php /*			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_title" name="dwg_title" size="105" maxlength="255" value="<?php echo string_attribute( $f_dwg_title ) ?>" required /> */ ?>
+
+			</form>
+<?php
+			}
+
+
+
+			if( $t_can_manage_licenses || $t_flags['license_can_add'] ) {
+	?>
+			<br /><br />
+			<form method="post" action="dwg_license_add.php" class="form-inline noprint">
+				<?php echo form_security_field( 'dwg_license_add' ) ?>
+				<input type="hidden" name="bug_id" value="<?php echo (integer)$f_issue_id; ?>" />
+				<!--suppress HtmlFormInputWithoutLabel -->
+				<input type="text" class="input-sm" id="dwg_license_list_license_to_add" name="license_to_add" />
 				<input type="submit" class="btn btn-primary btn-sm btn-white btn-round" value="<?php echo lang_get( 'add' ) ?>" />
 			</form>
 			<?php } ?>

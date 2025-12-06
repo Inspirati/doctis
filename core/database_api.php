@@ -1295,3 +1295,12 @@ function db_test_capability( $p_capability ) {
 	# if nothing was found, return false
 	return false;
 }
+
+function clean_sql($sql) {
+	// replace newlines + optional whitespace with a single space
+	$sql = preg_replace('/\s*[\r\n]+[\t]*/', ' ', $sql);
+	// collapse multiple spaces
+	$sql = preg_replace('/ {2,}/', ' ', $sql);
+	return trim($sql);
+}
+

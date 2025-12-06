@@ -542,9 +542,11 @@ $g_email_notifications_verbose = OFF;
  */
 $g_default_notify_flags = array(
 	'reporter'      => ON,
+	'creator'       => ON,
 	'handler'       => ON,
 	'monitor'       => ON,
 	'bugnotes'      => ON,
+	'dwgnotes'      => ON,
 	'category'      => ON,
 	'explicit'      => ON,
 	'threshold_min' => NOBODY,
@@ -594,12 +596,15 @@ $g_default_notify_flags = array(
 $g_notify_flags = array(
 	'new' => array(
 		'bugnotes'      => OFF,
+		'dwgnotes'      => OFF,
 	),
 	'monitor' => array(
 		'reporter'      => OFF,
+		'creator'       => OFF,
 		'handler'       => OFF,
 		'monitor'       => OFF,
 		'bugnotes'      => OFF,
+		'dwgnotes'      => OFF,
 		'explicit'      => ON,
 		'threshold_min' => NOBODY,
 		'threshold_max' => NOBODY,
@@ -997,7 +1002,8 @@ $g_email_retry_in_days = 7;
  * @see MANTIS_VERSION
  * @global int $g_show_version
  */
-$g_show_version = OFF;
+$g_show_version_suffix = ON;
+$g_show_copyright_footer = ON;
 
 /**
  * String appended to the MantisBT version when displayed to the user.
@@ -1005,6 +1011,7 @@ $g_show_version = OFF;
  * @global string $g_version_suffix
  */
 $g_version_suffix = '';
+$g_version_prefix = 'version ';
 
 /**
  * Custom copyright and licensing statement shown at the footer of each page.
@@ -1746,6 +1753,7 @@ $g_default_new_account_access_level = REPORTER;
  * @global int $g_default_project_view_status
  */
 $g_default_project_view_status = VS_PUBLIC;
+$g_default_license_view_status = VS_PUBLIC;
 
 /**
  * Default Bug View Status (VS_PUBLIC or VS_PRIVATE).
@@ -1900,7 +1908,7 @@ $g_default_dwg_show_changed = 6;
  * @global int $g_hide_status_default
  */
 $g_hide_status_default = CLOSED;
-$g_dwg_hide_status_default = ARCHIVED;
+$g_hide_dwg_status_default = ARCHIVED;
 
 /**
  *
@@ -3250,6 +3258,12 @@ $g_dwg_view_page_fields = array(
 	'fixed_in_version',
 	'creator',
 	'handler',
+	'number',
+//	'edition',
+	'revision',
+//	'version',
+	'author',
+	'publisher',
 	'id',
 	'last_updated',
 	'os',
@@ -3383,7 +3397,7 @@ $g_dwg_update_page_fields = array(
  * @global int $g_report_bug_threshold
  */
 $g_report_bug_threshold = REPORTER;
-$g_create_dwg_threshold = REPORTER;
+$g_create_dwg_threshold = DEVELOPER;
 
 /**
  * Access level needed to update bugs (i.e., the update_bug_page).
@@ -3394,7 +3408,7 @@ $g_create_dwg_threshold = REPORTER;
  * @global int $g_update_bug_threshold
  */
 $g_update_bug_threshold = UPDATER;
-$g_update_dwg_threshold = UPDATER;
+$g_update_dwg_threshold = DEVELOPER;
 
 /**
  * Access level needed to view bugs.
@@ -3411,6 +3425,7 @@ $g_view_dwg_threshold = VIEWER;
  */
 $g_monitor_bug_threshold = REPORTER;
 $g_monitor_dwg_threshold = REPORTER;
+$g_license_dwg_threshold = REPORTER;
 
 /**
  * Threshold needed to show the list of users monitoring a bug on the bug view pages.
@@ -3418,6 +3433,7 @@ $g_monitor_dwg_threshold = REPORTER;
  * @global int $g_show_monitor_list_threshold
  */
 $g_show_monitor_list_threshold = DEVELOPER;
+$g_show_license_list_threshold = REPORTER;
 
 /**
  * Access level needed to add other users to the list of users monitoring a bug.
@@ -3428,6 +3444,7 @@ $g_show_monitor_list_threshold = DEVELOPER;
  */
 $g_monitor_add_others_bug_threshold = DEVELOPER;
 $g_monitor_add_others_dwg_threshold = DEVELOPER;
+$g_license_add_others_dwg_threshold = MANAGER;
 
 /**
  * Access level needed to delete other users from the list of users
@@ -3439,6 +3456,7 @@ $g_monitor_add_others_dwg_threshold = DEVELOPER;
  */
 $g_monitor_delete_others_bug_threshold = DEVELOPER;
 $g_monitor_delete_others_dwg_threshold = DEVELOPER;
+$g_license_delete_others_dwg_threshold = MANAGER;
 
 /**
  * Access level required to print issue reports.
@@ -3563,7 +3581,7 @@ $g_upload_project_file_threshold = MANAGER;
  * @global int $g_upload_bug_file_threshold
  */
 $g_upload_bug_file_threshold = REPORTER;
-$g_upload_dwg_file_threshold = REPORTER;
+$g_upload_dwg_file_threshold = DEVELOPER;
 
 /**
  * Add bugnote threshold.
@@ -3624,6 +3642,15 @@ $g_admin_site_threshold = ADMINISTRATOR;
 $g_manage_project_threshold = MANAGER;
 
 /**
+ * Threshold needed to manage a license.
+ *
+ * Allows changing license details and settings (not to add/delete licenses).
+ *
+ * @global int $g_manage_license_threshold
+ */
+$g_manage_license_threshold = MANAGER;
+
+/**
  * Threshold needed to import data into a project.
  *
  * @global int $g_manage_import_threshold
@@ -3643,6 +3670,7 @@ $g_manage_news_threshold = MANAGER;
  * @global int $g_delete_project_threshold
  */
 $g_delete_project_threshold = ADMINISTRATOR;
+$g_delete_license_threshold = ADMINISTRATOR;
 
 /**
  * Threshold needed to create a new project.
@@ -3650,6 +3678,7 @@ $g_delete_project_threshold = ADMINISTRATOR;
  * @global int $g_create_project_threshold
  */
 $g_create_project_threshold = ADMINISTRATOR;
+$g_create_license_threshold = ADMINISTRATOR;
 
 /**
  * Threshold needed to be automatically included in private projects.
@@ -3657,6 +3686,7 @@ $g_create_project_threshold = ADMINISTRATOR;
  * @global int $g_private_project_threshold
  */
 $g_private_project_threshold = ADMINISTRATOR;
+$g_private_license_threshold = ADMINISTRATOR;
 
 /**
  * Threshold needed to manage user access to a project.
@@ -3664,6 +3694,7 @@ $g_private_project_threshold = ADMINISTRATOR;
  * @global int $g_project_user_threshold
  */
 $g_project_user_threshold = MANAGER;
+$g_license_user_threshold = UPDATER;
 
 /**
  * Threshold needed to manage user accounts.
@@ -3758,6 +3789,13 @@ $g_update_readonly_dwg_threshold = MANAGER;
  * @global int $g_view_changelog_threshold
  */
 $g_view_changelog_threshold = VIEWER;
+
+/**
+ * Threshold for viewing My View.
+ *
+ * @global int $g_view_changelog_threshold
+ */
+$g_view_my_view_threshold = UPDATER;
 
 /**
  * Threshold for viewing timeline.
@@ -4410,6 +4448,7 @@ $g_access_levels_enum_string = '10:viewer,25:reporter,40:updater,55:developer,70
  * @global string $g_project_status_enum_string
  */
 $g_project_status_enum_string = '10:development,30:release,50:stable,70:obsolete';
+$g_license_status_enum_string = '10:active,30:suspended,50:deprecated,70:obsolete';
 
 /**
  * Project view state enumeration.
@@ -4417,6 +4456,7 @@ $g_project_status_enum_string = '10:development,30:release,50:stable,70:obsolete
  * @global string $g_project_view_state_enum_string
  */
 $g_project_view_state_enum_string = '10:public,50:private';
+$g_license_view_state_enum_string = '10:public,50:private';
 
 /**
  * Bug view state enumeration.
@@ -4601,7 +4641,7 @@ $g_cdn_enabled = OFF;
  *
  * @global string $g_default_home_page
  */
-$g_default_home_page = 'my_view_page.php';
+$g_default_home_page = 'my_view_bug_page.php';
 
 /**
  * Specify where the user should be sent after logging out.
@@ -5340,7 +5380,7 @@ $g_due_date_view_threshold = DEVELOPER;
 /**
  * Default due date value for newly submitted issues.
  *
- * A valid relative date format {@link https://php.net/manual/en/datetime.formats.relative.php}
+ * A valid relative date format {@link https://www.php.net/manual/en/datetime.formats.php}
  * e.g. 'today' or '+2 days', or empty string for no due date set (default).
  *
  * @global string $g_due_date_default
@@ -5686,7 +5726,8 @@ $g_global_settings = array(
 	'show_memory_usage',
 	'show_queries_count',
 	'show_timer',
-	'show_version',
+	'show_version_suffix',
+	'show_copyright_footer',
 	'stop_on_errors',
 	'string_cookie',
 	'subprojects_enabled',
@@ -5694,6 +5735,7 @@ $g_global_settings = array(
 	'use_ldap_email',
 	'use_ldap_realname',
 	'validate_email',
+	'version_prefix',
 	'version_suffix',
 	'view_all_cookie',
 	'webmaster_email',
@@ -5809,6 +5851,7 @@ $g_public_config_names = array(
 	'copyright_statement',
 	'create_permalink_threshold',
 	'create_project_threshold',
+	'create_license_threshold',
 	'create_short_url',
 	'css_include_file',
 	'css_rtl_include_file',
@@ -5880,6 +5923,7 @@ $g_public_config_names = array(
 	'default_new_account_access_level',
 	'default_notify_flags',
 	'default_project_view_status',
+	'default_license_view_status',
 	'default_redirect_delay',
 	'default_refresh_delay',
 	'default_reminder_view_status',
@@ -5891,6 +5935,7 @@ $g_public_config_names = array(
 	'delete_bugnote_threshold',
 	'delete_dwgnote_threshold',
 	'delete_project_threshold',
+	'delete_license_threshold',
 	'disallowed_files',
 	'display_bug_padding',
 	'display_dwg_padding',
@@ -5941,7 +5986,7 @@ $g_public_config_names = array(
 	'handle_sponsored_bugs_threshold',
 	'handle_sponsored_dwgs_threshold',
 	'hide_status_default',
-	'dwg_hide_status_default',
+	'hide_dwg_status_default',
 	'history_default_visible',
 	'history_order',
 	'html_make_links',
@@ -5969,6 +6014,7 @@ $g_public_config_names = array(
 	'manage_news_threshold',
 	'manage_plugin_threshold',
 	'manage_project_threshold',
+	'manage_license_threshold',
 	'manage_import_threshold',
 	'manage_site_threshold',
 	'manage_user_threshold',
@@ -5984,15 +6030,19 @@ $g_public_config_names = array(
 	'minimum_sponsorship_amount',
 	'monitor_add_others_bug_threshold',
 	'monitor_add_others_dwg_threshold',
+	'license_add_others_dwg_threshold',
 	'monitor_bug_threshold',
 	'monitor_dwg_threshold',
+	'license_dwg_threshold',
 	'monitor_delete_others_bug_threshold',
 	'monitor_delete_others_dwg_threshold',
+	'license_delete_others_dwg_threshold',
 	'move_bug_threshold',
 	'move_dwg_threshold',
 	'my_view_boxes',
 	'my_view_bug_count',
 	'my_view_dwg_count',
+	'view_my_view_threshold',
 	'news_enabled',
 	'news_limit_method',
 	'news_view_limit_days',
@@ -6018,10 +6068,14 @@ $g_public_config_names = array(
 	'private_dwgnote_threshold',
 	'private_news_threshold',
 	'private_project_threshold',
+	'private_license_threshold',
 	'project_cookie',
 	'project_status_enum_string',
+	'license_status_enum_string',
 	'project_user_threshold',
+	'license_user_threshold',
 	'project_view_state_enum_string',
+	'license_view_state_enum_string',
 	'projection_enum_string',
 	'reassign_on_feedback',
 	'reauthentication_expiry',
@@ -6070,6 +6124,7 @@ $g_public_config_names = array(
 	'show_log_threshold',
 	'show_memory_usage',
 	'show_monitor_list_threshold',
+	'show_license_list_threshold',
 	'show_priority_text',
 	'show_product_version',
 	'show_project_menu_bar',
@@ -6082,7 +6137,7 @@ $g_public_config_names = array(
 	'show_user_email_threshold',
 	'show_user_realname_threshold',
 	'show_version_dates_threshold',
-	'show_version',
+	'show_version_suffix',
 	'signup_use_captcha',
 	'sort_by_last_name',
 	'sort_icon_arr',
@@ -6141,6 +6196,7 @@ $g_public_config_names = array(
 	'use_dynamic_filters_dwg',
 	'user_login_valid_regex',
 	'validate_email',
+	'version_prefix',
 	'version_suffix',
 	'view_all_cookie',
 	'view_attachments_threshold',

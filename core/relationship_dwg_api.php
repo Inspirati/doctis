@@ -478,9 +478,9 @@ function dwg_relationship_get_all_src( $p_src_bug_id ) {
 	db_param_push();
 	$t_query = 'SELECT {dwg_relationship}.id, {dwg_relationship}.relationship_type,
 				{dwg_relationship}.source_dwg_id, {dwg_relationship}.destination_dwg_id,
-				{document}.project_id
+				{dwg}.project_id
 				FROM {dwg_relationship}
-				INNER JOIN {document} ON {dwg_relationship}.destination_dwg_id = {document}.id
+				INNER JOIN {dwg} ON {dwg_relationship}.destination_dwg_id = {dwg}.id
 				WHERE source_dwg_id=' . db_param() . '
 				ORDER BY relationship_type, {dwg_relationship}.id';
 	$t_result = db_query( $t_query, array( $p_src_bug_id ) );
@@ -522,9 +522,9 @@ function dwg_relationship_get_all_dest( $p_dest_bug_id ) {
 	db_param_push();
 	$t_query = 'SELECT {dwg_relationship}.id, {dwg_relationship}.relationship_type,
 				{dwg_relationship}.source_dwg_id, {dwg_relationship}.destination_dwg_id,
-				{document}.project_id
+				{dwg}.project_id
 				FROM {dwg_relationship}
-				INNER JOIN {document} ON {dwg_relationship}.source_dwg_id = {document}.id
+				INNER JOIN {dwg} ON {dwg_relationship}.source_dwg_id = {dwg}.id
 				WHERE destination_dwg_id=' . db_param() . '
 				ORDER BY relationship_type, {dwg_relationship}.id';
 	$t_result = db_query( $t_query, array( (int)$p_dest_bug_id ) );

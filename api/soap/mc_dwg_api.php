@@ -853,14 +853,14 @@ function mc_dwg_get_biggest_id( $p_username, $p_password, $p_project_id ) {
 }
 
 /**
- * Get the id of an issue via the issue's summary.
+ * Get the id of a dwg via the document's title.
  *
  * @param string $p_username The name of the user trying to retrieve the information.
  * @param string $p_password The password of the user.
- * @param string $p_summary  The summary of the issue to retrieve.
- * @return integer The id of the issue with the given summary, 0 if there is no such issue.
+ * @param string $p_title    The title of the document to retrieve.
+ * @return integer The id of the document with the given title, 0 if there is no such title.
  */
-function mc_dwg_get_id_from_summary( $p_username, $p_password, $p_summary ) {
+function mc_dwg_get_id_from_title( $p_username, $p_password, $p_title ) {
 	global $g_project_override;
 
 	$t_user_id = mci_check_login( $p_username, $p_password );
@@ -868,9 +868,9 @@ function mc_dwg_get_id_from_summary( $p_username, $p_password, $p_summary ) {
 		return mci_fault_login_failed();
 	}
 
-	$t_query = 'SELECT id FROM {document} WHERE summary = ' . db_param();
+	$t_query = 'SELECT id FROM {documents} WHERE title = ' . db_param();
 
-	$t_result = db_query( $t_query, array( $p_summary ), 1 );
+	$t_result = db_query( $t_query, array( $p_title ), 1 );
 
 	if( db_num_rows( $t_result ) == 0 ) {
 		return 0;
@@ -1679,6 +1679,9 @@ function mci_dwg_data_as_array( DwgData $p_issue_data, $p_user_id, $p_lang, $p_f
 	if( $t_fields === null || isset( $t_fields['author'] ) ) {
 		$t_issue['author'] = mci_sanitize_xml_string( $p_issue_data->author );
 	}
+	if( $t_fields === null || isset( $t_fields['publisher'] ) ) {
+		$t_issue['publisher'] = mci_sanitize_xml_string( $p_issue_data->publisher );
+	}
 	if( $t_fields === null || isset( $t_fields['number'] ) ) {
 		$t_issue['number'] = mci_sanitize_xml_string( $p_issue_data->number );
 	}
@@ -1687,6 +1690,9 @@ function mci_dwg_data_as_array( DwgData $p_issue_data, $p_user_id, $p_lang, $p_f
 	}
 	if( $t_fields === null || isset( $t_fields['version'] ) ) {
 		$t_issue['version'] = mci_sanitize_xml_string( $p_issue_data->version );
+	}
+	if( $t_fields === null || isset( $t_fields['edition'] ) ) {
+		$t_issue['edition'] = mci_sanitize_xml_string( $p_issue_data->edition );
 	}
 	if( $t_fields === null || isset( $t_fields['revision'] ) ) {
 		$t_issue['revision'] = mci_sanitize_xml_string( $p_issue_data->revision );
@@ -1906,6 +1912,11 @@ function mci_dwg_data_as_array( DwgData $p_issue_data, $p_user_id, $p_lang, $p_f
 	# Get users monitoring issue - access checked as part of returning user list.
 	if( $t_fields === null || isset( $t_fields['monitors'] ) ) {
 		$t_issue['monitors'] = mci_account_get_array_by_ids( dwg_get_monitors( $p_issue_data->id ) );
+	}
+
+	# Get licenses applied to dwg - access checked as part of returning license? list.
+	if( $t_fields === null || isset( $t_fields['licenses'] ) ) {
+		$t_issue['licenses'] = mci_license_get_array_by_ids( dwg_get_licenses( $p_issue_data->id ) );
 	}
 
 	if( !ApiObjectFactory::$soap ) {

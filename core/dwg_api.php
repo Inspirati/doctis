@@ -117,9 +117,10 @@ use Mantis\Exceptions\ClientException;
  * @property string $steps_to_reproduce
  * @property string $additional_information
  */
-#[AllowDynamicProperties]
+// #[AllowDynamicProperties]
 class DwgData {
 	protected $id;
+	protected $document_id;
 	protected $project_id = null;
 	protected $status = PENDING;
 	protected $date_submitted = '';
@@ -130,48 +131,43 @@ class DwgData {
 // #TODO RobD - and now all the new data fields for the documents table	
 	protected $enabled = 1;
 	protected $priority = NORMAL;
+
 	protected $title = '';
 	protected $author = '';
-	protected $number = '';
-	protected $revision = '';
-	protected $discipline = '';
+	protected $publisher = '';
 	protected $reference = '';
+	protected $number = '';
+	protected $edition = '';
+	protected $revision = '';
 	protected $link_url = '';
 	protected $classification = '';
 	protected $revision_date = '';
 	protected $release_date = '';
 
+	protected $discipline = '';
+
 	protected $creator_id = 0;
 	protected $handler_id = 0;
 	protected $category_id = 1;
-	protected $duplicate_id = 0;
+	protected $duplicate_id = 0;  // deprecated by the introduction of bug relationships managment, so it should be removed from here
 
-	protected $issue_count = 0;
+	protected $issue_count = 0;  // ?
 
 // #TODO RobD - the legacy fields from the bug version
-//	protected $handler_id = 0;
-//	protected $duplicate_id = 0;
 //	protected $priority = NORMAL;
 	protected $severity = MINOR;
 	protected $reproducibility = 10;
-//	protected $status = NEW_;
 	protected $resolution = OPEN;
 	protected $projection = 10;
-//	protected $category_id = 1;
-//	protected $date_submitted = '';
-//	protected $last_updated = '';
 	protected $eta = 10;
 	protected $os = '';
 	protected $os_build = '';
 	protected $platform = '';
-//	protected $version = '';
 	protected $fixed_in_version = '';
 	protected $target_version = '';
 	protected $build = '';
 	protected $view_state = VS_PUBLIC;
-	// protected $summary = 'empty';
 	protected $sponsorship_total = 0;
-	// protected $sticky = 0;
 	// protected $due_date = '';
 	protected $due_date = 0;
 	protected $profile_id = 0;
@@ -224,6 +220,7 @@ class DwgData {
 		switch( $p_name ) {
 			# integer types
 			case 'id':
+			case 'document_id':
 			case 'project_id':
 			case 'creator_id':
 			case 'handler_id':
@@ -475,31 +472,51 @@ class DwgData {
 $this->classification = isset($this->classification) ? $this->classification : '';
 $this->link_url = isset($this->link_url) ? $this->link_url : '';
 $this->author = isset($this->author) ? $this->author : '';
+$this->publisher = isset($this->publisher) ? $this->publisher : '';
+$this->edition = isset($this->edition) ? $this->edition : '';
 
-
-		# Insert the rest of the data
+		# Insert the document
 		db_param_push();
-		$t_query = 'INSERT INTO {document}
-						( project_id, creator_id, status, enabled,
-						  version, title, author, number,
-						  revision, discipline, reference, link_url,
-						  classification, revision_date, release_date, date_submitted,
-						  last_updated, dwg_text_id, category_id
+		$t_query = 'INSERT INTO {documents}
+						( 
+						  title, author, publisher, reference,
+						  number, edition, revision, link_url,
+						  classification, revision_date, release_date
 						)
 					  VALUES
 						( ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
 						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
-						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
-						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
 						  ' . db_param() . ',' . db_param() . ',' . db_param() . ')';
 		db_query( $t_query, array(
-		  $this->project_id, $this->creator_id, $this->status, $this->enabled,
-		  $this->version, $this->title, $this->author, $this->number,
-		  $this->revision, $this->discipline, $this->reference, $this->link_url,
-		  $this->classification, $this->revision_date, $this->release_date, $this->date_submitted,
-		  $this->last_updated, $t_text_id, $this->category_id ) );
+		  $this->title, $this->author, $this->publisher, $this->reference,
+		  $this->number, $this->edition, $this->revision, $this->link_url,
+		  $this->classification, $this->revision_date, $this->release_date ) );
 
-		$this->id = db_insert_id( db_get_table( 'document' ) );
+		$this->document_id = db_insert_id( db_get_table( 'documents' ) );
+
+		# Insert the document metadata
+		db_param_push();
+		$t_query = 'INSERT INTO {dwg}
+						( project_id, creator_id, category_id, document_id,
+						  status, enabled, version,
+						  discipline, link_url,
+						  classification, date_submitted, due_date,
+						  last_updated, dwg_text_id
+						)
+					  VALUES
+						( ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
+						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',
+						  ' . db_param() . ',' . db_param() . ',
+						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',
+						  ' . db_param() . ',' . db_param() . ')';
+		db_query( $t_query, array(
+		  $this->project_id, $this->creator_id, $this->category_id, $this->document_id,
+		  $this->status, $this->enabled, $this->version,
+		  $this->discipline, $this->link_url,
+		  $this->classification, $this->date_submitted, $this->due_date,
+		  $this->last_updated, $t_text_id ) );
+
+		$this->id = db_insert_id( db_get_table( 'dwg' ) );
 
 		# log new bug
 		history_dwg_log_event_special( $this->id, NEW_DWG );
@@ -593,7 +610,7 @@ $this->author = isset($this->author) ? $this->author : '';
 		# like this anyway; if you really need to change them use dwg_set_field().
 		db_param_push();
 ////////////////////////////////////////////////////////////////////////////////
-		$t_query = 'UPDATE {document} SET 
+		$t_query = 'UPDATE {dwg} SET 
 			project_id=' . db_param() . ',
 			creator_id=' . db_param() . ',
 			handler_id=' . db_param() . ',
@@ -601,6 +618,7 @@ $this->author = isset($this->author) ? $this->author : '';
 			status=' . db_param() . ',
 			priority=' . db_param() . ',
 			category_id=' . db_param() . ',
+			due_date=' . db_param() . ',
 			version=' . db_param() . '
 			';
 		$t_query .= 'WHERE id=' . db_param();
@@ -613,6 +631,7 @@ $this->author = isset($this->author) ? $this->author : '';
 			$this->status,
 			$this->priority,
 			$this->category_id,
+			$this->due_date,
 			$this->version,
 			$this->id);
 
@@ -782,7 +801,9 @@ function dwg_cache_row( $p_bug_id, $p_trigger_errors = true ) {
 	$c_bug_id = (int)$p_bug_id;
 
 	db_param_push();
-	$t_query = 'SELECT * FROM {document} WHERE id=' . db_param();
+	// $t_query = 'SELECT * FROM {dwg} a WHERE id=' . db_param();
+	// @TODO RobD - beware we currently have field 'classification' in both tables; either drop one or be specific as right now it'd be indeterminate
+	$t_query = 'SELECT * FROM {dwg} a INNER JOIN {documents} b ON a.document_id=b.id WHERE a.id=' . db_param();
 	$t_result = db_query( $t_query, array( $c_bug_id ) );
 
 	$t_row = db_fetch_array( $t_result );
@@ -821,7 +842,8 @@ function dwg_cache_array_rows( array $p_bug_id_array ) {
 		return;
 	}
 
-	$t_query = 'SELECT * FROM {document} WHERE id IN (' . implode( ',', $c_bug_id_array ) . ')';
+	// $t_query = 'SELECT * FROM {dwg} WHERE id IN (' . implode( ',', $c_bug_id_array ) . ')';
+	$t_query = 'SELECT * FROM {dwg} a INNER JOIN {documents} b ON a.document_id=b.id WHERE a.id IN (' . implode( ',', $c_bug_id_array ) . ')';
 	$t_result = db_query( $t_query );
 
 	while( $t_row = db_fetch_array( $t_result ) ) {
@@ -900,19 +922,11 @@ function dwg_text_cache_row( $p_bug_id, $p_trigger_errors = true ) {
 
 	db_param_push();
 
+	$t_query = 'SELECT bt.* FROM {dwg_text} bt, {dwg} b
+				  WHERE b.id=' . db_param() . ' AND b.dwg_text_id = bt.id';
+	$t_result = db_query( $t_query, array( $c_bug_id ) );
 
-
-// @TODO RobD - found it, we need to provide some dummy 'bug_text' results
-//$t_row = false;
-$t_row = array("foobar", "barfoo");
-
-
-
-	// $t_query = 'SELECT bt.* FROM {dwg_text} bt, {document} b
-	// 			  WHERE b.id=' . db_param() . ' AND b.dwg_text_id = bt.id';
-	// $t_result = db_query( $t_query, array( $c_bug_id ) );
-
-	// $t_row = db_fetch_array( $t_result );
+	$t_row = db_fetch_array( $t_result );
 	
 	if( !$t_row ) {
 		$g_cache_dwg_text[$c_bug_id] = false;
@@ -1468,9 +1482,14 @@ function dwg_delete( $p_bug_id ) {
 	$t_query = 'DELETE FROM {dwg_text} WHERE id=' . db_param();
 	db_query( $t_query, array( $t_bug_text_id ) );
 
+	# Delete the dwg entry
+	db_param_push();
+	$t_query = 'DELETE FROM {dwg} WHERE id=' . db_param();
+	db_query( $t_query, array( $c_bug_id ) );
+
 	# Delete the bug entry
 	db_param_push();
-	$t_query = 'DELETE FROM {document} WHERE id=' . db_param();
+	$t_query = 'DELETE FROM {dwg} WHERE id=' . db_param();
 	db_query( $t_query, array( $c_bug_id ) );
 
 	dwg_clear_cache_all( $p_bug_id );
@@ -1488,7 +1507,7 @@ function dwg_delete_all( $p_project_id ) {
 	$c_project_id = (int)$p_project_id;
 
 	db_param_push();
-	$t_query = 'SELECT id FROM {document} WHERE project_id=' . db_param();
+	$t_query = 'SELECT id FROM {dwg} WHERE project_id=' . db_param();
 	$t_result = db_query( $t_query, array( $c_project_id ) );
 
 	while( $t_row = db_fetch_array( $t_result ) ) {
@@ -1697,10 +1716,10 @@ function dwg_get_dwgnote_stats_array( array $p_bugs_id, $p_user_id = null ) {
 
 	# We need to check for each bugnote if user has permissions to view in respective project.
 	# bugnotes are grouped by project_id and bug_id to save calls to config_get
-	$t_sql = 'SELECT n.id, n.dwg_id, n.creator_id, n.view_state, n.last_modified, n.date_submitted, b.project_id'
-		. ' FROM {dwgnote} n JOIN {document} b ON (n.dwg_id = b.id)'
+	$t_sql = 'SELECT n.id, n.dwg_id, n.creator_id, n.view_state, n.last_modified, n.date_submitted, d.project_id'
+		. ' FROM {dwgnote} n JOIN {dwg} d ON (n.dwg_id = d.id)'
 		. ' WHERE %s'
-		. ' ORDER BY b.project_id, n.dwg_id, n.last_modified';
+		. ' ORDER BY d.project_id, n.dwg_id, n.last_modified';
 	$t_query = new DbQuery();
 	$t_query->sql( sprintf( $t_sql, $t_query->sql_in( 'n.dwg_id', 'bug_ids' ) ) );
 
@@ -1903,7 +1922,7 @@ function dwg_set_field( $p_bug_id, $p_field_name, $p_value ) {
 
 	# Update fields
 	db_param_push();
-	$t_query = 'UPDATE {document} SET ' . $p_field_name . '=' . db_param() . ' WHERE id=' . db_param();
+	$t_query = 'UPDATE {dwg} SET ' . $p_field_name . '=' . db_param() . ' WHERE id=' . db_param();
 	db_query( $t_query, array( $c_value, $c_bug_id ) );
 
 	# updated the last_updated date
@@ -1967,7 +1986,7 @@ function dwg_assign( $p_bug_id, $p_user_id, $p_bugnote_text = '', $p_bugnote_pri
 
 		# get user id
 		db_param_push();
-		$t_query = 'UPDATE {document}
+		$t_query = 'UPDATE {dwg}
 					  SET handler_id=' . db_param() . ', status=' . db_param() . '
 					  WHERE id=' . db_param();
 		db_query( $t_query, array( $p_user_id, $t_ass_val, $p_bug_id ) );
@@ -2145,7 +2164,7 @@ function dwg_reopen( $p_bug_id, $p_bugnote_text = '', $p_time_tracking = '0:00',
  */
 function dwg_update_date( $p_bug_id ) {
 	db_param_push();
-	$t_query = 'UPDATE {document} SET last_updated=' . db_param() . ' WHERE id=' . db_param();
+	$t_query = 'UPDATE {dwg} SET last_updated=' . db_param() . ' WHERE id=' . db_param();
 	db_query( $t_query, array( db_now(), $p_bug_id ) );
 
 	dwg_clear_cache( $p_bug_id );
@@ -2219,6 +2238,28 @@ function dwg_get_monitors( $p_bug_id ) {
 	}
 
 	user_cache_array_rows( $t_users );
+
+	return $t_users;
+}
+
+function dwg_get_licenses( $p_dwg_id ) {
+	if( ! access_has_dwg_level( config_get( 'show_license_list_threshold' ), $p_dwg_id ) ) {
+		return array();
+	}
+
+	# get the license data
+	db_param_push();
+	$t_query = 'SELECT license_id
+			FROM {license_dwg_list} m
+			WHERE m.dwg_id=' . db_param();
+	$t_result = db_query( $t_query, array( $p_dwg_id ) );
+
+	$t_users = array();
+	while( $t_row = db_fetch_array( $t_result ) ) {
+		$t_users[] = $t_row['license_id'];
+	}
+
+	// user_cache_array_rows( $t_users );
 
 	return $t_users;
 }

@@ -83,7 +83,6 @@ require_once( __DIR__ . '/classes/EmailSender.class.php' );
 # PHPMailer is needed for email address validation independent of the provider used
 # to send the emails.
 use PHPMailer\PHPMailer\PHPMailer;
-
 use Mantis\Exceptions\ClientException;
 use VBoctor\Email\DisposableEmailChecker;
 
@@ -712,7 +711,7 @@ function email_bug_updated( $p_bug_id ) {
  *
  * @return string
  */
-// function email_generate_bug_md5( $p_bug_id, $p_date_submitted ) {
+// function email_generate_md5( $p_bug_id, $p_date_submitted ) {
 // 	return md5( $p_bug_id . $p_date_submitted );
 // }
 
@@ -1331,26 +1330,6 @@ function email_format_bug_message( array $p_visible_bug_data ) {
 	}
 
 	return $t_message;
-}
-
-/**
- * Format email attribute for display.
- *
- * If $p_visible_bug_data contains specified attribute the function
- * returns concatenated translated attribute name and original
- * attribute value. Else return empty string.
- *
- * @param array  $p_visible_bug_data Visible Bug Data array.
- * @param string $p_attribute_id     Attribute ID.
- *
- * @return string
- */
-function email_format_attribute( array $p_visible_bug_data, $p_attribute_id ) {
-	if( array_key_exists( $p_attribute_id, $p_visible_bug_data ) ) {
-		return utf8_str_pad( lang_get( $p_attribute_id ) . ': ', config_get( 'email_padding_length' ) )
-			. $p_visible_bug_data[$p_attribute_id] . "\n";
-	}
-	return '';
 }
 
 /**

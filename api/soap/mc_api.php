@@ -436,6 +436,29 @@ function mci_project_get( $p_project_id, $p_lang, $p_detail ) {
 	return $t_project;
 }
 
+function mci_license_get( $p_license_id, $p_lang, $p_detail ) {
+	$t_row = license_get_row( $p_license_id );
+
+	$t_user_id = auth_get_current_user_id();
+	$t_user_access_level = access_get_license_level( $p_license_id, $t_user_id );
+
+	# Get license info that makes sense to publish via API.
+	$t_license = array(
+		'id' => $p_license_id,
+		'name' => $t_row['name'],
+	);
+
+	if( $p_detail ) {
+		$t_license['status'] = mci_enum_get_array_by_id( (int)$t_row['status'], 'license_status', $p_lang );
+		$t_license['description'] = $t_row['description'];
+		$t_license['enabled'] = (int)$t_row['enabled'] != 0;
+		$t_license['view_state'] = mci_enum_get_array_by_id( (int)$t_row['view_state'], 'license_view_state', $p_lang );
+		$t_license['access_level'] = mci_enum_get_array_by_id( $t_user_access_level, 'access_levels', $p_lang );
+	}
+
+	return $t_license;
+}
+
 /**
  * access_ if MantisBT installation is marked as offline by the administrator.
  * @return true: offline, false: online
@@ -581,6 +604,24 @@ function mci_get_project_id( $p_project, $p_default = ALL_PROJECTS ) {
 	return $t_project_id;
 }
 
+function mci_get_license_id( $p_license, $p_default = ALL_LICENSES ) {
+	if( is_object( $p_license ) ) {
+		$p_license = get_object_vars( $p_license );
+	}
+
+	if( isset( $p_license['id'] ) && (int)$p_license['id'] != 0 ) {
+		$t_license_id = (int)$p_license['id'];
+	} else if( isset( $p_license['name'] ) && !is_blank( $p_license['name'] ) ) {
+		$t_license_id = license_get_id_by_name( $p_license['name'], $p_default );
+	} else if( $p_default === false ) {
+		$t_license_id = null;
+	} else {
+		$t_license_id = $p_default;
+	}
+
+	return $t_license_id;
+}
+
 /**
  * Return project Status
  * @param object $p_status Status.
@@ -588,6 +629,9 @@ function mci_get_project_id( $p_project, $p_default = ALL_PROJECTS ) {
  */
 function mci_get_project_status_id( $p_status ) {
 	return mci_get_enum_id_from_objectref( 'project_status', $p_status );
+}
+function mci_get_license_status_id( $p_status ) {
+	return mci_get_enum_id_from_objectref( 'license_status', $p_status );
 }
 
 /**
@@ -597,6 +641,9 @@ function mci_get_project_status_id( $p_status ) {
  */
 function mci_get_project_view_state_id( $p_view_state ) {
 	return mci_get_enum_id_from_objectref( 'project_view_state', $p_view_state );
+}
+function mci_get_license_view_state_id( $p_view_state ) {
+	return mci_get_enum_id_from_objectref( 'license_view_state', $p_view_state );
 }
 
 /**

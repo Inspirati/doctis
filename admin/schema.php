@@ -917,41 +917,64 @@ $g_upgrade[213] = array( 'UpdateFunction', 'category_status_default' );
 $t_idx = 214;  # the next upgrade sequence number from the released version when branched
 
 $g_upgrade[$t_idx++] = array( 'CreateTableSQL',
-	array( db_get_table( 'document' ), "
+	array( db_get_table( 'dwg' ), "
 		id				I		NOTNULL UNSIGNED AUTOINCREMENT PRIMARY,
 		project_id		I		UNSIGNED NOTNULL DEFAULT '0',
 		creator_id		I		UNSIGNED NOTNULL DEFAULT '0',
 		handler_id		I		UNSIGNED NOTNULL DEFAULT '0',
 		duplicate_id	I		UNSIGNED NOTNULL DEFAULT '0',
 		category_id		I		UNSIGNED NOTNULL DEFAULT '1',
+		document_id		I		UNSIGNED NOTNULL DEFAULT '1',
 		enabled			L		NOTNULL DEFAULT \" '1' \",
 		status			I2		NOTNULL DEFAULT '110',
 		priority		I2		NOTNULL DEFAULT '30',
 		view_state		I2		NOTNULL DEFAULT '10',
-		title			C(255)	NOTNULL,
-		author			C(255)	NOTNULL DEFAULT \" '' \",
-		reference		C(64)	NOTNULL DEFAULT \" '' \",
-		number			C(64)	NOTNULL DEFAULT \" '' \",
 		version			C(64)	NOTNULL DEFAULT \" '' \",
-		revision		C(64)	NOTNULL DEFAULT \" '' \",
 		discipline		C(64)	NOTNULL DEFAULT \" '' \",
 		classification	C(64)	NOTNULL DEFAULT \" '' \",
 		summary			C(255)	NOTNULL DEFAULT \" '' \",
 		link_url		C(2048)	NOTNULL DEFAULT \" '' \",
-		revision_date	I		UNSIGNED NOTNULL DEFAULT '1',
-		release_date	I		UNSIGNED NOTNULL DEFAULT '1',
 		date_submitted	I		UNSIGNED NOTNULL DEFAULT '1',
 		last_updated	I		UNSIGNED NOTNULL DEFAULT '1',
 		due_date		I		UNSIGNED NOTNULL DEFAULT '1',
 		dwg_text_id		I		UNSIGNED NOTNULL DEFAULT '0',
-
-	profile_id				I		UNSIGNED NOTNULL DEFAULT '0',
-	fixed_in_version		C(64)	NOTNULL DEFAULT \" '' \",
-	sticky					L		$t_notnull DEFAULT  \"'0'\" ",
+		sticky			L		$t_notnull DEFAULT  \"'0'\" ",
 	$t_table_options
 	) );
-$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_document_number', db_get_table( 'document' ), 'number' ) );
-$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_document_category', db_get_table( 'document' ), 'category_id' ) );
+
+$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_dwg_status', db_get_table( 'dwg' ), 'status' ) );
+$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_dwg_project', db_get_table( 'dwg' ), 'project_id' ) );
+$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_dwg_document_id', db_get_table( 'dwg' ), 'document_id' ) );
+
+# Create a default 'Empty' dwg with status 'Archived' for issues which refer to documents which are to be deleted
+$g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'dwg' ), "
+	( dwg_text_id, status )
+	VALUES
+	( '1', '195' )" ) );
+
+
+$g_upgrade[$t_idx++] = array( 'CreateTableSQL',
+	array( db_get_table( 'documents' ), "
+		id				I		NOTNULL UNSIGNED AUTOINCREMENT PRIMARY,
+		title			C(255)	NOTNULL,
+		author			C(255)	NOTNULL DEFAULT \" '' \",
+		publisher		C(255)	NOTNULL DEFAULT \" '' \",
+		reference		C(64)	NOTNULL DEFAULT \" '' \",
+		number			C(64)	NOTNULL DEFAULT \" '' \",
+		edition			C(64)	NOTNULL DEFAULT \" '' \",
+		revision		C(64)	NOTNULL DEFAULT \" '' \",
+		link_url		C(2048)	NOTNULL DEFAULT \" '' \",
+		classification	C(64)	NOTNULL DEFAULT \" '' \",
+		revision_date	I		UNSIGNED NOTNULL DEFAULT '1',
+		release_date	I		UNSIGNED NOTNULL DEFAULT '1' ",
+		$t_table_options
+	) );
+
+# Create a default 'Empty' document with status 'Archived' for issues which refer to documents which are to be deleted
+$g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'documents' ), "
+	( title )
+	VALUES
+	( 'Empty' )" ) );
 
 $g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwg_text' ), "
 	id						I		PRIMARY UNSIGNED NOTNULL AUTOINCREMENT,
@@ -966,12 +989,6 @@ $g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'dwg_text' ), "
 	VALUES
 	( 'Empty', 'Empty', 'Empty' )" ) );
 
-# Create a default 'Empty' document with status 'Archived' for issues which refer to documents which are to be deleted
-$g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'document' ), "
-	( title, category_id, dwg_text_id, status )
-	VALUES
-	( 'Empty', '1', '1', '195' )" ) );
-
 # @TODO RobD - extract from dwg_api.php ~line number 1982:
 #    "log changes except for duplicate_id which is obsolete and should be removed in MantisBT 1.3"
 
@@ -983,7 +1000,8 @@ $g_upgrade[$t_idx++] = array( 'AddColumnSQL', array( db_get_table( 'bug' ), "
 $g_upgrade[$t_idx++] = array( 'AddColumnSQL', array( db_get_table( 'project' ), "
 	reference_url1		C(255)	NOTNULL DEFAULT \" '' \",
 	reference_url2		C(255)	NOTNULL DEFAULT \" '' \",
-	classification		C(255)	NOTNULL DEFAULT \" '' \" " ) );
+	classification		C(255)	NOTNULL DEFAULT \" '' \",
+	due_date			I		UNSIGNED NOTNULL DEFAULT '1' " ) );
 
 $g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwgnote' ), "
 	id						I		UNSIGNED PRIMARY NOTNULL AUTOINCREMENT,
@@ -1092,6 +1110,42 @@ $g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwg_tag' )
 	$t_table_options
 	) );
 $g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_dwg_tag_tag_id', db_get_table( 'dwg_tag' ), 'tag_id' ) );
+
+$g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'license' ), "
+	id						I		UNSIGNED NOTNULL PRIMARY AUTOINCREMENT,
+	project_id				I		UNSIGNED NOTNULL DEFAULT '0',
+	enabled					L		NOTNULL DEFAULT \" '1' \",
+	name					C(128)	NOTNULL DEFAULT \" '' \",
+	match_str				C(128)	NOTNULL DEFAULT \" '' \",
+	type					C(128)	NOTNULL DEFAULT \" '' \",
+	status					I2		NOTNULL DEFAULT '10',
+	view_state				I2		NOTNULL DEFAULT '10',
+	access_min				I2		NOTNULL DEFAULT '10',
+	description				XL		$t_notnull",
+	$t_table_options
+	) );
+
+$g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'license_dwg_list' ), "
+	id						I		UNSIGNED NOTNULL PRIMARY AUTOINCREMENT,
+	dwg_id					I		UNSIGNED NOTNULL DEFAULT '0',
+	license_id				I		UNSIGNED NOTNULL DEFAULT '0',
+	status					I2		NOTNULL DEFAULT '10',
+	date_added				I		UNSIGNED NOTNULL DEFAULT '1' ",
+	$t_table_options
+	) );
+
+$g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'license_user_list' ), "
+	id						I		UNSIGNED NOTNULL PRIMARY AUTOINCREMENT,
+	user_id					I		UNSIGNED NOTNULL DEFAULT '0',
+	license_id				I		UNSIGNED NOTNULL DEFAULT '0',
+	status					I2		NOTNULL DEFAULT '10',
+	date_added				I		UNSIGNED NOTNULL DEFAULT '1' ",
+	$t_table_options
+	) );
+
+// $g_upgrade[$t_idx++] = array( 'AddColumnSQL', array( db_get_table( 'user' ), "
+// 	oauth_provider			C(50)	NOTNULL DEFAULT \" '' \",
+// 	oauth_uid				C(100)	NOTNULL DEFAULT \" '' \" ") );
 
 # IMPORTANT: keep these entries as the last indexes, as they will be deleted in release versions
 #			 (you will need to bump all the indexes when inserting tables database statements above here)

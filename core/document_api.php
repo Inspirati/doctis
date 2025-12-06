@@ -122,7 +122,7 @@ function document_ensure_exists_in_project( $p_document_id, $p_project_id ) {
  */
 function document_is_unique( $p_project_id, $p_name ) {
 	db_param_push();
-	$t_query = 'SELECT COUNT(*) FROM {document}
+	$t_query = 'SELECT COUNT(*) FROM {dwg}
 					WHERE project_id=' . db_param() . ' AND ' . db_helper_like( 'name' );
 	$t_count = db_result( db_query( $t_query, array( $p_project_id, $p_name ) ) );
 
@@ -191,7 +191,7 @@ function document_add( $p_project_id, $p_name ) {
 	category_ensure_unique( $p_project_id, $p_name );
 
 	db_param_push();
-	$t_query = 'INSERT INTO {document} ( project_id, name )
+	$t_query = 'INSERT INTO {dwg} ( project_id, name )
 				  VALUES ( ' . db_param() . ', ' . db_param() . ' )';
 	db_query( $t_query, array( $p_project_id, $p_name ) );
 
@@ -248,7 +248,7 @@ function document_update( $p_document_id, $p_name, $p_assigned_to, $p_status = n
 	}
 
 	db_param_push();
-	$t_query = 'UPDATE {document} SET name=' . db_param() . ', user_id=' . db_param() . ', status=' . db_param() .'
+	$t_query = 'UPDATE {dwg} SET name=' . db_param() . ', user_id=' . db_param() . ', status=' . db_param() .'
 				  WHERE id=' . db_param();
 	db_query( $t_query, array( $p_name, $p_assigned_to , $p_status, $p_document_id ) );
 
@@ -281,7 +281,7 @@ function document_remove( $p_document_id, $p_new_document_id = 0 ) {
 	}
 
 	db_param_push();
-	$t_query = 'DELETE FROM {document} WHERE id=' . db_param();
+	$t_query = 'DELETE FROM {dwg} WHERE id=' . db_param();
 	db_query( $t_query, array( $p_document_id ) );
 
 	# update bug history entries
@@ -318,7 +318,7 @@ function document_remove_all( $p_project_id, $p_new_document_id = 0 ) {
 
 	# get a list of affected documents
 	db_param_push();
-	$t_query = 'SELECT id FROM {document} WHERE project_id=' . db_param();
+	$t_query = 'SELECT id FROM {dwg} WHERE project_id=' . db_param();
 	$t_result = db_query( $t_query, array( $p_project_id ) );
 
 	$t_document_ids = array();
@@ -352,7 +352,7 @@ function document_remove_all( $p_project_id, $p_new_document_id = 0 ) {
 
 	# delete documents
 	db_param_push();
-	$t_query = 'DELETE FROM {document} WHERE project_id=' . db_param();
+	$t_query = 'DELETE FROM {dwg} WHERE project_id=' . db_param();
 	db_query( $t_query, array( $p_project_id ) );
 
 	return true;
@@ -375,7 +375,7 @@ function document_get_row( $p_document_id, $p_error_if_not_exists = true ) {
 	}
 
 	db_param_push();
-	$t_query = 'SELECT * FROM {document} WHERE id=' . db_param();
+	$t_query = 'SELECT * FROM {dwg} a INNER JOIN {documents} b ON a.document_id=b.id WHERE a.id=' . db_param();
 	$t_result = db_query( $t_query, array( $p_document_id ) );
 	$t_row = db_fetch_array( $t_result );
 	if( !$t_row ) {
@@ -449,7 +449,7 @@ function document_cache_array_rows_by_project( array $p_project_id_array ) {
 		return;
 	}
 
-	$t_query = 'SELECT c.*, p.name AS project_name FROM {document} c
+	$t_query = 'SELECT c.*, p.name AS project_name FROM {dwg} c
 				LEFT JOIN {project} p
 					ON c.project_id=p.id
 				WHERE project_id IN ( ' . implode( ', ', $c_project_id_array ) . ' )
@@ -563,9 +563,9 @@ function document_get_all_rows( $p_project_id, $p_inherit = null, $p_sort_by_pro
 
 	if( $t_inherit ) {
 		$t_project_ids = project_hierarchy_inheritance( $p_project_id );
-		$t_project_where = ' d.project_id IN ( ' . implode( ', ', $t_project_ids ) . ' ) ';
+		$t_project_where = ' dwg.project_id IN ( ' . implode( ', ', $t_project_ids ) . ' ) ';
 	} else {
-		$t_project_where = ' d.project_id=' . $p_project_id . ' ';
+		$t_project_where = ' dwg.project_id=' . $p_project_id . ' ';
 	}
 
 	// @TODO RobD - beware, we have mixed up the use of the table status fields between re-use of the 'bug' table meaning and that of the 'category' table
@@ -579,11 +579,13 @@ function document_get_all_rows( $p_project_id, $p_inherit = null, $p_sort_by_pro
 		$t_issues_only = '';
 	}
 
-	$t_query = 'SELECT DISTINCT d.*, p.name AS project_name FROM {document} d
+	// $t_query = 'SELECT DISTINCT dwg.id as id, dwg.project_id as project_id, dwg.status as status, doc.title as title, p.name AS project_name FROM {dwg} dwg
+	$t_query = 'SELECT DISTINCT dwg.*, doc.title as title, p.name AS project_name FROM {dwg} dwg
+				INNER JOIN {documents} doc ON doc.id = dwg.document_id
 				' . $t_issues_only . '
 				LEFT JOIN {project} p
-					ON d.project_id=p.id
-				WHERE ' . $t_project_where . ' ORDER BY d.title';
+					ON dwg.project_id=p.id
+				WHERE ' . $t_project_where . ' ORDER BY doc.title';
 
 	// error_log("document_get_all_rows() t_query: " . $t_query);
 
@@ -625,12 +627,12 @@ function document_cache_array_rows( array $p_cat_id_array ) {
 		return;
 	}
 
-	$t_query = 'SELECT c.*, p.name AS project_name FROM {document} c
+	$t_query = 'SELECT dwg.*, doc.*, p.name AS project_name FROM {dwg} dwg
+				LEFT JOIN {documents} doc
+					ON dwg.document_id=doc.id
 				LEFT JOIN {project} p
-					ON c.project_id=p.id
-				WHERE c.id IN (' . implode( ',', $c_cat_id_array ) . ')';
-
-	// error_log("document_cache_array_rows() t_query: " . $t_query);
+					ON dwg.project_id=p.id
+				WHERE dwg.id IN (' . implode( ',', $c_cat_id_array ) . ')';
 
 	$t_result = db_query( $t_query );
 
@@ -680,7 +682,7 @@ function document_get_id_by_title( $p_document_name, $p_project_id, $p_trigger_e
 	$t_project_name = project_get_name( $p_project_id );
 
 	db_param_push();
-	$t_query = 'SELECT id FROM {document} WHERE title=' . db_param() . ' AND project_id=' . db_param();
+	$t_query = 'SELECT id FROM {dwg} a INNER JOIN {documents} b ON a.document_id=b.id WHERE b.title=' . db_param() . ' AND a.project_id=' . db_param();
 	$t_result = db_query( $t_query, array( $p_document_name, (int)$p_project_id ) );
 	$t_id = db_result( $t_result );
 	if( $t_id === false ) {
@@ -734,7 +736,7 @@ function document_full_title( $p_document_id, $p_show_project = true, $p_current
  */
 function document_can_delete( $p_document_id ) {
 	db_param_push();
-	$t_query = 'SELECT COUNT(id) FROM {document} WHERE id=' . db_param();
+	$t_query = 'SELECT COUNT(id) FROM {dwg} WHERE id=' . db_param();
 	$t_bug_count = db_result( db_query( $t_query, array( $p_document_id ) ) );
 	return $t_bug_count == 0;
 }

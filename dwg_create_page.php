@@ -112,7 +112,9 @@ if( $f_master_bug_id > 0 ) {
 	$f_dwg_version			= $t_bug->version;
 	$f_dwg_title			= $t_bug->title;
 	$f_dwg_author			= $t_bug->author;
+	$f_dwg_publisher		= $t_bug->publisher;
 	$f_dwg_number			= $t_bug->number;
+	$f_dwg_edition			= $t_bug->edition;
 	$f_dwg_revision			= $t_bug->revision;
 	$f_dwg_discipline		= $t_bug->discipline;
 	$f_dwg_reference		= $t_bug->reference;
@@ -204,8 +206,10 @@ if ( array_key_exists('USE_LOREM_IPSUM', $GLOBALS) && use_random_example_data($t
 	$f_dwg_version			= gpc_get_string( 'dwg_version', '1.0' );
 	$f_dwg_title			= gpc_get_string( 'dwg_title', random_publication_title() );
 	$f_dwg_author			= gpc_get_string( 'dwg_author', random_author_name() );
+	$f_dwg_publisher		= gpc_get_string( 'dwg_publisher', "Penguin Books" );
 	$f_dwg_number			= gpc_get_string( 'dwg_number', random_numeric_string() );
-	$f_dwg_revision			= gpc_get_string( 'dwg_revision', 'Edition ' . random_numeric() );
+	$f_dwg_edition			= gpc_get_string( 'dwg_edition', 'Edition ' . random_numeric() );
+	$f_dwg_revision			= gpc_get_string( 'dwg_revision', 'Revision ' . random_numeric() );
 	$f_dwg_reference		= gpc_get_string( 'dwg_reference', random_reference() );
 	$f_dwg_discipline		= gpc_get_string( 'dwg_discipline', 'Philopsophy' );
 	$f_dwg_link_url			= gpc_get_string( 'dwg_link_url', 'https://openlibrary.org/books/OL3504254M/The_Tao_of_Pooh' );
@@ -216,7 +220,9 @@ if ( array_key_exists('USE_LOREM_IPSUM', $GLOBALS) && use_random_example_data($t
 	$f_dwg_version			= gpc_get_string( 'dwg_version', '1.0' );
 	$f_dwg_title			= gpc_get_string( 'dwg_title', '' );
 	$f_dwg_author			= gpc_get_string( 'dwg_author', '' );
+	$f_dwg_publisher		= gpc_get_string( 'dwg_publisher', '' );
 	$f_dwg_number			= gpc_get_string( 'dwg_number', '' );
+	$f_dwg_edition			= gpc_get_string( 'dwg_edition', '' );
 	$f_dwg_revision			= gpc_get_string( 'dwg_revision', '' );
 	$f_dwg_reference		= gpc_get_string( 'dwg_reference', '' );
 	$f_dwg_discipline		= gpc_get_string( 'dwg_discipline', '' );
@@ -241,7 +247,9 @@ $t_fields = config_get( 'dwg_report_page_fields' );
 $t_fields = columns_filter_disabled( $t_fields );
 
 $t_show_author = in_array( 'author', $t_fields );
+$t_show_publisher = in_array( 'publisher', $t_fields );
 $t_show_creator = in_array( 'creator_id', $t_fields );
+$t_show_edition = in_array( 'edition', $t_fields );
 $t_show_revision = in_array( 'revision', $t_fields );
 $t_show_reference = in_array( 'reference', $t_fields );
 $t_show_classification = in_array( 'classification', $t_fields );
@@ -736,10 +744,26 @@ if( $t_show_attachments ) {
 <?php if( true ) { ?>
 	<tr>
 		<th class="category">
+			<label for="dwg_edition"><?php print_dwg_documentation_link( 'dwg_edition' ) ?></label>
+		</th>
+		<td>
+			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_edition" name="dwg_edition" size="105" maxlength="128" value="<?php echo string_attribute( $f_dwg_edition ) ?>" />
+		</td>
+	</tr>
+	<tr>
+		<th class="category">
 			<label for="dwg_revision"><?php print_dwg_documentation_link( 'dwg_revision' ) ?></label>
 		</th>
 		<td>
 			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_revision" name="dwg_revision" size="105" maxlength="128" value="<?php echo string_attribute( $f_dwg_revision ) ?>" />
+		</td>
+	</tr>
+	<tr>
+		<th class="category">
+			<label for="dwg_publisher"><?php print_dwg_documentation_link( 'dwg_publisher' ) ?></label>
+		</th>
+		<td>
+			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_publisher" name="dwg_publisher" size="105" maxlength="128" value="<?php echo string_attribute( $f_dwg_publisher ) ?>" />
 		</td>
 	</tr>
 <!--

@@ -729,10 +729,9 @@ function layout_print_sidebar( $p_active_sidebar_page = null ) {
 		}
 
 		# My View Page
-		$t_link = layout_my_view_link();
-		if( !is_blank( $t_link ) ) {
+		if( access_has_global_level( config_get( 'view_my_view_threshold' ) ) ) {
 			$t_sidebar_items[] = array(
-				'url' => $t_link,
+				'url' => 'my_view_bug_page.php',
 				'title' => 'my_view_link',
 				'icon' => 'fa-dashboard',
 			);
@@ -1121,7 +1120,7 @@ function layout_breadcrumbs($p_is_dwg_page = false) {
 		$t_realname = current_user_get_field( 'realname' );
 		$t_display_realname = is_blank( $t_realname ) ? '' : ' ( ' . string_html_specialchars( $t_realname ) . ' ) ';
 
-		$t_page = ( OFF == $t_protected ) ? 'account_page.php' : 'my_view_page.php';
+		$t_page = ( OFF == $t_protected ) ? 'account_page.php' : 'my_view_bug_page.php';
 		echo '  <a href="' . helper_mantis_url( $t_page ) . '">' .
 			$t_display_username . $t_display_realname . '</a>' . "\n";
 
@@ -1206,11 +1205,14 @@ function layout_footer() {
 
 	layout_footer_begin();
 
+if( config_get_global( 'show_copyright_footer' ) == ON ) {
+
 	# Show MantisBT version and copyright statement
 	$t_version_suffix = '';
 	$t_copyright_years = ' 2000 - ' . date( 'Y' );
-	if( config_get_global( 'show_version' ) == ON ) {
-		$t_version_suffix = ' ' . htmlentities( MANTIS_VERSION . config_get_global( 'version_suffix' ) );
+	if( config_get_global( 'show_version_suffix' ) == ON ) {
+		// $t_version_suffix = ' ' . htmlentities( MANTIS_VERSION . config_get_global( 'version_suffix' ) );
+		$t_version_suffix = ' ' . htmlentities( config_get_global( 'version_prefix' ) . MANTIS_VERSION . config_get_global( 'version_suffix' ) );
 	}
 	echo '<div class="col-md-6 col-xs-12 no-padding">' . "\n";
 	echo '<address>' . "\n";
@@ -1232,7 +1234,6 @@ function layout_footer() {
 	echo '</address>' . "\n";
 	echo '</div>' . "\n";
 
-
 	# We don't have a button anymore, so for now we will only show the resized
 	# version of the logo when not on login page.
 	if( !is_page_name( 'login_page' ) ) {
@@ -1248,6 +1249,7 @@ function layout_footer() {
 		echo '</div>' . "\n";
 		echo '</div>' . "\n";
 	}
+}
 
 	event_signal( 'EVENT_LAYOUT_PAGE_FOOTER' );
 
@@ -1392,34 +1394,6 @@ function layout_manage_menu_link() {
 				}
 			}
 		}
-	}
-	return $t_link;
-}
-
-function layout_my_view_link() {
-	static $t_link = null;
-	if( access_has_global_level( config_get( 'project_user_threshold' ) ) ) {
-		// $t_link = 'my_view_cnf_page.php';
-		$t_link = 'my_view_bug_page.php';
-	} else {
-		// if( access_has_global_level( config_get( 'manage_user_threshold' ) ) ) {
-		// 	$t_link = 'manage_user_page.php';
-		// } else {
-		// 	if( access_has_any_project_level( 'manage_project_threshold' ) ) {
-		// 		$t_current_project = helper_get_current_project();
-		// 		if( $t_current_project == ALL_PROJECTS ) {
-		// 			$t_link = 'manage_proj_page.php';
-		// 		} else {
-		// 			if( access_has_project_level( config_get( 'manage_project_threshold' ), $t_current_project ) ) {
-		// 				$t_link = 'manage_proj_edit_page.php?project_id=' . $t_current_project;
-		// 			} else {
-		// 				if ( access_has_global_level( config_get( 'manage_custom_fields_threshold' ) ) ) {
-		// 					$t_link = 'manage_custom_field_page.php';
-		// 				}
-		// 			}
-		// 		}
-		// 	}
-		// }
 	}
 	return $t_link;
 }

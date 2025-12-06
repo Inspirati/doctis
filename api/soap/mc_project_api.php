@@ -89,7 +89,7 @@ function mc_project_get_issues_for_user( $p_username, $p_password, $p_project_id
 		# target id 0 for ??user?? doesn't make sense.
 // @TODO RobD - need to change the user_id to document_id, along with whatever else this implies
 		if( $t_target_user_id == 0 ) {
-			return ApiObjectFactory::faultBadRequest( 'Target document id must be specified for \'document\' filter.' );
+			return ApiObjectFactory::faultBadRequest( 'Target user id must be specified for \'document\' filter.' );
 		}
 
 		$t_filter = filter_create_document( $p_project_id, $t_target_user_id );

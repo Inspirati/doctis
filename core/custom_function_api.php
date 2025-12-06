@@ -900,3 +900,58 @@ function custom_function_default_print_bug_view_page_custom_buttons( $p_bug_id )
 
 function custom_function_default_print_dwg_view_page_custom_buttons( $p_bug_id ) {
 }
+
+/**
+ * Dump Mantis GPC input variables for debugging.
+ * Place anywhere in a page (top or bottom) during development.
+ * 
+ * How to use it
+ * 
+ * Option 1: Dump all incoming variables
+ * Place this in your script:
+ *
+ * mantis_debug_gpc();
+ * exit;
+ *
+ * You’ll see:
+ * Raw GET/POST/COOKIE data
+ * What GPC retrieves for every detected input key
+ * How Mantis converts values into int/bool/array
+ *
+ * Option 2: Dump only specific keys
+ * For example:
+ *
+ * mantis_debug_gpc( array( 'project_id', 'user_id', 'access_level' ) );
+ * exit; 
+ *
+ */
+function mantis_debug_gpc( $keys = array() ) {
+	echo "<pre style='background:#222;color:#0f0;padding:10px;overflow:auto;'>";
+
+	echo "===== RAW PHP INPUT =====\n";
+	echo "\$_GET:\n";     print_r( $_GET );
+	echo "\n\$_POST:\n";  print_r( $_POST );
+	echo "\n\$_COOKIE:\n";print_r( $_COOKIE );
+	echo "\n\$_REQUEST:\n";print_r( $_REQUEST );
+
+	echo "\n===== MANTIS GPC VALUES =====\n";
+
+	if( empty( $keys ) ) {
+		// If no keys provided, automatically dump all request keys
+		$keys = array_unique( array_merge(
+			array_keys( $_GET ),
+			array_keys( $_POST ),
+			array_keys( $_COOKIE )
+		));
+	}
+
+	foreach( $keys as $key ) {
+		echo "\n$key:\n";
+		echo "  string: "; var_dump( gpc_get_string( $key, null ) );
+		echo "  int:    "; var_dump( gpc_get_int( $key, null ) );
+		echo "  bool:   "; var_dump( gpc_get_bool( $key, null ) );
+		echo "  array:  "; print_r( gpc_get_array( $key, null ) );
+	}
+
+	echo "</pre>";
+}

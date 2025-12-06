@@ -213,6 +213,14 @@ function print_user( $p_user_id, $p_link = true ) {
 	echo prepare_user_name( $p_user_id, $p_link );
 }
 
+function print_license(
+	int $p_license_id,
+	bool $p_link = true,
+	?string $p_color = null
+): void {
+	echo prepare_license_name($p_license_id, $p_link, $p_color);
+}
+
 /**
  * same as echo get_user_name() but fills in the subject with the bug summary
  *
@@ -1513,6 +1521,9 @@ function print_manage_project_sort_link( $p_page, $p_string, $p_field, $p_dir, $
 	);
 }
 
+function print_manage_license_sort_link( $p_page, $p_string, $p_field, $p_dir, $p_sort_by ) {
+	print_manage_project_sort_link( $p_page, $p_string, $p_field, $p_dir, $p_sort_by );
+}
 /**
  * Print a button which presents a standalone form.
  *

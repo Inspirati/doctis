@@ -167,6 +167,10 @@ function current_user_get_accessible_projects( $p_show_disabled = false ) {
 	return user_get_accessible_projects( auth_get_current_user_id(), $p_show_disabled );
 }
 
+function current_user_get_accessible_licenses( $p_show_disabled = false ) {
+	return user_get_accessible_licenses( auth_get_current_user_id(), $p_show_disabled );
+}
+
 /**
  * Returns an array of subprojects of the specified project to which the
  * currently logged in user has access to.

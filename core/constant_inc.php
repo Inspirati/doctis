@@ -205,11 +205,17 @@ define( 'BY_DATE', 1 );
 # all projects
 define( 'ALL_PROJECTS', 0 );
 
+# all licenses
+define( 'ALL_LICENSES', 0 );
+
 # all users
 define( 'ALL_USERS', 0 );
 
 # no user
 define( 'NO_USER', 0 );
+
+# all documents
+define( 'ALL_DOCUMENTS', 0 );
 
 # history constants
 define( 'NORMAL_TYPE', 0 );
@@ -396,6 +402,11 @@ define( 'ERROR_PROJECT_RECURSIVE_HIERARCHY', 703 );
 define( 'ERROR_PROJECT_SUBPROJECT_DUPLICATE', 704 );
 define( 'ERROR_PROJECT_SUBPROJECT_NOT_FOUND', 705 );
 define( 'ERROR_PROJECT_HIERARCHY_DISABLED', 706 );
+
+# ERROR_LICENSE_*
+define( 'ERROR_LICENSE_NOT_FOUND', 750 );
+define( 'ERROR_LICENSE_NAME_NOT_UNIQUE', 751 );
+define( 'ERROR_LICENSE_NAME_INVALID', 752 );
 
 # ERROR_USER_*
 define( 'ERROR_USER_NAME_NOT_UNIQUE', 800 );

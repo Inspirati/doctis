@@ -115,7 +115,9 @@ class DwgAddCommand extends Command {
 		$t_version				= $t_issue['version'];
 		$t_title				= $t_issue['title'];
 		$t_author				= $t_issue['author'];
+		$t_publisher			= $t_issue['publisher'];
 		$t_number				= $t_issue['number'];
+		$t_edition				= $t_issue['edition'];
 		$t_revision				= $t_issue['revision'];
 //		$t_category				= $t_issue['category'];
 		$t_reference			= $t_issue['reference'];
@@ -123,6 +125,7 @@ class DwgAddCommand extends Command {
 		$t_classification		= $t_issue['classification'];
 		$t_revision_date		= $t_issue['revision_date'];
 		$t_release_date			= $t_issue['release_date'];
+		$t_due_date				= $t_issue['due_date'];
 		// $t_date_submitted		= $t_issue['date_submitted'];
 		// $t_last_updated			= $t_issue['last_updated'];
 
@@ -257,7 +260,9 @@ class DwgAddCommand extends Command {
 		$this->issue->version = $t_version;
 		$this->issue->title = $t_title;
 		$this->issue->author = $t_author;
+		$this->issue->publisher = $t_publisher;
 		$this->issue->number = $t_number;
+		$this->issue->edition = $t_edition;
 		$this->issue->revision = $t_revision;
 //		$this->issue->category = $t_category;
 		$this->issue->reference = $t_reference;
@@ -265,6 +270,7 @@ class DwgAddCommand extends Command {
 		$this->issue->classification = $t_classification;
 		$this->issue->revision_date = $t_revision_date;
 		$this->issue->release_date = $t_release_date;
+		$this->issue->due_date = $t_due_date;
 		// $this->issue->date_submitted = $t_date_submitted;
 		// $this->issue->last_updated = $t_last_updated;
 
@@ -322,7 +328,8 @@ class DwgAddCommand extends Command {
 
 		if( isset( $t_issue['due_date'] ) &&
 			access_has_project_level( config_get( 'due_date_update_threshold' ), $t_project_id ) ) {
-			$this->issue->due_date = strtotime( $t_issue['due_date'] );
+			$this->issue->due_date = $t_issue['due_date'];
+			// $this->issue->due_date = strtotime( $t_issue['due_date'] );
 		} else {
 			$this->issue->due_date = date_get_null();
 		}

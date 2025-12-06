@@ -82,7 +82,6 @@ require_once( __DIR__ . '/classes/EmailSender.class.php' );
 # PHPMailer is needed for email address validation independent of the provider used
 # to send the emails.
 use PHPMailer\PHPMailer\PHPMailer;
-
 use Mantis\Exceptions\ClientException;
 use VBoctor\Email\DisposableEmailChecker;
 
@@ -764,6 +763,26 @@ function email_create_provider() : EmailSender {
 function make_lf_crlf( $p_string ) {
 	$t_string = str_replace( "\n", "\r\n", $p_string );
 	return str_replace( "\r\r\n", "\r\n", $t_string );
+}
+
+/**
+ * Format email attribute for display.
+ *
+ * If $p_visible_bug_data contains specified attribute the function
+ * returns concatenated translated attribute name and original
+ * attribute value. Else return empty string.
+ *
+ * @param array  $p_visible_bug_data Visible Bug Data array.
+ * @param string $p_attribute_id     Attribute ID.
+ *
+ * @return string
+ */
+function email_format_attribute( array $p_visible_data, $p_attribute_id ) {
+	if( array_key_exists( $p_attribute_id, $p_visible_data ) ) {
+		return utf8_str_pad( lang_get( $p_attribute_id ) . ': ', config_get( 'email_padding_length' ) )
+			. $p_visible_data[$p_attribute_id] . "\n";
+	}
+	return '';
 }
 
 /**

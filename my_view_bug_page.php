@@ -40,7 +40,6 @@
 
 require_once( 'core.php' );
 require_api( 'access_api.php' );
-require_api( 'access_dwg_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'category_api.php' );
 require_api( 'compress_api.php' );
@@ -52,7 +51,6 @@ require_api( 'helper_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'print_api.php' );
-require_api( 'print_dwg_api.php' );
 require_api( 'user_api.php' );
 require_api( 'layout_api.php' );
 require_css( 'status_config.php' );
@@ -72,18 +70,16 @@ compress_enable();
 # don't index my view page
 html_robots_noindex();
 
-layout_page_header( lang_get( 'my_view_link' ) );
+layout_page_header_begin( lang_get( 'my_view_link' ) );
 
-//layout_page_header_begin( lang_get( 'my_view_link' ) );
-//$t_refresh_delay = current_user_get_pref( 'refresh_delay' );
-//if( $t_refresh_delay > 0 ) {
-//	html_meta_redirect( 'my_view_bug_page.php?refresh=true', $t_refresh_delay * 60 );
-//}
-//layout_page_header_end();
+$t_refresh_delay = current_user_get_pref( 'refresh_delay' );
+if( $t_refresh_delay > 0 ) {
+	html_meta_redirect( 'my_view_bug_page.php?refresh=true', $t_refresh_delay * 60 );
+}
 
-// layout_page_begin( __FILE__ );
-//layout_page_begin( 'my_view_page.php' );
-layout_page_begin( 'my_view_bug_page.php' );
+layout_page_header_end();
+
+layout_page_begin( __FILE__ );
 
 print_my_view_menu( 'my_view_bug_page.php' );
 

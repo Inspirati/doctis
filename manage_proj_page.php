@@ -148,6 +148,18 @@ print_manage_menu( 'manage_proj_page.php' );
 					);
 					print_sort_icon( $t_direction, $f_sort, 'view_state' ); ?>
 				</th>
+
+				<th><?php
+					print_manage_project_sort_link(
+						'manage_proj_page.php',
+						lang_get( 'due_date' ),
+						'due_date',
+						$t_direction,
+						$f_sort
+					);
+					print_sort_icon( $t_direction, $f_sort, 'due_date' ); ?>
+				</th>
+
 				<th><?php
 					print_manage_project_sort_link(
 						'manage_proj_page.php',
@@ -183,6 +195,12 @@ print_manage_menu( 'manage_proj_page.php' );
 			$t_project_id = $t_project['id'];
 			$t_level      = count( $t_stack );
 
+			if( 1 < $t_project['due_date'] ) {
+				$t_date_to_display = date( config_get( 'normal_date_format' ), $t_project['due_date'] );
+			} else {
+				$t_date_to_display = "";
+			}
+
 			# only print row if user has project management privileges
 			if( access_has_project_level( $t_manage_project_threshold, $t_project_id, auth_get_current_user_id() ) ) { ?>
 			<tr>
@@ -195,6 +213,7 @@ print_manage_menu( 'manage_proj_page.php' );
 				<td><?php echo get_enum_element( 'project_status', $t_project['status'] ) ?></td>
 				<td class="center"><?php echo trans_bool( $t_project['enabled'] ) ?></td>
 				<td><?php echo get_enum_element( 'project_view_state', $t_project['view_state'] ) ?></td>
+				<td><?php echo string_display_line( $t_date_to_display ) ?></td>
 				<td><?php echo string_display_links( $t_project['description'] ) ?></td>
 			</tr><?php
 			}

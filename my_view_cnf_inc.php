@@ -96,9 +96,11 @@ $t_url_link_parameters['reported'] = [
 ];
 
 // @TODO RobD - need to change the user_id to document_id, along with whatever else this implies
-// $c_filter['document'] = filter_create_document( helper_get_current_project(), $t_current_user_id );
+// 	// $c_filter['document'] = filter_create_document( helper_get_current_project(), $t_current_user_id );
+// 	$c_filter['document'] = filter_create_document( helper_get_current_project(), ALL_DOCUMENTS );
 // $t_url_link_parameters['document'] = [
-// 	FILTER_PROPERTY_DOCUMENT_ID => $t_current_user_id,
+// 	// FILTER_PROPERTY_DOCUMENT_ID => $t_current_user_id,
+// 	FILTER_PROPERTY_DOCUMENT_ID => META_FILTER_ANY,
 // 	FILTER_PROPERTY_HIDE_STATUS => $t_hide_status_default,
 // 	FILTER_PROPERTY_CREATOR_ID => $t_current_user_id,
 // ];

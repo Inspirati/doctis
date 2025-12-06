@@ -63,7 +63,7 @@ function move_attachments_to_db( $p_type, $p_projects ) {
 		case 'dwg':
 			$t_query = "SELECT f.*
 				FROM {dwg_file} f
-				JOIN {document} b ON b.id = f.dwg_id
+				JOIN {dwg} b ON b.id = f.dwg_id
 				WHERE content = ''
 				  AND b.project_id = " . db_param() . "
 				ORDER BY f.dwg_id, f.filename";
@@ -185,7 +185,7 @@ function move_attachments_to_disk( $p_type, array $p_projects ) {
 		case 'dwg':
 			$t_query = 'SELECT f.*
 				FROM {dwg_file} f
-				JOIN {document} b ON b.id = f.dwg_id
+				JOIN {dwg} b ON b.id = f.dwg_id
 				WHERE content <> \'\'
 				  AND b.project_id = ' . db_param() . '
 				ORDER BY f.dwg_id, f.filename';

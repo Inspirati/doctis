@@ -83,7 +83,7 @@ function access_denied() {
 		print_header_redirect( helper_mantis_url( auth_login_page( $t_return ) ), false, false, true );
 	} else {
 		$t_buttons = [];
-		
+
 		# Login button
 		if( current_user_is_anonymous() ) {
 			$t_buttons[] = [
@@ -106,7 +106,7 @@ function access_denied() {
 			error_string( ERROR_ACCESS_DENIED ), CONFIRMATION_TYPE_FAILURE );
 		layout_page_end();
 	}
-	http_response_code(HTTP_STATUS_FORBIDDEN);
+	http_response_code( HTTP_STATUS_FORBIDDEN );
 	exit(1);
 }
 
@@ -302,6 +302,52 @@ function access_get_project_level( $p_project_id = null, $p_user_id = null ) {
 	}
 }
 
+function access_get_license_level( $p_project_id = null, $p_user_id = null ) {
+	if( null === $p_user_id ) {
+		$p_user_id = auth_get_current_user_id();
+	}
+
+	# Deal with not logged in silently in this case
+	# @todo we may be able to remove this and just error and once we default to anon login, we can remove it for sure
+	if( empty( $p_user_id ) && !auth_is_user_authenticated() ) {
+		return ANYBODY;
+	}
+
+	if( null === $p_project_id ) {
+		$p_project_id = helper_get_current_project();
+	}
+
+	$t_global_access_level = access_get_global_level( $p_user_id );
+
+	if( ALL_LICENSES == $p_project_id || user_is_administrator( $p_user_id ) ) {
+		return $t_global_access_level;
+	} else {
+		$t_project_access_level = access_get_local_level( $p_user_id, $p_project_id );
+		$t_project_view_state = license_get_field( $p_project_id, 'view_state' );
+
+		# Try to use the project access level.
+		# If the user is not listed in the project, then try to fall back
+		#  to the global access level
+		if( false === $t_project_access_level ) {
+			# If the project is private and the user isn't listed, then they
+			# must have the private_project_threshold access level to get in.
+			if( VS_PRIVATE == $t_project_view_state ) {
+				if( access_compare_level( $t_global_access_level, config_get( 'private_license_threshold', null, null, ALL_LICENSES ) ) ) {
+					return $t_global_access_level;
+				} else {
+					return ANYBODY;
+				}
+			} else {
+				# project access not set, but the project is public
+				return $t_global_access_level;
+			}
+		} else {
+			# project specific access was set
+			return $t_project_access_level;
+		}
+	}
+}
+
 /**
  * Check the current user's access against the given value and return true
  * if the user's access is equal to or higher, false otherwise.
@@ -325,6 +371,21 @@ function access_has_project_level( $p_access_level, $p_project_id = null, $p_use
 	}
 
 	$t_access_level = access_get_project_level( $p_project_id, $p_user_id );
+
+	return access_compare_level( $t_access_level, $p_access_level );
+}
+
+function access_has_license_level( $p_access_level, $p_license_id = null, $p_user_id = null ) {
+	# Short circuit the check in this case
+	if( NOBODY == $p_access_level ) {
+		return false;
+	}
+
+	if( null === $p_user_id ) {
+		$p_user_id = auth_get_current_user_id();
+	}
+
+	$t_access_level = access_get_license_level( $p_license_id, $p_user_id );
 
 	return access_compare_level( $t_access_level, $p_access_level );
 }
@@ -448,6 +509,12 @@ function access_ensure_project_level( $p_access_level, $p_project_id = null, $p_
 		access_denied();
 	}
 }
+function access_ensure_license_level( $p_access_level, $p_project_id = null, $p_user_id = null ) {
+	if( !access_has_license_level( $p_access_level, $p_project_id, $p_user_id ) ) {
+		access_denied();
+	}
+}
+
 
 /**
  * Check whether the user has the specified access level for any project project

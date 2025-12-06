@@ -206,10 +206,10 @@ function summary_print_by_enum( $p_enum, array $p_filter = [] ) {
 	$t_status_query = ( 'status' == $p_enum ) ? '' : ' ,status ';
 	$t_query = new DBQuery();
 	$t_sql = 'SELECT COUNT(id) as dwgcount, ' . $p_enum . ' ' . $t_status_query
-		. ' FROM {document} WHERE ' . $t_project_filter;
+		. ' FROM {dwg} WHERE ' . $t_project_filter;
 	if( !empty( $p_filter ) ) {
 		$t_subquery = filter_cache_subquery( $p_filter );
-		$t_sql .= ' AND {document}.id IN :filter';
+		$t_sql .= ' AND {dwg}.id IN :filter';
 		$t_query->bind( 'filter', $t_subquery );
 	}
 	$t_sql .= ' GROUP BY ' . $p_enum . ' ' . $t_status_query
@@ -325,7 +325,7 @@ function summary_print_by_activity( array $p_filter = [] ) {
 	}
 	$t_query = new DBQuery();
 	$t_sql = 'SELECT COUNT(h.id) as count, b.id, b.summary, b.view_state'
-		. ' FROM {document} b JOIN {dwg_history} h ON h.dwg_id = b.id'
+		. ' FROM {dwg} b JOIN {dwg_history} h ON h.dwg_id = b.id'
 		. ' WHERE b.status < ' . $t_query->param( (int)$t_resolved )
 		. ' AND ' . $t_specific_where;
 	if( !empty( $p_filter ) ) {
@@ -389,11 +389,11 @@ function summary_print_by_age( array $p_filter = [] ) {
 		return;
 	}
 	$t_query = new DBQuery();
-	$t_sql = 'SELECT * FROM {document} WHERE status < ' . $t_query->param( (int)$t_resolved )
+	$t_sql = 'SELECT * FROM {dwg} WHERE status < ' . $t_query->param( (int)$t_resolved )
 		. ' AND ' . $t_specific_where;
 	if( !empty( $p_filter ) ) {
 		$t_subquery = filter_cache_subquery( $p_filter );
-		$t_sql .= ' AND {document}.id IN :filter';
+		$t_sql .= ' AND {dwg}.id IN :filter';
 		$t_query->bind( 'filter', $t_subquery );
 	}
 	$t_sql .= ' ORDER BY date_submitted ASC, priority DESC';
@@ -442,10 +442,10 @@ function summary_print_by_developer( array $p_filter = [] ) {
 
 	$t_query = new DBQuery();
 	$t_sql = 'SELECT COUNT(id) as dwgcount, handler_id, status'
-		. ' FROM {document} WHERE handler_id>0 AND ' . $t_specific_where;
+		. ' FROM {dwg} WHERE handler_id>0 AND ' . $t_specific_where;
 	if( !empty( $p_filter ) ) {
 		$t_subquery = filter_cache_subquery( $p_filter );
-		$t_sql .= ' AND {document}.id IN :filter';
+		$t_sql .= ' AND {dwg}.id IN :filter';
 		$t_query->bind( 'filter', $t_subquery );
 	}
 	$t_sql .= ' GROUP BY handler_id, status'
@@ -502,10 +502,10 @@ function summary_print_by_creator( array $p_filter = [] ) {
 		return;
 	}
 	$t_query = new DBQuery();
-	$t_sql = 'SELECT creator_id, COUNT(*) as num FROM {document} WHERE ' . $t_specific_where;
+	$t_sql = 'SELECT creator_id, COUNT(*) as num FROM {dwg} WHERE ' . $t_specific_where;
 	if( !empty( $p_filter ) ) {
 		$t_subquery = filter_cache_subquery( $p_filter );
-		$t_sql .= ' AND {document}.id IN :filter';
+		$t_sql .= ' AND {dwg}.id IN :filter';
 		$t_query->bind( 'filter', $t_subquery );
 	}
 	$t_sql .= ' GROUP BY creator_id ORDER BY num DESC';
@@ -529,12 +529,12 @@ function summary_print_by_creator( array $p_filter = [] ) {
 	user_cache_array_rows( $t_reporters );
 
 	$t_query = new DBQuery();
-	$t_sql = 'SELECT creator_id, status, COUNT(id) AS dwgcount FROM {document}'
+	$t_sql = 'SELECT creator_id, status, COUNT(id) AS dwgcount FROM {dwg}'
 		. ' WHERE ' . $t_query->sql_in( 'creator_id', $t_reporters )
 		. ' AND ' . $t_specific_where;
 	if( !empty( $p_filter ) ) {
 		$t_subquery = filter_cache_subquery( $p_filter );
-		$t_sql .= ' AND {document}.id IN :filter';
+		$t_sql .= ' AND {dwg}.id IN :filter';
 		$t_query->bind( 'filter', $t_subquery );
 	}
 	$t_sql .= ' GROUP BY creator_id, status ORDER BY creator_id, status';
@@ -635,7 +635,7 @@ function summary_print_by_category( array $p_filter = [] ) {
 
 	$t_query = new DBQuery();
 	$t_sql = 'SELECT COUNT(b.id) as dwgcount, ' . $t_project_query . ' c.name AS category_name, category_id, b.status'
-		. ' FROM {document} b JOIN {category} c ON b.category_id=c.id'
+		. ' FROM {dwg} b JOIN {category} c ON b.category_id=c.id'
 		. ' WHERE b.' . $t_specific_where;
 	if( !empty( $p_filter ) ) {
 		$t_subquery = filter_cache_subquery( $p_filter );
@@ -705,10 +705,10 @@ function summary_print_by_project( array $p_projects = [], int $p_level = 0, arr
 	# Retrieve statistics one time to improve performance.
 	if( empty( $p_cache ) ) {
 		$t_query = new DBQuery();
-		$t_sql = 'SELECT project_id, status, COUNT( status ) AS dwgcount FROM {document}';
+		$t_sql = 'SELECT project_id, status, COUNT( status ) AS dwgcount FROM {dwg}';
 		if( !empty( $p_filter ) ) {
 			$t_subquery = filter_cache_subquery( $p_filter );
-			$t_sql .= ' WHERE {document}.id IN :filter';
+			$t_sql .= ' WHERE {dwg}.id IN :filter';
 			$t_query->bind( 'filter', $t_subquery );
 		}
 		$t_sql .= ' GROUP BY project_id, status';
@@ -781,10 +781,10 @@ function summary_print_developer_resolution( $p_resolution_enum_string, array $p
 	# Get all of the bugs and split them up into an array
 	$t_query = new DBQuery();
 	$t_sql = 'SELECT COUNT(id) as dwgcount, handler_id, resolution'
-		. ' FROM {document} WHERE ' . $t_specific_where;
+		. ' FROM {dwg} WHERE ' . $t_specific_where;
 	if( !empty( $p_filter ) ) {
 		$t_subquery = filter_cache_subquery( $p_filter );
-		$t_sql .= ' AND {document}.id IN :filter';
+		$t_sql .= ' AND {dwg}.id IN :filter';
 		$t_query->bind( 'filter', $t_subquery );
 	}
 	$t_sql .= ' GROUP BY handler_id, resolution'
@@ -919,10 +919,10 @@ function summary_print_reporter_resolution( $p_resolution_enum_string, array $p_
 
 	$t_query = new DBQuery();
 	$t_sql = 'SELECT COUNT(id) as dwgcount, creator_id, resolution'
-		. ' FROM {document} WHERE ' . $t_specific_where;
+		. ' FROM {dwg} WHERE ' . $t_specific_where;
 	if( !empty( $p_filter ) ) {
 		$t_subquery = filter_cache_subquery( $p_filter );
-		$t_sql .= ' AND {document}.id IN :filter';
+		$t_sql .= ' AND {dwg}.id IN :filter';
 		$t_query->bind( 'filter', $t_subquery );
 	}
 	$t_sql .= ' GROUP BY creator_id, resolution';
@@ -1066,10 +1066,10 @@ function summary_print_reporter_resolution( $p_resolution_enum_string, array $p_
 // 	$t_query = new DBQuery();
 // 	// $t_sql = 'SELECT COUNT(id) as dwgcount, creator_id, resolution, severity'
 // 	$t_sql = 'SELECT COUNT(id) as dwgcount, creator_id, resolution'
-// 		. ' FROM {document} WHERE ' . $t_specific_where;
+// 		. ' FROM {dwg} WHERE ' . $t_specific_where;
 // 	if( !empty( $p_filter ) ) {
 // 		$t_subquery = filter_cache_subquery( $p_filter );
-// 		$t_sql .= ' AND {document}.id IN :filter';
+// 		$t_sql .= ' AND {dwg}.id IN :filter';
 // 		$t_query->bind( 'filter', $t_subquery );
 // 	}
 // 	// $t_sql .= ' GROUP BY creator_id, resolution, severity';
@@ -1178,7 +1178,7 @@ function summary_helper_get_time_stats( $p_project_id, array $p_filter = [] ) {
 		'average_time' => 0,
 		);
 
-	$t_sql_inner = ' FROM {document} b LEFT JOIN {dwg_history} h'
+	$t_sql_inner = ' FROM {dwg} b LEFT JOIN {dwg_history} h'
 		. ' ON b.id = h.dwg_id  AND h.type = :hist_type'
 		. ' AND h.field_name = :hist_field AND b.date_submitted <= h.date_modified'
 		. ' WHERE b.status >= :int_resolved'
@@ -1365,7 +1365,7 @@ function summary_by_dates_bug_count( array $p_date_array, array $p_filter = [] )
 		. ' WHEN h.type = :hist_type_upd AND h.old_value >= :status AND h.new_value  < :status THEN :action_open'
 		. ' WHEN h.type = :hist_type_upd AND h.old_value < :status AND h.new_value  >= :status THEN :action_close'
 		. ' ELSE null END AS action, date_modified'
-        . ' FROM {dwg_history} h JOIN {document} b ON b.id = h.dwg_id'
+        . ' FROM {dwg_history} h JOIN {dwg} b ON b.id = h.dwg_id'
 		. ' WHERE h.date_modified > :mint_ime'
 		. ' AND ( h.type = :hist_type_new OR h.type = :hist_type_upd AND h.field_name = :hist_field )'
 		. ' AND ' . $t_specific_where;
