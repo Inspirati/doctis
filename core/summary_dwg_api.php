@@ -68,7 +68,7 @@ require_api( 'utility_api.php' );
  * @param string $p_ratio    Ratio of total bugs
  * @return void
  */
-function summary_helper_print_row( $p_label, $p_open, $p_resolved, $p_closed, $p_total, $p_resolved_ratio, $p_ratio) {
+function summary_dwg_helper_print_row( $p_label, $p_open, $p_resolved, $p_closed, $p_total, $p_resolved_ratio, $p_ratio) {
 	echo '<tr>';
 	printf( '<td class="width50">%s</td>', $p_label );
 	printf( '<td class="width12 align-right">%s</td>', $p_open );
@@ -89,10 +89,10 @@ function summary_helper_print_row( $p_label, $p_open, $p_resolved, $p_closed, $p
  *
  * @return string
  */
-function summary_helper_get_developer_label( $p_user_id, array $p_filter = [] ) {
+function summary_dwg_helper_get_developer_label( $p_user_id, array $p_filter = [] ) {
 	$t_user = string_display_line( user_get_name( $p_user_id ) );
 
-	$t_link_prefix = summary_get_link_prefix( $p_filter );
+	$t_link_prefix = summary_dwg_get_link_prefix( $p_filter );
 
 	return '<a class="subtle" href="' . $t_link_prefix
 		. '&amp;' . FILTER_PROPERTY_CREATOR_ID . '=' . $p_user_id
@@ -149,7 +149,7 @@ function summary_helper_build_dwgcount( &$p_cache, $p_key, $p_status, $p_dwgcoun
  * @param string &$p_bugs_total         The total bugs count, return total bugs link.
  * @return void 
  */
-function summary_helper_build_buglinks( $p_bug_link, &$p_bugs_open, &$p_bugs_resolved, &$p_bugs_closed, &$p_bugs_total) {
+function summary_helper_build_dwglinks( $p_bug_link, &$p_bugs_open, &$p_bugs_resolved, &$p_bugs_closed, &$p_bugs_total) {
 	$t_resolved_val = config_get( 'bug_resolved_status_threshold' );
 	$t_closed_val = config_get( 'bug_closed_status_threshold' );
 
@@ -175,7 +175,7 @@ function summary_helper_build_buglinks( $p_bug_link, &$p_bugs_open, &$p_bugs_res
  * @param integer $p_bugs_total_count     The total bugs count.
  * @return array  array of ($t_bugs_resolved_ratio, $t_bugs_ratio)
  */
-function summary_helper_get_bugratio( $p_bugs_open, $p_bugs_resolved, $p_bugs_closed, $p_bugs_total_count) {
+function summary_helper_get_dwgratio( $p_bugs_open, $p_bugs_resolved, $p_bugs_closed, $p_bugs_total_count) {
 	$t_bugs_total = $p_bugs_open + $p_bugs_resolved + $p_bugs_closed;
 	$t_bugs_resolved_ratio = ( $p_bugs_resolved + $p_bugs_closed ) / ( $t_bugs_total == 0 ? 1 : $t_bugs_total );
 	$t_bugs_ratio = $t_bugs_total / ( $p_bugs_total_count == 0 ? 1 : $p_bugs_total_count );
@@ -194,14 +194,14 @@ function summary_helper_get_bugratio( $p_bugs_open, $p_bugs_resolved, $p_bugs_cl
  *
  * @return void
  */
-function summary_print_by_enum( $p_enum, array $p_filter = [] ) {
+function summary_dwg_print_by_enum( $p_enum, array $p_filter = [] ) {
 	$t_project_id = helper_get_current_project();
 
 	$t_project_filter = helper_project_specific_where( $t_project_id );
 	if( ' 1<>1' == $t_project_filter ) {
 		return;
 	}
-	$t_link_prefix = summary_get_link_prefix( $p_filter );
+	$t_link_prefix = summary_dwg_get_link_prefix( $p_filter );
 
 	$t_status_query = ( 'status' == $p_enum ) ? '' : ' ,status ';
 	$t_query = new DBQuery();
@@ -252,7 +252,7 @@ function summary_print_by_enum( $p_enum, array $p_filter = [] ) {
 		$t_bugs_resolved = $t_item['resolved'] ?? 0;
 		$t_bugs_closed = $t_item['closed'] ?? 0;
 		$t_bugs_total = $t_bugs_open + $t_bugs_resolved + $t_bugs_closed;
-		$t_bugs_ratio = summary_helper_get_bugratio( $t_bugs_open, $t_bugs_resolved, $t_bugs_closed, $t_bugs_total_count);
+		$t_bugs_ratio = summary_helper_get_dwgratio( $t_bugs_open, $t_bugs_resolved, $t_bugs_closed, $t_bugs_total_count);
 
 		$t_bug_link = $t_link_prefix . '&amp;' . $t_filter_property . '=' . $t_enum;
 
@@ -299,9 +299,9 @@ function summary_print_by_enum( $p_enum, array $p_filter = [] ) {
 			if( 'status' == $p_enum )  $t_bugs_ratio[0] = '-';		
 		}
 		if ( 'status' == $p_enum ) {
-			summary_helper_print_row( get_enum_element( 'dwg_status', $t_enum ), $t_bugs_open, $t_bugs_resolved, $t_bugs_closed, $t_bugs_total, $t_bugs_ratio[0], $t_bugs_ratio[1] );
+			summary_dwg_helper_print_row( get_enum_element( 'dwg_status', $t_enum ), $t_bugs_open, $t_bugs_resolved, $t_bugs_closed, $t_bugs_total, $t_bugs_ratio[0], $t_bugs_ratio[1] );
 		} else {
-			summary_helper_print_row( get_enum_element( $p_enum, $t_enum ), $t_bugs_open, $t_bugs_resolved, $t_bugs_closed, $t_bugs_total, $t_bugs_ratio[0], $t_bugs_ratio[1] );
+			summary_dwg_helper_print_row( get_enum_element( $p_enum, $t_enum ), $t_bugs_open, $t_bugs_resolved, $t_bugs_closed, $t_bugs_total, $t_bugs_ratio[0], $t_bugs_ratio[1] );
 		}
 	}
 }
@@ -316,7 +316,7 @@ function summary_print_by_enum( $p_enum, array $p_filter = [] ) {
  *
  * @return void
  */
-function summary_print_by_activity( array $p_filter = [] ) {
+function summary_dwg_print_by_activity( array $p_filter = [] ) {
 	$t_project_id = helper_get_current_project();
 	$t_resolved = config_get( 'bug_resolved_status_threshold' );
 	$t_specific_where = helper_project_specific_where( $t_project_id );
@@ -380,7 +380,7 @@ function summary_print_by_activity( array $p_filter = [] ) {
  * @return void
  * @throws ClientException
  */
-function summary_print_by_age( array $p_filter = [] ) {
+function summary_dwg_print_by_age( array $p_filter = [] ) {
 	$t_project_id = helper_get_current_project();
 	$t_resolved = config_get( 'bug_resolved_status_threshold' );
 
@@ -432,7 +432,7 @@ function summary_print_by_age( array $p_filter = [] ) {
  *
  * @return void
  */
-function summary_print_by_developer( array $p_filter = [] ) {
+function summary_dwg_print_by_developer( array $p_filter = [] ) {
 	$t_project_id = helper_get_current_project();
 
 	$t_specific_where = helper_project_specific_where( $t_project_id );
@@ -474,14 +474,14 @@ function summary_print_by_developer( array $p_filter = [] ) {
 		$t_bugs_resolved = isset( $t_item['resolved'] ) ? $t_item['resolved'] : 0;
 		$t_bugs_closed = isset( $t_item['closed'] ) ? $t_item['closed'] : 0;
 		$t_bugs_total = $t_bugs_open + $t_bugs_resolved + $t_bugs_closed;
-		$t_bugs_ratio = summary_helper_get_bugratio( $t_bugs_open, $t_bugs_resolved, $t_bugs_closed, $t_bugs_total_count);
+		$t_bugs_ratio = summary_helper_get_dwgratio( $t_bugs_open, $t_bugs_resolved, $t_bugs_closed, $t_bugs_total_count);
 
-		$t_link_prefix = summary_get_link_prefix( $p_filter );
+		$t_link_prefix = summary_dwg_get_link_prefix( $p_filter );
 
 		$t_bug_link = $t_link_prefix . '&amp;' . FILTER_PROPERTY_HANDLER_ID . '=' . $t_label;
-		$t_label = summary_helper_get_developer_label( $t_label, $p_filter );
-		summary_helper_build_buglinks( $t_bug_link, $t_bugs_open, $t_bugs_resolved, $t_bugs_closed, $t_bugs_total );
-		summary_helper_print_row( $t_label, $t_bugs_open, $t_bugs_resolved, $t_bugs_closed, $t_bugs_total, $t_bugs_ratio[0], $t_bugs_ratio[1] );
+		$t_label = summary_dwg_helper_get_developer_label( $t_label, $p_filter );
+		summary_helper_build_dwglinks( $t_bug_link, $t_bugs_open, $t_bugs_resolved, $t_bugs_closed, $t_bugs_total );
+		summary_dwg_helper_print_row( $t_label, $t_bugs_open, $t_bugs_resolved, $t_bugs_closed, $t_bugs_total, $t_bugs_ratio[0], $t_bugs_ratio[1] );
 	}
 }
 
@@ -568,7 +568,7 @@ function summary_print_by_creator( array $p_filter = [] ) {
 
 	# calculate ratios
 	foreach( $t_reporter_stats as $t_creator_id => $t_stats ) {
-		$t_reporter_stats[$t_creator_id]['ratios'] =summary_helper_get_bugratio(
+		$t_reporter_stats[$t_creator_id]['ratios'] =summary_helper_get_dwgratio(
 				$t_stats['open'],
 				$t_stats['resolved'],
 				$t_stats['closed'],
@@ -588,7 +588,7 @@ function summary_print_by_creator( array $p_filter = [] ) {
 		}
 		$t_creator_id = $t_stats['creator_id'];
 		$t_user = string_display_line( user_get_name( $t_creator_id ) );
-		$t_link_prefix = summary_get_link_prefix( $p_filter );
+		$t_link_prefix = summary_dwg_get_link_prefix( $p_filter );
 
 		$t_bug_link = $t_link_prefix . '&amp;' . FILTER_PROPERTY_CREATOR_ID . '=' . $t_creator_id;
 		if( 0 < $t_stats['open'] ) {
@@ -612,7 +612,7 @@ function summary_print_by_creator( array $p_filter = [] ) {
 			$t_bugs_total = 0;
 		}
 		$t_bugs_ratio = $t_stats['ratios'];
-		summary_helper_print_row( $t_user, $t_bugs_open, $t_bugs_resolved, $t_bugs_closed, $t_bugs_total, $t_bugs_ratio[0], $t_bugs_ratio[1] );
+		summary_dwg_helper_print_row( $t_user, $t_bugs_open, $t_bugs_resolved, $t_bugs_closed, $t_bugs_total, $t_bugs_ratio[0], $t_bugs_ratio[1] );
 	}
 }
 
@@ -622,7 +622,7 @@ function summary_print_by_creator( array $p_filter = [] ) {
  * @param array $p_filter Filter array to limit the visibility.
  * @return void
  */
-function summary_print_by_category( array $p_filter = [] ) {
+function summary_dwg_print_by_category( array $p_filter = [] ) {
 	$t_summary_category_include_project = config_get( 'summary_category_include_project' );
 
 	$t_project_id = helper_get_current_project();
@@ -667,13 +667,13 @@ function summary_print_by_category( array $p_filter = [] ) {
 		$t_bugs_resolved = isset( $t_item['resolved'] ) ? $t_item['resolved'] :0;
 		$t_bugs_closed = isset( $t_item['closed'] ) ? $t_item['closed'] : 0;
 		$t_bugs_total = $t_bugs_open + $t_bugs_resolved + $t_bugs_closed;
-		$t_bugs_ratio = summary_helper_get_bugratio( $t_bugs_open, $t_bugs_resolved, $t_bugs_closed, $t_bugs_total_count);
+		$t_bugs_ratio = summary_helper_get_dwgratio( $t_bugs_open, $t_bugs_resolved, $t_bugs_closed, $t_bugs_total_count);
 
-		$t_link_prefix = summary_get_link_prefix( $p_filter );
+		$t_link_prefix = summary_dwg_get_link_prefix( $p_filter );
 
 		$t_bug_link = $t_link_prefix . '&amp;' . FILTER_PROPERTY_CATEGORY_ID . '=' . string_url( $t_label );
-		summary_helper_build_buglinks( $t_bug_link, $t_bugs_open, $t_bugs_resolved, $t_bugs_closed, $t_bugs_total );
-		summary_helper_print_row( string_display_line( $t_label ), $t_bugs_open, $t_bugs_resolved, $t_bugs_closed, $t_bugs_total, $t_bugs_ratio[0], $t_bugs_ratio[1] );
+		summary_helper_build_dwglinks( $t_bug_link, $t_bugs_open, $t_bugs_resolved, $t_bugs_closed, $t_bugs_total );
+		summary_dwg_helper_print_row( string_display_line( $t_label ), $t_bugs_open, $t_bugs_resolved, $t_bugs_closed, $t_bugs_total, $t_bugs_ratio[0], $t_bugs_ratio[1] );
 	}
 }
 
@@ -689,7 +689,7 @@ function summary_print_by_category( array $p_filter = [] ) {
  *
  * @return void
  */
-function summary_print_by_project( array $p_projects = [], int $p_level = 0, array $p_cache = [], array $p_filter = [] ) {
+function summary_dwg_print_by_project( array $p_projects = [], int $p_level = 0, array $p_cache = [], array $p_filter = [] ) {
 	$t_project_id = helper_get_current_project();
 
 	if( empty( $p_projects ) ) {
@@ -738,19 +738,19 @@ function summary_print_by_project( array $p_projects = [], int $p_level = 0, arr
 		$t_bugs_closed = isset( $t_pdata['closed'] ) ? $t_pdata['closed'] : 0;
 		$t_bugs_total = $t_bugs_open + $t_bugs_resolved + $t_bugs_closed;
 		
-		$t_bugs_ratio = summary_helper_get_bugratio( $t_bugs_open, $t_bugs_resolved, $t_bugs_closed, $t_bugs_total_count);
+		$t_bugs_ratio = summary_helper_get_dwgratio( $t_bugs_open, $t_bugs_resolved, $t_bugs_closed, $t_bugs_total_count);
 
 # FILTER_PROPERTY_PROJECT_ID filter by project does not work ??
 #		$t_bug_link = '<a class="subtle" href="' . config_get( 'bug_count_hyperlink_prefix' ) . '&amp;' . FILTER_PROPERTY_PROJECT_ID . '=' . string_url( $t_project );
-#		summary_helper_build_buglinks( $t_bug_link, $t_bugs_open, $t_bugs_resolved, $t_bugs_closed, $t_bugs_total );
+#		summary_helper_build_dwglinks( $t_bug_link, $t_bugs_open, $t_bugs_resolved, $t_bugs_closed, $t_bugs_total );
 
-		summary_helper_print_row( string_display_line( $t_name ), $t_bugs_open, $t_bugs_resolved, $t_bugs_closed, $t_bugs_total, $t_bugs_ratio[0], $t_bugs_ratio[1]);
+		summary_dwg_helper_print_row( string_display_line( $t_name ), $t_bugs_open, $t_bugs_resolved, $t_bugs_closed, $t_bugs_total, $t_bugs_ratio[0], $t_bugs_ratio[1]);
 
 		if( count( project_hierarchy_get_subprojects( $t_project ) ) > 0 ) {
 			$t_subprojects = current_user_get_accessible_subprojects( $t_project );
 
 			if( count( $t_subprojects ) > 0 ) {
-				summary_print_by_project( $t_subprojects, $p_level + 1, $p_cache );
+				summary_dwg_print_by_project( $t_subprojects, $p_level + 1, $p_cache );
 			}
 		}
 	}
@@ -764,7 +764,7 @@ function summary_print_by_project( array $p_projects = [], int $p_level = 0, arr
  *
  * @return void
  */
-function summary_print_developer_resolution( $p_resolution_enum_string, array $p_filter = [] ) {
+function summary_dwg_print_developer_resolution( $p_resolution_enum_string, array $p_filter = [] ) {
 	$t_project_id = helper_get_current_project();
 
 	# Get the resolution values to use
@@ -817,7 +817,7 @@ function summary_print_developer_resolution( $p_resolution_enum_string, array $p
 	$t_threshold_fixed = config_get( 'bug_resolution_fixed_threshold' );
 	$t_threshold_notfixed = config_get( 'bug_resolution_not_fixed_threshold' );
 
-	$t_link_prefix = summary_get_link_prefix( $p_filter );
+	$t_link_prefix = summary_dwg_get_link_prefix( $p_filter );
 
 	$t_row_count = 0;
 
@@ -833,7 +833,7 @@ function summary_print_developer_resolution( $p_resolution_enum_string, array $p
 			echo '<tr>';
 			$t_row_count++;
 			echo '<td>';
-			echo summary_helper_get_developer_label( $t_handler_id, $p_filter );
+			echo summary_dwg_helper_get_developer_label( $t_handler_id, $p_filter );
 			echo "</td>\n";
 
 			# We need to track the percentage of bugs that are considered fixed, as well as
@@ -900,7 +900,7 @@ function summary_print_developer_resolution( $p_resolution_enum_string, array $p
  *
  * @return void
  */
-function summary_print_reporter_resolution( $p_resolution_enum_string, array $p_filter = [] ) {
+function summary_dwg_print_reporter_resolution( $p_resolution_enum_string, array $p_filter = [] ) {
 	$t_reporter_summary_limit = config_get( 'reporter_summary_limit' );
 
 	$t_project_id = helper_get_current_project();
@@ -951,7 +951,7 @@ function summary_print_reporter_resolution( $p_resolution_enum_string, array $p_
 	$t_threshold_fixed = config_get( 'bug_resolution_fixed_threshold' );
 	$t_threshold_notfixed = config_get( 'bug_resolution_not_fixed_threshold' );
 
-	$t_link_prefix = summary_get_link_prefix( $p_filter );
+	$t_link_prefix = summary_dwg_get_link_prefix( $p_filter );
 
 	$t_row_count = 0;
 
@@ -1338,7 +1338,7 @@ function summary_dwg_print_filter_info( array $p_filter = [] ) {
  *
  * @return array Accumulated count for each day range.
  */
-function summary_by_dates_bug_count( array $p_date_array, array $p_filter = [] ) {
+function summary_by_dates_dwg_count( array $p_date_array, array $p_filter = [] ) {
 	$t_project_id = helper_get_current_project();
 	$t_specific_where = helper_project_specific_where( $t_project_id );
 	$t_resolved = config_get( 'bug_resolved_status_threshold' );
@@ -1439,12 +1439,12 @@ function summary_by_dates_bug_count( array $p_date_array, array $p_filter = [] )
  *
  * @return void
  */
-function summary_print_by_date( array $p_date_array, array $p_filter = [] ) {
+function summary_dwg_print_by_date( array $p_date_array, array $p_filter = [] ) {
 	# clean and sort dates array
 	$t_date_array = array_values( $p_date_array );
 	sort( $t_date_array );
 
-	$t_by_dates_count = summary_by_dates_bug_count( $t_date_array, $p_filter );
+	$t_by_dates_count = summary_by_dates_dwg_count( $t_date_array, $p_filter );
 	$t_open_count_array = $t_by_dates_count['open'];
 	$t_resolved_count_array = $t_by_dates_count['close'];
 
@@ -1454,7 +1454,7 @@ function summary_print_by_date( array $p_date_array, array $p_filter = [] ) {
 		$t_start_date = mktime( 0, 0, 0, date( 'm' ), ( date( 'd' ) - $t_days ), date( 'Y' ) );
 		$t_end_date = mktime( 0, 0, 0 ) + SECONDS_PER_DAY;
 
-		$t_link_prefix = summary_get_link_prefix( $p_filter );
+		$t_link_prefix = summary_dwg_get_link_prefix( $p_filter );
 
 		# if we come from a filter, don't clear status properties
 		if( !filter_dwg_is_temporary( $p_filter ) ) {
@@ -1507,7 +1507,7 @@ function summary_print_by_date( array $p_date_array, array $p_filter = [] ) {
  *
  * @return string
  */
-function summary_get_link_prefix( array $p_filter = [] ) {
+function summary_dwg_get_link_prefix( array $p_filter = [] ) {
 	$t_filter_action = filter_dwg_is_temporary( $p_filter ) ? FILTER_ACTION_PARSE_ADD : FILTER_ACTION_PARSE_NEW;
 	$t_link_prefix = 'view_dwg_set.php?type=' . $t_filter_action . '&temporary=y&new=1';
 	return helper_url_combine( $t_link_prefix, filter_dwg_get_temporary_key_param( $p_filter ) );

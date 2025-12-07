@@ -115,7 +115,7 @@ print_summary_menu( 'summary_dwg_page.php', $t_filter );
 				<?php echo $t_summary_header ?>
 			</tr>
 		</thead>
-		<?php summary_print_by_project( [], 0, [], $t_filter ); ?>
+		<?php summary_dwg_print_by_project( [], 0, [], $t_filter ); ?>
 	</table>
 	</div>
 
@@ -129,7 +129,7 @@ print_summary_menu( 'summary_dwg_page.php', $t_filter );
 				<?php echo $t_summary_header ?>
 			</tr>
 		</thead>
-		<?php summary_print_by_enum( 'status', $t_filter ) ?>
+		<?php summary_dwg_print_by_enum( 'status', $t_filter ) ?>
 	</table>
 	</div>
 
@@ -144,7 +144,7 @@ print_summary_menu( 'summary_dwg_page.php', $t_filter );
 				<?php echo $t_summary_header ?>
 			</tr>
 		</thead>
-		<?php summary_print_by_enum( 'severity', $t_filter ) ?>
+		<?php summary_dwg_print_by_enum( 'severity', $t_filter ) ?>
 	</table>
 	</div>
 */ ?>
@@ -158,7 +158,7 @@ print_summary_menu( 'summary_dwg_page.php', $t_filter );
 				<?php echo $t_summary_header ?>
 			</tr>
 		</thead>
-		<?php summary_print_by_category( $t_filter ) ?>
+		<?php summary_dwg_print_by_category( $t_filter ) ?>
 	</table>
 	</div>
 
@@ -204,7 +204,7 @@ print_summary_menu( 'summary_dwg_page.php', $t_filter );
 				<?php echo $t_summary_header ?>
 			</tr>
 		</thead>
-		<?php summary_print_by_developer( $t_filter ) ?>
+		<?php summary_dwg_print_by_developer( $t_filter ) ?>
 	</table>
 </div>
 </div>
@@ -224,7 +224,7 @@ print_summary_menu( 'summary_dwg_page.php', $t_filter );
 				<th class="align-right"><?php echo lang_get( 'balance' ); ?></th>
 			</tr>
 		</thead>
-		<?php summary_print_by_date( config_get( 'date_partitions' ), $t_filter ) ?>
+		<?php summary_dwg_print_by_date( config_get( 'date_partitions' ), $t_filter ) ?>
 	</table>
 	</div>
 
@@ -238,7 +238,7 @@ print_summary_menu( 'summary_dwg_page.php', $t_filter );
 				<th class="align-right"><?php echo lang_get( 'score' ); ?></th>
 			</tr>
 		</thead>
-		<?php summary_print_by_activity( $t_filter ) ?>
+		<?php summary_dwg_print_by_activity( $t_filter ) ?>
 	</table>
 	</div>
 
@@ -252,7 +252,7 @@ print_summary_menu( 'summary_dwg_page.php', $t_filter );
 				<th class="align-right"><?php echo lang_get( 'days' ); ?></th>
 			</tr>
 		</thead>
-		<?php summary_print_by_age( $t_filter ) ?>
+		<?php summary_dwg_print_by_age( $t_filter ) ?>
 	</table>
 	</div>
 
@@ -267,7 +267,7 @@ print_summary_menu( 'summary_dwg_page.php', $t_filter );
 				<?php echo $t_summary_header ?>
 			</tr>
 		</thead>
-		<?php summary_print_by_enum( 'resolution', $t_filter ) ?>
+		<?php summary_dwg_print_by_enum( 'resolution', $t_filter ) ?>
 	</table>
 	</div>
 */ ?>
@@ -281,7 +281,7 @@ print_summary_menu( 'summary_dwg_page.php', $t_filter );
 				<?php echo $t_summary_header ?>
 			</tr>
 		</thead>
-		<?php summary_print_by_enum( 'priority', $t_filter ) ?>
+		<?php summary_dwg_print_by_enum( 'priority', $t_filter ) ?>
 	</table>
 	</div>
 
@@ -339,7 +339,7 @@ print_summary_menu( 'summary_dwg_page.php', $t_filter );
 				?>
 			</tr>
 		</thead>
-		<?php /* summary_print_reporter_resolution( config_get( 'resolution_enum_string' ), $t_filter ) */ ?>
+		<?php /* summary_dwg_print_reporter_resolution( config_get( 'resolution_enum_string' ), $t_filter ) */ ?>
 	</table>
 	</div>
 
@@ -362,7 +362,7 @@ print_summary_menu( 'summary_dwg_page.php', $t_filter );
 				?>
 			</tr>
 		</thead>
-		<?php /* summary_print_developer_resolution( config_get( 'resolution_enum_string' ), $t_filter ) */ ?>
+		<?php /* summary_dwg_print_developer_resolution( config_get( 'resolution_enum_string' ), $t_filter ) */ ?>
 	</table>
 	</div>
 

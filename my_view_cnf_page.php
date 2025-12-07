@@ -316,7 +316,7 @@ if( 'ASC' == $f_dir ) {
 			<?php print_icon( 'fa-puzzle-piece', 'ace-icon' ); ?>
 			<?php echo lang_get( 'licenses_title' ) ?>
 		</h4>
-</div>
+	</div>
 	<div class="widget-body">
 	<div class="widget-main no-padding">
 	<div class="widget-toolbox padding-8 clearfix">

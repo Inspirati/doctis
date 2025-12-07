@@ -191,25 +191,25 @@ if( $t_flags['history_show'] ) {
 $t_url = helper_mantis_url( 'dwg_view.php?id=' . $t_dwg->id );
 
 $t_citation_text = sprintf(
-    '%s (%s, Rev %s, Ver %s) by %s – %s – Doctis – %s',
-    string_display_line( $t_issue['title'] ?? '' ),
-    string_display_line( $t_issue['number'] ?? '' ),
-    string_display_line( $t_issue['revision'] ?? '' ),
-    string_display_line( $t_issue['version'] ?? '' ),
-    string_display_line( $t_issue['author'] ?? '' ),
-    string_display_line( $t_release_date ?? '' ),
-    $t_url
+	'%s (%s, Rev %s, Ver %s) by %s – %s – Doctis – %s',
+	string_display_line( $t_issue['title'] ?? '' ),
+	string_display_line( $t_issue['number'] ?? '' ),
+	string_display_line( $t_issue['revision'] ?? '' ),
+	string_display_line( $t_issue['version'] ?? '' ),
+	string_display_line( $t_issue['author'] ?? '' ),
+	string_display_line( $t_release_date ?? '' ),
+	$t_url
 );
 
 $t_citation_html = sprintf(
-    '%s (%s, Rev %s, Ver %s) by %s – %s – <a href="%s">Doctis</a>',
-    string_display_line( $t_issue['title'] ?? '' ),
-    string_display_line( $t_issue['number'] ?? '' ),
-    string_display_line( $t_issue['revision'] ?? '' ),
-    string_display_line( $t_issue['version'] ?? '' ),
-    string_display_line( $t_issue['author'] ?? '' ),
-    string_display_line( $t_release_date ?? '' ),
-    $t_url
+	'%s (%s, Rev %s, Ver %s) by %s – %s – <a href="%s">Doctis</a>',
+	string_display_line( $t_issue['title'] ?? '' ),
+	string_display_line( $t_issue['number'] ?? '' ),
+	string_display_line( $t_issue['revision'] ?? '' ),
+	string_display_line( $t_issue['version'] ?? '' ),
+	string_display_line( $t_issue['author'] ?? '' ),
+	string_display_line( $t_release_date ?? '' ),
+	$t_url
 );
 
 $author = $t_issue['author'] ?? 'Unknown';
@@ -365,7 +365,7 @@ if( true
 }
 
 if( $t_flags['id_show'] || $t_flags['project_show'] || $t_flags['category_show'] ||
-    $t_flags['view_state_show'] || $t_flags['created_at_show'] || $t_flags['updated_at_show']
+	$t_flags['view_state_show'] || $t_flags['created_at_show'] || $t_flags['updated_at_show']
 ) {
 
 	# Labels

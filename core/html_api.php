@@ -1008,7 +1008,7 @@ function print_summary_menu( $p_page = '', ?array $p_filter = null ): void {
 	print_menu( $t_pages, $p_page, 'EVENT_MENU_SUMMARY' );
 
 	if( $p_page == 'summary_page.php' )  {
-	summary_print_filter_info( $p_filter );
+		summary_print_filter_info( $p_filter );
 	}
 	if( $p_page == 'summary_dwg_page.php' )  {
 		summary_dwg_print_filter_info( $p_filter );

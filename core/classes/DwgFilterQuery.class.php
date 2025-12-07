@@ -1516,7 +1516,7 @@ class DwgFilterQuery extends DbQuery {
 							case CUSTOM_FIELD_TYPE_TEXTAREA:
 								$t_filter_array[] = $t_table_name . '.text = ' . $this->param( '' );
 								break;
-							default;
+							default:
 								$t_filter_array[] = $t_table_name . '.value = ' . $this->param( '' );
 						}
 					} else {
@@ -1703,6 +1703,10 @@ class DwgFilterQuery extends DbQuery {
 
 				$this->add_select( $t_select );
 				return $t_col_alias;
+				break;
+
+			case 'title':
+				return 'doc.' . $p_prop;
 				break;
 
 			default:

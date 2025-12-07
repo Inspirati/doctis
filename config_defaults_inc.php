@@ -3434,6 +3434,7 @@ $g_license_dwg_threshold = REPORTER;
  */
 $g_show_monitor_list_threshold = DEVELOPER;
 $g_show_license_list_threshold = REPORTER;
+//$g_show_license_list_threshold = NOBODY;
 
 /**
  * Access level needed to add other users to the list of users monitoring a bug.
@@ -3649,6 +3650,7 @@ $g_manage_project_threshold = MANAGER;
  * @global int $g_manage_license_threshold
  */
 $g_manage_license_threshold = MANAGER;
+// $g_manage_license_threshold = NOBODY;
 
 /**
  * Threshold needed to import data into a project.
@@ -5201,6 +5203,20 @@ $g_tag_edit_threshold = DEVELOPER;
  */
 $g_tag_edit_own_threshold = REPORTER;
 
+#####################
+# License managment #
+#####################
+
+/**
+ * Turn on Document License Management.
+ *
+ * @global int $g_licenses_enabled
+ */
+// @TODO RobD - note this may not be required as we can disable the licenses feature via 'g_show_license_list_threshold' and 'g_manage_license_threshold'
+$g_licenses_enabled = OFF;
+// $g_licenses_enabled = ON;
+
+
 #################
 # Time tracking #
 #################
@@ -5996,6 +6012,7 @@ $g_public_config_names = array(
 	'issue_activity_note_attachments_seconds_threshold',
 	'language_auto_map',
 	'language_choices_arr',
+	'licenses_enabled',
 	'limit_email_domains',
 	'limit_reporters',
 	'limit_creators',
