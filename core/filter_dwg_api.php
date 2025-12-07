@@ -112,7 +112,7 @@ $g_dwg_filter = null;
 $g_cache_filter_dwg_db_rows = array();
 
 /**
- * Indexed by a hash of the filter array, contains a prebuilt BugFilterQuery object.
+ * Indexed by a hash of the filter array, contains a prebuilt DwgFilterQuery object.
  * @global array $g_cache_filter_dwg_subquery
  */
 $g_cache_filter_dwg_subquery = array();
@@ -2830,7 +2830,7 @@ function filter_dwg_copy_runtime_properties( array $p_filter_to, array $p_filter
 }
 
 /**
- * Return a cached BugFilterQuery object for the provided filter, configured and
+ * Return a cached DwgFilterQuery object for the provided filter, configured and
  * ready to be used as a subquery for building other queries.
  * If the query is not in the cache, creates a new one and store it for later reuse.
  * Note: Query objects are indexed by a hash value over the serialized contents of the
@@ -2843,14 +2843,14 @@ function filter_dwg_copy_runtime_properties( array $p_filter_to, array $p_filter
  * instead, to avoid said side effects.
  *
  * @param array $p_filter	Filter array
- * @return BugFilterQuery	A query object for the filter
+ * @return DwgFilterQuery	A query object for the filter
  */
 function filter_dwg_cache_subquery( array $p_filter ) {
 	global $g_cache_filter_dwg_subquery;
 
 	$t_hash = md5( json_encode( $p_filter ) );
 	if( !isset( $g_cache_filter_dwg_subquery[$t_hash] ) ) {
-		$g_cache_filter_dwg_subquery[$t_hash] = new BugFilterQuery( $p_filter, BugFilterQuery::QUERY_TYPE_IDS );
+		$g_cache_filter_dwg_subquery[$t_hash] = new DwgFilterQuery( $p_filter, DwgFilterQuery::QUERY_TYPE_IDS );
 	}
 
 	return $g_cache_filter_dwg_subquery[$t_hash];

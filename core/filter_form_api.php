@@ -1787,7 +1787,7 @@ function print_filter_values_relationship_type( array $p_filter ) {
 			case META_FILTER_ANY:
 				echo lang_get( 'any' );
 				break;
-			default;
+			default:
 				echo lang_get( 'any' ),' ' , lang_get( 'with' ), ' ', $c_rel_bug;
 		}
 	} elseif( BUG_REL_NONE == $c_rel_type ) {
@@ -1796,7 +1796,7 @@ function print_filter_values_relationship_type( array $p_filter ) {
 			case META_FILTER_NONE:
 			case META_FILTER_ANY:
 				break;
-			default;
+			default:
 				echo ' ', lang_get( 'with' ), ' ', $c_rel_bug;
 		}
 	} else {
@@ -1808,7 +1808,7 @@ function print_filter_values_relationship_type( array $p_filter ) {
 			case META_FILTER_ANY:
 				echo lang_get( 'any' );
 				break;
-			default;
+			default:
 				echo $c_rel_bug;
 		}
 	}

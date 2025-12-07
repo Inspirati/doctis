@@ -58,9 +58,9 @@ $g_project_override = $f_project_id;
 
 access_ensure_project_level( config_get( 'view_summary_threshold' ) );
 
-$t_filter = summary_get_filter();
+$t_filter = summary_dwg_get_filter();
 
-$t_time_stats = summary_helper_get_time_stats( $f_project_id, $t_filter );
+$t_time_stats = summary_dwg_helper_get_time_stats( $f_project_id, $t_filter );
 
 $t_summary_header_arr = explode( '/', lang_get( 'summary_header' ) );
 

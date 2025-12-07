@@ -208,7 +208,7 @@ function summary_print_by_enum( $p_enum, array $p_filter = [] ) {
 	$t_sql = 'SELECT COUNT(id) as dwgcount, ' . $p_enum . ' ' . $t_status_query
 		. ' FROM {dwg} WHERE ' . $t_project_filter;
 	if( !empty( $p_filter ) ) {
-		$t_subquery = filter_cache_subquery( $p_filter );
+		$t_subquery = filter_dwg_cache_subquery( $p_filter );
 		$t_sql .= ' AND {dwg}.id IN :filter';
 		$t_query->bind( 'filter', $t_subquery );
 	}
@@ -329,7 +329,7 @@ function summary_print_by_activity( array $p_filter = [] ) {
 		. ' WHERE b.status < ' . $t_query->param( (int)$t_resolved )
 		. ' AND ' . $t_specific_where;
 	if( !empty( $p_filter ) ) {
-		$t_subquery = filter_cache_subquery( $p_filter );
+		$t_subquery = filter_dwg_cache_subquery( $p_filter );
 		$t_sql .= ' AND b.id IN :filter';
 		$t_query->bind( 'filter', $t_subquery );
 	}
@@ -359,7 +359,7 @@ function summary_print_by_activity( array $p_filter = [] ) {
 		$t_summarybugs[] = $t_row['id'];
 	}
 
-	bug_cache_array_rows( $t_summarybugs );
+	dwg_cache_array_rows( $t_summarybugs );
 
 	foreach( $t_summarydata as $t_row ) {
 		$t_bugid = string_get_dwg_view_link( $t_row['id'], false );
@@ -392,7 +392,7 @@ function summary_print_by_age( array $p_filter = [] ) {
 	$t_sql = 'SELECT * FROM {dwg} WHERE status < ' . $t_query->param( (int)$t_resolved )
 		. ' AND ' . $t_specific_where;
 	if( !empty( $p_filter ) ) {
-		$t_subquery = filter_cache_subquery( $p_filter );
+		$t_subquery = filter_dwg_cache_subquery( $p_filter );
 		$t_sql .= ' AND {dwg}.id IN :filter';
 		$t_query->bind( 'filter', $t_subquery );
 	}
@@ -444,7 +444,7 @@ function summary_print_by_developer( array $p_filter = [] ) {
 	$t_sql = 'SELECT COUNT(id) as dwgcount, handler_id, status'
 		. ' FROM {dwg} WHERE handler_id>0 AND ' . $t_specific_where;
 	if( !empty( $p_filter ) ) {
-		$t_subquery = filter_cache_subquery( $p_filter );
+		$t_subquery = filter_dwg_cache_subquery( $p_filter );
 		$t_sql .= ' AND {dwg}.id IN :filter';
 		$t_query->bind( 'filter', $t_subquery );
 	}
@@ -504,7 +504,7 @@ function summary_print_by_creator( array $p_filter = [] ) {
 	$t_query = new DBQuery();
 	$t_sql = 'SELECT creator_id, COUNT(*) as num FROM {dwg} WHERE ' . $t_specific_where;
 	if( !empty( $p_filter ) ) {
-		$t_subquery = filter_cache_subquery( $p_filter );
+		$t_subquery = filter_dwg_cache_subquery( $p_filter );
 		$t_sql .= ' AND {dwg}.id IN :filter';
 		$t_query->bind( 'filter', $t_subquery );
 	}
@@ -533,7 +533,7 @@ function summary_print_by_creator( array $p_filter = [] ) {
 		. ' WHERE ' . $t_query->sql_in( 'creator_id', $t_reporters )
 		. ' AND ' . $t_specific_where;
 	if( !empty( $p_filter ) ) {
-		$t_subquery = filter_cache_subquery( $p_filter );
+		$t_subquery = filter_dwg_cache_subquery( $p_filter );
 		$t_sql .= ' AND {dwg}.id IN :filter';
 		$t_query->bind( 'filter', $t_subquery );
 	}
@@ -638,7 +638,7 @@ function summary_print_by_category( array $p_filter = [] ) {
 		. ' FROM {dwg} b JOIN {category} c ON b.category_id=c.id'
 		. ' WHERE b.' . $t_specific_where;
 	if( !empty( $p_filter ) ) {
-		$t_subquery = filter_cache_subquery( $p_filter );
+		$t_subquery = filter_dwg_cache_subquery( $p_filter );
 		$t_sql .= ' AND b.id IN :filter';
 		$t_query->bind( 'filter', $t_subquery );
 	}
@@ -707,7 +707,7 @@ function summary_print_by_project( array $p_projects = [], int $p_level = 0, arr
 		$t_query = new DBQuery();
 		$t_sql = 'SELECT project_id, status, COUNT( status ) AS dwgcount FROM {dwg}';
 		if( !empty( $p_filter ) ) {
-			$t_subquery = filter_cache_subquery( $p_filter );
+			$t_subquery = filter_dwg_cache_subquery( $p_filter );
 			$t_sql .= ' WHERE {dwg}.id IN :filter';
 			$t_query->bind( 'filter', $t_subquery );
 		}
@@ -783,7 +783,7 @@ function summary_print_developer_resolution( $p_resolution_enum_string, array $p
 	$t_sql = 'SELECT COUNT(id) as dwgcount, handler_id, resolution'
 		. ' FROM {dwg} WHERE ' . $t_specific_where;
 	if( !empty( $p_filter ) ) {
-		$t_subquery = filter_cache_subquery( $p_filter );
+		$t_subquery = filter_dwg_cache_subquery( $p_filter );
 		$t_sql .= ' AND {dwg}.id IN :filter';
 		$t_query->bind( 'filter', $t_subquery );
 	}
@@ -921,7 +921,7 @@ function summary_print_reporter_resolution( $p_resolution_enum_string, array $p_
 	$t_sql = 'SELECT COUNT(id) as dwgcount, creator_id, resolution'
 		. ' FROM {dwg} WHERE ' . $t_specific_where;
 	if( !empty( $p_filter ) ) {
-		$t_subquery = filter_cache_subquery( $p_filter );
+		$t_subquery = filter_dwg_cache_subquery( $p_filter );
 		$t_sql .= ' AND {dwg}.id IN :filter';
 		$t_query->bind( 'filter', $t_subquery );
 	}
@@ -1068,7 +1068,7 @@ function summary_print_reporter_resolution( $p_resolution_enum_string, array $p_
 // 	$t_sql = 'SELECT COUNT(id) as dwgcount, creator_id, resolution'
 // 		. ' FROM {dwg} WHERE ' . $t_specific_where;
 // 	if( !empty( $p_filter ) ) {
-// 		$t_subquery = filter_cache_subquery( $p_filter );
+// 		$t_subquery = filter_dwg_cache_subquery( $p_filter );
 // 		$t_sql .= ' AND {dwg}.id IN :filter';
 // 		$t_query->bind( 'filter', $t_subquery );
 // 	}
@@ -1163,7 +1163,7 @@ function summary_print_reporter_resolution( $p_resolution_enum_string, array $p_
  *
  * @return array
  */
-function summary_helper_get_time_stats( $p_project_id, array $p_filter = [] ) {
+function summary_dwg_helper_get_time_stats( $p_project_id, array $p_filter = [] ) {
 	$t_specific_where = helper_project_specific_where( $p_project_id );
 	$t_resolved = config_get( 'bug_resolved_status_threshold' );
 
@@ -1191,7 +1191,7 @@ function summary_helper_get_time_stats( $p_project_id, array $p_filter = [] ) {
 		'str_resolved' => (string)$t_resolved
 		);
 	if( !empty( $p_filter ) ) {
-		$t_subquery = filter_cache_subquery( $p_filter );
+		$t_subquery = filter_dwg_cache_subquery( $p_filter );
 		$t_sql_inner .= ' AND b.id IN :filter';
 		$t_params['filter'] = $t_subquery;
 	}
@@ -1273,17 +1273,17 @@ function summary_helper_get_time_stats( $p_project_id, array $p_filter = [] ) {
  *
  * @return array Filter array
  */
-function summary_get_filter() {
+function summary_dwg_get_filter() {
 	$t_filter = null;
 	$f_tmp_key = gpc_get_string( 'filter', null );
 	if( null !== $f_tmp_key ) {
-		$t_filter = filter_temporary_get( $f_tmp_key, null );
+		$t_filter = filter_dwg_temporary_get( $f_tmp_key, null );
 	}
 	# if filter parameter doesn't exist or can't be loaded, return a default filter
 	if( null === $t_filter ) {
 		# TODO: for summary, as default, we want to show all status.
 		# Until a better implementation for default/empty filters, we need to adjust here
-		$t_filter = filter_get_default();
+		$t_filter = filter_dwg_get_default();
 		$t_filter[FILTER_PROPERTY_HIDE_STATUS] = array( META_FILTER_NONE );
 		$t_filter['_view_type'] = FILTER_VIEW_TYPE_SIMPLE;
 	}
@@ -1299,7 +1299,7 @@ function summary_get_filter() {
  *
  * @return void
  */
-function summary_print_filter_info( array $p_filter = [] ) {
+function summary_dwg_print_filter_info( array $p_filter = [] ) {
 	if( empty( $p_filter ) ) {
 		return;
 	}
@@ -1310,7 +1310,7 @@ function summary_print_filter_info( array $p_filter = [] ) {
 	if( !filter_dwg_is_temporary( $p_filter ) ) {
 		return;
 	}
-	$t_filter_query = filter_cache_subquery( $p_filter );
+	$t_filter_query = filter_dwg_cache_subquery( $p_filter );
 	$t_bug_count = $t_filter_query->get_dwg_count();
 	$t_view_issues_link = helper_url_combine( 'view_dwg_page.php', filter_dwg_get_temporary_key_param( $p_filter ) );
 	?>
@@ -1380,7 +1380,7 @@ function summary_by_dates_bug_count( array $p_date_array, array $p_filter = [] )
 		) );
 
 	if( !empty( $p_filter ) ) {
-		$t_subquery = filter_cache_subquery( $p_filter );
+		$t_subquery = filter_dwg_cache_subquery( $p_filter );
 		$t_sql_inner .= ' AND b.id IN :filter';
 		$t_query->bind( 'filter', $t_subquery );
 	}
