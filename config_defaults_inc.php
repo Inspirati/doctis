@@ -3434,7 +3434,7 @@ $g_license_dwg_threshold = REPORTER;
  */
 $g_show_monitor_list_threshold = DEVELOPER;
 $g_show_license_list_threshold = REPORTER;
-//$g_show_license_list_threshold = NOBODY;
+// $g_show_license_list_threshold = NOBODY;
 
 /**
  * Access level needed to add other users to the list of users monitoring a bug.
@@ -3865,6 +3865,14 @@ $g_set_dwg_sticky_threshold = MANAGER;
  * @global array $g_set_status_threshold
  */
 $g_set_status_threshold = array( NEW_ => REPORTER );
+
+
+/**
+ * Access level required to view/add document notes.
+ *
+ * @global int $g_dwgnote_view_threshold
+ */
+$g_dwgnote_view_threshold = DEVELOPER;
 
 /**
  * Threshold at which a user can edit his/her own bugnotes.
@@ -5856,6 +5864,7 @@ $g_public_config_names = array(
 	'dwgnote_user_delete_threshold',
 	'bugnote_user_edit_threshold',
 	'dwgnote_user_edit_threshold',
+	'g_dwgnote_view_threshold',
 	'cdn_enabled',
 	'change_view_status_threshold',
 	'check_mx_record',

@@ -1153,23 +1153,25 @@ $t_license_list = implode( ", ", $t_license_applied_name );
 <?php
 }
 
-# Bugnotes and "Add Note" box
-if( 'ASC' == current_user_get_pref( 'dwgnote_order' ) ) {
-	define( 'DWGNOTE_VIEW_INC_ALLOW', true );
-	include( $t_mantis_dir . 'dwgnote_view_inc.php' );
+if( access_has_dwg_level( config_get( 'dwgnote_view_threshold' ), $f_issue_id ) ) {
+	# Dwgnotes and "Add Note" box
+	if( 'ASC' == current_user_get_pref( 'dwgnote_order' ) ) {
+		define( 'DWGNOTE_VIEW_INC_ALLOW', true );
+		include( $t_mantis_dir . 'dwgnote_view_inc.php' );
 
-	if( !$t_force_readonly ) {
-		define( 'DWGNOTE_ADD_INC_ALLOW', true );
-		include( $t_mantis_dir . 'dwgnote_add_inc.php' );
-	}
-} else {
-	if( !$t_force_readonly ) {
-		define( 'DWGNOTE_ADD_INC_ALLOW', true );
-		include( $t_mantis_dir . 'dwgnote_add_inc.php' );
-	}
+		if( !$t_force_readonly ) {
+			define( 'DWGNOTE_ADD_INC_ALLOW', true );
+			include( $t_mantis_dir . 'dwgnote_add_inc.php' );
+		}
+	} else {
+		if( !$t_force_readonly ) {
+			define( 'DWGNOTE_ADD_INC_ALLOW', true );
+			include( $t_mantis_dir . 'dwgnote_add_inc.php' );
+		}
 
-	define( 'DWGNOTE_VIEW_INC_ALLOW', true );
-	include( $t_mantis_dir . 'dwgnote_view_inc.php' );
+		define( 'DWGNOTE_VIEW_INC_ALLOW', true );
+		include( $t_mantis_dir . 'dwgnote_view_inc.php' );
+	}
 }
 
 # Allow plugins to display stuff after notes
