@@ -17,20 +17,23 @@
 project="doctis"
 password="password"
 #ipaddr=$(ip -4 route get 1.1.1.1 | sed -n 's/.* src \([0-9.]*\).*/\1/p')
-ipaddr="localhost"
+#ipaddr="localhost"
+ipaddr="swcoh.com"
 
 targetproject="${1:-$project}"
 mysqlpassword="${2:-$password}"
 domain_idname="${3:-$ipaddr}"
 
-DBHOST="db"
+DBHOST="localhost"
+#DBHOST="db" # database server name for docker container
 #DBUSER="doctis"
-DBUSER="root"
+DBUSER="${project}"
 DBPASS="password"
 DBNAME="doctis"
 
 database="mariadb"
-db_cmd="mysql -h $DBHOST --ssl=0 -u $DBUSER -p$DBPASS"
+#db_cmd="mysql -h $DBHOST --ssl=0 -u $DBUSER -p$DBPASS"
+db_cmd="mysql -u $DBUSER -p$DBPASS"
 
 mysqladminname="admin"
 mysqladminpass=${mysqlpassword}
@@ -81,10 +84,10 @@ configure_database() {
     # Create database & user if they don't already exist
     ${db_cmd} <<EOF
 CREATE DATABASE IF NOT EXISTS ${mysqldatabase} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER IF NOT EXISTS '${mysqlusername}'@'localhost' IDENTIFIED BY '${mysqlpassword}';
-GRANT ALL PRIVILEGES ON ${mysqldatabase}.* TO '${mysqlusername}'@'localhost';
-#GRANT ALL PRIVILEGES ON ${mysqldatabase}.* TO '${mysqladminname}'@'localhost';
-FLUSH PRIVILEGES;
+#CREATE USER IF NOT EXISTS '${mysqlusername}'@'localhost' IDENTIFIED BY '${mysqlpassword}';
+#GRANT ALL PRIVILEGES ON ${mysqldatabase}.* TO '${mysqlusername}'@'localhost';
+##GRANT ALL PRIVILEGES ON ${mysqldatabase}.* TO '${mysqladminname}'@'localhost';
+#FLUSH PRIVILEGES;
 EOF
     echo -e "${INFO}Database configured for ${target}.${OFF}" >&2
 }

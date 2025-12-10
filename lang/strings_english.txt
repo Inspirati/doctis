@@ -595,7 +595,8 @@ $s_acknowledged_dwg_button = 'Acknowledge Document';
 $s_confirmed_dwg_button = 'Confirm Document';
 // $s_assigned_dwg_button = 'Assign Document';
 
-// ?
+// NOTE: most of the following string variable names are run-time generated
+//       and hence cannot be found via searching the codebase
 $s_closed_dwg_title = 'Close Document';
 
 $s_pending_dwg_button = 'Set to Pending';
@@ -774,7 +775,6 @@ $s_updating_bug_simple_title = 'Updating Issue Information';
 # dwg_update_page.php
 $s_back_to_dwg_link = 'Back To Document';
 $s_updating_dwg_advanced_title = 'Updating Document Information (WIP)';
-$s_document = 'Document';
 $s_document_summary = 'Document Summary';
 
 # bug_view*
@@ -1156,6 +1156,9 @@ $s_license_delete_button = 'Delete License';
 
 $s_license_request_access = 'Request Access';
 $s_license_apply_access = 'Apply Access';
+
+$s_license_request_access_tip = 'User does not have access, click to send request';
+$s_license_apply_access_tip = 'User has not registered access, click to register';
 
 # manage_proj_delete_page.php
 $s_project_delete_msg = 'Are you sure you want to delete project "%1$s"?<br>This will also delete %2$s attached issue reports.';

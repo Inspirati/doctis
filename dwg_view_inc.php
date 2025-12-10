@@ -1085,6 +1085,7 @@ $t_license_list = implode( ", ", $t_license_apply_for_name );
 				<!-- <input type="text" class="input-sm" id="dwg_license_list_license_to_add" name="license_to_add" /> -->
 				<input type="submit" class="btn btn-primary btn-sm btn-white btn-round" value="<?php echo lang_get( 'license_request_access' ) ?>" />
 				<input type="text" class="input-sm" id="dwg_license_list_license_to_add" name="license_to_add" size="64" maxlength="256" value="<?php echo $t_license_list ?>" />
+	<span class="required pull-right"> * <?php echo lang_get( 'license_request_access_tip' ) ?></span>
 			</form>
 <?php
 			}
