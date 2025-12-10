@@ -1241,10 +1241,10 @@ if( config_get_global( 'show_copyright_footer' ) == ON ) {
 		echo '<div class="pull-right" id="powered-by-mantisbt-logo">' . "\n";
 		// $t_mantisbt_logo_url = helper_mantis_url( 'images/mantis_logo.png' );
 		$t_mantisbt_logo_url = helper_mantis_url( 'images/doctis_logo.png' );
-		echo '<a href="https://www.mantisbt.org" '.
-			'title="Mantis Bug Tracker: a free and open source web based bug tracking system.">' .
+		echo '<a href="https://www.doctis.org" '.
+			'title="Doctis - Document Issue Tracking System: a free and open source web based document issue tracking system.">' .
 			'<img src="' . $t_mantisbt_logo_url . '" width="102" height="35" ' .
-			'alt="Powered by Mantis Bug Tracker: a free and open source web based bug tracking system." />' .
+			'alt="Powered by Doctis Issue Tracking System: a free and open source web based document issue tracking system." />' .
 			'</a>' . "\n";
 		echo '</div>' . "\n";
 		echo '</div>' . "\n";
