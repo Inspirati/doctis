@@ -1,198 +1,118 @@
-Doctis - Document Issue Tracking System
-=======================================
+# Doctis — Quality Management Document Control System
 
 [![Build Status](https://github.com/Inspirati/doctis/actions/workflows/mantisbt.yml/badge.svg?branch=dev)](https://github.com/Inspirati/doctis/actions/workflows/mantisbt.yml)
 [![Gitter](https://img.shields.io/gitter/room/doctis/doctis.svg?logo=gitter)](https://gitter.im/Inspirati/doctis)
 
-About
------
+## About
 
-The Doctis project aims to add support to MantisBT for tracking documents and the issues raised against them during a formal review process.
+Doctis is a lightweight, flexible document control and traceability platform designed to support the implementation and operation of a modern Quality Management System (QMS).
 
-Documents can be any set of electronic files or physical objects that can have suitable configuration data to uniquely identify them.
+At its core, Doctis provides a centralised index of controlled corporate documents, linking together documentation, review workflows, issue tracking, responsibilities, and supporting systems into a single cohesive environment.
 
-The documents themselves do not need to be contained within the system, but rather their leading particulars will include a reference number, and/or a URL to their location.
+Rather than attempting to replace existing tools already used within an organisation, Doctis acts as the central integration and control layer — providing a definitive source for identifying, locating, reviewing, maintaining, and tracking documents throughout their lifecycle.
 
-The easiest way to try Doctis right now is to duplicate the developers test environment, hosted in a VirtualBox running Debian Linux.
+Doctis is particularly well suited to small and medium organisations seeking to establish disciplined document control practices as part of a pathway toward ISO 9000 quality management certification.
 
-A script (below) will automatically clone, install, and configure Doctis (under development and currently undergoing beta testing).
+---
 
-Design Goals (requirements)
----------------------------
+## Key Features
 
-* simple to use, requires little to no training
-* track status of documents through the review cycle
-* track status of issues identified during document reviews (tailor existing mantis functionality)
-* maximise maintainability (minimise the diff with mantisbt codebase)
-* bulk import of document data from spreadsheet, csv, tsv
-* add group feature (users can be assigned to groups)
+### Centralised Document Control
 
-Installation
-------------
+Doctis serves as the authoritative index for controlled corporate documentation.
 
-1. Install [VirtualBox](https://www.virtualbox.org/) on any system it is supported on. (or VMWare if preferred)
+Documents themselves may be stored anywhere, including:
 
-2. Create a new virtual machine, configured with 4GB Memory (RAM), 10+ GB disk, and bridged network adaptor.
+- network file shares
+- SharePoint or Office 365
+- Git repositories
+- cloud storage platforms
+- external databases
+- physical archives
 
-3. Install a Debian[^1] based Linux virtual machine. (the ISO image at [Debian-13.1.0-amd64-netinst.iso](https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-13.1.0-amd64-netinst.iso) is recommended) however Debian 12, and recent Ubuntu and KDE-Neon distributions have also been tried successfully.
+Doctis stores the document metadata, ownership, revision information, relationships, and hyperlinks required to locate and manage those resources consistently across the organisation.
 
-    1. select the VirtualBox default 'unattended' install option, leave other options as default (this results in a GNOME[^2] desktop environment on Debian)
+---
 
-    2. upon initial login, open a terminal window (click top-left corner and then find the black terminal icon)
+### Clear Ownership and Accountability
 
-    3. if using Debian, enable sudo (where \<username\> is your login username) and shutdown[^3]
+Every controlled document can be assigned to a nominated owner responsible for its maintenance, accuracy, and ongoing review.
 
-    ```sh
-         $ su -
+Ownership and responsibility are visible and traceable throughout the document lifecycle.
 
-         # usermod -aG sudo <username>
+---
 
-         # shutdown now
-    ```
+### End-to-End Traceability
 
-    4. create a clone (backup) of your new virtual machine as a reference baseline (recommended)
+Doctis maintains traceability across the complete lifecycle of a document, including:
 
-    5. start a virtual machine and login to your account
+- creation and registration
+- review and approval
+- issue identification and resolution
+- revision history
+- maintenance activities
+- archival or retirement
 
-4. Download and install the Doctis project.
+Issues raised against documents are tracked through to closure, helping organisations maintain auditable records of review outcomes and corrective actions.
 
-    SIMPLE:
+---
 
-    For a default install, enter this single statement into a bash command shell:
+### Workflow and Task Management
 
-    ```sh
-    cd Documents && wget -O- https://tinyurl.com/get-doctis | bash
-    ```
+The system supports structured document maintenance workflows, including:
 
-    or,
+- review cycles
+- assigned actions and tasks
+- responsibility tracking
+- progress monitoring
+- overdue activity visibility
 
-    ADVANCED:
+This helps ensure controlled documents remain current, accurate, and actively maintained.
 
-    1. make a working directory, or just change to the existing '~/Documents' directory
+---
 
-    ```sh
-    cd Documents
-    ```
+### Hyperlink-Centric Architecture
 
-    2. copy the provided install script (below) into a file of your choosing, ie. 'install.sh'
-       or fetch it online with:
-    ```sh
-    wget -O- https://tinyurl.com/get-doctis > install.sh
-    ```
+Doctis is intentionally designed around a hyperlink-intensive architecture.
 
-    3. customise the configuration options in the install.sh script as needed (optional):
+Rather than duplicating functionality already provided by other systems, it connects and organises them — acting as the central navigation and traceability hub for the organisation’s documentation ecosystem.
 
-    ```sh
-    pico install.sh
-    ```
+---
 
-    4. enable the executable property on the script and run it:
+### Flexible and Organisation-Owned
 
-    ```sh
-    chmod +x install.sh
+Doctis is not a closed commercial platform.
 
-    ./install.sh
-    ```
+Because the organisation owns and controls the system, it can evolve alongside operational requirements, internal processes, and future compliance objectives.
 
-5. Follow the getting-started tips which should eventually be displayed.
+This provides long-term flexibility without vendor lock-in.
 
-NOTE: in order to create new users in mantisbt/doctis, the ability to send email is required and perhaps the most-difficult way to achieve this is to create an App Password for a gmail account. However the system can still be used with predefined user accounts without being able to send email. These accounts can be modified when logged into Doctis with an administrator account. The default account is 'administrator' with password 'root'.
+---
 
-[^1]: the install script utilises the 'apt' package manager for installing system services and tools
-[^2]: for alternative desktop environments, perform a manual Debian setup process. (this has undergone minimal testing)
-[^3]: a system restart seems to be required to ensure sudo is enabled upon next login
+### Simple and Practical
 
-Doctis Install Script
----------------------
+A key design goal of Doctis is simplicity.
 
-WARNING: this script should only be used inside your Debian based Linux virtual machine.
-(note this quoted script may be obsolete and you should obtain the lastest online version as per above)
+The system is intended to require little to no formal training for general users, allowing teams to adopt controlled document practices with minimal disruption.
 
-```sh
-#!/bin/bash
+---
 
-# Customise the email and database credentials for the project to use
-email_addr="my.email@gmail.com"
-email_hash="GmailAppPassword"
-mysql_pass="password"
+### Production Ready
 
-# Do we want a local machine (localhost) only server
-# or one available to a Local Area Network (LAN) via ip address (recommended)
-# or Fully Qualified Domain Name (FQDN), for public internet server (advanced)
-#domain="locahost"
-domain=$(ip r get 1 | grep -Eo 'src [^ ]+' | awk '{print $2}')
-#domain="my.domain.com"
+Doctis has evolved substantially beyond its original prototype origins and is now approaching practical production deployment readiness for organisations seeking a lightweight but capable QMS document control solution.
 
-wget --quiet https://raw.githubusercontent.com/Inspirati/doctis/refs/heads/dev/admin/tools/install-doctis.sh
-chmod +x install-doctis.sh
-./install-doctis.sh install all ${domain} ${mysql_pass} ${email_addr} ${email_hash} "doctis" | tee logfile.txt```
-```
+---
 
-Documentation
--------------
-
-For complete documentation, please read the mantisbt administration guide included with this release in the `doc/<lang>` directory. The guide is available in text, PDF, and HTML formats.
-
-Limitations
------------
-
-There is currently no built-in user interface support for bulk adding documents to the database. Bulk document data needs to be added to the database directly using other tools, such as phpMyAdmin or the CLI.
-
-Style Guide / Naming Convention
--------------------------------
-
-A primary goal of Doctis is keeping the fork standarised with is origins, MantisBT.
-
-More detailed documentation can be found at https://www.mantisbt.org/docs/
-
-* `config_defaults_inc.php`
-  * this file contains the default values for all the site-wide variables.
-* `config/config_inc.php`
-  * You should use this file to change config variable values. Your
-    values from this file will be used instead of the defaults. This file
-    will not be overwritten when you upgrade, but config_defaults_inc.php will.
-    Look at `config/config_inc.php.sample` for an example.
-
-* `core/*_api.php` - these files contain all the API library functions.
-
-* global variables are prefixed by `g_`
-* parameters in functions are prefixed with `p_` -- parameters shouldn't be modified within the function.
-* form variables are prefixed with `f_`
-* variables that have been cleaned for db insertion are prefixed with `c_`
-* temporary variables are prefixed with `t_`.
-* count variables have the word `count` in the variable name
-
-The Doctis fork has not renamed most local variables from the original MantisBT code. This is in the interests of keeping the 'diff' of the fork to a minimum in order to simplify future syncronisation with ongoing mantis development. This is a trade-off between readability and maintainability.
-
-More detail can be seen in the coding guidelines at:
-https://www.mantisbt.org/guidelines.php
-
-* The files are split into three basic categories, viewable pages,
-  include files and pure scripts. Examining the viewable pages (suffix `_page`)
-  should make the basic file format fairly easy to see. The file names
-  themselves should make their purpose apparent. The approach used is to break the
-  work into many small files rather than have a small number of large files.
-
-* For legacy and namespace reasons, there are a few naming anomolies.
-  In particular:
-	- 'bug' and 'issue' should (for the most part) be considered analogous
-	- 'dwg' and 'document' should be considered analogous
-		('doc' and 'document' are keywords which tend to be seriously overloaded)
-
-* All files are to be edited with TAB SPACES set to 4. Please be professional and use tabs for indentation, spaces for alignment.
-
-Contributing
-------------
-
-If you are interested in contributing to the development and/or testing of the project, raise a GitHub issue expressing your interest.
-
-Feedback
---------
-
-Should the installation fail please raise an issue and attach a copy of the generated logfile.txt
-
-Origins and Credit
-------------------
-
-[MantisBT](https://github.com/mantisbt/mantisbt)
-
+## Design Goals
+
+- simple and intuitive user experience
+- minimal training requirements
+- centralised document ownership and accountability
+- lifecycle traceability for controlled documents
+- issue and corrective action tracking
+- integration with existing storage and collaboration platforms
+- workflow-based document maintenance
+- maintainable and extensible architecture
+- bulk import of document metadata from CSV/TSV/spreadsheets
+- support for organisational groups and permissions
+- flexible deployment and ongoing feature evolution
