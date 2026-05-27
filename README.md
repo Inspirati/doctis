@@ -103,6 +103,77 @@ Doctis has evolved substantially beyond its original prototype origins and is no
 
 ---
 
+---
+
+## Supporting ISO 9000 Quality Management Compliance
+
+Doctis has been specifically designed to support many of the fundamental document control and traceability requirements expected within an ISO 9000 aligned Quality Management System (QMS).
+
+While ISO certification ultimately depends upon organisational processes, implementation practices, and independent audit outcomes, Doctis provides a practical framework that assists organisations in establishing and maintaining compliant document control procedures.
+
+Key areas supported include:
+
+### Controlled Documents
+
+Doctis provides a centralised register of controlled documents, ensuring that:
+
+- documents are uniquely identifiable
+- document ownership is clearly assigned
+- revision and status information is maintained
+- obsolete documents can be tracked and retired
+- personnel can locate the current approved version of a document
+
+---
+
+### Documented Review and Approval Processes
+
+The system supports formalised review workflows and issue tracking processes that help organisations demonstrate:
+
+- structured document review activities
+- accountability for approvals and actions
+- evidence of issue identification and resolution
+- maintenance of review history and audit trails
+
+---
+
+### Traceability and Record Retention
+
+Doctis maintains historical traceability across document revisions, issues, actions, and ownership changes.
+
+This assists organisations in demonstrating:
+
+- retention of quality records
+- traceability of decisions and corrective actions
+- evidence of ongoing maintenance activities
+- continuity of document lifecycle management
+
+---
+
+### Corrective Action and Continuous Improvement
+
+Through integrated issue tracking and task management workflows, Doctis supports continuous improvement processes by enabling organisations to:
+
+- identify deficiencies or review findings
+- assign corrective actions
+- track resolution progress
+- verify closure of identified issues
+
+---
+
+### Integration with Existing Systems
+
+Doctis complements existing corporate infrastructure rather than replacing it.
+
+This allows organisations to continue using established tools and repositories while implementing a centralised quality document control framework aligned with ISO 9000 principles.
+
+---
+
+### Scalable Organisational Adoption
+
+The lightweight and flexible nature of Doctis makes it suitable for gradual adoption within small and medium organisations seeking to improve operational discipline and quality management maturity without requiring large-scale enterprise system deployments.
+
+---
+
 ## Design Goals
 
 - simple and intuitive user experience
