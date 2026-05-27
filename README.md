@@ -172,10 +172,10 @@ The lightweight and flexible nature of Doctis makes it suitable for gradual adop
 
 ---
 
-## Design Goals
+## Summary of Design Features
 
-- simple and intuitive user experience
-- minimal training requirements
+- simple and intuitive experience
+- minimal user training requirements
 - centralised document ownership and accountability
 - lifecycle traceability for controlled documents
 - issue and corrective action tracking
@@ -185,3 +185,9 @@ The lightweight and flexible nature of Doctis makes it suitable for gradual adop
 - bulk import of document metadata from CSV/TSV/spreadsheets
 - support for organisational groups and permissions
 - flexible deployment and ongoing feature evolution
+
+---
+
+## Installation
+
+See [INSTALL.md](INSTALL.md) for full installation and deployment instructions.
