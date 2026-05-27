@@ -101,6 +101,8 @@ The system is intended to require little to no formal training for general users
 
 Doctis has evolved substantially beyond its original prototype origins and is now approaching practical production deployment readiness for organisations seeking a lightweight but capable QMS document control solution.
 
+See [INSTALL.md](INSTALL.md) for full installation and deployment instructions.
+
 ---
 
 ## Supporting ISO 9000 Quality Management Compliance
@@ -169,6 +171,122 @@ This allows organisations to continue using established tools and repositories w
 ### Scalable Organisational Adoption
 
 The lightweight and flexible nature of Doctis makes it suitable for gradual adoption within small and medium organisations seeking to improve operational discipline and quality management maturity without requiring large-scale enterprise system deployments.
+
+---
+
+## Beyond Compliance — Delivering Real Operational Value
+
+While systems such as Doctis play an important role in supporting ISO 9000 compliance requirements, their greatest long-term value is often operational rather than regulatory.
+
+When implemented thoughtfully, a well-structured document control and traceability system becomes a foundational operational tool that improves organisational efficiency, consistency, accountability, and knowledge retention.
+
+The goal should not simply be “passing an audit”, but rather establishing reliable and repeatable organisational processes that continue delivering value every day.
+
+---
+
+### Improved Organisational Efficiency
+
+A centralised document index significantly reduces the time spent:
+
+- searching for information
+- locating the latest approved document revisions
+- identifying responsible personnel
+- tracking unresolved issues or actions
+- onboarding new staff members
+
+This reduces duplicated effort and minimises productivity loss caused by fragmented or inconsistent information systems.
+
+---
+
+### Better Decision Making
+
+Reliable document traceability improves confidence in operational and management decisions by ensuring personnel are working from:
+
+- current information
+- approved processes
+- traceable revision histories
+- visible ownership and accountability structures
+
+This reduces operational ambiguity and helps organisations scale more consistently.
+
+---
+
+### Reduced Operational Risk
+
+Poor document control frequently results in:
+
+- outdated procedures being followed
+- duplicated or conflicting information
+- undocumented process changes
+- loss of organisational knowledge
+- unresolved corrective actions
+
+Doctis helps reduce these risks by maintaining visibility and traceability across the complete document lifecycle.
+
+---
+
+### Improved Knowledge Retention
+
+Many organisations unintentionally rely upon tribal knowledge held by key individuals.
+
+A centralised and traceable document control system helps preserve organisational knowledge beyond individual employees, improving:
+
+- business continuity
+- staff onboarding
+- succession planning
+- long-term maintainability
+
+---
+
+### Continuous Improvement
+
+Integrated issue tracking and workflow management support a culture of continual improvement by encouraging organisations to:
+
+- identify recurring problems
+- document corrective actions
+- track resolution effectiveness
+- maintain historical learning records
+
+This transforms document control from a passive archive into an active operational improvement system.
+
+---
+
+### Scalable Organisational Growth
+
+As organisations grow, informal processes often become difficult to maintain consistently.
+
+Doctis provides structure without requiring excessive bureaucracy, allowing organisations to scale while retaining:
+
+- process consistency
+- accountability
+- traceability
+- operational visibility
+
+---
+
+### Practical Rather Than Bureaucratic
+
+A common failure mode of quality systems is excessive process overhead.
+
+Doctis is intentionally designed to remain lightweight, practical, and operationally useful — ensuring that document control supports the business rather than becoming an obstacle to it.
+
+---
+
+## Further Reading
+
+The following resources provide useful background on ISO 9001 document control, quality management systems, and the operational value of structured process management:
+
+- [Document Control Requirements in ISO 9001](https://isocouncil.com.au/document-control-requirements-in-iso-9001/)
+- [ISO 9001 Document Control — The Complete Guide](https://isocouncil.com.au/iso-9001-document-control-the-complete-guide/)
+- [Document Control in ISO 9001 — A Practical Simplified Guide](https://www.9001simplified.com/learn/document-control-iso-9001.php)
+- [ISO 9001 Document Control Best Practices](https://processus.training/iso-9001-document-control-best-practices-a-complete-guide-for-quality-management-success/)
+- [EDMS & ISO 9001 — Optimising Quality Document Management](https://www.aletiq.com/en/ged/edms-iso-9001)
+
+Useful industry discussions and perspectives:
+
+- [Does ISO 9001 actually improve operations? (Reddit)](https://www.reddit.com/r/manufacturing/comments/1roxrm1/does_iso_9001_actually_improve_operations_or_is/)
+- [Is ISO 9001 useful for small organisations? (Reddit)](https://www.reddit.com/r/SystemCertification/comments/1stjsn5/is_iso_9001_really_useful_for_small_organizations/)
+- [What gives ISO 9001 real ROI? (Reddit)](https://www.reddit.com/r/u_isocertified/comments/1peqkdb/iso_9001_in_2025_what_actually_gives_you_roi_from/)---
 
 ---
 
