@@ -103,8 +103,6 @@ Doctis has evolved substantially beyond its original prototype origins and is no
 
 ---
 
----
-
 ## Supporting ISO 9000 Quality Management Compliance
 
 Doctis has been specifically designed to support many of the fundamental document control and traceability requirements expected within an ISO 9000 aligned Quality Management System (QMS).
