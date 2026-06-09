@@ -668,6 +668,10 @@ function document_get_title( $p_document_id ) {
 	return document_get_field( $p_document_id, 'title' );
 }
 
+function document_get_number( $p_document_id ) {
+	return document_get_field( $p_document_id, 'number' );
+}
+
 /**
  * Given a document title and project, this function returns the document id.
  * An error will be triggered if the specified project does not have a

@@ -61,7 +61,7 @@ $f_time_tracking = gpc_get_string( 'time_tracking', '0:00' );
 # Check if the current user is allowed to edit the bugnote
 $t_user_id = auth_get_current_user_id();
 $t_creator_id = dwgnote_get_field( $f_bugnote_id, 'creator_id' );
-$t_bug_id = dwgnote_get_field( $f_bugnote_id, 'bug_id' );
+$t_bug_id = dwgnote_get_field( $f_bugnote_id, 'dwg_id' );
 $t_project_id = dwg_get_field( $t_bug_id, 'project_id' );
 
 if( helper_get_current_project() != $t_project_id ) {

@@ -923,7 +923,7 @@ function email_dwg_deleted( $p_bug_id ) {
 /**
  * Formats the subject correctly.
  *
- * We include the project name, bug id, and summary.
+ * We include the project name, bug id, and title.
  *
  * @param int $p_bug_id A bug identifier.
  *
@@ -934,8 +934,8 @@ function email_dwg_build_subject( $p_bug_id ) {
 	# grab the project name
 	$p_project_name = project_get_field( dwg_get_field( $p_bug_id, 'project_id' ), 'name' );
 
-	# grab the subject (summary)
-	$p_subject = dwg_get_field( $p_bug_id, 'summary' );
+	# grab the subject (title)
+	$p_subject = dwg_get_field( $p_bug_id, 'title' );
 
 	# pad the bug id with zeros
 	$t_bug_id = dwg_format_id( $p_bug_id );
@@ -1270,7 +1270,8 @@ function email_format_dwg_message( array $p_visible_bug_data ) {
 
 	$t_message .= $t_email_separator1 . " \n";
 
-	$t_message .= email_format_attribute( $p_visible_bug_data, 'email_summary' );
+	// $t_message .= email_format_attribute( $p_visible_bug_data, 'email_summary' );
+	$t_message .= email_format_attribute( $p_visible_bug_data, 'email_document_title' );
 
 	// $t_message .= lang_get( 'email_description' ) . ": \n" . $p_visible_bug_data['email_description'] . "\n";
 
@@ -1435,7 +1436,7 @@ function email_build_visible_dwg_data( $p_user_id, $p_bug_id, $p_message_id ) {
 	// 	$t_bug_data['email_target_version'] = $t_row['target_version'];
 	// }
 
-	$t_bug_data['email_summary'] = $t_row['summary'];
+	$t_bug_data['email_document_title'] = $t_row['title'];
 	// @TODO RobD - investigate run-time failure on 'assign to' as documents do have a description field
 	// $t_bug_data['email_description'] = $t_row['description'];
 
@@ -1488,7 +1489,7 @@ function email_build_visible_dwg_data( $p_user_id, $p_bug_id, $p_message_id ) {
  * @throws ClientException
  */
 function email_dwg_relationship_get_details( $p_bug_id, DwgRelationshipData $p_relationship ) {
-	$t_summary_wrap_at = mb_strlen( config_get( 'email_separator2' ) ) - 28;
+	$t_title_wrap_at = mb_strlen( config_get( 'email_separator2' ) ) - 28;
 
 	if( $p_bug_id == $p_relationship->src_dwg_id ) {
 		# root bug is in the source side, related bug in the destination side
@@ -1518,11 +1519,11 @@ function email_dwg_relationship_get_details( $p_bug_id, DwgRelationshipData $p_r
 	$t_relationship_info_text = utf8_str_pad( $t_relationship_descr, 20 );
 	$t_relationship_info_text .= utf8_str_pad( dwg_format_id( $t_related_bug_id ), 8 );
 
-	# add summary
-	if( mb_strlen( $t_bug->summary ) <= $t_summary_wrap_at ) {
-		$t_relationship_info_text .= string_email_links( $t_bug->summary );
+	# add title
+	if( mb_strlen( $t_bug->title ) <= $t_title_wrap_at ) {
+		$t_relationship_info_text .= string_email_links( $t_bug->title );
 	} else {
-		$t_relationship_info_text .= mb_substr( string_email_links( $t_bug->summary ), 0, $t_summary_wrap_at - 3 ) . '...';
+		$t_relationship_info_text .= mb_substr( string_email_links( $t_bug->title ), 0, $t_title_wrap_at - 3 ) . '...';
 	}
 
 	$t_relationship_info_text .= "\n";
@@ -1555,13 +1556,68 @@ function email_dwg_relationship_get_summary_text( $p_bug_id ) {
 	return $t_summary;
 }
 
-function email_dwg_license_apply_for_access($f_dwg_id, $f_license_id) {
+// function email_dwg_license_apply_for_access($t_document_name, $t_license_names) {
+// }
 
-	$t_document_name = document_get_title( $f_dwg_id );
+function email_dwg_license_apply_for_access($p_dwg_id, $p_license_ids) {
+
+// ob_start();
+// print_r($t_licenses);
+// error_log(ob_get_clean());
+
+	// error_log("LICENSE APPLICATION: document " . print_r($p_dwg_id, true));
+	// error_log("LICENSE APPLICATION: licenses " . print_r($p_license_ids, true));
+
+	$t_document_name = document_get_title( $p_dwg_id );
+	$t_document_number = document_get_number( $p_dwg_id );
 
 	$t_license_names = array();
-	foreach( $f_license_id as $t_license_id ) {
+	foreach( $p_license_ids as $t_license_id ) {
 		$t_license_names[] = license_get_name( $t_license_id );
 	}
+	// error_log("LICENSE APPLICATION: document " . print_r($t_document_name, true));
+	// error_log("LICENSE APPLICATION: licenses " . print_r($t_license_names, true));
+
+	$p_message = 'apply for license(s): ' . implode( ' ,', $t_license_names );
+	$p_message = $p_message . " in order to review document " . $t_document_name . ", number " . $t_document_number;
+
+	// if( OFF == config_get( 'enable_email_notification' ) ) {
+	// 	log_event( LOG_EMAIL_VERBOSE, 'email notifications disabled.' );
+	// 	return array();
+	// }
+
+	$t_project_id = dwg_get_field( $p_dwg_id, 'project_id' );
+	$t_sender_id = auth_get_current_user_id();
+	$t_sender = user_get_name( $t_sender_id );
+
+	// $t_subject = email_dwg_build_subject( $p_dwg_id );
+	$t_date = date( config_get( 'normal_date_format' ) );
+	$t_user_id = auth_get_current_user_id();
+	// $t_users_processed = array();
+
+	lang_push( user_pref_get_language( $t_user_id, $t_project_id ) );
+
+	$t_email = user_get_email( $t_user_id );
+
+	if( access_has_project_level( config_get( 'show_user_email_threshold' ), $t_project_id, $t_user_id ) ) {
+		$t_sender_email = ' <' . user_get_email( $t_sender_id ) . '> ';
+	} else {
+		$t_sender_email = '';
+	}
+// $s_mentioned_in = 'Mentioned in %1$s';
+// $s_license_application = 'applied for license %1$s';
+	// $t_complete_subject = sprintf( lang_get( 'mentioned_in' ), $t_subject );
+	$t_complete_subject = "Request for License";
+	$t_header = "\n" . lang_get( 'on_date' ) . ' ' . $t_date . ', ' . $t_sender . ' ' . $t_sender_email . lang_get( 'license_application' ) . "\n\n";
+	$t_contents = $t_header . string_get_dwg_view_url_with_fqdn( $p_dwg_id ) . " \n\n" . $p_message;
+
+	$t_id = email_store( $t_email, $t_complete_subject, $t_contents );
+	if( $t_id !== null ) {
+		// $t_result[] = $t_mention_user_id;
+		log_event( LOG_EMAIL_VERBOSE, 'queued license application ' . $t_id . ' for U' . $t_user_id );
+	}
+
+	lang_pop();
 }
 
+// s_email_notification_title_for_action_license

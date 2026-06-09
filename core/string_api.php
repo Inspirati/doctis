@@ -538,7 +538,7 @@ function string_process_dwgnote_link( $p_string, $p_include_anchor = true, $p_de
 				function( $p_array ) {
 					$c_bugnote_id = (int)$p_array[2];
 					if( dwgnote_exists( $c_bugnote_id ) ) {
-						$t_bug_id = dwgnote_get_field( $c_bugnote_id, 'bug_id' );
+						$t_bug_id = dwgnote_get_field( $c_bugnote_id, 'dwg_id' );
 						if( $t_bug_id && dwg_exists( $t_bug_id ) ) {
 							return $p_array[1] .
 								string_get_dwgnote_view_url_with_fqdn( $t_bug_id, $c_bugnote_id );

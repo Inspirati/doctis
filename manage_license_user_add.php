@@ -63,7 +63,8 @@ exit;
 */
 $f_project_id	= gpc_get_int( 'project_id' );
 $f_license_id	= gpc_get_int( 'license_id' );
-$f_user_id		= gpc_get_int_array( 'user_id', array() );
+// $f_user_id		= gpc_get_int_array( 'user_id', array() );
+$f_user_id		= gpc_get_int( 'user_id' );
 $f_access_level	= gpc_get_int( 'access_level', 0 );
 
 // if ( is_array($f_license_id) ) {
@@ -71,8 +72,14 @@ $f_access_level	= gpc_get_int( 'access_level', 0 );
 // if ( is_array($f_user_id) ) {
 // }
 
+$t_user_id = $f_user_id;
+		// foreach ( $t_licenses as $t_license_id ) {
+		// 	$t_full_licenses[] = license_get_row( $t_license_id );
+		// }
+
 # Add user(s) to the specified project
-foreach( $f_user_id as $t_user_id ) {
+// foreach( $f_user_id as $t_user_id ) {
+if( true ) {
 	$t_data = array(
 		'payload' => array(
 			'project' => array(

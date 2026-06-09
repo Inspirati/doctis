@@ -49,7 +49,7 @@ form_security_validate( 'dwg_file_delete' );
 
 $f_file_id = gpc_get_int( 'file_id' );
 
-$t_bug_id = file_dwg_get_field( $f_file_id, 'bug_id', 'dwg' );
+$t_bug_id = file_dwg_get_field( $f_file_id, 'dwg_id', 'dwg' );
 
 $t_bug = dwg_get( $t_bug_id, true );
 if( $t_bug->project_id != helper_get_current_project() ) {

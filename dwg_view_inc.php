@@ -96,15 +96,15 @@ require_css( 'status_config.php' );
  * @var bool $t_force_readonly
  */
 
-$f_issue_id = gpc_get_int( 'id' );
+$f_dwg_id = gpc_get_int( 'id' );
 $f_history = gpc_get_bool( 'history', config_get( 'history_default_visible' ) );
 
 # compat variables for included pages
-$f_bug_id = $f_issue_id;
-$t_dwg = dwg_get( $f_bug_id, true );
+$f_bug_id = $f_dwg_id;
+$t_dwg = dwg_get( $f_dwg_id, true );
 
 $t_data = array(
-	'query' => array( 'id' => $f_issue_id ),
+	'query' => array( 'id' => $f_dwg_id ),
 	'options' => array( 'force_readonly' => $t_force_readonly )
 );
 $t_cmd = new DwgViewPageCommand( $t_data );
@@ -117,7 +117,7 @@ $t_flags = $t_result['flags'];
 compress_enable();
 
 if( $t_show_page_header ) {
-	layout_page_header( dwg_format_summary( $f_issue_id, SUMMARY_CAPTION ), null, 'view-issue-page', 'dwg_view.php?id=' . $f_issue_id );
+	layout_page_header( dwg_format_summary( $f_dwg_id, SUMMARY_CAPTION ), null, 'view-issue-page', 'dwg_view.php?id=' . $f_dwg_id );
 	layout_page_begin( 'view_dwg_page.php', true );
 }
 
@@ -148,7 +148,7 @@ echo '<div class="btn-group pull-left">';
 
 # Send Bug Reminder
 if( $t_flags['reminder_can_add'] ) {
-	print_dwg_small_button( 'dwg_reminder_page.php?dwg_id=' . $f_issue_id, lang_get( 'dwg_reminder' ) );
+	print_dwg_small_button( 'dwg_reminder_page.php?dwg_id=' . $f_dwg_id, lang_get( 'dwg_reminder' ) );
 }
 
 if( isset( $t_issue_view['wiki_link'] ) ) {
@@ -181,7 +181,7 @@ if( $t_flags['history_show'] ) {
 		$t_history_link = '#history';
 		$t_history_label = lang_get( 'jump_to_history' );
 	} else {
-		$t_history_link = 'dwg_view.php?id=' . $f_issue_id . '&history=1#history';
+		$t_history_link = 'dwg_view.php?id=' . $f_dwg_id . '&history=1#history';
 		$t_history_label = lang_get( 'display_history' );
 	}
 	print_dwg_small_button( $t_history_link, $t_history_label );
@@ -248,7 +248,7 @@ echo '</div>'; // end of presenting buttons on left of row
 echo '<div class="btn-group pull-right">';
 if( $t_dwgslist ) {
 	$t_dwgslist = explode( ',', $t_dwgslist );
-	$t_index = array_search( $f_issue_id, $t_dwgslist );
+	$t_index = array_search( $f_dwg_id, $t_dwgslist );
 	if( false !== $t_index ) {
 		if( isset( $t_dwgslist[$t_index-1] ) ) {
 			print_dwg_small_button( 'dwg_view.php?id='.$t_dwgslist[$t_index-1], '&lt;&lt;' );
@@ -270,7 +270,7 @@ if( $t_top_buttons_enabled ) {
 	echo '<thead>';
 	echo '<tr class="top-buttons noprint"><td colspan="6">';
 	/** @noinspection PhpUnhandledExceptionInspection */
-	dwg_view_action_buttons( $f_issue_id, $t_flags );
+	dwg_view_action_buttons( $f_dwg_id, $t_flags );
 	echo '</td></tr>';
 	echo '</thead>';
 }
@@ -286,7 +286,7 @@ if( true
 // if( $t_flags['summary_show'] && isset( $t_issue['summary'] ) ) {
 // 	echo '<tr>';
 // 	echo '<th class="bug-summary category">', lang_get( 'document_summary' ), '</th>';
-// 	echo '<td class="bug-summary" colspan="5">', bug_format_summary( $f_issue_id, SUMMARY_FIELD ), '</td>';
+// 	echo '<td class="bug-summary" colspan="5">', bug_format_summary( $f_dwg_id, SUMMARY_FIELD ), '</td>';
 // 	echo '</tr>';
 // }
 	# Title
@@ -479,7 +479,7 @@ if( $t_flags['creator_show'] || $t_flags['handler_show'] || $t_flags['classifica
 		echo '<th class="bug-assigned-to category">', lang_get( 'assigned_to' ), '</th>';
 		echo '<td class="bug-assigned-to">';
 		if( isset( $t_issue['handler'] ) ) {
-			print_dwg_user_with_subject( $t_issue['handler']['id'], $f_issue_id );
+			print_dwg_user_with_subject( $t_issue['handler']['id'], $f_dwg_id );
 		}
 		echo '</td>';
 	} else {
@@ -490,7 +490,7 @@ if( $t_flags['creator_show'] || $t_flags['handler_show'] || $t_flags['classifica
 	if( $t_flags['creator_show'] ) {
 		echo '<th class="dwg-creator category">', lang_get( 'dwg_creator' ), '</th>';
 		echo '<td class="dwg-creator">';
-		print_dwg_user_with_subject( $t_issue['creator']['id'], $f_issue_id );
+		print_dwg_user_with_subject( $t_issue['creator']['id'], $f_dwg_id );
 		echo '</td>';
 	} else {
 		$t_spacer += 2;
@@ -752,7 +752,7 @@ if( $t_flags['projection_show'] || $t_flags['eta_show'] ) {
 # Bug Details Event Signal
 #
 
-event_signal( 'EVENT_VIEW_DWG_DETAILS', array( $f_issue_id ) );
+event_signal( 'EVENT_VIEW_DWG_DETAILS', array( $f_dwg_id ) );
 
 print_table_spacer( 6 );
 
@@ -764,7 +764,7 @@ print_table_spacer( 6 );
 // if( $t_flags['summary_show'] && isset( $t_issue['summary'] ) ) {
 // 	echo '<tr>';
 // 	echo '<th class="bug-summary category">', lang_get( 'document_summary' ), '</th>';
-// 	echo '<td class="bug-summary" colspan="5">', dwg_format_summary( $f_issue_id, SUMMARY_FIELD ), '</td>';
+// 	echo '<td class="bug-summary" colspan="5">', dwg_format_summary( $f_dwg_id, SUMMARY_FIELD ), '</td>';
 // 	echo '</tr>';
 // }
 
@@ -797,7 +797,7 @@ print_table_spacer( 6 );
 // 	echo '<tr>';
 // 	echo '<th class="bug-tags category">', lang_get( 'tags' ), '</th>';
 // 	echo '<td class="bug-tags" colspan="5">';
-// 	tag_display_attached( $f_issue_id );
+// 	tag_display_attached( $f_dwg_id );
 // 	echo '</td></tr>';
 // }
 
@@ -806,7 +806,7 @@ print_table_spacer( 6 );
 // 	echo '<tr class="noprint">';
 // 	echo '<th class="bug-attach-tags category">', lang_get( 'tag_attach_long' ), '</th>';
 // 	echo '<td class="bug-attach-tags" colspan="5">';
-// 	print_tag_attach_form( $f_issue_id );
+// 	print_tag_attach_form( $f_dwg_id );
 // 	echo '</td></tr>';
 // }
 
@@ -816,7 +816,7 @@ if( !empty( $t_result['issue']['attachments'] ) ) {
 	echo '<th class="bug-attach-tags category">', lang_get( 'attached_files' ), '</th>';
 	echo '<td class="bug-attach-tags" colspan="5">';
 
-	$t_dwg_activity_get_all_result = dwg_activity_get_all( $f_issue_id, /* include_attachments */ true );
+	$t_dwg_activity_get_all_result = dwg_activity_get_all( $f_dwg_id, /* include_attachments */ true );
 	$t_activities = $t_dwg_activity_get_all_result['activities'];
 	$t_security_token_attachments_delete = form_security_token( 'dwg_file_delete' );
 
@@ -844,7 +844,7 @@ if( isset( $t_issue['custom_fields'] ) ) {
 		echo '<tr>';
 		echo '<th class="bug-custom-field category">', string_attribute( lang_get_defaulted( $t_def['name'] ) ), '</th>';
 		echo '<td class="bug-custom-field' . $t_class . '" colspan="5">';
-		print_custom_field_value( $t_def, $t_custom_field['field']['id'], $f_issue_id );
+		print_custom_field_value( $t_def, $t_custom_field['field']['id'], $f_dwg_id );
 		echo '</td></tr>';
 	}
 
@@ -857,7 +857,7 @@ if( $t_bottom_buttons_enabled ) {
 	echo '<tfoot>';
 	echo '<tr class="noprint"><td colspan="6">';
 	/** @noinspection PhpUnhandledExceptionInspection */
-	dwg_view_action_buttons( $f_issue_id, $t_flags );
+	dwg_view_action_buttons( $f_dwg_id, $t_flags );
 	echo '</td></tr>';
 	echo '</tfoot>';
 }
@@ -875,7 +875,7 @@ if( $t_flags['sponsorships_show'] ) {
 # Bug Relationships
 if( $t_flags['relationships_show'] ) {
 	/** @noinspection PhpUnhandledExceptionInspection */
-	dwg_view_relationship_view_box( $f_issue_id, /* can_update */ $t_flags['relationships_can_update'] );
+	dwg_view_relationship_view_box( $f_dwg_id, /* can_update */ $t_flags['relationships_can_update'] );
 }
 
 # User list monitoring the dwg
@@ -929,7 +929,7 @@ if( $t_flags['monitor_show'] ) {
 					if( $t_flags['monitor_can_delete'] ) {
 						echo ' <a class="btn btn-xs btn-primary btn-white btn-round" '
 							. 'href="' . helper_mantis_url( 'dwg_monitor_delete.php' )
-							. '?bug_id=' . $f_issue_id . '&amp;user_id=' . $t_monitor_user['id']
+							. '?bug_id=' . $f_dwg_id . '&amp;user_id=' . $t_monitor_user['id']
 							. htmlspecialchars(form_security_param( 'dwg_monitor_delete' ))
 							. '">'
 							. icon_get( 'fa-times' )
@@ -943,7 +943,7 @@ if( $t_flags['monitor_show'] ) {
 			<br /><br />
 			<form method="post" action="dwg_monitor_add.php" class="form-inline noprint">
 				<?php echo form_security_field( 'dwg_monitor_add' ) ?>
-				<input type="hidden" name="bug_id" value="<?php echo (integer)$f_issue_id; ?>" />
+				<input type="hidden" name="bug_id" value="<?php echo (integer)$f_dwg_id; ?>" />
 				<!--suppress HtmlFormInputWithoutLabel -->
 				<input type="text" class="input-sm" id="dwg_monitor_list_user_to_add" name="user_to_add" />
 				<input type="submit" class="btn btn-primary btn-sm btn-white btn-round" value="<?php echo lang_get( 'add' ) ?>" />
@@ -1057,7 +1057,7 @@ $t_show_request_license = true;
 					if( $t_can_manage_licenses || $t_flags['license_can_delete'] ) {
 						echo ' <a class="btn btn-xs btn-primary btn-white btn-round" '
 							. 'href="' . helper_mantis_url( 'dwg_license_delete.php' )
-							. '?bug_id=' . $f_issue_id . '&amp;user_id=' . $t_license['id']
+							. '?bug_id=' . $f_dwg_id . '&amp;user_id=' . $t_license['id']
 							. htmlspecialchars(form_security_param( 'dwg_license_delete' ))
 							. '">'
 							. icon_get( 'fa-times' )
@@ -1072,7 +1072,7 @@ $t_license_list = implode( ", ", $t_license_apply_for_name );
 ?>
 			<form method="post" action="dwg_license_update.php" class="form-inline noprint">
 				<?php echo form_security_field( 'dwg_license_update' ) ?>
-				<input type="hidden" name="bug_id" value="<?php echo (integer)$f_issue_id; ?>" />
+				<input type="hidden" name="bug_id" value="<?php echo (integer)$f_dwg_id; ?>" />
 				<input type="hidden" name="user_id" value="<?php echo (integer)$t_current_user_id; ?>" />
 				<input type="hidden" name="project_id" value="<?php echo (integer)$t_issue['project']; ?>" />
 				<input type="hidden" name="access_level" value="10" />
@@ -1106,7 +1106,7 @@ $t_license_list = implode( ", ", $t_license_applied_name );
 			<form method="post" action="dwg_license_update.php" class="form-inline noprint">
 				<?php echo form_security_field( 'dwg_license_update' ) ?>
 
-				<input type="hidden" name="bug_id" value="<?php echo (integer)$f_issue_id; ?>" />
+				<input type="hidden" name="bug_id" value="<?php echo (integer)$f_dwg_id; ?>" />
 				<input type="hidden" name="user_id" value="<?php echo (integer)$t_current_user_id; ?>" />
 				<input type="hidden" name="project_id" value="<?php echo (integer)$t_issue['project']; ?>" />
 				<input type="hidden" name="access_level" value="20" />
@@ -1136,7 +1136,7 @@ $t_license_list = implode( ", ", $t_license_applied_name );
 			<br /><br />
 			<form method="post" action="dwg_license_add.php" class="form-inline noprint">
 				<?php echo form_security_field( 'dwg_license_add' ) ?>
-				<input type="hidden" name="bug_id" value="<?php echo (integer)$f_issue_id; ?>" />
+				<input type="hidden" name="bug_id" value="<?php echo (integer)$f_dwg_id; ?>" />
 				<!--suppress HtmlFormInputWithoutLabel -->
 				<input type="text" class="input-sm" id="dwg_license_list_license_to_add" name="license_to_add" />
 				<input type="submit" class="btn btn-primary btn-sm btn-white btn-round" value="<?php echo lang_get( 'add' ) ?>" />
@@ -1153,7 +1153,7 @@ $t_license_list = implode( ", ", $t_license_applied_name );
 <?php
 }
 
-if( access_has_dwg_level( config_get( 'dwgnote_view_threshold' ), $f_issue_id ) ) {
+if( access_has_dwg_level( config_get( 'dwgnote_view_threshold' ), $f_dwg_id ) ) {
 	# Dwgnotes and "Add Note" box
 	if( 'ASC' == current_user_get_pref( 'dwgnote_order' ) ) {
 		define( 'DWGNOTE_VIEW_INC_ALLOW', true );
@@ -1175,11 +1175,11 @@ if( access_has_dwg_level( config_get( 'dwgnote_view_threshold' ), $f_issue_id ) 
 }
 
 # Allow plugins to display stuff after notes
-event_signal( 'EVENT_VIEW_DWG_EXTRA', array( $f_issue_id ) );
+event_signal( 'EVENT_VIEW_DWG_EXTRA', array( $f_dwg_id ) );
 
 # Time tracking statistics
 if( config_get( 'time_tracking_enabled' ) &&
-	access_has_dwg_level( config_get( 'time_tracking_view_threshold' ), $f_issue_id ) ) {
+	access_has_dwg_level( config_get( 'time_tracking_view_threshold' ), $f_dwg_id ) ) {
 	define( 'DWGNOTE_STATS_INC_ALLOW', true );
 	include( $t_mantis_dir . 'dwgnote_stats_inc.php' );
 }
@@ -1193,7 +1193,7 @@ if( $t_flags['history_show'] && $f_history ) {
 	$t_collapse_block = is_collapsed( 'history' );
 	$t_block_css = $t_collapse_block ? 'collapsed' : '';
 	$t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
-	$t_history = history_dwg_get_events_array( $f_issue_id );
+	$t_history = history_dwg_get_events_array( $f_dwg_id );
 ?>
 		<div id="history" class="widget-box widget-color-blue2 <?php echo $t_block_css ?>">
 			<div class="widget-header widget-header-small">

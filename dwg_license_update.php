@@ -54,9 +54,9 @@ $f_access_level	= gpc_get_int( 'access_level', 0 );
 // $f_licenses = trim( gpc_get_string( 'license_to_add', '' ) );
 
 if ( 10 == $f_access_level ) {
-	license_apply_for_access($f_dwg_id, $f_license_id);
+	// license_apply_for_access($f_dwg_id, $f_license_id);
+	email_dwg_license_apply_for_access($f_dwg_id, $f_license_id);
 }
-
 
 # Update license(s) to the specified dwg
 foreach( $f_license_id as $t_license_id ) {
@@ -144,9 +144,7 @@ form_security_purge( 'dwg_license_update' );
 
 print_dwg_header_redirect_view( $f_dwg_id );
 
-function license_apply_for_access($f_dwg_id, $f_license_id) {
-
-	email_dwg_license_apply_for_access($f_dwg_id, $f_license_id);
+// function license_apply_for_access($f_dwg_id, $f_license_id) {
 // // ob_start();
 // // print_r($t_licenses);
 // // error_log(ob_get_clean());
@@ -163,4 +161,4 @@ function license_apply_for_access($f_dwg_id, $f_license_id) {
 // 	error_log("LICENSE APPLICATION: licenses " . print_r($t_license_names, true));
 
 // 	email_dwg_license_apply_for_access($t_document_name, $t_license_names);
-}
+// }

@@ -388,6 +388,8 @@ $s_email_notification_title_for_action_dwg_reopened = 'The following document ha
 $s_email_notification_title_for_action_dwg_deleted = 'The following document has been DELETED.';
 $s_email_notification_title_for_action_dwg_updated = 'The following document has been UPDATED.';
 
+$s_email_notification_title_for_action_license = 'The following license has been applied for.';
+
 $s_email_notification_title_for_action_sponsorship_added = 'The following issue has been SPONSORED.';
 $s_email_notification_title_for_action_sponsorship_updated = 'A sponsorship of the following issue was modified.';
 $s_email_notification_title_for_action_sponsorship_deleted = 'A sponsorship of the following issue was withdrawn.';
@@ -442,6 +444,7 @@ $s_email_fixed_in_version = 'Fixed in Version';
 $s_email_target_version = 'Target Version';
 $s_email_date_submitted = 'Date Submitted';
 $s_email_last_modified = 'Last Modified';
+$s_email_document_title = 'Document Title';
 $s_email_summary = 'Summary';
 $s_email_description = 'Description';
 $s_email_additional_information = 'Additional Information';
@@ -1156,6 +1159,7 @@ $s_license_delete_button = 'Delete License';
 
 $s_license_request_access = 'Request Access';
 $s_license_apply_access = 'Apply Access';
+$s_license_add = 'Add license';
 
 $s_license_request_access_tip = 'User does not have access, click to send request';
 $s_license_apply_access_tip = 'User has not registered access, click to register';
@@ -1176,6 +1180,12 @@ $s_add_document_license_title = 'Add Document to License';
 $s_add_document_button = 'Add Document';
 $s_document = 'Document';
 $s_license_selection_title = 'License Selection';
+
+# $s_license_application = 'applied for license %1$s';
+$s_license_application = 'applied for license(s)';
+
+$s_license_existing = 'Existing licenses';
+
 
 # manage_proj_edit_page.php
 $s_edit_project_title = 'Edit Project';
@@ -1681,7 +1691,7 @@ $s_attachment_missing = 'Attachment missing';
 $s_attachment_count = 'Attachment count';
 $s_bugnotes_count = 'Issue Notes count';
 $s_dwgnotes_count = 'Document Notes count';
-$s_issue_count = 'Issue Count';
+$s_issue_count = 'Issues count';
 $s_view_attachments_for_issue = 'View %1$d attachment(s) for issue #%2$d';
 $s_view_issues_for_document = 'View %1$d issue(s) for document #%2$d';
 $s_warning_update_custom_field_type = '<strong>Warning:</strong> Custom field "%1$s" already has stored values. Changing field type may cause errors and unexpected behaviour if existing values are not consistent with the field\'s new type. To proceed, click the button below';

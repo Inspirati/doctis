@@ -70,7 +70,7 @@ if( $f_bug_id ) {
 
 } elseif( $f_bugnote_id ) {
 	$t_bugnote_id = (int)$f_bugnote_id;
-	$t_bug_id = dwgnote_get_field( $t_bugnote_id, 'bug_id' );
+	$t_bug_id = dwgnote_get_field( $t_bugnote_id, 'dwg_id' );
 
 	$t_bug_revisions = dwg_revision_list( $t_bug_id, REV_ANY, $f_bugnote_id );
 

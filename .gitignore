@@ -67,3 +67,8 @@ custom_functions_inc.php
 custom_relationships_inc.php
 custom_strings_inc.php
 api/soap/mc_config_inc.php
+
+# Temporary Docker support development directories, not ready for deployment
+/docker/
+/docker-live/
+/docker-test/

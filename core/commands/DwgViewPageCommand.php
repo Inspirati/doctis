@@ -250,7 +250,6 @@ class DwgViewPageCommand extends Command {
 			$t_flags['can_unmonitor'] = false;
 		}
 
-
 		$t_flags['license_show'] =
 			!$t_force_readonly &&
 			access_has_dwg_level( config_get( 'show_license_list_threshold' ), $t_issue_id );

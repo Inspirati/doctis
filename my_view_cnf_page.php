@@ -88,6 +88,19 @@ layout_page_begin( 'my_view_bug_page.php', true );
 
 print_my_view_menu( 'my_view_cnf_page.php' );
 
+
+?>
+<div class="space-10"></div>
+<div class="col-md-12 col-xs-12">
+	<div class="alert alert-warning center">
+	<?php
+		echo 'This page is a Work In Progress (WIP)';
+	?>
+	</div>
+</div>
+<?php
+
+
 $f_page_number = gpc_get_int( 'page_number', 1 );
 
 $t_per_page = config_get( 'my_view_dwg_count' );
@@ -462,13 +475,13 @@ echo '</div>';
 
 <?php
 if( true ) {
-	$t_collapse_block = is_collapsed( 'monitors' );
+	$t_collapse_block = is_collapsed( 'licenses' );
 	$t_block_css = $t_collapse_block ? 'collapsed' : '';
 	$t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 ?>
 	<div class="col-md-12 col-xs-12">
 	<div class="space-10"></div>
-	<div id="monitors" class="widget-box widget-color-blue2 <?php echo $t_block_css ?>">
+	<div id="licenses" class="widget-box widget-color-blue2 <?php echo $t_block_css ?>">
 		<div class="widget-header widget-header-small">
 			<h4 class="widget-title lighter">
 				<?php print_icon( 'fa-users', 'ace-icon' ); ?>
@@ -536,6 +549,18 @@ $f_license_id = 0;
 $f_user_id = 0;
 ?>
 
+<?php /*
+	<input type="hidden" name="bug_id" value="<?php echo (integer)$f_issue_id; ?>" />
+	<input type="hidden" name="user_id" value="<?php echo (integer)$t_current_user_id; ?>" />
+	<input type="hidden" name="project_id" value="<?php echo (integer)$t_issue['project']; ?>" />
+	<input type="hidden" name="access_level" value="10" />
+	<?php
+		foreach( $t_license_apply_for as $t_license ) {
+			echo '<input type="hidden" name="license_id[]" value="' . $t_license . '" />' . "\n";
+		}
+	?>
+ */ ?>
+
 				<input type="hidden" name="project_id" value="<?php echo $f_project_id ?>" />
 				<input type="hidden" name="license_id" value="<?php echo $f_license_id ?>" />
 				<input type="hidden" name="user_id" value="<?php echo $f_user_id ?>" />
@@ -554,9 +579,9 @@ $f_user_id = 0;
 		</div>
 		</div>
 		</div>
+	<!-- </div>
 	</div>
-	</div>
-	</div>
+	</div> -->
 
 </div>
 <div class="space-10"></div>
