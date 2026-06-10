@@ -2322,7 +2322,7 @@ $g_minimum_sponsorship_amount = 5;
 $g_allow_file_upload = ON;
 
 /**
- * Upload destination.
+ * Upload destination for bug/issue attachments.
  *
  * Specify actual location in project settings: DISK or DATABASE.
  *
@@ -2331,6 +2331,16 @@ $g_allow_file_upload = ON;
  * @global int $g_file_upload_method
  */
 $g_file_upload_method = DATABASE;
+
+/**
+ * Upload destination for document (dwg) attachments.
+ *
+ * Mirrors $g_file_upload_method but applies only to the document (dwg) side.
+ * Valid values: DISK, DATABASE, GIT.
+ *
+ * @global int $g_dwg_upload_method
+ */
+$g_dwg_upload_method = DATABASE;
 
 /**
  * Use File dropzone.
@@ -2425,7 +2435,7 @@ $g_absolute_path_default_upload_folder = '';
  * Git document storage: absolute path to the bare repository root.
  *
  * Each Doctis project gets its own bare repo: <git_storage_root>/<slug>.git
- * Only used when $g_file_upload_method = GIT.
+ * Only used when $g_dwg_upload_method = GIT.
  *
  * @global string $g_git_storage_root
  */
@@ -2435,7 +2445,7 @@ $g_git_storage_root = '';
  * Git document storage: absolute path to the working tree root.
  *
  * Each project gets a working tree: <git_worktree_root>/<slug>
- * Only used when $g_file_upload_method = GIT.
+ * Only used when $g_dwg_upload_method = GIT.
  *
  * @global string $g_git_worktree_root
  */

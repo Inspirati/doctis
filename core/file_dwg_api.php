@@ -524,7 +524,7 @@ function file_dwg_get_visible_attachments( $p_bug_id ) {
 			$t_attachment['download_url'] = 'file_download.php?file_id=' . $t_id . '&type=dwg';
 		}
 
-		$t_attachment['exists'] = config_get( 'file_upload_method' ) != DISK || file_exists( $t_diskfile );
+		$t_attachment['exists'] = config_get( 'dwg_upload_method' ) != DISK || file_exists( $t_diskfile );
 		$t_attachment['icon'] = file_dwg_get_icon_url( $t_attachment['display_name'] );
 
 		$t_attachment['preview'] = false;
@@ -566,7 +566,7 @@ function file_dwg_get_visible_attachments( $p_bug_id ) {
  * @throws ClientException
  */
 function file_dwg_delete_attachments( $p_bug_id ) {
-	$t_method = config_get( 'file_upload_method' );
+	$t_method = config_get( 'dwg_upload_method' );
 
 	# Delete files from disk
 	db_param_push();
@@ -641,7 +641,7 @@ function file_dwg_link_to_dwgnote( $p_file_id, $p_bugnote_id ) {
  * @return void
  */
 function file_dwg_delete_project_files( $p_project_id ) {
-	$t_method = config_get( 'file_upload_method' );
+	$t_method = config_get( 'dwg_upload_method' );
 
 	# Delete the file physically (if stored via DISK)
 	if( DISK == $t_method ) {
@@ -703,13 +703,13 @@ function file_dwg_get_field( $p_file_id, $p_field_name, $p_table = 'dwg' ) {
 }
 
 /**
- * Return the storage backend for the currently configured file_upload_method.
+ * Return the storage backend for the currently configured dwg_upload_method.
  *
  * @return FileStorageBackendInterface
- * @throws ServiceException on unknown file_upload_method
+ * @throws ServiceException on unknown dwg_upload_method
  */
 function file_dwg_get_storage_backend(): FileStorageBackendInterface {
-	switch( config_get( 'file_upload_method' ) ) {
+	switch( config_get( 'dwg_upload_method' ) ) {
 		case DISK:
 			return new DiskFileStorageBackend();
 		case DATABASE:
@@ -1321,7 +1321,7 @@ function file_dwg_move_dwg_attachments( $p_bug_id, $p_project_id_to ) {
 		return;
 	}
 
-	$t_method = config_get( 'file_upload_method' );
+	$t_method = config_get( 'dwg_upload_method' );
 	if( $t_method != DISK ) {
 		return;
 	}
@@ -1408,7 +1408,7 @@ function file_dwg_copy_attachments( $p_source_bug_id, $p_dest_bug_id ) {
 
 		# prepare the new diskfile name and then copy the file
 		$t_source_file = $t_bug_file['folder'] . $t_bug_file['diskfile'];
-		if( ( config_get( 'file_upload_method' ) == DISK ) ) {
+		if( ( config_get( 'dwg_upload_method' ) == DISK ) ) {
 			$t_source_file = file_dwg_normalize_attachment_path( $t_source_file, $t_project_id );
 			$t_file_path = dirname( $t_source_file ) . DIRECTORY_SEPARATOR;
 		} else {
@@ -1417,7 +1417,7 @@ function file_dwg_copy_attachments( $p_source_bug_id, $p_dest_bug_id ) {
 		$t_new_diskfile_name = file_dwg_generate_unique_name( $t_file_path );
 		$t_new_diskfile_location = $t_file_path . $t_new_diskfile_name;
 		$t_new_file_name = file_dwg_get_display_name( $t_bug_file['filename'] );
-		if( ( config_get( 'file_upload_method' ) == DISK ) ) {
+		if( ( config_get( 'dwg_upload_method' ) == DISK ) ) {
 			# Skip copy operation if file does not exist (i.e. target bug will have missing attachment)
 			# @todo maybe we should trigger an error instead in this case ?
 			if( file_exists( $t_source_file ) ) {

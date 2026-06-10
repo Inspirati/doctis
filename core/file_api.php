@@ -1036,8 +1036,6 @@ function file_add( $p_bug_id, array $p_file, $p_table = 'bug', $p_title = '', $p
 			}
 			break;
 		case DATABASE:
-		case GIT:
-			# GIT is a document-only storage method; bug/bugnote attachments fall back to DATABASE.
 			$c_content = db_prepare_binary_string( fread( fopen( $t_tmp_file, 'rb' ), $t_file_size ) );
 			$t_file_path = '';
 			break;
@@ -1328,8 +1326,6 @@ function file_get_content( $p_file_id, $p_type = 'bug' ) {
 			}
 			return false;
 		case DATABASE:
-		case GIT:
-			# GIT is a document-only storage method; bug/bugnote attachments fall back to DATABASE.
 			$t_file_info_type = file_get_mime_type_for_content( $t_row['content'] );
 
 			if( $t_file_info_type !== false ) {

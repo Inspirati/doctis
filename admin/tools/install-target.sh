@@ -1,6 +1,8 @@
 #!/bin/bash
 
-git_repository="https://github.com/Inspirati/doctis.git"
+# DOCTIS_GIT_REPO overrides the default GitHub source, e.g. for LAN installs:
+#   export DOCTIS_GIT_REPO="http://10.0.0.10/git/doctis"
+git_repository="${DOCTIS_GIT_REPO:-https://github.com/Inspirati/doctis.git}"
 database="mariadb"
 #database="mysql"
 mysqladminname="admin"
@@ -95,19 +97,6 @@ set_webroot() {
         echo -e "${WARN}webroot default:${OFF}" "$webroot"
     fi
     webroot=${webroot//\"/}
-}
-
-_set_webroot() {
-    if command -v apache2ctl >/dev/null 2>&1; then
-        webroot="$(apache2ctl -t -D DUMP_RUN_CFG 2>/dev/null | awk -F\" '/DocumentRoot/ {print $2; exit}')"
-        echo -e "${INFO}webroot according to apache2ctl:${OFF}" "$webroot"
-    elif command -v httpd >/dev/null 2>&1; then
-        webroot="$(httpd -t -D DUMP_RUN_CFG 2>/dev/null | awk -F\" '/DocumentRoot/ {print $2; exit}')"
-        echo -e "${INFO}webroot according to httpd:${OFF}" "$webroot"
-    else
-        webroot="/var/www/html"
-        echo -e "${WARN}webroot default:${OFF}" "$webroot"
-    fi
 }
 
 set_headless() {
@@ -475,6 +464,18 @@ install_mantis() {
     echo -e "${DIAG}Finished installing mantis.${OFF}"
 }
 
+install_git_storage() {
+    local target="$1"
+    local git_setup="${webroot}/${target}/admin/tools/doctis-git-setup.sh"
+    echo -e "${DIAG}Setting up git document storage...${OFF}"
+    if [ -f "$git_setup" ]; then
+        . "$git_setup"
+        doctis-git-setup "" "" "" "" "$target"
+    else
+        echo -e "${WARN}doctis-git-setup.sh not found at ${git_setup} — skipping git storage setup${OFF}"
+    fi
+}
+
 install_doctis() {
     echo -e "${DIAG}Started installing doctis..${OFF}"
     local target="doctis"
@@ -484,6 +485,7 @@ install_doctis() {
     setup_target ${target} "nodbprepostfix"
     exec_install ${target}
     load_example ${target}
+    install_git_storage ${target}
     set_headless
     if [ $HEADLESS = false ]; then
         launch_target ${target}

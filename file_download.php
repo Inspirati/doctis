@@ -165,7 +165,7 @@ http_security_headers();
 header( 'Expires: ' . gmdate( 'D, d M Y H:i:s \G\M\T', time() ) );
 header( 'Last-Modified: ' . gmdate( 'D, d M Y H:i:s \G\M\T', $v_date_added ) );
 
-$t_upload_method = config_get( 'file_upload_method' );
+$t_upload_method = config_get( $f_type === 'dwg' ? 'dwg_upload_method' : 'file_upload_method' );
 $t_filename = file_get_display_name( $v_filename );
 
 # Content headers

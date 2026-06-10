@@ -8,7 +8,9 @@ GITHUB_USR="Inspirati"
 
 GITHUB_URL="https://raw.githubusercontent.com/${GITHUB_USR}"
 SCRIPT_LOC="${TARGET}/refs/heads/dev/admin/tools"
-SCRIPT_URL="${GITHUB_URL}/${SCRIPT_LOC}"
+# DOCTIS_SCRIPT_URL overrides the default GitHub source, e.g. for LAN installs:
+#   export DOCTIS_SCRIPT_URL="http://10.0.0.10/doctis/admin/tools"
+SCRIPT_URL="${DOCTIS_SCRIPT_URL:-${GITHUB_URL}/${SCRIPT_LOC}}"
 
 INSTALL_SYSTEM_SCRIPT="install-system.sh"
 INSTALL_TARGET_SCRIPT="install-target.sh"

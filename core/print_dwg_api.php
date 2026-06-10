@@ -2227,7 +2227,7 @@ function print_dwg_attachment_preview_text( array $p_attachment ) {
 		return;
 	}
 	echo "\n<pre class=\"bug-attachment-preview-text\">";
-	switch( config_get( 'file_upload_method' ) ) {
+	switch( config_get( 'dwg_upload_method' ) ) {
 		case DISK:
 			if( file_exists( $p_attachment['diskfile'] ) ) {
 				$t_content = file_dwg_get_contents( $p_attachment['diskfile'] );
