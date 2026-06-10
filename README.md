@@ -4,6 +4,19 @@ Doctis - Document Issue Tracking System
 [![Build Status](https://github.com/Inspirati/doctis/actions/workflows/mantisbt.yml/badge.svg?branch=dev)](https://github.com/Inspirati/doctis/actions/workflows/mantisbt.yml)
 [![Gitter](https://img.shields.io/gitter/room/doctis/doctis.svg?logo=gitter)](https://gitter.im/Inspirati/doctis)
 
+Quick Install — LAN (from local development server)
+----------------------------------------------------
+
+Run this on a fresh Debian/Ubuntu VM connected to the local network.
+Pulls scripts and the repository directly from the development server at `10.0.0.10`.
+
+```sh
+cd ~/Documents && wget -qO install-lan.sh http://10.0.0.10/doctis/admin/tools/install-lan.sh && bash install-lan.sh
+```
+
+> Edit `install-lan.sh` before running to set your email credentials and MySQL password.
+> For a public internet install see the **Installation** section below.
+
 About
 -----
 
