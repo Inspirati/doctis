@@ -50,6 +50,7 @@ require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
 require_api( 'database_api.php' );
 require_api( 'file_api.php' );
+require_api( 'file_dwg_api.php' );
 require_api( 'gpc_api.php' );
 require_api( 'http_api.php' );
 require_api( 'utility_api.php' );
@@ -173,6 +174,7 @@ $t_content_type = $v_file_type;
 $t_content_type_override = file_get_content_type_override( $t_filename );
 $t_file_info_type = false;
 
+$t_git_content = null;
 switch( $t_upload_method ) {
 	case DISK:
 		$t_local_disk_file = file_normalize_attachment_path( $v_diskfile, $t_project_id );
@@ -182,6 +184,17 @@ switch( $t_upload_method ) {
 		break;
 	case DATABASE:
 		$t_file_info_type = file_get_mime_type_for_content( $v_content );
+		break;
+	case GIT:
+		if( $f_type === 'dwg' ) {
+			$t_git_result = file_dwg_get_content( $c_file_id );
+		} else {
+			$t_git_result = false;
+		}
+		if( $t_git_result !== false ) {
+			$t_git_content = $t_git_result['content'];
+			$t_file_info_type = file_dwg_get_mime_type_for_content( $t_git_content );
+		}
 		break;
 	default:
 		trigger_error( ERROR_GENERIC, ERROR );
@@ -241,4 +254,8 @@ switch( $t_upload_method ) {
 		break;
 	case DATABASE:
 		echo $v_content;
+		break;
+	case GIT:
+		echo $t_git_content;
+		break;
 }

@@ -703,8 +703,27 @@ function file_dwg_get_field( $p_file_id, $p_field_name, $p_table = 'dwg' ) {
 }
 
 /**
+ * Return the storage backend for the currently configured file_upload_method.
+ *
+ * @return FileStorageBackendInterface
+ * @throws ServiceException on unknown file_upload_method
+ */
+function file_dwg_get_storage_backend(): FileStorageBackendInterface {
+	switch( config_get( 'file_upload_method' ) ) {
+		case DISK:
+			return new DiskFileStorageBackend();
+		case DATABASE:
+			return new DatabaseFileStorageBackend();
+		case GIT:
+			return new GitFileStorageBackend();
+		default:
+			throw new \Mantis\Exceptions\ServiceException( 'Unknown file upload method', ERROR_GENERIC );
+	}
+}
+
+/**
  * Delete File.
- * 
+ *
  * @param int    $p_file_id    File identifier.
  * @param string $p_table      Table identifier.
  * @param int    $p_bugnote_id The bugnote id the file is attached to or 0 if
@@ -714,29 +733,23 @@ function file_dwg_get_field( $p_file_id, $p_field_name, $p_table = 'dwg' ) {
  * @throws ClientException
  */
 function file_dwg_delete( $p_file_id, $p_table = 'dwg', $p_bugnote_id = 0 ) {
-	$t_upload_method = config_get( 'file_upload_method' );
-
-	$c_file_id = (int)$p_file_id;
+	$c_file_id  = (int)$p_file_id;
 	$t_filename = file_dwg_get_field( $p_file_id, 'filename', $p_table );
 	$t_diskfile = file_dwg_get_field( $p_file_id, 'diskfile', $p_table );
+	$t_dwg_id   = (int)file_dwg_get_field( $p_file_id, 'dwg_id', $p_table );
 
-	if( $p_table == 'document' ) {
-		$t_bug_id = file_dwg_get_field( $p_file_id, 'dwg_id', $p_table );
-		$t_project_id = dwg_get_field( $t_bug_id, 'project_id' );
-	} else {
-		$t_project_id = file_dwg_get_field( $p_file_id, 'project_id', $p_table );
-	}
+	# Resolve project_id through the document record (works for both table types)
+	$t_project_id = (int)dwg_get_field( $t_dwg_id, 'project_id' );
 
-	if( DISK == $t_upload_method ) {
-		$t_local_disk_file = file_dwg_normalize_attachment_path( $t_diskfile, $t_project_id );
-		if( file_exists( $t_local_disk_file ) ) {
-			file_dwg_delete_local( $t_local_disk_file );
-		}
-	}
+	file_dwg_get_storage_backend()->delete( $t_diskfile, $t_project_id, array(
+		'dwg_id'   => $t_dwg_id,
+		'filename' => $t_filename,
+		'user_id'  => auth_get_current_user_id(),
+	) );
 
 	if( 'document' == $p_table ) {
 		# log file deletion
-		history_dwg_log_event_special( $t_bug_id, FILE_DELETED, file_dwg_get_display_name( $t_filename ), $p_bugnote_id );
+		history_dwg_log_event_special( $t_dwg_id, FILE_DELETED, file_dwg_get_display_name( $t_filename ), $p_bugnote_id );
 	}
 
 	$t_file_table = db_get_table( $p_table . '_file' );
@@ -1004,44 +1017,23 @@ function file_dwg_add( $p_bug_id, array $p_file, $p_table = 'dwg', $p_title = ''
 	}
 
 	$t_unique_name = file_dwg_generate_unique_name( $t_file_path );
-	$t_method = config_get( 'file_upload_method' );
 
-	switch( $t_method ) {
-		case DISK:
-			file_dwg_ensure_valid_upload_path( $t_file_path );
-
-			$t_disk_file_name = $t_file_path . $t_unique_name;
-			if( !file_exists( $t_disk_file_name ) ) {
-				if( $p_file['browser_upload'] ) {
-					if( !move_uploaded_file( $t_tmp_file, $t_disk_file_name ) ) {
-						throw new ServiceException(
-							'Unable to move uploaded file',
-							ERROR_FILE_MOVE_FAILED
-						);
-					}
-				} else {
-					if( !copy( $t_tmp_file, $t_disk_file_name ) || !unlink( $t_tmp_file ) ) {
-						throw new ServiceException(
-							'Unable to move uploaded file',
-							ERROR_FILE_MOVE_FAILED
-						);
-					}
-				}
-
-				chmod( $t_disk_file_name, config_get( 'attachments_file_permissions' ) );
-
-				$c_content = '';
-			} else {
-				throw new ClientException( 'Duplicate file', ERROR_FILE_DUPLICATE );
-			}
-			break;
-		case DATABASE:
-			$c_content = db_prepare_binary_string( fread( fopen( $t_tmp_file, 'rb' ), $t_file_size ) );
-			$t_file_path = '';
-			break;
-		default:
-			throw new ServiceException( 'Unknown file upload method', ERROR_GENERIC );
-	}
+	$t_stored = file_dwg_get_storage_backend()->store(
+		$t_tmp_file,
+		$t_file_size,
+		$t_unique_name,
+		$t_file_path,
+		$p_file['browser_upload'],
+		array(
+			'project_id' => $t_project_id,
+			'dwg_id'     => $p_bug_id,
+			'filename'   => $t_file_name,
+			'user_id'    => $p_user_id,
+		)
+	);
+	$t_unique_name = $t_stored['diskfile'];
+	$t_file_path   = $t_stored['folder'];
+	$c_content     = $t_stored['content'];
 
 	$t_file_table = db_get_table( $p_table . '_file' );
 	$t_id_col = $p_table . '_id';
@@ -1309,34 +1301,7 @@ function file_dwg_get_content( $p_file_id, $p_type = 'dwg' ) {
 		$t_project_id = $t_row['dwg_id'];
 	}
 
-	$t_content_type = $t_row['file_type'];
-
-	switch( config_get( 'file_upload_method' ) ) {
-		case DISK:
-			$t_local_disk_file = file_dwg_normalize_attachment_path( $t_row['diskfile'], $t_project_id );
-
-			if( file_exists( $t_local_disk_file ) ) {
-				$t_file_info_type = file_dwg_get_mime_type( $t_local_disk_file );
-
-				if( $t_file_info_type !== false ) {
-					$t_content_type = $t_file_info_type;
-				}
-
-				return array( 'type' => $t_content_type, 'content' => file_dwg_get_contents( $t_local_disk_file ) );
-			}
-			return false;
-		case DATABASE:
-			$t_file_info_type = file_dwg_get_mime_type_for_content( $t_row['content'] );
-
-			if( $t_file_info_type !== false ) {
-				$t_content_type = $t_file_info_type;
-			}
-
-			return array( 'type' => $t_content_type, 'content' => $t_row['content'] );
-		default:
-			trigger_error( ERROR_GENERIC, ERROR );
-	}
-	return false;
+	return file_dwg_get_storage_backend()->retrieve( $t_row, $t_project_id );
 }
 
 /**

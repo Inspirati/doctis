@@ -190,6 +190,7 @@ define( 'HTTP_AUTH', 6 );
 # file upload methods
 define( 'DISK', 1 );
 define( 'DATABASE', 2 );
+define( 'GIT', 3 );
 
 # show variable values
 define( 'BOTH', 0 );

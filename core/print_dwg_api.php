@@ -2240,6 +2240,10 @@ function print_dwg_attachment_preview_text( array $p_attachment ) {
 			$t_row = db_fetch_array( $t_result );
 			$t_content = $t_row['content'];
 			break;
+		case GIT:
+			$t_file_info = file_dwg_get_content( (int)$p_attachment['id'] );
+			$t_content = $t_file_info ? $t_file_info['content'] : '';
+			break;
 		default:
 			trigger_error( ERROR_GENERIC, ERROR );
 	}

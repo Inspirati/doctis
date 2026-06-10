@@ -2422,6 +2422,26 @@ $g_document_files_prefix = 'doc';
 $g_absolute_path_default_upload_folder = '';
 
 /**
+ * Git document storage: absolute path to the bare repository root.
+ *
+ * Each Doctis project gets its own bare repo: <git_storage_root>/<slug>.git
+ * Only used when $g_file_upload_method = GIT.
+ *
+ * @global string $g_git_storage_root
+ */
+$g_git_storage_root = '';
+
+/**
+ * Git document storage: absolute path to the working tree root.
+ *
+ * Each project gets a working tree: <git_worktree_root>/<slug>
+ * Only used when $g_file_upload_method = GIT.
+ *
+ * @global string $g_git_worktree_root
+ */
+$g_git_worktree_root = '';
+
+/**
  * Enable support for sending files to users via a more efficient X-Sendfile
  * method.
  *
