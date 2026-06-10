@@ -32,17 +32,16 @@ define( 'ABS_FILE',     WORKTREE . '/' . REL_PATH );
 $pass = 0;
 $fail = 0;
 
-// ok() and fail() assume the caller already echoed "  N. label ... "
-function ok() : void {
+function ok( string $label ) : void {
     global $pass;
     $pass++;
-    echo "OK\n";
+    echo "  $label ... OK\n";
 }
 
-function fail( string $detail = '' ) : void {
+function fail( string $label, string $detail = '' ) : void {
     global $fail;
     $fail++;
-    echo "FAILED" . ( $detail !== '' ? ": $detail" : '' ) . "\n";
+    echo "  $label ... FAILED" . ( $detail !== '' ? ": $detail" : '' ) . "\n";
 }
 
 function exec_cmd( string $cmd ) : array {
@@ -74,9 +73,9 @@ try {
     echo "  1. git init --bare   ... ";
     [ $rc, $out ] = exec_cmd( 'git init --bare ' . escapeshellarg( BARE_REPO ) );
     if ( $rc !== 0 ) {
-        fail( $out );
+        fail( '1. git init --bare', $out );
     } else {
-        ok();
+        ok( '1. git init --bare' );
     }
 
     // ── STEP 2: Clone working tree ─────────────────────────────────────────────
@@ -86,9 +85,9 @@ try {
         'git clone ' . escapeshellarg( BARE_REPO ) . ' ' . escapeshellarg( WORKTREE )
     );
     if ( $rc !== 0 ) {
-        fail( $out );
+        fail( '2. git clone', $out );
     } else {
-        ok();
+        ok( '2. git clone' );
     }
 
     // ── STEP 3: Open via czproject ─────────────────────────────────────────────
@@ -98,7 +97,7 @@ try {
     echo "  3. czproject open    ... ";
     $git  = new Git;
     $repo = $git->open( WORKTREE );
-    ok();
+    ok( '3. czproject open' );
 
     // ── STEP 4: Write source file ──────────────────────────────────────────────
 
@@ -113,13 +112,13 @@ try {
         "---\n\n" .
         "Written by PHP at: " . date( 'Y-m-d H:i:s' ) . "\n";
     file_put_contents( ABS_FILE, $content );
-    ok();
+    ok( '4. write source file' );
 
     // ── STEP 5: git add ────────────────────────────────────────────────────────
 
     echo "  5. git add           ... ";
     $repo->addFile( REL_PATH );
-    ok();
+    ok( '5. git add' );
 
     // ── STEP 6: git commit ─────────────────────────────────────────────────────
 
@@ -131,8 +130,8 @@ try {
     // ── STEP 7: git push ───────────────────────────────────────────────────────
 
     echo "  7. git push          ... ";
-    $repo->push( [ 'origin', 'main' ] );
-    ok();
+    $repo->push( 'origin', [ 'main' ] );
+    ok( '7. git push' );
 
     // ── STEP 8: Retrieve by SHA ────────────────────────────────────────────────
 
@@ -144,9 +143,9 @@ try {
         ' show ' . escapeshellarg( $sha . ':' . REL_PATH ) . ' 2>&1'
     );
     if ( strpos( $retrieved, 'czproject/git-php integration test' ) !== false ) {
-        ok();
+        ok( '8. retrieve by SHA' );
     } else {
-        fail( $retrieved );
+        fail( '8. retrieve by SHA', $retrieved );
     }
 
     // ── STEP 9: Retrieve via HEAD ──────────────────────────────────────────────
@@ -157,9 +156,9 @@ try {
         ' show HEAD:' . escapeshellarg( REL_PATH ) . ' 2>&1'
     );
     if ( strpos( $head_content, 'czproject/git-php integration test' ) !== false ) {
-        ok();
+        ok( '9. retrieve via HEAD' );
     } else {
-        fail( $head_content );
+        fail( '9. retrieve via HEAD', $head_content );
     }
 
     // ── STEP 10: SHA256 integrity ──────────────────────────────────────────────
@@ -174,9 +173,9 @@ try {
     $bare_hash = explode( ' ', $hash_bare )[0];
     $disk_hash = explode( ' ', $hash_disk )[0];
     if ( $bare_hash === $disk_hash && strlen( $bare_hash ) === 64 ) {
-        ok();
+        ok( '10. SHA256 integrity' );
     } else {
-        fail( "bare=$bare_hash disk=$disk_hash" );
+        fail( '10. SHA256 integrity', "bare=$bare_hash disk=$disk_hash" );
     }
 
     // ── STEP 11: Soft delete (git rm + commit + push) ─────────────────────────
@@ -185,7 +184,7 @@ try {
 
     echo "  11. git rm           ... ";
     $repo->removeFile( REL_PATH );
-    ok();
+    ok( '11. git rm' );
 
     $repo->commit( 'dwg_id=1 FILE_DELETED by phptest' );
     $del_sha = (string) $repo->getLastCommitId();
@@ -193,8 +192,8 @@ try {
     $pass++;
 
     echo "  13. push delete      ... ";
-    $repo->push( [ 'origin', 'main' ] );
-    ok();
+    $repo->push( 'origin', [ 'main' ] );
+    ok( '13. push delete' );
 
     // ── STEP 14: Verify file absent from HEAD ──────────────────────────────────
 
@@ -208,9 +207,9 @@ try {
     if ( strpos( $absent, 'exists on disk' ) !== false
       || strpos( $absent, 'does not exist' ) !== false
       || strpos( $absent, 'fatal' ) !== false ) {
-        ok();
+        ok( '14. absent from HEAD' );
     } else {
-        fail( 'file still visible at HEAD' );
+        fail( '14. absent from HEAD', 'file still visible at HEAD' );
     }
 
     // ── STEP 15: Both commits present in log ───────────────────────────────────
@@ -222,9 +221,9 @@ try {
     $sha_short     = substr( $sha,     0, 7 );
     $del_sha_short = substr( $del_sha, 0, 7 );
     if ( strpos( $log, $sha_short ) !== false && strpos( $log, $del_sha_short ) !== false ) {
-        ok();
+        ok( '15. history retained' );
     } else {
-        fail( "log:\n$log" );
+        fail( '15. history retained', "log:\n$log" );
     }
 
 } catch ( GitException $e ) {
