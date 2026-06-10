@@ -23,10 +23,17 @@
  * @link http://www.mantisbt.org
  */
 
+require_api( 'license_api.php' );
+
+use Mantis\Exceptions\ClientException;
+
 /**
- * Get username, realname and email from for a given user id
+ * Get username, realname and email from for a given user id.
+ *
  * @param integer $p_user_id A valid user identifier.
+ *
  * @return array
+ * @throws ClientException
  */
 function mci_account_get_array_by_id( $p_user_id ) {
 	$t_result = array();
@@ -63,21 +70,53 @@ function mci_account_get_array_by_id( $p_user_id ) {
 			if( !empty( $t_email ) ) {
 				$t_result['email'] = $t_email;
 			}
+
+			$t_email_pending = token_get_value( TOKEN_ACCOUNT_CHANGE_EMAIL, $p_user_id );
+			if( $t_email_pending !== null ) {
+				$t_result['email_pending'] = $t_email_pending;
+			}
 		}
 	}
 	return $t_result;
 }
 
 /**
- * Get username, realname and email from for a set of given user ids
+ * Get username, realname and email from for a set of given user ids.
+ *
  * @param array $p_user_ids An array of user identifiers.
+ *
  * @return array
+ * @throws ClientException
  */
 function mci_account_get_array_by_ids ( array $p_user_ids ) {
 	$t_result = array();
 
 	foreach ( $p_user_ids as $t_user_id ) {
 		$t_result[] = mci_account_get_array_by_id( $t_user_id );
+	}
+
+	return $t_result;
+}
+
+function mci_license_get_array_by_id( $p_license_id ) {
+	$t_result = array();
+	$t_result['id'] = (int)$p_license_id;
+
+	if( license_exists( $p_license_id ) ) {
+		$t_current_user_id = auth_get_current_user_id();
+		$t_access_level = user_get_field ( $t_current_user_id, 'access_level' );
+		$t_can_manage = access_has_global_level( config_get( 'manage_license_threshold' ) ) &&
+			access_has_global_level( $t_access_level );
+		$t_result['name'] = license_get_name( $p_license_id );
+	}
+	return $t_result;
+}
+
+function mci_license_get_array_by_ids ( array $p_license_ids ) {
+	$t_result = array();
+
+	foreach ( $p_license_ids as $t_license_id ) {
+		$t_result[] = mci_license_get_array_by_id( $t_license_id );
 	}
 
 	return $t_result;

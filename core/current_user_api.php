@@ -91,6 +91,10 @@ function current_user_get_assigned_open_bug_count() {
 	return user_get_assigned_open_bug_count( auth_get_current_user_id(), helper_get_current_project() );
 }
 
+function current_user_get_assigned_open_dwg_count() {
+	return user_get_assigned_open_dwg_count( auth_get_current_user_id(), helper_get_current_project() );
+}
+
 /**
  * Returns the number of open reported bugs by the current user in
  * the current project
@@ -100,6 +104,10 @@ function current_user_get_assigned_open_bug_count() {
  */
 function current_user_get_reported_open_bug_count() {
 	return user_get_reported_open_bug_count( auth_get_current_user_id(), helper_get_current_project() );
+}
+
+function current_user_get_created_open_dwg_count() {
+	return user_get_created_open_dwg_count( auth_get_current_user_id(), helper_get_current_project() );
 }
 
 /**
@@ -157,6 +165,10 @@ function current_user_set_default_project( $p_project_id ) {
  */
 function current_user_get_accessible_projects( $p_show_disabled = false ) {
 	return user_get_accessible_projects( auth_get_current_user_id(), $p_show_disabled );
+}
+
+function current_user_get_accessible_licenses( $p_show_disabled = false ) {
+	return user_get_accessible_licenses( auth_get_current_user_id(), $p_show_disabled );
 }
 
 /**

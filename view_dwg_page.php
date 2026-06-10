@@ -89,7 +89,7 @@ compress_enable();
 # don't index view documents pages
 html_robots_noindex();
 
-layout_page_header_begin( lang_get( 'view_dwg_link' ) );
+layout_page_header_begin( lang_get( 'view_dwgs_link' ) );
 
 $t_refresh_delay = current_user_get_pref( 'refresh_delay' );
 if( $t_refresh_delay > 0 ) {
@@ -106,7 +106,7 @@ if( $t_refresh_delay > 0 ) {
 
 layout_page_header_end();
 
-layout_page_begin( __FILE__ );
+layout_page_begin( __FILE__, true );
 
 define( 'VIEW_DWG_INC_ALLOW', true );
 include( __DIR__ . '/view_dwg_inc.php' );

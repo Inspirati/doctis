@@ -61,6 +61,7 @@ $f_view_state	= gpc_get_int( 'view_state' );
 $f_status		= gpc_get_int( 'status' );
 $f_file_path	= gpc_get_string( 'file_path', '' );
 $f_inherit_global = gpc_get_bool( 'inherit_global', 0 );
+$f_due_date		= gpc_get_string( 'due_date', null );
 
 $t_data = array(
 	'payload' => array(
@@ -69,7 +70,8 @@ $t_data = array(
 		'file_path' => $f_file_path,
 		'inherit_global' => $f_inherit_global,
 		'view_state' => array( 'id' => $f_view_state ),
-		'status' => array( 'id' => $f_status )
+		'status' => array( 'id' => $f_status ),
+		'due_date' => $f_due_date
 	),
 	'options' => array(
 		'return_project' => false

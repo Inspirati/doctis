@@ -73,30 +73,22 @@ compress_enable();
 # don't index my view page
 html_robots_noindex();
 
+layout_page_header( lang_get( 'my_view_link' ) );
 
-// layout_page_header( lang_get( 'manage_projects_link' ) );
-// layout_page_begin( 'manage_overview_page.php' );
-//print_manage_menu( 'manage_proj_page.php' );
+//layout_page_header_begin( lang_get( 'my_view_link' ) );
+//$t_refresh_delay = current_user_get_pref( 'refresh_delay' );
+//if( $t_refresh_delay > 0 ) {
+//	html_meta_redirect( 'my_view_dwg_page.php?refresh=true', $t_refresh_delay * 60 );
+//}
+//layout_page_header_end();
 
+layout_page_begin( 'my_view_bug_page.php', true );
 
-layout_page_header_begin( lang_get( 'my_view_link' ) );
-
-$t_refresh_delay = current_user_get_pref( 'refresh_delay' );
-if( $t_refresh_delay > 0 ) {
-	html_meta_redirect( 'my_view_dwg_page.php?refresh=true', $t_refresh_delay * 60 );
-}
-
-layout_page_header_end();
-
-layout_page_begin( __FILE__ );
-
-// print_my_view_menu( 'my_view_dwg_page.php' );
-print_my_view_menu( __FILE__ );
+print_my_view_menu( 'my_view_dwg_page.php' );
 
 $f_page_number = gpc_get_int( 'page_number', 1 );
 
 $t_per_page = config_get( 'my_view_dwg_count' );
-$t_bug_count = null;
 $t_dwg_count = null;
 $t_page_count = null;
 
@@ -110,14 +102,14 @@ if( $t_current_project_id == ALL_PROJECTS ) {
 } else {
 	# this creates a filter with the specific project informes, in the same way that
 	# those that will be used later for the boxes
-	$t_test_filter = filter_ensure_valid_filter( array( FILTER_PROPERTY_PROJECT_ID => [$t_current_project_id]) );
-	$t_project_ids_to_check = filter_get_included_projects( $t_test_filter );
+	$t_test_filter = filter_dwg_ensure_valid_filter( array( FILTER_PROPERTY_PROJECT_ID => [$t_current_project_id]) );
+	$t_project_ids_to_check = filter_dwg_get_included_projects( $t_test_filter );
 }
 
 # Retrieve the boxes to display
 # - exclude hidden boxes per configuration (order == 0)
 # - remove boxes that do not make sense in the user's context (access level)
-$t_boxes = array_filter( config_get( 'my_view_boxes' ) );
+$t_boxes = array_filter( config_get( 'my_view_dwg_boxes' ) );
 $t_anonymous_user = current_user_is_anonymous();
 foreach( $t_boxes as $t_box_title => $t_box_display ) {
 	if( # Remove "Assigned to Me" box for users that can't handle issues
@@ -179,7 +171,6 @@ foreach( $t_boxes as $t_box_title => $t_box_display ) {
 		$g_timeline_filter[FILTER_PROPERTY_HIDE_STATUS] = array( META_FILTER_NONE );
 		$g_timeline_filter = filter_dwg_ensure_valid_filter( $g_timeline_filter );
 		include( 'timeline_dwg_inc.php' );
-
 	?>
 	<div class="space-10"></div>
 </div>

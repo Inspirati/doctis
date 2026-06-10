@@ -99,7 +99,7 @@ $t_bug_id = $f_bug_id;
 $t_show_document = false;
 // $t_document_id = (int)$t_issue['document_id'];
 $t_document_id = (int)$t_bug->document_id;
-if ( $t_document_id ) {
+if ( $t_document_id > 1 ) {
 	// $t_force_readonly = $this->option( 'force_readonly', false );
 	$t_force_readonly = true;
 	$t_document_id = (int)$t_bug->document_id;
@@ -117,6 +117,7 @@ $t_show_document = in_array( 'document_id', $t_fields );
 ////////////////////////////////////////////////////////////////////////////////
 
 $t_action_button_position = config_get( 'action_button_position' );
+$t_max_textarea_length = config_get_global( 'max_textarea_length' );
 
 $t_top_buttons_enabled = $t_action_button_position == POSITION_TOP || $t_action_button_position == POSITION_BOTH;
 $t_bottom_buttons_enabled = $t_action_button_position == POSITION_BOTTOM || $t_action_button_position == POSITION_BOTH;
@@ -296,6 +297,35 @@ if( $t_show_id || $t_show_project || $t_show_category || $t_show_view_state || $
 	print_table_spacer( 6 );
 }
 
+
+#
+# Document Title
+#
+
+if( $t_show_document ) {
+	# Title
+	if( document_is_enabled( $t_bug->document_id ) ) {
+		echo '<th class="category">';
+		echo lang_get( 'dwg_title' );
+		echo '</th><td>';
+		// print_icon( 'warning',
+		// 	'fa-status-box bigger-125 red',
+		// 	lang_get( 'category_disabled' )
+		// );
+		echo "&nbsp;";
+
+		$t_allow_no_document = config_get( 'allow_no_document' );
+		echo '<select ' . helper_get_tab_index()
+			. ( $t_allow_no_document ? '' : ' required' )
+			. ' id="document_id" name="document_id" class="input-sm">';
+		print_document_option_list( $t_bug->document_id, $t_bug->project_id, true );
+		echo '</select>';
+
+	} else {
+		// $t_spacer += 2;
+	}
+}
+
 #
 # Document, Reference, Author
 #
@@ -306,9 +336,9 @@ if( $t_show_document ) {
 	# Labels
 	echo '<tr class="bug-header">';
 	echo '<th class="bug-project category width-15">', $t_document_flags['project_show'] ? lang_get( 'dwg_title' ) : '', '</th>';
+	echo '<th class="bug-project category width-15">', $t_document_flags['project_show'] ? lang_get( 'dwg_reference' ) : '', '</th>';
 	echo '<th class="bug-project category width-20">', $t_document_flags['project_show'] ? lang_get( 'dwg_number' ) : '', '</th>';
 	echo '<th class="bug-project category width-15">', $t_document_flags['project_show'] ? lang_get( 'dwg_revision' ) : '', '</th>';
-	echo '<th class="bug-project category width-15">', $t_document_flags['project_show'] ? lang_get( 'dwg_reference' ) : '', '</th>';
 	echo '<th class="bug-project category width-15">', $t_document_flags['project_show'] ? lang_get( 'dwg_release_date' ) : '', '</th>';
 	echo '<th class="bug-project category width-15">', $t_document_flags['project_show'] ? lang_get( 'dwg_classification' ) : '', '</th>';
 	echo '</tr>';
@@ -343,9 +373,16 @@ if( $t_show_document ) {
 	}
 	echo '</td>';
 
+	// echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['reference'] ) ? string_display_line( $t_document['reference'] ) : '', '</td>';
+	# Reference
+	if( $t_document_flags['project_show'] ) {
+		echo '<td class="bug-project">';
+//		echo string_display_line( $t_document['reference'] );
+		print_dwg_reference_link( $t_document['id'], $t_document['reference'], false );
+		echo '</td>';
+	}
 	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['number'] ) ? string_display_line( $t_document['number'] ) : '', '</td>';
 	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['revision'] ) ? string_display_line( $t_document['revision'] ) : '', '</td>';
-	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['reference'] ) ? string_display_line( $t_document['reference'] ) : '', '</td>';
 	//echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['release_date'] ) ? string_display_line( $t_document['release_date'] ) : '', '</td>';
 	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['release_date'] ) ? $t_release_date : '', '</td>';
 	// echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['release_date'] ) ? string_display_line( date( $t_date_format, strtotime( $t_document['release_date'] ) ) ) : '', '</td>';
@@ -460,7 +497,17 @@ if( $t_show_priority || $t_show_severity || $t_show_reproducibility ) {
 	if( $t_show_priority ) {
 		# Priority
 		echo '<th class="category"><label for="priority">' . lang_get( 'priority' ) . '</label></th>';
-		echo '<td><select ' . helper_get_tab_index() . ' id="priority" name="priority" class="input-sm">';
+		$t_icon = $t_bug->priority;
+		$t_status_icon_arr = config_get( 'status_icon_arr' );
+		// $t_priotext = get_enum_element( 'priority', $t_icon );
+		echo '<td class="bug-priority">';
+		if( isset( $t_status_icon_arr[$t_icon] ) && !is_blank( $t_status_icon_arr[$t_icon] ) ) {
+			echo '&nbsp' . icon_get( $t_status_icon_arr[$t_icon] ) . '&nbsp';
+		}
+		// echo ' ' . string_display_line( $t_priotext ), '</td>';
+		echo '&nbsp;';
+		echo '&nbsp;';
+		echo '<select ' . helper_get_tab_index() . ' id="priority" name="priority" class="input-sm">';
 		print_enum_string_option_list( 'priority', $t_bug->priority );
 		echo '</select></td>';
 	} else {
@@ -513,6 +560,7 @@ if( $t_show_status || $t_show_resolution ) {
 
 		echo '<td class="bug-status">';
 		print_icon( 'fa-square', 'fa-status-box ' . $t_status_css );
+		echo '&nbsp;';
 		echo '&nbsp;';
 		print_status_option_list( 'status', $t_bug->status,
 			access_can_close_bug( $t_bug ),
@@ -726,7 +774,7 @@ if( $t_show_summary ) {
 	echo '<tr>';
 	echo '<th class="category">';
 	echo '<span class="required">*</span> ';
-	echo '<label for="summary">' . lang_get( 'summary' ) . '</label>';
+	echo '<label for="summary">' . lang_get( 'issue_summary' ) . '</label>';
 	echo '</th>';
 	echo '<td colspan="5">';
 	echo '<input ', helper_get_tab_index(),
@@ -744,7 +792,9 @@ if( $t_show_description ) {
 	echo '</th>';
 	echo '<td colspan="5">';
 	echo '<textarea class="form-control" required ', helper_get_tab_index(),
-		' cols="80" rows="10" id="description" name="description">', "\n",
+		' cols="80" rows="10"',
+		' maxlength="' . $t_max_textarea_length . '"',
+		' id="description" name="description">', "\n",
 		$t_description_textarea, '</textarea>';
 	echo '</td></tr>';
 }
@@ -755,7 +805,9 @@ if( $t_show_steps_to_reproduce ) {
 	echo '<th class="category"><label for="steps_to_reproduce">' . lang_get( 'steps_to_reproduce' ) . '</label></th>';
 	echo '<td colspan="5">';
 	echo '<textarea class="form-control" ', helper_get_tab_index(),
-		' cols="80" rows="10" id="steps_to_reproduce" name="steps_to_reproduce">', "\n",
+		' cols="80" rows="10"',
+		' maxlength="' . $t_max_textarea_length . '"',
+		' id="steps_to_reproduce" name="steps_to_reproduce">', "\n",
 		$t_steps_to_reproduce_textarea, '</textarea>';
 	echo '</td></tr>';
 }
@@ -766,7 +818,9 @@ if( $t_show_additional_information ) {
 	echo '<th class="category"><label for="additional_information">' . lang_get( 'additional_information' ) . '</label></th>';
 	echo '<td colspan="5">';
 	echo '<textarea class="form-control" ', helper_get_tab_index(),
-		' cols="80" rows="10" id="additional_information" name="additional_information">', "\n",
+		' cols="80" rows="10"',
+		' maxlength="' . $t_max_textarea_length . '"',
+		' id="additional_information" name="additional_information">', "\n",
 		$t_additional_information_textarea, '</textarea>';
 	echo '</td></tr>';
 }
@@ -812,7 +866,12 @@ $t_bugnote_class = $t_bugnote_private ? 'form-control bugnote-private' : 'form-c
 
 echo '<tr>';
 echo '<th class="category"><label for="bugnote_text">' . lang_get( 'add_bugnote_title' ) . '</label></th>';
-echo '<td colspan="5"><textarea ', helper_get_tab_index(), ' id="bugnote_text" name="bugnote_text" class="', $t_bugnote_class, '" cols="80" rows="7"></textarea></td></tr>';
+echo '<td colspan="5"><textarea ', helper_get_tab_index(),
+	' id="bugnote_text" name="bugnote_text" class="', $t_bugnote_class,
+	'" cols="80" rows="7"',
+	' maxlength="' . $t_max_textarea_length . '">',
+	'</textarea></td></tr>';
+
 
 # Bugnote Private Checkbox (if permitted)
 if( access_has_bug_level( config_get( 'private_bugnote_threshold' ), $t_bug_id ) ) {

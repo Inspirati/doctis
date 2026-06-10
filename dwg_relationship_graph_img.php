@@ -67,9 +67,9 @@ $t_graph_relation = ( 'relation' == $f_type );
 $t_graph_horizontal = ( 'horizontal' == $f_orientation );
 
 if( $t_graph_relation ) {
-	$t_graph = relgraph_generate_rel_graph( $f_bug_id, $f_show_summary );
+	$t_graph = dwg_relgraph_generate_rel_graph( $f_bug_id, $f_show_summary );
 } else {
-	$t_graph = relgraph_generate_dep_graph( $f_bug_id, $t_graph_horizontal, $f_show_summary );
+	$t_graph = dwg_relgraph_generate_dep_graph( $f_bug_id, $t_graph_horizontal, $f_show_summary );
 }
 
-relgraph_output_image( $t_graph );
+dwg_relgraph_output_image( $t_graph );

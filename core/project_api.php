@@ -342,7 +342,7 @@ function validate_project_file_path( $p_file_path ) {
  * @param boolean $p_inherit_global Whether the project inherits global categories.
  * @return integer
  */
-function project_create( $p_name, $p_description, $p_status, $p_view_state = VS_PUBLIC, $p_file_path = '', $p_enabled = true, $p_inherit_global = true ) {
+function project_create( $p_name, $p_description, $p_status, $p_view_state = VS_PUBLIC, $p_file_path = '', $p_enabled = true, $p_inherit_global = true, $p_due_date = 1 ) {
 	$c_enabled = (bool)$p_enabled;
 
 	if( is_blank( $p_name ) ) {
@@ -366,6 +366,7 @@ function project_create( $p_name, $p_description, $p_status, $p_view_state = VS_
 		'file_path' => $p_file_path,
 		'description' => $p_description,
 		'inherit_global' => $p_inherit_global,
+		'due_date' => $p_due_date,
 	);
 
 	$t_query = new DbQuery( 'INSERT INTO {project}
@@ -449,7 +450,7 @@ function project_delete( $p_project_id ) {
  * @param boolean $p_inherit_global Whether the project inherits global categories.
  * @return void
  */
-function project_update( $p_project_id, $p_name, $p_description, $p_status, $p_view_state, $p_file_path, $p_enabled, $p_inherit_global ) {
+function project_update( $p_project_id, $p_name, $p_description, $p_status, $p_view_state, $p_file_path, $p_enabled, $p_inherit_global, $p_due_date ) {
 	$p_project_id = (int)$p_project_id;
 	$c_enabled = (bool)$p_enabled;
 	$c_inherit_global = (bool)$p_inherit_global;
@@ -488,6 +489,7 @@ function project_update( $p_project_id, $p_name, $p_description, $p_status, $p_v
 		'file_path' => $p_file_path,
 		'description' => $p_description,
 		'inherit_global' => $c_inherit_global,
+		'due_date' => $p_due_date,
 	);
 
 	$t_columns = '';
@@ -605,6 +607,21 @@ function project_get_name( $p_project_id, $p_trigger_errors = true ) {
 		return lang_get( 'all_projects' );
 	} else {
 		return project_get_field( $p_project_id, 'name', $p_trigger_errors );
+	}
+}
+
+/**
+ * Return the due date of the project
+ * Handles ALL_PROJECTS by returning the database default date value
+ * @param integer $p_project_id     A project identifier.
+ * @param boolean $p_trigger_errors Whether to trigger errors.
+ * @return string
+ */
+function project_due_date( $p_project_id, $p_trigger_errors = true ) {
+	if( ALL_PROJECTS == $p_project_id ) {
+		return 1;
+	} else {
+		return project_get_field( $p_project_id, 'due_date', $p_trigger_errors );
 	}
 }
 

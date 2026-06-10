@@ -92,7 +92,12 @@ $s_actiongroup_error_issue_is_readonly = 'Issue is readonly.';
 $s_actiongroup_error_document_is_readonly = 'Document is readonly.';
 
 # new strings:
+// $s_copy_citation_to_clipboard = 'Copy Citation';
+$s_copy_citation = 'Copy Citation';
+$s_copied = 'Copied';
+
 $s_all_projects = 'All Projects';
+$s_all_licenses = 'All Licenses';
 $s_move_bugs = 'Move Issues';
 $s_move_dwgs = 'Move Documents';
 $s_operation_successful = 'Operation successful.';
@@ -124,6 +129,8 @@ $s_copy_versions_from = 'Copy Versions From';
 $s_copy_versions_to = 'Copy Versions To';
 $s_copy_users_from = 'Copy Users From';
 $s_copy_users_to = 'Copy Users To';
+$s_copy_licenses_from = 'Copy Licenses From';
+$s_copy_licenses_to = 'Copy Licenses To';
 $s_bug_history = 'Issue History';
 $s_dwg_history = 'Document History';
 $s_field = 'Field';
@@ -192,6 +199,7 @@ $s_make_public = 'Make Public';
 $s_document_id = 'Document';
 
 $s_create_new_project_link = 'Create New Project';
+$s_create_new_license_link = 'Create New License';
 
 # Browser Search - %s is the Search Engine title (@see $g_search_title)
 $s_opensearch_id_short = '%s Id';
@@ -310,7 +318,10 @@ $s_issue_status_percentage = 'Issue Status Percentage';
 $s_access_levels_enum_string = '10:viewer,25:reporter,40:updater,55:developer,70:manager,90:administrator';
 $s_no_access = 'no access';
 $s_project_status_enum_string = '10:development,30:release,50:stable,70:obsolete';
+$s_license_status_enum_string = '10:active,30:suspended,50:deprecated,70:obsolete';
+
 $s_project_view_state_enum_string = '10:public,50:private';
+$s_license_view_state_enum_string = '10:public,50:private';
 $s_view_state_enum_string = '10:public,50:private';
 
 #$s_priority_enum_string = '10:none,20:low,30:normal,40:high,50:urgent,60:immediate';
@@ -320,8 +331,8 @@ $s_priority_enum_string = '10:none,20:low,30:normal,40:high,50:urgent,60:immedia
 $s_severity_enum_string = '10:feature,20:comment,30:query,40:tweak,50:minor,60:major,70:crash,80:block';
 
 $s_reproducibility_enum_string = '10:always,30:sometimes,50:random,70:have not tried,90:unable to reproduce,100:N/A';
-$s_status_enum_string = '10:new,20:feedback,30:acknowledged,40:confirmed,50:assigned,80:resolved,90:closed';
-$s_dwg_status_enum_string = '10:pending,20:received,30:triage,40:JoS,50:assigned,60:review,65:rework,70:independent review,80:accepted,90:incorported,95:archived';
+$s_status_enum_string = '10:new,20:feedback,30:acknowledged,40:confirmed,50:assigned,80:resolved,90:closed,110:pending,120:received,130:triage,140:JoS,150:assigned,160:review,165:rework,170:independent review,180:accepted,190:incorporated,195:archived';
+$s_dwg_status_enum_string = '10:new,20:feedback,30:acknowledged,40:confirmed,50:assigned,80:resolved,90:closed,110:pending,120:received,130:triage,140:JoS,150:assigned,160:review,165:rework,170:independent review,180:accepted,190:incorporated,195:archived';
 $s_resolution_enum_string = '10:open,20:fixed,30:reopened,40:unable to reproduce,50:not fixable,60:duplicate,70:no change required,80:suspended,90:won\'t fix';
 $s_projection_enum_string = '10:none,30:tweak,50:minor fix,70:major rework,90:redesign';
 $s_eta_enum_string = '10:none,20:< 1 day,30:2-3 days,40:< 1 week,50:< 1 month,60:> 1 month';
@@ -344,6 +355,10 @@ If you requested this verification, visit the following URL to change your passw
 $s_reset_request_admin_msg = 'Your password has been reset. Please visit the following URL to set a new one:';
 
 $s_reset_request_in_progress_msg = 'If you supplied the correct username and e-mail address for your account, we will now have sent a confirmation message to that e-mail address. Once the message has been received, follow the instructions provided to change the password on your account.';
+
+$s_verify_email_msg = 'Someone (presumably you) modified the email address associated with the account mentioned below. The old email address will remain active until you confirm this change.
+
+To validate the new email, please visit the following URL:';
 
 $s_email_notification_title_for_status_bug_new = 'The following issue is now in status NEW (again)';
 $s_email_notification_title_for_status_bug_feedback = 'The following issue requires FEEDBACK.';
@@ -372,6 +387,8 @@ $s_email_notification_title_for_action_dwg_unassigned = 'The following document 
 $s_email_notification_title_for_action_dwg_reopened = 'The following document has been REOPENED.';
 $s_email_notification_title_for_action_dwg_deleted = 'The following document has been DELETED.';
 $s_email_notification_title_for_action_dwg_updated = 'The following document has been UPDATED.';
+
+$s_email_notification_title_for_action_license = 'The following license has been applied for.';
 
 $s_email_notification_title_for_action_sponsorship_added = 'The following issue has been SPONSORED.';
 $s_email_notification_title_for_action_sponsorship_updated = 'A sponsorship of the following issue was modified.';
@@ -411,6 +428,7 @@ $s_email_notification_title_for_action_dwg_related_document_deleted = 'The RELAT
 $s_email_notification_title_for_action_dwg_monitor = 'document %1$s is now monitored by user %2$s.';
 
 $s_email_reporter = 'Reported By';
+$s_email_creator = 'Created By';
 $s_email_handler = 'Assigned To';
 $s_email_project = 'Project';
 $s_email_bug = 'Issue ID';
@@ -426,6 +444,7 @@ $s_email_fixed_in_version = 'Fixed in Version';
 $s_email_target_version = 'Target Version';
 $s_email_date_submitted = 'Date Submitted';
 $s_email_last_modified = 'Last Modified';
+$s_email_document_title = 'Document Title';
 $s_email_summary = 'Summary';
 $s_email_description = 'Description';
 $s_email_additional_information = 'Additional Information';
@@ -570,27 +589,30 @@ $s_feedback_dwg_title = 'Request Feedback on Document';
 $s_acknowledged_dwg_title = 'Acknowledge Document';
 $s_confirmed_dwg_title = 'Confirm Document';
 $s_assigned_dwg_title = 'Assign Document';
+$s_assigned_to_dwg_title = 'Assign Document';
 $s_new_dwg_button = 'New Document';
 
-// @TODO RobD - all the strings in this block are probably not required
+// @TODO RobD - all the strings in this block are possibly not required
 $s_feedback_dwg_button = 'Request Feedback';
 $s_acknowledged_dwg_button = 'Acknowledge Document';
 $s_confirmed_dwg_button = 'Confirm Document';
 // $s_assigned_dwg_button = 'Assign Document';
 
-// ?
+// NOTE: most of the following string variable names are run-time generated
+//       and hence cannot be found via searching the codebase
 $s_closed_dwg_title = 'Close Document';
 
 $s_pending_dwg_button = 'Set to Pending';
 $s_received_dwg_button = 'Set to Received';
 $s_triage_dwg_button = 'Set to Triage Document';
 $s_assigned_dwg_button = 'Set to Assigned';
+$s_assigned_to_dwg_button = 'Set to Assigned';
 $s_JoS_dwg_button = 'Set to JoS required';
 $s_review_dwg_button = 'Set to Review';
 $s_rework_dwg_button = 'Set to Rework';
 $s_independent_review_dwg_button = 'Set to Independent Review';
 $s_accepted_dwg_button = 'Set to Accepted';
-$s_incorported_dwg_button = 'Set to Incorporated';
+$s_incorporated_dwg_button = 'Set to Incorporated';
 $s_archived_dwg_button = 'Set to Archived';
 
 $s_pending_dwg_title = 'Set Document to Pending';
@@ -602,7 +624,7 @@ $s_review_dwg_title = 'Set Document to Review Required';
 $s_rework_dwg_title = 'Set Document to Send for Rework';
 $s_independent_review_dwg_title = 'Set Document to Independent Review';
 $s_accepted_dwg_title = 'Set Document to Accepted';
-$s_incorported_dwg_title = 'Set Document to Incorporated';
+$s_incorporated_dwg_title = 'Set Document to Incorporated';
 $s_archived_dwg_title = 'Set Document to Archived';
 
 # bug_close.php
@@ -740,11 +762,13 @@ $s_build = 'Build';
 $s_fixed_in_version = 'Fixed in Version';
 $s_target_version = 'Target Version';
 $s_votes = 'Votes';
-$s_summary = 'Issue Summary';
+$s_summary = 'Summary';
+$s_issue_summary = 'Issue Summary';
 $s_synthesis = 'Synthesis';
 $s_description = 'Description';
 $s_steps_to_reproduce = 'Steps To Reproduce';
 $s_update_information_button = 'Update Information';
+$s_edit_document_button = 'Edit Document Details';
 $s_sticky_issue = 'Sticky Issue';
 $s_profile = 'Profile';
 
@@ -754,7 +778,7 @@ $s_updating_bug_simple_title = 'Updating Issue Information';
 # dwg_update_page.php
 $s_back_to_dwg_link = 'Back To Document';
 $s_updating_dwg_advanced_title = 'Updating Document Information (WIP)';
-$s_document = 'Document';
+$s_document_summary = 'Document Summary';
 
 # bug_view*
 $s_view_revisions = 'View Revisions';
@@ -772,8 +796,10 @@ $s_activities_title = 'Activities';
 # documents_view*
 $s_dwg_title = 'Document Title';
 $s_dwg_author = 'Author';
+$s_dwg_publisher = 'Publisher';
 $s_dwg_number = 'Number';
 $s_dwg_version = 'Version';
+$s_dwg_edition = 'Edition';
 $s_dwg_revision = 'Revision';
 $s_dwg_reference = 'Reference';
 $s_dwg_discipline = 'Discipline';
@@ -785,7 +811,7 @@ $s_dwg_classification = 'Classification';
 
 $s_confirm_dwg_revision_drop = 'Are you sure you want to drop this document revision?';
 
-$s_dwg_creator = 'Created by';
+$s_dwg_creator = 'Owned by';
 
 # @TODO RobD - these are still needed by the listview on view_dwg_page.php (and since some were inherited, probably someplace else too)
 $s_reference = 'Reference';
@@ -890,9 +916,17 @@ $s_lost_password_subject = 'Password Reset';
 $s_lost_password_info = 'To reinstate your lost password, please supply the name and e-mail address for the account.<br /><br />If the data corresponds to a valid account, you will be sent a special URL via e-mail that contains a validation code for your account. Please follow this link to change your password.';
 $s_lost_password_confirm_hash_OK = 'Your confirmation has been accepted. Please update your password.';
 
+# verify_email.php
+$s_verify_email_title = 'Verify Email Address';
+$s_verify_email_pending = 'New email address "%1$s" is pending verification.';
+$s_verify_email_warning = 'Your new email address "%1$s" has been verified.';
+$s_verify_email_confirm_msg = 'To validate the change of email address, a confirmation message has been sent to "%1$s". The old address will remain active until the new one has been verified.';
+
 # main_page.php
-$s_open_and_assigned_to_me_label = 'Open and assigned to me:';
-$s_open_and_reported_to_me_label = 'Open and reported by me:';
+$s_open_and_assigned_to_me_label = 'Issues open and assigned to me:';
+$s_dwg_open_and_assigned_to_me_label = 'Documents open and assigned to me:';
+$s_open_and_reported_to_me_label = 'Issues open and reported by me:';
+$s_dwg_open_and_created_to_me_label = 'Documents open and created by me:';
 $s_newer_news_link = 'Newer News';
 $s_older_news_link = 'Older News';
 $s_archives = 'Archives';
@@ -905,6 +939,9 @@ $s_schema_version = 'Database Schema Version';
 $s_site_path = 'Site Path';
 $s_core_path = 'Core Path';
 $s_plugin_path = 'Plugin Path';
+
+$s_user_status = 'User Status';
+$s_user_configuration = 'User Configuration';
 
 # manage_create_new_user.php
 $s_created_user_part1 = 'Created user';
@@ -932,6 +969,7 @@ $s_my_view_bug_link = 'My Issues View';
 $s_my_view_dwg_link = 'My Documents View';
 $s_my_view_cnf_link = 'My Configuration View';
 $s_manage_projects_link = 'Projects';
+$s_manage_licenses_link = 'Licenses';
 $s_manage_import_link = 'Import Data';
 $s_manage_custom_field_link = 'Custom Fields';
 $s_manage_global_profiles_link = 'Global Profiles';
@@ -945,6 +983,7 @@ $s_manage_workflow_graph = 'Workflow Graph';
 $s_manage_tags_link = 'Tags';
 $s_create_new_account_link = 'Create New Account';
 $s_projects_link = 'Projects';
+$s_licenses_link = 'Licenses';
 $s_documentation_link = 'Documentation';
 $s_new_accounts_title = 'New Accounts';
 $s_1_week_title = '1 Week';
@@ -953,6 +992,7 @@ $s_prune_accounts = 'Prune Accounts';
 $s_hide_inactive = 'Hide Inactive';
 $s_show_disabled = 'Show Disabled';
 $s_manage_accounts_title = 'Manage Accounts';
+$s_manage_licenses_title = 'Manage Licenses';
 $s_p = 'p';
 $s_date_created = 'Date Created';
 $s_last_visit = 'Last Visit';
@@ -1113,9 +1153,39 @@ $s_add_subproject_title = 'Add Subproject';
 # manage_proj_delete.php
 $s_project_deleted_msg = 'Project successfully removed...';
 
+# manage_license_delete_page.php
+$s_license_delete_msg = 'Are you sure you want to delete license "%1$s"?<br>This will also remove license from %2$s users.';
+$s_license_delete_button = 'Delete License';
+
+$s_license_request_access = 'Request Access';
+$s_license_apply_access = 'Apply Access';
+$s_license_add = 'Add license';
+
+$s_license_request_access_tip = 'User does not have access, click to send request';
+$s_license_apply_access_tip = 'User has not registered access, click to register';
+
 # manage_proj_delete_page.php
 $s_project_delete_msg = 'Are you sure you want to delete project "%1$s"?<br>This will also delete %2$s attached issue reports.';
 $s_project_delete_button = 'Delete Project';
+
+# manage_license_edit_page.php
+$s_edit_license_title = 'Edit License';
+$s_license_name = 'License Name';
+$s_license_name_label = 'License Name:';
+$s_update_license_button = 'Update License';
+$s_delete_license_button = 'Delete License';
+
+$s_add_user_license_title = 'Add User to License';
+$s_add_document_license_title = 'Add Document to License';
+$s_add_document_button = 'Add Document';
+$s_document = 'Document';
+$s_license_selection_title = 'License Selection';
+
+# $s_license_application = 'applied for license %1$s';
+$s_license_application = 'applied for license(s)';
+
+$s_license_existing = 'Existing licenses';
+
 
 # manage_proj_edit_page.php
 $s_edit_project_title = 'Edit Project';
@@ -1149,7 +1219,13 @@ $s_review_changes = 'Review Changes';
 $s_review_changes_confirmation = 'Are you sure you want to apply the following changes?';
 $s_review_changes_empty = 'There are no changes selected';
 
-# manage_proj_menu_page.php
+# manage_license_page.php
+$s_add_license_title = 'Add License';
+$s_add_license_button = 'Add License';
+$s_licenses_title = 'Licenses';
+$s_licenses_title_label = 'Licenses';
+
+# manage_proj_page.php
 $s_add_project_title = 'Add Project';
 $s_upload_file_path = 'Upload File Path';
 $s_add_project_button = 'Add Project';
@@ -1219,7 +1295,7 @@ $s_email_user_updated_msg = 'Your account has been updated by an administrator. 
 # menu_inc.php
 $s_main_link = 'Main';
 $s_view_bugs_link = 'View Issues';
-$s_view_dwg_link = 'View Documents';
+$s_view_dwgs_link = 'View Documents';
 $s_report_bug_link = 'Report Issue';
 $s_create_dwg_link = 'Create Document';
 $s_changelog_link = 'Change Log';
@@ -1234,7 +1310,7 @@ $s_logout_link = 'Logout';
 $s_my_view_link = 'My View';
 $s_invite_users = 'Invite Users';
 
-# my_view_page.php
+# my_view_page.php deprecated in favour of my_view_bug_page.php
 $s_my_view_title_unassigned = 'Unassigned';
 $s_my_view_title_recent_mod = 'Recently Modified';
 $s_my_view_title_reported = 'Reported by Me';
@@ -1244,6 +1320,10 @@ $s_my_view_title_monitored = 'Monitored by Me';
 $s_my_view_title_feedback = 'Awaiting Feedback from Me';
 $s_my_view_title_verify = 'Awaiting Confirmation of Resolution from Me';
 $s_my_view_title_my_comments = 'Issues I Have Commented On';
+
+# my_view_dwg_page.php
+$s_my_view_title_created = 'Owned by Me';
+$s_my_view_title_accepted = 'Accepted by Me';
 
 # news_add.php
 $s_news_added_msg = 'News item added...';
@@ -1317,7 +1397,7 @@ $s_remove_all_users_sure_msg = 'Are you sure you wish to remove all the users of
 $s_remove_all_users_button = 'Remove All Users';
 
 # proj_user_menu_page.php
-$s_add_user_title = 'Add user to project';
+$s_add_user_title = 'Add User to Project';
 $s_add_user_button = 'Add User';
 $s_project_selection_title = 'Project Selection';
 $s_remove_link = 'Remove';
@@ -1395,7 +1475,7 @@ $s_site_settings_link = 'Site Settings';
 $s_site_settings_updated_msg = 'Site settings have been updated';
 
 # summary_page.php
-$s_summary_title = 'Summary';
+$s_summary_title = 'Issue Summary';
 $s_summary_advanced_link = 'Advanced summary';
 $s_by_project = 'By Project';
 $s_by_status = 'By Status';
@@ -1429,6 +1509,14 @@ $s_reporter_stats = 'Reporter Stats';
 $s_orct = '(open/resolved/closed/total)';
 $s_summary_header = 'open/resolved/closed/total/resolved ratio/ratio';
 $s_summary_notice_filter_is_applied = 'A filter has been applied';
+
+# summary_dwg_page.php
+$s_summary_dwg_title = 'Document Summary';
+$s_by_creator = 'By Creator';
+$s_creator_by_resolution = 'Creator By Resolution';
+$s_creator_effectiveness = 'Creator Effectiveness';
+$s_dwg_time_stats = 'Time Stats For Accepted Documents (days)';
+$s_creator_stats = 'Creator Stats';
 
 # view_all_bug_page.php
 $s_any = 'any';
@@ -1530,6 +1618,11 @@ $s_no_users_monitoring_dwg = 'There are no users monitoring this document.';
 $s_users_monitoring_dwg = 'Users monitoring this document';
 $s_monitoring_dwg_user_list = 'User List';
 
+$s_no_licenses_dwg = 'There are no licenses applied to this document.';
+$s_licenses_applied_dwg = 'Licenses applied to this document';
+$s_licenses_dwg_list = 'License List';
+$s_licenses_dwg_mine = 'My Licenses';
+
 $s_dwg_id = 'ID';
 
 # bug_sponsorship_list_view_inc.php
@@ -1598,7 +1691,9 @@ $s_attachment_missing = 'Attachment missing';
 $s_attachment_count = 'Attachment count';
 $s_bugnotes_count = 'Issue Notes count';
 $s_dwgnotes_count = 'Document Notes count';
+$s_issue_count = 'Issues count';
 $s_view_attachments_for_issue = 'View %1$d attachment(s) for issue #%2$d';
+$s_view_issues_for_document = 'View %1$d issue(s) for document #%2$d';
 $s_warning_update_custom_field_type = '<strong>Warning:</strong> Custom field "%1$s" already has stored values. Changing field type may cause errors and unexpected behaviour if existing values are not consistent with the field\'s new type. To proceed, click the button below';
 
 # PHPMailer
@@ -1645,6 +1740,7 @@ $s_no_relationship = 'no relationship';
 $s_relationship_replaced = 'Relationship replaced';
 $s_replace_relationship_button = 'Replace';
 $s_relationship_with_parent = 'Relationship with the parent issue';
+$s_relationship_with_parent_dwg = 'Relationship with the parent document';
 $s_delete_relationship_sure_msg = 'Are you sure you wish to delete this relationship?';
 $s_relationship_warning_blocking_bugs_not_resolved = 'Not all the children of this issue are yet resolved or closed.';
 $s_relationship_warning_blocking_dwgs_not_resolved = 'Not all the children of this document are yet resolved or closed.';
@@ -1668,8 +1764,11 @@ $s_dependency_graph = 'Dependency Graph';
 $s_vertical = 'Vertical';
 $s_horizontal = 'Horizontal';
 $s_view_issue = 'View Issue';
+$s_view_document = 'View Document';
 $s_show_summary = 'Show Summary';
 $s_hide_summary = 'Hide Summary';
+$s_show_title = 'Show Title';
+$s_hide_title = 'Hide Title';
 
 # Permissions report
 $s_perm_rpt_capability = 'Capability';
@@ -1882,6 +1981,7 @@ $s_timeline_issue_reopened = '<span class="username">%1$s</span> reopened issue 
 $s_timeline_issue_assigned = '<span class="username">%1$s</span> assigned issue <span class="issue_id">%2$s</span> to <span class="username">%3$s</span>';
 $s_timeline_issue_assigned_to_self = '<span class="username">%1$s</span> picked up issue <span class="issue_id">%2$s</span>';
 $s_timeline_issue_unassigned = '<span class="username">%1$s</span> unassigned issue <span class="issue_id">%2$s</span>';
+$s_timeline_issue_title = 'Issues Timeline';
 $s_timeline_no_activity = 'No activity within time range.';
 $s_timeline_title = 'Timeline';
 $s_timeline_more = 'More events...';
@@ -1901,6 +2001,7 @@ $s_timeline_document_reopened = '<span class="username">%1$s</span> reopened doc
 $s_timeline_document_assigned = '<span class="username">%1$s</span> assigned document <span class="document_id">%2$s</span> to <span class="username">%3$s</span>';
 $s_timeline_document_assigned_to_self = '<span class="username">%1$s</span> picked up document <span class="document_id">%2$s</span>';
 $s_timeline_document_unassigned = '<span class="username">%1$s</span> unassigned document <span class="document_id">%2$s</span>';
+$s_timeline_document_title = 'Documents Timeline';
 
 /**
  * ERROR strings
@@ -1935,8 +2036,11 @@ $MANTIS_ERROR[ERROR_DB_FIELD_NOT_FOUND] = 'Database field "%1$s" not found.';
 $MANTIS_ERROR[ERROR_HANDLER_ACCESS_TOO_LOW] = 'Issue handler does not have sufficient access rights to handle issue at this status.';
 $MANTIS_ERROR[ERROR_PROJECT_HIERARCHY_DISABLED] = 'Project hierarchy (subprojects) is disabled.';
 $MANTIS_ERROR[ERROR_PROJECT_NOT_FOUND] = 'Project "%1$s" not found.';
+$MANTIS_ERROR[ERROR_LICENSE_NOT_FOUND] = 'License "%1$s" not found.';
 $MANTIS_ERROR[ERROR_PROJECT_NAME_NOT_UNIQUE] = 'A project with that name already exists. Please go back and enter a different name.';
+$MANTIS_ERROR[ERROR_LICENSE_NAME_NOT_UNIQUE] = 'A license with that name already exists. Please go back and enter a different name.';
 $MANTIS_ERROR[ERROR_PROJECT_NAME_INVALID] = 'Invalid project name specified. Project names cannot be blank.';
+$MANTIS_ERROR[ERROR_LICENSE_NAME_INVALID] = 'Invalid license name specified. License names cannot be blank.';
 $MANTIS_ERROR[ERROR_PROJECT_RECURSIVE_HIERARCHY] = 'That operation would create a loop in the subproject hierarchy.';
 $MANTIS_ERROR[ERROR_PROJECT_SUBPROJECT_DUPLICATE] = 'Project "%1$s" is already a subproject of "%2$s".';
 $MANTIS_ERROR[ERROR_PROJECT_SUBPROJECT_NOT_FOUND] = 'Project "%1$s" is not a subproject of "%2$s".';
@@ -2019,7 +2123,7 @@ $MANTIS_ERROR[ERROR_SIGNUP_NOT_MATCHING_CAPTCHA] = 'Confirmation hash does not m
 $MANTIS_ERROR[ERROR_LOST_PASSWORD_NOT_ENABLED] = 'The "lost your password" feature is not available.';
 $MANTIS_ERROR[ERROR_LOST_PASSWORD_NO_EMAIL_SPECIFIED] = 'You must provide an e-mail address in order to reset the password.';
 $MANTIS_ERROR[ERROR_LOST_PASSWORD_NOT_MATCHING_DATA] = 'The provided information does not match any registered account!';
-$MANTIS_ERROR[ERROR_LOST_PASSWORD_CONFIRM_HASH_INVALID] = 'The confirmation URL is invalid or has already been used. Please signup again.';
+$MANTIS_ERROR[ERROR_LOST_PASSWORD_CONFIRM_HASH_INVALID] = 'The confirmation URL is invalid or has already been used.';
 $MANTIS_ERROR[ERROR_LOST_PASSWORD_MAX_IN_PROGRESS_ATTEMPTS_REACHED] = 'Maximum number of in-progress requests reached. Please contact the system administrator.';
 $MANTIS_ERROR[ERROR_USER_CHANGE_LAST_ADMIN] = 'You cannot remove or demote the last administrator account. To perform the action you requested, you first need to create another administrator account.';
 $MANTIS_ERROR[ERROR_PAGE_REDIRECTION] = 'Page redirection error, ensure that there are no spaces outside the PHP block (&lt;?php ?&gt;) in config_inc.php or custom_*.php files.';
@@ -2059,7 +2163,7 @@ $MANTIS_ERROR[ERROR_TYPE_MISMATCH] = 'Data Type mismatch. Enable detailed error 
 $MANTIS_ERROR[ERROR_BUG_CONFLICTING_EDIT] = 'This issue has been updated by another user, please return to the issue and submit your changes again.';
 $MANTIS_ERROR[ERROR_DWG_CONFLICTING_EDIT] = 'This document has been updated by another user, please return to the document and submit your changes again.';
 $MANTIS_ERROR[ERROR_SPAM_SUSPECTED] = 'You have reached the allowed activity limit of %d events within the last %d seconds; your action has been blocked to avoid spam, please try again later.';
-$MANTIS_ERROR[ERROR_FIELD_TOO_LONG] = 'Field "%1$s" must be shorter or equal to %2$d characters long.';
+$MANTIS_ERROR[ERROR_FIELD_TOO_LONG] = 'Maximum length for Field "%1$s" is %2$d characters.';
 $MANTIS_ERROR[ERROR_API_TOKEN_NAME_NOT_UNIQUE] = 'API token name "%s" is already being used. Please go back and select another one.';
 $MANTIS_ERROR[ERROR_LOGFILE_NOT_WRITABLE] = 'The file specified in $g_log_destination "%s" is not writable.';
 $MANTIS_ERROR[ERROR_MONITOR_ACCESS_TOO_LOW] = 'Added user does not have sufficient access rights to monitor this issue.';

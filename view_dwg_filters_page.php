@@ -65,7 +65,7 @@ compress_enable();
 
 layout_page_header();
 
-layout_page_begin();
+layout_page_begin(null, true);
 
 $f_filter_id = gpc_get( 'filter_id', null );
 if( null === $f_filter_id ) {

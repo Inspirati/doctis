@@ -81,6 +81,12 @@ class ProjectUpdateCommand extends Command {
 	private $file_path;
 
 	/**
+	 * Project Due Date
+	 * @var string
+	 */
+	private $due_date;
+
+/**
 	 * Constructor
 	 *
 	 * $p_data['query'] is expected to contain:
@@ -160,6 +166,13 @@ class ProjectUpdateCommand extends Command {
 		$t_status_ref = $this->payload( 'status', array( 'id' => project_get_field( $this->id, 'status' ) ) );
 		$this->status = mci_get_project_status_id( $t_status_ref );
 
+		$this->due_date = $this->payload( 'due_date' );
+		if( ! empty( $this->due_date ) ) {
+			$this->due_date = strtotime( $this->due_date );
+		} else {
+			$this->due_date = 1;
+		}
+
 		# check to make sure a modified project doesn't already exist
 		if( $this->name != project_get_name( $this->id ) ) {
 			if( !project_is_name_unique( $this->name ) ) {
@@ -185,7 +198,8 @@ class ProjectUpdateCommand extends Command {
 			$this->view_state,
 			$this->file_path,
 			$this->enabled,
-			$this->inherit_global
+			$this->inherit_global,
+			$this->due_date
 		);
 
 		project_clear_cache( $this->id );

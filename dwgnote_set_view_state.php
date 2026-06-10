@@ -58,7 +58,7 @@ form_security_validate( 'dwgnote_set_view_state' );
 $f_bugnote_id	= gpc_get_int( 'bugnote_id' );
 $f_private		= gpc_get_bool( 'private' );
 
-$t_bug_id = dwgnote_get_field( $f_bugnote_id, 'bug_id' );
+$t_bug_id = dwgnote_get_field( $f_bugnote_id, 'dwg_id' );
 
 $t_bug = dwg_get( $t_bug_id, true );
 if( $t_bug->project_id != helper_get_current_project() ) {

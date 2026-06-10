@@ -69,7 +69,7 @@ function dwg_group_action_init( $p_action ) {
  */
 function dwg_group_action_print_top() {
 	layout_page_header();
-	layout_page_begin();
+	layout_page_begin(null, true);
 }
 
 /**

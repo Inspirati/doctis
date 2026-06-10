@@ -79,6 +79,9 @@ require_api( 'utility_api.php' );
 require_api( 'layout_api.php' );
 require_api( 'api_token_api.php' );
 
+// require_api( 'summary_api.php' );
+require_api( 'summary_dwg_api.php' );
+
 $g_rss_feed_url = null;
 
 $g_robots_meta = '';
@@ -783,6 +786,9 @@ function print_manage_menu( $p_page = '' ) {
 	if( access_has_project_level( config_get( 'manage_project_threshold' ) ) ) {
 		$t_pages['manage_proj_page.php'] = array( 'url'   => 'manage_proj_page.php', 'label' => 'manage_projects_link' );
 	}
+	if( access_has_project_level( config_get( 'manage_license_threshold' ) ) ) {
+		$t_pages['manage_license_page.php'] = array( 'url'   => 'manage_license_page.php', 'label' => 'manage_licenses_link' );
+	}
 	if( access_has_project_level( config_get( 'manage_import_threshold' ) ) ) {
 		$t_pages['manage_import_data_page.php'] = array( 'url'   => 'manage_import_data_page.php', 'label' => 'manage_import_link' );
 	}
@@ -798,7 +804,6 @@ function print_manage_menu( $p_page = '' ) {
 	if( access_has_global_level( config_get( 'manage_plugin_threshold' ) ) ) {
 		$t_pages['manage_plugin_page.php'] = array( 'url'   => 'manage_plugin_page.php', 'label' => 'manage_plugin_link' );
 	}
-
 	if( access_has_project_level( config_get( 'manage_configuration_threshold' ) ) ) {
 		$t_pages['adm_permissions_report.php'] = array(
 			'url'   => 'adm_permissions_report.php',
@@ -812,13 +817,13 @@ function print_manage_menu( $p_page = '' ) {
 function print_my_view_menu( $p_page = '' ) {
 	$t_pages = array();
 
-	if( access_has_global_level( config_get( 'manage_site_threshold' ) ) ) {
+	if( access_has_global_level( config_get( 'timeline_view_threshold' ) ) ) {
 		$t_pages['my_view_bug_page.php'] = array( 'url'   => 'my_view_bug_page.php', 'label' => 'my_view_bug_link' );
 	}
-	if( access_has_global_level( config_get( 'manage_user_threshold' ) ) ) {
+	if( access_has_global_level( config_get( 'timeline_view_threshold' ) ) ) {
 		$t_pages['my_view_dwg_page.php'] = array( 'url'   => 'my_view_dwg_page.php', 'label' => 'my_view_dwg_link' );
 	}
-	if( access_has_global_level( config_get( 'manage_user_threshold' ) ) ) {
+	if( access_has_global_level( config_get( 'timeline_view_threshold' ) ) ) {
 		$t_pages['my_view_cnf_page.php'] = array( 'url'   => 'my_view_cnf_page.php', 'label' => 'my_view_cnf_link' );
 	}
 	print_menu( $t_pages, $p_page, 'EVENT_MENU_MY_VIEW' );
@@ -981,19 +986,33 @@ function print_doc_menu( $p_page = '' ) {
  * @return void
  */
 function print_summary_menu( $p_page = '', ?array $p_filter = null ): void {
-	$t_link = 'summary_page.php';
-	$t_filter_param = $p_filter ? filter_get_temporary_key_param( $p_filter ) : '';
-	if( $t_filter_param ) {
-		$t_link = helper_url_combine( $t_link, $t_filter_param );
-	}
-	$t_pages['summary_page.php'] = array(
-		'url' => $t_link,
-		'label' => 'summary_link',
-	);
+	$t_pages = array();
+
+	// if( $p_page == 'summary_page.php' )  {
+		$t_link = 'summary_page.php';
+		$t_filter_param = $p_filter ? filter_get_temporary_key_param( $p_filter ) : '';
+		if( $t_filter_param ) {
+			$t_link = helper_url_combine( $t_link, $t_filter_param );
+		}
+		$t_pages['summary_page.php'] = array( 'url' => $t_link, 'label' => 'issue_summary' );
+	// }
+	// if( $p_page == 'summary_dwg_page.php' )  {
+		$t_link = 'summary_dwg_page.php';
+		$t_filter_param = $p_filter ? filter_dwg_get_temporary_key_param( $p_filter ) : '';
+		if( $t_filter_param ) {
+			$t_link = helper_url_combine( $t_link, $t_filter_param );
+		}
+		$t_pages['summary_dwg_page.php'] = array( 'url' => $t_link, 'label' => 'document_summary' );
+	// }
 
 	print_menu( $t_pages, $p_page, 'EVENT_MENU_SUMMARY' );
 
-	summary_print_filter_info( $p_filter );
+	if( $p_page == 'summary_page.php' )  {
+		summary_print_filter_info( $p_filter );
+	}
+	if( $p_page == 'summary_dwg_page.php' )  {
+		summary_dwg_print_filter_info( $p_filter );
+	}
 }
 
 /**
@@ -1100,16 +1119,12 @@ function html_get_status_css_fg( $p_status, $p_user = null, $p_project = null ) 
 	if( MantisEnum::hasValue( $t_status_enum, $p_status ) ) {
 		return 'status-' . $p_status . '-fg';
 	} else {
-		return '';
-	}
-}
-
-function html_dwg_get_status_css_fg( $p_status, $p_user = null, $p_project = null ) {
-	$t_status_enum = config_get( 'dwg_status_enum_string', null, $p_user, $p_project );
-	if( MantisEnum::hasValue( $t_status_enum, $p_status ) ) {
-		return 'status-' . $p_status . '-fg';
-	} else {
-		return '';
+		$t_status_enum = config_get( 'dwg_status_enum_string', null, $p_user, $p_project );
+		if( MantisEnum::hasValue( $t_status_enum, $p_status ) ) {
+			return 'status-' . $p_status . '-fg';
+		} else {
+			return '';
+		}
 	}
 }
 
@@ -1128,7 +1143,12 @@ function html_get_status_css_bg( $p_status, $p_user = null, $p_project = null ) 
 	if( MantisEnum::hasValue( $t_status_enum, $p_status ) ) {
 		return 'status-' . $p_status . '-bg';
 	} else {
-		return '';
+		$t_status_enum = config_get( 'dwg_status_enum_string', null, $p_user, $p_project );
+		if( MantisEnum::hasValue( $t_status_enum, $p_status ) ) {
+			return 'status-' . $p_status . '-bg';
+		} else {
+			return '';
+		}
 	}
 }
 

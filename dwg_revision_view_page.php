@@ -66,11 +66,11 @@ if( $f_bug_id ) {
 	$t_bugnote_id = false;
 	$t_bug_revisions = dwg_revision_list( $t_bug_id );
 
-	$t_title = lang_get( 'issue_id' ) . $t_bug_id;
+	$t_title = lang_get( 'dwg_issue_id' ) . $t_bug_id;
 
 } elseif( $f_bugnote_id ) {
 	$t_bugnote_id = (int)$f_bugnote_id;
-	$t_bug_id = dwgnote_get_field( $t_bugnote_id, 'bug_id' );
+	$t_bug_id = dwgnote_get_field( $t_bugnote_id, 'dwg_id' );
 
 	$t_bug_revisions = dwg_revision_list( $t_bug_id, REV_ANY, $f_bugnote_id );
 
@@ -87,7 +87,7 @@ if( $f_bug_id ) {
 	$t_bug_id = $t_rev['dwg_id'];
 	$t_bugnote_id = $t_rev['dwgnote_id'];
 
-	$t_title = lang_get( 'issue_id' ) . $t_bug_id;
+	$t_title = lang_get( 'dwg_issue_id' ) . $t_bug_id;
 
 } else {
 	trigger_error( ERROR_GENERIC, ERROR );
@@ -196,7 +196,7 @@ function show_dwg_revision( array $p_revision ) {
 } # End show_revision()
 
 layout_page_header( dwg_format_summary( $t_bug_id, SUMMARY_CAPTION ) );
-layout_page_begin();
+layout_page_begin(null, true);
 
 ?>
 
@@ -215,9 +215,9 @@ layout_page_begin();
 					<div class="btn-group pull-right">
 <?php
 if( !$f_bug_id && !$f_bugnote_id ) {
-	print_small_button( '?bug_id=' . $t_bug_id, lang_get( 'all_revisions' ) );
+	print_dwg_small_button( '?bug_id=' . $t_bug_id, lang_get( 'all_revisions' ) );
 }
-print_small_button( 'view.php?id=' . $t_bug_id, lang_get( 'back_to_issue' ) );
+print_dwg_small_button( 'view.php?id=' . $t_bug_id, lang_get( 'back_to_issue' ) );
 ?>
 					</div>
 				</div>
@@ -228,7 +228,7 @@ print_small_button( 'view.php?id=' . $t_bug_id, lang_get( 'back_to_issue' ) );
 					<table class="table table-bordered table-condensed table-striped">
 						<tr>
 							<th class="category width-20">
-								<?php echo lang_get( 'summary' ) ?>
+								<?php echo lang_get( 'document_summary' ) ?>
 							</th>
 							<td>
 								<?php echo dwg_format_summary( $t_bug_id, SUMMARY_FIELD ) ?>

@@ -106,8 +106,8 @@ require_api( 'file_dwg_api.php' );
 					<?php echo lang_get( 'view_status' ) ?>
 				</th>
 				<td>
-				<label for="bugnote_add_view_status">
-					<input type="checkbox" class="ace" id="bugnote_add_view_status" name="private" <?php check_checked( $t_default_bugnote_view_status, VS_PRIVATE ); ?> />
+				<label for="dwgnote_add_view_status">
+					<input type="checkbox" class="ace" id="dwgnote_add_view_status" name="private" <?php check_checked( $t_default_bugnote_view_status, VS_PRIVATE ); ?> />
 					<span class="lbl padding-6"><?php echo lang_get( 'private' ) ?></span>
 				</label>
 				</td>

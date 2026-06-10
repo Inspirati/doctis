@@ -140,7 +140,11 @@ if( config_get_global( 'admin_checks' ) == ON ) {
 	$t_admin_dir = __DIR__ . '/admin';
 	$t_admin_dir_is_accessible = @is_readable( $t_admin_dir );
 	if( $t_admin_dir_is_accessible ) {
-		$t_warnings[] = lang_get( 'warning_admin_directory_present' );
+		$t_admin_htaccess_file = __DIR__ . '/admin/.htaccess';
+		$t_admin_htaccess_file_exists = @is_readable( $t_admin_htaccess_file );
+		if( ! $t_admin_htaccess_file_exists ) {
+			$t_warnings[] = lang_get( 'warning_admin_directory_present' );
+		}
 	}
 
 	# Generate a warning if default user administrator/root is valid.

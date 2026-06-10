@@ -71,9 +71,17 @@ foreach ( $t_summary_header_arr as $t_summary_header_name ) {
 	$t_summary_header .= '</th>';
 }
 
-layout_page_header( lang_get( 'summary_link' ) );
+layout_page_header( lang_get( 'issue_summary' ) );
 
-layout_page_begin( __FILE__ );
+// layout_page_header_begin( lang_get( 'issue_summary' ) );
+// $t_refresh_delay = current_user_get_pref( 'refresh_delay' );
+// if( $t_refresh_delay > 0 ) {
+// 	html_meta_redirect( 'summary_page.php?refresh=true', $t_refresh_delay * 60 );
+// }
+// layout_page_header_end();
+
+
+layout_page_begin( 'summary_page.php' );
 
 print_summary_menu( 'summary_page.php', $t_filter );
 print_summary_submenu();

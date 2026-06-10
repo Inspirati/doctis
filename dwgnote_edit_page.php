@@ -69,7 +69,7 @@ require_api( 'print_dwg_api.php' );
 require_api( 'string_api.php' );
 
 $f_bugnote_id = gpc_get_int( 'bugnote_id' );
-$t_bug_id = dwgnote_get_field( $f_bugnote_id, 'bug_id' );
+$t_bug_id = dwgnote_get_field( $f_bugnote_id, 'dwg_id' );
 
 $t_bug = dwg_get( $t_bug_id, true );
 if( $t_bug->project_id != helper_get_current_project() ) {
@@ -108,14 +108,14 @@ $t_redirect_url = string_get_dwg_view_url( $t_bug_id );
 
 layout_page_header( dwg_format_summary( $t_bug_id, SUMMARY_CAPTION ) );
 
-layout_page_begin();
+layout_page_begin(null, true);
 
 $t_bugnote_class = dwgnote_get_field( $f_bugnote_id, 'view_state' ) == VS_PUBLIC ? '' : 'bugnote-private';
 ?>
 <div class="col-md-12 col-xs-12">
 
-<form method="post" action="bugnote_update.php">
-<?php echo form_security_field( 'bugnote_update' ) ?>
+<form method="post" action="dwgnote_update.php">
+<?php echo form_security_field( 'dwgnote_update' ) ?>
 <input type="hidden" name="bugnote_id" value="<?php echo $f_bugnote_id ?>" />
 <div class="widget-box widget-color-blue2">
 <div class="widget-header widget-header-small">

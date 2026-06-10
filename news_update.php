@@ -73,6 +73,10 @@ $t_buttons = array(
 	array( 'news_menu_page.php' ),
 	array( 'news_edit_page.php?news_id=' . $f_news_id . '&action=edit', lang_get( 'edit' ) ),
 );
+
+// function html_operation_confirmation( array $p_buttons = [], string $p_message = '', int $p_type = CONFIRMATION_TYPE_SUCCESS ): void {
+		// html_operation_confirmation( $t_buttons,
+		// 	error_string( ERROR_ACCESS_DENIED ), CONFIRMATION_TYPE_FAILURE );
 html_operation_confirmation( $t_buttons, CONFIRMATION_TYPE_SUCCESS );
 
 echo '<br />';
@@ -80,3 +84,42 @@ echo '<br />';
 print_news_entry( $f_headline, $f_body, $t_row['poster_id'], $f_view_state, $f_announcement, $t_row['date_posted'] );
 
 layout_page_end();
+
+
+// /**
+//  * Outputs an operation successful message with a single redirect link.
+//  * @param string $p_redirect_url The url to redirect to.
+//  * @param string $p_message      Message to display to the user.
+//  * @return void
+//  */
+// function html_operation_successful( $p_redirect_url, $p_message = '' ) {
+// 	html_operation_confirmation( array( array( $p_redirect_url ) ), $p_message );
+// }
+
+// /**
+//  * Outputs a warning message with a single redirect link.
+//  * @param string $p_redirect_url The url to redirect to.
+//  * @param string $p_message      Message to display to the user.
+//  * @return void
+//  */
+// function html_operation_warning( $p_redirect_url, $p_message = '' ) {
+// 	html_operation_confirmation(
+// 		array( array( $p_redirect_url ) ),
+// 		$p_message,
+// 		CONFIRMATION_TYPE_WARNING
+// 	);
+// }
+
+// /**
+//  * Outputs an error message with a single redirect link.
+//  * @param string $p_redirect_url The url to redirect to.
+//  * @param string $p_message      Message to display to the user.
+//  * @return void
+//  */
+// function html_operation_failure( $p_redirect_url, $p_message = '' ) {
+// 	html_operation_confirmation(
+// 		array( array( $p_redirect_url ) ),
+// 		$p_message,
+// 		CONFIRMATION_TYPE_FAILURE
+// 	);
+// }

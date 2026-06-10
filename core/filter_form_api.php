@@ -293,7 +293,7 @@ function print_filter_document_id( ?array $p_filter = null ) {
 			// 	check_selected( $p_filter[FILTER_PROPERTY_DOCUMENT_ID], META_FILTER_MYSELF );
 			// 	echo '>[' . lang_get( 'myself' ) . ']</option>';
 			// }
-		print_document_option_list( $p_filter[FILTER_PROPERTY_DOCUMENT_ID] );
+		print_document_option_list( $p_filter[FILTER_PROPERTY_DOCUMENT_ID], null, false, true );
 	// }
 		?>
 		</select>
@@ -1787,7 +1787,7 @@ function print_filter_values_relationship_type( array $p_filter ) {
 			case META_FILTER_ANY:
 				echo lang_get( 'any' );
 				break;
-			default;
+			default:
 				echo lang_get( 'any' ),' ' , lang_get( 'with' ), ' ', $c_rel_bug;
 		}
 	} elseif( BUG_REL_NONE == $c_rel_type ) {
@@ -1796,7 +1796,7 @@ function print_filter_values_relationship_type( array $p_filter ) {
 			case META_FILTER_NONE:
 			case META_FILTER_ANY:
 				break;
-			default;
+			default:
 				echo ' ', lang_get( 'with' ), ' ', $c_rel_bug;
 		}
 	} else {
@@ -1808,7 +1808,7 @@ function print_filter_values_relationship_type( array $p_filter ) {
 			case META_FILTER_ANY:
 				echo lang_get( 'any' );
 				break;
-			default;
+			default:
 				echo $c_rel_bug;
 		}
 	}

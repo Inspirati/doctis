@@ -46,6 +46,9 @@
  * @uses user_api.php
  * @uses user_pref_api.php
  * @uses utility_api.php
+ ## CN-start
+ * @uses template_api.php
+ ## CN-end
  *
  * @uses PHPMailerAutoload.php PHPMailer library
  *
@@ -76,14 +79,12 @@ require_api( 'string_api.php' );
 require_api( 'user_api.php' );
 require_api( 'user_pref_api.php' );
 require_api( 'utility_api.php' );
+## CN-start
+require_api( 'template_api.php' );
+## CN-end
 
-require_once( __DIR__ . '/classes/EmailMessage.class.php' );
-require_once( __DIR__ . '/classes/EmailSender.class.php' );
-
-# PHPMailer is needed for email address validation independent of the provider used
-# to send the emails.
 use PHPMailer\PHPMailer\PHPMailer;
-
+use PHPMailer\PHPMailer\Exception as phpmailerException;
 use Mantis\Exceptions\ClientException;
 use VBoctor\Email\DisposableEmailChecker;
 
@@ -351,7 +352,7 @@ function email_collect_recipients( $p_bug_id, $p_notify_type, array $p_extra_use
  * @return void
  * @throws ClientException
  */
-function email_generic( $p_bug_id, $p_notify_type, $p_message_id = null, array $p_header_optional_params = [], array $p_extra_user_ids_to_email = array() ) {
+function email_generic( $p_bug_id, $p_notify_type, $p_message_id = null, array $p_header_optional_params = null, array $p_extra_user_ids_to_email = array() ) {
 	# @todo yarick123: email_collect_recipients(...) will be completely rewritten to provide additional information such as language, user access,..
 	# @todo yarick123:sort recipients list by language to reduce switches between different languages
 	$t_recipients = email_collect_recipients( $p_bug_id, $p_notify_type, $p_extra_user_ids_to_email );
@@ -370,7 +371,7 @@ function email_generic( $p_bug_id, $p_notify_type, $p_message_id = null, array $
  * @return void
  * @throws ClientException
  */
-function email_generic_to_recipients( int $p_bug_id, string $p_notify_type, array $p_recipients, $p_message_id = null, array $p_header_optional_params = [] ) {
+function email_generic_to_recipients( $p_bug_id, $p_notify_type, array $p_recipients, $p_message_id = null, array $p_header_optional_params = null ) {
 	if( empty( $p_recipients ) ) {
 		return;
 	}
@@ -475,12 +476,15 @@ function email_relationship_added( $p_bug_id, $p_related_bug_id, $p_rel_type, $p
 function email_filter_recipients_for_bug( $p_bug_id, array $p_recipients ) {
 	$t_view_bug_threshold = config_get( 'view_bug_threshold' );
 
-	return array_filter( $p_recipients,
-		function( $t_recipient_id ) use ( $t_view_bug_threshold, $p_bug_id ) {
-			return access_has_bug_level( $t_view_bug_threshold, $p_bug_id, $t_recipient_id );
-		},
-		ARRAY_FILTER_USE_KEY
-	);
+	$t_authorized_recipients = array();
+
+	foreach( $p_recipients as $t_recipient_id => $t_recipient_email ) {
+		if( access_has_bug_level( $t_view_bug_threshold, $p_bug_id, $t_recipient_id ) ) {
+			$t_authorized_recipients[$t_recipient_id] = $t_recipient_email;
+		}
+	}
+
+	return $t_authorized_recipients;
 }
 
 /**
@@ -712,7 +716,7 @@ function email_bug_updated( $p_bug_id ) {
  *
  * @return string
  */
-// function email_generate_bug_md5( $p_bug_id, $p_date_submitted ) {
+// function email_generate_md5( $p_bug_id, $p_date_submitted ) {
 // 	return md5( $p_bug_id . $p_date_submitted );
 // }
 
@@ -773,6 +777,42 @@ function email_bugnote_add( $p_bugnote_id, $p_files = array(), $p_exclude_user_i
 		$t_message = lang_get( 'email_notification_title_for_action_bugnote_submitted' ) . "\n\n";
 
 		$t_show_time_tracking = access_has_bug_level( $t_time_tracking_access_threshold, $t_bugnote->bug_id, $t_user_id );
+## CN-start
+## setting required in config_inc.php :
+## $g_use_mailtemplate = ON;
+## here we also check if the mail template exists
+	$templating = OFF;
+	if ( ON == config_get( 'use_mailtemplate' ) )  {
+		$template_definition = config_get( 'note_mailtemplate' );
+		if (file_exists($template_definition)) {
+			$templating = ON;
+		}
+	}
+	if ( $templating ) {
+		$t_message = email_template_bugnote($t_bugnote, $t_project_id, $t_show_time_tracking, $t_separator,$t_message );
+		$t_message .= "<br>";	
+		# Files attached
+		if( count( $p_files ) > 0 &&
+			access_has_bug_level( $t_view_attachments_threshold, $t_bugnote->bug_id, $t_user_id ) ) {
+			$t_message .= lang_get( 'bugnote_attached_files' ) . "<br>";
+
+			foreach( $p_files as $t_file ) {
+				$t_message .= '- ' . $t_file['name'] . ' (' . number_format( $t_file['size'] ) .
+					' ' . lang_get( 'bytes' ) . ")<br>";
+			}
+
+			$t_message .= "<br>";
+		}
+		if ( ON == config_get( 'escape_mailtemplate' ) )  {
+			$t_contents = htmlspecialchars( $t_message . "<br>" );
+		} else {
+			$t_contents = $t_message . "<br>";
+		}
+
+
+	} else {
+## CN-end
+
 		$t_formatted_note = email_format_bugnote( $t_bugnote, $t_project_id, $t_show_time_tracking, $t_separator );
 		$t_message .= trim( $t_formatted_note ) . "\n";
 		$t_message .= $t_separator . "\n";
@@ -795,7 +835,9 @@ function email_bugnote_add( $p_bugnote_id, $p_files = array(), $p_exclude_user_i
 		$t_mail_headers = [
 			'In-Reply-To' => email_generate_md5( $t_bugnote->bug_id, $t_date_submitted )
 		];
-
+## CN-start
+	}
+## CN-end
 		email_store( $t_user_email, $t_subject, $t_contents, $t_mail_headers );
 
 		log_event( LOG_EMAIL_VERBOSE, 'queued bugnote email for note ~' . $p_bugnote_id .
@@ -889,7 +931,7 @@ function email_owner_changed($p_bug_id, $p_prev_handler_id, $p_new_handler_id ) 
 		}
 	}
 
-	email_generic( $p_bug_id, 'owner', $t_message_id, /* headers */ [], $t_extra_user_ids_to_email );
+	email_generic( $p_bug_id, 'owner', $t_message_id, /* headers */ null, $t_extra_user_ids_to_email );
 }
 
 /**
@@ -943,7 +985,10 @@ function email_build_subject( $p_bug_id ) {
 	$t_email_subject = '[' . $p_project_name . ' ' . $t_bug_id . ']: ' . $p_subject;
 
 	# update subject as defined by plugins
-	return event_signal( 'EVENT_DISPLAY_EMAIL_BUILD_SUBJECT', $t_email_subject, array( $p_bug_id ) );
+	/** @noinspection PhpUnnecessaryLocalVariableInspection */
+	$t_email_subject = event_signal( 'EVENT_DISPLAY_EMAIL_BUILD_SUBJECT', $t_email_subject, array( 'bug_id' => $p_bug_id ) );
+
+	return $t_email_subject;
 }
 
 /**
@@ -1088,7 +1133,7 @@ function email_user_mention( $p_bug_id, $p_mention_user_ids, $p_message, $p_remo
  * @return void
  * @throws ClientException
  */
-function email_bug_info_to_one_user( array $p_visible_bug_data, string $p_message_id, int $p_user_id, array $p_header_optional_params = [] ) {
+function email_bug_info_to_one_user( array $p_visible_bug_data, $p_message_id, $p_user_id, array $p_header_optional_params = null ) {
 	$t_user_email = user_get_email( $p_user_id );
 
 	# check whether email should be sent
@@ -1103,16 +1148,37 @@ function email_bug_info_to_one_user( array $p_visible_bug_data, string $p_messag
 	# build message
 	$t_message = lang_get_defaulted( $p_message_id );
 
-	if( $p_header_optional_params ) {
+	if( is_array( $p_header_optional_params ) ) {
 		$t_message = vsprintf( $t_message, $p_header_optional_params );
 	}
 
 	if( ( $t_message !== null ) && ( !is_blank( $t_message ) ) ) {
 		$t_message .= " \n";
 	}
-
+## CN-start
+## test CN to enable template for sending email
+## setting required on config_inc.php :
+## $g_use_mailtemplate = ON;
+## here we also check if the mail template exists
+	$templating = OFF;
+	if ( ON == config_get( 'use_mailtemplate' ) )  {
+		$template_definition = config_get( 'bug_mailtemplate' );
+		if (file_exists($template_definition)) {
+			$templating = ON;
+		}
+	}
+	if ( $templating ) {
+		if ( ON == config_get( 'escape_mailtemplate' ) )  {
+			$t_message = htmlspecialchars( email_template_bug_message( $p_visible_bug_data, $t_message ) );
+		} else {
+			$t_message = email_template_bug_message( $p_visible_bug_data, $t_message );
+		}
+	} else {
+## CN-end
 	$t_message .= email_format_bug_message( $p_visible_bug_data );
-
+## CN-start
+	}
+## CN-end
 	# build headers
 	$t_bug_id = $p_visible_bug_data['email_bug'];
 	$t_message_md5 = email_generate_md5( $t_bug_id, $p_visible_bug_data['email_date_submitted'] );
@@ -1214,6 +1280,8 @@ function email_format_bug_message( array $p_visible_bug_data ) {
 	if ( isset( $p_visible_bug_data[ 'email_reproducibility' ] ) ) {
 		$p_visible_bug_data['email_reproducibility'] = get_enum_element( 'reproducibility', $p_visible_bug_data['email_reproducibility'] );
 		$t_message .= email_format_attribute( $p_visible_bug_data, 'email_reproducibility' );
+	} else {
+		$p_visible_bug_data['email_reproducibility'] = false;
 	}
 		
 	if ( isset( $p_visible_bug_data[ 'email_severity' ] ) ) {
@@ -1279,7 +1347,7 @@ function email_format_bug_message( array $p_visible_bug_data ) {
 
 	if( isset( $p_visible_bug_data['relations'] ) ) {
 		if( $p_visible_bug_data['relations'] != '' ) {
-			$t_message .= $t_email_separator1 . "\n" . utf8_str_pad( lang_get( 'bug_relationships' ), 20 ) . utf8_str_pad( lang_get( 'id' ), 8 ) . lang_get( 'summary' ) . "\n" . $t_email_separator2 . "\n" . $p_visible_bug_data['relations'];
+			$t_message .= $t_email_separator1 . "\n" . utf8_str_pad( lang_get( 'bug_relationships' ), 20 ) . utf8_str_pad( lang_get( 'id' ), 8 ) . lang_get( 'issue_summary' ) . "\n" . $t_email_separator2 . "\n" . $p_visible_bug_data['relations'];
 		}
 	}
 
@@ -1331,26 +1399,6 @@ function email_format_bug_message( array $p_visible_bug_data ) {
 	}
 
 	return $t_message;
-}
-
-/**
- * Format email attribute for display.
- *
- * If $p_visible_bug_data contains specified attribute the function
- * returns concatenated translated attribute name and original
- * attribute value. Else return empty string.
- *
- * @param array  $p_visible_bug_data Visible Bug Data array.
- * @param string $p_attribute_id     Attribute ID.
- *
- * @return string
- */
-function email_format_attribute( array $p_visible_bug_data, $p_attribute_id ) {
-	if( array_key_exists( $p_attribute_id, $p_visible_bug_data ) ) {
-		return utf8_str_pad( lang_get( $p_attribute_id ) . ': ', config_get( 'email_padding_length' ) )
-			. $p_visible_bug_data[$p_attribute_id] . "\n";
-	}
-	return '';
 }
 
 /**
@@ -1491,12 +1539,12 @@ function email_build_visible_bug_data( $p_user_id, $p_bug_id, $p_message_id ) {
  * Return formatted string with all the details on the requested relationship.
  *
  * @param int                 $p_bug_id       A bug identifier.
- * @param DwgRelationshipData $p_relationship A bug relationship object.
+ * @param BugRelationshipData $p_relationship A bug relationship object.
  *
  * @return string
  * @throws ClientException
  */
-function email_relationship_get_details( $p_bug_id, DwgRelationshipData $p_relationship ) {
+function email_relationship_get_details( $p_bug_id, BugRelationshipData $p_relationship ) {
 	$t_summary_wrap_at = mb_strlen( config_get( 'email_separator2' ) ) - 28;
 
 	if( $p_bug_id == $p_relationship->src_bug_id ) {

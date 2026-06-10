@@ -130,10 +130,22 @@ function get_status_color( $p_status, $p_user = null, $p_project = null, $p_defa
 	return $p_default_color;
 }
 
+function get_dwg_status_color( $p_status, $p_user = null, $p_project = null, $p_default_color = '#ffffff' ) {
+	$t_status_enum = config_get( 'dwg_status_enum_string', null, $p_user, $p_project );
+	$t_status_colors = config_get( 'status_colors', null, $p_user, $p_project );
+	$t_status_label = MantisEnum::getLabel( $t_status_enum, $p_status );
+
+	if( isset( $t_status_colors[$t_status_label] ) ) {
+		return $t_status_colors[$t_status_label];
+	}
+	return $p_default_color;
+}
+
 /**
  * get the status percentages
  * @return array key is the status value, value is the percentage of bugs for the status
  */
+// @TODO RobD - seemingly unused?
 function get_percentage_by_status() {
 	$t_project_id = helper_get_current_project();
 	$t_user_id = auth_get_current_user_id();
@@ -997,6 +1009,37 @@ function helper_get_link_attributes( $p_return_array = true, $p_is_external_link
 		$t_string .= " $t_attr=\"$t_value\"";
 	}
 	return $t_string;
+}
+
+/**
+ * Checks that a string's length is within the allowed size.
+ *     
+ * @param string $p_string Text to check
+ *
+ * @return bool True if smaller than or equal to the maximum allowed length
+ *              {@see $g_max_textarea_length}.
+ */
+function helper_is_longtext_length_valid( string $p_string ): bool {
+	return mb_strlen( $p_string ) <= config_get_global( 'max_textarea_length' );
+}
+
+/**
+ * Throws error if a string's length is bigger than the allowed maximum.
+ *
+ * @param string $p_string Text to check.
+ * @param string $p_field  Field name.
+ *
+ * @throws ClientException
+ */
+function helper_ensure_longtext_length_valid( string $p_string, string $p_field ): void {
+	if( !helper_is_longtext_length_valid( $p_string ) ) {
+		$t_max_length = config_get_global( 'max_textarea_length' );
+		throw new ClientException(
+			'Long text field "' . $p_field . '" must be shorter than ' . $t_max_length . ' characters.',
+			ERROR_FIELD_TOO_LONG,
+			array( lang_get( $p_field ), $t_max_length )
+		);
+	}
 }
 
 /**

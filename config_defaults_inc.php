@@ -397,6 +397,7 @@ $g_notify_new_user_created_threshold_min = ADMINISTRATOR;
  * @global int $g_send_reset_password
  */
 $g_send_reset_password = ON;
+// $g_send_reset_password = OFF;
 
 /**
  * Use captcha image to validate subscription it requires GD library installed.
@@ -541,9 +542,11 @@ $g_email_notifications_verbose = OFF;
  */
 $g_default_notify_flags = array(
 	'reporter'      => ON,
+	'creator'       => ON,
 	'handler'       => ON,
 	'monitor'       => ON,
 	'bugnotes'      => ON,
+	'dwgnotes'      => ON,
 	'category'      => ON,
 	'explicit'      => ON,
 	'threshold_min' => NOBODY,
@@ -593,12 +596,15 @@ $g_default_notify_flags = array(
 $g_notify_flags = array(
 	'new' => array(
 		'bugnotes'      => OFF,
+		'dwgnotes'      => OFF,
 	),
 	'monitor' => array(
 		'reporter'      => OFF,
+		'creator'       => OFF,
 		'handler'       => OFF,
 		'monitor'       => OFF,
 		'bugnotes'      => OFF,
+		'dwgnotes'      => OFF,
 		'explicit'      => ON,
 		'threshold_min' => NOBODY,
 		'threshold_max' => NOBODY,
@@ -610,7 +616,8 @@ $g_notify_flags = array(
  *
  * @global int $g_email_receive_own
  */
-$g_email_receive_own = OFF;
+// $g_email_receive_own = OFF;
+$g_email_receive_own = ON;
 
 /**
  * Email addresses validation
@@ -996,7 +1003,11 @@ $g_email_retry_in_days = 7;
  * @see MANTIS_VERSION
  * @global int $g_show_version
  */
-$g_show_version = OFF;
+// $g_show_version = ON;
+// $g_show_version = OFF;
+$g_show_version_suffix = ON;
+// $g_show_copyright_footer = OFF;
+$g_show_copyright_footer = ON;
 
 /**
  * String appended to the MantisBT version when displayed to the user.
@@ -1004,6 +1015,7 @@ $g_show_version = OFF;
  * @global string $g_version_suffix
  */
 $g_version_suffix = '';
+$g_version_prefix = 'version ';
 
 /**
  * Custom copyright and licensing statement shown at the footer of each page.
@@ -1411,7 +1423,9 @@ $g_view_dwg_page_columns = array(
 	'selection', 'edit', 'priority',
 	'id',
 	'dwgnotes_count', 'attachment_count',
-	'category_id', 'status', 'title', 'number', 'revision', 'reference', 'date', 'last_updated', 
+	'issue_count',
+	'category_id', 'status', 'last_updated', 'title', 'number', 'revision', 'reference',
+	'date', // @TODO RobD - for some reason 'date' needs to be here to avoid error on bug_update_page.php 'Undefined array key "updated_at"' in '/var/www/html/doctis/core/commands/DwgViewPageCommand.php' line 184
 );
 
 /**
@@ -1743,6 +1757,7 @@ $g_default_new_account_access_level = REPORTER;
  * @global int $g_default_project_view_status
  */
 $g_default_project_view_status = VS_PUBLIC;
+$g_default_license_view_status = VS_PUBLIC;
 
 /**
  * Default Bug View Status (VS_PUBLIC or VS_PRIVATE).
@@ -1837,9 +1852,10 @@ $g_default_dwg_eta = ETA_NONE;
  *
  * @global int $g_default_bug_relationship_clone
  */
-$g_default_bug_relationship_clone = BUG_REL_NONE;
-$g_default_dwg_relationship_clone = DWG_REL_NONE;
-
+//$g_default_bug_relationship_clone = BUG_REL_NONE;
+$g_default_bug_relationship_clone = BUG_DUPLICATE;
+//$g_default_dwg_relationship_clone = DWG_REL_NONE;
+$g_default_dwg_relationship_clone = BUG_DUPLICATE;
 /**
  * Allow parent bug to close regardless of child status.
  *
@@ -1882,19 +1898,21 @@ $g_default_document_for_moves = 1;
  * @global int $g_default_limit_view
  */
 $g_default_limit_view = 50;
+$g_default_dwg_limit_view = 50;
 
 /**
  *
  * @global int $g_default_show_changed
  */
 $g_default_show_changed = 6;
+$g_default_dwg_show_changed = 6;
 
 /**
  *
  * @global int $g_hide_status_default
  */
 $g_hide_status_default = CLOSED;
-$g_dwg_hide_status_default = CLOSED;
+$g_hide_dwg_status_default = ARCHIVED;
 
 /**
  *
@@ -2080,7 +2098,7 @@ $g_summary_category_include_project = OFF;
  *
  * @global int $g_view_summary_threshold
  */
-$g_view_summary_threshold = MANAGER;
+$g_view_summary_threshold = DEVELOPER;
 
 /**
  * Severity multipliers used to determine reporters effectiveness.
@@ -2222,7 +2240,8 @@ $g_mentions_tag = '@';
  *
  * @global int $g_enable_sponsorship
  */
-$g_enable_sponsorship = OFF;
+// $g_enable_sponsorship = OFF;
+$g_enable_sponsorship = ON;
 
 /**
  * Currency used for all sponsorships.
@@ -2478,6 +2497,18 @@ $g_html_valid_tags = 'p, li, ul, ol, br, pre, i, b, u, em, strong';
  * @global string $g_html_valid_tags_single_line
  */
 $g_html_valid_tags_single_line = 'i, b, u, em, strong';
+
+/**
+ * Maximum size for long text fields.
+ *
+ * Applies to: bug description, steps to reproduce, additional information,
+ * bugnotes.
+ *
+ * This reduces the risk of DoS attacks (see #35893).
+ *
+ * @global int $g_max_textarea_length
+ */
+$g_max_textarea_length = 65535;
 
 /**
  * Maximum length of the description in a dropdown menu (for search).
@@ -2740,7 +2771,7 @@ $g_ldap_simulation_file_path = '';
  * @global int $g_bug_submit_status
  */
 $g_bug_submit_status = NEW_;
-$g_dwg_submit_status = NEW_;
+$g_dwg_submit_status = PENDING;
 
 /**
  * Status to assign to the bug when assigned.
@@ -2756,7 +2787,7 @@ $g_dwg_assigned_status = ASSIGNED;
  * @global int $g_bug_reopen_status
  */
 $g_bug_reopen_status = FEEDBACK;
-$g_dwg_reopen_status = FEEDBACK;
+$g_dwg_reopen_status = REWORK;
 
 /**
  * Status to assign to the bug when feedback is required from the issue reporter.
@@ -2767,7 +2798,7 @@ $g_dwg_reopen_status = FEEDBACK;
  * @global int $g_bug_feedback_status
  */
 $g_bug_feedback_status = FEEDBACK;
-$g_dwg_feedback_status = FEEDBACK;
+$g_dwg_feedback_status = REWORK;
 
 /**
  * Automatically reassign issue when feedback has been provided.
@@ -2809,7 +2840,7 @@ $g_dwg_duplicate_resolution = DUPLICATE;
  * @global int $g_bug_readonly_status_threshold
  */
 $g_bug_readonly_status_threshold = RESOLVED;
-$g_dwg_readonly_status_threshold = RESOLVED;
+$g_dwg_readonly_status_threshold = ARCHIVED;
 
 /**
  * Bug is resolved, ready to be closed or reopened.
@@ -2820,7 +2851,7 @@ $g_dwg_readonly_status_threshold = RESOLVED;
  * @global int $g_bug_resolved_status_threshold
  */
 $g_bug_resolved_status_threshold = RESOLVED;
-$g_dwg_resolved_status_threshold = RESOLVED;
+$g_dwg_resolved_status_threshold = ACCEPTED;
 
 /**
  * Threshold resolution which denotes that a bug has been resolved and
@@ -2833,7 +2864,7 @@ $g_dwg_resolved_status_threshold = RESOLVED;
  * @global int $g_bug_resolution_fixed_threshold
  */
 $g_bug_resolution_fixed_threshold = FIXED;
-$g_dwg_resolution_fixed_threshold = FIXED;
+$g_dwg_resolution_fixed_threshold = ACCEPTED;
 
 /**
  * Threshold resolution which denotes that a bug has been resolved without
@@ -2856,7 +2887,7 @@ $g_dwg_resolution_not_fixed_threshold = UNABLE_TO_REPRODUCE;
  * @global int $g_bug_closed_status_threshold
  */
 $g_bug_closed_status_threshold = CLOSED;
-$g_dwg_closed_status_threshold = CLOSED;
+$g_dwg_closed_status_threshold = INCORPORATED;
 
 /**
  * Automatically set status to ASSIGNED whenever a bug is assigned to a person.
@@ -2867,6 +2898,13 @@ $g_dwg_closed_status_threshold = CLOSED;
  * @global int $g_auto_set_status_to_assigned
  */
 $g_auto_set_status_to_assigned = ON;
+
+/**
+ * Automatically assign new issues to the current document handler, if set.
+ *
+ * @global int $g_auto_assign_issue_to_document_handler
+ */
+$g_auto_assign_issue_to_document_handler = ON;
 
 /**
  * Status Workflow definition.
@@ -3225,6 +3263,12 @@ $g_dwg_view_page_fields = array(
 	'fixed_in_version',
 	'creator',
 	'handler',
+	'number',
+//	'edition',
+	'revision',
+//	'version',
+	'author',
+	'publisher',
 	'id',
 	'last_updated',
 	'os',
@@ -3358,7 +3402,7 @@ $g_dwg_update_page_fields = array(
  * @global int $g_report_bug_threshold
  */
 $g_report_bug_threshold = REPORTER;
-$g_create_dwg_threshold = REPORTER;
+$g_create_dwg_threshold = DEVELOPER;
 
 /**
  * Access level needed to update bugs (i.e., the update_bug_page).
@@ -3369,7 +3413,7 @@ $g_create_dwg_threshold = REPORTER;
  * @global int $g_update_bug_threshold
  */
 $g_update_bug_threshold = UPDATER;
-$g_update_dwg_threshold = UPDATER;
+$g_update_dwg_threshold = DEVELOPER;
 
 /**
  * Access level needed to view bugs.
@@ -3386,6 +3430,7 @@ $g_view_dwg_threshold = VIEWER;
  */
 $g_monitor_bug_threshold = REPORTER;
 $g_monitor_dwg_threshold = REPORTER;
+$g_license_dwg_threshold = REPORTER;
 
 /**
  * Threshold needed to show the list of users monitoring a bug on the bug view pages.
@@ -3393,6 +3438,8 @@ $g_monitor_dwg_threshold = REPORTER;
  * @global int $g_show_monitor_list_threshold
  */
 $g_show_monitor_list_threshold = DEVELOPER;
+$g_show_license_list_threshold = REPORTER;
+// $g_show_license_list_threshold = NOBODY;
 
 /**
  * Access level needed to add other users to the list of users monitoring a bug.
@@ -3403,6 +3450,7 @@ $g_show_monitor_list_threshold = DEVELOPER;
  */
 $g_monitor_add_others_bug_threshold = DEVELOPER;
 $g_monitor_add_others_dwg_threshold = DEVELOPER;
+$g_license_add_others_dwg_threshold = MANAGER;
 
 /**
  * Access level needed to delete other users from the list of users
@@ -3414,6 +3462,7 @@ $g_monitor_add_others_dwg_threshold = DEVELOPER;
  */
 $g_monitor_delete_others_bug_threshold = DEVELOPER;
 $g_monitor_delete_others_dwg_threshold = DEVELOPER;
+$g_license_delete_others_dwg_threshold = MANAGER;
 
 /**
  * Access level required to print issue reports.
@@ -3538,7 +3587,7 @@ $g_upload_project_file_threshold = MANAGER;
  * @global int $g_upload_bug_file_threshold
  */
 $g_upload_bug_file_threshold = REPORTER;
-$g_upload_dwg_file_threshold = REPORTER;
+$g_upload_dwg_file_threshold = DEVELOPER;
 
 /**
  * Add bugnote threshold.
@@ -3599,6 +3648,16 @@ $g_admin_site_threshold = ADMINISTRATOR;
 $g_manage_project_threshold = MANAGER;
 
 /**
+ * Threshold needed to manage a license.
+ *
+ * Allows changing license details and settings (not to add/delete licenses).
+ *
+ * @global int $g_manage_license_threshold
+ */
+$g_manage_license_threshold = MANAGER;
+// $g_manage_license_threshold = NOBODY;
+
+/**
  * Threshold needed to import data into a project.
  *
  * @global int $g_manage_import_threshold
@@ -3618,6 +3677,7 @@ $g_manage_news_threshold = MANAGER;
  * @global int $g_delete_project_threshold
  */
 $g_delete_project_threshold = ADMINISTRATOR;
+$g_delete_license_threshold = ADMINISTRATOR;
 
 /**
  * Threshold needed to create a new project.
@@ -3625,6 +3685,7 @@ $g_delete_project_threshold = ADMINISTRATOR;
  * @global int $g_create_project_threshold
  */
 $g_create_project_threshold = ADMINISTRATOR;
+$g_create_license_threshold = ADMINISTRATOR;
 
 /**
  * Threshold needed to be automatically included in private projects.
@@ -3632,6 +3693,7 @@ $g_create_project_threshold = ADMINISTRATOR;
  * @global int $g_private_project_threshold
  */
 $g_private_project_threshold = ADMINISTRATOR;
+$g_private_license_threshold = ADMINISTRATOR;
 
 /**
  * Threshold needed to manage user access to a project.
@@ -3639,6 +3701,7 @@ $g_private_project_threshold = ADMINISTRATOR;
  * @global int $g_project_user_threshold
  */
 $g_project_user_threshold = MANAGER;
+$g_license_user_threshold = UPDATER;
 
 /**
  * Threshold needed to manage user accounts.
@@ -3735,6 +3798,13 @@ $g_update_readonly_dwg_threshold = MANAGER;
 $g_view_changelog_threshold = VIEWER;
 
 /**
+ * Threshold for viewing My View.
+ *
+ * @global int $g_view_changelog_threshold
+ */
+$g_view_my_view_threshold = UPDATER;
+
+/**
  * Threshold for viewing timeline.
  *
  * @global int $g_timeline_view_threshold
@@ -3800,6 +3870,14 @@ $g_set_dwg_sticky_threshold = MANAGER;
  * @global array $g_set_status_threshold
  */
 $g_set_status_threshold = array( NEW_ => REPORTER );
+
+
+/**
+ * Access level required to view/add document notes.
+ *
+ * @global int $g_dwgnote_view_threshold
+ */
+$g_dwgnote_view_threshold = DEVELOPER;
 
 /**
  * Threshold at which a user can edit his/her own bugnotes.
@@ -4095,6 +4173,7 @@ $g_set_configuration_threshold = ADMINISTRATOR;
  *
  * @global array $g_status_colors
  */
+# Default MantisBT Tones
 $g_status_colors = array(
 	'new'          => '#fcbdbd', # red    (scarlet red #ef2929)
 	'feedback'     => '#e3b7eb', # purple (plum        #75507b)
@@ -4102,8 +4181,68 @@ $g_status_colors = array(
 	'confirmed'    => '#fff494', # yellow (butter      #fce94f)
 	'assigned'     => '#c2dfff', # blue   (sky blue    #729fcf)
 	'resolved'     => '#d2f5b0', # green  (chameleon   #8ae234)
-	'closed'       => '#c9ccc4'  # grey   (aluminum    #babdb6)
+	'closed'       => '#c9ccc4', # grey   (aluminum    #babdb6)
+
+	# ---- Document-specific statuses (calmer, modern palette) ----
+	'pending'             => '#f5a6a6', # soft coral red
+	'received'            => '#a7c7e7', # light steel blue
+	'triage'              => '#d9b3e6', # soft lavender
+	'JoS'                 => '#f7e49b', # warm pastel yellow
+	'review'              => '#f9c97a', # mellow apricot
+	'rework'              => '#b5e7a0', # pale green
+	'accepted'            => '#a2b9bc', # muted teal-grey
+	'archived'            => '#d0d0d0', # soft neutral grey
+	'incorporated'        => '#b8d8ba', # gentle sage
+	'independent review'  => '#b0e0e6', # powder blue
 );
+/*
+# Material-Inspired Tones
+$g_status_colors = array(
+    'new'          => '#e53935', // material red 600
+    'feedback'     => '#8e24aa', // material purple 600
+    'acknowledged' => '#fb8c00', // material orange 600
+    'confirmed'    => '#fdd835', // material yellow 600
+    'assigned'     => '#1e88e5', // material blue 600
+    'resolved'     => '#43a047', // material green 600
+    'closed'       => '#757575', // material grey 600
+
+    # ---- Document-specific statuses ----
+    'pending'             => '#ef5350', // material red 400
+    'received'            => '#42a5f5', // material blue 400
+    'triage'              => '#ab47bc', // material purple 400
+    'JoS'                 => '#fdd835', // material yellow 500
+    'review'              => '#ffb74d', // material orange 300
+    'rework'              => '#66bb6a', // material green 400
+    'accepted'            => '#26c6da', // material cyan 400
+    'archived'            => '#bdbdbd', // material grey 400
+    'incorporated'        => '#9ccc65', // material light green 400
+    'independent review'  => '#29b6f6', // material light blue 400
+);
+ */
+/*
+# Desaturated Neon
+$g_status_colors = array(
+    'new'          => '#ff6b6b', // neon red
+    'feedback'     => '#b085f5', // neon purple
+    'acknowledged' => '#ffb86c', // neon orange
+    'confirmed'    => '#f1f94f', // neon yellow
+    'assigned'     => '#6fc2ff', // neon blue
+    'resolved'     => '#7df57d', // neon green
+    'closed'       => '#c0c0c0', // soft grey
+
+    # ---- Document-specific statuses ----
+    'pending'             => '#ff7f7f', // soft neon coral
+    'received'            => '#85bfff', // soft neon azure
+    'triage'              => '#c9a0f5', // soft neon violet
+    'JoS'                 => '#f4f18b', // soft neon yellow
+    'review'              => '#ffbd75', // soft neon orange
+    'rework'              => '#9df5a0', // soft neon green
+    'accepted'            => '#7fc1c4', // muted neon teal
+    'archived'            => '#bdbdbd', // gentle grey
+    'incorporated'        => '#a8d4a4', // soft mint
+    'independent review'  => '#90e0f0', // powder neon blue
+);
+ */
 
 /**
  * The padding level when displaying bug ids.
@@ -4324,6 +4463,7 @@ $g_access_levels_enum_string = '10:viewer,25:reporter,40:updater,55:developer,70
  * @global string $g_project_status_enum_string
  */
 $g_project_status_enum_string = '10:development,30:release,50:stable,70:obsolete';
+$g_license_status_enum_string = '10:active,30:suspended,50:deprecated,70:obsolete';
 
 /**
  * Project view state enumeration.
@@ -4331,6 +4471,7 @@ $g_project_status_enum_string = '10:development,30:release,50:stable,70:obsolete
  * @global string $g_project_view_state_enum_string
  */
 $g_project_view_state_enum_string = '10:public,50:private';
+$g_license_view_state_enum_string = '10:public,50:private';
 
 /**
  * Bug view state enumeration.
@@ -4393,7 +4534,8 @@ $g_projection_enum_string = '10:none,30:tweak,50:minor fix,70:major rework,90:re
  *
  * @global string $g_dwg_status_enum_string
  */
-$g_dwg_status_enum_string = '10:pending,20:received,30:triage,40:JoS,50:assigned,60:review,65:rework,70:independent review,80:accepted,90:incorported,95:archived';
+// $g_dwg_status_enum_string = '10:pending,20:received,30:triage,40:JoS,50:assigned,60:review,65:rework,70:independent review,80:accepted,90:incorporated,95:archived';
+$g_dwg_status_enum_string = '110:pending,120:received,130:triage,140:JoS,150:assigned to,160:review,165:rework,170:independent review,180:accepted,190:incorporated,195:archived';
 
 /**
  * Change Class enumeration.
@@ -4483,6 +4625,7 @@ $g_bottom_include_page = '';
  * @global string $g_css_include_file
  */
 $g_css_include_file = 'default.css';
+$g_active_theme = 'default';
 
 /**
  * RTL CSS file.
@@ -4513,7 +4656,7 @@ $g_cdn_enabled = OFF;
  *
  * @global string $g_default_home_page
  */
-$g_default_home_page = 'my_view_page.php';
+$g_default_home_page = 'my_view_bug_page.php';
 
 /**
  * Specify where the user should be sent after logging out.
@@ -4715,10 +4858,12 @@ $g_file_download_content_type_overrides = array(
 /**
  * Icon associative arrays.
  *
- * Status to icon mapping.
+ * Priority to icon mapping.
  *
  * @global array $g_status_icon_arr
  */
+// @TODO RobD - this would be better being called g_priority_icon_arr
+//$g_priority_icon_arr = array(
 $g_status_icon_arr = array(
 	NONE      => '',
 	LOW       => 'fa-chevron-down fa-lg green',
@@ -4769,6 +4914,20 @@ $g_my_view_boxes = array(
 	'my_comments'   => '0'
 );
 
+$g_my_view_dwg_boxes = array(
+	'assigned'      => '1',
+	'unassigned'    => '2',
+	// 'reported'      => '3',  // @TODO RobD - change to 'created'?
+	'created'       => '3',  // @TODO RobD - change to 'created'?
+	'resolved'      => '0',  // not a valid document status
+	'recent_mod'    => '5',
+	'monitored'     => '6',
+	'accepted'      => '7',
+	'feedback'      => '0',
+	'verify'        => '0',
+	'my_comments'   => '0'
+);
+
 
 #############
 # RSS Feeds #
@@ -4781,7 +4940,8 @@ $g_my_view_boxes = array(
  *
  * @global int $g_rss_enabled
  */
-$g_rss_enabled = ON;
+// $g_rss_enabled = ON;
+$g_rss_enabled = OFF;
 
 
 #####################
@@ -4799,7 +4959,8 @@ $g_rss_enabled = ON;
  *
  * @global int $g_relationship_graph_enable
  */
-$g_relationship_graph_enable = OFF;
+// $g_relationship_graph_enable = OFF;
+$g_relationship_graph_enable = ON;
 
 /**
  * Complete path to the Graphviz tools.
@@ -5056,6 +5217,20 @@ $g_tag_edit_threshold = DEVELOPER;
  */
 $g_tag_edit_own_threshold = REPORTER;
 
+#####################
+# License managment #
+#####################
+
+/**
+ * Turn on Document License Management.
+ *
+ * @global int $g_licenses_enabled
+ */
+// @TODO RobD - note this may not be required as we can disable the licenses feature via 'g_show_license_list_threshold' and 'g_manage_license_threshold'
+$g_licenses_enabled = OFF;
+// $g_licenses_enabled = ON;
+
+
 #################
 # Time tracking #
 #################
@@ -5065,7 +5240,8 @@ $g_tag_edit_own_threshold = REPORTER;
  *
  * @global int $g_time_tracking_enabled
  */
-$g_time_tracking_enabled = OFF;
+// $g_time_tracking_enabled = OFF;
+$g_time_tracking_enabled = ON;
 
 /**
  * A billing sums.
@@ -5235,7 +5411,7 @@ $g_due_date_view_threshold = DEVELOPER;
 /**
  * Default due date value for newly submitted issues.
  *
- * A valid relative date format {@link https://php.net/manual/en/datetime.formats.relative.php}
+ * A valid relative date format {@link https://www.php.net/manual/en/datetime.formats.php}
  * e.g. 'today' or '+2 days', or empty string for no due date set (default).
  *
  * @global string $g_due_date_default
@@ -5434,6 +5610,7 @@ $g_stop_on_errors = OFF;
  * @global int $g_log_level
  */
 $g_log_level = LOG_NONE;
+// $g_log_level = LOG_FILTERING;
 
 /**
  * Specifies where the log data goes.
@@ -5452,6 +5629,8 @@ $g_log_level = LOG_NONE;
  * @global string $g_log_destination
  */
 $g_log_destination = '';
+// $g_log_destination = 'file:/var/log/mantis.log';
+// $g_log_destination = 'page';
 
 /**
  * Indicates the access level required for a user to see the log output.
@@ -5502,6 +5681,7 @@ $g_global_settings = array(
 	'core_path',
 	'crypto_master_salt',
 	'css_include_file',
+	'active_theme',
 	'css_rtl_include_file',
 	'custom_headers',
 	'database_name',
@@ -5567,6 +5747,7 @@ $g_global_settings = array(
 	'long_process_timeout',
 	'manage_config_cookie',
 	'manual_url',
+	'max_textarea_length',
 	'path',
 	'plugin_path',
 	'plugins_enabled',
@@ -5579,7 +5760,8 @@ $g_global_settings = array(
 	'show_memory_usage',
 	'show_queries_count',
 	'show_timer',
-	'show_version',
+	'show_version_suffix',
+	'show_copyright_footer',
 	'stop_on_errors',
 	'string_cookie',
 	'subprojects_enabled',
@@ -5587,6 +5769,7 @@ $g_global_settings = array(
 	'use_ldap_email',
 	'use_ldap_realname',
 	'validate_email',
+	'version_prefix',
 	'version_suffix',
 	'view_all_cookie',
 	'webmaster_email',
@@ -5639,6 +5822,7 @@ $g_public_config_names = array(
 	'assign_sponsored_bugs_threshold',
 	'assign_sponsored_dwgs_threshold',
 	'attachments_to_new_tab',
+	'auto_assign_issue_to_document_handler',
 	'auto_set_status_to_assigned',
 	'backward_year_count',
 	'bottom_include_page',
@@ -5690,6 +5874,7 @@ $g_public_config_names = array(
 	'dwgnote_user_delete_threshold',
 	'bugnote_user_edit_threshold',
 	'dwgnote_user_edit_threshold',
+	'g_dwgnote_view_threshold',
 	'cdn_enabled',
 	'change_view_status_threshold',
 	'check_mx_record',
@@ -5701,6 +5886,7 @@ $g_public_config_names = array(
 	'copyright_statement',
 	'create_permalink_threshold',
 	'create_project_threshold',
+	'create_license_threshold',
 	'create_short_url',
 	'css_include_file',
 	'css_rtl_include_file',
@@ -5767,20 +5953,24 @@ $g_public_config_names = array(
 	'default_home_page',
 	'default_language',
 	'default_limit_view',
+	'default_dwg_limit_view',
 	'default_manage_tag_prefix',
 	'default_new_account_access_level',
 	'default_notify_flags',
 	'default_project_view_status',
+	'default_license_view_status',
 	'default_redirect_delay',
 	'default_refresh_delay',
 	'default_reminder_view_status',
 	'default_show_changed',
+	'default_dwg_show_changed',
 	'default_timezone',
 	'delete_bug_threshold',
 	'delete_dwg_threshold',
 	'delete_bugnote_threshold',
 	'delete_dwgnote_threshold',
 	'delete_project_threshold',
+	'delete_license_threshold',
 	'disallowed_files',
 	'display_bug_padding',
 	'display_dwg_padding',
@@ -5831,7 +6021,7 @@ $g_public_config_names = array(
 	'handle_sponsored_bugs_threshold',
 	'handle_sponsored_dwgs_threshold',
 	'hide_status_default',
-	'dwg_hide_status_default',
+	'hide_dwg_status_default',
 	'history_default_visible',
 	'history_order',
 	'html_make_links',
@@ -5841,6 +6031,7 @@ $g_public_config_names = array(
 	'issue_activity_note_attachments_seconds_threshold',
 	'language_auto_map',
 	'language_choices_arr',
+	'licenses_enabled',
 	'limit_email_domains',
 	'limit_reporters',
 	'limit_creators',
@@ -5859,6 +6050,7 @@ $g_public_config_names = array(
 	'manage_news_threshold',
 	'manage_plugin_threshold',
 	'manage_project_threshold',
+	'manage_license_threshold',
 	'manage_import_threshold',
 	'manage_site_threshold',
 	'manage_user_threshold',
@@ -5867,21 +6059,26 @@ $g_public_config_names = array(
 	'max_failed_login_count',
 	'max_file_size',
 	'max_lost_password_in_progress_count',
+	'max_textarea_length',
 	'mentions_enabled',
 	'mentions_tag',
 	'min_refresh_delay',
 	'minimum_sponsorship_amount',
 	'monitor_add_others_bug_threshold',
 	'monitor_add_others_dwg_threshold',
+	'license_add_others_dwg_threshold',
 	'monitor_bug_threshold',
 	'monitor_dwg_threshold',
+	'license_dwg_threshold',
 	'monitor_delete_others_bug_threshold',
 	'monitor_delete_others_dwg_threshold',
+	'license_delete_others_dwg_threshold',
 	'move_bug_threshold',
 	'move_dwg_threshold',
 	'my_view_boxes',
 	'my_view_bug_count',
 	'my_view_dwg_count',
+	'view_my_view_threshold',
 	'news_enabled',
 	'news_limit_method',
 	'news_view_limit_days',
@@ -5907,10 +6104,14 @@ $g_public_config_names = array(
 	'private_dwgnote_threshold',
 	'private_news_threshold',
 	'private_project_threshold',
+	'private_license_threshold',
 	'project_cookie',
 	'project_status_enum_string',
+	'license_status_enum_string',
 	'project_user_threshold',
+	'license_user_threshold',
 	'project_view_state_enum_string',
+	'license_view_state_enum_string',
 	'projection_enum_string',
 	'reassign_on_feedback',
 	'reauthentication_expiry',
@@ -5959,6 +6160,7 @@ $g_public_config_names = array(
 	'show_log_threshold',
 	'show_memory_usage',
 	'show_monitor_list_threshold',
+	'show_license_list_threshold',
 	'show_priority_text',
 	'show_product_version',
 	'show_project_menu_bar',
@@ -5971,7 +6173,7 @@ $g_public_config_names = array(
 	'show_user_email_threshold',
 	'show_user_realname_threshold',
 	'show_version_dates_threshold',
-	'show_version',
+	'show_version_suffix',
 	'signup_use_captcha',
 	'sort_by_last_name',
 	'sort_icon_arr',
@@ -6030,6 +6232,7 @@ $g_public_config_names = array(
 	'use_dynamic_filters_dwg',
 	'user_login_valid_regex',
 	'validate_email',
+	'version_prefix',
 	'version_suffix',
 	'view_all_cookie',
 	'view_attachments_threshold',

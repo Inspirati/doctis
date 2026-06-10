@@ -305,26 +305,26 @@ if( $t_existing_bug->category_id != $t_updated_bug->category_id ) {
 # - new status >= RESOLVED and resolution < fixed_threshold
 # - resolution = REOPENED and current status < RESOLVED and new status >= RESOLVED
 # Refer to #15653 for further details (particularly note 37180)
-$t_resolution_fixed_threshold = config_get( 'dwg_resolution_fixed_threshold' );
-if( $t_existing_bug->resolution != $t_updated_bug->resolution && (
-	   (  $t_updated_bug->resolution >= $t_resolution_fixed_threshold
-	   && $t_updated_bug->resolution != $t_reopen_resolution
-	   && $t_updated_bug->status < $t_resolved_status
-	   )
-	|| (  $t_updated_bug->resolution == $t_reopen_resolution
-	   && (  $t_existing_bug->status < $t_resolved_status
-		  || $t_updated_bug->status >= $t_resolved_status
-	   ) )
-	|| (  $t_updated_bug->resolution < $t_resolution_fixed_threshold
-	   && $t_updated_bug->status >= $t_resolved_status
-	   )
-) ) {
-	error_parameters(
-		get_enum_element( 'resolution', $t_updated_bug->resolution ),
-		get_enum_element( 'dwg_status', $t_updated_bug->status )
-	);
-	trigger_error( ERROR_INVALID_RESOLUTION, ERROR );
-}
+// $t_resolution_fixed_threshold = config_get( 'dwg_resolution_fixed_threshold' );
+// if( $t_existing_bug->resolution != $t_updated_bug->resolution && (
+// 	   (  $t_updated_bug->resolution >= $t_resolution_fixed_threshold
+// 	   && $t_updated_bug->resolution != $t_reopen_resolution
+// 	   && $t_updated_bug->status < $t_resolved_status
+// 	   )
+// 	|| (  $t_updated_bug->resolution == $t_reopen_resolution
+// 	   && (  $t_existing_bug->status < $t_resolved_status
+// 		  || $t_updated_bug->status >= $t_resolved_status
+// 	   ) )
+// 	|| (  $t_updated_bug->resolution < $t_resolution_fixed_threshold
+// 	   && $t_updated_bug->status >= $t_resolved_status
+// 	   )
+// ) ) {
+// 	error_parameters(
+// 		get_enum_element( 'resolution', $t_updated_bug->resolution ),
+// 		get_enum_element( 'dwg_status', $t_updated_bug->status )
+// 	);
+// 	trigger_error( ERROR_INVALID_RESOLUTION, ERROR );
+// }
 
 # Ensure that the user has permission to change the target version of the issue.
 if( $t_existing_bug->target_version !== $t_updated_bug->target_version ) {

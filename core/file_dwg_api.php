@@ -148,7 +148,7 @@ function file_dwg_attachment_count_cache( array $p_bug_ids ) {
 	}
 
 	$t_query = 'SELECT B.id AS dwg_id, COUNT(F.dwg_id) AS attachments'
-			. ' FROM {document} B JOIN {dwg_file} F ON ( B.id = F.dwg_id )'
+			. ' FROM {dwg} B JOIN {dwg_file} F ON ( B.id = F.dwg_id )'
 			. ' WHERE B.id IN (' . implode( ',', $t_in_values ) . ')'
 			. ' GROUP BY B.id';
 

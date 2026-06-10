@@ -90,7 +90,9 @@ $t_issue = array(
 	// 'version'			=> gpc_get_string( 'dwg_version' ),
 	'title'				=> gpc_get_string( 'dwg_title' ),
 	'author'			=> gpc_get_string( 'dwg_author' ),
+	'publisher'			=> gpc_get_string( 'dwg_publisher' ),
 	'number'			=> gpc_get_string( 'dwg_number' ),
+	'edition'			=> gpc_get_string( 'dwg_edition' ),
 	'revision'			=> gpc_get_string( 'dwg_revision' ),
 	'reference'			=> gpc_get_string( 'dwg_reference' ),
 	'discipline'		=> gpc_get_string( 'dwg_discipline', '' ),
@@ -117,7 +119,7 @@ if( $t_release_date !== null ) {
 $t_tag_string = '';
 $f_tag_select = gpc_get_int( 'tag_select', 0 );
 if( $f_tag_select != 0 ) {
-	$t_tag_string = tag_get_name( $f_tag_select );
+	$t_tag_string = tag_dwg_get_name( $f_tag_select );
 }
 
 $f_tag_string = gpc_get_string( 'tag_string', '' );
@@ -188,6 +190,16 @@ if( $t_monitors ) {
 	$t_issue['monitors'] = $t_list;
 }
 
+$t_licenses = gpc_get_int_array( 'licenses', array() );
+if( $t_licenses ) {
+	# The API expects a list of arrays with 'id' as key
+	$t_list = array();
+	foreach( $t_licenses as $t_license_id ) {
+		$t_list[] = array( 'id' => $t_license_id );
+	}
+	$t_issue['licenses'] = $t_list;
+}
+
 $t_view_state = gpc_get_int( 'view_state', 0 );
 if( $t_view_state != 0 ) {
 	$t_issue['view_state'] = array( 'id' => $t_view_state );
@@ -247,7 +259,9 @@ if( $t_status != 0 ) {
 // 	$t_issue['additional_information'] = $t_additional_info;
 // }
 
-$t_due_date = gpc_get_string( 'due_date', null );
+$t_due_date = project_due_date( $t_project_id, $p_trigger_errors = true );
+$t_due_date = gpc_get_string( 'due_date', $t_due_date );
+//$t_due_date = gpc_get_string( 'due_date', null );
 if( $t_due_date !== null ) {
 	$t_issue['due_date'] = $t_due_date;
 }

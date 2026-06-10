@@ -124,7 +124,7 @@ if( ( $t_filter_position & FILTER_POSITION_TOP ) == FILTER_POSITION_TOP ) {
 		$t_summary_link = 'view_dwg_set.php?summary=1&temporary=y';
 	} else {
 		$t_filter_param = '?' . $t_filter_param;
-		$t_summary_link = 'summary_page.php' . $t_filter_param;
+		$t_summary_link = 'summary_dwg_page.php' . $t_filter_param;
 	}
 
 	$t_can_print_reports = access_has_project_level( config_get( 'print_reports_threshold' ), $t_current_project );
@@ -172,17 +172,17 @@ if( ( $t_filter_position & FILTER_POSITION_TOP ) == FILTER_POSITION_TOP ) {
 						<div class="btn-group pull-left">
 <?php
 		if( $t_can_print_reports ) {
-			print_small_button(
+			print_dwg_small_button(
 				'print_dwg_page.php' . $t_filter_param,
 				lang_get( 'print_dwg_page_link' )
 			);
 		}
 		if( $t_can_export_issues ) {
-			print_small_button( 'csv_export.php' . $t_filter_param, lang_get( 'csv_export' ) );
-			print_small_button( 'excel_xml_export.php' . $t_filter_param, lang_get( 'excel_export' ) );
+			print_dwg_small_button( 'csv_export.php' . $t_filter_param, lang_get( 'csv_export' ) );
+			print_dwg_small_button( 'excel_xml_export.php' . $t_filter_param, lang_get( 'excel_export' ) );
 		}
 		if( $t_can_view_summary ) {
-			print_small_button( $t_summary_link, lang_get( 'summary_link' ) );
+			print_dwg_small_button( $t_summary_link, lang_get( 'summary_link' ) );
 		}
 
 		echo $t_plugin_menu_items;
@@ -213,7 +213,7 @@ if( ( $t_filter_position & FILTER_POSITION_TOP ) == FILTER_POSITION_TOP ) {
 <?php # -- Bug list column header row -- ?>
 							<tr class="buglist-headers">
 <?php
-	$t_title_function = 'print_dwg_column_title';  // @TODO RobD - setting this causes most* all the column title hyperlinks to not be hyperlinks (* only the first column 'status' remains as a hyperlink?)
+	$t_title_function = 'print_dwg_column_title';
 	$t_sort_properties = filter_dwg_get_visible_sort_properties_array( $t_filter, COLUMNS_TARGET_VIEW_PAGE );
 	foreach( $g_columns as $t_column ) {
 		helper_call_custom_function( $t_title_function, array( $t_column, COLUMNS_TARGET_VIEW_PAGE, $t_sort_properties ) );
@@ -236,7 +236,7 @@ if( ( $t_filter_position & FILTER_POSITION_TOP ) == FILTER_POSITION_TOP ) {
 				<div class="widget-toolbox padding-8 clearfix">
 <?php
 # -- ====================== MASS BUG MANIPULATION =================== --
-# @@@ ideally buglist-footer would be in <tfoot>, but that's not possible due to global g_checkboxes_exist set via write_dwg_rows()
+# @@@ ideally buglist-footer would be in <tfoot>, but that's not possible due to global g_checkboxes_exist set via write_bug_rows()
 ?>
 					<div class="form-inline pull-left">
 <?php
@@ -282,7 +282,7 @@ if( ( $t_filter_position & FILTER_POSITION_BOTTOM ) == FILTER_POSITION_BOTTOM ) 
 # -- ====================== end of FILTER FORM ================== --
 
 /**
- * Output Rows
+ * Output Dwg Rows
  *
  * @param array $p_rows An array of objects.
  * @return void
@@ -292,11 +292,12 @@ function write_dwg_rows( array $p_rows ) {
 
 	$t_in_stickies = ( $g_dwg_filter && ( 'on' == $g_dwg_filter[FILTER_PROPERTY_STICKY] ) );
 
-	# Loop over rows
+	# Loop over bug rows
 	$t_rows = count( $p_rows );
 	for( $i = 0; $i < $t_rows; $i++ ) {
 		$t_row = $p_rows[$i];
 
+		# Don't display the default 'Empty' document
 		if( 1 == $t_row->id ) {
 			continue;
 		}

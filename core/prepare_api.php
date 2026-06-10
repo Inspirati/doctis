@@ -146,6 +146,42 @@ function prepare_user_name( $p_user_id, $p_link = true ) {
 	return '<del ' . $t_tooltip . '>' . $t_name . '</del>';
 }
 
+function prepare_license_name( $p_license_id, $p_link = true, $p_color = null ) {
+	$t_name = license_get_name( $p_license_id );
+	$t_name = string_display_line( $t_name );
+	$t_tooltip = '';
+
+	# Span controls color
+	$t_span_start = '';
+	$t_span_end = '';
+
+	if( !is_blank( $p_color ) ) {
+		$t_safe = string_attribute( $p_color );
+		$t_span_start = '<span style="color:' . $t_safe . '">';
+		$t_span_end = '</span>';
+	}
+
+	# Force link itself to inherit color — strongest possible without !important
+	$t_link_style = 'style="color:inherit;text-decoration:inherit"';
+
+	# Enabled license
+	if( license_exists( $p_license_id ) && license_get_field( $p_license_id, 'enabled' ) ) {
+		if( $p_link ) {
+			return $t_span_start
+				. '<a ' . $t_link_style . ' ' . $t_tooltip
+				. ' href="' . string_sanitize_url( 'manage_license_edit_page.php?license_id=' . $p_license_id, true ) . '">'
+				. $t_name
+				. '</a>'
+				. $t_span_end;
+		} else {
+			return $t_span_start . '<span ' . $t_tooltip . '>' . $t_name . '</span>' . $t_span_end;
+		}
+	}
+
+	# Disabled license
+	return $t_span_start . '<del ' . $t_tooltip . '>' . $t_name . '</del>' . $t_span_end;
+}
+
 /**
  * Prepares Version string for output.
  *

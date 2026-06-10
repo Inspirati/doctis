@@ -145,7 +145,7 @@ function layout_page_header_end( $p_page_id = null) {
  * @param string $p_active_sidebar_page sidebar page where the current page lives under
  * @return void
  */
-function layout_page_begin( $p_active_sidebar_page = null ) {
+function layout_page_begin( $p_active_sidebar_page = null, $p_is_dwg_page = false ) {
 	if( !db_is_connected() ) {
 		return;
 	}
@@ -161,7 +161,7 @@ function layout_page_begin( $p_active_sidebar_page = null ) {
 
 	layout_main_content_begin();
 
-	layout_breadcrumbs();
+	layout_breadcrumbs($p_is_dwg_page);
 
 	layout_page_content_begin();
 
@@ -729,10 +729,9 @@ function layout_print_sidebar( $p_active_sidebar_page = null ) {
 		}
 
 		# My View Page
-		$t_link = layout_my_view_link();
-		if( !is_blank( $t_link ) ) {
+		if( access_has_global_level( config_get( 'view_my_view_threshold' ) ) ) {
 			$t_sidebar_items[] = array(
-				'url' => $t_link,
+				'url' => 'my_view_bug_page.php',
 				'title' => 'my_view_link',
 				'icon' => 'fa-dashboard',
 			);
@@ -757,7 +756,7 @@ function layout_print_sidebar( $p_active_sidebar_page = null ) {
 		# View Documents
 		$t_sidebar_items[] = array(
 			'url' => 'view_dwg_page.php',
-			'title' => 'view_dwg_link',
+			'title' => 'view_dwgs_link',
 			'icon' => 'fa-list-alt'
 		);
 
@@ -778,21 +777,29 @@ function layout_print_sidebar( $p_active_sidebar_page = null ) {
 			'access_level' => config_get( 'view_changelog_threshold' )
 		);
 
-		# Roadmap Page
-		$t_sidebar_items[] = array(
-			'url' => 'roadmap_page.php',
-			'title' => 'roadmap_link',
-			'icon' => 'fa-road',
-			'access_level' => config_get( 'roadmap_view_threshold' )
-		);
+		# Documents Changelog Page
+		// $t_sidebar_items[] = array(
+		// 	'url' => 'dwg_changelog_page.php',
+		// 	'title' => 'changelog_link',
+		// 	'icon' => 'fa-retweet',
+		// 	'access_level' => config_get( 'view_changelog_threshold' )
+		// );
 
-		# Summary Page
-		$t_sidebar_items[] = array(
-			'url' => 'summary_page.php',
-			'title' => 'summary_link',
-			'icon' => 'fa-bar-chart-o',
-			'access_level' => config_get( 'view_summary_threshold' )
-		);
+		# Roadmap Page
+		// $t_sidebar_items[] = array(
+		// 	'url' => 'roadmap_page.php',
+		// 	'title' => 'roadmap_link',
+		// 	'icon' => 'fa-road',
+		// 	'access_level' => config_get( 'roadmap_view_threshold' )
+		// );
+
+		// # Summary Page
+		// $t_sidebar_items[] = array(
+		// 	'url' => 'summary_page.php',
+		// 	'title' => 'summary_link',
+		// 	'icon' => 'fa-bar-chart-o',
+		// 	'access_level' => config_get( 'view_summary_threshold' )
+		// );
 
 		# Project Documentation Page
 		if( ON == config_get( 'enable_project_documentation' ) ) {
@@ -803,14 +810,14 @@ function layout_print_sidebar( $p_active_sidebar_page = null ) {
 			);
 		}
 
-		# Project Wiki
-		if( ON == config_get_global( 'wiki_enable' )  ) {
-			$t_sidebar_items[] = array(
-				'url' => 'wiki.php?type=project&amp;id=' . $t_current_project,
-				'title' => 'wiki',
-				'icon' => 'fa-book'
-			);
-		}
+		// # Project Wiki
+		// if( ON == config_get_global( 'wiki_enable' )  ) {
+		// 	$t_sidebar_items[] = array(
+		// 		'url' => 'wiki.php?type=project&amp;id=' . $t_current_project,
+		// 		'title' => 'wiki',
+		// 		'icon' => 'fa-book'
+		// 	);
+		// }
 
 		# Manage Users (admins) or Manage Project (managers) or Manage Custom Fields
 		$t_link = layout_manage_menu_link();
@@ -1078,7 +1085,7 @@ function layout_page_content_end() {
  * Render breadcrumbs bar.
  * @return void
  */
-function layout_breadcrumbs() {
+function layout_breadcrumbs($p_is_dwg_page = false) {
 	if( !auth_is_user_authenticated() ) {
 		return;
 	}
@@ -1113,7 +1120,7 @@ function layout_breadcrumbs() {
 		$t_realname = current_user_get_field( 'realname' );
 		$t_display_realname = is_blank( $t_realname ) ? '' : ' ( ' . string_html_specialchars( $t_realname ) . ' ) ';
 
-		$t_page = ( OFF == $t_protected ) ? 'account_page.php' : 'my_view_page.php';
+		$t_page = ( OFF == $t_protected ) ? 'account_page.php' : 'my_view_bug_page.php';
 		echo '  <a href="' . helper_mantis_url( $t_page ) . '">' .
 			$t_display_username . $t_display_realname . '</a>' . "\n";
 
@@ -1124,7 +1131,11 @@ function layout_breadcrumbs() {
 
 	# Recently visited
 	if( last_visited_enabled() ) {
-		$t_ids = last_visited_get_array();
+		if ( $p_is_dwg_page ) {
+			$t_ids = last_visited_dwg_get_array();
+		} else {
+			$t_ids = last_visited_get_array();
+		}
 
 		if( count( $t_ids ) > 0 ) {
 			echo '<div class="nav-recent hidden-xs">' . lang_get( 'recently_visited' ) . ': ';
@@ -1136,8 +1147,11 @@ function layout_breadcrumbs() {
 				} else {
 					$t_first = false;
 				}
-
-				echo string_get_bug_view_link( $t_id );
+				if ( $p_is_dwg_page ) {
+					echo string_get_dwg_view_link( $t_id );
+				} else {
+					echo string_get_bug_view_link( $t_id );
+				}
 			}
 			echo '</div>';
 		}
@@ -1146,9 +1160,17 @@ function layout_breadcrumbs() {
 	# Bug Jump form
 	# CSRF protection not required here - form does not result in modifications
 	echo '<div id="nav-search" class="nav-search">';
-	echo '<form class="form-search" method="post" action="' . helper_mantis_url( 'jump_to_bug.php' ) . '">';
+	if ( $p_is_dwg_page ) {
+		echo '<form class="form-search" method="post" action="' . helper_mantis_url( 'jump_to_dwg.php' ) . '">';
+	} else {
+		echo '<form class="form-search" method="post" action="' . helper_mantis_url( 'jump_to_bug.php' ) . '">';
+	}
 	echo '<span class="input-icon">';
-	echo '<input type="text" name="bug_id" autocomplete="off" class="nav-search-input" placeholder="' . lang_get( 'issue_id' ) . '">';
+	if ( $p_is_dwg_page ) {
+		echo '<input type="text" name="bug_id" autocomplete="off" class="nav-search-input" placeholder="' . lang_get( 'dwg_issue_id' ) . '">';
+	} else {
+		echo '<input type="text" name="bug_id" autocomplete="off" class="nav-search-input" placeholder="' . lang_get( 'issue_id' ) . '">';
+	}
 	print_icon( 'fa-search', 'ace-icon nav-search-icon' );
 	echo '</span>';
 	echo '</form>';
@@ -1183,11 +1205,14 @@ function layout_footer() {
 
 	layout_footer_begin();
 
+if( config_get_global( 'show_copyright_footer' ) == ON ) {
+
 	# Show MantisBT version and copyright statement
 	$t_version_suffix = '';
 	$t_copyright_years = ' 2000 - ' . date( 'Y' );
-	if( config_get_global( 'show_version' ) == ON ) {
-		$t_version_suffix = ' ' . htmlentities( MANTIS_VERSION . config_get_global( 'version_suffix' ) );
+	if( config_get_global( 'show_version_suffix' ) == ON ) {
+		// $t_version_suffix = ' ' . htmlentities( MANTIS_VERSION . config_get_global( 'version_suffix' ) );
+		$t_version_suffix = ' ' . htmlentities( config_get_global( 'version_prefix' ) . MANTIS_VERSION . config_get_global( 'version_suffix' ) );
 	}
 	echo '<div class="col-md-6 col-xs-12 no-padding">' . "\n";
 	echo '<address>' . "\n";
@@ -1209,7 +1234,6 @@ function layout_footer() {
 	echo '</address>' . "\n";
 	echo '</div>' . "\n";
 
-
 	# We don't have a button anymore, so for now we will only show the resized
 	# version of the logo when not on login page.
 	if( !is_page_name( 'login_page' ) ) {
@@ -1217,14 +1241,15 @@ function layout_footer() {
 		echo '<div class="pull-right" id="powered-by-mantisbt-logo">' . "\n";
 		// $t_mantisbt_logo_url = helper_mantis_url( 'images/mantis_logo.png' );
 		$t_mantisbt_logo_url = helper_mantis_url( 'images/doctis_logo.png' );
-		echo '<a href="https://www.mantisbt.org" '.
-			'title="Mantis Bug Tracker: a free and open source web based bug tracking system.">' .
+		echo '<a href="https://www.doctis.org" '.
+			'title="Doctis - Document Issue Tracking System: a free and open source web based document issue tracking system.">' .
 			'<img src="' . $t_mantisbt_logo_url . '" width="102" height="35" ' .
-			'alt="Powered by Mantis Bug Tracker: a free and open source web based bug tracking system." />' .
+			'alt="Powered by Doctis Issue Tracking System: a free and open source web based document issue tracking system." />' .
 			'</a>' . "\n";
 		echo '</div>' . "\n";
 		echo '</div>' . "\n";
 	}
+}
 
 	event_signal( 'EVENT_LAYOUT_PAGE_FOOTER' );
 
@@ -1369,33 +1394,6 @@ function layout_manage_menu_link() {
 				}
 			}
 		}
-	}
-	return $t_link;
-}
-
-function layout_my_view_link() {
-	static $t_link = null;
-	if( access_has_global_level( config_get( 'manage_site_threshold' ) ) ) {
-		$t_link = 'my_view_overview_page.php';
-	} else {
-		// if( access_has_global_level( config_get( 'manage_user_threshold' ) ) ) {
-		// 	$t_link = 'manage_user_page.php';
-		// } else {
-		// 	if( access_has_any_project_level( 'manage_project_threshold' ) ) {
-		// 		$t_current_project = helper_get_current_project();
-		// 		if( $t_current_project == ALL_PROJECTS ) {
-		// 			$t_link = 'manage_proj_page.php';
-		// 		} else {
-		// 			if( access_has_project_level( config_get( 'manage_project_threshold' ), $t_current_project ) ) {
-		// 				$t_link = 'manage_proj_edit_page.php?project_id=' . $t_current_project;
-		// 			} else {
-		// 				if ( access_has_global_level( config_get( 'manage_custom_fields_threshold' ) ) ) {
-		// 					$t_link = 'manage_custom_field_page.php';
-		// 				}
-		// 			}
-		// 		}
-		// 	}
-		// }
 	}
 	return $t_link;
 }

@@ -213,6 +213,14 @@ function print_user( $p_user_id, $p_link = true ) {
 	echo prepare_user_name( $p_user_id, $p_link );
 }
 
+function print_license(
+	int $p_license_id,
+	bool $p_link = true,
+	?string $p_color = null
+): void {
+	echo prepare_license_name($p_license_id, $p_link, $p_color);
+}
+
 /**
  * same as echo get_user_name() but fills in the subject with the bug summary
  *
@@ -244,6 +252,46 @@ function print_user_with_subject( $p_user_id, $p_bug_id ) {
  */
 function print_email_input( $p_field_name, $p_email ) {
 	echo '<input class="input-sm" id="email-field" type="text" name="' . string_attribute( $p_field_name ) . '" size="32" maxlength="64" value="' . string_attribute( $p_email ) . '" />';
+}
+
+/**
+ * Prints a warning message indicating that the email address is not unique.
+ *
+ * Nothing is printed if the email address is unique.
+ *
+ * @param string $p_email   Email address to check
+ * @param int    $p_user_id User Id
+ *
+ * @return void
+ */
+function print_email_not_unique_warning( string $p_email, int $p_user_id ): void {
+	if( config_get_global( 'email_ensure_unique' )
+		&& !user_is_email_unique( $p_email, $p_user_id )
+	) {
+		echo '<div class="padding-8">';
+		print_icon( 'fa-exclamation-triangle', 'ace-icon bigger-125 red  padding-right-4' );
+		echo lang_get( 'email_not_unique' );
+		echo '</div>';
+	}
+}
+
+/**
+ * Prints a warning message if the user's email address is pending validation.
+ *
+ * @param int $p_user_id User Id
+ *
+ * @return void
+ */
+function print_email_pending_verification_warning( int $p_user_id ): void {
+	# Get pending email address from token
+	$t_email_change = token_get_value( TOKEN_ACCOUNT_CHANGE_EMAIL, $p_user_id );
+
+	if( $t_email_change ) {
+		echo '<div class="padding-8">';
+		print_icon('fa-info-circle', 'ace-icon bigger-125 blue padding-right-4' );
+		printf( lang_get( 'verify_email_pending' ), $t_email_change );
+		echo '</div>';
+	}
 }
 
 /**
@@ -837,13 +885,13 @@ function print_category_filter_option_list( $p_category_name = '', $p_project_id
 }
 
 function print_document_filter_option_list( $p_document_name = '', $p_project_id = null ) {
-	$t_cat_arr = document_get_filter_list( $p_project_id );
+	$t_dwg_arr = document_get_filter_list( $p_project_id );
 
-	natcasesort( $t_cat_arr );
-	foreach( $t_cat_arr as $t_cat ) {
-		$t_name = string_attribute( $t_cat );
+	natcasesort( $t_dwg_arr );
+	foreach( $t_dwg_arr as $t_dwg ) {
+		$t_name = string_attribute( $t_dwg );
 		echo '<option value="' . $t_name . '"';
-		check_selected( $p_document_name, $t_cat );
+		check_selected( $p_document_name, $t_dwg );
 		echo '>' . $t_name . '</option>';
 	}
 }
@@ -1392,7 +1440,7 @@ function print_view_bug_sort_link( $p_label, $p_sort_field, $p_sort, $p_dir, $p_
 			if( filter_is_temporary( $g_filter ) ) {
 				$t_url .= '&' . filter_get_temporary_key_param( $g_filter );
 			}
-			print_link( $t_url, $p_label, false, '', $p_icon );
+			print_hyperlink( $t_url, $p_label, false, '', $p_icon );
 			break;
 		default:
 			echo $p_label;
@@ -1426,7 +1474,7 @@ function print_manage_user_sort_link( $p_page, $p_string, $p_field, $p_dir, $p_s
 		$t_dir = 'ASC';
 	}
 
-	print_link(
+	print_hyperlink(
 		helper_url_combine( $p_page, [
 			'sort' => $p_field,
 			'dir' => $t_dir,
@@ -1464,7 +1512,7 @@ function print_manage_project_sort_link( $p_page, $p_string, $p_field, $p_dir, $
 		$t_dir = 'ASC';
 	}
 
-	print_link(
+	print_hyperlink(
 		helper_url_combine( $p_page, [
 			'sort' => $p_field,
 			'dir' => $t_dir
@@ -1473,6 +1521,9 @@ function print_manage_project_sort_link( $p_page, $p_string, $p_field, $p_dir, $
 	);
 }
 
+function print_manage_license_sort_link( $p_page, $p_string, $p_field, $p_dir, $p_sort_by ) {
+	print_manage_project_sort_link( $p_page, $p_string, $p_field, $p_dir, $p_sort_by );
+}
 /**
  * Print a button which presents a standalone form.
  *
@@ -1558,7 +1609,7 @@ function print_bracket_link_prepared( $p_link ) {
  *
  * @return void
  */
-function print_link( $p_link, $p_url_text, $p_new_window = false, $p_class = '', $p_icon = '' ) {
+function print_hyperlink( $p_link, $p_url_text, $p_new_window = false, $p_class = '', $p_icon = '' ) {
 	if( $p_icon ) {
 		$t_url_text = icon_get( $p_icon, '', $p_url_text );
 	} else {
@@ -1635,9 +1686,9 @@ function print_page_link( $p_page_url, $p_text = '', $p_page_no = 0, $p_page_cur
 		echo '<li class="pull-right"> ';
 		$t_delimiter = ( strpos( $p_page_url, '?' ) ? '&' : '?' );
 		if( $p_temp_filter_key ) {
-			print_link( $p_page_url . $t_delimiter . 'filter=' . $p_temp_filter_key . '&page_number=' . $p_page_no, $p_text );
+			print_hyperlink( $p_page_url . $t_delimiter . 'filter=' . $p_temp_filter_key . '&page_number=' . $p_page_no, $p_text );
 		} else {
-			print_link( $p_page_url . $t_delimiter . 'page_number=' . $p_page_no, $p_text );
+			print_hyperlink( $p_page_url . $t_delimiter . 'page_number=' . $p_page_no, $p_text );
 		}
 		echo ' </li>';
 	} else {

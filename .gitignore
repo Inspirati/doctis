@@ -56,11 +56,12 @@ composer.phar
 # PHPUnit
 .phpunit.result.cache
 
+version.json
 
 # Settings below are for convenience when switching branches on Dev machines
 
 # v1.2.x config files
-config_inc.php
+# config_inc.php
 custom_constants_inc.php
 custom_functions_inc.php
 custom_relationships_inc.php

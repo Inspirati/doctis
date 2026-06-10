@@ -21,7 +21,7 @@ if( !defined( 'TIMELINE_INC_ALLOW' ) ) {
 require_api( 'helper_api.php' );
 require_api( 'timeline_api.php' );
 
-define( 'MAX_EVENTS', 50 );
+define( 'MAX_BUG_EVENTS', 50 );
 
 # Variables that are defined in parent script:
 #
@@ -40,7 +40,7 @@ if( !isset( $g_timeline_user ) ) {
 
 $f_days = gpc_get_int( 'days', 0 );
 $f_all = gpc_get_int( 'all', 0 );
-$t_max_events = $f_all ? 0 : MAX_EVENTS + 1;
+$t_max_events = $f_all ? 0 : MAX_BUG_EVENTS + 1;
 
 $t_end_time = time() - ( $f_days * SECONDS_PER_DAY );
 $t_start_time = $t_end_time - ( 7 * SECONDS_PER_DAY );
@@ -69,7 +69,7 @@ unset( $t_url_params['all'] );
 	<div class="widget-header widget-header-small">
 		<h4 class="widget-title lighter">
 			<?php print_icon( 'fa-clock-o', 'ace-icon' ); ?>
-			<?php echo lang_get( 'timeline_title' ) ?>
+			<?php echo lang_get( 'timeline_issue_title' ) ?>
 		</h4>
 		<div class="widget-toolbar">
 			<a data-action="collapse" href="#">
@@ -112,8 +112,8 @@ unset( $t_url_params['all'] );
 		</div>
 
 <?php
-	if( !$f_all && count( $t_events ) > MAX_EVENTS ) {
-		$t_events = array_slice( $t_events, 0, MAX_EVENTS );
+	if( !$f_all && count( $t_events ) > MAX_BUG_EVENTS ) {
+		$t_events = array_slice( $t_events, 0, MAX_BUG_EVENTS );
 		timeline_print_events( $t_events );
 		echo '<div class="widget-toolbox">';
 		echo '<div class="btn-toolbar">';

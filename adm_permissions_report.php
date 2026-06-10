@@ -144,8 +144,15 @@ if( config_get( 'allow_file_upload' ) == ON ) {
 	echo get_section_end();
 }
 
-# Filters
+# Issue Filters
 echo get_section_begin_apr( lang_get( 'filters' ) );
+echo get_capability_row( lang_get( 'save_filters' ), config_get( 'stored_query_create_threshold' ) );
+echo get_capability_row( lang_get( 'save_filters_as_shared' ), config_get( 'stored_query_create_shared_threshold' ) );
+echo get_capability_row( lang_get( 'use_saved_filters' ), config_get( 'stored_query_use_threshold' ) );
+echo get_section_end();
+
+# Document Filters
+echo get_section_begin_apr( lang_get( 'dwg_filters' ) );
 echo get_capability_row( lang_get( 'save_filters' ), config_get( 'stored_query_create_threshold' ) );
 echo get_capability_row( lang_get( 'save_filters_as_shared' ), config_get( 'stored_query_create_shared_threshold' ) );
 echo get_capability_row( lang_get( 'use_saved_filters' ), config_get( 'stored_query_use_threshold' ) );

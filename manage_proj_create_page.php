@@ -161,6 +161,37 @@ $f_parent_id = gpc_get( 'parent_id', null );
 				</td>
 			</tr>
 
+		<?php
+			$f_due_date = gpc_get_string( 'due_date', date_strtotime( config_get( 'due_date_default' ) ) );
+			if( $f_due_date == '' ) {
+				$f_due_date = date_get_null();
+			}
+			$t_show_due_date = true;
+	
+			if( $t_show_due_date ) {
+				$t_date_to_display = '';
+
+				if( !date_is_null( $f_due_date ) ) {
+					$t_date_to_display = date( config_get( 'normal_date_format' ), $f_due_date );
+				}
+		?>
+			<tr>
+				<th class="category">
+					<label for="due_date"><?php print_documentation_link( 'due_date' ) ?></label>
+				</th>
+				<td>
+					<?php echo '<input ' . helper_get_tab_index() . ' type="text" id="due_date" name="due_date" class="datetimepicker input-sm" ' .
+						'data-picker-locale="' . lang_get_current_datetime_locale() .
+						'" data-picker-format="' . config_get( 'datetime_picker_format' ) . '" ' .
+						'size="20" maxlength="16" value="' . $t_date_to_display . '" />' ?>
+					<?php print_icon( 'fa-calendar', 'fa-xlg datetimepicker' ); ?>
+				</td>
+			</tr>
+		<?php
+			}
+		?>
+
+
 <?php
 	$g_project_override = ALL_PROJECTS;
 	if( file_is_uploading_enabled() && DATABASE !== config_get( 'file_upload_method' ) ) {

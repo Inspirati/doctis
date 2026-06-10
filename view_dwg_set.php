@@ -198,7 +198,7 @@ if( !$t_temp_filter ) {
 if( $f_print ) {
 	$t_redirect_url = 'print_dwg_page.php';
 } elseif( $f_summary ) {
-	$t_redirect_url = 'summary_page.php';  // @TODO RobD - what to do with this one?
+	$t_redirect_url = 'summary_dwg_page.php';  // @TODO RobD - what to do with this one?
 } else {
 	$t_redirect_url = 'view_dwg_page.php';
 }

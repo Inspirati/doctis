@@ -51,7 +51,7 @@ access_ensure_global_level( config_get( 'manage_import_threshold' ) );
 
 layout_page_header( lang_get( 'manage_import_link' ) );
 
-layout_page_begin( 'manage_import_data_page.php' );
+layout_page_begin( 'manage_overview_page.php' );
 
 print_manage_menu( 'manage_import_data_page.php' );
 

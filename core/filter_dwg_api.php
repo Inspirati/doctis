@@ -112,7 +112,7 @@ $g_dwg_filter = null;
 $g_cache_filter_dwg_db_rows = array();
 
 /**
- * Indexed by a hash of the filter array, contains a prebuilt BugFilterQuery object.
+ * Indexed by a hash of the filter array, contains a prebuilt DwgFilterQuery object.
  * @global array $g_cache_filter_dwg_subquery
  */
 $g_cache_filter_dwg_subquery = array();
@@ -137,24 +137,24 @@ function filter_dwg_get_plugin_filters() {
 	if( is_null( $s_field_array ) ) {
 		$s_field_array = array();
 
-		$t_all_plugin_filters = event_signal( 'EVENT_FILTER_FIELDS' );
-		foreach( $t_all_plugin_filters as $t_plugin => $t_plugin_filters ) {
-			foreach( $t_plugin_filters as $t_callback => $t_plugin_filter_array ) {
-				if( is_array( $t_plugin_filter_array ) ) {
-					foreach( $t_plugin_filter_array as $t_filter_item ) {
-						if( is_object( $t_filter_item ) && $t_filter_item instanceof MantisFilter ) {
-							$t_filter_object = $t_filter_item;
-						} elseif( class_exists( $t_filter_item ) && is_subclass_of( $t_filter_item, 'MantisFilter' ) ) {
-							$t_filter_object = new $t_filter_item();
-						} else {
-							continue;
-						}
-						$t_filter_name = mb_strtolower( $t_plugin . '_' . $t_filter_object->field );
-						$s_field_array[$t_filter_name] = $t_filter_object;
-					}
-				}
-			}
-		}
+		// $t_all_plugin_filters = event_signal( 'EVENT_FILTER_FIELDS' );
+		// foreach( $t_all_plugin_filters as $t_plugin => $t_plugin_filters ) {
+		// 	foreach( $t_plugin_filters as $t_callback => $t_plugin_filter_array ) {
+		// 		if( is_array( $t_plugin_filter_array ) ) {
+		// 			foreach( $t_plugin_filter_array as $t_filter_item ) {
+		// 				if( is_object( $t_filter_item ) && $t_filter_item instanceof MantisFilter ) {
+		// 					$t_filter_object = $t_filter_item;
+		// 				} elseif( class_exists( $t_filter_item ) && is_subclass_of( $t_filter_item, 'MantisFilter' ) ) {
+		// 					$t_filter_object = new $t_filter_item();
+		// 				} else {
+		// 					continue;
+		// 				}
+		// 				$t_filter_name = mb_strtolower( $t_plugin . '_' . $t_filter_object->field );
+		// 				$s_field_array[$t_filter_name] = $t_filter_object;
+		// 			}
+		// 		}
+		// 	}
+		// }
 	}
 
 	return $s_field_array;
@@ -261,13 +261,13 @@ function filter_dwg_get_url( array $p_custom_filter ) {
 	}
 
 	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_ISSUES_PER_PAGE] ) ) {
-		if( $p_custom_filter[FILTER_PROPERTY_ISSUES_PER_PAGE] != config_get( 'default_limit_view' ) ) {
+		if( $p_custom_filter[FILTER_PROPERTY_ISSUES_PER_PAGE] != config_get( 'default_dwg_limit_view' ) ) {
 			$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_ISSUES_PER_PAGE, $p_custom_filter[FILTER_PROPERTY_ISSUES_PER_PAGE] );
 		}
 	}
 
 	if( !filter_dwg_field_is_any( $p_custom_filter[FILTER_PROPERTY_HIGHLIGHT_CHANGED] ) ) {
-		if( $p_custom_filter[FILTER_PROPERTY_HIGHLIGHT_CHANGED] != config_get( 'default_show_changed' ) ) {
+		if( $p_custom_filter[FILTER_PROPERTY_HIGHLIGHT_CHANGED] != config_get( 'default_dwg_show_changed' ) ) {
 			$t_query[] = filter_dwg_encode_field_and_value( FILTER_PROPERTY_HIGHLIGHT_CHANGED, $p_custom_filter[FILTER_PROPERTY_HIGHLIGHT_CHANGED] );
 		}
 	}
@@ -388,7 +388,7 @@ function filter_dwg_get_url( array $p_custom_filter ) {
 
 	if( count( $t_query ) > 0 ) {
 		$t_query_str = implode( '&', $t_query );
-		$t_url = config_get_global( 'path' ) . 'search.php?' . $t_query_str;
+		$t_url = config_get_global( 'path' ) . 'dwg_search.php?' . $t_query_str;
 	} else {
 		$t_url = '';
 	}
@@ -880,7 +880,7 @@ function filter_dwg_get_default_array( $p_view_type = null ) {
 	}
 
 	if( $t_view_type == FILTER_VIEW_TYPE_SIMPLE ) {
-		$t_hide_status_default = config_get( 'dwg_hide_status_default' );
+		$t_hide_status_default = config_get( 'hide_dwg_status_default' );
 	} else {
 		$t_hide_status_default = META_FILTER_NONE;
 	}
@@ -903,7 +903,7 @@ function filter_dwg_get_default_array( $p_view_type = null ) {
 		FILTER_PROPERTY_MONITOR_USER_ID => $t_meta_filter_any_array,
 		FILTER_PROPERTY_SORT_FIELD_NAME => 'last_updated',
 		FILTER_PROPERTY_SORT_DIRECTION => 'DESC',
-		FILTER_PROPERTY_ISSUES_PER_PAGE => config_get( 'default_limit_view' ),
+		FILTER_PROPERTY_ISSUES_PER_PAGE => config_get( 'default_dwg_limit_view' ),
 		FILTER_PROPERTY_MATCH_TYPE => FILTER_MATCH_ALL,
 		FILTER_PROPERTY_PLATFORM => $t_meta_filter_any_array,
 		FILTER_PROPERTY_OS => $t_meta_filter_any_array,
@@ -1956,7 +1956,7 @@ function filter_dwg_create_assigned_to_unresolved( $p_project_id, $p_user_id ) {
 		$t_filter[FILTER_PROPERTY_HANDLER_ID] = array( '0' => $p_user_id );
 	}
 
-	$t_bug_resolved_status_threshold = config_get( 'bug_resolved_status_threshold', null, $p_user_id, $p_project_id );
+	$t_bug_resolved_status_threshold = config_get( 'dwg_resolved_status_threshold', null, $p_user_id, $p_project_id );
 	$t_filter[FILTER_PROPERTY_HIDE_STATUS] = array( '0' => $t_bug_resolved_status_threshold );
 
 	if( $p_project_id != ALL_PROJECTS ) {
@@ -2421,8 +2421,8 @@ function filter_dwg_is_accessible( $p_filter_id, $p_user_id = null ) {
  *                            FILTER_VIEW_TYPE_ADVANCED)
  */
 function filter_dwg_print_view_type_toggle( $p_url, $p_view_type ) {
-	$t_view_dwg_filters = config_get( 'view_dwg_filters' );
-	if( $t_view_dwg_filters == SIMPLE_ONLY || $t_view_dwg_filters == ADVANCED_ONLY ) {
+	$t_view_filters = config_get( 'view_dwg_filters' );
+	if( $t_view_filters == SIMPLE_ONLY || $t_view_filters == ADVANCED_ONLY ) {
 		return;
 	}
 
@@ -2459,12 +2459,6 @@ function filter_dwg_print_view_type_toggle( $p_url, $p_view_type ) {
  * @return array|integer	Array of project ids, or ALL_PROJECTS if applicable.
  */
 function filter_dwg_get_included_projects( array $p_filter, $p_project_id = null, $p_user_id = null, $p_return_all_projects = false ) {
-
-	// @TODO RobD - during development, i used a null filter (no filter), and this is then needed to avoid throwing an exception below
-//	if (count( $p_filter ) == 0) {
-//		return null;
-//	}
-
 	if( null === $p_project_id ) {
 		$t_project_id = helper_get_current_project();
 	} else {
@@ -2669,9 +2663,9 @@ function filter_dwg_update_source_properties( array $p_filter ) {
 	if( isset( $p_filter['_source_query_id'] ) && $t_filter_id != $p_filter['_source_query_id'] ) {
 		$t_source_query_id = $p_filter['_source_query_id'];
 		# check if filter id is a proper named filter, and is accessible
-		if( filter_dwg_is_named_filter( $t_source_query_id ) && filter_is_accessible( $t_source_query_id ) ){
+		if( filter_dwg_is_named_filter( $t_source_query_id ) && filter_dwg_is_accessible( $t_source_query_id ) ){
 			# replace filter with the referenced one
-			$t_new_filter = filter_dwg_deserialize( filter_db_get_filter_string( $t_source_query_id ) );
+			$t_new_filter = filter_dwg_deserialize( filter_dwg_db_get_filter_string( $t_source_query_id ) );
 			if( is_array( $t_new_filter ) ) {
 				# update the referenced stored filter id for the new loaded filter
 				$t_new_filter['_source_query_id'] = $t_source_query_id;
@@ -2836,7 +2830,7 @@ function filter_dwg_copy_runtime_properties( array $p_filter_to, array $p_filter
 }
 
 /**
- * Return a cached BugFilterQuery object for the provided filter, configured and
+ * Return a cached DwgFilterQuery object for the provided filter, configured and
  * ready to be used as a subquery for building other queries.
  * If the query is not in the cache, creates a new one and store it for later reuse.
  * Note: Query objects are indexed by a hash value over the serialized contents of the
@@ -2849,14 +2843,14 @@ function filter_dwg_copy_runtime_properties( array $p_filter_to, array $p_filter
  * instead, to avoid said side effects.
  *
  * @param array $p_filter	Filter array
- * @return BugFilterQuery	A query object for the filter
+ * @return DwgFilterQuery	A query object for the filter
  */
 function filter_dwg_cache_subquery( array $p_filter ) {
 	global $g_cache_filter_dwg_subquery;
 
 	$t_hash = md5( json_encode( $p_filter ) );
 	if( !isset( $g_cache_filter_dwg_subquery[$t_hash] ) ) {
-		$g_cache_filter_dwg_subquery[$t_hash] = new BugFilterQuery( $p_filter, BugFilterQuery::QUERY_TYPE_IDS );
+		$g_cache_filter_dwg_subquery[$t_hash] = new DwgFilterQuery( $p_filter, DwgFilterQuery::QUERY_TYPE_IDS );
 	}
 
 	return $g_cache_filter_dwg_subquery[$t_hash];

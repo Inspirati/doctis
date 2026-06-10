@@ -68,7 +68,7 @@ if( dwg_is_readonly( $f_bug_id ) ) {
 access_ensure_dwg_level( config_get( 'dwg_reminder_threshold' ), $f_bug_id );
 
 layout_page_header( dwg_format_summary( $f_bug_id, SUMMARY_CAPTION ) );
-layout_page_begin();
+layout_page_begin(null, true);
 ?>
 
 <?php # Send reminder Form BEGIN ?>
@@ -108,9 +108,9 @@ layout_page_begin();
 <?php
 		if( access_has_dwg_level( config_get( 'set_view_status_threshold' ), $f_bug_id ) ) {
 			?>
-			<input type="checkbox" id="bugnote_add_view_status" class="ace" name="private"
+			<input type="checkbox" id="dwgnote_add_view_status" class="ace" name="private"
 				<?php check_checked( $t_default_reminder_view_status, VS_PRIVATE ); ?> />
-			<label class="lbl padding-6" for="bugnote_add_view_status"><?php echo lang_get( 'private' ) ?></label>
+			<label class="lbl padding-6" for="dwgnote_add_view_status"><?php echo lang_get( 'private' ) ?></label>
 			<?php
 		} else {
 			echo get_enum_element( 'view_state', $t_default_reminder_view_status );

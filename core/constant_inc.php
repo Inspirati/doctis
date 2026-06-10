@@ -35,8 +35,16 @@ define( 'BAD', 0 );
 define( 'GOOD', 1 );
 define( 'WARN', 2 );
 
-# PHP-related constants
+# PHP version constants. PHP_VERSION:
+# - MUST¹ be >= PHP_MIN_VERSION and < PHP_MAX_VERSION
+# - SHOULD be < PHP_SUPPORTED_VERSION (Later versions have not been tested,
+#   there may be compatibility issues)
+# ¹ Enforced in core.php, MantisBT will halt if condition is not met.
 define( 'PHP_MIN_VERSION', '7.4.0' );
+//define( 'PHP_MAX_VERSION', '8.4.0' ); # Do not define (i.e. comment out) if there are no known restrictions
+define( 'PHP_SUPPORTED_VERSION', '8.4' ); # should be defined as X.Y (not X.Y.Z)
+
+# Other PHP-related constants
 define( 'PHP_CLI', 0 );
 define( 'PHP_CGI', 1 );
 
@@ -60,6 +68,8 @@ define( 'VIEWER', 10 );
 define( 'REPORTER', 25 );
 define( 'UPDATER', 40 );
 define( 'DEVELOPER', 55 );
+define( 'APPROVER', 60 );
+define( 'ACCEPTOR', 65 );
 define( 'MANAGER', 70 );
 define( 'ADMINISTRATOR', 90 );
 define( 'NOBODY', 100 );
@@ -98,17 +108,19 @@ define( 'URGENT', 50 );
 define( 'IMMEDIATE', 60 );
 
 # document
-define( 'PENDING', 10 );
-define( 'RECEIVED', 20 );
-define( 'TRIAGE', 30 );
-define( 'JOS', 40 );
+define( 'PENDING', 110 );
+define( 'RECEIVED', 120 );
+define( 'TRIAGE', 130 );
+define( 'JOS', 140 );
 //define( 'ASSIGNED', 50 );  // BEWARE: this is the same identifier as defined earlier, and hence must keep the same value as the previous definition
-define( 'REVIEW', 60 );
-define( 'REWORK', 65 );
-define( 'INDEPENDENT_REVEIW', 70 );
-define( 'ACCEPTED', 80 );
-define( 'INCORPORATED', 90 );
-define( 'ARCHIVED', 95 );
+define( 'ASSIGNED_TO', 150 );
+define( 'REVIEW', 160 );
+define( 'REWORK', 165 );
+define( 'INDEPENDENT_REVIEW', 170 );
+define( 'ACCEPTED', 180 );
+define( 'REJECTED', 185 );
+define( 'INCORPORATED', 190 );
+define( 'ARCHIVED', 195 );
 
 # severity
 define( 'FEATURE', 10 );
@@ -119,6 +131,9 @@ define( 'MINOR', 50 );
 define( 'MAJOR', 60 );
 define( 'CRASH', 70 );
 define( 'BLOCK', 80 );
+
+define( 'COMMENT', 20 );
+define( 'QUERY', 30 );
 
 # reproducibility
 define( 'REPRODUCIBILITY_ALWAYS', 10 );
@@ -190,11 +205,17 @@ define( 'BY_DATE', 1 );
 # all projects
 define( 'ALL_PROJECTS', 0 );
 
+# all licenses
+define( 'ALL_LICENSES', 0 );
+
 # all users
 define( 'ALL_USERS', 0 );
 
 # no user
 define( 'NO_USER', 0 );
+
+# all documents
+define( 'ALL_DOCUMENTS', 0 );
 
 # history constants
 define( 'NORMAL_TYPE', 0 );
@@ -381,6 +402,11 @@ define( 'ERROR_PROJECT_RECURSIVE_HIERARCHY', 703 );
 define( 'ERROR_PROJECT_SUBPROJECT_DUPLICATE', 704 );
 define( 'ERROR_PROJECT_SUBPROJECT_NOT_FOUND', 705 );
 define( 'ERROR_PROJECT_HIERARCHY_DISABLED', 706 );
+
+# ERROR_LICENSE_*
+define( 'ERROR_LICENSE_NOT_FOUND', 750 );
+define( 'ERROR_LICENSE_NAME_NOT_UNIQUE', 751 );
+define( 'ERROR_LICENSE_NAME_INVALID', 752 );
 
 # ERROR_USER_*
 define( 'ERROR_USER_NAME_NOT_UNIQUE', 800 );
@@ -624,7 +650,8 @@ define( 'TOKEN_AUTHENTICATED', 4 );
 define( 'TOKEN_COLLAPSE', 5 );
 define( 'TOKEN_ACCOUNT_VERIFY', 6 );
 define( 'TOKEN_ACCOUNT_ACTIVATION', 7 );
-define( 'TOKEN_LAST_VISITED_DWG', 8 );
+define( 'TOKEN_ACCOUNT_CHANGE_EMAIL', 8 );
+define( 'TOKEN_LAST_VISITED_DWG', 9 );
 define( 'TOKEN_USER', 1000 );
 
 # Token expiry durations (in seconds)
@@ -709,6 +736,7 @@ define( 'DB_FIELD_SIZE_PASSWORD', 64 );
 define( 'DB_FIELD_SIZE_API_TOKEN_NAME', 128 );
 define( 'DB_FIELD_SIZE_HISTORY_VALUE', 255 );
 define( 'DB_FIELD_SIZE_FILENAME', 250 );
+define( 'DB_FIELD_SIZE_CF_DEFAULT_VALUE', 255 );
 
 # Maximum size for the user's password when storing it as a hash
 define( 'PASSWORD_MAX_SIZE_BEFORE_HASH', 1024 );

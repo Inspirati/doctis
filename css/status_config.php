@@ -58,15 +58,34 @@ if( gpc_isset( 'cache_key' ) ) {
 	http_caching_headers( true );
 }
 
-$t_status_string = config_get( 'status_enum_string' );
-$t_statuses = MantisEnum::getAssocArrayIndexedByValues( $t_status_string );
-$t_colors = config_get( 'status_colors' );
+$t_status_string1 = config_get( 'status_enum_string' );
+$t_status_string2 = config_get( 'dwg_status_enum_string' );
+$t_status_string  = rtrim( $t_status_string1, ',' ) . ',' . ltrim( $t_status_string2, ',' );
 
-foreach( $t_statuses as $t_id => $t_label ) {
-	# Status color class
-	if( array_key_exists( $t_label, $t_colors ) ) {
+$t_statuses = MantisEnum::getAssocArrayIndexedByValues( $t_status_string );
+
+$t_statuses =
+	MantisEnum::getAssocArrayIndexedByValues(config_get('status_enum_string')) +
+	MantisEnum::getAssocArrayIndexedByValues(config_get('dwg_status_enum_string'));
+
+$t_colors = config_get('status_colors');
+
+foreach ($t_statuses as $t_id => $t_label) {
+	// Only generate CSS if we have a color for this label
+	if (array_key_exists($t_label, $t_colors)) {
 		$t_color = $t_colors[$t_label];
-		echo '.' . html_get_status_css_fg( $t_id ) . " { color: {$t_color}; }\n";
-		echo '.' . html_get_status_css_bg( $t_id ) . " { background-color: {$t_color}; }\n";
+
+		// Foreground CSS class
+		$fg_class = html_get_status_css_fg($t_id);
+		if ($fg_class !== '') {
+			echo '.' . $fg_class . " { color: {$t_color}; }\n";
+		}
+
+		// Background CSS class
+		$bg_class = html_get_status_css_bg($t_id);
+		if ($bg_class !== '') {
+			echo '.' . $bg_class . " { background-color: {$t_color}; }\n";
+		}
 	}
 }
+

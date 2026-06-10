@@ -831,6 +831,11 @@ function enableDropzone( classPrefix, autoUpload ) {
 				document.write( response );
 				document.close();
 			});
+			this.on( "complete", function( file ) {
+				// Set progress bar as inactive
+				let progressbar = file.previewElement.querySelector('.progress');
+				progressbar.classList.remove('active');
+			});
 			/**
 			 * 'addedfiles' is undocumented but works similar to 'addedfile'
 			 * It's triggered once after a multiple file addition, and receives
@@ -894,3 +899,53 @@ function enableDropzone( classPrefix, autoUpload ) {
 
 	return zone_object;
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+	const buttons = document.querySelectorAll('.js-copy-citation');
+
+	buttons.forEach(btn => {
+		btn.addEventListener('click', async function(e) {
+			e.preventDefault();
+
+			const text = btn.getAttribute('data-citation');
+			const html = btn.getAttribute('data-citation-html');
+			const originalText = btn.textContent;
+
+			if (navigator.clipboard && navigator.clipboard.write) {
+				// Modern Clipboard API with HTML support
+				try {
+					await navigator.clipboard.write([
+						new ClipboardItem({
+							'text/plain': new Blob([text], { type: 'text/plain' }),
+							'text/html': new Blob([html], { type: 'text/html' })
+						})
+					]);
+				} catch (err) {
+					console.error('Clipboard write failed, falling back', err);
+					fallbackCopyToClipboard(text);
+				}
+			} else {
+				fallbackCopyToClipboard(text);
+			}
+
+			// Temporary feedback
+			btn.textContent = 'Copied!';
+			setTimeout(() => { btn.textContent = originalText; }, 1500);
+		});
+	});
+
+	function fallbackCopyToClipboard(text) {
+		const textArea = document.createElement('textarea');
+		textArea.value = text;
+		textArea.style.position = 'fixed';
+		textArea.style.top = '-1000px';
+		document.body.appendChild(textArea);
+		textArea.focus();
+		textArea.select();
+
+		try { document.execCommand('copy'); }
+		catch (err) { console.error('Fallback copy failed', err); }
+
+		document.body.removeChild(textArea);
+	}
+});

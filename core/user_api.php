@@ -501,6 +501,20 @@ function user_is_monitoring_dwg( $p_user_id, $p_bug_id ) {
 		return true;
 	}
 }
+
+function document_is_licensed( $p_dwg_id ) {
+	db_param_push();
+	$t_query = 'SELECT COUNT(*) FROM {license_dwg_list}
+				  WHERE dwg_id=' . db_param();
+
+	$t_result = db_query( $t_query, array( (int)$p_dwg_id ) );
+
+	if( 0 == db_result( $t_result ) ) {
+		return false;
+	} else {
+		return true;
+	}
+}
 // END doctis developmental section
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -1325,6 +1339,7 @@ function user_get_access_level( $p_user_id, $p_project_id = ALL_PROJECTS ) {
 }
 
 $g_user_accessible_projects_cache = null;
+$g_user_accessible_licenses_cache = null;
 
 /**
  * return an array of project IDs to which the user has access
@@ -1390,6 +1405,64 @@ function user_get_accessible_projects( $p_user_id, $p_show_disabled = false ) {
 
 	return $t_projects;
 }
+
+function user_get_accessible_licenses( $p_user_id, $p_show_disabled = false ) {
+	global $g_user_accessible_licenses_cache;
+
+	if( null !== $g_user_accessible_licenses_cache
+		&& auth_get_current_user_id() == $p_user_id
+		&& !$p_show_disabled
+	) {
+		return $g_user_accessible_licenses_cache;
+	}
+
+		$t_public = VS_PUBLIC;
+		$t_private = VS_PRIVATE;
+
+		db_param_push();
+		$t_query = 'SELECT l.id, l.name
+						  FROM {license} l
+						  WHERE ' . ( $p_show_disabled ? '' : ( 'l.enabled = ' . db_param() . ' AND ' ) ) . '
+							(l.view_state=' . db_param() . ' OR l.view_state=' . db_param() . ')
+							ORDER BY l.name';
+
+		$t_result = db_query( $t_query, ( $p_show_disabled ? array( $t_public, $t_private ) : array( true, $t_public, $t_private ) ) );
+
+		$t_licenses = array();
+		while( $t_row = db_fetch_array( $t_result ) ) {
+			$t_licenses[(int)$t_row['id']] = $t_row;
+		}
+		$t_licenses = array_keys( $t_licenses );
+
+	if( auth_get_current_user_id() == $p_user_id ) {
+		$g_user_accessible_licenses_cache = $t_licenses;
+	}
+
+	return $t_licenses;
+}
+
+
+function user_get_granted_licenses( $p_user_id, $p_show_disabled = false ) {
+
+	if( true ) {
+		db_param_push();
+		$t_query = 'SELECT l.id, l.name
+						  FROM {license} l
+						  LEFT JOIN {license_user_list} u
+						    ON l.id=u.license_id
+						  WHERE u.user_id=' . db_param() . '
+							ORDER BY l.name';
+		$t_result = db_query( $t_query, array( $p_user_id ) );
+
+		$t_licenses = array();
+		while( $t_row = db_fetch_array( $t_result ) ) {
+			$t_licenses[(int)$t_row['id']] = $t_row;
+		}
+		$t_licenses = array_keys( $t_licenses );
+	}
+	return $t_licenses;
+}
+
 
 /**
  * Get a list of a project's sub-projects to which the user has access.
@@ -1597,6 +1670,86 @@ function user_get_unassigned_by_project_id( $p_project_id = null ) {
 	return $t_user_list;
 }
 
+function user_get_unassigned_by_license_id( $p_license_id, $p_user_id, $p_project_id = null ) {
+	if( null === $p_project_id ) {
+		$p_project_id = helper_get_current_project();
+	}
+
+	db_param_push();
+	$t_query = 'SELECT DISTINCT u.id, u.username, u.realname
+				FROM {user} u
+				WHERE u.enabled = ' . db_param() . '
+					AND NOT EXISTS (
+							SELECT 1
+							FROM {license_user_list} l
+							WHERE l.user_id = u.id
+							AND l.license_id = ' . db_param() . '
+					)
+				ORDER BY u.realname, u.username';
+	$t_result = db_query( $t_query, array( true, $p_license_id ) );
+
+	$t_display = array();
+	$t_sort = array();
+	$t_users = array();
+
+	while( $t_row = db_fetch_array( $t_result ) ) {
+		$t_users[] = (int)$t_row['id'];
+		$t_display[] = user_get_expanded_name_from_row( $t_row );
+		$t_sort[] = user_get_name_for_sorting_from_row( $t_row );
+	}
+
+	array_multisort( $t_sort, SORT_ASC, SORT_STRING, $t_users, $t_display );
+
+	$t_count = count( $t_sort );
+	$t_user_list = array();
+	for( $i = 0;$i < $t_count; $i++ ) {
+		$t_user_list[$t_users[$i]] = $t_display[$i];
+	}
+	return $t_user_list;
+}
+
+function document_get_unassigned_by_license_id( $p_license_id,  $p_project_id = null ) {
+	if( null === $p_project_id ) {
+		$p_project_id = helper_get_current_project();
+	}
+
+	db_param_push();
+
+	$t_query = '
+SELECT d.id, c.title, c.reference
+FROM {dwg} d
+JOIN {documents} c
+      ON c.id = d.document_id
+WHERE d.enabled = ' . db_param() . '
+  AND NOT EXISTS (
+        SELECT 1
+        FROM {license_dwg_list} l
+        WHERE l.dwg_id = d.id
+          AND l.license_id = ' . db_param() . '
+  )
+ORDER BY c.title, c.reference';
+	$t_result = db_query( $t_query, array( true, $p_license_id ) );
+
+	$t_display = array();
+	$t_sort = array();
+	$t_dwgs = array();
+
+	while( $t_row = db_fetch_array( $t_result ) ) {
+		$t_dwgs[] = (int)$t_row['id'];
+		$t_display[] = $t_row['title'] . ' ['. dwg_format_id($t_row['id']) . ']';
+		$t_sort[] = $t_row['title'];
+	}
+
+	array_multisort( $t_sort, SORT_ASC, SORT_STRING, $t_dwgs, $t_display );
+
+	$t_count = count( $t_sort );
+	$t_dwg_list = array();
+	for( $i = 0;$i < $t_count; $i++ ) {
+		$t_dwg_list[$t_dwgs[$i]] = $t_display[$i];
+	}
+	return $t_dwg_list;
+}
+
 /**
  * Return the number of open assigned bugs to a user in a project.
  *
@@ -1613,6 +1766,22 @@ function user_get_assigned_open_bug_count( $p_user_id, $p_project_id = ALL_PROJE
 	db_param_push();
 	$t_query = 'SELECT COUNT(*)
 				  FROM {bug}
+				  WHERE ' . $t_where_prj . '
+						status<' . db_param() . ' AND
+						handler_id=' . db_param();
+	$t_result = db_query( $t_query, array( $t_resolved, $p_user_id ) );
+
+	return db_result( $t_result );
+}
+
+function user_get_assigned_open_dwg_count( $p_user_id, $p_project_id = ALL_PROJECTS ) {
+	$t_where_prj = helper_project_specific_where( $p_project_id, $p_user_id ) . ' AND';
+
+	$t_resolved = config_get( 'dwg_resolved_status_threshold' );
+
+	db_param_push();
+	$t_query = 'SELECT COUNT(*)
+				  FROM {dwg}
 				  WHERE ' . $t_where_prj . '
 						status<' . db_param() . ' AND
 						handler_id=' . db_param();
@@ -1639,6 +1808,21 @@ function user_get_reported_open_bug_count( $p_user_id, $p_project_id = ALL_PROJE
 				  WHERE ' . $t_where_prj . '
 						  status<' . db_param() . ' AND
 						  reporter_id=' . db_param();
+	$t_result = db_query( $t_query, array( $t_resolved, $p_user_id ) );
+
+	return db_result( $t_result );
+}
+
+function user_get_created_open_dwg_count( $p_user_id, $p_project_id = ALL_PROJECTS ) {
+	$t_where_prj = helper_project_specific_where( $p_project_id, $p_user_id ) . ' AND';
+
+	$t_resolved = config_get( 'dwg_resolved_status_threshold' );
+
+	db_param_push();
+	$t_query = 'SELECT COUNT(*) FROM {dwg}
+				  WHERE ' . $t_where_prj . '
+						  status<' . db_param() . ' AND
+						  creator_id=' . db_param();
 	$t_result = db_query( $t_query, array( $t_resolved, $p_user_id ) );
 
 	return db_result( $t_result );
@@ -1948,8 +2132,10 @@ function user_set_password( $p_user_id, $p_password, $p_allow_protected = false 
 	# When the password is changed, invalidate the cookie to expire sessions that
 	# may be active on all browsers.
 	$c_cookie_string = auth_generate_unique_cookie_string();
+
 	# Delete token for password activation if there is any
 	token_delete( TOKEN_ACCOUNT_ACTIVATION, $p_user_id );
+	token_delete( TOKEN_ACCOUNT_CHANGE_EMAIL, $p_user_id );
 
 	$c_password = auth_process_plain_password( $p_password );
 
@@ -1963,15 +2149,15 @@ function user_set_password( $p_user_id, $p_password, $p_allow_protected = false 
 }
 
 /**
- * Set the user's email after checking that it is valid.
+ * Validate the user's email address.
  *
  * @param int    $p_user_id A valid user identifier.
  * @param string $p_email   An email address to set.
  *
- * @return bool
- * @throws ClientException
+ * @return void
+ * @throws ClientException If mail is not valid.
  */
-function user_set_email( $p_user_id, $p_email ) {
+function user_ensure_email_valid( $p_user_id, $p_email ) {
 	$p_email = trim( $p_email );
 
 	email_ensure_valid( $p_email );
@@ -1981,8 +2167,20 @@ function user_set_email( $p_user_id, $p_email ) {
 	if( strcasecmp( $t_old_email, $p_email ) != 0 ) {
 		user_ensure_email_unique( $p_email );
 	}
+}
 
-	return user_set_field( $p_user_id, 'email', $p_email );
+/**
+ * Set the user's email after checking that it is valid.
+ *
+ * @param int    $p_user_id A valid user identifier.
+ * @param string $p_email   An email address to set.
+ *
+ * @return void
+ * @throws ClientException
+ */
+function user_set_email( $p_user_id, $p_email ) {
+	user_ensure_email_valid( $p_user_id, $p_email );
+	user_set_field( $p_user_id, 'email', $p_email );
 }
 
 /**

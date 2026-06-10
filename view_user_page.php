@@ -53,6 +53,7 @@ require_api( 'user_api.php' );
 require_api( 'utility_api.php' );
 
 const TIMELINE_INC_ALLOW = true;
+const TIMELINE_DWG_INC_ALLOW = true;
 
 auth_ensure_user_authenticated();
 
@@ -230,6 +231,25 @@ if( $t_timeline_view_threshold_access ) {
 		<div class="space-10"></div>
 	</div>
 <?php } ?>
+
+
+<!-- ////////////////////////////////////////////////////////////////////////////
+// BEGIN doctis developmental section -->
+<?php
+if( $t_timeline_view_threshold_access ) {
+	# Build a filter to show all dwgs in current projects
+	$g_timeline_filter = array();
+	$g_timeline_filter[FILTER_PROPERTY_HIDE_STATUS] = array( META_FILTER_NONE );
+	$g_timeline_filter = filter_dwg_ensure_valid_filter( $g_timeline_filter );
+	$g_timeline_user = $f_user_id;
+	?>
+	<div class="col-md-5 col-xs-12">
+		<?php include( 'timeline_dwg_inc.php' ); ?>
+		<div class="space-10"></div>
+	</div>
+<?php } ?>
+<!-- // END doctis developmental section
+//////////////////////////////////////////////////////////////////////////// -->
 
 <?php
 layout_page_end();

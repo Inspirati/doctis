@@ -100,7 +100,9 @@ $t_top_buttons_enabled = $t_action_button_position == POSITION_TOP || $t_action_
 $t_bottom_buttons_enabled = $t_action_button_position == POSITION_BOTTOM || $t_action_button_position == POSITION_BOTH;
 
 $t_show_author = in_array( 'author', $t_fields );
+$t_show_publisher = in_array( 'publisher', $t_fields );
 $t_show_creator = in_array( 'creator', $t_fields );
+$t_show_edition = in_array( 'edition', $t_fields );
 $t_show_revision = in_array( 'revision', $t_fields );
 $t_show_reference = in_array( 'reference', $t_fields );
 $t_show_classification = in_array( 'classification', $t_fields );
@@ -160,7 +162,7 @@ $t_project_name = $t_show_project ? string_display_line( project_get_name( $t_bu
 
 layout_page_header( dwg_format_summary( $f_bug_id, SUMMARY_CAPTION ) );
 
-layout_page_begin();
+layout_page_begin(null, true);
 
 ?>
 <div class="col-md-12 col-xs-12">
@@ -178,7 +180,7 @@ layout_page_begin();
 			</h4>
 			<div class="widget-toolbar no-border">
 				<div class="widget-menu">
-					<?php print_extra_small_button( string_get_dwg_view_url( $t_bug_id ), lang_get( 'back_to_dwg_link' ) ); ?>
+					<?php print_dwg_extra_small_button( string_get_dwg_view_url( $t_bug_id ), lang_get( 'back_to_dwg_link' ) ); ?>
 				</div>
 			</div>
 		</div>
@@ -193,6 +195,9 @@ if( $t_top_buttons_enabled ) {
 					<input <?php echo helper_get_tab_index(); ?>
 						type="submit" class="btn btn-primary btn-white btn-round"
 						value="<?php echo lang_get( 'update_information_button' ); ?>" />
+					<input <?php echo helper_get_tab_index(); ?>
+						type="submit" class="btn btn-primary btn-white btn-round"
+						value="<?php echo lang_get( 'edit_document_button' ); ?>" />
 				</div>
 <?php
 }
@@ -384,8 +389,16 @@ if( $t_show_priority || $t_show_severity || $t_show_reproducibility ) {
 	if( $t_show_priority ) {
 		# Priority
 		echo '<th class="category"><label for="priority">' . lang_get( 'priority' ) . '</label></th>';
-		echo '<td><select ' . helper_get_tab_index() . ' id="priority" name="priority" class="input-sm">';
-		print_dwg_enum_string_option_list( 'priority', $t_bug->priority );
+		$t_icon = $t_bug->priority;
+		$t_status_icon_arr = config_get( 'status_icon_arr' );
+		$t_priotext = get_enum_element( 'priority', $t_icon );
+		echo '<td class="bug-priority">';
+		if( isset( $t_status_icon_arr[$t_icon] ) && !is_blank( $t_status_icon_arr[$t_icon] ) ) {
+			echo '&nbsp' . icon_get( $t_status_icon_arr[$t_icon] ) . '&nbsp';
+		}
+		echo '&nbsp;';
+		echo '<select ' . helper_get_tab_index() . ' id="priority" name="priority" class="input-sm">';
+		print_enum_string_option_list( 'priority', $t_bug->priority );
 		echo '</select></td>';
 	} else {
 		$t_spacer += 2;
@@ -438,7 +451,9 @@ if( $t_show_status || $t_show_resolution ) {
 		echo '<td class="bug-status">';
 		print_icon( 'fa-square', 'fa-status-box ' . $t_status_css );
 		echo '&nbsp;';
-		print_dwg_status_option_list( 'dwg_status', $t_bug->status,
+		echo '&nbsp;';
+		// print_dwg_status_option_list( 'dwg_status', $t_bug->status, // @NOTE RobD - wrong
+		print_dwg_status_option_list( 'status', $t_bug->status, // @NOTE RobD - correct, this needs to be 'status'
 			access_can_close_dwg( $t_bug ),
 			$t_bug->project_id );
 		echo '</td>';
@@ -650,7 +665,7 @@ print_table_spacer( 6 );
 // 	echo '<tr>';
 // 	echo '<th class="category">';
 // 	echo '<span class="required">*</span> ';
-// 	echo '<label for="summary">' . lang_get( 'summary' ) . '</label>';
+// 	echo '<label for="summary">' . lang_get( 'document_summary' ) . '</label>';
 // 	echo '</th>';
 // 	echo '<td colspan="5">';
 // 	echo '<input ', helper_get_tab_index(),
@@ -781,6 +796,10 @@ if( $t_bottom_buttons_enabled ) {
 		<input <?php echo helper_get_tab_index(); ?>
 			type="submit" class="btn btn-primary btn-white btn-round"
 			value="<?php echo lang_get( 'update_information_button' ); ?>" />
+		<button class="btn btn-primary btn-white btn-round"
+				formaction="dwg_edit_page.php">
+			<?php echo lang_get( 'edit_document_button' ) ?>
+		</button>
 	</div>
 <?php
 }

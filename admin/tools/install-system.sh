@@ -1,8 +1,9 @@
 #!/bin/bash
 
 mysqladminname="admin"
-sudoers_file="/etc/sudoers.d/34_install-doctis"
+sudoers_file="/etc/sudoers.d/34_installer"
 database="mariadb"
+db_cmd="mysql"
 #database="mysql"
 
 OFF="\033[0m"
@@ -26,7 +27,7 @@ silence_sudo() {
     local user="$(whoami)"
     echo -e "${INFO}Configuring sudo for user:${OFF} $user"
     sudo tee "$sudoers_file" >/dev/null <<EOF
-# this file was created by the doctis installer and should be deleted
+# this file was created by the an installer and should be deleted
 $user ALL=(ALL:ALL) NOPASSWD:/usr/bin/apt-get, \
 /lib/systemd/systemd-sysv-install, \
 /usr/bin/mariadb, /bin/mariadb, \
@@ -41,7 +42,7 @@ $user ALL=(ALL:ALL) NOPASSWD:/usr/bin/apt-get, \
 /bin/mv, \
 /bin/rm
 EOF
-    # sudo won't read it with the correct permission set
+    # sudo won't read it without the correct permission set
     sudo chmod 440 "$sudoers_file"
     # Arrange for cleanup on exit (normal or error)
     trap cleanup_sudo EXIT
@@ -115,6 +116,8 @@ phpinfo();
 xdebuginfo();
 ?>
 EOF
+    # Get and install the libraries and tools needed for mantis extended features:
+    sudo apt-get install -y graphviz
     echo -e "${INFO}Extras installed.${OFF}" >&2
 }
 
@@ -132,9 +135,7 @@ install_tools_cli() {
     fi
 }
 
-install_tools_gui() {
-    echo -e "${INFO}Installing GUI developer tools...${OFF}"
-    sudo apt-get install -y meld
+install_vscode() {
     # Optional: install VS Code if not present
     if ! command -v code >/dev/null 2>&1; then
         echo "Installing VS Code..."
@@ -149,6 +150,18 @@ install_tools_gui() {
         code --install-extension muhammedrashid.stain
         code --install-extension oleg-shilo.favorites
     fi
+}
+
+install_tools_gui() {
+    echo -e "${INFO}Installing GUI developer tools...${OFF}"
+    sudo apt-get install -y meld
+    wget https://github.com/VSCodium/vscodium/releases/download/1.105.06922/codium_1.105.06922_amd64.deb
+    sudo dpkg -i codium_1.105.06922_amd64.deb
+    codium --install-extension xdebug.php-debug
+    codium --install-extension muhammedrashid.stain
+    codium --install-extension oleg-shilo.favorites
+    
+    # install_vscode
 }
 
 install_tools() {
@@ -175,6 +188,10 @@ EOF
     echo -e "${INFO}Xdebug configured.${OFF}"
 }
 
+
+# CREATE USER IF NOT EXISTS 'admin'@'localhost' IDENTIFIED BY 'password';
+# GRANT ALL PRIVILEGES ON *.* TO 'admin'@'localhost' WITH GRANT OPTION;
+
 init_database() {
     echo -e "${INFO}Initialising ${database} database...${OFF}"
     # Ensure MySQL/MariaDB is running and enabled
@@ -186,11 +203,15 @@ init_database() {
         echo "Starting ${database} service..."
         sudo systemctl start "${database}"
     fi
-    sudo ${database} <<EOF
+#    sudo ${database} <<EOF
+#    sudo ${db_cmd} <<EOF
+    sudo mysql -u root <<EOF
 CREATE USER IF NOT EXISTS '${mysqladminname}'@'localhost' IDENTIFIED BY '${mysqladminpass}';
 GRANT ALL PRIVILEGES ON *.* TO '${mysqladminname}'@'localhost' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 EOF
+# CREATE USER IF NOT EXISTS 'mantisbt'@'localhost' IDENTIFIED BY 'password';
+# GRANT ALL PRIVILEGES ON *.* TO 'mantisbt'@'localhost' WITH GRANT OPTION;
     # So the database cli mysql client doesn't keep prompting for a password
     # Optional convenience: drop a client config file (dev only)
     cat > ~/.my.cnf << EOF
@@ -202,7 +223,7 @@ EOF
     echo -e "${INFO}Database initialised.${OFF}" >&2
 }
 
-# Deprecated - no long used
+# Deprecated - no longer used
 check_vbox_addin() {
     local running=0
     local installed=0
@@ -303,12 +324,130 @@ install_vbox() {
 # install_vbox true   # interactive mode (default)
 # install_vbox false  # non-interactive mode
 
+# ------------------------------
+# Installation handlers
+# ------------------------------
+
+install_vbox() {
+    echo "[INFO] VirtualBox environment detected."
+    echo "[INFO] Running VirtualBox-specific installation..."
+    # TODO: add your VirtualBox installation steps here
+}
+
+install_qemu() {
+    echo "[INFO] QEMU/KVM environment detected."
+    echo "[INFO] Running QEMU/KVM-specific installation..."
+    # TODO: add your QEMU/KVM installation steps here
+}
+
+install_droplet() {
+    echo "[INFO] DigitalOcean droplet detected."
+    echo "[INFO] Running DigitalOcean-specific installation..."
+    # TODO: add your DigitalOcean installation steps here
+}
+
+install_baremetal() {
+    echo "[INFO] No virtualization detected: assuming bare metal."
+    echo "[INFO] Running bare-metal installation..."
+    # TODO: add your bare metal installation steps here
+}
+
+# ------------------------------
+# Virtualization detection
+# returns one of:
+#   virtualbox | qemu-kvm | digitalocean | baremetal
+# ------------------------------
+
+detect_virtualization() {
+
+    # Prefer systemd-detect-virt if available
+    if command -v systemd-detect-virt >/dev/null 2>&1; then
+        virt=$(systemd-detect-virt)
+
+        case "$virt" in
+            oracle)
+                echo "virtualbox"
+                return ;;
+            kvm|qemu)
+                # Could be DigitalOcean (DO uses KVM)
+                if grep -qi "DigitalOcean" /sys/class/dmi/id/sys_vendor 2>/dev/null; then
+                    echo "digitalocean"
+                elif curl -fs http://169.254.169.254/metadata/v1/id >/dev/null 2>&1; then
+                    echo "digitalocean"
+                else
+                    echo "qemu-kvm"
+                fi
+                return ;;
+        esac
+    fi
+
+    # --- DMI fallback (VirtualBox / QEMU / DO) ---
+
+    # VirtualBox fingerprints
+    if grep -qi "VirtualBox" /sys/class/dmi/id/product_name 2>/dev/null \
+    || grep -qi "innotek" /sys/class/dmi/id/sys_vendor 2>/dev/null; then
+        echo "virtualbox"
+        return
+    fi
+
+    # DigitalOcean DMI fingerprint
+    if grep -qi "DigitalOcean" /sys/class/dmi/id/sys_vendor 2>/dev/null; then
+        echo "digitalocean"
+        return
+    fi
+
+    # QEMU/KVM DMI pattern
+    if grep -qiE "QEMU|KVM" /sys/class/dmi/id/sys_vendor 2>/dev/null; then
+        echo "qemu-kvm"
+        return
+    fi
+
+    # --- DigitalOcean metadata fallback ---
+    if curl -fs http://169.254.169.254/metadata/v1/id >/dev/null 2>&1; then
+        echo "digitalocean"
+        return
+    fi
+
+    # Default fallback
+    echo "baremetal"
+}
+
+# ------------------------------
+# Dispatcher
+# ------------------------------
+
+chkinst_virt() {
+    virt=$(detect_virtualization)
+
+    case "$virt" in
+        virtualbox)
+            install_vbox
+            ;;
+        qemu-kvm)
+            install_qemu
+            ;;
+        digitalocean)
+            install_droplet
+            ;;
+        baremetal|*)
+            install_baremetal
+            ;;
+    esac
+}
+
+# ------------------------------
+# Run dispatcher
+# ------------------------------
+
+chkinst_virt
+
 install_system() {
     # Run the system installation functions in a specific sequence
     mysqladminpass="${2:-password}"
     echo -e "${GREEN}Started installing services..${OFF}"
     silence_sudo
-    install_vbox
+#    install_vbox
+#    chkinst_virt
     install_lamp
     install_tools
     install_extra

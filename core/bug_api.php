@@ -492,7 +492,7 @@ class BugData {
 	public function validate( $p_update_extended = true ) {
 		# Summary cannot be blank
 		if( is_blank( $this->summary ) ) {
-			error_parameters( lang_get( 'summary' ) );
+			error_parameters( lang_get( 'issue_summary' ) );
 			trigger_error( ERROR_EMPTY_FIELD, ERROR );
 		}
 
@@ -502,6 +502,10 @@ class BugData {
 				error_parameters( lang_get( 'description' ) );
 				trigger_error( ERROR_EMPTY_FIELD, ERROR );
 			}
+
+			helper_ensure_longtext_length_valid( $this->description, 'description' );
+			helper_ensure_longtext_length_valid( $this->steps_to_reproduce, 'steps_to_reproduce' );
+			helper_ensure_longtext_length_valid( $this->additional_information, 'additional_information' );
 		}
 
 		# Make sure a category is set

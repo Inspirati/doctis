@@ -79,6 +79,14 @@ function custom_function_default_changelog_include_issue( $p_issue_id ) {
 		$t_issue->status >= config_get( 'bug_resolved_status_threshold' ) ) );
 }
 
+function custom_function_default_changelog_include_document( $p_issue_id ) {
+	$t_issue = dwg_get( $p_issue_id );
+
+	return( ( $t_issue->resolution >= config_get( 'dwg_resolution_fixed_threshold' ) &&
+		$t_issue->resolution < config_get( 'dwg_resolution_not_fixed_threshold' ) &&
+		$t_issue->status >= config_get( 'dwg_resolved_status_threshold' ) ) );
+}
+
 /**
  * Prints one entry in the changelog.
  *
@@ -106,7 +114,7 @@ function custom_function_default_changelog_print_issue( $p_issue_id, $p_issue_le
 
 	# choose color based on status
 	$t_status_css = html_get_status_css_fg( $t_bug->status, $t_current_user, $t_bug->project_id );
-	$t_status_title = string_attribute( get_enum_element( 'status', dwg_get_field( $t_bug->id, 'status' ), $t_bug->project_id ) );
+	$t_status_title = string_attribute( get_enum_element( 'status', bug_get_field( $t_bug->id, 'status' ), $t_bug->project_id ) );
 
 	echo utf8_str_pad( '', $p_issue_level * 36, '&#160;' );
 	print_icon( 'fa-square', 'fa-status-box ' . $t_status_css, $t_status_title );
@@ -119,6 +127,40 @@ function custom_function_default_changelog_print_issue( $p_issue_id, $p_issue_le
 	}
 }
 
+function custom_function_default_changelog_print_document( $p_issue_id, $p_issue_level = 0 ) {
+	static $s_status;
+
+	$t_bug = dwg_get( $p_issue_id );
+	$t_current_user = auth_get_current_user_id();
+
+	if( $t_bug->category_id ) {
+		$t_category_name = category_get_name( $t_bug->category_id );
+	} else {
+		$t_category_name = '';
+	}
+
+	$t_category = is_blank( $t_category_name ) ? '' : '<strong>[' . string_display_line( $t_category_name ) . ']</strong> ';
+
+	if( !isset( $s_status[$t_bug->status] ) ) {
+		$s_status[$t_bug->status] = get_enum_element( 'dwg_status', $t_bug->status, $t_current_user, $t_bug->project_id );
+	}
+
+	# choose color based on status
+	$t_status_css = html_get_status_css_fg( $t_bug->status, $t_current_user, $t_bug->project_id );
+	$t_status_title = string_attribute( get_enum_element( 'dwg_status', dwg_get_field( $t_bug->id, 'status' ), $t_bug->project_id ) );
+
+	echo utf8_str_pad( '', $p_issue_level * 36, '&#160;' );
+	print_icon( 'fa-square', 'fa-status-box ' . $t_status_css, $t_status_title );
+//	echo ' ' . string_get_dwg_view_link( $p_issue_id, false );
+	echo ' ' . string_get_dwg_view_link( $p_issue_id, true );
+	echo ': <span class="label label-light">', $t_category, '</span> ' , string_display_line_links( $t_bug->summary );
+	if( $t_bug->handler_id > 0
+			&& ON == config_get( 'show_assigned_names', null, $t_current_user, $t_bug->project_id )
+			&& access_can_see_handler_for_dwg( $t_bug ) ) {
+		echo ' (', prepare_user_name( $t_bug->handler_id ), ')';
+	}
+}
+
 /**
  * Checks the provided bug and determines whether it should be included in the roadmap or not.
  * returns true: to include, false: to exclude.
@@ -127,6 +169,10 @@ function custom_function_default_changelog_print_issue( $p_issue_id, $p_issue_le
  * @return boolean
  */
 function custom_function_default_roadmap_include_issue( $p_issue_id ) {
+	return true;
+}
+
+function custom_function_default_roadmap_include_document( $p_issue_id ) {
 	return true;
 }
 
@@ -164,7 +210,7 @@ function custom_function_default_roadmap_print_issue( $p_issue_id, $p_issue_leve
 
 	# choose color based on status
 	$t_status_css = html_get_status_css_fg( $t_bug->status, $t_current_user, $t_bug->project_id );
-	$t_status_title = string_attribute( get_enum_element( 'status', dwg_get_field( $t_bug->id, 'status' ), $t_bug->project_id ) );
+	$t_status_title = string_attribute( get_enum_element( 'status', bug_get_field( $t_bug->id, 'status' ), $t_bug->project_id ) );
 
 	echo utf8_str_pad( '', $p_issue_level * 36, '&#160;' );
 	print_icon( 'fa-square', 'fa-status-box ' . $t_status_css, $t_status_title );
@@ -173,6 +219,46 @@ function custom_function_default_roadmap_print_issue( $p_issue_id, $p_issue_leve
 	if( $t_bug->handler_id > 0
 			&& ON == config_get( 'show_assigned_names', null, $t_current_user, $t_bug->project_id )
 			&& access_can_see_handler_for_bug( $t_bug ) ) {
+		echo ' (', prepare_user_name( $t_bug->handler_id ), ')';
+	}
+}
+
+function custom_function_default_roadmap_print_document( $p_issue_id, $p_issue_level = 0 ) {
+	static $s_status;
+
+	$t_bug = dwg_get( $p_issue_id );
+	$t_current_user = auth_get_current_user_id();
+
+	if( dwg_is_resolved( $p_issue_id ) ) {
+		$t_strike_start = '<s>';
+		$t_strike_end = '</s>';
+	} else {
+		$t_strike_start = $t_strike_end = '';
+	}
+
+	if( $t_bug->category_id ) {
+		$t_category_name = category_get_name( $t_bug->category_id );
+	} else {
+		$t_category_name = '';
+	}
+
+	$t_category = is_blank( $t_category_name ) ? '' : '<strong>[' . string_display_line( $t_category_name ) . ']</strong> ';
+
+	if( !isset( $s_status[$t_bug->status] ) ) {
+		$s_status[$t_bug->status] = get_enum_element( 'dwg_status', $t_bug->status, $t_current_user, $t_bug->project_id );
+	}
+
+	# choose color based on status
+	$t_status_css = html_get_status_css_fg( $t_bug->status, $t_current_user, $t_bug->project_id );
+	$t_status_title = string_attribute( get_enum_element( 'dwg_status', dwg_get_field( $t_bug->id, 'status' ), $t_bug->project_id ) );
+
+	echo utf8_str_pad( '', $p_issue_level * 36, '&#160;' );
+	print_icon( 'fa-square', 'fa-status-box ' . $t_status_css, $t_status_title );
+	echo ' ' . string_get_bug_view_link( $p_issue_id, false );
+	echo ': <span class="label label-light">', $t_category, '</span> ', $t_strike_start, string_display_line_links( $t_bug->summary ), $t_strike_end;
+	if( $t_bug->handler_id > 0
+			&& ON == config_get( 'show_assigned_names', null, $t_current_user, $t_bug->project_id )
+			&& access_can_see_handler_for_dwg( $t_bug ) ) {
 		echo ' (', prepare_user_name( $t_bug->handler_id ), ')';
 	}
 }
@@ -187,10 +273,12 @@ function custom_function_default_roadmap_print_issue( $p_issue_id, $p_issue_leve
 function custom_function_default_format_issue_summary( $p_issue_id, $p_context = 0 ) {
 	switch( $p_context ) {
 		case SUMMARY_CAPTION:
-			$t_string = bug_format_id( $p_issue_id ) . ': ' . string_attribute( bug_get_field( $p_issue_id, 'summary' ) );
+//			$t_string = bug_format_id( $p_issue_id ) . ': ' . string_attribute( bug_get_field( $p_issue_id, 'summary' ) );
+			$t_string = string_attribute( bug_get_field( $p_issue_id, 'summary' ) );
 			break;
 		case SUMMARY_FIELD:
-			$t_string = bug_format_id( $p_issue_id ) . ': ' . string_display_line_links( bug_get_field( $p_issue_id, 'summary' ) );
+//			$t_string = bug_format_id( $p_issue_id ) . ': ' . string_display_line_links( bug_get_field( $p_issue_id, 'summary' ) );
+			$t_string = string_display_line_links( bug_get_field( $p_issue_id, 'summary' ) );
 			break;
 		case SUMMARY_EMAIL:
 			$t_string = bug_format_id( $p_issue_id ) . ': ' . string_attribute( bug_get_field( $p_issue_id, 'summary' ) );
@@ -202,7 +290,7 @@ function custom_function_default_format_issue_summary( $p_issue_id, $p_context =
 	return $t_string;
 }
 
-function custom_function_default_format_dwg_summary( $p_issue_id, $p_context = 0 ) {
+function custom_function_default_format_document_summary( $p_issue_id, $p_context = 0 ) {
 	switch( $p_context ) {
 		case SUMMARY_CAPTION:
 			$t_string = dwg_format_id( $p_issue_id ) . ': ' . string_attribute( dwg_get_field( $p_issue_id, 'summary' ) );
@@ -369,8 +457,6 @@ function custom_function_default_get_dwg_columns_to_view( $p_columns_target = CO
 		$t_columns = columns_dwg_remove_invalid( $t_columns, columns_dwg_get_all( $t_project_id ) );
 	} else if( $p_columns_target == COLUMNS_TARGET_VIEW_PAGE ) {
 		$t_columns = config_get( 'view_dwg_page_columns', '', $p_user_id, $t_project_id );
-
-// @TODO RobD - calling this causes most of the column text to not be displayed?
 		$t_columns = columns_dwg_remove_invalid( $t_columns, columns_dwg_get_all( $t_project_id ) );
 	} else {
 		$t_columns = config_get( 'print_dwg_page_columns', '', $p_user_id, $t_project_id );
@@ -396,7 +482,7 @@ function custom_function_default_get_dwg_columns_to_view( $p_columns_target = CO
 function custom_function_default_print_column_title( $p_column, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE, array $p_sort_properties = [] ) {
 	global $t_sort, $t_dir;
 
-	# if no sort properties are provided, resort to deprecated golbal vars, to keep compatibility
+	# if no sort properties are provided, resort to deprecated global vars, to keep compatibility
 	if( empty( $p_sort_properties ) ) {
 		$t_main_sort_column = $t_sort;
 		$t_main_sort_dir = $t_dir;
@@ -633,9 +719,9 @@ function custom_function_default_print_dwg_column_value( $p_column, DwgData $p_b
 	// if ($p_column == "date") {
 	// 	error_log("custom_function_default_print_dwg_column_value: " . $p_column);
 	// }
-//	if ($p_column == "attachment_count") {
-//		error_log("custom_function_default_print_dwg_column_value: " . $p_column);
-//	}
+	// if ($p_column == "attachment_count") {
+	// 	error_log("custom_function_default_print_dwg_column_value: " . $p_column);
+	// }
 	$t_custom_field = column_get_custom_field_name( $p_column );
 	if( $t_custom_field !== null ) {
 		$t_class = custom_field_css_name( $t_custom_field );
@@ -813,4 +899,59 @@ function custom_function_default_print_bug_view_page_custom_buttons( $p_bug_id )
 }
 
 function custom_function_default_print_dwg_view_page_custom_buttons( $p_bug_id ) {
+}
+
+/**
+ * Dump Mantis GPC input variables for debugging.
+ * Place anywhere in a page (top or bottom) during development.
+ * 
+ * How to use it
+ * 
+ * Option 1: Dump all incoming variables
+ * Place this in your script:
+ *
+ * mantis_debug_gpc();
+ * exit;
+ *
+ * You’ll see:
+ * Raw GET/POST/COOKIE data
+ * What GPC retrieves for every detected input key
+ * How Mantis converts values into int/bool/array
+ *
+ * Option 2: Dump only specific keys
+ * For example:
+ *
+ * mantis_debug_gpc( array( 'project_id', 'user_id', 'access_level' ) );
+ * exit; 
+ *
+ */
+function mantis_debug_gpc( $keys = array() ) {
+	echo "<pre style='background:#222;color:#0f0;padding:10px;overflow:auto;'>";
+
+	echo "===== RAW PHP INPUT =====\n";
+	echo "\$_GET:\n";     print_r( $_GET );
+	echo "\n\$_POST:\n";  print_r( $_POST );
+	echo "\n\$_COOKIE:\n";print_r( $_COOKIE );
+	echo "\n\$_REQUEST:\n";print_r( $_REQUEST );
+
+	echo "\n===== MANTIS GPC VALUES =====\n";
+
+	if( empty( $keys ) ) {
+		// If no keys provided, automatically dump all request keys
+		$keys = array_unique( array_merge(
+			array_keys( $_GET ),
+			array_keys( $_POST ),
+			array_keys( $_COOKIE )
+		));
+	}
+
+	foreach( $keys as $key ) {
+		echo "\n$key:\n";
+		echo "  string: "; var_dump( gpc_get_string( $key, null ) );
+		echo "  int:    "; var_dump( gpc_get_int( $key, null ) );
+		echo "  bool:   "; var_dump( gpc_get_bool( $key, null ) );
+		echo "  array:  "; print_r( gpc_get_array( $key, null ) );
+	}
+
+	echo "</pre>";
 }

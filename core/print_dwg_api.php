@@ -101,7 +101,7 @@ function print_dwg_header_redirect( $p_url, $p_die = true, $p_sanitize = false, 
 		# of $g_stop_on_errors setting which is actually handled in
 		# html_meta_redirect(), called by layout_page_header().
 		layout_page_header( null, $p_url );
-		layout_page_begin();
+		layout_page_begin(null, true);
 		html_operation_successful( $p_url );
 		layout_page_end();
 		return false;
@@ -368,6 +368,102 @@ function print_dwg_tag_attach_form( $p_bug_id, $p_string = '' ) {
 }
 
 /**
+ * Print the drop-down combo-box of existing tags.
+ * When passed a dwg ID, the option list will not contain any tags attached to the given dwg.
+ * @param integer $p_dwg_id A bug identifier.
+ * @return void
+ */
+function print_dwg_license_option_list( $p_dwg_id = 0 ) {
+	$t_rows = license_get_candidates_for_dwg( $p_dwg_id );
+
+	echo '<option value="0">', string_html_specialchars( lang_get( 'license_existing' ) ), '</option>';
+	foreach ( $t_rows as $t_row ) {
+		echo '<option value="', $t_row['id'], '" title="', string_attribute( $t_row['description'] );
+		echo '">', string_attribute( $t_row['name'] ), '</option>';
+	}
+}
+
+/**
+ * Print the separator comment, input box, and existing tag dropdown menu.
+ *
+ * @param integer $p_dwg_id A dwg identifier. If not specified or 0, the
+ *                          dropdown list will include all available licenses;
+ *                          otherwise licenses attached to the given dwg will
+ *                          be excluded.
+ * @param string  $p_string Default contents of the input box.
+ *
+ * @return void
+ */
+function print_dwg_license_input( $p_dwg_id = 0, $p_string = '' ) {
+?>
+	<label class="inline small">
+		<?php printf( lang_get( 'tag_separate_by' ), config_get( 'tag_separator' ) )?>
+	</label>
+	<input type="hidden" id="tag_separator" value="<?php echo config_get( 'tag_separator' )?>" />
+	<input type="text" name="license_string" id="license_string"
+		   class="input-sm" size="40" <?php echo helper_get_tab_index(); ?>
+		   value="<?php echo string_attribute( $p_string )?>" />
+	<select class="input-sm" <?php echo helper_get_tab_index()?> name="license_select" id="license_select">
+		<?php print_dwg_license_option_list( $p_dwg_id );?>
+	</select>
+<?php
+}
+
+/**
+ * Print the entire form for adding a license to a dwg/document.
+ * @param integer $p_dwg_id A dwg/document identifier.
+ * @param string  $p_string Default contents of the input box.
+ * @return boolean
+ */
+function print_dwg_license_add_form( $p_dwg_id, $p_string = '' ) {
+?>
+	<form method="post" action="dwg_license_add.php" class="form-inline">
+	<?php echo form_security_field( 'dwg_license_add' )?>
+	<input type="hidden" name="dwg_id" value="<?php echo $p_dwg_id?>" class="input-sm" />
+	<?php print_dwg_license_input( $p_dwg_id, $p_string ); ?>
+	<input type="submit" value="<?php echo lang_get( 'license_add' )?>" class="btn btn-primary btn-sm btn-white btn-round" />
+	</form>
+<?php
+	return true;
+}
+/**
+ * Print the entire form for requesting access to a license.
+ * @param integer $p_dwg_id A dwg/document identifier.
+ * @param string  $p_string Default contents of the input box.
+ * @return boolean
+ */
+function print_dwg_license_request_form( $p_dwg_id, $p_string = '' ) {
+?>
+	<form method="post" action="dwg_license_update.php" class="form-inline">
+	<?php echo form_security_field( 'dwg_license_update' )?>
+	<input type="hidden" name="bug_id" value="<?php echo $p_dwg_id?>" class="input-sm" />
+	<?php print_dwg_license_input( $p_dwg_id, $p_string ); ?>
+	<input type="submit" value="<?php echo lang_get( 'license_request_access' )?>" class="btn btn-primary btn-sm btn-white btn-round" />
+	</form>
+<?php
+	return true;
+}
+/*
+			<form method="post" action="dwg_license_update.php" class="form-inline noprint">
+				<?php echo form_security_field( 'dwg_license_update' ) ?>
+				<input type="hidden" name="bug_id" value="<?php echo (integer)$f_issue_id; ?>" />
+				<input type="hidden" name="user_id" value="<?php echo (integer)$t_current_user_id; ?>" />
+				<input type="hidden" name="project_id" value="<?php echo (integer)$t_issue['project']; ?>" />
+				<input type="hidden" name="access_level" value="10" />
+				<?php
+					foreach( $t_license_apply_for as $t_license ) {
+						echo '<input type="hidden" name="license_id[]" value="' . $t_license . '" />' . "\n";
+					}
+				?>
+				<!--suppress HtmlFormInputWithoutLabel -->
+				<!-- <input type="text" class="input-sm" id="dwg_license_list_license_to_add" name="license_to_add" /> -->
+				<input type="submit" class="btn btn-primary btn-sm btn-white btn-round" value="<?php echo lang_get( 'license_request_access' ) ?>" />
+				<input type="text" class="input-sm" id="dwg_license_list_license_to_add" name="license_to_add" size="64" maxlength="256" value="<?php echo $t_license_list ?>" />
+	<span class="required pull-right"> * <?php echo lang_get( 'license_request_access_tip' ) ?></span>
+			</form>
+ */
+
+/**
  * Print the separator comment, input box, and existing tag dropdown menu.
  *
  * @param integer $p_bug_id A bug identifier. If not specified or 0, the
@@ -432,7 +528,7 @@ function print_dwg_tagging_errors_table( $p_tags_failed ) {
  * @return void
  */
 function print_dwg_tag_option_list( $p_bug_id = 0 ) {
-	$t_rows = tag_get_candidates_for_bug( $p_bug_id );
+	$t_rows = tag_dwg_get_candidates_for_bug( $p_bug_id );
 
 	echo '<option value="0">', string_html_specialchars( lang_get( 'tag_existing' ) ), '</option>';
 	foreach ( $t_rows as $t_row ) {
@@ -817,19 +913,18 @@ function print_dwg_category_option_list( $p_category_id = 0, $p_project_id = nul
 	}
 }
 
-function print_document_option_list( $p_document_id = 0, $p_project_id = null, $p_enabled_only = false ) {
+function print_document_option_list( $p_document_id = 0, $p_project_id = null, $p_enabled_only = false, $p_with_issues = false ) {
 	if( null === $p_project_id ) {
 		$t_project_id = helper_get_current_project();
 	} else {
 		$t_project_id = $p_project_id;
 	}
 
-	$t_cat_arr = document_get_all_rows( $t_project_id, null, true, $p_enabled_only );
+	$t_cat_arr = document_get_all_rows( $t_project_id, null, true, $p_enabled_only, $p_with_issues );
 
 	# Add the current document if it is not in the list
-	// if( $p_document_id != 0
-    //     && !in_array( $p_document_id, array_column( $t_cat_arr, 'id' ) )
-    // ) {
+	// if( $p_document_id != 0 && !in_array( $p_document_id, array_column( $t_cat_arr, 'id' ) )
+	// ) {
 	// 	$t_document_row = document_get_row( $p_document_id );
 	// 	$t_document_row['project_name'] = project_get_name( $t_document_row['project_id'] );
 	// 	$t_cat_arr[] = $t_document_row;
@@ -1023,7 +1118,7 @@ function print_dwg_build_option_list( $p_build = '' ) {
 
 	# Get the "found in" build list
 	$t_query = 'SELECT DISTINCT build
-				FROM {document}
+				FROM {dwg}
 				WHERE ' . $t_project_where . '
 				ORDER BY build DESC';
 	$t_result = db_query( $t_query );
@@ -1291,7 +1386,7 @@ function print_dwg_custom_field_projects_list( $p_field_id ) {
 	foreach( $t_project_ids as $t_project_id ) {
 		$t_project_name = project_get_field( $t_project_id, 'name' );
 		echo '<strong>', string_display_line( $t_project_name ), '</strong>: ';
-		print_extra_small_button( 'manage_proj_custom_field_remove.php?field_id=' . $c_field_id . '&project_id=' . $t_project_id . '&return=custom_field' . $t_security_token, lang_get( 'remove_link' ) );
+		print_dwg_extra_small_button( 'manage_proj_custom_field_remove.php?field_id=' . $c_field_id . '&project_id=' . $t_project_id . '&return=custom_field' . $t_security_token, lang_get( 'remove_link' ) );
 		echo '<br />- ';
 
 		$t_linked_field_ids = custom_field_get_linked_ids( $t_project_id );
@@ -1348,14 +1443,18 @@ function print_dwg_link( $p_bug_id, $p_detail_info = true ) {
 	echo string_get_dwg_view_link( $p_bug_id, $p_detail_info );
 }
 
-function print_dwg_reference_link( $p_bug_id, $p_dwg_reference, $p_detail_info = true ) {
-	echo string_get_dwg_view_reference_link( $p_bug_id, $p_dwg_reference, $p_detail_info );
+function print_dwg_title_link( $p_dwg_id, $p_dwg_title, $p_detail_info = true ) {
+	echo string_get_dwg_view_title_link( $p_dwg_id, $p_dwg_title, $p_detail_info );
+}
+
+function print_dwg_reference_link( $p_dwg_id, $p_dwg_reference, $p_detail_info = true ) {
+	echo string_get_dwg_view_reference_link( $p_dwg_id, $p_dwg_reference, $p_detail_info );
 }
 
 /**
  * formats the priority given the status
  * shows the priority in BOLD if the bug is NOT closed and is of significant priority
- * @param DwgData $p_bug Bug Object.
+ * @param BugData $p_bug Bug Object.
  * @return void
  */
 function print_dwg_formatted_priority_string( DwgData $p_bug ) {
@@ -1374,7 +1473,7 @@ function print_dwg_formatted_priority_string( DwgData $p_bug ) {
 /**
  * formats the severity given the status
  * shows the severity in BOLD if the bug is NOT closed and is of significant severity
- * @param DwgData $p_bug Bug Object.
+ * @param BugData $p_bug Bug Object.
  * @return void
  */
 function print_dwg_formatted_severity_string( DwgData $p_bug ) {
@@ -1440,7 +1539,7 @@ function print_view_dwg_sort_link( $p_label, $p_sort_field, $p_sort, $p_dir, $p_
 			if( filter_dwg_is_temporary( $g_dwg_filter ) ) {
 				$t_url .= '&' . filter_dwg_get_temporary_key_param( $g_dwg_filter );
 			}
-			print_link( $t_url, $p_label, false, '', $p_icon );
+			print_hyperlink( $t_url, $p_label, false, '', $p_icon );
 			break;
 		default:
 			echo $p_label;
@@ -1474,7 +1573,7 @@ function print_dwg_manage_user_sort_link( $p_page, $p_string, $p_field, $p_dir, 
 		$t_dir = 'ASC';
 	}
 
-	print_link(
+	print_hyperlink(
 		helper_url_combine( $p_page, [
 			'sort' => $p_field,
 			'dir' => $t_dir,
@@ -1512,7 +1611,7 @@ function print_dwg_manage_project_sort_link( $p_page, $p_string, $p_field, $p_di
 		$t_dir = 'ASC';
 	}
 
-	print_link(
+	print_hyperlink(
 		helper_url_combine( $p_page, [
 			'sort' => $p_field,
 			'dir' => $t_dir
@@ -1606,30 +1705,30 @@ function print_dwg_bracket_link_prepared( $p_link ) {
  *
  * @return void
  */
-// @TODO RobD - already defined in print_api.php
-// function print_link( $p_link, $p_url_text, $p_new_window = false, $p_class = '', $p_icon = '' ) {
-// 	if( $p_icon ) {
-// 		$t_url_text = icon_get( $p_icon, '', $p_url_text );
-// 	} else {
-// 		$t_url_text = string_attribute( $p_url_text );
-// 	}
+/* @TODO RobD - already defined in print_api.php
+function print_hyperlink( $p_link, $p_url_text, $p_new_window = false, $p_class = '', $p_icon = '' ) {
+	if( $p_icon ) {
+		$t_url_text = icon_get( $p_icon, '', $p_url_text );
+	} else {
+		$t_url_text = string_attribute( $p_url_text );
+	}
 
-// 	if( is_blank( $p_link ) ) {
-// 		echo $t_url_text;
-// 	} else {
-// 		$t_link = htmlspecialchars( $p_link );
-// 		if( $p_new_window === true ) {
-// 			echo '<a class="new-window ' . $p_class . '" href="' . $t_link . '" target="_blank">' . $t_url_text . '</a>';
-// 		} else {
-// 			if( $p_class !== '' ) {
-// 				echo '<a class="' . $p_class . '" href="' . $t_link . '">' . $t_url_text . '</a>';
-// 			} else {
-// 				echo '<a href="' . $t_link . '">' . $t_url_text . '</a>';
-// 			}
-// 		}
-// 	}
-// }
-
+	if( is_blank( $p_link ) ) {
+		echo $t_url_text;
+	} else {
+		$t_link = htmlspecialchars( $p_link );
+		if( $p_new_window === true ) {
+			echo '<a class="new-window ' . $p_class . '" href="' . $t_link . '" target="_blank">' . $t_url_text . '</a>';
+		} else {
+			if( $p_class !== '' ) {
+				echo '<a class="' . $p_class . '" href="' . $t_link . '">' . $t_url_text . '</a>';
+			} else {
+				echo '<a href="' . $t_link . '">' . $t_url_text . '</a>';
+			}
+		}
+	}
+}
+ */
 /**
  * print a HTML link with a button look
  * @param string  $p_link       The page URL.
@@ -1684,9 +1783,9 @@ function print_dwg_page_link( $p_page_url, $p_text = '', $p_page_no = 0, $p_page
 		echo '<li class="pull-right"> ';
 		$t_delimiter = ( strpos( $p_page_url, '?' ) ? '&' : '?' );
 		if( $p_temp_filter_key ) {
-			print_link( $p_page_url . $t_delimiter . 'filter=' . $p_temp_filter_key . '&page_number=' . $p_page_no, $p_text );
+			print_hyperlink( $p_page_url . $t_delimiter . 'filter=' . $p_temp_filter_key . '&page_number=' . $p_page_no, $p_text );
 		} else {
-			print_link( $p_page_url . $t_delimiter . 'page_number=' . $p_page_no, $p_text );
+			print_hyperlink( $p_page_url . $t_delimiter . 'page_number=' . $p_page_no, $p_text );
 		}
 		echo ' </li>';
 	} else {
@@ -1962,8 +2061,7 @@ function print_dwg_recently_visited() {
  * @param boolean      $p_multiple      Whether drop down list allows multiple values to be selected.
  * @return string
  */
-/*
-// @TODO RobD - already defined in print_api.php
+/* @TODO RobD - already defined in print_api.php
 function get_dropdown( array $p_control_array, $p_control_name, $p_match = '', $p_add_any = false, $p_multiple = false ) {
 	if( $p_multiple ) {
 		$t_size = ' size="5"';
@@ -2237,7 +2335,7 @@ function print_dwg_timezone_option_list( $p_timezone ) {
  * @param string  $p_unit File size unit.
  * @return string
  */
-/*
+/* @TODO RobD - already defined in print_api.php
 function get_filesize_info( $p_size, $p_unit ) {
 	return sprintf( lang_get( 'max_file_size_info' ), number_format( $p_size ), $p_unit );
 }
@@ -2246,7 +2344,7 @@ function get_filesize_info( $p_size, $p_unit ) {
  * Returns target attribute to be added in attachment links
  * @return string
  */
-/*
+/* @TODO RobD - already defined in print_api.php
 function print_attachment_link_target() {
 	if( config_get( 'attachments_to_new_tab' ) ) {
 		return ' target="_blank"';

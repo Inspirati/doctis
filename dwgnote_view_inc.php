@@ -108,7 +108,7 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 
 ?>
 <a id="attachments"></a>
-<div id="bugnotes" class="widget-box widget-color-blue2 <?php echo $t_block_css ?>">
+<div id="dwgnotes" class="widget-box widget-color-blue2 <?php echo $t_block_css ?>">
 <div class="widget-header widget-header-small">
 	<h4 class="widget-title lighter">
 		<?php print_icon( 'fa-comments', 'ace-icon' ); ?>
@@ -128,7 +128,7 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 	# no dwgnotes
 	if( 0 == $t_activities_count ) {
 ?>
-<tr class="bugnotes-empty">
+<tr class="dwgnotes-empty">
 	<td class="center">
 		<?php echo lang_get( 'no_dwgnotes_msg' ) ?>
 	</td>

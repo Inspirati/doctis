@@ -555,6 +555,13 @@ function print_dwg_column_title_id( $p_sort, $p_dir, $p_columns_target = COLUMNS
 	echo '</th>';
 }
 
+function print_dwg_column_title_title( $p_sort, $p_dir, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+	echo '<th class="column-id">';
+	print_view_dwg_sort_link( lang_get( 'title' ), 'title', $p_sort, $p_dir, $p_columns_target );
+	print_sort_icon( $p_dir, $p_sort, 'title' );
+	echo '</th>';
+}
+
 /**
  * Print table header for column project id
  *
@@ -863,6 +870,22 @@ function print_dwg_column_title_attachment_count( $p_sort, $p_dir, $p_columns_ta
 }
 
 /**
+ * Print table header for column document issue count
+ *
+ * @param string  $p_sort           Sort.
+ * @param string  $p_dir            Direction.
+ * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
+ * @return void
+ * @access public
+ */
+function print_dwg_column_title_issue_count( $p_sort, $p_dir, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+	$t_attachment_count_text = lang_get( 'issue_count' );
+//	$t_attachment_count_icon = icon_get( 'fa-bug', 'blue', $t_attachment_count_text );
+	$t_attachment_count_icon = icon_get( 'fa-info', 'blue', $t_attachment_count_text );
+	echo "\t" . '<th class="column-issue_count">' . $t_attachment_count_icon . '</th>' . "\n";
+}
+
+/**
  * Print table header for column category
  *
  * @param string  $p_sort           Sort.
@@ -968,7 +991,7 @@ function print_dwg_column_title_last_updated( $p_sort, $p_dir, $p_columns_target
  */
 function print_dwg_column_title_summary( $p_sort, $p_dir, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	echo '<th class="column-summary">';
-	print_view_dwg_sort_link( lang_get( 'summary' ), 'summary', $p_sort, $p_dir, $p_columns_target );
+	print_view_dwg_sort_link( lang_get( 'document_summary' ), 'summary', $p_sort, $p_dir, $p_columns_target );
 	print_sort_icon( $p_dir, $p_sort, 'summary' );
 	echo '</th>';
 }
@@ -1215,7 +1238,7 @@ function print_dwg_column_id( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET
 	echo '</td>';
 }
 
-#@ NOTE: called via a run-time generated function name (@TODO RobD - possibly deprecated/unused)
+#@ NOTE: called via a run-time generated function name (@TODO RobD - possibly deprecated/unused) (development legacy from when the column identifier was 'dwg_id' instead of 'id')
 function print_dwg_column_dwg_id( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	echo '<td class="column-id">';
 	print_dwg_link( $p_bug->id, false );
@@ -1225,13 +1248,22 @@ function print_dwg_column_dwg_id( DwgData $p_bug, $p_columns_target = COLUMNS_TA
 #@ NOTE: called via a run-time generated function name
 function print_column_document_id( BugData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	echo '<td class="column-id">';
-	print_dwg_link( $p_bug->document_id, false );
+	// print_dwg_link( $p_bug->document_id, false );
+	if ( $p_bug->document_id > 1 ) {
+		print_dwg_link( $p_bug->document_id, true );
+	}
 	echo '</td>';
 }
 
-function print_dwg_column_reference( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+function print_dwg_column_title( DwgData $p_dwg, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	echo '<td class="column-id">';
-	print_dwg_reference_link( $p_bug->id, $p_bug->reference, false );
+	print_dwg_title_link( $p_dwg->id, $p_dwg->title, false );
+	echo '</td>';
+}
+
+function print_dwg_column_reference( DwgData $p_dwg, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+	echo '<td class="column-id">';
+	print_dwg_reference_link( $p_dwg->id, $p_dwg->reference, false );
 	echo '</td>';
 }
 
@@ -1281,7 +1313,7 @@ function print_dwg_column_dwgnotes_count( DwgData $p_bug, $p_columns_target = CO
 		if( $t_show_in_bold ) {
 			echo '<span class="bold">';
 		}
-		print_link( string_get_dwg_view_url( $p_bug->id ) . '&nbn=' . $t_bugnote_count . '#bugnotes', $t_bugnote_count );
+		print_hyperlink( string_get_dwg_view_url( $p_bug->id ) . '&nbn=' . $t_bugnote_count . '#bugnotes', $t_bugnote_count );
 		if( $t_show_in_bold ) {
 			echo '</span>';
 		}
@@ -1314,6 +1346,32 @@ function print_dwg_column_attachment_count( DwgData $p_bug, $p_columns_target = 
 		$t_href = string_get_dwg_view_url( $p_bug->id ) . '#attachments';
 		$t_href_title = sprintf( lang_get( 'view_attachments_for_issue' ), $t_attachment_count, $p_bug->id );
 		echo '<a href="' . $t_href . '" title="' . $t_href_title . '">' . $t_attachment_count . '</a>';
+	} else {
+		echo ' &#160; ';
+	}
+
+	echo "</td>\n";
+}
+
+/**
+ * Print column content for column issue_count count
+ *
+ * @param DwgData $p_dwg            DwgData object.
+ * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
+ * @return void
+ * @access public
+ */
+function print_dwg_column_issue_count( DwgData $p_dwg, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+
+	# Check for issues
+	$t_issue_count = dwg_get_issue_count( $p_dwg->id );
+
+	echo '<td class="column-issue_count">';
+
+	if( $t_issue_count > 0 ) {
+		$t_href = string_get_all_bug_page_url( $p_dwg->id );
+		$t_href_title = sprintf( lang_get( 'view_issues_for_document' ), $t_issue_count, $p_dwg->id );
+		echo '<a href="' . $t_href . '" title="' . $t_href_title . '">' . $t_issue_count . '</a>';
 	} else {
 		echo ' &#160; ';
 	}
@@ -1425,7 +1483,7 @@ function print_dwg_column_resolution( DwgData $p_bug, $p_columns_target = COLUMN
 function print_dwg_column_status( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	$t_current_user = auth_get_current_user_id();
 	# choose color based on status
-	$t_status_css = html_dwg_get_status_css_fg( $p_bug->status, $t_current_user, $p_bug->project_id );
+	$t_status_css = html_get_status_css_fg( $p_bug->status, $t_current_user, $p_bug->project_id );
 	echo '<td class="column-status">';
 	echo '<div class="align-left">';
 	print_icon( 'fa-square', 'fa-status-box ' . $t_status_css );
@@ -1499,6 +1557,7 @@ function print_dwg_column_project_id( DwgData $p_bug, $p_columns_target = COLUMN
  * @return void
  * @access public
  */
+/*
 function print_dwg_column_last_updated( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	global $g_dwg_filter;
 
@@ -1511,6 +1570,15 @@ function print_dwg_column_last_updated( DwgData $p_bug, $p_columns_target = COLU
 		echo $t_last_updated;
 	}
 	echo '</td>';
+}
+ */
+function print_dwg_column_last_updated( DwgData $p_dwg, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+	global $g_dwg_filter;
+
+	echo format_last_updated_display(
+		$p_dwg->last_updated,
+		$g_dwg_filter[FILTER_PROPERTY_HIGHLIGHT_CHANGED]
+	);
 }
 
 /**
@@ -1675,7 +1743,7 @@ function print_dwg_column_tags( DwgData $p_bug, $p_columns_target = COLUMNS_TARG
 	echo '<td class="column-tags">';
 
 	if( access_has_dwg_level( config_get( 'tag_view_threshold' ), $p_bug->id ) ) {
-		echo string_display_line( tag_bug_get_all( $p_bug->id ) );
+		echo string_display_line( tag_dwg_get_all( $p_bug->id ) );
 	}
 
 	echo '</td>';

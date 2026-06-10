@@ -75,16 +75,17 @@ require_api( 'string_api.php' );
 require_api( 'user_api.php' );
 require_api( 'user_pref_api.php' );
 require_api( 'utility_api.php' );
+## CN-start
+require_api( 'template_api.php' );
+## CN-end
 
-require_once( __DIR__ . '/classes/EmailMessage.class.php' );
-require_once( __DIR__ . '/classes/EmailSender.class.php' );
-
-# PHPMailer is needed for email address validation independent of the provider used
-# to send the emails.
 use PHPMailer\PHPMailer\PHPMailer;
-
+use PHPMailer\PHPMailer\Exception as phpmailerException;
 use Mantis\Exceptions\ClientException;
 use VBoctor\Email\DisposableEmailChecker;
+
+/** @global PHPMailer $g_phpMailer Reusable PHPMailer object */
+$g_phpMailer = null;
 
 /**
  * Generates md5 used in "In-Reply-To" header for emails.
@@ -303,8 +304,8 @@ function email_user_changed( $p_user_id, $p_old_user, $p_new_user ) {
 		$t_changes .= lang_get( 'username_label' ) . ' ' . $p_old_user['username'] . ' => ' . $p_new_user['username'] . "\n";
 	}
 
-	if( strcmp( $p_old_user['real_name'], $p_new_user['real_name'] ) ) {
-		$t_changes .= lang_get( 'realname_label' ) . ' ' . $p_old_user['real_name'] . ' => ' . $p_new_user['real_name'] . "\n";
+	if( strcmp( $p_old_user['realname'], $p_new_user['realname'] ) ) {
+		$t_changes .= lang_get( 'realname_label' ) . ' ' . $p_old_user['realname'] . ' => ' . $p_new_user['realname'] . "\n";
 	}
 
 	if( strcmp( $p_old_user['email'], $p_new_user['email'] ) ) {
@@ -371,7 +372,7 @@ function email_signup( $p_user_id, $p_confirm_hash, $p_admin_name = '' ) {
 	# Send signup email regardless of mail notification pref
 	# or else users won't be able to sign up
 	if( !is_blank( $t_email ) ) {
-		email_store( $t_email, $t_subject, $t_message, [], true );
+		email_store( $t_email, $t_subject, $t_message, null, true );
 		log_event( LOG_EMAIL, 'Signup Email = %s, Hash = %s, User = @U%d', $t_email, $p_confirm_hash, $p_user_id );
 	}
 
@@ -424,11 +425,55 @@ function email_send_confirm_hash_url( $p_user_id, $p_confirm_hash, $p_reset_by_a
 	# Send password reset regardless of mail notification preferences
 	# or else users won't be able to receive their reset passwords
 	if( !is_blank( $t_email ) ) {
-		email_store( $t_email, $t_subject, $t_message, [], true );
+		email_store( $t_email, $t_subject, $t_message, null, true );
 		log_event( LOG_EMAIL, 'Password reset for user @U%d sent to %s', $p_user_id, $t_email );
 	} else {
 		log_event( LOG_EMAIL, 'Password reset for user @U%d not sent, email is empty', $p_user_id );
 	}
+
+	lang_pop();
+}
+
+/**
+ * Send confirm_hash URL to let user validate a new email address.
+ *
+ * @param int    $p_user_id        A valid user identifier.
+ * @param string $p_confirm_hash   Confirmation hash.
+ * @param string $p_new_email      The new email address
+ *
+ * @return void
+ * @throws ClientException
+ */
+function email_send_email_verification_url( $p_user_id, $p_confirm_hash, $p_new_email ) {
+	# TODO is this needed ?
+	if( OFF == config_get( 'send_reset_password' ) ) {
+		log_event( LOG_EMAIL_VERBOSE, 'Password reset email notifications disabled.' );
+		return;
+	}
+
+	lang_push( user_pref_get_language( $p_user_id ) );
+
+	# retrieve the username and email
+	$t_username = user_get_username( $p_user_id );
+	$t_old_email = user_get_email( $p_user_id );
+
+	$t_subject = '[' . config_get( 'window_title' ) . '] '
+		. lang_get( 'verify_email_title' );
+
+	$t_message = lang_get( 'verify_email_msg' )
+		. "\n\n"
+		. string_get_confirm_hash_url( $p_user_id, $p_confirm_hash, 'verify_email.php' )
+		. "\n\n"
+		. lang_get( 'new_account_username' ) . ' ' . $t_username . "\n"
+		. lang_get( 'new_value' ) . ': ' . $p_new_email . "\n"
+		. lang_get( 'old_value' ) . ': ' . $t_old_email . "\n"
+		. lang_get( 'new_account_IP' ) . ' ' . $_SERVER['REMOTE_ADDR']
+		. "\n\n"
+		. lang_get( 'new_account_do_not_reply' );
+
+	# Send regardless of mail notification preferences
+	email_store( $p_new_email, $t_subject, $t_message, [], true, [$t_old_email] );
+	log_event( LOG_EMAIL, 'Email verification message for user @U%d sent to %s', $p_user_id, $p_new_email );
 
 	lang_pop();
 }
@@ -482,7 +527,7 @@ function email_notify_new_account( $p_username, $p_email ) {
  *
  * @return integer|null
  */
-function email_store( string $p_recipient, string $p_subject, string $p_message, array $p_headers = [], $p_force = false, $p_cc = [], $p_bcc = [] ) {
+function email_store( string $p_recipient, string $p_subject, string $p_message, array $p_headers = null, $p_force = false, $p_cc = [], $p_bcc = [] ) {
 	global $g_email_shutdown_processing;
 
 	$t_recipient = trim( $p_recipient );
@@ -501,12 +546,24 @@ function email_store( string $p_recipient, string $p_subject, string $p_message,
 	$t_email_data->subject = $t_subject;
 	$t_email_data->body = $t_message;
 	$t_email_data->metadata = array();
-	$t_email_data->metadata['headers'] = $p_headers;
+	$t_email_data->metadata['headers'] = $p_headers === null ? array() : $p_headers;
 	$t_email_data->metadata['cc'] = $p_cc;
 	$t_email_data->metadata['bcc'] = $p_bcc;
 
 	# Urgent = 1, Not Urgent = 5, Disable = 0
 	$t_email_data->metadata['charset'] = 'utf-8';
+
+	$t_hostname = '';
+	if( isset( $_SERVER['SERVER_NAME'] ) ) {
+		$t_hostname = $_SERVER['SERVER_NAME'];
+	} else {
+		$t_address = explode( '@', config_get( 'from_email' ) );
+		if( isset( $t_address[1] ) ) {
+			$t_hostname = $t_address[1];
+		}
+	}
+	$t_email_data->metadata['hostname'] = $t_hostname;
+
 	$t_email_id = email_queue_add( $t_email_data );
 
 	# Set the email processing flag for the shutdown function
@@ -580,134 +637,213 @@ function email_send_all( $p_delete_on_failure = false ) : void {
  * @return boolean
  */
 function email_send( EmailData $p_email_data ) : bool {
-	$t_msg = new EmailMessage();
+	global $g_phpMailer;
 
-	$t_recipient = trim( $p_email_data->email );
-	$t_body = string_email_links( trim( $p_email_data->body ) );
+	$t_email_data = $p_email_data;
+
+	$t_recipient = trim( $t_email_data->email );
+	$t_subject = string_email( trim( $t_email_data->subject ) );
+	$t_message = string_email_links( trim( $t_email_data->body ) );
+
 	$t_debug_email = config_get_global( 'debug_email' );
-	if( !empty( $t_debug_email ) ) {
-		$t_body = 'To: ' . $t_recipient . "\n\n" . $t_body;
-		$t_recipient = $t_debug_email;
-		log_event( LOG_EMAIL_VERBOSE, "Using debug email '$t_debug_email'" );
-	}
 
-	$t_body = make_lf_crlf( $t_body );
+	$t_log_msg = 'ERROR: Message could not be sent - ';
+
+	if( is_null( $g_phpMailer ) ) {
+		if( PHPMAILER_METHOD_SMTP == config_get( 'phpMailer_method' ) ) {
+			register_shutdown_function( 'email_smtp_close' );
+		}
+		$g_phpMailer = new PHPMailer( true );
+
+		// Set e-mail addresses validation pattern. The 'html5' setting is
+		// consistent with the regex defined in email_regex_simple().
+		PHPMailer::$validator  = 'html5';
+	}
+	$t_mail = $g_phpMailer;
+
+	if( isset( $t_email_data->metadata['hostname'] ) ) {
+		$t_mail->Hostname = $t_email_data->metadata['hostname'];
+	}
 
 	# @@@ should this be the current language (for the recipient) or the default one (for the user running the command) (thraxisp)
 	$t_lang = config_get_global( 'default_language' );
 	if( 'auto' == $t_lang ) {
 		$t_lang = config_get_global( 'fallback_language' );
 	}
+	$t_mail->setLanguage( lang_get( 'phpmailer_language', $t_lang ) );
 
-	$t_msg->to = [ $t_recipient ];
-	$t_msg->subject = string_email( trim( $p_email_data->subject ) );
-	$t_msg->text = $t_body;
-	$t_msg->lang = $t_lang;
+	# Select the method to send mail
+	switch( config_get( 'phpMailer_method' ) ) {
+		case PHPMAILER_METHOD_MAIL:
+			$t_mail->isMail();
+			break;
 
-	$t_msg->cc = [];
-	if( isset( $p_email_data->metadata['cc'] ) && $p_email_data->metadata['cc'] ) {
-		foreach( $p_email_data->metadata['cc'] as $cc ) {
-			$t_msg->cc[] = trim( $cc );
+		case PHPMAILER_METHOD_SENDMAIL:
+			$t_mail->isSendmail();
+			break;
+
+		case PHPMAILER_METHOD_SMTP:
+			$t_mail->isSMTP();
+
+			# SMTP collection is always kept alive
+			$t_mail->SMTPKeepAlive = true;
+
+			if( !is_blank( config_get( 'smtp_username' ) ) ) {
+				# Use SMTP Authentication
+				$t_mail->SMTPAuth = true;
+				$t_mail->Username = config_get( 'smtp_username' );
+				$t_mail->Password = config_get( 'smtp_password' );
+			}
+
+			if( is_blank( config_get( 'smtp_connection_mode' ) ) ) {
+				$t_mail->SMTPAutoTLS = false;
+			}
+			else {
+				$t_mail->SMTPSecure = config_get( 'smtp_connection_mode' );
+			}
+
+			$t_mail->Port = config_get( 'smtp_port' );
+
+			break;
+	}
+
+	# S/MIME signature
+	if( ON == config_get_global( 'email_smime_enable' ) ) {
+		$t_mail->sign(
+			config_get_global( 'email_smime_cert_file' ),
+			config_get_global( 'email_smime_key_file' ),
+			config_get_global( 'email_smime_key_password' ),
+			config_get_global( 'email_smime_extracerts_file' )
+		);
+	}
+
+	#apply DKIM settings
+	if( config_get_global( 'email_dkim_enable' ) ) {
+		$t_mail->DKIM_domain = config_get_global( 'email_dkim_domain' );
+		$t_mail->DKIM_private = config_get_global( 'email_dkim_private_key_file_path' );
+		$t_mail->DKIM_private_string = config_get_global( 'email_dkim_private_key_string' );
+		$t_mail->DKIM_selector = config_get_global( 'email_dkim_selector' );
+		$t_mail->DKIM_passphrase = config_get_global( 'email_dkim_passphrase' );
+		$t_mail->DKIM_identity = config_get_global( 'email_dkim_identity' );
+	}
+
+	$t_mail->isHTML( false );              # set email format to plain text
+## CN
+	if ( ON == config_get( 'use_mailtemplate' ) )  {
+		$t_mail->isHTML( true );
+	} 
+## CN
+	$t_mail->WordWrap = 80;              # set word wrap to 80 characters
+	$t_mail->CharSet = $t_email_data->metadata['charset'];
+	$t_mail->Host = config_get( 'smtp_host' );
+	$t_mail->From = config_get( 'from_email' );
+	$t_mail->Sender = config_get( 'return_path_email' );
+	$t_mail->FromName = config_get( 'from_name' );
+	$t_mail->AddCustomHeader( 'Auto-Submitted:auto-generated' );
+	$t_mail->AddCustomHeader( 'X-Auto-Response-Suppress: All' );
+
+	if( isset( $t_email_data->metadata['cc'] ) && $t_email_data->metadata['cc'] ) {
+		foreach( $t_email_data->metadata['cc'] as $cc ) {
+			$t_mail->addCC( trim( $cc ) );
+		}
+	}
+	if( isset( $t_email_data->metadata['bcc'] ) && $t_email_data->metadata['bcc'] ) {
+		foreach( $t_email_data->metadata['bcc'] as $bcc ) {
+			$t_mail->addBCC( trim( $bcc ) );
 		}
 	}
 
-	$t_msg->bcc = [];
-	if( isset( $p_email_data->metadata['bcc'] ) && $p_email_data->metadata['bcc'] ) {
-		foreach( $p_email_data->metadata['bcc'] as $bcc ) {
-			$t_msg->bcc[] = trim( $bcc );
-		}
+	$t_mail->Encoding   = 'quoted-printable';
+
+	if( isset( $t_email_data->metadata['priority'] ) ) {
+		$t_mail->Priority = $t_email_data->metadata['priority'];  # Urgent = 1, Not Urgent = 5, Disable = 0
 	}
 
-	$t_hostname = $p_email_data->metadata['hostname'] ?? '';
+	if( !empty( $t_debug_email ) ) {
+		$t_message = 'To: ' . $t_recipient . "\n\n" . $t_message;
+		$t_recipient = $t_debug_email;
+		log_event(LOG_EMAIL_VERBOSE, "Using debug email '$t_debug_email'");
+	}
 
-	if( empty( $t_hostname ) ) {
-		if( isset( $_SERVER['SERVER_NAME'] ) ) {
-			$t_hostname = $_SERVER['SERVER_NAME'];
-		} else {
-			$t_address = explode( '@', config_get( 'from_email' ) );
-			if( isset( $t_address[1] ) ) {
-				$t_hostname = $t_address[1];
+	try {
+		$t_mail->addAddress( $t_recipient );
+	}
+	catch ( phpmailerException $e ) {
+		log_event( LOG_EMAIL, $t_log_msg . $t_mail->ErrorInfo );
+		$t_mail->clearAllRecipients();
+		$t_mail->clearAttachments();
+		$t_mail->clearReplyTos();
+		$t_mail->clearCustomHeaders();
+		return false;
+	}
+
+	$t_mail->Subject = $t_subject;
+	$t_mail->Body = make_lf_crlf( $t_message );
+
+	if( isset( $t_email_data->metadata['headers'] ) && is_array( $t_email_data->metadata['headers'] ) ) {
+		foreach( $t_email_data->metadata['headers'] as $t_key => $t_value ) {
+			switch( strtolower( $t_key ) ) {
+				case 'message-id':
+					# Note: hostname can never be blank here as we set metadata['hostname']
+					# in email_store() where mail gets queued.
+					if( !strchr( $t_value, '@' ) && !is_blank( $t_mail->Hostname ) ) {
+						$t_value = $t_value . '@' . $t_mail->Hostname;
+					}
+					$t_mail->set( 'MessageID', '<' . $t_value . '>' );
+					break;
+				/** @noinspection PhpMissingBreakStatementInspection */
+				case 'in-reply-to':
+					if( !preg_match( '/<.+@.+>/m', $t_value ) ) {
+						$t_value = '<' . $t_value . '@' . $t_mail->Hostname . '>';
+					}
+					# Fall-through
+				default:
+					$t_mail->addCustomHeader( $t_key . ': ' . $t_value );
+					break;
 			}
 		}
 	}
 
-	$t_msg->hostname = $t_hostname;
-
-	$t_msg->charset = $p_email_data->metadata['charset'];
-
-	# Expected Headers
-	# - Auto-Submitted
-	# - X-Auto-Response-Suppress
-	# - Message-ID
-	# - In-Reply-To
-	# - ... possibly other custom headers
-
-	$t_headers = [
-		'Auto-Submitted' => 'auto-generated',
-		'X-Auto-Response-Suppress' => 'All',
-	];
-
-	if( isset( $p_email_data->metadata['headers'] ) && is_array( $p_email_data->metadata['headers'] ) ) {
-		$t_headers = array_merge( $t_headers, $p_email_data->metadata['headers'] );
-	}
-
-	$t_msg->headers = [];
-	foreach( $t_headers as $t_key => $t_value ) {
-		switch( strtolower( $t_key ) ) {
-			case 'message-id':
-				# Note: hostname can never be blank here as we set metadata['hostname']
-				# in email_store() where mail gets queued.
-				if( !strchr( $t_value, '@' ) && !is_blank( $t_msg->hostname ) ) {
-					$t_value = $t_value . '@' . $t_msg->hostname;
-				}
-
-				$t_value = '<' . $t_value . '>';
-				break;
-			case 'in-reply-to':
-				if( !preg_match( '/<.+@.+>/m', $t_value ) ) {
-					$t_value = '<' . $t_value . '@' . $t_msg->hostname . '>';
-				}
-				break;
-		}
-
-		$t_msg->headers[$t_key] = $t_value;
-	}
-
 	try {
-		$t_sender = email_create_provider();
-		$t_success = $t_sender->send( $t_msg );
-
-		# if email is sent successfully, then delete it from the queue
-		if( $t_success && $p_email_data->email_id > 0 ) {
-			email_queue_delete( $p_email_data->email_id );
+		$t_success = $t_mail->send();
+		if( $t_success ) {
+			if( $t_email_data->email_id > 0 ) {
+				email_queue_delete( $t_email_data->email_id );
+			}
+		} else {
+			# We should never get here, as an exception is thrown after failures
+			log_event( LOG_EMAIL, $t_log_msg . $t_mail->ErrorInfo );
 		}
-	} catch ( Exception $e ) {
+	}
+	catch ( phpmailerException $e ) {
+		log_event( LOG_EMAIL, $t_log_msg . $t_mail->ErrorInfo );
 		$t_success = false;
 	}
+
+	$t_mail->clearAllRecipients();
+	$t_mail->clearAttachments();
+	$t_mail->clearReplyTos();
+	$t_mail->clearCustomHeaders();
 
 	return $t_success;
 }
 
 /**
- * Create Email Send Provider object.
+ * closes opened kept alive SMTP connection (if it was opened)
  *
- * @return EmailSender The email sender instance to use.
- * @throws Exception If configured provider can't be found.
+ * @return void
  */
-function email_create_provider() : EmailSender {
-	/** @var EmailSender $s_provider */
-	static $s_provider = null;
+function email_smtp_close() {
+	global $g_phpMailer;
 
-	if( is_null( $s_provider ) ) {
-		$s_provider = event_signal( 'EVENT_EMAIL_CREATE_SEND_PROVIDER', [] );
-
-		if( is_null( $s_provider ) ) {
-			require_once __DIR__ . '/classes/EmailSenderPhpMailer.class.php';
-			$s_provider = new EmailSenderPhpMailer();
+	if( !is_null( $g_phpMailer ) ) {
+		$t_smtp = $g_phpMailer->getSMTPInstance();
+		if( $t_smtp->connected() ) {
+			$t_smtp->quit();
+			$t_smtp->close();
 		}
+		$g_phpMailer = null;
 	}
-
-	return $s_provider;
 }
 
 /**
@@ -720,6 +856,26 @@ function email_create_provider() : EmailSender {
 function make_lf_crlf( $p_string ) {
 	$t_string = str_replace( "\n", "\r\n", $p_string );
 	return str_replace( "\r\r\n", "\r\n", $t_string );
+}
+
+/**
+ * Format email attribute for display.
+ *
+ * If $p_visible_bug_data contains specified attribute the function
+ * returns concatenated translated attribute name and original
+ * attribute value. Else return empty string.
+ *
+ * @param array  $p_visible_bug_data Visible Bug Data array.
+ * @param string $p_attribute_id     Attribute ID.
+ *
+ * @return string
+ */
+function email_format_attribute( array $p_visible_data, $p_attribute_id ) {
+	if( array_key_exists( $p_attribute_id, $p_visible_data ) ) {
+		return utf8_str_pad( lang_get( $p_attribute_id ) . ': ', config_get( 'email_padding_length' ) )
+			. $p_visible_data[$p_attribute_id] . "\n";
+	}
+	return '';
 }
 
 /**
@@ -753,15 +909,7 @@ function email_shutdown_function() {
 	log_event( LOG_EMAIL_VERBOSE, $t_msg );
 
 	if( $g_email_shutdown_processing ) {
-		if( function_exists( 'fastcgi_finish_request' ) ) {
-			fastcgi_finish_request();
-		}
-
-		try {
-			email_send_all();
-		} catch( Exception $e ) {
-			log_event( LOG_EMAIL, 'Error sending emails on shutdown: ' . $e->getMessage() );
-		}
+		email_send_all();
 	}
 }
 

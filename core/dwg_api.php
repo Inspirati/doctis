@@ -117,11 +117,12 @@ use Mantis\Exceptions\ClientException;
  * @property string $steps_to_reproduce
  * @property string $additional_information
  */
-#[AllowDynamicProperties]
+// #[AllowDynamicProperties]
 class DwgData {
 	protected $id;
+	protected $document_id;
 	protected $project_id = null;
-	protected $status = NEW_;
+	protected $status = PENDING;
 	protected $date_submitted = '';
 	protected $last_updated = '';
 	protected $summary = 'nil';
@@ -130,46 +131,43 @@ class DwgData {
 // #TODO RobD - and now all the new data fields for the documents table	
 	protected $enabled = 1;
 	protected $priority = NORMAL;
+
 	protected $title = '';
 	protected $author = '';
-	protected $number = '';
-	protected $revision = '';
-	protected $discipline = '';
+	protected $publisher = '';
 	protected $reference = '';
+	protected $number = '';
+	protected $edition = '';
+	protected $revision = '';
 	protected $link_url = '';
 	protected $classification = '';
 	protected $revision_date = '';
 	protected $release_date = '';
 
+	protected $discipline = '';
+
 	protected $creator_id = 0;
 	protected $handler_id = 0;
 	protected $category_id = 1;
-	protected $duplicate_id = 0;
+	protected $duplicate_id = 0;  // deprecated by the introduction of bug relationships managment, so it should be removed from here
+
+	protected $issue_count = 0;  // ?
 
 // #TODO RobD - the legacy fields from the bug version
-//	protected $handler_id = 0;
-//	protected $duplicate_id = 0;
 //	protected $priority = NORMAL;
 	protected $severity = MINOR;
 	protected $reproducibility = 10;
-//	protected $status = NEW_;
 	protected $resolution = OPEN;
 	protected $projection = 10;
-//	protected $category_id = 1;
-//	protected $date_submitted = '';
-//	protected $last_updated = '';
 	protected $eta = 10;
 	protected $os = '';
 	protected $os_build = '';
 	protected $platform = '';
-//	protected $version = '';
 	protected $fixed_in_version = '';
 	protected $target_version = '';
 	protected $build = '';
 	protected $view_state = VS_PUBLIC;
-	// protected $summary = 'empty';
 	protected $sponsorship_total = 0;
-	// protected $sticky = 0;
 	// protected $due_date = '';
 	protected $due_date = 0;
 	protected $profile_id = 0;
@@ -222,6 +220,7 @@ class DwgData {
 		switch( $p_name ) {
 			# integer types
 			case 'id':
+			case 'document_id':
 			case 'project_id':
 			case 'creator_id':
 			case 'handler_id':
@@ -378,7 +377,7 @@ class DwgData {
 	public function validate( $p_update_extended = true ) {
 		# Summary cannot be blank
 		if( is_blank( $this->summary ) ) {  // @TODO RobD:
-			// error_parameters( lang_get( 'summary' ) );
+			// error_parameters( lang_get( 'document_summary' ) );
 			// trigger_error( ERROR_EMPTY_FIELD, ERROR );
 			// error_log("Summary cannot be blank - BUT CURRENTLY IT IS !!");
 		}
@@ -393,9 +392,9 @@ class DwgData {
 
 		# Make sure a category is set
 		if( 0 == $this->category_id && !config_get( 'allow_no_category' ) ) {
-//		if( 0 == $this->category_id && !config_get( 'allow_no_document' ) ) {  // @TODO RobD:
-			error_parameters( lang_get( 'category' ) );
-			trigger_error( ERROR_EMPTY_FIELD, ERROR );
+			$this->category_id = 1;
+			// error_parameters( lang_get( 'category' ) );
+			// trigger_error( ERROR_EMPTY_FIELD, ERROR );
 		}
 
 		# Ensure that category id is a valid category
@@ -473,38 +472,58 @@ class DwgData {
 $this->classification = isset($this->classification) ? $this->classification : '';
 $this->link_url = isset($this->link_url) ? $this->link_url : '';
 $this->author = isset($this->author) ? $this->author : '';
+$this->publisher = isset($this->publisher) ? $this->publisher : '';
+$this->edition = isset($this->edition) ? $this->edition : '';
 
-
-		# Insert the rest of the data
+		# Insert the document
 		db_param_push();
-		$t_query = 'INSERT INTO {document}
-						( project_id, creator_id, status, enabled,
-						  version, title, author, number,
-						  revision, discipline, reference, link_url,
-						  classification, revision_date, release_date, date_submitted,
-						  last_updated, dwg_text_id, category_id
+		$t_query = 'INSERT INTO {documents}
+						( 
+						  title, author, publisher, reference,
+						  number, edition, revision, link_url,
+						  classification, revision_date, release_date
 						)
 					  VALUES
 						( ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
 						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
-						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
-						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
 						  ' . db_param() . ',' . db_param() . ',' . db_param() . ')';
 		db_query( $t_query, array(
-		  $this->project_id, $this->creator_id, $this->status, $this->enabled,
-		  $this->version, $this->title, $this->author, $this->number,
-		  $this->revision, $this->discipline, $this->reference, $this->link_url,
-		  $this->classification, $this->revision_date, $this->release_date, $this->date_submitted,
-		  $this->last_updated, $t_text_id, $this->category_id ) );
+		  $this->title, $this->author, $this->publisher, $this->reference,
+		  $this->number, $this->edition, $this->revision, $this->link_url,
+		  $this->classification, $this->revision_date, $this->release_date ) );
 
-		$this->id = db_insert_id( db_get_table( 'document' ) );
+		$this->document_id = db_insert_id( db_get_table( 'documents' ) );
+
+		# Insert the document metadata
+		db_param_push();
+		$t_query = 'INSERT INTO {dwg}
+						( project_id, creator_id, category_id, document_id,
+						  status, enabled, version,
+						  discipline, link_url,
+						  classification, date_submitted, due_date,
+						  last_updated, dwg_text_id
+						)
+					  VALUES
+						( ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
+						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',
+						  ' . db_param() . ',' . db_param() . ',
+						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',
+						  ' . db_param() . ',' . db_param() . ')';
+		db_query( $t_query, array(
+		  $this->project_id, $this->creator_id, $this->category_id, $this->document_id,
+		  $this->status, $this->enabled, $this->version,
+		  $this->discipline, $this->link_url,
+		  $this->classification, $this->date_submitted, $this->due_date,
+		  $this->last_updated, $t_text_id ) );
+
+		$this->id = db_insert_id( db_get_table( 'dwg' ) );
 
 		# log new bug
 		history_dwg_log_event_special( $this->id, NEW_DWG );
 
 		# log changes, if any (compare happens in history_log_event_direct)
-		history_log_event_direct( $this->id, 'status', $t_original_status, $t_status );
-		history_log_event_direct( $this->id, 'handler_id', 0, $this->handler_id );
+		history_dwg_log_event_direct( $this->id, 'status', $t_original_status, $t_status );
+		history_dwg_log_event_direct( $this->id, 'handler_id', 0, $this->handler_id );
 
 		return $this->id;
 	}
@@ -591,7 +610,7 @@ $this->author = isset($this->author) ? $this->author : '';
 		# like this anyway; if you really need to change them use dwg_set_field().
 		db_param_push();
 ////////////////////////////////////////////////////////////////////////////////
-		$t_query = 'UPDATE {document} SET 
+		$t_query = 'UPDATE {dwg} SET 
 			project_id=' . db_param() . ',
 			creator_id=' . db_param() . ',
 			handler_id=' . db_param() . ',
@@ -599,6 +618,7 @@ $this->author = isset($this->author) ? $this->author : '';
 			status=' . db_param() . ',
 			priority=' . db_param() . ',
 			category_id=' . db_param() . ',
+			due_date=' . db_param() . ',
 			version=' . db_param() . '
 			';
 		$t_query .= 'WHERE id=' . db_param();
@@ -611,6 +631,7 @@ $this->author = isset($this->author) ? $this->author : '';
 			$this->status,
 			$this->priority,
 			$this->category_id,
+			$this->due_date,
 			$this->version,
 			$this->id);
 
@@ -623,32 +644,32 @@ $this->author = isset($this->author) ? $this->author : '';
 		dwg_clear_cache( $this->id );
 
 		# log changes
-		history_log_event_direct( $c_bug_id, 'project_id', $t_old_data->project_id, $this->project_id );
-		history_log_event_direct( $c_bug_id, 'creator_id', $t_old_data->creator_id, $this->creator_id );
-		history_log_event_direct( $c_bug_id, 'handler_id', $t_old_data->handler_id, $this->handler_id );
-		history_log_event_direct( $c_bug_id, 'priority', $t_old_data->priority, $this->priority );
-		history_log_event_direct( $c_bug_id, 'severity', $t_old_data->severity, $this->severity );
-		history_log_event_direct( $c_bug_id, 'reproducibility', $t_old_data->reproducibility, $this->reproducibility );
-		history_log_event_direct( $c_bug_id, 'status', $t_old_data->status, $this->status );
-		history_log_event_direct( $c_bug_id, 'resolution', $t_old_data->resolution, $this->resolution );
-		history_log_event_direct( $c_bug_id, 'projection', $t_old_data->projection, $this->projection );
-		history_log_event_direct( $c_bug_id, 'category', category_full_name( $t_old_data->category_id, false ), category_full_name( $this->category_id, false ) );
-		history_log_event_direct( $c_bug_id, 'eta', $t_old_data->eta, $this->eta );
-		history_log_event_direct( $c_bug_id, 'os', $t_old_data->os, $this->os );
-		history_log_event_direct( $c_bug_id, 'os_build', $t_old_data->os_build, $this->os_build );
-		history_log_event_direct( $c_bug_id, 'platform', $t_old_data->platform, $this->platform );
-		history_log_event_direct( $c_bug_id, 'version', $t_old_data->version, $this->version );
-		history_log_event_direct( $c_bug_id, 'build', $t_old_data->build, $this->build );
-		history_log_event_direct( $c_bug_id, 'fixed_in_version', $t_old_data->fixed_in_version, $this->fixed_in_version );
+		history_dwg_log_event_direct( $c_bug_id, 'project_id', $t_old_data->project_id, $this->project_id );
+		history_dwg_log_event_direct( $c_bug_id, 'creator_id', $t_old_data->creator_id, $this->creator_id );
+		history_dwg_log_event_direct( $c_bug_id, 'handler_id', $t_old_data->handler_id, $this->handler_id );
+		history_dwg_log_event_direct( $c_bug_id, 'priority', $t_old_data->priority, $this->priority );
+		history_dwg_log_event_direct( $c_bug_id, 'severity', $t_old_data->severity, $this->severity );
+		history_dwg_log_event_direct( $c_bug_id, 'reproducibility', $t_old_data->reproducibility, $this->reproducibility );
+		history_dwg_log_event_direct( $c_bug_id, 'status', $t_old_data->status, $this->status );
+		history_dwg_log_event_direct( $c_bug_id, 'resolution', $t_old_data->resolution, $this->resolution );
+		history_dwg_log_event_direct( $c_bug_id, 'projection', $t_old_data->projection, $this->projection );
+		history_dwg_log_event_direct( $c_bug_id, 'category', category_full_name( $t_old_data->category_id, false ), category_full_name( $this->category_id, false ) );
+		history_dwg_log_event_direct( $c_bug_id, 'eta', $t_old_data->eta, $this->eta );
+		history_dwg_log_event_direct( $c_bug_id, 'os', $t_old_data->os, $this->os );
+		history_dwg_log_event_direct( $c_bug_id, 'os_build', $t_old_data->os_build, $this->os_build );
+		history_dwg_log_event_direct( $c_bug_id, 'platform', $t_old_data->platform, $this->platform );
+		history_dwg_log_event_direct( $c_bug_id, 'version', $t_old_data->version, $this->version );
+		history_dwg_log_event_direct( $c_bug_id, 'build', $t_old_data->build, $this->build );
+		history_dwg_log_event_direct( $c_bug_id, 'fixed_in_version', $t_old_data->fixed_in_version, $this->fixed_in_version );
 		// if( $t_roadmap_updated ) {
-		// 	history_log_event_direct( $c_bug_id, 'target_version', $t_old_data->target_version, $this->target_version );
+		// 	history_dwg_log_event_direct( $c_bug_id, 'target_version', $t_old_data->target_version, $this->target_version );
 		// }
-		history_log_event_direct( $c_bug_id, 'view_state', $t_old_data->view_state, $this->view_state );
-		history_log_event_direct( $c_bug_id, 'summary', $t_old_data->summary, $this->summary );
-		history_log_event_direct( $c_bug_id, 'sponsorship_total', $t_old_data->sponsorship_total, $this->sponsorship_total );
-		history_log_event_direct( $c_bug_id, 'sticky', $t_old_data->sticky, $this->sticky );
+		history_dwg_log_event_direct( $c_bug_id, 'view_state', $t_old_data->view_state, $this->view_state );
+		history_dwg_log_event_direct( $c_bug_id, 'summary', $t_old_data->summary, $this->summary );
+		history_dwg_log_event_direct( $c_bug_id, 'sponsorship_total', $t_old_data->sponsorship_total, $this->sponsorship_total );
+		history_dwg_log_event_direct( $c_bug_id, 'sticky', $t_old_data->sticky, $this->sticky );
 
-		history_log_event_direct( $c_bug_id, 'due_date',
+		history_dwg_log_event_direct( $c_bug_id, 'due_date',
 			( $t_old_data->due_date != date_get_null() ) ? $t_old_data->due_date : null,
 			( $this->due_date != date_get_null() ) ? $this->due_date : null
 		);
@@ -780,7 +801,9 @@ function dwg_cache_row( $p_bug_id, $p_trigger_errors = true ) {
 	$c_bug_id = (int)$p_bug_id;
 
 	db_param_push();
-	$t_query = 'SELECT * FROM {document} WHERE id=' . db_param();
+	// $t_query = 'SELECT * FROM {dwg} a WHERE id=' . db_param();
+	// @TODO RobD - beware we currently have field 'classification' in both tables; either drop one or be specific as right now it'd be indeterminate
+	$t_query = 'SELECT * FROM {dwg} a INNER JOIN {documents} b ON a.document_id=b.id WHERE a.id=' . db_param();
 	$t_result = db_query( $t_query, array( $c_bug_id ) );
 
 	$t_row = db_fetch_array( $t_result );
@@ -819,7 +842,8 @@ function dwg_cache_array_rows( array $p_bug_id_array ) {
 		return;
 	}
 
-	$t_query = 'SELECT * FROM {document} WHERE id IN (' . implode( ',', $c_bug_id_array ) . ')';
+	// $t_query = 'SELECT * FROM {dwg} WHERE id IN (' . implode( ',', $c_bug_id_array ) . ')';
+	$t_query = 'SELECT * FROM {dwg} a INNER JOIN {documents} b ON a.document_id=b.id WHERE a.id IN (' . implode( ',', $c_bug_id_array ) . ')';
 	$t_result = db_query( $t_query );
 
 	while( $t_row = db_fetch_array( $t_result ) ) {
@@ -898,19 +922,11 @@ function dwg_text_cache_row( $p_bug_id, $p_trigger_errors = true ) {
 
 	db_param_push();
 
+	$t_query = 'SELECT bt.* FROM {dwg_text} bt, {dwg} b
+				  WHERE b.id=' . db_param() . ' AND b.dwg_text_id = bt.id';
+	$t_result = db_query( $t_query, array( $c_bug_id ) );
 
-
-// @TODO RobD - found it, we need to provide some dummy 'bug_text' results
-//$t_row = false;
-$t_row = array("foobar", "barfoo");
-
-
-
-	// $t_query = 'SELECT bt.* FROM {dwg_text} bt, {document} b
-	// 			  WHERE b.id=' . db_param() . ' AND b.dwg_text_id = bt.id';
-	// $t_result = db_query( $t_query, array( $c_bug_id ) );
-
-	// $t_row = db_fetch_array( $t_result );
+	$t_row = db_fetch_array( $t_result );
 	
 	if( !$t_row ) {
 		$g_cache_dwg_text[$c_bug_id] = false;
@@ -1343,7 +1359,7 @@ function dwg_copy( $p_bug_id, $p_target_project_id = null, $p_copy_custom_fields
 		}
 	} else {
 		# Create a "New Issue" history entry
-		history_dwg_log_event_special( $t_new_bug_id, NEW_BUG );
+		history_dwg_log_event_special( $t_new_bug_id, NEW_DWG );
 	}
 
 	# Create history entries to reflect the copy operation
@@ -1466,9 +1482,14 @@ function dwg_delete( $p_bug_id ) {
 	$t_query = 'DELETE FROM {dwg_text} WHERE id=' . db_param();
 	db_query( $t_query, array( $t_bug_text_id ) );
 
+	# Delete the dwg entry
+	db_param_push();
+	$t_query = 'DELETE FROM {dwg} WHERE id=' . db_param();
+	db_query( $t_query, array( $c_bug_id ) );
+
 	# Delete the bug entry
 	db_param_push();
-	$t_query = 'DELETE FROM {document} WHERE id=' . db_param();
+	$t_query = 'DELETE FROM {dwg} WHERE id=' . db_param();
 	db_query( $t_query, array( $c_bug_id ) );
 
 	dwg_clear_cache_all( $p_bug_id );
@@ -1486,7 +1507,7 @@ function dwg_delete_all( $p_project_id ) {
 	$c_project_id = (int)$p_project_id;
 
 	db_param_push();
-	$t_query = 'SELECT id FROM {document} WHERE project_id=' . db_param();
+	$t_query = 'SELECT id FROM {dwg} WHERE project_id=' . db_param();
 	$t_result = db_query( $t_query, array( $c_project_id ) );
 
 	while( $t_row = db_fetch_array( $t_result ) ) {
@@ -1635,7 +1656,7 @@ function dwg_get_text_field( $p_bug_id, $p_field_name ) {
  * @access public
  */
 function dwg_format_summary( $p_bug_id, $p_context ) {
-	return helper_call_custom_function( 'format_dwg_summary', array( $p_bug_id, $p_context ) );
+	return helper_call_custom_function( 'format_document_summary', array( $p_bug_id, $p_context ) );
 }
 
 /**
@@ -1695,10 +1716,10 @@ function dwg_get_dwgnote_stats_array( array $p_bugs_id, $p_user_id = null ) {
 
 	# We need to check for each bugnote if user has permissions to view in respective project.
 	# bugnotes are grouped by project_id and bug_id to save calls to config_get
-	$t_sql = 'SELECT n.id, n.dwg_id, n.creator_id, n.view_state, n.last_modified, n.date_submitted, b.project_id'
-		. ' FROM {dwgnote} n JOIN {document} b ON (n.dwg_id = b.id)'
+	$t_sql = 'SELECT n.id, n.dwg_id, n.creator_id, n.view_state, n.last_modified, n.date_submitted, d.project_id'
+		. ' FROM {dwgnote} n JOIN {dwg} d ON (n.dwg_id = d.id)'
 		. ' WHERE %s'
-		. ' ORDER BY b.project_id, n.dwg_id, n.last_modified';
+		. ' ORDER BY d.project_id, n.dwg_id, n.last_modified';
 	$t_query = new DbQuery();
 	$t_query->sql( sprintf( $t_sql, $t_query->sql_in( 'n.dwg_id', 'bug_ids' ) ) );
 
@@ -1901,7 +1922,7 @@ function dwg_set_field( $p_bug_id, $p_field_name, $p_value ) {
 
 	# Update fields
 	db_param_push();
-	$t_query = 'UPDATE {document} SET ' . $p_field_name . '=' . db_param() . ' WHERE id=' . db_param();
+	$t_query = 'UPDATE {dwg} SET ' . $p_field_name . '=' . db_param() . ' WHERE id=' . db_param();
 	db_query( $t_query, array( $c_value, $c_bug_id ) );
 
 	# updated the last_updated date
@@ -1916,11 +1937,11 @@ function dwg_set_field( $p_bug_id, $p_field_name, $p_value ) {
 			break;
 
 		case 'category_id':
-			history_log_event_direct( $p_bug_id, 'category', category_full_name( $t_current_value, false ), category_full_name( $c_value, false ) );
+			history_dwg_log_event_direct( $p_bug_id, 'category', category_full_name( $t_current_value, false ), category_full_name( $c_value, false ) );
 			break;
 
 		default:
-			history_log_event_direct( $p_bug_id, $p_field_name, $t_current_value, $c_value );
+			history_dwg_log_event_direct( $p_bug_id, $p_field_name, $t_current_value, $c_value );
 	}
 
 	dwg_clear_cache( $p_bug_id );
@@ -1965,14 +1986,14 @@ function dwg_assign( $p_bug_id, $p_user_id, $p_bugnote_text = '', $p_bugnote_pri
 
 		# get user id
 		db_param_push();
-		$t_query = 'UPDATE {document}
+		$t_query = 'UPDATE {dwg}
 					  SET handler_id=' . db_param() . ', status=' . db_param() . '
 					  WHERE id=' . db_param();
 		db_query( $t_query, array( $p_user_id, $t_ass_val, $p_bug_id ) );
 
 		# log changes
-		history_log_event_direct( $p_bug_id, 'status', $h_status, $t_ass_val );
-		history_log_event_direct( $p_bug_id, 'handler_id', $h_handler_id, $p_user_id );
+		history_dwg_log_event_direct( $p_bug_id, 'status', $h_status, $t_ass_val );
+		history_dwg_log_event_direct( $p_bug_id, 'handler_id', $h_handler_id, $p_user_id );
 
 		# Add bugnote if supplied ignore false return
 		if( !is_blank( $p_bugnote_text ) ) {
@@ -2143,7 +2164,7 @@ function dwg_reopen( $p_bug_id, $p_bugnote_text = '', $p_time_tracking = '0:00',
  */
 function dwg_update_date( $p_bug_id ) {
 	db_param_push();
-	$t_query = 'UPDATE {document} SET last_updated=' . db_param() . ' WHERE id=' . db_param();
+	$t_query = 'UPDATE {dwg} SET last_updated=' . db_param() . ' WHERE id=' . db_param();
 	db_query( $t_query, array( db_now(), $p_bug_id ) );
 
 	dwg_clear_cache( $p_bug_id );
@@ -2217,6 +2238,28 @@ function dwg_get_monitors( $p_bug_id ) {
 	}
 
 	user_cache_array_rows( $t_users );
+
+	return $t_users;
+}
+
+function dwg_get_licenses( $p_dwg_id ) {
+	if( ! access_has_dwg_level( config_get( 'show_license_list_threshold' ), $p_dwg_id ) ) {
+		return array();
+	}
+
+	# get the license data
+	db_param_push();
+	$t_query = 'SELECT license_id
+			FROM {license_dwg_list} m
+			WHERE m.dwg_id=' . db_param();
+	$t_result = db_query( $t_query, array( $p_dwg_id ) );
+
+	$t_users = array();
+	while( $t_row = db_fetch_array( $t_result ) ) {
+		$t_users[] = $t_row['license_id'];
+	}
+
+	// user_cache_array_rows( $t_users );
 
 	return $t_users;
 }
@@ -2422,4 +2465,18 @@ function dwg_cache_columns_data( array $p_bugs, array $p_selected_columns ) {
 	if( !empty( $t_custom_field_ids ) ) {
 		custom_field_cache_values( $t_bug_ids, $t_custom_field_ids );
 	}
+}
+
+/**
+ * Returns the number of issues for the given dwg_id.
+ *
+ * @return int Number of bugnotes
+ */
+function dwg_get_issue_count($p_dwg_id) {
+	db_param_push();
+	$t_query = 'SELECT COUNT(*) FROM {bug}
+					WHERE document_id =' . db_param();
+	$t_result = db_query( $t_query, array( $p_dwg_id ) );
+	$t_count = db_result( $t_result );
+	return $t_count;
 }

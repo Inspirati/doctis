@@ -55,7 +55,7 @@ compress_enable();
 
 layout_page_header();
 
-layout_page_begin();
+layout_page_begin(null, true);
 ?>
 <div class="col-md-12 col-xs-12">
 <div id="save-filter" class="widget-box widget-color-blue2">

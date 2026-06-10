@@ -64,7 +64,7 @@ function print_info_row( $p_description, $p_value ) {
 <div class="table-responsive">
 	<table class="table table-bordered table-condensed">
 <?php
-	if( ON == config_get_global( 'show_version' ) ) {
+	if( ON == config_get_global( 'show_version_suffix' ) ) {
 		$t_version_suffix = config_get_global( 'version_suffix' );
 	} else {
 		$t_version_suffix = '';

@@ -62,7 +62,7 @@ auth_ensure_user_authenticated();
 
 layout_page_header( lang_get('manage_filter_edit_page_title' ) );
 
-layout_page_begin( 'manage_filter_dwg_edit_page.php' );
+layout_page_begin( 'manage_filter_dwg_edit_page.php', true );
 
 $f_filter_id = gpc_get_int( 'filter_id', null );
 if( null === $f_filter_id ) {

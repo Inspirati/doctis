@@ -21,6 +21,12 @@
  * @copyright Copyright 2004  Victor Boctor - vboctor@users.sourceforge.net
  * @copyright Copyright 2005  MantisBT Team - mantisbt-dev@lists.sourceforge.net
  * @link http://www.mantisbt.org
+ *
+ * @noinspection PhpComposerExtensionStubsInspection
+ * @noinspection PhpMultipleClassesDeclarationsInOneFile
+ * @noinspection PhpIllegalPsrClassPathInspection
+ * @noinspection PhpUnused
+ * @noinspection PhpMissingFieldTypeInspection
  */
 
 /**
@@ -40,7 +46,7 @@ use Mantis\Exceptions\LegacyApiFaultException;
  */
 class RestFault {
 	/**
-	 * @var integer The http status code
+	 * @var int The http status code
 	 */
 	public $status_code;
 
@@ -52,7 +58,7 @@ class RestFault {
 	/**
 	 * RestFault constructor.
 	 *
-	 * @param integer $p_status_code The http status code
+	 * @param int $p_status_code The http status code
 	 * @param string $p_fault_string The error description
 	 */
 	function __construct( $p_status_code, $p_fault_string = '' ) {
@@ -72,7 +78,7 @@ class RestFault {
 	/**
 	 * Http status code getter
 	 *
-	 * @return integer The http status code
+	 * @return int The http status code
 	 */
 	function getCode() {
 		return $this->status_code;
@@ -95,7 +101,7 @@ class ApiObjectFactory {
 	 *
 	 * @param string $p_fault_code   SOAP fault code (Server or Client).
 	 * @param string $p_fault_string Fault description.
-	 * @param integer $p_status_code The http status code.
+	 * @param int $p_status_code The http status code.
 	 * @return RestFault|SoapFault The fault object.
 	 * @access private
 	 */
@@ -190,17 +196,19 @@ class ApiObjectFactory {
 	}
 
 	/**
-	 * Convert a soap object to an array
+	 * Convert a soap object to an array.
+	 *
 	 * @param stdClass|array $p_object Object.
-	 * @param boolean $p_recursive
+	 * @param bool $p_recursive
+	 *
 	 * @return array
 	 */
 	static function objectToArray( $p_object, $p_recursive = false ) {
 		$t_object = is_object( $p_object ) ? get_object_vars( $p_object ) : $p_object;
 		if( $p_recursive && is_array( $t_object ) ) {
 			foreach( $t_object as $t_key => $t_value ) {
-				if( is_object( $t_object[$t_key] ) || is_array( $t_object[$t_key] ) ) {
-					$t_object[$t_key] = ApiObjectFactory::objectToArray( $t_object[$t_key], $p_recursive );
+				if( is_object( $t_value ) || is_array( $t_value ) ) {
+					$t_object[$t_key] = ApiObjectFactory::objectToArray( $t_value, $p_recursive );
 				}
 			}
 		}
@@ -209,11 +217,13 @@ class ApiObjectFactory {
 	}
 
 	/**
-	 * Convert a timestamp to a soap DateTime variable
-	 * @param integer $p_value Integer value to return as date time string.
-	 * @return datetime in expected API format.
+	 * Convert a timestamp to a soap DateTime variable or ISO-8601 date.
+	 *
+	 * @param int $p_value Unix Timestamp.
+	 *
+	 * @return SoapVar|string datetime in expected API format.
 	 */
-	static function datetime($p_value ) {
+	static function datetime( $p_value ) {
 		$t_string_value = self::datetimeString( $p_value );
 
 		if( ApiObjectFactory::$soap ) {
@@ -224,22 +234,33 @@ class ApiObjectFactory {
 	}
 
 	/**
-	 * Convert a timestamp to a DateTime string
-	 * @param integer $p_timestamp Integer value to format as date time string.
-	 * @return string for provided timestamp
+	 * Convert a timestamp to an ISO-8601 formatted DateTime string.
+	 *
+	 * @param int|null $p_timestamp Unix timestamp.
+	 *
+	 * @return string|null Formatted datetime.
 	 */
-	static function datetimeString($p_timestamp ) {
-		if( $p_timestamp == null || date_is_null( $p_timestamp ) ) {
-			return null;
-		}
+	static function datetimeString( $p_timestamp ) {
+		return date_timestamp_to_iso8601( $p_timestamp );
+	}
 
-		return date( 'c', (int)$p_timestamp );
+	/**
+	 * Converts a datetime string to a Unix timestamp.
+	 *
+	 * @param string $p_date_string Date string.
+	 *
+	 * @return int|null Unix timestamp, null when $p_date_string is blank.
+	 *
+	 * @throws ClientException When given string cannot be converted to Date.
+	 */
+	static function dateStringToTimestamp( $p_date_string ): ?int {
+		return date_string_to_timestamp( $p_date_string );
 	}
 
 	/**
 	 * Checks if an object is a SoapFault
 	 * @param mixed $p_maybe_fault Object to check whether it is a SOAP/REST fault.
-	 * @return boolean
+	 * @return bool
 	 */
 	static function isFault( $p_maybe_fault ) {
 		if( !is_object( $p_maybe_fault ) ) {
@@ -281,11 +302,15 @@ function mc_version() {
 
 /**
  * Attempts to login the user.
+ *
  * If logged in successfully, return user information.
  * If failed to login in, then throw a fault.
+ *
  * @param string $p_username Login username.
  * @param string $p_password Login password.
- * @return array Array of user data for the current API user
+ *
+ * @return array|RestFault|SoapFault
+ * @throws ClientException
  */
 function mc_login( $p_username, $p_password ) {
 	$t_user_id = mci_check_login( $p_username, $p_password );
@@ -298,11 +323,15 @@ function mc_login( $p_username, $p_password ) {
 
 /**
  * Given an id, this method returns the user.
+ *
  * When calling this method make sure that the caller has the right to retrieve
  * information about the target user.
- * @param integer $p_user_id  A valid user identifier.
- * @param array $p_select     An array of fields to be returned.
+ *
+ * @param int $p_user_id A valid user identifier.
+ * @param array   $p_select  An array of fields to be returned.
+ *
  * @return array array of user data for the supplied user id
+ * @throws ClientException
  */
 function mci_user_get( $p_user_id, $p_select = null ) {
 	$t_user_data = array();
@@ -365,10 +394,13 @@ function mci_user_get( $p_user_id, $p_select = null ) {
 /**
  * Get project info for the specified id.
  *
- * @param int $p_project_id The project id to get info for.
- * @param string $p_lang The user's language.
- * @param bool @p_detail Include all project details vs. just reference info.
+ * @param int    $p_project_id The project id to get info for.
+ * @param string $p_lang       The user's language.
+ * @param bool   $p_detail     Include all project details vs. just reference
+ *                             info.
+ *
  * @return array project info.
+ * @throws ClientException
  */
 function mci_project_get( $p_project_id, $p_lang, $p_detail ) {
 	$t_row = project_get_row( $p_project_id );
@@ -404,6 +436,29 @@ function mci_project_get( $p_project_id, $p_lang, $p_detail ) {
 	return $t_project;
 }
 
+function mci_license_get( $p_license_id, $p_lang, $p_detail ) {
+	$t_row = license_get_row( $p_license_id );
+
+	$t_user_id = auth_get_current_user_id();
+	$t_user_access_level = access_get_license_level( $p_license_id, $t_user_id );
+
+	# Get license info that makes sense to publish via API.
+	$t_license = array(
+		'id' => $p_license_id,
+		'name' => $t_row['name'],
+	);
+
+	if( $p_detail ) {
+		$t_license['status'] = mci_enum_get_array_by_id( (int)$t_row['status'], 'license_status', $p_lang );
+		$t_license['description'] = $t_row['description'];
+		$t_license['enabled'] = (int)$t_row['enabled'] != 0;
+		$t_license['view_state'] = mci_enum_get_array_by_id( (int)$t_row['view_state'], 'license_view_state', $p_lang );
+		$t_license['access_level'] = mci_enum_get_array_by_id( $t_user_access_level, 'access_levels', $p_lang );
+	}
+
+	return $t_license;
+}
+
 /**
  * access_ if MantisBT installation is marked as offline by the administrator.
  * @return true: offline, false: online
@@ -414,10 +469,13 @@ function mci_is_mantis_offline() {
 }
 
 /**
- * handle a soap API login
+ * Handle a soap API login.
+ *
  * @param string $p_username Login username.
  * @param string $p_password Login password.
- * @return integer|false return user_id if successful, otherwise false.
+ *
+ * @return int|false return user_id if successful, otherwise false.
+ * @throws ClientException
  */
 function mci_check_login( $p_username, $p_password ) {
 	static $s_already_called = false;
@@ -438,7 +496,7 @@ function mci_check_login( $p_username, $p_password ) {
 
 	if( api_token_validate( $p_username, $t_password ) ) {
 		# Token is valid, then login the user without worrying about a password.
-		if( auth_attempt_script_login( $p_username, null ) === false ) {
+		if( auth_attempt_script_login( $p_username ) === false ) {
 			return false;
 		}
 	} else {
@@ -446,7 +504,7 @@ function mci_check_login( $p_username, $p_password ) {
 		$t_user_id = auth_user_id_from_cookie( $p_password );
 		if( $t_user_id !== false ) {
 			# Cookie is valid
-			if( auth_attempt_script_login( $p_username, null ) === false ) {
+			if( auth_attempt_script_login( $p_username ) === false ) {
 				return false;
 			}
 		} else {
@@ -464,10 +522,13 @@ function mci_check_login( $p_username, $p_password ) {
 }
 
 /**
- * Check with a user has readonly access to the webservice for a given project
- * @param integer|null $p_user_id A user id or null for logged in user.
- * @param integer $p_project_id A project identifier ( Default All Projects ).
- * @return boolean indicating whether user has readonly access
+ * Check with a user has readonly access to the webservice for a given project.
+ *
+ * @param int|null $p_user_id    A user id or null for logged in user.
+ * @param int      $p_project_id A project identifier ( Default All
+ *                                   Projects ).
+ * @return bool indicating whether user has readonly access
+ * @throws ClientException
  */
 function mci_has_readonly_access( $p_user_id = null, $p_project_id = ALL_PROJECTS ) {
 	$t_user_id = is_null( $p_user_id ) ? auth_get_current_user_id() : $p_user_id;
@@ -476,10 +537,13 @@ function mci_has_readonly_access( $p_user_id = null, $p_project_id = ALL_PROJECT
 }
 
 /**
- * Check with a user has readwrite access to the webservice for a given project
- * @param integer|null $p_user_id User id or null for logged in user.
- * @param integer $p_project_id Project Id ( Default All Projects ).
- * @return boolean indicating whether user has readwrite access
+ * Check with a user has readwrite access to the webservice for a given project.
+ *
+ * @param int|null $p_user_id    User id or null for logged in user.
+ * @param int      $p_project_id Project Id ( Default All Projects ).
+ *
+ * @return bool indicating whether user has readwrite access
+ * @throws ClientException
  */
 function mci_has_readwrite_access( $p_user_id = null, $p_project_id = ALL_PROJECTS ) {
 	$t_user_id = is_null( $p_user_id ) ? auth_get_current_user_id() : $p_user_id;
@@ -488,11 +552,14 @@ function mci_has_readwrite_access( $p_user_id = null, $p_project_id = ALL_PROJEC
 }
 
 /**
- * Check with a user has the required access level for a given project
- * @param integer $p_access_level Access level.
- * @param integer $p_user_id      User id.
- * @param integer $p_project_id   Project Id ( Default All Projects ).
- * @return boolean indicating whether user has the required access
+ * Check with a user has the required access level for a given project.
+ *
+ * @param int $p_access_level Access level.
+ * @param int $p_user_id      User id.
+ * @param int $p_project_id   Project Id ( Default All Projects ).
+ *
+ * @return bool indicating whether user has the required access
+ * @throws ClientException
  */
 function mci_has_access( $p_access_level, $p_user_id, $p_project_id = ALL_PROJECTS ) {
 	$t_access_level = user_get_access_level( $p_user_id, $p_project_id );
@@ -500,10 +567,13 @@ function mci_has_access( $p_access_level, $p_user_id, $p_project_id = ALL_PROJEC
 }
 
 /**
- * Check with a user has administrative access to the webservice
- * @param integer $p_user_id    User id.
- * @param integer $p_project_id Project Id ( Default All Projects ).
- * @return boolean indicating whether user has the required access
+ * Check with a user has administrative access to the webservice.
+ *
+ * @param int $p_user_id    User id.
+ * @param int $p_project_id Project Id ( Default All Projects ).
+ *
+ * @return bool indicating whether user has the required access
+ * @throws ClientException
  */
 function mci_has_administrator_access( $p_user_id, $p_project_id = ALL_PROJECTS ) {
 	$t_access_level = user_get_access_level( $p_user_id, $p_project_id );
@@ -513,8 +583,8 @@ function mci_has_administrator_access( $p_user_id, $p_project_id = ALL_PROJECTS 
 /**
  * Given an object, return the project id
  * @param object $p_project Project Object.
- * @param integer|boolean $p_default The default value or false if the default should not be applied.
- * @return null|integer project id
+ * @param int|bool $p_default The default value or false if the default should not be applied.
+ * @return null|int project id
  */
 function mci_get_project_id( $p_project, $p_default = ALL_PROJECTS ) {
 	if( is_object( $p_project ) ) {
@@ -534,30 +604,54 @@ function mci_get_project_id( $p_project, $p_default = ALL_PROJECTS ) {
 	return $t_project_id;
 }
 
+function mci_get_license_id( $p_license, $p_default = ALL_LICENSES ) {
+	if( is_object( $p_license ) ) {
+		$p_license = get_object_vars( $p_license );
+	}
+
+	if( isset( $p_license['id'] ) && (int)$p_license['id'] != 0 ) {
+		$t_license_id = (int)$p_license['id'];
+	} else if( isset( $p_license['name'] ) && !is_blank( $p_license['name'] ) ) {
+		$t_license_id = license_get_id_by_name( $p_license['name'], $p_default );
+	} else if( $p_default === false ) {
+		$t_license_id = null;
+	} else {
+		$t_license_id = $p_default;
+	}
+
+	return $t_license_id;
+}
+
 /**
  * Return project Status
  * @param object $p_status Status.
- * @return integer Status
+ * @return int Status
  */
 function mci_get_project_status_id( $p_status ) {
 	return mci_get_enum_id_from_objectref( 'project_status', $p_status );
+}
+function mci_get_license_status_id( $p_status ) {
+	return mci_get_enum_id_from_objectref( 'license_status', $p_status );
 }
 
 /**
  * Return project view state
  * @param object $p_view_state View state.
- * @return integer View state
+ * @return int View state
  */
 function mci_get_project_view_state_id( $p_view_state ) {
 	return mci_get_enum_id_from_objectref( 'project_view_state', $p_view_state );
+}
+function mci_get_license_view_state_id( $p_view_state ) {
+	return mci_get_enum_id_from_objectref( 'license_view_state', $p_view_state );
 }
 
 /**
  * Return user id
  * @param stdClass|array $p_user User.
- * @param integer|null $p_default Default value on error.
- * @param boolean $p_allow_all_users Allow user id 0 to be returned.
- * @return integer user id or 0 if not found.
+ * @param int|null $p_default Default value on error.
+ * @param bool $p_allow_all_users Allow user id 0 to be returned.
+ * @return int user id or 0 if not found.
  */
 function mci_get_user_id( $p_user, $p_default = 0, $p_allow_all_users = false ) {
 	if( is_object( $p_user ) ) {
@@ -575,8 +669,10 @@ function mci_get_user_id( $p_user, $p_default = 0, $p_allow_all_users = false ) 
  * Given a profile id, return its information as an array or null
  * if profile id is 0 or not found.
  *
- * @param integer $p_profile_id The profile id, can be 0.
+ * @param int $p_profile_id The profile id, can be 0.
+ *
  * @return array|null The profile or null if not found.
+ * @throws ClientException
  */
 function mci_profile_as_array_by_id( $p_profile_id ) {
 	$t_profile_id = (int)$p_profile_id;
@@ -603,8 +699,10 @@ function mci_profile_as_array_by_id( $p_profile_id ) {
 /**
  * Get basic issue info for related issues.
  *
- * @param integer $p_issue_id The issue id.
+ * @param int $p_issue_id The issue id.
+ *
  * @return array|null The issue id or null if not found.
+ * @throws ClientException
  */
 function mci_related_issue_as_array_by_id( $p_issue_id ) {
 	$t_issue_id = (int)$p_issue_id;
@@ -638,7 +736,7 @@ function mci_related_issue_as_array_by_id( $p_issue_id ) {
 
 /**
  * Return user's default language given a user id
- * @param integer $p_user_id User id.
+ * @param int $p_user_id User id.
  * @return string language string
  */
 function mci_get_user_lang( $p_user_id ) {
@@ -652,7 +750,7 @@ function mci_get_user_lang( $p_user_id ) {
 /**
  * Return Status
  * @param object $p_status Status.
- * @return integer status id
+ * @return int status id
  */
 function mci_get_status_id( $p_status ) {
 	return mci_get_enum_id_from_objectref( 'status', $p_status );
@@ -661,7 +759,7 @@ function mci_get_status_id( $p_status ) {
 /**
  * Return Severity
  * @param object $p_severity Severity.
- * @return integer severity id
+ * @return int severity id
  */
 function mci_get_severity_id( $p_severity ) {
 	return mci_get_enum_id_from_objectref( 'severity', $p_severity );
@@ -670,7 +768,7 @@ function mci_get_severity_id( $p_severity ) {
 /**
  * Return Priority
  * @param object $p_priority Priority.
- * @return integer priority id
+ * @return int priority id
  */
 function mci_get_priority_id( $p_priority ) {
 	return mci_get_enum_id_from_objectref( 'priority', $p_priority );
@@ -679,7 +777,7 @@ function mci_get_priority_id( $p_priority ) {
 /**
  * Return Reproducibility
  * @param object $p_reproducibility Reproducibility.
- * @return integer reproducibility id
+ * @return int reproducibility id
  */
 function mci_get_reproducibility_id( $p_reproducibility ) {
 	return mci_get_enum_id_from_objectref( 'reproducibility', $p_reproducibility );
@@ -688,7 +786,7 @@ function mci_get_reproducibility_id( $p_reproducibility ) {
 /**
  * Return Resolution
  * @param object $p_resolution Resolution object.
- * @return integer Resolution id
+ * @return int Resolution id
  */
 function mci_get_resolution_id( $p_resolution ) {
 	return mci_get_enum_id_from_objectref( 'resolution', $p_resolution );
@@ -697,7 +795,7 @@ function mci_get_resolution_id( $p_resolution ) {
 /**
  * Return projection
  * @param object $p_projection Projection object.
- * @return integer projection id
+ * @return int projection id
  */
 function mci_get_projection_id( $p_projection ) {
 	return mci_get_enum_id_from_objectref( 'projection', $p_projection );
@@ -706,7 +804,7 @@ function mci_get_projection_id( $p_projection ) {
 /**
  * Return ETA id
  * @param object $p_eta ETA object.
- * @return integer eta id
+ * @return int eta id
  */
 function mci_get_eta_id( $p_eta ) {
 	return mci_get_enum_id_from_objectref( 'eta', $p_eta );
@@ -715,7 +813,7 @@ function mci_get_eta_id( $p_eta ) {
 /**
  * Return view state id
  * @param object $p_view_state View state object.
- * @return integer view state
+ * @return int view state
  */
 function mci_get_view_state_id( $p_view_state ) {
 	return mci_get_enum_id_from_objectref( 'view_state', $p_view_state );
@@ -765,10 +863,13 @@ function mci_get_mantis_path() {
 
 /**
  * Gets the sub-projects that are accessible to the specified user / project.
- * @param integer $p_user_id           User id.
- * @param integer $p_parent_project_id Parent Project id.
- * @param string  $p_lang              Language string.
+ *
+ * @param int    $p_user_id           User id.
+ * @param int    $p_parent_project_id Parent Project id.
+ * @param string $p_lang              Language string.
+ *
  * @return array
+ * @throws ClientException
  */
 function mci_user_get_accessible_subprojects( $p_user_id, $p_parent_project_id, $p_lang = null ) {
 	if( $p_lang === null ) {
@@ -807,7 +908,7 @@ function mci_get_version( $p_version, $p_project_id ) {
 	}
 
 	return array(
-		'id' => (int)$t_version_id,
+		'id' => $t_version_id,
 		'name' => $p_version,
 	);
 }
@@ -892,7 +993,8 @@ function mci_get_category( $p_category_id ) {
 	);
 }
 
-// @TODO RobD - unused, it is probably not the right approach to getting the document (to be continued...)
+// @TODO RobD - unused, it is probably not the right approach to getting the document (to be continued...) : update, is used
+// @TODO RobD - need to test if the document still exists
 function mci_get_document( $p_document_id ) {
 	if( ApiObjectFactory::$soap ) {
 		if( $p_document_id == 0 ) {
@@ -996,6 +1098,15 @@ function mci_get_category_id( $p_category, $p_project_id ) {
 	return $t_category_id;
 }
 
+/**
+ * Convert a document name or object reference to a document id.
+ *
+ * @param string|array $p_document   Document name or array with id and/or title.
+ * @param int          $p_project_id Project id.
+ *
+ * @return int document id or error.
+ * @throws ClientException if document is not set or does not exist.
+ */
 function mci_get_document_id( $p_document, $p_project_id ) {
 	$t_allow_no_document = config_get( 'allow_no_document' );
 
@@ -1046,11 +1157,11 @@ function mci_get_document_id( $p_document, $p_project_id ) {
 			$t_document_name = $p_document;
 		}
 
-		# Retrieve Document Id from Name
-		$t_cat_array = document_get_all_rows( $p_project_id );
-		foreach( $t_cat_array as $t_category_row ) {
-			if( strcasecmp( $t_category_row['title'], $t_document_name ) == 0 ) {
-				return $t_category_row['id'];
+		# Retrieve Document Id from Title
+		$t_document_array = document_get_all_rows( $p_project_id );
+		foreach( $t_document_array as $t_document_row ) {
+			if( strcasecmp( $t_document_row['title'], $t_document_name ) == 0 ) {
+				return $t_document_row['id'];
 			}
 		}
 
@@ -1078,7 +1189,7 @@ function mci_get_document_id( $p_document, $p_project_id ) {
 /**
  * Get a category definition.
  *
- * @param integer $p_category_id The id of the category to retrieve.
+ * @param int $p_category_id The id of the category to retrieve.
  * @return array an array containing the id and the name of the category.
  */
 function mci_category_as_array_by_id( $p_category_id ) {
@@ -1109,7 +1220,7 @@ function mci_project_version_as_array( array $p_version ) {
 /**
  * Returns time tracking information from a bug note.
  *
- * @param integer $p_issue_id The id of the issue.
+ * @param int $p_issue_id The id of the issue.
  * @param array   $p_note     A note as passed to the soap api methods.
  *
  * @return string the string time entry to be added to the bugnote, in 'HH:mm' format
@@ -1190,15 +1301,24 @@ EOL;
 /**
  * Default error handler
  *
- * This handler will not receive E_ERROR, E_PARSE, E_CORE_*, or E_COMPILE_* errors.
+ * This handler will not receive E_ERROR, E_PARSE, E_CORE_*, or E_COMPILE_*
+ * errors.
  *
  * E_USER_* are triggered by us and will contain an error constant in $p_error
- * The others, being system errors, will come with a string in $p_error
- * @param integer $p_type    Contains the level of the error raised, as an integer.
- * @param string  $p_error   Contains the error message, as a string.
- * @param string  $p_file    Contains the filename that the error was raised in, as a string.
- * @param integer $p_line    Contains the line number the error was raised at, as an integer.
+ * The others, being system errors, will come with a string in $p_error.
+ *
+ * @param int    $p_type  Contains the level of the error raised, as an
+ *                        integer.
+ * @param string $p_error Contains the error message, as a string.
+ * @param string $p_file  Contains the filename that the error was raised in,
+ *                        as a string.
+ * @param int    $p_line  Contains the line number the error was raised at, as
+ *                        an integer.
+ *
  * @return void
+ * @throws SoapFault
+ *
+ * @noinspection PhpUnusedParameterInspection
  */
 function mc_error_handler( $p_type, $p_error, $p_file, $p_line ) {
 	# check if errors were disabled with @ somewhere in this call chain
@@ -1270,8 +1390,8 @@ function error_get_stack_trace() {
 		#remove the call to this function from the stack trace
 		foreach( $t_stack as $t_frame ) {
 			$t_trace .= ( isset( $t_frame['file'] ) ? basename( $t_frame['file'] ) : 'UnknownFile' )
-				. ' L' . ( isset( $t_frame['line'] ) ? $t_frame['line'] : '?' )
-				. ' ' . ( isset( $t_frame['function'] ) ? $t_frame['function'] : 'UnknownFunction' );
+				. ' L' . ( $t_frame['line'] ?? '?' )
+				. ' ' . ( $t_frame['function'] ?? 'UnknownFunction' );
 
 			$t_args = array();
 			if( isset( $t_frame['params'] ) && ( count( $t_frame['params'] ) > 0 ) ) {
@@ -1295,8 +1415,8 @@ function error_get_stack_trace() {
 
 		foreach( $t_stack as $t_frame ) {
 			$t_trace .= ( isset( $t_frame['file'] ) ? basename( $t_frame['file'] ) : 'UnknownFile' )
-				. ' L' . ( isset( $t_frame['line'] ) ? $t_frame['line'] : '?' )
-				. ' ' . ( isset( $t_frame['function'] ) ? $t_frame['function'] : 'UnknownFunction' );
+				. ' L' . ( $t_frame['line'] ?? '?' )
+				. ' ' . ( $t_frame['function'] ?? 'UnknownFunction' );
 
 			$t_args = array();
 			if( isset( $t_frame['args'] ) ) {
@@ -1330,7 +1450,7 @@ function mci_fault_login_failed() {
  * Returns a soap_fault signalling that the user does not have
  * access rights for the specific action.
  *
- * @param integer $p_user_id A user id, optional.
+ * @param int $p_user_id A user id, optional.
  * @param string  $p_detail  The optional details to append to the error message.
  * @return RestFault|SoapFault
  */

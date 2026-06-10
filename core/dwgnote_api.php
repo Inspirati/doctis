@@ -503,7 +503,7 @@ function dwgnote_get_all_visible_dwgnotes( $p_bug_id, $p_user_bugnote_order, $p_
 	$t_project_id = dwg_get_field( $p_bug_id, 'project_id' );
 	$t_user_access_level = user_get_access_level( $t_user_id, $t_project_id );
 
-	$t_all_bugnotes = dwgnote_get_all_bugnotes( $p_bug_id );
+	$t_all_bugnotes = dwgnote_get_all_dwgnotes( $p_bug_id );
 
 	$t_private_bugnote_visible = access_compare_level( $t_user_access_level, config_get( 'private_dwgnote_threshold' ) );
 	$t_time_tracking_visible = access_compare_level( $t_user_access_level, config_get( 'time_tracking_view_threshold' ) );
@@ -629,7 +629,7 @@ function dwgnote_row_to_object( array $p_row ) {
  *
  * @access public
  */
-function dwgnote_get_all_bugnotes( $p_bug_id ) {
+function dwgnote_get_all_dwgnotes( $p_bug_id ) {
 	global $g_cache_dwgnotes_by_bug_id;
 
 	# the cache should be aware of the sorting order

@@ -50,7 +50,7 @@ function mc_tag_get_all( $p_username, $p_password, $p_page_number, $p_per_page )
 
 	$t_results = array();
 	$t_total_results = tag_count( '' );
-	$t_tags = tag_get_all( '', $p_per_page, $p_per_page *  ( $p_page_number - 1 ) );
+	$t_tags = tag_get_all_bug_tag( '', $p_per_page, $p_per_page *  ( $p_page_number - 1 ) );
 
 	while( $t_tag = db_fetch_array( $t_tags ) ) {
 		$t_tag['user_id'] = mci_account_get_array_by_id( $t_tag['user_id'] );
