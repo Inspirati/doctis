@@ -77,8 +77,12 @@ require_api( 'user_api.php' );
 require_api( 'user_pref_api.php' );
 require_api( 'utility_api.php' );
 
+require_once( __DIR__ . '/classes/EmailMessage.class.php' );
+require_once( __DIR__ . '/classes/EmailSender.class.php' );
+
+# PHPMailer is needed for email address validation independent of the provider used
+# to send the emails.
 use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception as phpmailerException;
 use Mantis\Exceptions\ClientException;
 use VBoctor\Email\DisposableEmailChecker;
 
@@ -346,7 +350,7 @@ function email_collect_recipients( $p_bug_id, $p_notify_type, array $p_extra_use
  * @return void
  * @throws ClientException
  */
-function email_generic( $p_bug_id, $p_notify_type, $p_message_id = null, array $p_header_optional_params = null, array $p_extra_user_ids_to_email = array() ) {
+function email_generic( $p_bug_id, $p_notify_type, $p_message_id = null, array $p_header_optional_params = [], array $p_extra_user_ids_to_email = array() ) {
 	# @todo yarick123: email_collect_recipients(...) will be completely rewritten to provide additional information such as language, user access,..
 	# @todo yarick123:sort recipients list by language to reduce switches between different languages
 	$t_recipients = email_collect_recipients( $p_bug_id, $p_notify_type, $p_extra_user_ids_to_email );
@@ -365,7 +369,7 @@ function email_generic( $p_bug_id, $p_notify_type, $p_message_id = null, array $
  * @return void
  * @throws ClientException
  */
-function email_generic_to_recipients( $p_bug_id, $p_notify_type, array $p_recipients, $p_message_id = null, array $p_header_optional_params = null ) {
+function email_generic_to_recipients( int $p_bug_id, string $p_notify_type, array $p_recipients, $p_message_id = null, array $p_header_optional_params = [] ) {
 	if( empty( $p_recipients ) ) {
 		return;
 	}
@@ -470,15 +474,12 @@ function email_relationship_added( $p_bug_id, $p_related_bug_id, $p_rel_type, $p
 function email_filter_recipients_for_bug( $p_bug_id, array $p_recipients ) {
 	$t_view_bug_threshold = config_get( 'view_bug_threshold' );
 
-	$t_authorized_recipients = array();
-
-	foreach( $p_recipients as $t_recipient_id => $t_recipient_email ) {
-		if( access_has_bug_level( $t_view_bug_threshold, $p_bug_id, $t_recipient_id ) ) {
-			$t_authorized_recipients[$t_recipient_id] = $t_recipient_email;
-		}
-	}
-
-	return $t_authorized_recipients;
+	return array_filter( $p_recipients,
+		function( $t_recipient_id ) use ( $t_view_bug_threshold, $p_bug_id ) {
+			return access_has_bug_level( $t_view_bug_threshold, $p_bug_id, $t_recipient_id );
+		},
+		ARRAY_FILTER_USE_KEY
+	);
 }
 
 /**
@@ -887,7 +888,7 @@ function email_owner_changed($p_bug_id, $p_prev_handler_id, $p_new_handler_id ) 
 		}
 	}
 
-	email_generic( $p_bug_id, 'owner', $t_message_id, /* headers */ null, $t_extra_user_ids_to_email );
+	email_generic( $p_bug_id, 'owner', $t_message_id, /* headers */ [], $t_extra_user_ids_to_email );
 }
 
 /**
@@ -941,10 +942,7 @@ function email_build_subject( $p_bug_id ) {
 	$t_email_subject = '[' . $p_project_name . ' ' . $t_bug_id . ']: ' . $p_subject;
 
 	# update subject as defined by plugins
-	/** @noinspection PhpUnnecessaryLocalVariableInspection */
-	$t_email_subject = event_signal( 'EVENT_DISPLAY_EMAIL_BUILD_SUBJECT', $t_email_subject, array( 'bug_id' => $p_bug_id ) );
-
-	return $t_email_subject;
+	return event_signal( 'EVENT_DISPLAY_EMAIL_BUILD_SUBJECT', $t_email_subject, array( $p_bug_id ) );
 }
 
 /**
@@ -1089,7 +1087,7 @@ function email_user_mention( $p_bug_id, $p_mention_user_ids, $p_message, $p_remo
  * @return void
  * @throws ClientException
  */
-function email_bug_info_to_one_user( array $p_visible_bug_data, $p_message_id, $p_user_id, array $p_header_optional_params = null ) {
+function email_bug_info_to_one_user( array $p_visible_bug_data, string $p_message_id, int $p_user_id, array $p_header_optional_params = [] ) {
 	$t_user_email = user_get_email( $p_user_id );
 
 	# check whether email should be sent
@@ -1104,7 +1102,7 @@ function email_bug_info_to_one_user( array $p_visible_bug_data, $p_message_id, $
 	# build message
 	$t_message = lang_get_defaulted( $p_message_id );
 
-	if( is_array( $p_header_optional_params ) ) {
+	if( $p_header_optional_params ) {
 		$t_message = vsprintf( $t_message, $p_header_optional_params );
 	}
 
@@ -1215,8 +1213,6 @@ function email_format_bug_message( array $p_visible_bug_data ) {
 	if ( isset( $p_visible_bug_data[ 'email_reproducibility' ] ) ) {
 		$p_visible_bug_data['email_reproducibility'] = get_enum_element( 'reproducibility', $p_visible_bug_data['email_reproducibility'] );
 		$t_message .= email_format_attribute( $p_visible_bug_data, 'email_reproducibility' );
-	} else {
-		$p_visible_bug_data['email_reproducibility'] = false;
 	}
 		
 	if ( isset( $p_visible_bug_data[ 'email_severity' ] ) ) {
