@@ -20,6 +20,10 @@
 # Customise the three variables below if needed.
 #
 
+# When invoked as 'curl URL | bash', bash's stdin is the pipe and sudo cannot
+# prompt for a password.  Reconnect stdin to the terminal before proceeding.
+exec </dev/tty
+
 # ---------------------------------------------------------------------------
 # LAN server — the vaio development machine
 # ---------------------------------------------------------------------------
@@ -46,4 +50,10 @@ echo "  domain  : ${domain}"
 
 wget --quiet -O install-option.sh "${LAN_SCRIPT_ROOT}/install-option.sh"
 chmod +x install-option.sh
-./install-option.sh install all "${domain}" "${mysql_pass}" "${email_addr}" "${email_hash}" "doctis" | tee logfile.txt
+
+cmd="./install-option.sh install all \"${domain}\" \"${mysql_pass}\" \"${email_addr}\" \"${email_hash}\" \"doctis\""
+echo "Running: $cmd"
+eval "$cmd" | tee logfile.txt
+
+# Example of the command line produced above:
+# ./install-option.sh install all "10.0.0.10" "password" "my.email@gmail.com" "GmailAppPassword" "doctis"

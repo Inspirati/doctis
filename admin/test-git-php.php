@@ -130,7 +130,7 @@ try {
     // ── STEP 7: git push ───────────────────────────────────────────────────────
 
     echo "  7. git push          ... ";
-    $repo->push( 'origin', [ 'main' ] );
+    $repo->push( [ 'origin', $repo->getCurrentBranchName() ] );
     ok( '7. git push' );
 
     // ── STEP 8: Retrieve by SHA ────────────────────────────────────────────────
@@ -192,7 +192,7 @@ try {
     $pass++;
 
     echo "  13. push delete      ... ";
-    $repo->push( 'origin', [ 'main' ] );
+    $repo->push( [ 'origin', $repo->getCurrentBranchName() ] );
     ok( '13. push delete' );
 
     // ── STEP 14: Verify file absent from HEAD ──────────────────────────────────

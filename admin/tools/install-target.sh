@@ -210,6 +210,12 @@ if [ ${target} = "doctis" ]; then
 #\$g_reproducibility_enum_string = '';
 #\$g_enable_profiles = OFF;
 \$USE_LOREM_IPSUM = true;
+
+# --- File / Document storage ---
+\$g_file_upload_method  = DATABASE;	# bug/issue attachments
+\$g_dwg_upload_method   = GIT;		# document (dwg) attachments
+\$g_git_storage_root    = '/var/git/doctis';
+\$g_git_worktree_root   = '/var/www/doctis/worktrees';
 EOF
 fi
 if [ "$2" = "nodbprepostfix" ]; then

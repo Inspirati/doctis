@@ -372,7 +372,7 @@ detect_virtualization() {
                 # Could be DigitalOcean (DO uses KVM)
                 if grep -qi "DigitalOcean" /sys/class/dmi/id/sys_vendor 2>/dev/null; then
                     echo "digitalocean"
-                elif curl -fs http://169.254.169.254/metadata/v1/id >/dev/null 2>&1; then
+                elif curl -fs --connect-timeout 3 http://169.254.169.254/metadata/v1/id >/dev/null 2>&1; then
                     echo "digitalocean"
                 else
                     echo "qemu-kvm"
@@ -403,7 +403,7 @@ detect_virtualization() {
     fi
 
     # --- DigitalOcean metadata fallback ---
-    if curl -fs http://169.254.169.254/metadata/v1/id >/dev/null 2>&1; then
+    if curl -fs --connect-timeout 3 http://169.254.169.254/metadata/v1/id >/dev/null 2>&1; then
         echo "digitalocean"
         return
     fi
@@ -434,12 +434,6 @@ chkinst_virt() {
             ;;
     esac
 }
-
-# ------------------------------
-# Run dispatcher
-# ------------------------------
-
-chkinst_virt
 
 install_system() {
     # Run the system installation functions in a specific sequence
