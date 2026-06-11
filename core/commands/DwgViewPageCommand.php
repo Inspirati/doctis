@@ -255,8 +255,8 @@ class DwgViewPageCommand extends Command {
 			access_has_dwg_level( config_get( 'show_license_list_threshold' ), $t_issue_id );
 
 		if( $t_flags['license_show'] ) {
-			$t_flags['license_can_delete'] = access_has_license_level( config_get( 'license_delete_others_dwg_threshold' ), $t_issue_id );
-			$t_flags['license_can_add'] = access_has_license_level( config_get( 'license_add_others_dwg_threshold' ), $t_issue_id );
+			$t_flags['license_can_delete'] = access_has_dwg_level( config_get( 'license_delete_others_dwg_threshold' ), $t_issue_id );
+			$t_flags['license_can_add'] = access_has_dwg_level( config_get( 'license_add_others_dwg_threshold' ), $t_issue_id );
 		}
 
 		if( !$t_force_readonly && !$t_anonymous_user ) {

@@ -323,7 +323,7 @@ function access_get_license_level( $p_project_id = null, $p_user_id = null ) {
 		return $t_global_access_level;
 	} else {
 		$t_project_access_level = access_get_local_level( $p_user_id, $p_project_id );
-		$t_project_view_state = project_get_field( $p_project_id, 'view_state' );
+		$t_project_view_state = license_get_field( $p_project_id, 'view_state' );
 
 		# Try to use the project access level.
 		# If the user is not listed in the project, then try to fall back
