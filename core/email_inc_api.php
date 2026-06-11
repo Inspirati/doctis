@@ -75,9 +75,6 @@ require_api( 'string_api.php' );
 require_api( 'user_api.php' );
 require_api( 'user_pref_api.php' );
 require_api( 'utility_api.php' );
-## CN-start
-require_api( 'template_api.php' );
-## CN-end
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception as phpmailerException;
@@ -728,11 +725,6 @@ function email_send( EmailData $p_email_data ) : bool {
 	}
 
 	$t_mail->isHTML( false );              # set email format to plain text
-## CN
-	if ( ON == config_get( 'use_mailtemplate' ) )  {
-		$t_mail->isHTML( true );
-	} 
-## CN
 	$t_mail->WordWrap = 80;              # set word wrap to 80 characters
 	$t_mail->CharSet = $t_email_data->metadata['charset'];
 	$t_mail->Host = config_get( 'smtp_host' );
