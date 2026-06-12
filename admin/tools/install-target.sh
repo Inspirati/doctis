@@ -486,8 +486,10 @@ install_git_storage() {
     local git_setup="${webroot}/${target}/admin/tools/doctis-git-setup.sh"
     echo -e "${DIAG}Setting up git document storage...${OFF}"
     if [ -f "$git_setup" ]; then
-        . "$git_setup"
-        doctis-git-setup "" "" "" "" "$target"
+        # doctis-git-setup.sh requires root (creates directories, sets ownership,
+        # writes /var/www/.gitconfig). install-target.sh runs without sudo, so
+        # invoke the script directly under sudo rather than sourcing it.
+        sudo bash "$git_setup" "${webroot}/${target}"
     else
         echo -e "${WARN}doctis-git-setup.sh not found at ${git_setup} — skipping git storage setup${OFF}"
     fi
