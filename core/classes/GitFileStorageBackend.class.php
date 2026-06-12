@@ -23,8 +23,8 @@ use Mantis\Exceptions\ServiceException;
  * GIT storage backend.
  *
  * Stores each uploaded document file as a git commit in a per-project bare
- * repository.  {dwg_file}.diskfile holds the commit SHA; {dwg_file}.folder
- * holds the absolute path to the bare repository.
+ * repository.  {dwg_primary_file}.git_sha holds the commit SHA; {dwg_primary_file}.folder
+ * holds the absolute path to the bare repository (redundant — derivable from project).
  *
  * Repository layout:
  *   <git_storage_root>/<project-slug>.git   — bare repo (authoritative store)
@@ -293,7 +293,9 @@ class GitFileStorageBackend implements FileStorageBackendInterface {
 	 */
 	public function retrieve( array $p_row, int $p_project_id ) {
 		$t_bare     = $p_row['folder'];
-		$t_sha      = $p_row['diskfile'];
+		# {dwg_primary_file} uses git_sha; {dwg_file} attachments retain the
+		# MantisBT-inherited diskfile column name.  Accept either.
+		$t_sha      = $p_row['git_sha'] ?? $p_row['diskfile'];
 		$t_rel_path = $this->repo_rel_path( (int)$p_row['dwg_id'], $p_row['filename'] );
 
 		$t_content = shell_exec(

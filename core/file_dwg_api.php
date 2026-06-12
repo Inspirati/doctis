@@ -1543,9 +1543,9 @@ function file_dwg_primary_add( $p_dwg_id, $p_user_id, $p_tmp_file, $p_filename, 
 	$t_stored   = $t_backend->store(
 		$p_tmp_file, $p_filesize, $t_unique_name, $t_file_path, false, $t_metadata
 	);
-	$t_diskfile = $t_stored['diskfile'];
-	$t_folder   = $t_stored['folder'];
-	$t_content  = $t_stored['content'];
+	$t_git_sha = $t_stored['diskfile'];
+	$t_folder  = $t_stored['folder'];
+	$t_content = $t_stored['content'];
 
 	# Remove any existing row (replace semantics)
 	# Build separate metadata for the delete so it carries the OLD filename,
@@ -1558,14 +1558,14 @@ function file_dwg_primary_add( $p_dwg_id, $p_user_id, $p_tmp_file, $p_filename, 
 			'filename'   => $t_existing['filename'],
 			'user_id'    => $p_user_id,
 		);
-		$t_backend->delete( $t_existing['diskfile'], $t_project_id, $t_delete_metadata );
+		$t_backend->delete( $t_existing['git_sha'], $t_project_id, $t_delete_metadata );
 		db_param_push();
 		db_query( 'DELETE FROM {dwg_primary_file} WHERE dwg_id=' . db_param(), array( (int)$p_dwg_id ) );
 	}
 
 	db_param_push();
 	$t_query = 'INSERT INTO {dwg_primary_file}
-		( dwg_id, user_id, filename, filesize, file_type, diskfile, folder, content, date_added, description, git_branch )
+		( dwg_id, user_id, filename, filesize, file_type, git_sha, folder, content, date_added, description, git_branch )
 		VALUES
 		( ' . db_param() . ', ' . db_param() . ', ' . db_param() . ', ' . db_param() . ', ' . db_param() . ',
 		  ' . db_param() . ', ' . db_param() . ', ' . db_param() . ', ' . db_param() . ', ' . db_param() . ', ' . db_param() . ' )';
@@ -1575,7 +1575,7 @@ function file_dwg_primary_add( $p_dwg_id, $p_user_id, $p_tmp_file, $p_filename, 
 		$p_filename,
 		(int)$p_filesize,
 		$p_file_type,
-		$t_diskfile,
+		$t_git_sha,
 		$t_folder,
 		$t_content,
 		db_now(),
@@ -1606,7 +1606,7 @@ function file_dwg_primary_delete( $p_dwg_id ) {
 		'user_id'    => $t_row['user_id'],
 	);
 
-	$t_backend->delete( $t_row['diskfile'], $t_project_id, $t_metadata );
+	$t_backend->delete( $t_row['git_sha'], $t_project_id, $t_metadata );
 
 	db_param_push();
 	db_query( 'DELETE FROM {dwg_primary_file} WHERE dwg_id=' . db_param(), array( (int)$p_dwg_id ) );
@@ -1629,4 +1629,33 @@ function file_dwg_primary_get_content( $p_dwg_id ) {
 	$t_backend    = file_dwg_get_storage_backend();
 
 	return $t_backend->retrieve( $t_row, $t_project_id );
+}
+
+/**
+ * Return the current HEAD commit SHA of the git repository for the project
+ * that owns a given document.  Returns null if the GIT backend is not active
+ * or if the bare repository does not yet exist.
+ *
+ * @param int $p_dwg_id
+ * @return string|null  40-character SHA, or null.
+ */
+function file_dwg_git_head_sha( int $p_dwg_id ): ?string {
+	if( config_get( 'dwg_upload_method' ) !== GIT ) {
+		return null;
+	}
+
+	$t_project_id = dwg_get_field( $p_dwg_id, 'project_id' );
+	$t_name       = project_get_field( $t_project_id, 'name' );
+	$t_slug       = preg_replace( '/[^a-z0-9\-]+/', '-', strtolower( trim( $t_name ) ) );
+	$t_bare       = config_get( 'git_storage_root' ) . '/' . $t_slug . '.git';
+
+	if( !is_dir( $t_bare ) ) {
+		return null;
+	}
+
+	$t_sha = trim( (string)shell_exec(
+		'git --git-dir=' . escapeshellarg( $t_bare ) . ' rev-parse HEAD 2>/dev/null'
+	) );
+
+	return ( strlen( $t_sha ) === 40 ) ? $t_sha : null;
 }

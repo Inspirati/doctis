@@ -1019,6 +1019,7 @@ if( $t_flags['sponsorships_show'] ) {
 $t_primary_file = file_dwg_primary_get( $f_dwg_id );
 $t_can_upload_primary = !$t_force_readonly &&
 	access_has_dwg_level( config_get( 'update_dwg_threshold' ), $f_dwg_id );
+$t_git_head_sha = file_dwg_git_head_sha( $f_dwg_id );
 $t_collapse_block = is_collapsed( 'primary_document' );
 $t_block_css = $t_collapse_block ? 'collapsed' : '';
 $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
@@ -1055,8 +1056,21 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 					</td>
 				</tr>
 				<tr>
-					<th class="category width-15"><?php echo lang_get( 'file_added' ) ?></th>
-					<td><?php echo date( config_get( 'normal_date_format' ), $t_primary_file['date_added'] ) ?></td>
+					<th class="category width-10"><?php echo lang_get( 'date_added' ) ?></th>
+					<td class="width-20"><?php echo date( config_get( 'normal_date_format' ), $t_primary_file['date_added'] ) ?></td>
+					<th class="category width-10">SHA</th>
+					<td class="width-25"><code><?php echo htmlspecialchars( $t_primary_file['git_sha'] ) ?></code></td>
+					<th class="category width-10">Current</th>
+					<td class="width-25">
+<?php	if( $t_git_head_sha !== null ): ?>
+						<code><?php echo htmlspecialchars( $t_git_head_sha ) ?></code>
+<?php		if( $t_git_head_sha !== $t_primary_file['git_sha'] ): ?>
+						&nbsp;<span class="label label-warning">updated</span>
+<?php		endif; ?>
+<?php	else: ?>
+						<span class="small">—</span>
+<?php	endif; ?>
+					</td>
 				</tr>
 <?php	if( !is_blank( $t_primary_file['description'] ) ): ?>
 				<tr>
