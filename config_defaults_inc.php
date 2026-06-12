@@ -2240,8 +2240,7 @@ $g_mentions_tag = '@';
  *
  * @global int $g_enable_sponsorship
  */
-// $g_enable_sponsorship = OFF;
-$g_enable_sponsorship = ON;
+$g_enable_sponsorship = OFF;
 
 /**
  * Currency used for all sponsorships.
@@ -4970,7 +4969,6 @@ $g_my_view_dwg_boxes = array(
  *
  * @global int $g_rss_enabled
  */
-// $g_rss_enabled = ON;
 $g_rss_enabled = OFF;
 
 
@@ -5270,8 +5268,7 @@ $g_licenses_enabled = OFF;
  *
  * @global int $g_time_tracking_enabled
  */
-// $g_time_tracking_enabled = OFF;
-$g_time_tracking_enabled = ON;
+$g_time_tracking_enabled = OFF;
 
 /**
  * A billing sums.

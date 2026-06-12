@@ -250,13 +250,19 @@ class DwgViewPageCommand extends Command {
 			$t_flags['can_unmonitor'] = false;
 		}
 
-		$t_flags['license_show'] =
-			!$t_force_readonly &&
-			access_has_dwg_level( config_get( 'show_license_list_threshold' ), $t_issue_id );
+		if( OFF == config_get( 'licenses_enabled', OFF ) ) {
+			$t_flags['license_show'] = false;
+			$t_flags['license_can_delete'] = false;
+			$t_flags['license_can_add'] = false;
+		} else {
+			$t_flags['license_show'] =
+				!$t_force_readonly &&
+				access_has_dwg_level( config_get( 'show_license_list_threshold' ), $t_issue_id );
 
-		if( $t_flags['license_show'] ) {
-			$t_flags['license_can_delete'] = access_has_dwg_level( config_get( 'license_delete_others_dwg_threshold' ), $t_issue_id );
-			$t_flags['license_can_add'] = access_has_dwg_level( config_get( 'license_add_others_dwg_threshold' ), $t_issue_id );
+			if( $t_flags['license_show'] ) {
+				$t_flags['license_can_delete'] = access_has_dwg_level( config_get( 'license_delete_others_dwg_threshold' ), $t_issue_id );
+				$t_flags['license_can_add'] = access_has_dwg_level( config_get( 'license_add_others_dwg_threshold' ), $t_issue_id );
+			}
 		}
 
 		if( !$t_force_readonly && !$t_anonymous_user ) {

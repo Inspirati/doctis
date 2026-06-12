@@ -2243,6 +2243,9 @@ function dwg_get_monitors( $p_bug_id ) {
 }
 
 function dwg_get_licenses( $p_dwg_id ) {
+	if( OFF == config_get( 'licenses_enabled', OFF ) ) {
+		return array();
+	}
 	if( ! access_has_dwg_level( config_get( 'show_license_list_threshold' ), $p_dwg_id ) ) {
 		return array();
 	}

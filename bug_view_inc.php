@@ -359,12 +359,88 @@ function print_project_section($f_issue_id, $t_issue, $t_issue_view, $t_flags) {
 	}
 }
 
+function print_document_section( $t_issue, $t_force_readonly ) {
+
+	// @TODO RobD - we really don't need both a document array and the document_id
+	//$t_document = $t_issue['document'];
+	//$t_document_id = (int)$t_document['id'];
+	$t_document_id = (int)$t_issue['document_id'];
+	if( $t_document_id > 1 ) {
+		if( $t_issue['document']['name'] ) {
+			$t_data = array(
+				'query' => array( 'id' => $t_document_id ),
+				'options' => array( 'force_readonly' => $t_force_readonly )
+			);
+			$t_cmd = new DwgViewPageCommand( $t_data );
+			$t_dwgresult = $t_cmd->execute();
+			$t_document = $t_dwgresult['issue'];
+			// $t_document_view = $t_dwgresult['issue_view'];
+			$t_document_flags = $t_dwgresult['flags'];
+
+			if( $t_document_flags['project_show'] ) {
+				print_document_details( $t_document, $t_document_flags );
+			}
+		}
+	}
+}
+
+#
+# Document, Reference, Author
+#
+
+function print_document_details( $t_document, $t_document_flags ) {
+
+	# Labels
+	echo '<tr class="bug-header">';
+	echo '<th class="bug-project category width-15">', $t_document_flags['project_show'] ? lang_get( 'dwg_title' ) : '', '</th>';
+	echo '<th class="bug-project category width-15">', $t_document_flags['project_show'] ? lang_get( 'dwg_reference' ) : '', '</th>';
+	echo '<th class="bug-project category width-20">', $t_document_flags['project_show'] ? lang_get( 'dwg_number' ) : '', '</th>';
+	echo '<th class="bug-project category width-15">', $t_document_flags['project_show'] ? lang_get( 'dwg_revision' ) : '', '</th>';
+	echo '<th class="bug-project category width-15">', $t_document_flags['project_show'] ? lang_get( 'dwg_release_date' ) : '', '</th>';
+	echo '<th class="bug-project category width-15">', $t_document_flags['project_show'] ? lang_get( 'dwg_classification' ) : '', '</th>';
+	echo '</tr>';
+
+	echo '<tr class="bug-header-data">';
+
+	# Document Title
+//	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['title'] ) ? string_display_line( $t_document['title'] ) : '', '</td>';
+	echo '<td class="bug-project">';
+	if( $t_document_flags['project_show'] ) {
+		if ( isset( $t_document['title'] )) {
+			// echo string_display_line( $t_document['title'] );
+			print_dwg_title_link( $t_document['id'], $t_document['title'], false );
+		}
+	}
+	echo '</td>';
+
+//	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['reference'] ) ? string_display_line( $t_document['reference'] ) : '', '</td>';
+	# Document Reference
+	if( $t_document_flags['project_show'] ) {
+		echo '<td class="bug-project">';
+//		echo string_display_line( $t_issue['reference'] );
+		print_dwg_reference_link( $t_document['id'], $t_document['reference'], false );
+		echo '</td>';
+	}
+	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['number'] ) ? string_display_line( $t_document['number'] ) : '', '</td>';
+	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['revision'] ) ? string_display_line( $t_document['revision'] ) : '', '</td>';
+	// $t_created_at = ApiObjectFactory::datetime( $t_attachment_row['date_added'] );
+//	$t_release_date = ApiObjectFactory::datetime( $t_document['release_date'] );
+	$t_date_format = 'Y-m-d';
+	$t_release_date = date( $t_date_format, strtotime( $t_document['release_date'] ) );
+	//echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['release_date'] ) ? string_display_line( $t_document['release_date'] ) : '', '</td>';
+	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['release_date'] ) ? $t_release_date : '', '</td>';
+	// echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['release_date'] ) ? string_display_line( date( $t_date_format, strtotime( $t_document['release_date'] ) ) ) : '', '</td>';
+	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['classification'] ) ? string_display_line( $t_document['classification'] ) : '', '</td>';
+	echo '</tr>';
+	print_table_spacer( 6 );
+}
+
 #
 # Reporter, Handler, Due Date
 #
 
 function print_issue_section( $f_issue_id, $t_issue, $t_issue_view, $t_flags ) {
-	if( $t_flags['handler_show'] || $t_flags['reporter_show'] || $t_flags['due_date_show'] ) {
+	if( $t_flags['reporter_show'] || $t_flags['handler_show'] || $t_flags['due_date_show'] ) {
 		echo '<tr>';
 
 		$t_spacer = 0;
@@ -1431,77 +1507,4 @@ function bug_view_action_buttons( $p_bug_id, $p_flags ) {
 
 	echo '</div>';
 }
-
-function print_document_section( $t_issue, $t_force_readonly ) {
-
-	// @TODO RobD - we really don't need both a document array and the document_id
-	//$t_document = $t_issue['document'];
-	//$t_document_id = (int)$t_document['id'];
-	$t_document_id = (int)$t_issue['document_id'];
-	if( $t_document_id > 1 ) {
-		if( $t_issue['document']['name'] ) {
-			$t_data = array(
-				'query' => array( 'id' => $t_document_id ),
-				'options' => array( 'force_readonly' => $t_force_readonly )
-			);
-			$t_cmd = new DwgViewPageCommand( $t_data );
-			$t_dwgresult = $t_cmd->execute();
-			$t_document = $t_dwgresult['issue'];
-			// $t_document_view = $t_dwgresult['issue_view'];
-			$t_document_flags = $t_dwgresult['flags'];
-
-			if( $t_document_flags['project_show'] ) {
-				print_document_details( $t_document, $t_document_flags );
-			}
-		}
-	}
-}
-
-function print_document_details( $t_document, $t_document_flags ) {
-
-	# Labels
-	echo '<tr class="bug-header">';
-	echo '<th class="bug-project category width-15">', $t_document_flags['project_show'] ? lang_get( 'dwg_title' ) : '', '</th>';
-	echo '<th class="bug-project category width-15">', $t_document_flags['project_show'] ? lang_get( 'dwg_reference' ) : '', '</th>';
-	echo '<th class="bug-project category width-20">', $t_document_flags['project_show'] ? lang_get( 'dwg_number' ) : '', '</th>';
-	echo '<th class="bug-project category width-15">', $t_document_flags['project_show'] ? lang_get( 'dwg_revision' ) : '', '</th>';
-	echo '<th class="bug-project category width-15">', $t_document_flags['project_show'] ? lang_get( 'dwg_release_date' ) : '', '</th>';
-	echo '<th class="bug-project category width-15">', $t_document_flags['project_show'] ? lang_get( 'dwg_classification' ) : '', '</th>';
-	echo '</tr>';
-
-	echo '<tr class="bug-header-data">';
-
-	# Document Title
-//	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['title'] ) ? string_display_line( $t_document['title'] ) : '', '</td>';
-	echo '<td class="bug-project">';
-	if( $t_document_flags['project_show'] ) {
-		if ( isset( $t_document['title'] )) {
-			// echo string_display_line( $t_document['title'] );
-			print_dwg_title_link( $t_document['id'], $t_document['title'], false );
-		}
-	}
-	echo '</td>';
-
-//	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['reference'] ) ? string_display_line( $t_document['reference'] ) : '', '</td>';
-	# Document Reference
-	if( $t_document_flags['project_show'] ) {
-		echo '<td class="bug-project">';
-//		echo string_display_line( $t_issue['reference'] );
-		print_dwg_reference_link( $t_document['id'], $t_document['reference'], false );
-		echo '</td>';
-	}
-	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['number'] ) ? string_display_line( $t_document['number'] ) : '', '</td>';
-	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['revision'] ) ? string_display_line( $t_document['revision'] ) : '', '</td>';
-	// $t_created_at = ApiObjectFactory::datetime( $t_attachment_row['date_added'] );
-//	$t_release_date = ApiObjectFactory::datetime( $t_document['release_date'] );
-	$t_date_format = 'Y-m-d';
-	$t_release_date = date( $t_date_format, strtotime( $t_document['release_date'] ) );
-	//echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['release_date'] ) ? string_display_line( $t_document['release_date'] ) : '', '</td>';
-	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['release_date'] ) ? $t_release_date : '', '</td>';
-	// echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['release_date'] ) ? string_display_line( date( $t_date_format, strtotime( $t_document['release_date'] ) ) ) : '', '</td>';
-	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['classification'] ) ? string_display_line( $t_document['classification'] ) : '', '</td>';
-	echo '</tr>';
-	print_table_spacer( 6 );
-}
-
 

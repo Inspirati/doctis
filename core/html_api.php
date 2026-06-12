@@ -786,7 +786,7 @@ function print_manage_menu( $p_page = '' ) {
 	if( access_has_project_level( config_get( 'manage_project_threshold' ) ) ) {
 		$t_pages['manage_proj_page.php'] = array( 'url'   => 'manage_proj_page.php', 'label' => 'manage_projects_link' );
 	}
-	if( access_has_project_level( config_get( 'manage_license_threshold' ) ) ) {
+	if( ON == config_get( 'licenses_enabled', OFF ) && access_has_project_level( config_get( 'manage_license_threshold' ) ) ) {
 		$t_pages['manage_license_page.php'] = array( 'url'   => 'manage_license_page.php', 'label' => 'manage_licenses_link' );
 	}
 	if( access_has_project_level( config_get( 'manage_import_threshold' ) ) ) {

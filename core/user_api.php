@@ -503,6 +503,9 @@ function user_is_monitoring_dwg( $p_user_id, $p_bug_id ) {
 }
 
 function document_is_licensed( $p_dwg_id ) {
+	if( OFF == config_get( 'licenses_enabled', OFF ) ) {
+		return false;
+	}
 	db_param_push();
 	$t_query = 'SELECT COUNT(*) FROM {license_dwg_list}
 				  WHERE dwg_id=' . db_param();

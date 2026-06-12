@@ -1560,6 +1560,9 @@ function email_dwg_relationship_get_summary_text( $p_bug_id ) {
 // }
 
 function email_dwg_license_apply_for_access($p_dwg_id, $p_license_ids) {
+	if( OFF == config_get( 'licenses_enabled', OFF ) ) {
+		return;
+	}
 
 // ob_start();
 // print_r($t_licenses);

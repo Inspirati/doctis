@@ -62,7 +62,12 @@ prompt_delete_dir() {
     if [ -d "$DIR" ]; then
         sleep 0.01  # tiny delay to allow earlier stdout echos to flush
         echo -e "${WARN}Directory $DIR already exists.${OFF}" >&2
-        read -rp "Type 'yes' to delete it: " answer
+        if [ "${HEADLESS:-false}" = "true" ] || [ -f /.dockerenv ]; then
+            echo -e "${INFO}Headless mode: auto-confirming deletion of $DIR${OFF}"
+            answer="yes"
+        else
+            read -rp "Type 'yes' to delete it: " answer
+        fi
         if [ "$answer" = "yes" ]; then
             echo -e "${INFO}Attempting to delete $DIR${OFF}"
             rm -rf "$DIR" 2>/dev/null || true
@@ -100,6 +105,12 @@ set_webroot() {
 }
 
 set_headless() {
+    # Allow explicit override via environment variable (export HEADLESS=1 before running)
+    if [ "${HEADLESS:-}" = "1" ] || [ "${HEADLESS:-}" = "true" ]; then
+        echo -e "${INFO}Headless mode forced via HEADLESS environment variable.${OFF}"
+        HEADLESS=true
+        return
+    fi
     # Check if a display server is available (X11 or Wayland)
     if [ -z "$DISPLAY" ] && [ -z "$WAYLAND_DISPLAY" ]; then
         echo -e "${INFO}Headless environment detected (no GUI display).${OFF}"

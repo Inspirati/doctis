@@ -370,7 +370,7 @@ class DwgFilterQuery extends DbQuery {
 	 * @return string	The constructed query string
 	 */
 	protected function string_query_count() {
-		$t_select_string = 'SELECT COUNT( DISTINCT dwg.id )';
+		$t_select_string = 'SELECT COUNT( DISTINCT {dwg}.id )';
 		return $t_select_string . $this->helper_string_query_inner();
 	}
 
@@ -380,7 +380,7 @@ class DwgFilterQuery extends DbQuery {
 	 * @return string	The constructed query string
 	 */
 	protected function string_query_ids() {
-		$t_select_string = 'SELECT dwg.id';
+		$t_select_string = 'SELECT {dwg}.id';
 		return $t_select_string . $this->helper_string_query_inner();
 	}
 
@@ -390,7 +390,7 @@ class DwgFilterQuery extends DbQuery {
 	 * @return string	The constructed query string
 	 */
 	protected function string_query_dinstinct_ids() {
-		$t_select_string = 'SELECT DISTINCT dwg.id';
+		$t_select_string = 'SELECT DISTINCT {dwg}.id';
 		return $t_select_string . $this->helper_string_query_inner();
 	}
 
@@ -400,9 +400,9 @@ class DwgFilterQuery extends DbQuery {
 	 */
 	protected function build_main() {
 		$this->rt_stop_build = false;
-		$this->add_from( '{dwg} dwg INNER JOIN {documents} doc ON doc.id = dwg.document_id' );
-		// $this->add_select( 'dwg.*, doc.title as title' );
-		$this->add_select( 'dwg.*, doc.*' );
+		$this->add_from( '{dwg} dwg INNER JOIN {documents} doc ON doc.id = {dwg}.document_id' );
+		// $this->add_select( '{dwg}.*, doc.title as title' );
+		$this->add_select( '{dwg}.*, doc.*' );
 
 		if( $this->filter[FILTER_PROPERTY_MATCH_TYPE] == FILTER_MATCH_ANY ) {
 			$this->filter_operator = ' OR ';
@@ -518,7 +518,7 @@ class DwgFilterQuery extends DbQuery {
 	 * @return void
 	 */
 	protected function build_projects() {
-		$this->add_join( 'JOIN {project} ON {project}.id = dwg.project_id' );
+		$this->add_join( 'JOIN {project} ON {project}.id = {dwg}.project_id' );
 		$this->add_fixed_where( '{project}.enabled = ' . $this->param( true ) );
 
 		$t_user_id = $this->user_id;
@@ -621,57 +621,57 @@ class DwgFilterQuery extends DbQuery {
 			$t_query_projects_or = array();
 			# for these projects, search all issues
 			if( !empty( $t_private_and_public_project_ids ) ) {
-				$t_query_projects_or[] = $this->sql_in( 'dwg.project_id', $t_private_and_public_project_ids );
+				$t_query_projects_or[] = $this->sql_in( '{dwg}.project_id', $t_private_and_public_project_ids );
 			}
 
 			# for these projects, search public issues
 			if( !empty( $t_public_only_project_ids ) ) {
-				$t_query_projects_or[] = $this->sql_in( 'dwg.project_id', $t_public_only_project_ids )
-						. ' AND dwg.view_state = ' . $this->param( VS_PUBLIC );
+				$t_query_projects_or[] = $this->sql_in( '{dwg}.project_id', $t_public_only_project_ids )
+						. ' AND {dwg}.view_state = ' . $this->param( VS_PUBLIC );
 			}
 
 			# for these projects, search private issues where the user is reporter
 			if( !empty( $t_private_is_reporter_project_ids ) ) {
-				$t_query_projects_or[] = $this->sql_in( 'dwg.project_id', $t_private_is_reporter_project_ids )
-						. ' AND dwg.view_state <> ' . $this->param( VS_PUBLIC )
-						. ' AND dwg.creator_id = ' . $this->param( $t_user_id );
+				$t_query_projects_or[] = $this->sql_in( '{dwg}.project_id', $t_private_is_reporter_project_ids )
+						. ' AND {dwg}.view_state <> ' . $this->param( VS_PUBLIC )
+						. ' AND {dwg}.creator_id = ' . $this->param( $t_user_id );
 			}
 
 			# for these projects, search any issue (public or private) valid for the old 'limit_reporters' configuration
 			if( !empty( $t_old_limit_public_and_private_project_ids ) ) {
-				$t_query_projects_or[] = $this->sql_in( 'dwg.project_id', $t_old_limit_public_and_private_project_ids )
-						. ' AND dwg.creator_id = ' . $this->param( $t_user_id );
+				$t_query_projects_or[] = $this->sql_in( '{dwg}.project_id', $t_old_limit_public_and_private_project_ids )
+						. ' AND {dwg}.creator_id = ' . $this->param( $t_user_id );
 			}
 
 			# for these projects, search public issues valid for the old 'limit_reporters' configuration
 			if( !empty( $t_old_limit_public_only_project_ids ) ) {
-				$t_query_projects_or[] = $this->sql_in( 'dwg.project_id', $t_old_limit_public_only_project_ids )
-						. ' AND dwg.view_state = ' . $this->param( VS_PUBLIC )
-						. ' AND dwg.creator_id = ' . $this->param( $t_user_id );
+				$t_query_projects_or[] = $this->sql_in( '{dwg}.project_id', $t_old_limit_public_only_project_ids )
+						. ' AND {dwg}.view_state = ' . $this->param( VS_PUBLIC )
+						. ' AND {dwg}.creator_id = ' . $this->param( $t_user_id );
 			}
 
 			# for these projects, search any issue (public or private) valid for limited view
 			if( !empty( $t_limited_public_and_private_project_ids ) ) {
-				$t_query_projects_or[] = $this->sql_in( 'dwg.project_id', $t_limited_public_and_private_project_ids )
+				$t_query_projects_or[] = $this->sql_in( '{dwg}.project_id', $t_limited_public_and_private_project_ids )
 						. ' AND ('
-						. ' dwg.creator_id = ' . $this->param( $t_user_id )
-						. ' OR dwg.handler_id = ' . $this->param( $t_user_id )
+						. ' {dwg}.creator_id = ' . $this->param( $t_user_id )
+						. ' OR {dwg}.handler_id = ' . $this->param( $t_user_id )
 						. ' OR EXISTS ( SELECT 1 FROM {dwg_monitor} bm'
 						. ' WHERE bm.user_id = ' . $this->param( $t_user_id )
-						. ' AND bm.dwg_id = dwg.id )'
+						. ' AND bm.dwg_id = {dwg}.id )'
 						. ' )';
 			}
 
 			# for these projects, search public issues valid for limited view
 			if( !empty( $t_limited_public_only_project_ids ) ) {
-				$t_query_projects_or[] = $this->sql_in( 'dwg.project_id', $t_limited_public_only_project_ids )
-						. ' AND dwg.view_state = ' . $this->param( VS_PUBLIC )
+				$t_query_projects_or[] = $this->sql_in( '{dwg}.project_id', $t_limited_public_only_project_ids )
+						. ' AND {dwg}.view_state = ' . $this->param( VS_PUBLIC )
 						. ' AND ('
-						. ' dwg.creator_id = ' . $this->param( $t_user_id )
-						. ' OR dwg.handler_id = ' . $this->param( $t_user_id )
+						. ' {dwg}.creator_id = ' . $this->param( $t_user_id )
+						. ' OR {dwg}.handler_id = ' . $this->param( $t_user_id )
 						. ' OR EXISTS ( SELECT 1 FROM {dwg_monitor} bm'
 						. ' WHERE bm.user_id = ' . $this->param( $t_user_id )
-						. ' AND bm.dwg_id = dwg.id )'
+						. ' AND bm.dwg_id = {dwg}.id )'
 						. ' )';
 			}
 
@@ -717,7 +717,7 @@ class DwgFilterQuery extends DbQuery {
 
 		if( count( $t_desired_statuses ) > 0 ) {
 			$t_clauses = $this->helper_array_map_int( $t_desired_statuses );
-			$this->add_where( $this->sql_in( 'dwg.status', $t_clauses ) );
+			$this->add_where( $this->sql_in( '{dwg}.status', $t_clauses ) );
 		}
 	}
 
@@ -743,7 +743,7 @@ class DwgFilterQuery extends DbQuery {
 					. '-' . $this->filter[FILTER_PROPERTY_DATE_SUBMITTED_END_DAY]
 					. ' 23:59:59';
 
-			$t_query_created_at = 'dwg.date_submitted BETWEEN '
+			$t_query_created_at = '{dwg}.date_submitted BETWEEN '
 					. $this->param( strtotime( $t_start_string ) ) . ' AND '
 					. $this->param( strtotime( $t_end_string ) ) ;
 			$this->add_fixed_where( $t_query_created_at );
@@ -772,7 +772,7 @@ class DwgFilterQuery extends DbQuery {
 					. '-' . $this->filter[FILTER_PROPERTY_LAST_UPDATED_END_DAY]
 					. ' 23:59:59';
 
-			$t_query_updated_at = 'dwg.last_updated BETWEEN '
+			$t_query_updated_at = '{dwg}.last_updated BETWEEN '
 					. $this->param( strtotime( $t_start_string ) ) . ' AND '
 					. $this->param( strtotime( $t_end_string ) ) ;
 			$this->add_fixed_where( $t_query_updated_at );
@@ -788,7 +788,7 @@ class DwgFilterQuery extends DbQuery {
 			return;
 		}
 		$t_view_state = (int)$this->filter[FILTER_PROPERTY_VIEW_STATE];
-		$t_view_state_query = 'dwg.view_state = ' . $this->param( $t_view_state ) ;
+		$t_view_state_query = '{dwg}.view_state = ' . $this->param( $t_view_state ) ;
 		log_event( LOG_FILTERING, 'view_state query = ' . $t_view_state_query );
 		$this->add_where( $t_view_state_query );
 	}
@@ -829,7 +829,7 @@ class DwgFilterQuery extends DbQuery {
 			return;
 		}
 		$t_user_ids = $this->helper_process_users_property( $this->filter[FILTER_PROPERTY_CREATOR_ID] );
-		$t_users_query = $this->sql_in( 'dwg.creator_id', $t_user_ids );
+		$t_users_query = $this->sql_in( '{dwg}.creator_id', $t_user_ids );
 		log_event( LOG_FILTERING, 'creator query = ' . $t_users_query );
 		$this->add_where( $t_users_query );
 	}
@@ -849,10 +849,10 @@ class DwgFilterQuery extends DbQuery {
 		if( ALL_PROJECTS == $t_projects_can_view ) {
 			$t_view_condition = null;
 		} else {
-			$t_view_condition = 'dwg.handler_id = ' . $this->param( $this->user_id );
+			$t_view_condition = '{dwg}.handler_id = ' . $this->param( $this->user_id );
 			if( !empty( $t_projects_can_view ) ) {
 				$t_view_condition = '(' . $t_view_condition . ' OR '
-						. $this->sql_in( 'dwg.project_id', $t_projects_can_view ) . ')';
+						. $this->sql_in( '{dwg}.project_id', $t_projects_can_view ) . ')';
 			}
 		}
 		if( $t_view_condition ) {
@@ -860,7 +860,7 @@ class DwgFilterQuery extends DbQuery {
 		}
 
 		$t_user_ids = $this->helper_process_users_property( $this->filter[FILTER_PROPERTY_HANDLER_ID] );
-		$t_query = $this->sql_in( 'dwg.handler_id', $t_user_ids ) . $t_view_condition;
+		$t_query = $this->sql_in( '{dwg}.handler_id', $t_user_ids ) . $t_view_condition;
 		log_event( LOG_FILTERING, 'handler query = ' . $t_query );
 		$this->add_where( $t_query );
 	}
@@ -883,7 +883,7 @@ class DwgFilterQuery extends DbQuery {
 			}
 		}
 
-		$t_join = 'LEFT JOIN {category} ON dwg.category_id = {category}.id';
+		$t_join = 'LEFT JOIN {category} ON {dwg}.category_id = {category}.id';
 		$t_query_or = array();
 		if( !empty( $t_names ) ) {
 			$t_query_or[] = $this->sql_in( '{category}.name', $t_names );
@@ -905,7 +905,7 @@ class DwgFilterQuery extends DbQuery {
 	// 	if( filter_dwg_field_is_any( $this->filter[FILTER_PROPERTY_SEVERITY] ) ) {
 	// 		return;
 	// 	}
-	// 	$t_query = $this->sql_in( 'dwg.severity', $this->filter[FILTER_PROPERTY_SEVERITY] );
+	// 	$t_query = $this->sql_in( '{dwg}.severity', $this->filter[FILTER_PROPERTY_SEVERITY] );
 	// 	$this->add_where( $t_query );
 	// }
 
@@ -917,7 +917,7 @@ class DwgFilterQuery extends DbQuery {
 		if( filter_dwg_field_is_any( $this->filter[FILTER_PROPERTY_RESOLUTION] ) ) {
 			return;
 		}
-		$t_query = $this->sql_in( 'dwg.resolution', $this->filter[FILTER_PROPERTY_RESOLUTION] );
+		$t_query = $this->sql_in( '{dwg}.resolution', $this->filter[FILTER_PROPERTY_RESOLUTION] );
 		$this->add_where( $t_query );
 	}
 
@@ -929,7 +929,7 @@ class DwgFilterQuery extends DbQuery {
 		if( filter_dwg_field_is_any( $this->filter[FILTER_PROPERTY_PRIORITY] ) ) {
 			return;
 		}
-		$t_query = $this->sql_in( 'dwg.priority', $this->filter[FILTER_PROPERTY_PRIORITY] );
+		$t_query = $this->sql_in( '{dwg}.priority', $this->filter[FILTER_PROPERTY_PRIORITY] );
 		$this->add_where( $t_query );
 	}
 
@@ -941,7 +941,7 @@ class DwgFilterQuery extends DbQuery {
 	// 	if( filter_dwg_field_is_any( $this->filter[FILTER_PROPERTY_PROJECTION] ) ) {
 	// 		return;
 	// 	}
-	// 	$t_query = $this->sql_in( 'dwg.projection', $this->filter[FILTER_PROPERTY_PROJECTION] );
+	// 	$t_query = $this->sql_in( '{dwg}.projection', $this->filter[FILTER_PROPERTY_PROJECTION] );
 	// 	$this->add_where( $t_query );
 	// }
 
@@ -975,7 +975,7 @@ class DwgFilterQuery extends DbQuery {
 	// 		return;
 	// 	}
 	// 	$t_array = $this->helper_process_string_property( $this->filter[FILTER_PROPERTY_BUILD] );
-	// 	$t_query = $this->sql_in( 'dwg.build', $t_array );
+	// 	$t_query = $this->sql_in( '{dwg}.build', $t_array );
 	// 	$this->add_where( $t_query );
 	// }
 
@@ -988,7 +988,7 @@ class DwgFilterQuery extends DbQuery {
 			return;
 		}
 		$t_array = $this->helper_process_string_property( $this->filter[FILTER_PROPERTY_VERSION] );
-		$t_query = $this->sql_in( 'dwg.version', $t_array );
+		$t_query = $this->sql_in( '{dwg}.version', $t_array );
 		$this->add_where( $t_query );
 	}
 
@@ -1021,7 +1021,7 @@ class DwgFilterQuery extends DbQuery {
 			return;
 		}
 		$t_array = $this->helper_process_id_property( $this->filter[FILTER_PROPERTY_PROFILE_ID] );
-		$t_query = $this->sql_in( 'dwg.profile_id', $t_array );
+		$t_query = $this->sql_in( '{dwg}.profile_id', $t_array );
 		$this->add_where( $t_query );
 	}
 
@@ -1034,7 +1034,7 @@ class DwgFilterQuery extends DbQuery {
 	// 		return;
 	// 	}
 	// 	$t_array = $this->helper_process_string_property( $this->filter[FILTER_PROPERTY_PLATFORM] );
-	// 	$t_query = $this->sql_in( 'dwg.platform', $t_array );
+	// 	$t_query = $this->sql_in( '{dwg}.platform', $t_array );
 	// 	$this->add_where( $t_query );
 	// }
 
@@ -1047,7 +1047,7 @@ class DwgFilterQuery extends DbQuery {
 	// 		return;
 	// 	}
 	// 	$t_array = $this->helper_process_string_property( $this->filter[FILTER_PROPERTY_OS] );
-	// 	$t_query = $this->sql_in( 'dwg.os', $t_array );
+	// 	$t_query = $this->sql_in( '{dwg}.os', $t_array );
 	// 	$this->add_where( $t_query );
 	// }
 
@@ -1060,7 +1060,7 @@ class DwgFilterQuery extends DbQuery {
 	// 		return;
 	// 	}
 	// 	$t_array = $this->helper_process_string_property( $this->filter[FILTER_PROPERTY_OS_BUILD] );
-	// 	$t_query = $this->sql_in( 'dwg.os_build', $t_array );
+	// 	$t_query = $this->sql_in( '{dwg}.os_build', $t_array );
 	// 	$this->add_where( $t_query );
 	// }
 
@@ -1073,7 +1073,7 @@ class DwgFilterQuery extends DbQuery {
 			return;
 		}
 		$t_array = $this->helper_process_string_property( $this->filter[FILTER_PROPERTY_FIXED_IN_VERSION] );
-		$t_query = $this->sql_in( 'dwg.fixed_in_version', $t_array );
+		$t_query = $this->sql_in( '{dwg}.fixed_in_version', $t_array );
 		$this->add_where( $t_query );
 	}
 
@@ -1086,7 +1086,7 @@ class DwgFilterQuery extends DbQuery {
 			return;
 		}
 		$t_array = $this->helper_process_string_property( $this->filter[FILTER_PROPERTY_TARGET_VERSION] );
-		$t_query = $this->sql_in( 'dwg.target_version', $t_array );
+		$t_query = $this->sql_in( '{dwg}.target_version', $t_array );
 		$this->add_where( $t_query );
 	}
 
@@ -1111,14 +1111,14 @@ class DwgFilterQuery extends DbQuery {
 			$t_view_condition = '{dwg_monitor}.user_id = ' . $this->param( $this->user_id );
 			if( !empty( $t_projects_can_view ) ) {
 				$t_view_condition = '(' . $t_view_condition . ' OR '
-						. $this->sql_in( 'dwg.project_id', $t_projects_can_view ) . ')';
+						. $this->sql_in( '{dwg}.project_id', $t_projects_can_view ) . ')';
 			}
 		}
 		if( $t_view_condition ) {
 			$t_view_condition = ' AND ' . $t_view_condition;
 		}
 
-		$this->add_join( 'LEFT JOIN {dwg_monitor} ON dwg.id = {dwg_monitor}.dwg_id' . $t_view_condition );
+		$this->add_join( 'LEFT JOIN {dwg_monitor} ON {dwg}.id = {dwg_monitor}.dwg_id' . $t_view_condition );
 		if( $t_use_none ) {
 			$t_expr = 'COALESCE( {dwg_monitor}.user_id, 0 )';
 		} else {
@@ -1155,14 +1155,14 @@ class DwgFilterQuery extends DbQuery {
 			$t_view_condition = $t_table_alias . '.view_state = ' . $this->param( VS_PUBLIC )
 					. ' OR ' . $t_table_alias . '.creator_id = ' . $this->param( $this->user_id );
 			if( !empty( $t_projects_can_view_private ) ) {
-				$t_view_condition .= ' OR ' . $this->sql_in( 'dwg.project_id', $t_projects_can_view_private );
+				$t_view_condition .= ' OR ' . $this->sql_in( '{dwg}.project_id', $t_projects_can_view_private );
 			}
 		}
 		if( $t_view_condition ) {
 			$t_view_condition = ' AND (' . $t_view_condition . ')';
 		}
 		$t_join = 'LEFT JOIN {dwgnote} ' . $t_table_alias
-				. ' ON dwg.id = ' . $t_table_alias . '.dwg_id'
+				. ' ON {dwg}.id = ' . $t_table_alias . '.dwg_id'
 				. $t_view_condition;
 
 		$this->add_join( $t_join );
@@ -1221,10 +1221,10 @@ class DwgFilterQuery extends DbQuery {
 				# rel NONE, bug ID, those bugs that are not related in any way to bug ID
 				# also, exclude target id from results
 				$t_where = 'NOT EXISTS ( SELECT 1 FROM {dwg_relationship} WHERE source_dwg_id = ' . $this->param( $c_rel_bug )
-						. ' AND destination_dwg_id = dwg.id'
+						. ' AND destination_dwg_id = {dwg}.id'
 						. ' OR destination_dwg_id = ' . $this->param( $c_rel_bug )
-						. ' AND source_dwg_id = dwg.id )'
-						. ' AND NOT dwg.id = ' . $this->param( $c_rel_bug );
+						. ' AND source_dwg_id = {dwg}.id )'
+						. ' AND NOT {dwg}.id = ' . $this->param( $c_rel_bug );
 				$t_use_join = false;
 			}
 		} elseif( DWG_REL_ANY == $c_rel_type ) {
@@ -1263,8 +1263,8 @@ class DwgFilterQuery extends DbQuery {
 		}
 
 		if( $t_use_join ) {
-			$this->add_join( 'LEFT JOIN {dwg_relationship} ' . $t_table_dst . ' ON ' . $t_table_dst . '.destination_dwg_id = dwg.id' );
-			$this->add_join( 'LEFT JOIN {dwg_relationship} ' . $t_table_src . ' ON ' . $t_table_src . '.source_dwg_id = dwg.id' );
+			$this->add_join( 'LEFT JOIN {dwg_relationship} ' . $t_table_dst . ' ON ' . $t_table_dst . '.destination_dwg_id = {dwg}.id' );
+			$this->add_join( 'LEFT JOIN {dwg_relationship} ' . $t_table_src . ' ON ' . $t_table_src . '.source_dwg_id = {dwg}.id' );
 		}
 		$this->add_where( $t_where );
 	}
@@ -1334,7 +1334,7 @@ class DwgFilterQuery extends DbQuery {
 				log_event( LOG_FILTERING, 'tags query, no accessible projects ' );
 				return;
 			} else {
-				$t_tag_projects_clause = ' AND ' . $this->sql_in( 'dwg.project_id', $t_projects_can_view_tags );
+				$t_tag_projects_clause = ' AND ' . $this->sql_in( '{dwg}.project_id', $t_projects_can_view_tags );
 				log_event( LOG_FILTERING, 'tags query, accessible projects =  @P' . implode( ', @P', $t_projects_can_view_tags ) );
 			}
 		}
@@ -1378,7 +1378,7 @@ class DwgFilterQuery extends DbQuery {
 		if( count( $t_tags_always ) ) {
 			foreach( $t_tags_always as $t_tag_row ) {
 				$t_tag_alias = 'bug_tag_alias_alw_' . $t_tag_row['id'];
-				$t_join_inc = 'LEFT JOIN {dwg_tag} ' . $t_tag_alias . ' ON ' . $t_tag_alias . '.dwg_id = dwg.id'
+				$t_join_inc = 'LEFT JOIN {dwg_tag} ' . $t_tag_alias . ' ON ' . $t_tag_alias . '.dwg_id = {dwg}.id'
 					. ' AND ' . $t_tag_alias . '.tag_id = ' . $this->param( (int)$t_tag_row['id'] )
 					. $t_tag_projects_clause;
 				$this->add_join( $t_join_inc );
@@ -1389,7 +1389,7 @@ class DwgFilterQuery extends DbQuery {
 		if( count( $t_tags_any ) ) {
 			$t_tag_alias = 'bug_tag_alias_any';
 			$t_tag_ids = $this->helper_array_map_int( array_column( $t_tags_any, 'id' ) );
-			$t_join_any = 'LEFT JOIN {dwg_tag} ' . $t_tag_alias . ' ON ' . $t_tag_alias . '.dwg_id = dwg.id'
+			$t_join_any = 'LEFT JOIN {dwg_tag} ' . $t_tag_alias . ' ON ' . $t_tag_alias . '.dwg_id = {dwg}.id'
 				. ' AND ' . $this->sql_in( $t_tag_alias . '.tag_id', $t_tag_ids )
 				. $t_tag_projects_clause;
 			$this->add_join( $t_join_any );
@@ -1399,7 +1399,7 @@ class DwgFilterQuery extends DbQuery {
 		if( count( $t_tags_never ) ) {
 			$t_tag_alias = 'bug_tag_alias_nev';
 			$t_tag_ids = $this->helper_array_map_int( array_column( $t_tags_never, 'id' ) );
-			$t_join_exc = 'LEFT JOIN {dwg_tag} ' . $t_tag_alias . ' ON ' . $t_tag_alias . '.dwg_id = dwg.id'
+			$t_join_exc = 'LEFT JOIN {dwg_tag} ' . $t_tag_alias . ' ON ' . $t_tag_alias . '.dwg_id = {dwg}.id'
 				. ' AND ' . $this->sql_in(  $t_tag_alias . '.tag_id', $t_tag_ids )
 				. $t_tag_projects_clause;
 			$this->add_join( $t_join_exc );
@@ -1425,7 +1425,7 @@ class DwgFilterQuery extends DbQuery {
 			return $this->rt_table_alias_cf[$t_id];
 		}
 		$t_table_name = 'cf_alias_' . $t_id;
-		$t_cf_join_clause = 'LEFT OUTER JOIN {custom_field_string} ' . $t_table_name . ' ON dwg.id = ' . $t_table_name . '.dwg_id AND ' . $t_table_name . '.field_id = ' . $this->param( $t_id );
+		$t_cf_join_clause = 'LEFT OUTER JOIN {custom_field_string} ' . $t_table_name . ' ON {dwg}.id = ' . $t_table_name . '.dwg_id AND ' . $t_table_name . '.field_id = ' . $this->param( $t_id );
 
 		# get which projects are valid for this custom field
 		$t_searchable_projects = array_intersect( $this->rt_included_projects, custom_field_get_project_ids( $t_id ) );
@@ -1439,7 +1439,7 @@ class DwgFilterQuery extends DbQuery {
 			# If not empty, it means there are some projects that can't view the field values,
 			# so a project filter must be used to not include values from those projects
 			if( !empty( $t_diff ) ) {
-				$t_cf_join_clause .= ' AND ' . $this->sql_in( 'dwg.project_id', $t_projects_can_view_field );
+				$t_cf_join_clause .= ' AND ' . $this->sql_in( '{dwg}.project_id', $t_projects_can_view_field );
 			}
 			$this->rt_table_alias_cf[$t_id] = $t_table_name;
 			$this->add_join( $t_cf_join_clause );
@@ -1575,7 +1575,7 @@ class DwgFilterQuery extends DbQuery {
 			}
 
 			$c_search = '%' . $t_search_term . '%';
-			$t_textsearch_where_clause .= '( ' . $this->sql_like( 'dwg.summary', $c_search )
+			$t_textsearch_where_clause .= '( ' . $this->sql_like( '{dwg}.summary', $c_search )
 					. ' OR ' . $this->sql_like( 'doc.title', $c_search )
 					. ' OR ' . $this->sql_like( '{dwg_text}.description', $c_search )
 					. ' OR ' . $this->sql_like( '{dwg_text}.steps_to_reproduce', $c_search )
@@ -1586,7 +1586,7 @@ class DwgFilterQuery extends DbQuery {
 				# Note: no need to test negative values, '-' sign has been removed
 				if( $t_search_term <= DB_MAX_INT ) {
 					$c_search_int = (int)$t_search_term;
-					$t_textsearch_where_clause .= ' OR dwg.id = ' . $this->param( $c_search_int );
+					$t_textsearch_where_clause .= ' OR {dwg}.id = ' . $this->param( $c_search_int );
 					$t_textsearch_where_clause .= ' OR ' . $t_dwgnote_table . '.id = ' . $this->param( $c_search_int );
 				}
 			}
@@ -1599,7 +1599,7 @@ class DwgFilterQuery extends DbQuery {
 		# add text query elements to arrays
 		if( !$t_first ) {
 			# join with dwgnote table has already been created or reused
-			$this->add_join( 'JOIN {dwg_text} ON dwg.dwg_text_id = {dwg_text}.id' );
+			$this->add_join( 'JOIN {dwg_text} ON {dwg}.dwg_text_id = {dwg_text}.id' );
 			# Outer join required otherwise we don't retrieve issues without notes
 			$this->add_join( 'LEFT JOIN {dwgnote_text} ON ' . $t_dwgnote_table . '.dwgnote_text_id = {dwgnote_text}.id' );
 			$this->add_where( $t_textsearch_where_clause );
@@ -1671,7 +1671,7 @@ class DwgFilterQuery extends DbQuery {
 
 			case 'category_id':
 				# This join will be reduced as unique, if category search is active
-				$this->add_join( 'LEFT JOIN {category} ON dwg.category_id = {category}.id' );
+				$this->add_join( 'LEFT JOIN {category} ON {dwg}.category_id = {category}.id' );
 				$this->add_select( '{category}.name' );
 				return '{category}.name';
 				break;
@@ -1686,7 +1686,7 @@ class DwgFilterQuery extends DbQuery {
 			case 'creator_id':
 				$t_table_alias = $p_prop . '_sort_table';
 				$t_join = 'LEFT JOIN {user} ' . $t_table_alias
-						. ' ON dwg.' . $p_prop . ' = ' . $t_table_alias . '.id';
+						. ' ON {dwg}.' . $p_prop . ' = ' . $t_table_alias . '.id';
 				$this->add_join( $t_join );
 				$t_col_alias = $p_prop . '_sort_alias';
 
@@ -1699,7 +1699,7 @@ class DwgFilterQuery extends DbQuery {
 					$t_select .= 'NULLIF(' . $t_table_alias . '.realname, \'\'), ';
 				}
 				$t_select .= $t_table_alias . '.username, ';
-				$t_select .= 'CONCAT(\'' . lang_get( 'prefix_for_deleted_users' ) . '\', dwg.' . $p_prop . ')';
+				$t_select .= 'CONCAT(\'' . lang_get( 'prefix_for_deleted_users' ) . '\', {dwg}.' . $p_prop . ')';
 				$t_select .= ') AS ' . $t_col_alias;
 
 				$this->add_select( $t_select );
@@ -1711,7 +1711,7 @@ class DwgFilterQuery extends DbQuery {
 				break;
 
 			default:
-				return 'dwg.' . $p_prop;
+				return '{dwg}.' . $p_prop;
 		}
 	}
 
@@ -1729,7 +1729,7 @@ class DwgFilterQuery extends DbQuery {
 		$t_dir_fields = $t_sort_properties[FILTER_PROPERTY_SORT_DIRECTION];
 
 		if( gpc_string_to_bool( $this->filter[FILTER_PROPERTY_STICKY] ) && ( $this->use_sticky ) ) {
-			$this->add_order( 'dwg.sticky DESC' );
+			$this->add_order( '{dwg}.sticky DESC' );
 		}
 
 		$t_count = count( $t_sort_fields );
@@ -1833,10 +1833,10 @@ class DwgFilterQuery extends DbQuery {
 
 		# add basic sorting if necessary
 		if( !in_array( 'last_updated', $t_sort_fields ) ) {
-			$this->add_order( 'dwg.last_updated DESC' );
+			$this->add_order( '{dwg}.last_updated DESC' );
 		}
 		if( !in_array( 'date_submitted', $t_sort_fields ) ) {
-			$this->add_order( 'dwg.date_submitted DESC' );
+			$this->add_order( '{dwg}.date_submitted DESC' );
 		}
 	}
 }

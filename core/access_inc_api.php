@@ -380,6 +380,9 @@ function access_has_license_level( $p_access_level, $p_license_id = null, $p_use
 	if( NOBODY == $p_access_level ) {
 		return false;
 	}
+	if( OFF == config_get( 'licenses_enabled', OFF ) ) {
+		return true;
+	}
 
 	if( null === $p_user_id ) {
 		$p_user_id = auth_get_current_user_id();

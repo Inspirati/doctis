@@ -70,6 +70,12 @@ set_webroot() {
 }
 
 set_headless() {
+    # Allow explicit override via environment variable (export HEADLESS=1 before running)
+    if [ "${HEADLESS:-}" = "1" ] || [ "${HEADLESS:-}" = "true" ]; then
+        echo -e "${INFO}Headless mode forced via HEADLESS environment variable.${OFF}"
+        HEADLESS=true
+        return
+    fi
     # Check if a display server is available (X11 or Wayland)
     if [ -z "$DISPLAY" ] && [ -z "$WAYLAND_DISPLAY" ]; then
         echo -e "${INFO}Headless environment detected (no GUI display).${OFF}"
@@ -434,6 +440,12 @@ chkinst_virt() {
             ;;
     esac
 }
+
+# ------------------------------
+# Run dispatcher
+# ------------------------------
+
+#chkinst_virt
 
 install_system() {
     # Run the system installation functions in a specific sequence
