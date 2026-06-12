@@ -297,6 +297,25 @@ $t_command = new DwgAddCommand( $t_data );
 $t_result = $t_command->execute();
 $t_issue_id = (int)$t_result['issue_id'];
 
+# Handle optional primary document file upload
+$t_primary_file = gpc_get_file( 'primary_document_file', null );
+if( $t_primary_file !== null && $t_primary_file['error'] === UPLOAD_ERR_OK && $t_primary_file['size'] > 0 ) {
+	$t_max_file_size = file_dwg_get_max_file_size();
+	if( $t_primary_file['size'] > $t_max_file_size ) {
+		trigger_error( ERROR_FILE_TOO_BIG, ERROR );
+	}
+	$t_primary_description = gpc_get_string( 'primary_document_description', '' );
+	file_dwg_primary_add(
+		$t_issue_id,
+		auth_get_current_user_id(),
+		$t_primary_file['tmp_name'],
+		$t_primary_file['name'],
+		$t_primary_file['size'],
+		$t_primary_file['type'],
+		$t_primary_description
+	);
+}
+
 form_security_purge( 'dwg_report' );
 
 if( $f_dwg_entry_stay ) {

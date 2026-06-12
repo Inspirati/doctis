@@ -22,7 +22,7 @@ $f_dwg_id     = gpc_get_int( 'dwg_id' );
 $f_description = gpc_get_string( 'primary_document_description', '' );
 
 $t_dwg        = dwg_get( $f_dwg_id );
-$t_project_id = $t_dwg['project_id'];
+$t_project_id = $t_dwg->project_id;
 
 # Access check — same threshold as updating the dwg record
 access_ensure_dwg_level( config_get( 'update_dwg_threshold' ), $f_dwg_id );

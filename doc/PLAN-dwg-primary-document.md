@@ -58,7 +58,7 @@ current phase; remain mindful of it when designing the API boundary.
 ### Phase 3 — Create page  ✅
 - [x] Always set `enctype="multipart/form-data"` on the create form (unconditional)
 - [x] Add "Primary Document" upload section to `dwg_create_page.php`
-- [ ] Handle upload in `dwg_create.php` after dwg record is created
+- [x] Handle upload in `dwg_create.php` after dwg record is created
   (call `file_dwg_primary_add()` if a file was submitted)
 
 ### Phase 4 — View page  ✅
@@ -68,13 +68,13 @@ current phase; remain mindful of it when designing the API boundary.
   - If no file and read-only: plain "No document file uploaded" message
 - [x] Add `dwg_primary_file_update.php` — POST handler for view-page upload/replace
 
-### Phase 5 — Download
-- [ ] Extend `file_download.php` to serve primary document files
-  (new query parameter `type=dwg_primary&id=<dwg_id>`)
+### Phase 5 — Download  ✅
+- [x] Extend `file_download.php` to serve primary document files
+  (`?type=dwg_primary&id=<dwg_id>` — early-exit branch before main file-id switch)
 
-### Phase 6 — Create page handler
-- [ ] Handle upload in `dwg_create.php` after dwg record is created
-  (call `file_dwg_primary_add()` if a file was submitted)
+### Phase 6 — Create page handler  ✅
+- [x] Handle upload in `dwg_create.php` after dwg record is created
+  (call `file_dwg_primary_add()` if a file was submitted; skipped if no file or empty)
 
 ### Phase 7 — Access control
 - [ ] Review whether dedicated config thresholds are needed beyond `update_dwg_threshold`
@@ -100,4 +100,18 @@ current phase; remain mindful of it when designing the API boundary.
 
 ## Issues / notes
 
-_(record problems and decisions here as they arise)_
+- **`DwgAddCommand.php` date fields** — `revision_date`, `release_date`, `due_date` were accessed
+  unconditionally but are only conditionally set by `dwg_create.php`. Fixed with `?? null`.
+- **`dwg_primary_file_update.php` DwgData object** — `dwg_get()` returns a `DwgData` object;
+  was incorrectly accessed as `$t_dwg['project_id']`. Fixed to `$t_dwg->project_id`.
+- **`file_dwg_primary_add()` metadata** — `filename` and `user_id` keys were missing from the
+  `$t_metadata` array passed to `GitFileStorageBackend::store()`. Added.
+- **`file_dwg_primary_add()` list() destructuring** — `store()` returns named-key array
+  (`['diskfile'=>..., 'folder'=>..., 'content'=>...]`); `list($a,$b,$c)=` expects numeric keys.
+  Fixed to assign via array keys.
+- **`GitFileStorageBackend::ensure_git_home()`** — under Apache, `putenv('HOME=...')` alone was
+  insufficient; git still could not auto-detect author identity. Fixed by also setting
+  `GIT_AUTHOR_NAME`, `GIT_AUTHOR_EMAIL`, `GIT_COMMITTER_NAME`, `GIT_COMMITTER_EMAIL` from the
+  gitconfig file, bypassing the HOME lookup entirely.
+- **`dwg_view_inc.php` PHP tag** — stray `<?php` inside an already-open PHP block (line 1107)
+  caused parse error. Removed the duplicate open tag.
