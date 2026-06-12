@@ -616,8 +616,7 @@ $g_notify_flags = array(
  *
  * @global int $g_email_receive_own
  */
-// $g_email_receive_own = OFF;
-$g_email_receive_own = ON;
+$g_email_receive_own = OFF;
 
 /**
  * Email addresses validation
@@ -1003,10 +1002,8 @@ $g_email_retry_in_days = 7;
  * @see MANTIS_VERSION
  * @global int $g_show_version
  */
-// $g_show_version = ON;
 // $g_show_version = OFF;
 $g_show_version_suffix = ON;
-// $g_show_copyright_footer = OFF;
 $g_show_copyright_footer = ON;
 
 /**
