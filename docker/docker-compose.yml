@@ -1,0 +1,54 @@
+services:
+  db:
+    image: mariadb:10.6
+    container_name: doctis-db
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: password
+      MARIADB_DATABASE: doctis
+      MARIADB_USER: doctis
+      MARIADB_PASSWORD: password
+    # Production DB stored *inside* container
+    volumes:
+      - /var/lib/mysql
+      - ./initdb:/docker-entrypoint-initdb.d
+    networks:
+      - doctis-net
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      additional_contexts:
+        doctis_src: ../
+    container_name: doctis-web
+    restart: unless-stopped
+    depends_on:
+      - db
+    volumes:
+      - ./bootstrap.sh:/bootstrap.sh
+    networks:
+      - doctis-net
+    ports:
+      - "8081:80"
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: doctis-pma
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      PMA_HOST: db
+      PMA_USER: root
+      PMA_PASSWORD: password
+    networks:
+      - doctis-net
+    ports:
+      - "8082:80"
+    # Comment out this entire block if phpMyAdmin is NOT desired.
+
+networks:
+  doctis-net:
+    driver: bridge
+

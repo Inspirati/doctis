@@ -1,0 +1,13 @@
+FROM php:8.2-apache
+
+RUN apt-get update && apt-get install -y \
+    mariadb-client \
+    unzip \
+    nano \
+    && docker-php-ext-install mysqli pdo pdo_mysql \
+    && rm -rf /var/lib/apt/lists/*
+
+# Just create folder (bind mount replaces it)
+RUN mkdir -p /var/www/html \
+    && chown -R www-data:www-data /var/www/html
+

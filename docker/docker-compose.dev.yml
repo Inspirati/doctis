@@ -1,0 +1,10 @@
+services:
+  web:
+    volumes:
+      - ../:/var/www/html
+  db:
+    # Replace the production internal storage with an external host directory
+    volumes:
+      - ./dev-db:/var/lib/mysql
+      - ./initdb:/docker-entrypoint-initdb.d
+

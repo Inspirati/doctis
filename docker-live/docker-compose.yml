@@ -1,0 +1,32 @@
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: docker-live/Dockerfile.prod
+    container_name: doctis-web
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    environment:
+      DOCTIS_DB_HOST: db
+      DOCTIS_DB_NAME: doctis
+      DOCTIS_DB_USER: doctis
+      DOCTIS_DB_PASS: password
+    depends_on:
+      - db
+
+  db:
+    image: mariadb:10.6
+    container_name: doctis-db
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: password
+      MARIADB_DATABASE: doctis
+      MARIADB_USER: doctis
+      MARIADB_PASSWORD: password
+    volumes:
+      - db_data:/var/lib/mysql
+
+volumes:
+  db_data:
+

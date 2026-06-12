@@ -1,0 +1,41 @@
+# docker-compose.test.yml
+
+networks:
+  doctis-test-net:
+    driver: bridge
+
+services:
+  db:
+    image: mariadb:10.6
+    container_name: doctis-test-db
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: password
+      MARIADB_DATABASE: doctis
+      MARIADB_USER: doctis
+      MARIADB_PASSWORD: password
+    networks:
+      - doctis-test-net
+    volumes:
+      - doctis-test-db-data:/var/lib/mysql
+
+  web:
+    image: doctis/doctis:prod
+    container_name: doctis-test-web
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+#      - "8082:80"   # adjust port to avoid conflicts
+    environment:
+      DOCTIS_DB_HOST: db
+      DOCTIS_DB_NAME: doctis
+      DOCTIS_DB_USER: doctis
+      DOCTIS_DB_PASS: password
+    depends_on:
+      - db
+    networks:
+      - doctis-test-net
+
+volumes:
+  doctis-test-db-data:
+

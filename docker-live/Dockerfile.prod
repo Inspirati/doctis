@@ -1,0 +1,27 @@
+FROM php:8.2-apache
+
+RUN apt-get update && apt-get install -y \
+    mariadb-client \
+    unzip \
+    nano \
+    && docker-php-ext-install mysqli pdo pdo_mysql \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy entire Doctis project (relative to build context)
+COPY . /var/www/html/
+
+# Ensure bootstrap.sh is executable
+RUN chmod +x /var/www/html/docker-live/bootstrap.sh
+
+# Copy start script
+#COPY docker-live/start.sh /start.sh
+#RUN chmod +x /start.sh
+
+# Use custom entrypoint
+#ENTRYPOINT ["/start.sh"]
+
+# Fix permissions
+RUN chown -R www-data:www-data /var/www/html \
+    && find /var/www/html -type d -exec chmod 755 {} \; \
+    && find /var/www/html -type f -exec chmod 644 {} \;
+
