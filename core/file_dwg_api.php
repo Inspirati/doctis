@@ -1534,16 +1534,31 @@ function file_dwg_primary_add( $p_dwg_id, $p_user_id, $p_tmp_file, $p_filename, 
 	$t_metadata = array(
 		'dwg_id'     => $p_dwg_id,
 		'project_id' => $t_project_id,
+		'filename'   => $p_filename,
+		'user_id'    => $p_user_id,
 	);
 
-	list( $t_diskfile, $t_folder, $t_content ) = $t_backend->store(
-		$p_tmp_file, $p_filesize, $t_unique_name, $t_file_path, true, $t_metadata
+	# browser_upload=false: the temp file was written programmatically (not via
+	# an HTTP multipart upload), so copy() must be used instead of move_uploaded_file().
+	$t_stored   = $t_backend->store(
+		$p_tmp_file, $p_filesize, $t_unique_name, $t_file_path, false, $t_metadata
 	);
+	$t_diskfile = $t_stored['diskfile'];
+	$t_folder   = $t_stored['folder'];
+	$t_content  = $t_stored['content'];
 
 	# Remove any existing row (replace semantics)
+	# Build separate metadata for the delete so it carries the OLD filename,
+	# not the new one we just stored.
 	if( file_dwg_primary_exists( $p_dwg_id ) ) {
 		$t_existing = file_dwg_primary_get( $p_dwg_id );
-		$t_backend->delete( $t_existing['diskfile'], $t_project_id, $t_metadata );
+		$t_delete_metadata = array(
+			'dwg_id'     => $p_dwg_id,
+			'project_id' => $t_project_id,
+			'filename'   => $t_existing['filename'],
+			'user_id'    => $p_user_id,
+		);
+		$t_backend->delete( $t_existing['diskfile'], $t_project_id, $t_delete_metadata );
 		db_param_push();
 		db_query( 'DELETE FROM {dwg_primary_file} WHERE dwg_id=' . db_param(), array( (int)$p_dwg_id ) );
 	}
@@ -1587,6 +1602,8 @@ function file_dwg_primary_delete( $p_dwg_id ) {
 	$t_metadata   = array(
 		'dwg_id'     => $p_dwg_id,
 		'project_id' => $t_project_id,
+		'filename'   => $t_row['filename'],
+		'user_id'    => $t_row['user_id'],
 	);
 
 	$t_backend->delete( $t_row['diskfile'], $t_project_id, $t_metadata );

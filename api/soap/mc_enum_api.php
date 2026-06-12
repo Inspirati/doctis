@@ -189,6 +189,36 @@ function mc_enum_view_states( $p_username, $p_password ) {
 }
 
 /**
+ * Get all available document status values (Doctis dwg_status enum).
+ *
+ * @param string $p_username The name of the user trying to access the enumeration.
+ * @param string $p_password The password of the user.
+ * @return array  The requested enumeration
+ */
+function mc_enum_dwg_status( $p_username, $p_password ) {
+	if( !mci_validate_enum_access( $p_username, $p_password ) ) {
+		return mci_fault_login_failed();
+	}
+
+	$t_user_id = auth_get_current_user_id();
+	$t_lang    = mci_get_user_lang( $t_user_id );
+	$t_config_var_value  = config_get( 'dwg_status_enum_string' );
+	$t_config_var_localized = lang_get( 'dwg_status_enum_string', $t_lang );
+
+	$t_enum_values = MantisEnum::getValues( $t_config_var_value );
+
+	$t_result = array();
+	foreach( $t_enum_values as $t_key ) {
+		$t_result[] = array(
+			'id'   => $t_key,
+			'name' => MantisEnum::getLocalizedLabel( $t_config_var_value, $t_config_var_localized, $t_key ),
+		);
+	}
+
+	return $t_result;
+}
+
+/**
  * Get all available custom field types.
  *
  * @param string $p_username The name of the user trying to access the enumeration.

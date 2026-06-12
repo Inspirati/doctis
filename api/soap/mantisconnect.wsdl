@@ -428,6 +428,105 @@
    <xsd:element name="total_results" type="xsd:integer" minOccurs="0"/>
   </xsd:all>
  </xsd:complexType>
+ <!-- Doctis document types -->
+ <xsd:complexType name="DwgNoteData">
+  <xsd:all>
+   <xsd:element name="id" type="xsd:integer" minOccurs="0"/>
+   <xsd:element name="reporter" type="tns:AccountData" minOccurs="0"/>
+   <xsd:element name="text" type="xsd:string" minOccurs="0"/>
+   <xsd:element name="view_state" type="tns:ObjectRef" minOccurs="0"/>
+   <xsd:element name="date_submitted" type="xsd:dateTime" minOccurs="0"/>
+   <xsd:element name="last_modified" type="xsd:dateTime" minOccurs="0"/>
+   <xsd:element name="time_tracking" type="xsd:integer" minOccurs="0"/>
+   <xsd:element name="note_type" type="xsd:integer" minOccurs="0"/>
+   <xsd:element name="note_attr" type="xsd:string" minOccurs="0"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="DwgNoteDataArray">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:DwgNoteData[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+ <xsd:complexType name="DwgData">
+  <xsd:all>
+   <xsd:element name="id" type="xsd:integer" minOccurs="0"/>
+   <xsd:element name="view_state" type="tns:ObjectRef" minOccurs="0"/>
+   <xsd:element name="last_updated" type="xsd:dateTime" minOccurs="0"/>
+   <xsd:element name="project" type="tns:ObjectRef" minOccurs="0"/>
+   <xsd:element name="category" type="xsd:string" minOccurs="0"/>
+   <xsd:element name="priority" type="tns:ObjectRef" minOccurs="0"/>
+   <xsd:element name="severity" type="tns:ObjectRef" minOccurs="0"/>
+   <xsd:element name="status" type="tns:ObjectRef" minOccurs="0"/>
+   <xsd:element name="reporter" type="tns:AccountData" minOccurs="0"/>
+   <xsd:element name="summary" type="xsd:string" minOccurs="0"/>
+   <xsd:element name="description" type="xsd:string" minOccurs="0"/>
+   <xsd:element name="handler" type="tns:AccountData" minOccurs="0"/>
+   <xsd:element name="due_date" type="xsd:dateTime" minOccurs="0"/>
+   <xsd:element name="date_submitted" type="xsd:dateTime" minOccurs="0"/>
+   <xsd:element name="monitors" type="tns:AccountDataArray" minOccurs="0"/>
+   <xsd:element name="sticky" type="xsd:boolean" minOccurs="0"/>
+   <xsd:element name="tags" type="tns:ObjectRefArray" minOccurs="0"/>
+   <xsd:element name="attachments" type="tns:AttachmentDataArray" minOccurs="0"/>
+   <xsd:element name="relationships" type="tns:RelationshipDataArray" minOccurs="0"/>
+   <xsd:element name="notes" type="tns:DwgNoteDataArray" minOccurs="0"/>
+   <xsd:element name="title" type="xsd:string" minOccurs="0"/>
+   <xsd:element name="author" type="xsd:string" minOccurs="0"/>
+   <xsd:element name="publisher" type="xsd:string" minOccurs="0"/>
+   <xsd:element name="number" type="xsd:string" minOccurs="0"/>
+   <xsd:element name="edition" type="xsd:string" minOccurs="0"/>
+   <xsd:element name="revision" type="xsd:string" minOccurs="0"/>
+   <xsd:element name="reference" type="xsd:string" minOccurs="0"/>
+   <xsd:element name="link_url" type="xsd:anyURI" minOccurs="0"/>
+   <xsd:element name="classification" type="xsd:string" minOccurs="0"/>
+   <xsd:element name="revision_date" type="xsd:dateTime" minOccurs="0"/>
+   <xsd:element name="release_date" type="xsd:dateTime" minOccurs="0"/>
+   <xsd:element name="creator" type="tns:AccountData" minOccurs="0"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="DwgDataArray">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:DwgData[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+ <xsd:complexType name="DwgHeaderData">
+  <xsd:all>
+   <xsd:element name="id" type="xsd:integer" minOccurs="0"/>
+   <xsd:element name="view_state" type="tns:ObjectRef" minOccurs="0"/>
+   <xsd:element name="last_updated" type="xsd:dateTime" minOccurs="0"/>
+   <xsd:element name="project" type="tns:ObjectRef" minOccurs="0"/>
+   <xsd:element name="category" type="xsd:string" minOccurs="0"/>
+   <xsd:element name="priority" type="tns:ObjectRef" minOccurs="0"/>
+   <xsd:element name="severity" type="tns:ObjectRef" minOccurs="0"/>
+   <xsd:element name="status" type="tns:ObjectRef" minOccurs="0"/>
+   <xsd:element name="reporter" type="tns:AccountData" minOccurs="0"/>
+   <xsd:element name="summary" type="xsd:string" minOccurs="0"/>
+   <xsd:element name="handler" type="tns:AccountData" minOccurs="0"/>
+   <xsd:element name="date_submitted" type="xsd:dateTime" minOccurs="0"/>
+   <xsd:element name="title" type="xsd:string" minOccurs="0"/>
+   <xsd:element name="number" type="xsd:string" minOccurs="0"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="DwgHeaderDataArray">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:DwgHeaderData[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+ <xsd:complexType name="PrimaryFileData">
+  <xsd:all>
+   <xsd:element name="filename" type="xsd:string" minOccurs="0"/>
+   <xsd:element name="filesize" type="xsd:integer" minOccurs="0"/>
+   <xsd:element name="file_type" type="xsd:string" minOccurs="0"/>
+   <xsd:element name="date_added" type="xsd:dateTime" minOccurs="0"/>
+   <xsd:element name="description" type="xsd:string" minOccurs="0"/>
+   <xsd:element name="download_url" type="xsd:anyURI" minOccurs="0"/>
+  </xsd:all>
+ </xsd:complexType>
 </xsd:schema>
 </types>
 <message name="mc_versionRequest"></message>
@@ -891,6 +990,157 @@
   <part name="tag_id" type="xsd:integer" /></message>
 <message name="mc_tag_deleteResponse">
   <part name="return" type="xsd:boolean" /></message>
+<!-- Doctis document messages -->
+<message name="mc_dwg_existsRequest">
+  <part name="username" type="xsd:string" />
+  <part name="password" type="xsd:string" />
+  <part name="issue_id" type="xsd:integer" /></message>
+<message name="mc_dwg_existsResponse">
+  <part name="return" type="xsd:boolean" /></message>
+<message name="mc_dwg_getRequest">
+  <part name="username" type="xsd:string" />
+  <part name="password" type="xsd:string" />
+  <part name="issue_id" type="xsd:integer" />
+  <part name="fields" type="tns:StringArray" /></message>
+<message name="mc_dwg_getResponse">
+  <part name="return" type="tns:DwgData" /></message>
+<message name="mc_dwg_get_historyRequest">
+  <part name="username" type="xsd:string" />
+  <part name="password" type="xsd:string" />
+  <part name="issue_id" type="xsd:integer" /></message>
+<message name="mc_dwg_get_historyResponse">
+  <part name="return" type="tns:HistoryDataArray" /></message>
+<message name="mc_dwg_get_biggest_idRequest">
+  <part name="username" type="xsd:string" />
+  <part name="password" type="xsd:string" />
+  <part name="project_id" type="xsd:integer" /></message>
+<message name="mc_dwg_get_biggest_idResponse">
+  <part name="return" type="xsd:integer" /></message>
+<message name="mc_dwg_get_id_from_titleRequest">
+  <part name="username" type="xsd:string" />
+  <part name="password" type="xsd:string" />
+  <part name="title" type="xsd:string" /></message>
+<message name="mc_dwg_get_id_from_titleResponse">
+  <part name="return" type="xsd:integer" /></message>
+<message name="mc_dwg_addRequest">
+  <part name="username" type="xsd:string" />
+  <part name="password" type="xsd:string" />
+  <part name="issue" type="tns:DwgData" /></message>
+<message name="mc_dwg_addResponse">
+  <part name="return" type="xsd:integer" /></message>
+<message name="mc_dwg_updateRequest">
+  <part name="username" type="xsd:string" />
+  <part name="password" type="xsd:string" />
+  <part name="issue_id" type="xsd:integer" />
+  <part name="issue" type="tns:DwgData" /></message>
+<message name="mc_dwg_updateResponse">
+  <part name="return" type="xsd:boolean" /></message>
+<message name="mc_dwg_deleteRequest">
+  <part name="username" type="xsd:string" />
+  <part name="password" type="xsd:string" />
+  <part name="issue_id" type="xsd:integer" /></message>
+<message name="mc_dwg_deleteResponse">
+  <part name="return" type="xsd:boolean" /></message>
+<message name="mc_dwg_note_addRequest">
+  <part name="username" type="xsd:string" />
+  <part name="password" type="xsd:string" />
+  <part name="issue_id" type="xsd:integer" />
+  <part name="note" type="tns:IssueNoteData" /></message>
+<message name="mc_dwg_note_addResponse">
+  <part name="return" type="xsd:integer" /></message>
+<message name="mc_dwg_note_updateRequest">
+  <part name="username" type="xsd:string" />
+  <part name="password" type="xsd:string" />
+  <part name="note" type="tns:IssueNoteData" /></message>
+<message name="mc_dwg_note_updateResponse">
+  <part name="return" type="xsd:boolean" /></message>
+<message name="mc_dwg_note_deleteRequest">
+  <part name="username" type="xsd:string" />
+  <part name="password" type="xsd:string" />
+  <part name="issue_note_id" type="xsd:integer" /></message>
+<message name="mc_dwg_note_deleteResponse">
+  <part name="return" type="xsd:boolean" /></message>
+<message name="mc_dwg_relationship_addRequest">
+  <part name="username" type="xsd:string" />
+  <part name="password" type="xsd:string" />
+  <part name="issue_id" type="xsd:integer" />
+  <part name="relationship" type="tns:RelationshipData" /></message>
+<message name="mc_dwg_relationship_addResponse">
+  <part name="return" type="xsd:integer" /></message>
+<message name="mc_dwg_relationship_deleteRequest">
+  <part name="username" type="xsd:string" />
+  <part name="password" type="xsd:string" />
+  <part name="issue_id" type="xsd:integer" />
+  <part name="relationship_id" type="xsd:integer" /></message>
+<message name="mc_dwg_relationship_deleteResponse">
+  <part name="return" type="xsd:boolean" /></message>
+<message name="mc_dwg_set_tagsRequest">
+  <part name="username" type="xsd:string" />
+  <part name="password" type="xsd:string" />
+  <part name="issue_id" type="xsd:integer" />
+  <part name="tags" type="tns:ObjectRefArray" /></message>
+<message name="mc_dwg_set_tagsResponse">
+  <part name="return" type="xsd:boolean" /></message>
+<message name="mc_dwgs_getRequest">
+  <part name="username" type="xsd:string" />
+  <part name="password" type="xsd:string" />
+  <part name="issue_ids" type="tns:IntegerArray" /></message>
+<message name="mc_dwgs_getResponse">
+  <part name="return" type="tns:DwgDataArray" /></message>
+<message name="mc_dwgs_get_headerRequest">
+  <part name="username" type="xsd:string" />
+  <part name="password" type="xsd:string" />
+  <part name="issue_ids" type="tns:IntegerArray" /></message>
+<message name="mc_dwgs_get_headerResponse">
+  <part name="return" type="tns:DwgHeaderDataArray" /></message>
+<message name="mc_enum_dwg_statusRequest">
+  <part name="username" type="xsd:string" />
+  <part name="password" type="xsd:string" /></message>
+<message name="mc_enum_dwg_statusResponse">
+  <part name="return" type="tns:ObjectRefArray" /></message>
+<message name="mc_dwg_attachment_getRequest">
+  <part name="username" type="xsd:string" />
+  <part name="password" type="xsd:string" />
+  <part name="attachment_id" type="xsd:integer" /></message>
+<message name="mc_dwg_attachment_getResponse">
+  <part name="return" type="xsd:base64Binary" /></message>
+<message name="mc_dwg_attachment_addRequest">
+  <part name="username" type="xsd:string" />
+  <part name="password" type="xsd:string" />
+  <part name="dwg_id" type="xsd:integer" />
+  <part name="name" type="xsd:string" />
+  <part name="file_type" type="xsd:string" />
+  <part name="content" type="xsd:base64Binary" /></message>
+<message name="mc_dwg_attachment_addResponse">
+  <part name="return" type="xsd:integer" /></message>
+<message name="mc_dwg_attachment_deleteRequest">
+  <part name="username" type="xsd:string" />
+  <part name="password" type="xsd:string" />
+  <part name="attachment_id" type="xsd:integer" /></message>
+<message name="mc_dwg_attachment_deleteResponse">
+  <part name="return" type="xsd:boolean" /></message>
+<message name="mc_dwg_primary_getRequest">
+  <part name="username" type="xsd:string" />
+  <part name="password" type="xsd:string" />
+  <part name="dwg_id" type="xsd:integer" /></message>
+<message name="mc_dwg_primary_getResponse">
+  <part name="return" type="tns:PrimaryFileData" /></message>
+<message name="mc_dwg_primary_uploadRequest">
+  <part name="username" type="xsd:string" />
+  <part name="password" type="xsd:string" />
+  <part name="dwg_id" type="xsd:integer" />
+  <part name="name" type="xsd:string" />
+  <part name="file_type" type="xsd:string" />
+  <part name="content" type="xsd:base64Binary" />
+  <part name="description" type="xsd:string" /></message>
+<message name="mc_dwg_primary_uploadResponse">
+  <part name="return" type="xsd:boolean" /></message>
+<message name="mc_dwg_primary_deleteRequest">
+  <part name="username" type="xsd:string" />
+  <part name="password" type="xsd:string" />
+  <part name="dwg_id" type="xsd:integer" /></message>
+<message name="mc_dwg_primary_deleteResponse">
+  <part name="return" type="xsd:boolean" /></message>
 <portType name="MantisConnectPortType">
   <operation name="mc_version">
     <input message="tns:mc_versionRequest"/>
@@ -1250,6 +1500,122 @@
     <documentation>Deletes a tag.</documentation>
     <input message="tns:mc_tag_deleteRequest"/>
     <output message="tns:mc_tag_deleteResponse"/>
+  </operation>
+  <!-- Doctis document operations -->
+  <operation name="mc_dwg_exists">
+    <documentation>Check if a document with the given id exists.</documentation>
+    <input message="tns:mc_dwg_existsRequest"/>
+    <output message="tns:mc_dwg_existsResponse"/>
+  </operation>
+  <operation name="mc_dwg_get">
+    <documentation>Get all details about a document.</documentation>
+    <input message="tns:mc_dwg_getRequest"/>
+    <output message="tns:mc_dwg_getResponse"/>
+  </operation>
+  <operation name="mc_dwg_get_history">
+    <documentation>Get history for a document.</documentation>
+    <input message="tns:mc_dwg_get_historyRequest"/>
+    <output message="tns:mc_dwg_get_historyResponse"/>
+  </operation>
+  <operation name="mc_dwg_get_biggest_id">
+    <documentation>Get the largest document id in the given project.</documentation>
+    <input message="tns:mc_dwg_get_biggest_idRequest"/>
+    <output message="tns:mc_dwg_get_biggest_idResponse"/>
+  </operation>
+  <operation name="mc_dwg_get_id_from_title">
+    <documentation>Get the id of the document with the given title.</documentation>
+    <input message="tns:mc_dwg_get_id_from_titleRequest"/>
+    <output message="tns:mc_dwg_get_id_from_titleResponse"/>
+  </operation>
+  <operation name="mc_dwg_add">
+    <documentation>Add a new document.</documentation>
+    <input message="tns:mc_dwg_addRequest"/>
+    <output message="tns:mc_dwg_addResponse"/>
+  </operation>
+  <operation name="mc_dwg_update">
+    <documentation>Update an existing document.</documentation>
+    <input message="tns:mc_dwg_updateRequest"/>
+    <output message="tns:mc_dwg_updateResponse"/>
+  </operation>
+  <operation name="mc_dwg_delete">
+    <documentation>Delete a document.</documentation>
+    <input message="tns:mc_dwg_deleteRequest"/>
+    <output message="tns:mc_dwg_deleteResponse"/>
+  </operation>
+  <operation name="mc_dwg_note_add">
+    <documentation>Add a note to a document.</documentation>
+    <input message="tns:mc_dwg_note_addRequest"/>
+    <output message="tns:mc_dwg_note_addResponse"/>
+  </operation>
+  <operation name="mc_dwg_note_update">
+    <documentation>Update a document note.</documentation>
+    <input message="tns:mc_dwg_note_updateRequest"/>
+    <output message="tns:mc_dwg_note_updateResponse"/>
+  </operation>
+  <operation name="mc_dwg_note_delete">
+    <documentation>Delete a document note.</documentation>
+    <input message="tns:mc_dwg_note_deleteRequest"/>
+    <output message="tns:mc_dwg_note_deleteResponse"/>
+  </operation>
+  <operation name="mc_dwg_relationship_add">
+    <documentation>Add a relationship to a document.</documentation>
+    <input message="tns:mc_dwg_relationship_addRequest"/>
+    <output message="tns:mc_dwg_relationship_addResponse"/>
+  </operation>
+  <operation name="mc_dwg_relationship_delete">
+    <documentation>Delete a document relationship.</documentation>
+    <input message="tns:mc_dwg_relationship_deleteRequest"/>
+    <output message="tns:mc_dwg_relationship_deleteResponse"/>
+  </operation>
+  <operation name="mc_dwg_set_tags">
+    <documentation>Set tags on a document.</documentation>
+    <input message="tns:mc_dwg_set_tagsRequest"/>
+    <output message="tns:mc_dwg_set_tagsResponse"/>
+  </operation>
+  <operation name="mc_dwgs_get">
+    <documentation>Get documents by id list.</documentation>
+    <input message="tns:mc_dwgs_getRequest"/>
+    <output message="tns:mc_dwgs_getResponse"/>
+  </operation>
+  <operation name="mc_dwgs_get_header">
+    <documentation>Get document headers by id list.</documentation>
+    <input message="tns:mc_dwgs_get_headerRequest"/>
+    <output message="tns:mc_dwgs_get_headerResponse"/>
+  </operation>
+  <operation name="mc_enum_dwg_status">
+    <documentation>Get the enumeration for document statuses.</documentation>
+    <input message="tns:mc_enum_dwg_statusRequest"/>
+    <output message="tns:mc_enum_dwg_statusResponse"/>
+  </operation>
+  <operation name="mc_dwg_attachment_get">
+    <documentation>Get the content of a document note attachment.</documentation>
+    <input message="tns:mc_dwg_attachment_getRequest"/>
+    <output message="tns:mc_dwg_attachment_getResponse"/>
+  </operation>
+  <operation name="mc_dwg_attachment_add">
+    <documentation>Add an attachment to a document.</documentation>
+    <input message="tns:mc_dwg_attachment_addRequest"/>
+    <output message="tns:mc_dwg_attachment_addResponse"/>
+  </operation>
+  <operation name="mc_dwg_attachment_delete">
+    <documentation>Delete a document attachment.</documentation>
+    <input message="tns:mc_dwg_attachment_deleteRequest"/>
+    <output message="tns:mc_dwg_attachment_deleteResponse"/>
+  </operation>
+  <operation name="mc_dwg_primary_get">
+    <documentation>Get metadata for the primary document file.</documentation>
+    <input message="tns:mc_dwg_primary_getRequest"/>
+    <output message="tns:mc_dwg_primary_getResponse"/>
+  </operation>
+  <operation name="mc_dwg_primary_upload">
+    <documentation>Upload or replace the primary document file.</documentation>
+    <input message="tns:mc_dwg_primary_uploadRequest"/>
+    <output message="tns:mc_dwg_primary_uploadResponse"/>
+  </operation>
+  <operation name="mc_dwg_primary_delete">
+    <documentation>Delete the primary document file.</documentation>
+    <input message="tns:mc_dwg_primary_deleteRequest"/>
+    <output message="tns:mc_dwg_primary_deleteResponse"/>
   </operation>
 </portType>
 <binding name="MantisConnectBinding" type="tns:MantisConnectPortType">
@@ -1611,6 +1977,122 @@
   </operation>
   <operation name="mc_tag_delete">
     <soap:operation soapAction="http://www.mantisbt.org/bugs/api/soap/mantisconnect.php/mc_tag_delete" style="rpc"/>
+    <input><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <!-- Doctis document bindings -->
+  <operation name="mc_dwg_exists">
+    <soap:operation soapAction="http://www.mantisbt.org/bugs/api/soap/mantisconnect.php/mc_dwg_exists" style="rpc"/>
+    <input><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="mc_dwg_get">
+    <soap:operation soapAction="http://www.mantisbt.org/bugs/api/soap/mantisconnect.php/mc_dwg_get" style="rpc"/>
+    <input><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="mc_dwg_get_history">
+    <soap:operation soapAction="http://www.mantisbt.org/bugs/api/soap/mantisconnect.php/mc_dwg_get_history" style="rpc"/>
+    <input><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="mc_dwg_get_biggest_id">
+    <soap:operation soapAction="http://www.mantisbt.org/bugs/api/soap/mantisconnect.php/mc_dwg_get_biggest_id" style="rpc"/>
+    <input><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="mc_dwg_get_id_from_title">
+    <soap:operation soapAction="http://www.mantisbt.org/bugs/api/soap/mantisconnect.php/mc_dwg_get_id_from_title" style="rpc"/>
+    <input><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="mc_dwg_add">
+    <soap:operation soapAction="http://www.mantisbt.org/bugs/api/soap/mantisconnect.php/mc_dwg_add" style="rpc"/>
+    <input><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="mc_dwg_update">
+    <soap:operation soapAction="http://www.mantisbt.org/bugs/api/soap/mantisconnect.php/mc_dwg_update" style="rpc"/>
+    <input><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="mc_dwg_delete">
+    <soap:operation soapAction="http://www.mantisbt.org/bugs/api/soap/mantisconnect.php/mc_dwg_delete" style="rpc"/>
+    <input><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="mc_dwg_note_add">
+    <soap:operation soapAction="http://www.mantisbt.org/bugs/api/soap/mantisconnect.php/mc_dwg_note_add" style="rpc"/>
+    <input><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="mc_dwg_note_update">
+    <soap:operation soapAction="http://www.mantisbt.org/bugs/api/soap/mantisconnect.php/mc_dwg_note_update" style="rpc"/>
+    <input><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="mc_dwg_note_delete">
+    <soap:operation soapAction="http://www.mantisbt.org/bugs/api/soap/mantisconnect.php/mc_dwg_note_delete" style="rpc"/>
+    <input><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="mc_dwg_relationship_add">
+    <soap:operation soapAction="http://www.mantisbt.org/bugs/api/soap/mantisconnect.php/mc_dwg_relationship_add" style="rpc"/>
+    <input><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="mc_dwg_relationship_delete">
+    <soap:operation soapAction="http://www.mantisbt.org/bugs/api/soap/mantisconnect.php/mc_dwg_relationship_delete" style="rpc"/>
+    <input><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="mc_dwg_set_tags">
+    <soap:operation soapAction="http://www.mantisbt.org/bugs/api/soap/mantisconnect.php/mc_dwg_set_tags" style="rpc"/>
+    <input><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="mc_dwgs_get">
+    <soap:operation soapAction="http://www.mantisbt.org/bugs/api/soap/mantisconnect.php/mc_dwgs_get" style="rpc"/>
+    <input><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="mc_dwgs_get_header">
+    <soap:operation soapAction="http://www.mantisbt.org/bugs/api/soap/mantisconnect.php/mc_dwgs_get_header" style="rpc"/>
+    <input><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="mc_enum_dwg_status">
+    <soap:operation soapAction="http://www.mantisbt.org/bugs/api/soap/mantisconnect.php/mc_enum_dwg_status" style="rpc"/>
+    <input><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="mc_dwg_attachment_get">
+    <soap:operation soapAction="http://www.mantisbt.org/bugs/api/soap/mantisconnect.php/mc_dwg_attachment_get" style="rpc"/>
+    <input><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="mc_dwg_attachment_add">
+    <soap:operation soapAction="http://www.mantisbt.org/bugs/api/soap/mantisconnect.php/mc_dwg_attachment_add" style="rpc"/>
+    <input><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="mc_dwg_attachment_delete">
+    <soap:operation soapAction="http://www.mantisbt.org/bugs/api/soap/mantisconnect.php/mc_dwg_attachment_delete" style="rpc"/>
+    <input><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="mc_dwg_primary_get">
+    <soap:operation soapAction="http://www.mantisbt.org/bugs/api/soap/mantisconnect.php/mc_dwg_primary_get" style="rpc"/>
+    <input><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="mc_dwg_primary_upload">
+    <soap:operation soapAction="http://www.mantisbt.org/bugs/api/soap/mantisconnect.php/mc_dwg_primary_upload" style="rpc"/>
+    <input><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="mc_dwg_primary_delete">
+    <soap:operation soapAction="http://www.mantisbt.org/bugs/api/soap/mantisconnect.php/mc_dwg_primary_delete" style="rpc"/>
     <input><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
     <output><soap:body use="encoded" namespace="http://futureware.biz/mantisconnect" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
   </operation>

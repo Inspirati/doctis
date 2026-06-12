@@ -1226,7 +1226,7 @@ function mc_dwg_update( $p_username, $p_password, $p_issue_id, stdClass $p_issue
 	}
 
 	if( isset( $p_issue['tags'] ) && is_array( $p_issue['tags'] ) ) {
-		// mci_tag_set_for_issue( $p_issue_id, $p_issue['tags'], $t_user_id );
+		mci_tag_set_for_dwg( $p_issue_id, $p_issue['tags'], $t_user_id );
 	}
 
 	# submit the issue
@@ -1265,7 +1265,7 @@ function mc_dwg_set_tags ( $p_username, $p_password, $p_issue_id, array $p_tags 
 		return mci_fault_access_denied( $t_user_id, 'Document \'' . $p_issue_id . '\' is readonly' );
 	}
 
-	// mci_tag_set_for_issue( $p_issue_id, $p_tags, $t_user_id );
+	mci_tag_set_for_dwg( $p_issue_id, $p_tags, $t_user_id );
 
 	return true;
 }

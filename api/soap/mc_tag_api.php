@@ -214,3 +214,83 @@ function mci_tag_set_for_issue ( $p_issue_id, array $p_tags, $p_user_id ) {
 		}
 	}
 }
+
+/**
+ * Set tag(s) for a given document id (Doctis dwg entity).
+ *
+ * Mirrors mci_tag_set_for_issue() but uses the dwg tag table and
+ * access_has_dwg_level() for permission checks.
+ *
+ * @param integer $p_dwg_id  Document id.
+ * @param array   $p_tags    Array of tag objects (each with 'id' or 'name').
+ * @param integer $p_user_id User id.
+ * @return void
+ */
+function mci_tag_set_for_dwg( $p_dwg_id, array $p_tags, $p_user_id ) {
+	$t_tag_ids_to_attach = array();
+	$t_tag_ids_to_detach = array();
+
+	$t_submitted_tag_ids  = array();
+	$t_attached_tags      = tag_dwg_get_attached( $p_dwg_id );
+	$t_attached_tag_ids   = array();
+	foreach( $t_attached_tags as $t_attached_tag ) {
+		$t_attached_tag_ids[] = $t_attached_tag['id'];
+	}
+
+	foreach( $p_tags as $t_tag ) {
+		$t_tag = ApiObjectFactory::objectToArray( $t_tag );
+
+		if( isset( $t_tag['id'] ) ) {
+			$t_tag_id = $t_tag['id'];
+			if( !tag_exists( $t_tag_id ) ) {
+				throw new ClientException(
+					"Tag with id $t_tag_id not found.",
+					ERROR_TAG_NOT_FOUND
+				);
+			}
+		} else if( isset( $t_tag['name'] ) ) {
+			$t_get_tag = tag_get_by_name( $t_tag['name'] );
+			if( $t_get_tag === false ) {
+				throw new ClientException(
+					"Tag '{$t_tag['name']}' not found.",
+					ERROR_TAG_NOT_FOUND
+				);
+			}
+			$t_tag_id = $t_get_tag['id'];
+		} else {
+			throw new ClientException(
+				'Tag without id or name.',
+				ERROR_TAG_NAME_INVALID
+			);
+		}
+
+		$t_submitted_tag_ids[] = $t_tag_id;
+
+		if( in_array( $t_tag_id, $t_attached_tag_ids ) ) {
+			continue;
+		}
+
+		$t_tag_ids_to_attach[] = $t_tag_id;
+	}
+
+	foreach( $t_attached_tag_ids as $t_attached_tag_id ) {
+		if( in_array( $t_attached_tag_id, $t_submitted_tag_ids ) ) {
+			continue;
+		}
+		$t_tag_ids_to_detach[] = $t_attached_tag_id;
+	}
+
+	foreach( $t_tag_ids_to_detach as $t_tag_id ) {
+		if( access_has_dwg_level( config_get( 'tag_detach_threshold' ), $p_dwg_id, $p_user_id ) ) {
+			log_event( LOG_WEBSERVICE, 'detaching tag id \'' . $t_tag_id . '\' from document \'' . $p_dwg_id . '\'' );
+			tag_dwg_detach( $t_tag_id, $p_dwg_id );
+		}
+	}
+
+	foreach( $t_tag_ids_to_attach as $t_tag_id ) {
+		if( access_has_dwg_level( config_get( 'tag_attach_threshold' ), $p_dwg_id, $p_user_id ) ) {
+			log_event( LOG_WEBSERVICE, 'attaching tag id \'' . $t_tag_id . '\' to document \'' . $p_dwg_id . '\'' );
+			tag_dwg_attach( $t_tag_id, $p_dwg_id );
+		}
+	}
+}
