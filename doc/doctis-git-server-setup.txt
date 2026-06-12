@@ -1,0 +1,381 @@
+Doctis Git Storage Backend — Server Setup
+==========================================
+
+This file documents every step required to configure the git document
+storage infrastructure on a fresh Doctis server installation.
+
+Context
+-------
+Doctis stores document source files (Markdown, AsciiDoc, etc.) in git
+repositories on the same server that runs Apache/PHP. PHP executes git
+operations as the www-data user. Each Doctis project gets its own bare
+git repository; PHP creates these dynamically when a project is created.
+
+Reference documents:
+  doc/GIT_STORAGE_BACKEND.md      — architecture and PHP implementation plan
+  doc/GIT_SERVER_OPERATIONS.md    — full reference of every git operation
+                                    with SSH command examples
+
+Environment assumed
+-------------------
+  Server OS      : Debian / Ubuntu
+  Apache user    : www-data (uid 33, gid 33)
+  www-data HOME  : /var/www          (verify: getent passwd www-data)
+  Bare repo root : /var/git/doctis/
+  Worktree root  : /var/www/doctis/worktrees/
+
+All commands below are run from a remote dev machine via SSH,
+or directly in a terminal on the server. Adjust 'hcr@vaio' to
+match your SSH user and hostname.
+
+
+STEP 1 — Ensure git is installed
+---------------------------------
+
+  ssh hcr@vaio "git --version || sudo apt install -y git"
+
+
+STEP 2 — Create storage root directories
+-----------------------------------------
+
+The bare repo root and worktree root must be owned by www-data so that
+PHP can create per-project subdirectories without privilege escalation.
+Mode 2770 (setgid) ensures all new files and subdirectories created
+inside inherit the www-data group, preventing permission drift over time.
+
+  ssh hcr@vaio "
+    sudo mkdir -p /var/git/doctis &&
+    sudo mkdir -p /var/www/doctis/worktrees &&
+    sudo chown www-data:www-data /var/git/doctis /var/www/doctis/worktrees &&
+    sudo chmod 2770 /var/git/doctis /var/www/doctis/worktrees
+  "
+
+Verify:
+
+  ssh hcr@vaio "sudo ls -la /var/git/ && sudo ls -la /var/www/doctis/"
+
+
+STEP 3 — Set global git identity for www-data
+----------------------------------------------
+
+PHP commits require a git author identity. Git reads this from
+~/.gitconfig, which for www-data resolves to /var/www/.gitconfig.
+
+IMPORTANT: /var/www/ is owned by root (mode 755). The www-data user
+can READ files in that directory but cannot CREATE files there. The
+'git config --global' command internally creates a lock file alongside
+.gitconfig before writing, which requires write permission on /var/www/
+itself — not just on the .gitconfig file. Running 'sudo -u www-data
+git config --global ...' will therefore fail with:
+
+  error: could not lock config file /var/www/.gitconfig: Permission denied
+
+The workaround is to write the config file directly as root. Git only
+needs read access to .gitconfig at runtime, which www-data has:
+
+  ssh hcr@vaio "sudo bash -c 'printf \
+    \"[user]\n\temail = doctis@vaio.local\n\tname = Doctis\n\
+[init]\n\tdefaultBranch = main\n\" \
+    > /var/www/.gitconfig && \
+    chown www-data:www-data /var/www/.gitconfig'"
+
+Verify (www-data can read it):
+
+  ssh hcr@vaio "sudo -u www-data git config --global --list"
+
+Expected output:
+  user.email=doctis@vaio.local
+  user.name=Doctis
+  init.defaultbranch=main
+
+NOTE: Any future change to this config must also be made by writing
+the file as root. Running 'sudo -u www-data git config --global'
+will always fail due to the /var/www/ directory permission constraint.
+To update a value, repeat the printf command above with the full file
+contents, or use:
+
+  ssh hcr@vaio "sudo sed -i 's/old/new/' /var/www/.gitconfig"
+
+STEP 3a — Apache HOME issue and the ensure_git_home() workaround
+-----------------------------------------------------------------
+
+Even with /var/www/.gitconfig correctly written, PHP git commits will
+fail at runtime under Apache with:
+
+  fatal: unable to auto-detect email address (got 'www-data@vaio.(none)')
+  Author identity unknown
+
+Root cause: Apache does not set the HOME environment variable for its
+worker processes. Without HOME, git cannot locate ~/.gitconfig.  When
+you run 'sudo -u www-data ...' interactively, sudo inherits the calling
+user's HOME, so the problem does not appear in manual testing — which
+makes it easy to miss.
+
+Verify the difference:
+
+  # Interactive: HOME is the calling user's home (misleading)
+  ssh hcr@vaio "sudo -u www-data bash -c 'echo HOME=$HOME'"
+  # → HOME=/home/hcr  (or similar — NOT /var/www)
+
+  # Apache context: HOME is unset or absent
+  # (observe with a debug script run via browser, not SSH)
+
+The PHP backend compensates in GitFileStorageBackend::ensure_git_home()
+(core/classes/GitFileStorageBackend.class.php), which calls:
+
+  putenv('HOME=' . posix_getpwuid(posix_getuid())['dir']);
+
+This reads www-data's home directory directly from the passwd database
+and sets HOME before any git operation.  It only sets HOME when the
+current value does not already point at the correct directory.
+
+No server-side action is required for this fix — it is handled entirely
+in code.  This note exists so that future troubleshooters understand
+why ensure_git_home() is called before every git operation, and why
+the error appears under Apache but not in SSH interactive tests.
+
+Symptom checklist if "Author identity unknown" appears in apache logs:
+  1. Verify /var/www/.gitconfig exists and is readable by www-data.
+  2. Verify ensure_git_home() is called before Git::open() in store()
+     and delete().
+  3. Verify posix extension is enabled in PHP (php -m | grep posix).
+
+
+STEP 4 — Install czproject/git-php via Composer
+------------------------------------------------
+
+The PHP backend uses the czproject/git-php library (v4.4.0 or later)
+to drive git operations.  It must be installed via Composer.
+
+If the Doctis webroot is an NFS mount from the dev machine, run
+Composer on the server directly (not via NFS), so that Composer
+writes to the server's local filesystem and respects the server's PHP
+version:
+
+  ssh hcr@vaio "cd /var/www/html/doctis && composer install"
+
+If czproject/git-php is not yet listed in composer.json, add it first:
+
+  ssh hcr@vaio "cd /var/www/html/doctis && composer require czproject/git-php:^4.4"
+
+Verify the library loaded correctly (run as www-data to mirror the
+Apache runtime environment):
+
+  ssh hcr@vaio "sudo -u www-data php -r \"
+    require '/var/www/html/doctis/vendor/autoload.php';
+    \\\$git = new CzProject\\\GitPhp\\\Git;
+    echo 'czproject/git-php loaded OK\n';
+  \""
+
+Expected output:
+  czproject/git-php loaded OK
+
+NOTE: Composer writes vendor/ into the webroot.  The vendor/ directory
+must be readable by www-data but should not be web-accessible.
+Confirm the Apache virtual host configuration excludes vendor/ from
+direct HTTP access (e.g. via a Deny or RedirectMatch rule).
+
+
+STEP 5 — Verify the full create/commit/push/retrieve cycle
+-----------------------------------------------------------
+
+This test simulates exactly what the PHP backend will do when a
+document is uploaded to a new project. Run each command in sequence.
+
+5a. Create a bare repository (simulates project creation in Doctis):
+
+  ssh hcr@vaio "sudo -u www-data git init --bare /var/git/doctis/test-project.git"
+
+  Expected: Initialized empty Git repository in /var/git/doctis/test-project.git/
+
+5b.Clone a working tree from the bare repo:
+
+  ssh hcr@vaio "sudo -u www-data git clone \
+    /var/git/doctis/test-project.git \
+    /var/www/doctis/worktrees/test-project"
+
+  Expected: warning: You appear to have cloned an empty repository.
+
+5c.Write a document file, stage, commit, and push (simulates file upload):
+
+  ssh hcr@vaio "sudo -u www-data bash -c '
+    cd /var/www/doctis/worktrees/test-project &&
+    mkdir -p PROC-TEST-001 &&
+    printf \"# Test Document\n\nContent.\n\" > PROC-TEST-001/source.md &&
+    git add PROC-TEST-001/source.md &&
+    git commit -m \"dwg_id=1 rev=A upload by testuser\" &&
+    git push origin main
+  '"
+
+  Expected: a commit SHA and push confirmation:
+    [main (root-commit) xxxxxxx] dwg_id=1 rev=A upload by testuser
+    To /var/git/doctis/test-project.git
+       xxxxxxx  main -> main
+
+  THE PUSH IS MANDATORY. git commit only writes to the working tree's
+  local history. The bare repo — the durable store — does not receive
+  the commit until git push is called. If push is omitted, retrieval
+  from the bare repo returns stale or absent content. See
+  doc/GIT_SERVER_OPERATIONS.md Operation 2 for full detail.
+
+5d.Confirm the bare repo received the commit:
+
+  ssh hcr@vaio "sudo -u www-data git \
+    --git-dir=/var/git/doctis/test-project.git log --oneline"
+
+  Expected: xxxxxxx dwg_id=1 rev=A upload by testuser
+
+5e.Retrieve document content from the bare repo by commit SHA
+    (replace xxxxxxx with the actual SHA from step 5c):
+
+  ssh hcr@vaio "sudo -u www-data git \
+    --git-dir=/var/git/doctis/test-project.git \
+    show xxxxxxx:PROC-TEST-001/source.md"
+
+  Expected: the file contents printed to stdout.
+
+5f.Retrieve using HEAD (latest commit):
+
+  ssh hcr@vaio "sudo -u www-data git \
+    --git-dir=/var/git/doctis/test-project.git \
+    show HEAD:PROC-TEST-001/source.md"
+
+5g.Verify content integrity — SHA256 must match between bare repo and
+    working tree:
+
+  ssh hcr@vaio "
+    sudo -u www-data git --git-dir=/var/git/doctis/test-project.git \
+      show HEAD:PROC-TEST-001/source.md | sha256sum &&
+    sudo cat /var/www/doctis/worktrees/test-project/PROC-TEST-001/source.md \
+      | sha256sum
+  "
+
+  Expected: identical hashes on both lines.
+
+5h. Clean up test project (once satisfied):
+
+  ssh hcr@vaio "
+    sudo rm -rf /var/git/doctis/test-project.git &&
+    sudo rm -rf /var/www/doctis/worktrees/test-project
+  "
+
+
+STEP 5a — Branch naming: main vs master
+----------------------------------------
+
+The global gitconfig (Step 3) sets init.defaultBranch = main, which
+ensures all new bare repos and clones created by PHP use the 'main'
+branch.
+
+Any repository created before that setting was written (e.g. during
+earlier manual testing) will use 'master'.
+
+The PHP backend calls $repo->getCurrentBranchName() and pushes to
+whatever branch the worktree is currently on, so both 'master' and
+'main' worktrees are handled without error.  Renaming to 'main' is
+still recommended for consistency across all project repos.
+
+Diagnosis — check which branch a worktree is on:
+
+  ssh hcr@vaio "sudo -u www-data git \
+    -C /var/www/doctis/worktrees/<slug> branch"
+
+Fix — rename master to main and re-register the tracking branch:
+
+  ssh hcr@vaio "
+    sudo -u www-data git -C /var/www/doctis/worktrees/<slug> \
+      branch -m master main &&
+    sudo -u www-data git -C /var/www/doctis/worktrees/<slug> \
+      push --set-upstream origin main
+  "
+
+
+STEP 6 — Run the PHP integration test
+--------------------------------------
+
+admin/test-git-php.php exercises the full czproject/git-php
+store/retrieve/delete cycle.  It is self-contained: it creates a
+temporary bare repo and worktree using a unique slug (phptest-<pid>),
+runs 15 checks, then tears everything down regardless of outcome.
+
+Run it as www-data to mirror the Apache runtime environment exactly:
+
+  ssh hcr@vaio "sudo -u www-data php /var/www/html/doctis/admin/test-git-php.php"
+
+Expected output (abbreviated):
+
+  === czproject/git-php integration test ===
+      slug: phptest-NNNNN
+
+  ── Setup ──────────────────────────────────────────────────────
+    1. git init --bare   ... OK
+    2. git clone         ... OK
+
+  ── Store cycle ────────────────────────────────────────────────
+    3. czproject open    ... OK
+    4. write source file ... OK
+    5. git add           ... OK
+    6. git commit        ... OK (SHA: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx)
+    7. git push          ... OK
+
+  ── Retrieval ──────────────────────────────────────────────────
+    8. retrieve by SHA   ... OK
+    9. retrieve via HEAD ... OK
+   10. SHA256 integrity  ... OK
+
+  ── Delete cycle ───────────────────────────────────────────────
+   11. git rm           ... OK
+   12. commit delete    ... OK (SHA: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx)
+   13. push delete      ... OK
+
+  ── History integrity ──────────────────────────────────────────
+   14. absent from HEAD ... OK
+   15. history retained ... OK
+
+  ── Teardown ───────────────────────────────────────────────────
+    Removed: /var/www/doctis/worktrees/phptest-NNNNN
+    Removed: /var/git/doctis/phptest-NNNNN.git
+
+  ── Result ─────────────────────────────────────────────────────
+    15 / 15 tests passed
+    All tests passed.
+
+If any test fails, the teardown still runs.  Check the Apache error
+log for detail:
+
+  ssh hcr@vaio "sudo tail -30 /var/log/apache2/error.log | grep -v Xdebug"
+
+This test must pass before enabling $g_file_upload_method = GIT.
+
+
+STEP 7 — Add config keys to Doctis config_inc.php
+--------------------------------------------------
+
+Activate the GIT backend by adding these keys to
+/var/www/html/doctis/config/config_inc.php on the server:
+
+  $g_file_upload_method = GIT;   // constant 3, defined in constant_inc.php
+  $g_git_storage_root   = '/var/git/doctis';
+  $g_git_worktree_root  = '/var/www/doctis/worktrees';
+
+
+NOTE: Legacy monolithic store (superseded)
+------------------------------------------
+
+An earlier version of this setup created a single monolithic bare repo:
+
+  /var/git/doctis-store.git
+  /var/www/doctis/document_workspace/
+
+These directories may still exist on the server. They predate the
+per-project design and are not used by the current implementation.
+They can be safely removed once confirmed to contain no documents:
+
+  ssh hcr@vaio "sudo -u www-data git \
+    --git-dir=/var/git/doctis-store.git log --oneline 2>&1 | head -5"
+
+  # If empty / no commits, safe to remove:
+  ssh hcr@vaio "
+    sudo rm -rf /var/git/doctis-store.git &&
+    sudo rm -rf /var/www/doctis/document_workspace
+  "
