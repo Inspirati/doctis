@@ -1479,3 +1479,137 @@ function file_dwg_get_max_file_size() {
 		config_get( 'max_file_size' )
 	);
 }
+
+# =============================================================================
+# Primary document file API  (Phase 2 — {dwg_primary_file} table)
+# =============================================================================
+
+/**
+ * Return true if a primary document file exists for the given dwg.
+ *
+ * @param int $p_dwg_id
+ * @return bool
+ */
+function file_dwg_primary_exists( $p_dwg_id ) {
+	db_param_push();
+	$t_query = 'SELECT COUNT(*) FROM {dwg_primary_file} WHERE dwg_id=' . db_param();
+	$t_result = db_query( $t_query, array( (int)$p_dwg_id ) );
+	return ( db_result( $t_result ) > 0 );
+}
+
+/**
+ * Return the primary document file row for a dwg, or null if none exists.
+ *
+ * @param int $p_dwg_id
+ * @return array|null
+ */
+function file_dwg_primary_get( $p_dwg_id ) {
+	db_param_push();
+	$t_query = 'SELECT * FROM {dwg_primary_file} WHERE dwg_id=' . db_param();
+	$t_result = db_query( $t_query, array( (int)$p_dwg_id ) );
+	$t_row = db_fetch_array( $t_result );
+	return $t_row ? $t_row : null;
+}
+
+/**
+ * Store a primary document file for a dwg via the configured storage backend,
+ * inserting or replacing the {dwg_primary_file} row.
+ *
+ * @param int    $p_dwg_id
+ * @param int    $p_user_id
+ * @param string $p_tmp_file      Path to the uploaded temp file
+ * @param string $p_filename      Original filename from the browser
+ * @param int    $p_filesize      File size in bytes
+ * @param string $p_file_type     MIME type
+ * @param string $p_description   Optional revision note
+ * @return void
+ */
+function file_dwg_primary_add( $p_dwg_id, $p_user_id, $p_tmp_file, $p_filename, $p_filesize, $p_file_type, $p_description = '' ) {
+	$t_project_id = dwg_get_field( $p_dwg_id, 'project_id' );
+	$t_backend    = file_dwg_get_storage_backend();
+
+	$t_unique_name = $p_filename;
+	$t_file_path   = (int)$p_dwg_id . '/' . $p_filename;
+
+	$t_metadata = array(
+		'dwg_id'     => $p_dwg_id,
+		'project_id' => $t_project_id,
+	);
+
+	list( $t_diskfile, $t_folder, $t_content ) = $t_backend->store(
+		$p_tmp_file, $p_filesize, $t_unique_name, $t_file_path, true, $t_metadata
+	);
+
+	# Remove any existing row (replace semantics)
+	if( file_dwg_primary_exists( $p_dwg_id ) ) {
+		$t_existing = file_dwg_primary_get( $p_dwg_id );
+		$t_backend->delete( $t_existing['diskfile'], $t_project_id, $t_metadata );
+		db_param_push();
+		db_query( 'DELETE FROM {dwg_primary_file} WHERE dwg_id=' . db_param(), array( (int)$p_dwg_id ) );
+	}
+
+	db_param_push();
+	$t_query = 'INSERT INTO {dwg_primary_file}
+		( dwg_id, user_id, filename, filesize, file_type, diskfile, folder, content, date_added, description, git_branch )
+		VALUES
+		( ' . db_param() . ', ' . db_param() . ', ' . db_param() . ', ' . db_param() . ', ' . db_param() . ',
+		  ' . db_param() . ', ' . db_param() . ', ' . db_param() . ', ' . db_param() . ', ' . db_param() . ', ' . db_param() . ' )';
+	db_query( $t_query, array(
+		(int)$p_dwg_id,
+		(int)$p_user_id,
+		$p_filename,
+		(int)$p_filesize,
+		$p_file_type,
+		$t_diskfile,
+		$t_folder,
+		$t_content,
+		db_now(),
+		$p_description,
+		'main',
+	) );
+}
+
+/**
+ * Delete the primary document file for a dwg from both the storage backend
+ * and the {dwg_primary_file} table.
+ *
+ * @param int $p_dwg_id
+ * @return void
+ */
+function file_dwg_primary_delete( $p_dwg_id ) {
+	$t_row = file_dwg_primary_get( $p_dwg_id );
+	if( !$t_row ) {
+		return;
+	}
+
+	$t_project_id = dwg_get_field( $p_dwg_id, 'project_id' );
+	$t_backend    = file_dwg_get_storage_backend();
+	$t_metadata   = array(
+		'dwg_id'     => $p_dwg_id,
+		'project_id' => $t_project_id,
+	);
+
+	$t_backend->delete( $t_row['diskfile'], $t_project_id, $t_metadata );
+
+	db_param_push();
+	db_query( 'DELETE FROM {dwg_primary_file} WHERE dwg_id=' . db_param(), array( (int)$p_dwg_id ) );
+}
+
+/**
+ * Retrieve the content of a primary document file for download.
+ * Returns array( $type, $content ) matching the pattern used by file_dwg_get_content().
+ *
+ * @param int $p_dwg_id
+ * @return array|false  array( mime_type, content_bytes ) or false on failure
+ */
+function file_dwg_primary_get_content( $p_dwg_id ) {
+	$t_row = file_dwg_primary_get( $p_dwg_id );
+	if( !$t_row ) {
+		return false;
+	}
+
+	$t_project_id = dwg_get_field( $p_dwg_id, 'project_id' );
+	$t_backend    = file_dwg_get_storage_backend();
+
+	return $t_backend->retrieve( $t_row, $t_project_id );
+}

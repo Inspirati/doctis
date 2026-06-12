@@ -1103,6 +1103,111 @@ if( $t_flags['monitor_show'] ) {
 <?php
 }
 
+# ── Primary Document File ────────────────────────────────────────────────────
+<?php
+$t_primary_file = file_dwg_primary_get( $f_dwg_id );
+$t_can_upload_primary = !$t_force_readonly &&
+	access_has_dwg_level( config_get( 'update_dwg_threshold' ), $f_dwg_id );
+?>
+<div class="col-md-12 col-xs-12">
+<div class="space-10"></div>
+<div class="widget-box widget-color-orange2">
+	<div class="widget-header widget-header-small">
+		<h4 class="widget-title lighter">
+			<?php print_icon( 'fa-file', 'ace-icon' ); ?>
+			<?php echo lang_get( 'primary_document_section' ) ?>
+		</h4>
+	</div>
+	<div class="widget-body">
+		<div class="widget-main no-padding">
+			<div class="table-responsive">
+				<table class="table table-bordered table-condensed table-striped">
+<?php if( $t_primary_file ): ?>
+				<tr>
+					<th class="category width-15"><?php echo lang_get( 'primary_document_file' ) ?></th>
+					<td class="width-85">
+						<a href="file_download.php?type=dwg_primary&amp;id=<?php echo $f_dwg_id ?>"><?php
+							echo string_display_line( $t_primary_file['filename'] )
+						?></a>
+						&nbsp;
+						<span class="small">(<?php echo number_format( $t_primary_file['filesize'] ) ?> <?php echo lang_get( 'bytes' ) ?>)</span>
+					</td>
+				</tr>
+				<tr>
+					<th class="category width-15"><?php echo lang_get( 'date_uploaded' ) ?></th>
+					<td><?php echo date( config_get( 'normal_date_format' ), $t_primary_file['date_added'] ) ?></td>
+				</tr>
+<?php	if( !is_blank( $t_primary_file['description'] ) ): ?>
+				<tr>
+					<th class="category width-15"><?php echo lang_get( 'description' ) ?></th>
+					<td><?php echo string_display_line( $t_primary_file['description'] ) ?></td>
+				</tr>
+<?php	endif; ?>
+<?php	if( $t_can_upload_primary ): ?>
+				<tr>
+					<th class="category width-15"><?php echo lang_get( 'primary_document_replace' ) ?></th>
+					<td>
+						<form method="post" enctype="multipart/form-data" action="dwg_primary_file_update.php">
+							<?php echo form_security_field( 'dwg_primary_file_update' ) ?>
+							<input type="hidden" name="dwg_id" value="<?php echo $f_dwg_id ?>" />
+							<input type="file" name="primary_document_file" class="input-sm" />
+							<input type="text" name="primary_document_description" class="input-sm width-40"
+								maxlength="255" placeholder="<?php echo lang_get( 'primary_document_description_hint' ) ?>" />
+							<input type="submit" class="btn btn-warning btn-sm btn-white btn-round"
+								value="<?php echo lang_get( 'primary_document_replace_button' ) ?>" />
+						</form>
+					</td>
+				</tr>
+<?php	endif; ?>
+<?php else: ?>
+				<tr>
+					<td colspan="2" class="center">
+<?php	if( $t_can_upload_primary ): ?>
+						<form method="post" enctype="multipart/form-data" action="dwg_primary_file_update.php">
+							<?php echo form_security_field( 'dwg_primary_file_update' ) ?>
+							<input type="hidden" name="dwg_id" value="<?php echo $f_dwg_id ?>" />
+							<table class="table table-condensed no-border">
+							<tr>
+								<th class="category width-15">
+									<label for="primary_document_file_view"><?php echo lang_get( 'primary_document_file' ) ?></label>
+								</th>
+								<td>
+									<input id="primary_document_file_view" type="file" name="primary_document_file" class="input-sm" />
+								</td>
+							</tr>
+							<tr>
+								<th class="category width-15">
+									<label for="primary_document_description_view"><?php echo lang_get( 'description' ) ?></label>
+								</th>
+								<td>
+									<input id="primary_document_description_view" type="text"
+										name="primary_document_description" class="input-sm width-60"
+										maxlength="255"
+										placeholder="<?php echo lang_get( 'primary_document_description_hint' ) ?>" />
+								</td>
+							</tr>
+							<tr>
+								<td colspan="2">
+									<input type="submit" class="btn btn-primary btn-sm btn-white btn-round"
+										value="<?php echo lang_get( 'primary_document_upload_button' ) ?>" />
+								</td>
+							</tr>
+							</table>
+						</form>
+<?php	else: ?>
+						<span class="grey"><?php echo lang_get( 'primary_document_none' ) ?></span>
+<?php	endif; ?>
+					</td>
+				</tr>
+<?php endif; ?>
+				</table>
+			</div>
+		</div>
+	</div>
+</div>
+</div>
+
+<?php
 # Licenses applied to the dwg
 if( $t_flags['license_show'] ) {
 	$t_collapse_block = is_collapsed( 'licenses' );
