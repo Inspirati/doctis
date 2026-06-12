@@ -42,17 +42,66 @@ class GitFileStorageBackend implements FileStorageBackendInterface {
 	# ── Private helpers ────────────────────────────────────────────────────────
 
 	/**
-	 * Ensure HOME is set so that git can locate the www-data global gitconfig.
+	 * Ensure HOME is set so that git can locate the www-data global gitconfig,
+	 * and set GIT_AUTHOR_* / GIT_COMMITTER_* from that config as a fallback.
 	 *
 	 * Apache does not set HOME for the www-data worker process, so git cannot
-	 * find /var/www/.gitconfig (www-data's home as defined in /etc/passwd).
-	 * We only set it when it is missing or wrong; we never override a value
-	 * that already points at the correct directory.
+	 * find /var/www/.gitconfig.  We always force HOME to the value from
+	 * /etc/passwd rather than trusting whatever Apache may have set.
+	 *
+	 * Additionally we propagate GIT_AUTHOR_NAME / EMAIL and their COMMITTER
+	 * counterparts so that git commit never fails with "Author identity
+	 * unknown" even when the HOME trick is insufficient (e.g. running under
+	 * an unusual Apache configuration).
 	 */
 	private function ensure_git_home(): void {
 		$t_www_data_home = posix_getpwuid( posix_getuid() )['dir'] ?? '/var/www';
-		if( getenv( 'HOME' ) !== $t_www_data_home ) {
-			putenv( 'HOME=' . $t_www_data_home );
+		putenv( 'HOME=' . $t_www_data_home );
+
+		# Read name/email from the gitconfig so we don't hard-code them here.
+		# These become the fallback identity; set_git_author() overrides them
+		# with the actual Doctis user's details for each operation.
+		$t_gitconfig = $t_www_data_home . '/.gitconfig';
+		$t_name  = trim( (string)shell_exec( 'git config --file ' . escapeshellarg( $t_gitconfig ) . ' user.name 2>/dev/null' ) );
+		$t_email = trim( (string)shell_exec( 'git config --file ' . escapeshellarg( $t_gitconfig ) . ' user.email 2>/dev/null' ) );
+
+		if( $t_name !== '' ) {
+			putenv( 'GIT_AUTHOR_NAME='    . $t_name );
+			putenv( 'GIT_COMMITTER_NAME=' . $t_name );
+		}
+		if( $t_email !== '' ) {
+			putenv( 'GIT_AUTHOR_EMAIL='    . $t_email );
+			putenv( 'GIT_COMMITTER_EMAIL=' . $t_email );
+		}
+	}
+
+	/**
+	 * Override GIT_AUTHOR_* / GIT_COMMITTER_* with the identity of the
+	 * Doctis user performing the operation, so each git commit is attributed
+	 * to the actual uploader rather than the generic www-data system account.
+	 *
+	 * Call this after ensure_git_home() — the gitconfig values set there
+	 * act as a safe fallback; this method overrides only what it can resolve.
+	 *
+	 * Name: uses realname when set, otherwise the login username.
+	 * Email: uses the address stored in the user table; if blank (the account
+	 * has no email address) the gitconfig fallback is left unchanged.
+	 *
+	 * @param int $p_user_id  Doctis user id.
+	 */
+	private function set_git_author( int $p_user_id ): void {
+		# user_get_name() returns realname ?? username, matching the display
+		# convention used elsewhere in Doctis.
+		$t_name  = user_get_name( $p_user_id );
+		$t_email = user_get_email( $p_user_id );
+
+		if( !is_blank( $t_name ) ) {
+			putenv( 'GIT_AUTHOR_NAME='    . $t_name );
+			putenv( 'GIT_COMMITTER_NAME=' . $t_name );
+		}
+		if( !is_blank( $t_email ) ) {
+			putenv( 'GIT_AUTHOR_EMAIL='    . $t_email );
+			putenv( 'GIT_COMMITTER_EMAIL=' . $t_email );
 		}
 	}
 
@@ -161,12 +210,11 @@ class GitFileStorageBackend implements FileStorageBackendInterface {
 		$t_filename   = $p_metadata['filename'];
 		$t_user_id    = (int)$p_metadata['user_id'];
 
-		error_log( 'GitFileStorageBackend::store() project_id=' . $t_project_id . ' dwg_id=' . $t_dwg_id . ' filename=' . $t_filename );
+		$this->set_git_author( $t_user_id );
 
 		$t_paths    = $this->ensure_project_repo( $t_project_id );
 		$t_bare     = $t_paths['bare'];
 		$t_worktree = $t_paths['worktree'];
-		error_log( 'GitFileStorageBackend::store() bare=' . $t_bare . ' worktree=' . $t_worktree );
 
 		# Create the per-document subdirectory if needed
 		$t_abs_dir = $t_worktree . '/' . $t_dwg_id;
@@ -201,16 +249,13 @@ class GitFileStorageBackend implements FileStorageBackendInterface {
 
 		# Commit and push via czproject/git-php
 		try {
-			error_log( 'GitFileStorageBackend::store() opening worktree' );
 			$t_git  = new Git;
 			$t_repo = $t_git->open( $t_worktree );
-			error_log( 'GitFileStorageBackend::store() addFile ' . $t_rel_path );
 			$t_repo->addFile( $t_rel_path );
 
 			$t_username   = user_get_name( $t_user_id );
 			$t_commit_msg = 'dwg_id=' . $t_dwg_id . ' by ' . $t_username;
 
-			error_log( 'GitFileStorageBackend::store() commit: ' . $t_commit_msg );
 			try {
 				$t_repo->commit( $t_commit_msg );
 			} catch( GitException $e ) {
@@ -220,17 +265,13 @@ class GitFileStorageBackend implements FileStorageBackendInterface {
 				if( $e->getCode() !== 1 ) {
 					throw $e;
 				}
-				error_log( 'GitFileStorageBackend::store() nothing to commit (duplicate content), using HEAD' );
 			}
 			$t_branch = $t_repo->getCurrentBranchName();
-			error_log( 'GitFileStorageBackend::store() push origin ' . $t_branch );
 			$t_repo->push( [ 'origin', $t_branch ] );
 			$t_sha = (string)$t_repo->getLastCommitId();
-			error_log( 'GitFileStorageBackend::store() success sha=' . $t_sha );
 		} catch( GitException $e ) {
 			$t_result = $e->getRunnerResult();
 			$t_stderr = $t_result ? implode( "\n", $t_result->getErrorOutput() ) : '(no result)';
-			error_log( 'GitFileStorageBackend::store() GitException: ' . $e->getMessage() . ' | stderr: ' . $t_stderr );
 			throw new ServiceException(
 				'Git operation failed during store: ' . $e->getMessage() . ' | stderr: ' . $t_stderr,
 				ERROR_GENERIC
@@ -284,6 +325,8 @@ class GitFileStorageBackend implements FileStorageBackendInterface {
 		$t_dwg_id   = (int)$p_metadata['dwg_id'];
 		$t_filename = $p_metadata['filename'];
 		$t_user_id  = (int)$p_metadata['user_id'];
+
+		$this->set_git_author( $t_user_id );
 
 		$t_slug     = $this->project_slug( $p_project_id );
 		$t_worktree = $this->worktree_path( $t_slug );

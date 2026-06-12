@@ -123,9 +123,9 @@ class DwgAddCommand extends Command {
 		$t_reference			= $t_issue['reference'];
 		$t_link_url				= $t_issue['link_url'];
 		$t_classification		= $t_issue['classification'];
-		$t_revision_date		= $t_issue['revision_date'];
-		$t_release_date			= $t_issue['release_date'];
-		$t_due_date				= $t_issue['due_date'];
+		$t_revision_date		= $t_issue['revision_date'] ?? null;
+		$t_release_date			= $t_issue['release_date'] ?? null;
+		$t_due_date				= $t_issue['due_date'] ?? null;
 		// $t_date_submitted		= $t_issue['date_submitted'];
 		// $t_last_updated			= $t_issue['last_updated'];
 

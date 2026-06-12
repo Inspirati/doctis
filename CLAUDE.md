@@ -87,7 +87,7 @@ running instance; it serves as both the development and local test environment.
 |------|--------|
 | Apache webroot | `/var/www/html/doctis/` on vaio |
 | URL | `http://10.0.0.10/doctis/` |
-| Database | MariaDB on `localhost`, database `testdb`, user `admin` |
+| Database | MariaDB on `localhost`, database `doctis`, user `admin` |
 | NFS mount (dev machine) | `/home/hcr/html/doctis/` → vaio:`/var/www/html/doctis/` |
 
 Edit PHP files locally via the NFS mount; changes are immediately live on
@@ -170,11 +170,12 @@ before committing.
 | Symptom | Likely cause | Where to look |
 |---------|-------------|---------------|
 | `Class "ServiceException" not found` | Missing `use Mantis\Exceptions\ServiceException;` in a `.class.php` file | Top of the failing backend class |
-| `Author identity unknown` | Apache didn't set `HOME`; `ensure_git_home()` not called | `GitFileStorageBackend::store()` or `delete()` |
-| `git commit` exit-code 128 | Same as above — identity missing | Apache error log stderr capture |
+| `Author identity unknown` / exit-code 128 | `GIT_AUTHOR_*` env vars not set; `ensure_git_home()` now sets them from gitconfig | `GitFileStorageBackend::ensure_git_home()` |
 | `git commit` exit-code 1 | Nothing to commit (duplicate file content) | Handled gracefully; returns existing HEAD SHA |
 | `An error occurred during this action` | MantisBT caught an exception; check browser for stack trace | Browser HTML output |
 | `APPLICATION ERROR #0` with `trigger_error` | A switch on `file_upload_method` is missing a `GIT` case | The file and line shown in the stack trace |
+| `Cannot use object of type DwgData as array` | `dwg_get()` returns a `DwgData` object — use `->property`, not `['key']` | The file and line in the stack trace |
+| `Undefined array key 0` on `list(...)=backend->store()` | `store()` returns named-key array; use `$r['diskfile']` etc., not positional `list()` | Caller of `store()` |
 
 ## Upstream Sync Process
 
@@ -188,6 +189,380 @@ composer install
 ```
 
 REST/SOAP integration tests live under `tests/`. Bootstrap: `tests/bootstrap.php.sample` → copy to `tests/bootstrap.php` and configure.
+
+## Resetting to a Clean Slate for Testing
+
+A full clean-room reset wipes both the MariaDB database and the git document
+store, then reinstalls the schema and reloads example data.  This is required
+before any test session that must start from a known-empty state.
+
+**Always run both steps together** — the database and the git store reference
+each other.  Running one without the other leaves them out of sync.
+
+### Step 1 — Reset the git document store
+
+The script must be run as root (it touches `/var/git/doctis/` and
+`/var/www/doctis/worktrees/`).  It prompts for confirmation when invoked
+directly:
+
+```bash
+ssh hcr@vaio "echo 'yes' | sudo bash /var/www/html/doctis/admin/tools/doctis-git-reset.sh"
+```
+
+Expected output ends with: `Git store reset: N item(s) removed.`
+
+### Step 2 — Drop, recreate, and install the database
+
+The script must be run **from its own directory** — it uses a relative path
+(`../../../doctis`) to decide the correct installer URL.  Running it from
+any other directory causes it to build a wrong URL and the schema install
+will fail with a 404.
+
+```bash
+ssh hcr@vaio "echo 'yes' | bash -c 'cd /var/www/html/doctis/admin/tools && bash doctis-drop-and-create-new-database.sh'"
+```
+
+Expected output includes:
+- `✔ doctis database install successful.`
+- `Example data loaded.`
+- `Database doctis loaded.`
+
+A timestamped HTML log of the installer output is saved to
+`admin/tools/doctis_install_<YYYYMMDD_HHMMSS>.html` (excluded from git via
+`.gitignore`).
+
+### Verifying the reset
+
+After both steps, confirm the state is clean:
+
+```bash
+# Database: should show only the example project and test users
+ssh hcr@vaio "mysql -e 'SELECT id, name FROM doctis.project; SELECT id, username FROM doctis.user;'"
+
+# Git store: directories should be absent or empty
+ssh hcr@vaio "ls /var/git/doctis/ /var/www/doctis/worktrees/ 2>&1"
+```
+
+### Common failure: wrong working directory for Step 2
+
+If the database script outputs `curl: (22) The requested URL returned error: 404`
+and the installer log shows no GOOD/FAILED lines, the script was not run from
+its own directory.  The URL check `[ -d ../../../doctis ]` resolved against
+the shell's working directory, not the script's location.  Always use the
+`bash -c 'cd ... && bash ...'` form shown above.
+
+## Curl-Based Live Testing
+
+Use `curl` to exercise the live vaio instance programmatically when browser
+access is not possible. All state lives in a cookie jar file.
+
+### One-time setup — login
+
+MantisBT login is a two-step POST. Do both in sequence:
+
+```bash
+# Step 1 — submit username; server redirects to password page
+curl -s -c /tmp/doctis_cookies.txt -b /tmp/doctis_cookies.txt \
+  -X POST "http://10.0.0.10/doctis/login_password_page.php" \
+  -d "username=manager&return=index.php" -o /dev/null
+
+# Step 2 — submit password (blank for the default manager account)
+curl -s -c /tmp/doctis_cookies.txt -b /tmp/doctis_cookies.txt \
+  -X POST "http://10.0.0.10/doctis/login.php" \
+  -d "username=manager&password=&return=index.php&secure_session=0" -o /dev/null
+```
+
+Verify success by fetching any authenticated page and grepping for the username:
+
+```bash
+curl -s -L -c /tmp/doctis_cookies.txt -b /tmp/doctis_cookies.txt \
+  "http://10.0.0.10/doctis/my_view_dwg_page.php" | grep -o 'manager'
+```
+
+### Project context
+
+Pages that require a project selected will redirect to
+`login_select_proj_page.php`, which in turn redirects to
+`set_project.php?project_id=1&ref=<target>`. Follow redirects with `-L` to
+handle this transparently:
+
+```bash
+curl -s -L -c /tmp/doctis_cookies.txt -b /tmp/doctis_cookies.txt \
+  "http://10.0.0.10/doctis/dwg_create_page.php" -o /tmp/page.html
+```
+
+### Reading CSRF tokens from a page
+
+Every MantisBT form embeds a `form_security_field()` token. Extract it before
+POSTing:
+
+```bash
+TOKEN=$(grep -oP 'name="dwg_report_token" value="\K[^"]+' /tmp/page.html)
+# general pattern:
+TOKEN=$(grep -oP 'name="<token_name>" value="\K[^"]+' /tmp/page.html)
+```
+
+Token names follow the pattern `<action>_token`, e.g.:
+- `dwg_report_token` — document create form
+- `dwg_primary_file_update_token` — primary document upload on view page
+
+### Creating a document
+
+```bash
+curl -s -L -c /tmp/doctis_cookies.txt -b /tmp/doctis_cookies.txt \
+  "http://10.0.0.10/doctis/dwg_create_page.php" -o /tmp/create.html
+TOKEN=$(grep -oP 'name="dwg_report_token" value="\K[^"]+' /tmp/create.html)
+
+curl -s -c /tmp/doctis_cookies.txt -b /tmp/doctis_cookies.txt \
+  -X POST "http://10.0.0.10/doctis/dwg_create.php" \
+  -F "dwg_report_token=${TOKEN}" \
+  -F "m_dwg_id=0" -F "project_id=1" -F "category_id=0" \
+  -F "dwg_title=Test Document" -F "dwg_author=Test Author" \
+  -F "dwg_reference=REF-001" -F "dwg_number=12345" \
+  -F "dwg_edition=Ed 1" -F "dwg_revision=Rev A" \
+  -F "dwg_publisher=Test" -F "dwg_discipline=Testing" \
+  -F "dwg_classification=UNCLASSIFIED" \
+  -F "view_state=10" -F "description=Test" -F "dwg_entry_stay=0" \
+  -v 2>&1 | grep "Location:"
+# Successful create redirects to dwg_view.php?id=<N>
+```
+
+To include a primary document file on create, add:
+
+```bash
+  -F "primary_document_file=@/tmp/myfile.pdf;type=application/pdf;filename=myfile.pdf" \
+  -F "primary_document_description=Initial revision"
+```
+
+### Uploading/replacing a primary document (view page)
+
+```bash
+curl -s -L -c /tmp/doctis_cookies.txt -b /tmp/doctis_cookies.txt \
+  "http://10.0.0.10/doctis/dwg_view.php?id=<N>" -o /tmp/view.html
+UPLOAD_TOKEN=$(grep -oP 'dwg_primary_file_update[^"]*" value="\K[^"]+' /tmp/view.html)
+
+curl -s -c /tmp/doctis_cookies.txt -b /tmp/doctis_cookies.txt \
+  -X POST "http://10.0.0.10/doctis/dwg_primary_file_update.php" \
+  -F "dwg_primary_file_update_token=${UPLOAD_TOKEN}" \
+  -F "dwg_id=<N>" \
+  -F "primary_document_file=@/tmp/myfile.pdf;type=application/pdf;filename=myfile.pdf" \
+  -F "primary_document_description=New revision" \
+  -v 2>&1 | grep "Location:"
+# Redirects to dwg_view.php?id=<N> on success
+```
+
+### Downloading a primary document
+
+```bash
+curl -s -c /tmp/doctis_cookies.txt -b /tmp/doctis_cookies.txt \
+  "http://10.0.0.10/doctis/file_download.php?type=dwg_primary&id=<N>"
+```
+
+### Diagnosing curl failures
+
+- **0-byte response** — the page redirected without `-L`; add `-L` to follow
+- **302 to `login_select_proj_page.php`** — project cookie missing; follow the
+  redirect chain with `-L` and vaio will auto-select project 1
+- **HTTP 500 with `<p>error message</p>`** — extract with:
+  `grep -oP "(?<=<p>)[^<]+(?=</p>)" /tmp/result.html`
+- **Empty `Location:` header** — POST was rejected (CSRF mismatch, access
+  denied, or validation error); save `-o /tmp/result.html` and inspect body
+- **Git `Author identity unknown`** — `ensure_git_home()` in
+  `GitFileStorageBackend` sets `GIT_AUTHOR_*` env vars; check gitconfig at
+  `/var/www/.gitconfig` exists and is readable by `www-data`
+
+## SOAP API Testing and Diagnostics
+
+The Doctis SOAP API is the primary programmatic interface for document
+operations.  Use raw `curl` SOAP calls to exercise and diagnose individual
+endpoints without requiring a browser or a configured SoapClient.
+
+### Smoke test — all Doctis SOAP endpoints in one command
+
+```bash
+ssh hcr@vaio "bash /var/www/html/doctis/admin/tools/doctis-soap-test.sh"
+```
+
+Runs 13 tests covering every Doctis-specific SOAP endpoint (enum, document
+fetch, primary file lifecycle, attachment lifecycle).  Non-fatal — all
+steps run even if earlier ones fail.  Idempotent — cleans up leftover state
+at the start.  Exit code 0 = all pass.  Full description in
+[admin/tools/README.md](admin/tools/README.md).
+
+Override defaults to test a specific document or user:
+
+```bash
+ssh hcr@vaio "bash /var/www/html/doctis/admin/tools/doctis-soap-test.sh \
+  http://10.0.0.10/doctis manager '' 3"
+#                           host   user  pw  dwg_id
+```
+
+### SOAP endpoint and WSDL
+
+```
+SOAP endpoint : http://10.0.0.10/doctis/api/soap/mantisconnect.php
+WSDL          : http://10.0.0.10/doctis/api/soap/mantisconnect.php?wsdl
+```
+
+List all available operations (useful to confirm new endpoints appear after
+a WSDL change):
+
+```bash
+curl -s "http://10.0.0.10/doctis/api/soap/mantisconnect.php?wsdl" \
+  | grep -oP 'operation name="\K[^"]+' | sort
+```
+
+Look up parameter names for a specific method:
+
+```bash
+curl -s "http://10.0.0.10/doctis/api/soap/mantisconnect.php?wsdl" \
+  | grep -A8 '"mc_dwg_primary_uploadRequest"'
+```
+
+### Raw curl SOAP call template
+
+Every SOAP call needs two headers and an XML envelope:
+
+```bash
+curl -s \
+  -H "Content-Type: text/xml; charset=utf-8" \
+  -H 'SOAPAction: ""' \
+  --data '<?xml version="1.0" encoding="utf-8"?>
+<soapenv:Envelope
+    xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+    xmlns:man="http://futureware.biz/mantisconnect">
+  <soapenv:Body>
+    <man:OPERATION_NAME>
+      <username>manager</username>
+      <password></password>
+      PARAMETERS
+    </man:OPERATION_NAME>
+  </soapenv:Body>
+</soapenv:Envelope>' \
+  "http://10.0.0.10/doctis/api/soap/mantisconnect.php"
+```
+
+### Useful diagnostic one-liners
+
+**Connectivity / version check:**
+
+```bash
+curl -s -H "Content-Type: text/xml" -H 'SOAPAction: ""' \
+  --data '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:man="http://futureware.biz/mantisconnect"><soapenv:Body><man:mc_version><username>manager</username><password></password></man:mc_version></soapenv:Body></soapenv:Envelope>' \
+  "http://10.0.0.10/doctis/api/soap/mantisconnect.php" | grep -oP '(?<=<return[^>]*>)[^<]+'
+```
+
+**List all document status values:**
+
+```bash
+curl -s -H "Content-Type: text/xml" -H 'SOAPAction: ""' \
+  --data '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:man="http://futureware.biz/mantisconnect"><soapenv:Body><man:mc_enum_dwg_status><username>manager</username><password></password></man:mc_enum_dwg_status></soapenv:Body></soapenv:Envelope>' \
+  "http://10.0.0.10/doctis/api/soap/mantisconnect.php" \
+  | grep -oP '(?<=<name xsi:type="xsd:string">)[^<]+'
+```
+
+**Fetch a document by id (note: parameter is `issue_id`):**
+
+```bash
+curl -s -H "Content-Type: text/xml" -H 'SOAPAction: ""' \
+  --data '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:man="http://futureware.biz/mantisconnect"><soapenv:Body><man:mc_dwg_get><username>manager</username><password></password><issue_id>2</issue_id></man:mc_dwg_get></soapenv:Body></soapenv:Envelope>' \
+  "http://10.0.0.10/doctis/api/soap/mantisconnect.php" \
+  | grep -oP '(?<=<title[^>]*>)[^<]+'
+```
+
+**Check primary file metadata for a document:**
+
+```bash
+curl -s -H "Content-Type: text/xml" -H 'SOAPAction: ""' \
+  --data '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:man="http://futureware.biz/mantisconnect"><soapenv:Body><man:mc_dwg_primary_get><username>manager</username><password></password><dwg_id>2</dwg_id></man:mc_dwg_primary_get></soapenv:Body></soapenv:Envelope>' \
+  "http://10.0.0.10/doctis/api/soap/mantisconnect.php"
+# Returns empty PrimaryFileData if no file; filename/filesize/file_type/download_url if present
+```
+
+### base64Binary encoding for file upload/download
+
+PHP's SoapServer **pre-decodes** `xsd:base64Binary` input parameters before
+passing them to the PHP handler.  PHP's SoapClient compensates by
+double-encoding.  Raw `curl` callers must therefore also double-encode:
+
+```bash
+# Upload: double-encode the content
+CONTENT="file bytes here"
+B64=$(printf '%s' "$CONTENT" | base64 -w 0 | base64 -w 0)
+# Send <content>${B64}</content> in the SOAP body
+
+# Download (mc_dwg_attachment_get): double-decode the returned value
+RETURNED_B64="... value from <return> element ..."
+printf '%s' "$RETURNED_B64" | base64 -d | base64 -d
+```
+
+This does **not** affect PHP SoapClient or PHPUnit tests — the SoapClient
+handles the double-encoding transparently.  It only matters for raw curl
+diagnostic calls against base64Binary parameters/returns.
+
+### Verifying git commit attribution after a file operation
+
+After any upload or delete via SOAP (or the web UI), confirm the commit is
+attributed to the correct Doctis user:
+
+```bash
+ssh hcr@vaio "git --git-dir=/var/git/doctis/example.git \
+  log --format='%h %an <%ae> %s' -5"
+# Should show the Doctis user's realname and email, not "Doctis <doctis@vaio.local>"
+```
+
+### Diagnosing "Procedure not present" SOAP errors
+
+This error means the SoapServer received a call for an operation it has no
+registered PHP function for.  Work through in order:
+
+1. **Is the operation in the WSDL?**
+   ```bash
+   grep 'mc_my_function' /var/www/html/doctis/api/soap/mantisconnect.wsdl
+   # Must appear in <message>, <portType>, and <binding> sections
+   ```
+
+2. **Clear the WSDL cache** (PHP caches parsed WSDL in `/tmp/wsdl-*`):
+   ```bash
+   ssh hcr@vaio "sudo rm -f /tmp/wsdl-*"
+   ```
+
+3. **Force OPcache recompilation of `mc_core.php`** — the most common cause
+   after adding new `require_once` lines.  OPcache caches compiled bytecode
+   keyed on file mtime; touching the file forces recompilation on the next
+   request:
+   ```bash
+   ssh hcr@vaio "touch /var/www/html/doctis/api/soap/mc_core.php"
+   ```
+   Alternatively, adding any whitespace edit and saving achieves the same
+   effect via the NFS mount.
+
+4. **Confirm the PHP function is defined** by loading the SOAP stack from
+   CLI as the correct user:
+   ```bash
+   # Write a check script:
+   cat > /tmp/check_fns.php << 'EOF'
+   <?php
+   # Bootstrap MantisBT, then load the SOAP stack
+   $t_mantis_dir = '/var/www/html/doctis/';
+   require_once $t_mantis_dir . 'core.php';
+   require_once $t_mantis_dir . 'api/soap/mc_core.php';
+   $fns = array_filter(get_defined_functions()['user'],
+       fn($f) => strpos($f, 'mc_dwg') === 0 || $f === 'mc_enum_dwg_status');
+   sort($fns);
+   echo implode("\n", $fns) . "\n";
+   EOF
+   ssh hcr@vaio "php /tmp/check_fns.php"
+   # If the function is absent, the require_once chain has a gap
+   ```
+
+5. **Check Apache error log** for include-time PHP errors that silently abort
+   the SOAP bootstrap:
+   ```bash
+   ssh hcr@vaio "sudo tail -30 /var/log/apache2/error.log | grep -v Xdebug"
+   ```
+
+---
 
 ## Config File
 

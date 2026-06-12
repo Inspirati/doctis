@@ -2213,3 +2213,15 @@ $s_filter_all = 'All';
 $s_filter_new = 'New';
 $s_filter_unused_tags = 'Unused';
 $s_filter_unused = 'Unused';
+
+# Primary document file
+$s_primary_document_section            = 'Primary Document';
+$s_primary_document_upload             = 'Primary Document Upload';
+$s_primary_document_file               = 'Document File';
+$s_primary_document_file_optional      = 'Optional — upload the document file this record represents.';
+$s_primary_document_description        = 'Revision Note';
+$s_primary_document_description_hint   = 'e.g. Initial upload, Rev A, corrected figures...';
+$s_primary_document_upload_button      = 'Upload Document';
+$s_primary_document_replace            = 'Upload New Revision';
+$s_primary_document_replace_button     = 'Replace Document';
+$s_primary_document_none               = 'No document file uploaded.';

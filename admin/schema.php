@@ -1151,6 +1151,27 @@ $g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'license_us
 //	oauth_provider			C(50)	NOTNULL DEFAULT \" '' \",
 //	oauth_uid				C(100)	NOTNULL DEFAULT \" '' \" ") );
 
+# Primary document file — one canonical file per dwg record, stored via GIT backend.
+# Distinct from {dwg_file} which holds note attachments.
+# Storage backend columns (diskfile, folder, content) mirror {dwg_file} for API consistency.
+# Git-specific fields (git_branch) are included from the outset to avoid future migrations.
+$g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwg_primary_file' ), "
+	id					I		UNSIGNED NOTNULL PRIMARY AUTOINCREMENT,
+	dwg_id				I		UNSIGNED NOTNULL DEFAULT '0',
+	user_id				I		UNSIGNED NOTNULL DEFAULT '0',
+	filename			C(250)	NOTNULL DEFAULT \" '' \",
+	filesize			I		NOTNULL DEFAULT '0',
+	file_type			C(250)	NOTNULL DEFAULT \" '' \",
+	diskfile			C(250)	NOTNULL DEFAULT \" '' \",
+	folder				C(250)	NOTNULL DEFAULT \" '' \",
+	content				B		NULL " . $t_blob_default . ",
+	date_added			I		UNSIGNED NOTNULL DEFAULT '1',
+	description			C(255)	NOTNULL DEFAULT \" '' \",
+	git_branch			C(64)	NOTNULL DEFAULT \" 'main' \" ",
+	$t_table_options
+	) );
+$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_dwg_primary_file_dwg_id', db_get_table( 'dwg_primary_file' ), 'dwg_id', array( 'UNIQUE' ) ) );
+
 # IMPORTANT: keep these entries as the last indexes, as they will be deleted in release versions
 #			 (you will need to bump all the indexes when inserting tables database statements above here)
 # user access_level: '10:viewer,25:reporter,40:updater,55:developer,70:manager,90:administrator'

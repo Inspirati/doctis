@@ -318,10 +318,8 @@ layout_page_header( lang_get( 'create_dwg_link' ) );
 
 layout_page_begin( __FILE__, true );
 
-$t_form_encoding = '';
-if( $t_show_attachments ) {
-	$t_form_encoding = 'enctype="multipart/form-data"';
-}
+// Always multipart — primary document upload is always available on the create form
+$t_form_encoding = 'enctype="multipart/form-data"';
 
 # @TODO RobD - note the form id below 'report_bug_form' is referenced from some javascript (for the attachments image)
 ?>
@@ -965,10 +963,57 @@ if( $t_show_attachments ) {
 </table>
 </div>
 </div>
+
+<?php # ── Primary Document Upload ──────────────────────────────────────────────── ?>
+<div class="space-10"></div>
+<div class="widget-box widget-color-orange2">
+	<div class="widget-header widget-header-small">
+		<h4 class="widget-title lighter">
+			<?php print_icon( 'fa-file', 'ace-icon' ); ?>
+			<?php echo lang_get( 'primary_document_upload' ) ?>
+		</h4>
+	</div>
+	<div class="widget-body">
+		<div class="widget-main no-padding">
+			<div class="table-responsive">
+				<table class="table table-bordered table-condensed table-striped">
+				<tr>
+					<th class="category width-15">
+						<label for="primary_document_file"><?php echo lang_get( 'primary_document_file' ) ?></label>
+					</th>
+					<td class="width-85">
+						<input <?php echo helper_get_tab_index() ?>
+							type="file"
+							id="primary_document_file"
+							name="primary_document_file"
+							class="input-sm" />
+						<span class="help-block"><?php echo lang_get( 'primary_document_file_optional' ) ?></span>
+					</td>
+				</tr>
+				<tr>
+					<th class="category width-15">
+						<label for="primary_document_description"><?php echo lang_get( 'primary_document_description' ) ?></label>
+					</th>
+					<td class="width-85">
+						<input <?php echo helper_get_tab_index() ?>
+							type="text"
+							id="primary_document_description"
+							name="primary_document_description"
+							class="input-sm width-60"
+							maxlength="255"
+							value="" />
+						<span class="help-block"><?php echo lang_get( 'primary_document_description_hint' ) ?></span>
+					</td>
+				</tr>
+				</table>
+			</div>
+		</div>
+	</div>
+</div>
+
 <div class="widget-toolbox padding-8 clearfix">
 	<span class="required pull-right"> * <?php echo lang_get( 'required' ) ?></span>
 	<input <?php echo helper_get_tab_index() ?> type="submit" class="btn btn-primary btn-white btn-round" value="<?php echo lang_get( 'submit_dwg_button' ) ?>" />
-</div>
 </div>
 </div>
 </form>
