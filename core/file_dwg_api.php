@@ -1636,14 +1636,17 @@ function file_dwg_primary_get_content( $p_dwg_id ) {
  * the project that owns a given document.  Returns null if the GIT backend is
  * not active or if the bare repository does not yet exist.
  *
- * A single git process is spawned to fetch all fields.  Fields are separated
- * by ASCII unit-separator (0x1F) to handle author names that contain spaces.
+ * Two git processes are spawned: one for commit metadata, one for the
+ * current filename in the working tree.  Author name fields use ASCII
+ * unit-separator (0x1F) as delimiter to handle names containing spaces.
  *
  * @param int $p_dwg_id
- * @return array{sha: string, date: int, author: string}|null
- *   sha    — 40-character commit SHA
- *   date   — commit author timestamp as a Unix epoch integer
- *   author — author name (respecting .mailmap)
+ * @return array{sha: string, date: int, author: string, filename: string|null}|null
+ *   sha      — 40-character commit SHA
+ *   date     — commit author timestamp as a Unix epoch integer
+ *   author   — author name (respecting .mailmap)
+ *   filename — basename of the file currently under <dwg_id>/ in HEAD,
+ *              or null if the directory is absent (document deleted from HEAD)
  */
 function file_dwg_git_head_info( int $p_dwg_id ): ?array {
 	if( config_get( 'dwg_upload_method' ) !== GIT ) {
@@ -1660,7 +1663,7 @@ function file_dwg_git_head_info( int $p_dwg_id ): ?array {
 	}
 
 	# %H = full SHA, %at = author date (Unix timestamp), %aN = author name (mailmap)
-	# Fields delimited by ASCII unit-separator (octal \037) so author names
+	# Fields delimited by ASCII unit-separator (0x1F) so author names
 	# containing spaces are parsed unambiguously.
 	$t_output = trim( (string)shell_exec(
 		'git --git-dir=' . escapeshellarg( $t_bare ) . ' log -1 --format="%H%x1f%at%x1f%aN" HEAD 2>/dev/null'
@@ -1671,9 +1674,20 @@ function file_dwg_git_head_info( int $p_dwg_id ): ?array {
 		return null;
 	}
 
+	# Retrieve the filename currently stored under <dwg_id>/ in HEAD.
+	# ls-tree returns full repo-relative paths; basename() strips the prefix.
+	# If the document directory was soft-deleted from HEAD this returns empty.
+	$t_ls = trim( (string)shell_exec(
+		'git --git-dir=' . escapeshellarg( $t_bare ) .
+		' ls-tree --name-only HEAD ' . escapeshellarg( $p_dwg_id . '/' ) .
+		' 2>/dev/null'
+	) );
+	$t_filename = ( $t_ls !== '' ) ? basename( strtok( $t_ls, "\n" ) ) : null;
+
 	return array(
-		'sha'    => $t_parts[0],
-		'date'   => (int)$t_parts[1],
-		'author' => $t_parts[2],
+		'sha'      => $t_parts[0],
+		'date'     => (int)$t_parts[1],
+		'author'   => $t_parts[2],
+		'filename' => $t_filename,
 	);
 }
