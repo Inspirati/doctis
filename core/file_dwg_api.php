@@ -1632,14 +1632,18 @@ function file_dwg_primary_get_content( $p_dwg_id ) {
 }
 
 /**
- * Return the current HEAD commit SHA of the git repository for the project
- * that owns a given document.  Returns null if the GIT backend is not active
- * or if the bare repository does not yet exist.
+ * Return information about the current HEAD commit of the git repository for
+ * the project that owns a given document.  Returns null if the GIT backend is
+ * not active or if the bare repository does not yet exist.
+ *
+ * A single git process is spawned to fetch both fields.
  *
  * @param int $p_dwg_id
- * @return string|null  40-character SHA, or null.
+ * @return array{sha: string, date: int}|null
+ *   sha  — 40-character commit SHA
+ *   date — commit author timestamp as a Unix epoch integer
  */
-function file_dwg_git_head_sha( int $p_dwg_id ): ?string {
+function file_dwg_git_head_info( int $p_dwg_id ): ?array {
 	if( config_get( 'dwg_upload_method' ) !== GIT ) {
 		return null;
 	}
@@ -1653,9 +1657,18 @@ function file_dwg_git_head_sha( int $p_dwg_id ): ?string {
 		return null;
 	}
 
-	$t_sha = trim( (string)shell_exec(
-		'git --git-dir=' . escapeshellarg( $t_bare ) . ' rev-parse HEAD 2>/dev/null'
+	# %H = full SHA, %at = author date as Unix timestamp
+	$t_output = trim( (string)shell_exec(
+		'git --git-dir=' . escapeshellarg( $t_bare ) . ' log -1 --format="%H %at" HEAD 2>/dev/null'
 	) );
 
-	return ( strlen( $t_sha ) === 40 ) ? $t_sha : null;
+	$t_parts = explode( ' ', $t_output, 2 );
+	if( count( $t_parts ) !== 2 || strlen( $t_parts[0] ) !== 40 ) {
+		return null;
+	}
+
+	return array(
+		'sha'  => $t_parts[0],
+		'date' => (int)$t_parts[1],
+	);
 }
