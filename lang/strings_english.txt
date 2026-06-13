@@ -1311,6 +1311,7 @@ $s_docs_link = 'Help';
 $s_logout_link = 'Logout';
 $s_my_view_link = 'My View';
 $s_invite_users = 'Invite Users';
+$s_qms_link = 'QMS';
 
 # my_view_page.php deprecated in favour of my_view_bug_page.php
 $s_my_view_title_unassigned = 'Unassigned';

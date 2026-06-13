@@ -853,6 +853,16 @@ function layout_print_sidebar( $p_active_sidebar_page = null ) {
 			$t_sidebar_items = array_merge( $t_sidebar_items, $t_config_menu_items );
 		}
 
+		# QMS — external Quality Management System link
+		$t_qms_url = config_get_global( 'qms_url' );
+		if( !is_blank( $t_qms_url ) ) {
+			$t_sidebar_items[] = array(
+				'url'   => $t_qms_url,
+				'title' => 'qms_link',
+				'icon'  => config_get_global( 'qms_icon' ),
+			);
+		}
+
 		# Allow plugins to alter the sidebar items array
 		$t_modified_sidebar_items = event_signal( 'EVENT_MENU_MAIN_FILTER', array( $t_sidebar_items ) );
 		if( is_array( $t_modified_sidebar_items ) && count( $t_modified_sidebar_items ) > 0 ) {

@@ -45,6 +45,24 @@ require_api( 'utility_api.php' );
  * @return string
  */
 function icon_get( $p_icon, $p_classes = '', $p_title = '', $p_inner_html = '' ) {
+	# img: prefix — render a custom image file instead of a Font Awesome glyph.
+	# The path after 'img:' is used as the <img> src; relative paths are
+	# resolved against the Doctis web root (helper_mantis_url()).
+	# CSS class 'menu-icon-img' sizes the image to match FA sidebar glyphs.
+	# Example: icon_get( 'img:images/qms-icon.svg', 'menu-icon' )
+	if( substr( $p_icon, 0, 4 ) === 'img:' ) {
+		$t_src = substr( $p_icon, 4 );
+		if( parse_url( $t_src, PHP_URL_SCHEME ) === null && $t_src[0] !== '/' ) {
+			$t_src = helper_mantis_url( $t_src );
+		}
+		$t_title_attr = $p_title ? ' title="' . htmlspecialchars( $p_title ) . '"' : '';
+		$t_classes    = trim( 'menu-icon-img ' . $p_classes );
+		return sprintf(
+			'<img src="%s" class="%s"%s alt="" />',
+			htmlspecialchars( $t_src ), htmlspecialchars( $t_classes ), $t_title_attr
+		);
+	}
+
 	# Add 'fa-' prefix if missing
 	if( substr( $p_icon, 0, 3 ) != 'fa-' ) {
 		$p_icon = 'fa-' . $p_icon;

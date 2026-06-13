@@ -770,3 +770,14 @@ ul.changelog > li, ul.roadmap > li {
 .skin-3 .navbar.navbar-collapse {
 	background-color: #404040;
 }
+/* Custom image icons used in place of Font Awesome glyphs (e.g. sidebar QMS button).
+   Sized to match the 18px FA icon rendered by .nav-list > li > a > .menu-icon. */
+.nav-list > li > a > .menu-icon-img {
+	display: inline-block;
+	width: 18px;
+	height: 18px;
+	min-width: 30px;
+	margin-right: 2px;
+	vertical-align: sub;
+	object-fit: contain;
+}
