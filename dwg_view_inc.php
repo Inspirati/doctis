@@ -1059,11 +1059,11 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 					<th class="category width-10"><?php echo lang_get( 'date_added' ) ?></th>
 					<td class="width-20"><?php echo date( config_get( 'normal_date_format' ), $t_primary_file['date_added'] ) ?></td>
 					<th class="category width-10">SHA</th>
-					<td class="width-25"><code><?php echo htmlspecialchars( $t_primary_file['git_sha'] ) ?></code></td>
+					<td class="width-25"><code title="<?php echo htmlspecialchars( $t_primary_file['git_sha'] ) ?>"><?php echo htmlspecialchars( substr( $t_primary_file['git_sha'], 0, 8 ) ) ?></code></td>
 					<th class="category width-10">Current</th>
 					<td class="width-25">
 <?php	if( $t_git_head_sha !== null ): ?>
-						<code><?php echo htmlspecialchars( $t_git_head_sha ) ?></code>
+						<code title="<?php echo htmlspecialchars( $t_git_head_sha ) ?>"><?php echo htmlspecialchars( substr( $t_git_head_sha, 0, 8 ) ) ?></code>
 <?php		if( $t_git_head_sha !== $t_primary_file['git_sha'] ): ?>
 						&nbsp;<span class="label label-warning">updated</span>
 <?php		endif; ?>
