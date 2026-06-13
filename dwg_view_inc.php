@@ -1048,16 +1048,22 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 		<div class="widget-main no-padding">
 			<div class="table-responsive">
 				<table class="table table-bordered table-condensed table-striped">
+<?php
+$t_head_diverged = $t_git_head_sha !== null && $t_git_head_sha !== ( $t_primary_file['git_sha'] ?? null );
+?>
 <?php if( $t_primary_file ): ?>
 				<tr class="bug-header">
 					<th class="category width-10"></th>
 					<th class="category width-25"><?php echo lang_get( 'primary_document_file' ) ?></th>
-					<th class="category width-20"><?php echo lang_get( 'date_added' ) ?></th>
-					<th class="category width-15">SHA</th>
+					<th class="category width-15"><?php echo lang_get( 'date_added_modified' ) ?></th>
+					<th class="category width-10">SHA</th>
 					<th class="category width-20">Author</th>
+					<th class="category width-20">Action</th>
 				</tr>
 				<tr>
-					<th class="category">Doctis</th>
+					<th class="category">
+						<span class="label label-success"><?php echo lang_get( 'primary_document_approved' ) ?></span>
+					</th>
 					<td>
 						<a href="file_download.php?type=dwg_primary&amp;id=<?php echo $f_dwg_id ?>"><?php
 							echo string_display_line( $t_primary_file['filename'] )
@@ -1067,12 +1073,18 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 					<td><?php echo date( config_get( 'normal_date_format' ), $t_primary_file['date_added'] ) ?></td>
 					<td><code title="<?php echo htmlspecialchars( $t_primary_file['git_sha'] ) ?>"><?php echo htmlspecialchars( substr( $t_primary_file['git_sha'], 0, 8 ) ) ?></code></td>
 					<td><?php echo htmlspecialchars( user_get_name( (int)$t_primary_file['user_id'] ) ) ?></td>
+					<td></td>
 				</tr>
 				<tr>
-					<th class="category">Git</th>
+					<th class="category">
+						<span class="label label-default"><?php echo lang_get( 'primary_document_draft' ) ?></span>
+					</th>
 					<td>
 <?php	if( $t_git_head_filename !== null ): ?>
-						<?php echo htmlspecialchars( $t_git_head_filename ) ?>
+						<a href="file_download.php?type=dwg_primary_head&amp;id=<?php echo $f_dwg_id ?>"
+							onclick="return confirm(<?php echo htmlspecialchars( json_encode( lang_get( 'primary_document_head_download_confirm' ) ), ENT_QUOTES ) ?>)"><?php
+							echo htmlspecialchars( $t_git_head_filename )
+						?></a>
 <?php		if( $t_git_head_filename !== $t_primary_file['filename'] ): ?>
 						&nbsp;<span class="label label-info">renamed</span>
 <?php		endif; ?>
@@ -1084,7 +1096,7 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 					<td>
 <?php	if( $t_git_head_sha !== null ): ?>
 						<code title="<?php echo htmlspecialchars( $t_git_head_sha ) ?>"><?php echo htmlspecialchars( substr( $t_git_head_sha, 0, 8 ) ) ?></code>
-<?php		if( $t_git_head_sha !== $t_primary_file['git_sha'] ): ?>
+<?php		if( $t_head_diverged ): ?>
 						&nbsp;<span class="label label-warning">updated</span>
 <?php		endif; ?>
 <?php	else: ?>
@@ -1092,17 +1104,29 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 <?php	endif; ?>
 					</td>
 					<td><?php echo $t_git_head_author !== null ? htmlspecialchars( $t_git_head_author ) : '<span class="small">—</span>' ?></td>
+					<td>
+<?php	if( $t_can_upload_primary && $t_head_diverged ): ?>
+						<form method="post" action="dwg_primary_file_sync_head.php" style="display:inline">
+							<?php echo form_security_field( 'dwg_primary_file_sync_head' ) ?>
+							<input type="hidden" name="dwg_id" value="<?php echo $f_dwg_id ?>" />
+							<input type="submit"
+								class="btn btn-warning btn-xs btn-white btn-round"
+								value="<?php echo lang_get( 'primary_document_sync_head' ) ?>"
+								onclick="return confirm(<?php echo htmlspecialchars( json_encode( lang_get( 'primary_document_sync_head_confirm' ) ), ENT_QUOTES ) ?>)" />
+						</form>
+<?php	endif; ?>
+					</td>
 				</tr>
 <?php	if( !is_blank( $t_primary_file['description'] ) ): ?>
 				<tr>
 					<th class="category"><?php echo lang_get( 'description' ) ?></th>
-					<td colspan="4"><?php echo string_display_line( $t_primary_file['description'] ) ?></td>
+					<td colspan="5"><?php echo string_display_line( $t_primary_file['description'] ) ?></td>
 				</tr>
 <?php	endif; ?>
 <?php	if( $t_can_upload_primary ): ?>
 				<tr>
 					<th class="category"><?php echo lang_get( 'primary_document_replace' ) ?></th>
-					<td colspan="4">
+					<td colspan="5">
 						<form method="post" enctype="multipart/form-data" action="dwg_primary_file_update.php">
 							<?php echo form_security_field( 'dwg_primary_file_update' ) ?>
 							<input type="hidden" name="dwg_id" value="<?php echo $f_dwg_id ?>" />
@@ -1117,7 +1141,7 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 <?php	endif; ?>
 <?php else: ?>
 				<tr>
-					<td colspan="5" class="center">
+					<td colspan="6" class="center">
 <?php	if( $t_can_upload_primary ): ?>
 						<form method="post" enctype="multipart/form-data" action="dwg_primary_file_update.php">
 							<?php echo form_security_field( 'dwg_primary_file_update' ) ?>

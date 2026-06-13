@@ -1648,6 +1648,99 @@ function file_dwg_primary_get_content( $p_dwg_id ) {
  *   filename — basename of the file currently under <dwg_id>/ in HEAD,
  *              or null if the directory is absent (document deleted from HEAD)
  */
+/**
+ * Retrieve the content of the primary document file as it currently exists at
+ * git HEAD, bypassing the SHA stored in the Doctis database.  Useful when the
+ * git repository has been updated outside Doctis and the caller wants to serve
+ * the actual current file rather than the last Doctis-recorded version.
+ *
+ * Returns false if there is no primary file record, no git HEAD info, or the
+ * git backend is not active.
+ *
+ * @param int $p_dwg_id
+ * @return array{type: string, content: string}|false
+ */
+function file_dwg_primary_get_head_content( int $p_dwg_id ) {
+	$t_row = file_dwg_primary_get( $p_dwg_id );
+	if( !$t_row ) {
+		return false;
+	}
+
+	$t_head = file_dwg_git_head_info( $p_dwg_id );
+	if( !$t_head || $t_head['filename'] === null ) {
+		return false;
+	}
+
+	$t_project_id = dwg_get_field( $p_dwg_id, 'project_id' );
+	$t_backend    = file_dwg_get_storage_backend();
+
+	# Build a synthetic row pointing at the HEAD commit and HEAD filename so
+	# that retrieve() fetches the current file rather than the stored SHA.
+	$t_head_row             = $t_row;
+	$t_head_row['git_sha']  = $t_head['sha'];
+	$t_head_row['filename'] = $t_head['filename'];
+
+	return $t_backend->retrieve( $t_head_row, $t_project_id );
+}
+
+/**
+ * Sync the Doctis {dwg_primary_file} record to the current git HEAD commit.
+ *
+ * Overwrites the stored git_sha, filename, filesize, and date_added with the
+ * values from the HEAD commit of the project's bare repository.  The user_id
+ * is set to the acting Doctis user who initiated the sync; the git author
+ * name is not mapped to a Doctis user (it is already visible in the Git row
+ * on the view page).
+ *
+ * No-op if the GIT backend is not active, no primary file exists, or HEAD
+ * cannot be resolved.
+ *
+ * @param int $p_dwg_id
+ * @param int $p_acting_user_id  Doctis user performing the sync operation
+ * @return void
+ */
+function file_dwg_primary_sync_head( int $p_dwg_id, int $p_acting_user_id ): void {
+	$t_head = file_dwg_git_head_info( $p_dwg_id );
+	if( !$t_head || $t_head['filename'] === null ) {
+		trigger_error( ERROR_GENERIC, ERROR );
+	}
+
+	$t_row = file_dwg_primary_get( $p_dwg_id );
+	if( !$t_row ) {
+		trigger_error( ERROR_GENERIC, ERROR );
+	}
+
+	# Derive the bare repo path (mirrors project_slug / bare_repo_path in the backend).
+	$t_project_id = dwg_get_field( $p_dwg_id, 'project_id' );
+	$t_name       = project_get_field( $t_project_id, 'name' );
+	$t_slug       = preg_replace( '/[^a-z0-9\-]+/', '-', strtolower( trim( $t_name ) ) );
+	$t_bare       = config_get( 'git_storage_root' ) . '/' . $t_slug . '.git';
+
+	# Determine the file size directly from the git object store.
+	$t_rel_path = $p_dwg_id . '/' . $t_head['filename'];
+	$t_size_str = trim( (string)shell_exec(
+		'git --git-dir=' . escapeshellarg( $t_bare ) .
+		' cat-file -s ' . escapeshellarg( $t_head['sha'] . ':' . $t_rel_path ) . ' 2>/dev/null'
+	) );
+	$t_filesize = is_numeric( $t_size_str ) ? (int)$t_size_str : (int)$t_row['filesize'];
+
+	db_param_push();
+	db_query(
+		'UPDATE {dwg_primary_file}
+		 SET git_sha=' . db_param() . ', filename=' . db_param() .
+		', filesize=' . db_param() . ', date_added=' . db_param() . ', user_id=' . db_param() .
+		' WHERE dwg_id=' . db_param(),
+		array(
+			$t_head['sha'],
+			$t_head['filename'],
+			$t_filesize,
+			$t_head['date'],
+			(int)$p_acting_user_id,
+			(int)$p_dwg_id,
+		)
+	);
+}
+
 function file_dwg_git_head_info( int $p_dwg_id ): ?array {
 	if( config_get( 'dwg_upload_method' ) !== GIT ) {
 		return null;
