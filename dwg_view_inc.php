@@ -1076,7 +1076,14 @@ $t_head_diverged = $t_git_head_sha !== null && $t_git_head_sha !== ( $t_primary_
 					<td><?php echo date( config_get( 'normal_date_format' ), $t_primary_file['date_added'] ) ?></td>
 					<td><code title="<?php echo htmlspecialchars( $t_primary_file['git_sha'] ) ?>"><?php echo htmlspecialchars( substr( $t_primary_file['git_sha'], 0, 8 ) ) ?></code></td>
 					<td><?php echo htmlspecialchars( user_get_name( (int)$t_primary_file['user_id'] ) ) ?></td>
-					<td></td>
+					<td>
+<?php	if( $t_can_sync_to_head ): ?>
+						<a href="dwg_primary_file_tag_page.php?id=<?php echo $f_dwg_id ?>"
+							class="btn btn-info btn-xs btn-white btn-round">
+							<?php echo lang_get( 'primary_document_tag' ) ?>
+						</a>
+<?php	endif; ?>
+					</td>
 				</tr>
 				<tr>
 					<th class="category">
@@ -1107,14 +1114,22 @@ $t_head_diverged = $t_git_head_sha !== null && $t_git_head_sha !== ( $t_primary_
 					</td>
 					<td><?php echo $t_git_head_author !== null ? htmlspecialchars( $t_git_head_author ) : '<span class="small">—</span>' ?></td>
 					<td>
+<?php	if( $t_can_sync_to_head ): ?>
+						<form method="post" action="dwg_primary_file_touch.php" style="display:inline">
+							<?php echo form_security_field( 'dwg_primary_file_touch' ) ?>
+							<input type="hidden" name="dwg_id" value="<?php echo $f_dwg_id ?>" />
+							<input type="submit"
+								class="btn btn-default btn-xs btn-white btn-round"
+								value="<?php echo lang_get( 'primary_document_touch' ) ?>" />
+						</form>
+<?php	endif; ?>
 <?php	if( $t_can_sync_to_head && $t_head_diverged ): ?>
 						<form method="post" action="dwg_primary_file_sync_head.php" style="display:inline">
 							<?php echo form_security_field( 'dwg_primary_file_sync_head' ) ?>
 							<input type="hidden" name="dwg_id" value="<?php echo $f_dwg_id ?>" />
 							<input type="submit"
 								class="btn btn-warning btn-xs btn-white btn-round"
-								value="<?php echo lang_get( 'primary_document_sync_head' ) ?>"
-								/>
+								value="<?php echo lang_get( 'primary_document_sync_head' ) ?>" />
 						</form>
 <?php	endif; ?>
 					</td>

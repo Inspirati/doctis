@@ -1784,3 +1784,133 @@ function file_dwg_git_head_info( int $p_dwg_id ): ?array {
 		'filename' => $t_filename,
 	);
 }
+
+/**
+ * Validate a candidate git tag name against the rules enforced by git itself.
+ *
+ * Permitted characters: letters, digits, hyphens, underscores, dots,
+ * forward-slashes (hierarchical tags).  Additional git constraints checked:
+ *   - must not be empty
+ *   - must not start with a dot or a hyphen
+ *   - must not contain ".." (ambiguous reference)
+ *   - must not contain whitespace, NUL, or the characters ^ : ~ ? * [ \ @{
+ *   - must not end with ".lock" or "."
+ *
+ * @param string $p_tag_name
+ * @return bool  true when the name is valid
+ */
+function file_dwg_git_tag_name_valid( string $p_tag_name ): bool {
+	if( $p_tag_name === '' ) {
+		return false;
+	}
+	# Must not start with dot or hyphen
+	if( $p_tag_name[0] === '.' || $p_tag_name[0] === '-' ) {
+		return false;
+	}
+	# Must not end with dot or ".lock"
+	if( substr( $p_tag_name, -1 ) === '.' || substr( $p_tag_name, -5 ) === '.lock' ) {
+		return false;
+	}
+	# Must not contain ".."
+	if( strpos( $p_tag_name, '..' ) !== false ) {
+		return false;
+	}
+	# Whitespace and git-reserved characters
+	if( preg_match( '/[\x00-\x20\x7f ~^:?*\[\\\\@{]/', $p_tag_name ) ) {
+		return false;
+	}
+	# Only allow the safe subset we advertise: letters, digits, -, _, ., /
+	if( !preg_match( '/^[a-zA-Z0-9._\-\/]+$/', $p_tag_name ) ) {
+		return false;
+	}
+	return true;
+}
+
+/**
+ * Apply a git lightweight tag to the commit SHA recorded in {dwg_primary_file}
+ * for the given document.  The tag is created in the project's bare repository.
+ *
+ * @param int    $p_dwg_id
+ * @param string $p_tag_name  Already-validated tag name.
+ * @return string  One of: 'ok', 'exists', 'error'
+ */
+function file_dwg_git_tag( int $p_dwg_id, string $p_tag_name ): string {
+	$t_row = file_dwg_primary_get( $p_dwg_id );
+	if( !$t_row ) {
+		return 'error';
+	}
+
+	$t_project_id = dwg_get_field( $p_dwg_id, 'project_id' );
+	$t_name       = project_get_field( $t_project_id, 'name' );
+	$t_slug       = preg_replace( '/[^a-z0-9\-]+/', '-', strtolower( trim( $t_name ) ) );
+	$t_bare       = config_get( 'git_storage_root' ) . '/' . $t_slug . '.git';
+	$t_sha        = $t_row['git_sha'];
+
+	# Check whether the tag already exists.
+	$t_check = shell_exec(
+		'git --git-dir=' . escapeshellarg( $t_bare ) .
+		' rev-parse --verify ' . escapeshellarg( 'refs/tags/' . $p_tag_name ) . ' 2>/dev/null'
+	);
+	if( trim( (string)$t_check ) !== '' ) {
+		return 'exists';
+	}
+
+	$t_out = [];
+	$t_rc  = 0;
+	exec(
+		'git --git-dir=' . escapeshellarg( $t_bare ) .
+		' tag ' . escapeshellarg( $p_tag_name ) . ' ' . escapeshellarg( $t_sha ) . ' 2>&1',
+		$t_out, $t_rc
+	);
+
+	return $t_rc === 0 ? 'ok' : 'error';
+}
+
+/**
+ * Create an empty git commit on the project working tree, advancing the HEAD
+ * SHA without modifying any file content.  Intended for development/testing:
+ * it puts the repository into a state where the git HEAD SHA differs from the
+ * SHA recorded in {dwg_primary_file}, making the "updated" badge and
+ * "Sync to HEAD" button visible in the Primary Document panel.
+ *
+ * @param int $p_dwg_id
+ * @param int $p_user_id  Doctis user attributed as git author of the commit.
+ * @throws ServiceException
+ */
+function file_dwg_git_touch( int $p_dwg_id, int $p_user_id ): void {
+	# Replicate the HOME / author env setup from GitFileStorageBackend.
+	$t_www_data_home = posix_getpwuid( posix_getuid() )['dir'] ?? '/var/www';
+	putenv( 'HOME=' . $t_www_data_home );
+
+	$t_author_name  = user_get_name( $p_user_id );
+	$t_author_email = user_get_email( $p_user_id );
+	if( !is_blank( $t_author_name ) ) {
+		putenv( 'GIT_AUTHOR_NAME='    . $t_author_name );
+		putenv( 'GIT_COMMITTER_NAME=' . $t_author_name );
+	}
+	if( !is_blank( $t_author_email ) ) {
+		putenv( 'GIT_AUTHOR_EMAIL='    . $t_author_email );
+		putenv( 'GIT_COMMITTER_EMAIL=' . $t_author_email );
+	}
+
+	$t_project_id = dwg_get_field( $p_dwg_id, 'project_id' );
+	$t_name       = project_get_field( $t_project_id, 'name' );
+	$t_slug       = preg_replace( '/[^a-z0-9\-]+/', '-', strtolower( trim( $t_name ) ) );
+	$t_worktree   = config_get( 'git_worktree_root' ) . '/' . $t_slug;
+
+	try {
+		$t_git        = new \CzProject\GitPhp\Git;
+		$t_repo       = $t_git->open( $t_worktree );
+		$t_commit_msg = 'git-touch: dwg_id=' . $p_dwg_id . ' by ' . $t_author_name;
+		$t_repo->commit( $t_commit_msg, ['--allow-empty'] );
+		$t_branch = $t_repo->getCurrentBranchName();
+		$t_repo->push( ['origin', $t_branch] );
+	} catch( \CzProject\GitPhp\GitException $e ) {
+		$t_result = $e->getRunnerResult();
+		$t_stderr = $t_result ? implode( "\n", $t_result->getErrorOutput() ) : '(no result)';
+		throw new \Mantis\Exceptions\ServiceException(
+			'Git touch failed: ' . $e->getMessage() . ' | stderr: ' . $t_stderr,
+			ERROR_GENERIC
+		);
+	}
+}
