@@ -1019,6 +1019,9 @@ if( $t_flags['sponsorships_show'] ) {
 $t_primary_file = file_dwg_primary_get( $f_dwg_id );
 $t_can_upload_primary = !$t_force_readonly &&
 	access_has_dwg_level( config_get( 'update_dwg_threshold' ), $f_dwg_id );
+# Sync to HEAD is a privileged operation — restricted to manager level and above.
+$t_can_sync_to_head = !$t_force_readonly &&
+	access_has_dwg_level( MANAGER, $f_dwg_id );
 $t_git_head_info     = file_dwg_git_head_info( $f_dwg_id );
 $t_git_head_sha      = $t_git_head_info ? $t_git_head_info['sha']      : null;
 $t_git_head_date     = $t_git_head_info ? $t_git_head_info['date']     : null;
@@ -1081,8 +1084,7 @@ $t_head_diverged = $t_git_head_sha !== null && $t_git_head_sha !== ( $t_primary_
 					</th>
 					<td>
 <?php	if( $t_git_head_filename !== null ): ?>
-						<a href="file_download.php?type=dwg_primary_head&amp;id=<?php echo $f_dwg_id ?>"
-							onclick="return confirm(<?php echo htmlspecialchars( json_encode( lang_get( 'primary_document_head_download_confirm' ) ), ENT_QUOTES ) ?>)"><?php
+						<a href="dwg_primary_head_warn.php?id=<?php echo $f_dwg_id ?>"><?php
 							echo htmlspecialchars( $t_git_head_filename )
 						?></a>
 <?php		if( $t_git_head_filename !== $t_primary_file['filename'] ): ?>
@@ -1105,14 +1107,14 @@ $t_head_diverged = $t_git_head_sha !== null && $t_git_head_sha !== ( $t_primary_
 					</td>
 					<td><?php echo $t_git_head_author !== null ? htmlspecialchars( $t_git_head_author ) : '<span class="small">—</span>' ?></td>
 					<td>
-<?php	if( $t_can_upload_primary && $t_head_diverged ): ?>
+<?php	if( $t_can_sync_to_head && $t_head_diverged ): ?>
 						<form method="post" action="dwg_primary_file_sync_head.php" style="display:inline">
 							<?php echo form_security_field( 'dwg_primary_file_sync_head' ) ?>
 							<input type="hidden" name="dwg_id" value="<?php echo $f_dwg_id ?>" />
 							<input type="submit"
 								class="btn btn-warning btn-xs btn-white btn-round"
 								value="<?php echo lang_get( 'primary_document_sync_head' ) ?>"
-								onclick="return confirm(<?php echo htmlspecialchars( json_encode( lang_get( 'primary_document_sync_head_confirm' ) ), ENT_QUOTES ) ?>)" />
+								/>
 						</form>
 <?php	endif; ?>
 					</td>
