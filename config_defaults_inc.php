@@ -3278,9 +3278,62 @@ $g_bug_view_page_fields = array(
 	'view_state',
 );
 
+/**
+ * An array of optional fields to show on the document view page.
+ *
+ * Mirrors {@see $g_bug_view_page_fields} for documents.  Remove a field name
+ * from this array to hide the corresponding panel or section on dwg_view.php.
+ *
+ * The following optional fields are allowed:
+ *   - additional_info
+ *   - attachments
+ *   - dwgnotes     — document notes panel AND the Notes/Attachment count columns
+ *                    on the document list page (view_dwg_page.php).  Removing
+ *                    this entry disables the entire document-notes feature:
+ *                    the notes panel and 'Add Note' box disappear from
+ *                    dwg_view.php, and the two count columns are suppressed in
+ *                    view_dwg_page.php via columns_dwg_filter_disabled().
+ *                    To disable in config_inc.php:
+ *                      $g_dwg_view_page_fields =
+ *                          array_diff( $g_dwg_view_page_fields, ['dwgnotes'] );
+ *   - category_id
+ *   - date_submitted
+ *   - description
+ *   - due_date
+ *   - eta
+ *   - fixed_in_version
+ *   - creator
+ *   - handler
+ *   - number
+ *   - revision
+ *   - author
+ *   - publisher
+ *   - id
+ *   - last_updated
+ *   - os
+ *   - os_build
+ *   - platform
+ *   - priority
+ *   - product_build
+ *   - product_version
+ *   - project
+ *   - projection
+ *   - reproducibility
+ *   - resolution
+ *   - severity
+ *   - status
+ *   - steps_to_reproduce
+ *   - summary
+ *   - tags
+ *   - target_version
+ *   - view_state
+ *
+ * @global array $g_dwg_view_page_fields
+ */
 $g_dwg_view_page_fields = array(
 	'additional_info',
 	'attachments',
+	'dwgnotes',
 	'category_id',
 	'date_submitted',
 	'description',

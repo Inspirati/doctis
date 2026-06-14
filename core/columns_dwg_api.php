@@ -122,6 +122,13 @@ function columns_dwg_filter_disabled( array $p_columns ) {
 				}
 				break;
 
+			case 'dwgnotes_count':
+			case 'attachment_count':
+				if( !in_array( 'dwgnotes', config_get( 'dwg_view_page_fields' ) ) ) {
+					continue 2;
+				}
+				break;
+
 				default:
 				# don't filter
 				break;
