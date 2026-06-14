@@ -49,6 +49,30 @@ Tabs for indentation, spaces for alignment. Files edited at 4-column tab width.
 
 Doctis deliberately avoids renaming MantisBT variables and follows upstream structure closely so that periodic upstream syncs (via `upstream_sync` branch) remain feasible. When adding Doctis functionality, prefer **parallel** files/functions rather than in-place edits to shared MantisBT code.
 
+### Variable and parameter names in `dwg_*` modules — intentionally unchanged
+
+Most `dwg_*` modules were created by duplicating a MantisBT module of similar
+functionality and then making the minimum changes needed: function names were
+renamed (adding a `dwg_` prefix, `_dwg` suffix, or equivalent), but internal
+parameter and variable names were deliberately left as-is.
+
+This means names like `$p_bug_id`, `$t_bug`, `$p_issue_id`, or `$t_file_id`
+appear inside document-specific functions where "bug" and "issue" refer to a
+document, not an issue. **These names are misleading when read in isolation, but
+the inconsistency is intentional.**
+
+The rationale is maintainability over readability: keeping internal names
+unchanged minimises the diff against the original MantisBT source file, making
+it straightforward to compare the two with `diff` or `git diff` and identify
+which changes are Doctis-specific. This is expected to significantly reduce the
+effort required to incorporate future MantisBT upstream changes into the
+parallel `dwg_*` equivalents.
+
+When reading or modifying a `dwg_*` module, treat `$p_bug_id` / `$p_issue_id`
+/ `$t_file_id` etc. as referring to whatever the document-domain equivalent is
+(dwg_id, primary file row, etc.) — the type is determined by context, not by
+the name.
+
 ## Document (dwg) Entity
 
 Documents are stored in a dedicated `documents` table alongside the MantisBT `bugs` table. Key Doctis-specific APIs:

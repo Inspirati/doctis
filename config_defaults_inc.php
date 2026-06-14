@@ -4788,6 +4788,37 @@ $g_custom_field_edit_after_create = ON;
  */
 $g_main_menu_custom_options = array();
 
+/**
+ * URL for the QMS (Quality Management System) sidebar button.
+ *
+ * When non-empty, a 'QMS' button appears in the left sidebar for all
+ * authenticated users, linking to this URL.  Supports absolute URLs and
+ * root-relative paths.
+ *
+ * Typical deployments co-locate the QMS at the web-root alongside Doctis:
+ *   http://10.0.0.10/qms/
+ *
+ * To derive the URL automatically from the configured $g_path:
+ *   $g_qms_url = preg_replace( '|/[^/]+/?$|', '/qms/', $g_path );
+ *
+ * To disable the button, leave this empty (the default).
+ *
+ * The sidebar icon is controlled by $g_qms_icon (a Font Awesome 4 icon name
+ * such as 'fa-certificate', or an 'img:' prefixed path to a custom image,
+ * e.g. 'img:images/qms-icon.svg').  See icon_get() in core/icon_api.php.
+ *
+ * @global string $g_qms_url
+ */
+$g_qms_url = '';
+
+/**
+ * Font Awesome 4 icon name for the QMS sidebar button, or an 'img:'-prefixed
+ * path to a custom image file (relative to the Doctis web root).
+ *
+ * @global string $g_qms_icon
+ */
+$g_qms_icon = 'fa-certificate';
+
 #########
 # Icons #
 #########

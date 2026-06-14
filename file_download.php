@@ -124,6 +124,59 @@ if( $f_type === 'dwg_primary' ) {
 	exit;
 }
 
+if( $f_type === 'dwg_primary_head' ) {
+	# Serve the file at the current git HEAD — may differ from the Doctis-
+	# approved version stored in the database.  The UI warns the user before
+	# following this link.
+	$f_dwg_id = gpc_get_int( 'id' );
+
+	access_ensure_dwg_level( config_get( 'view_dwg_threshold' ), $f_dwg_id );
+
+	$t_row = file_dwg_primary_get( $f_dwg_id );
+	if( $t_row === null ) {
+		error_parameters( $f_dwg_id );
+		trigger_error( ERROR_FILE_NOT_FOUND, ERROR );
+	}
+
+	$t_head = file_dwg_git_head_info( $f_dwg_id );
+	if( $t_head === null || $t_head['filename'] === null ) {
+		error_parameters( $f_dwg_id );
+		trigger_error( ERROR_FILE_NOT_FOUND, ERROR );
+	}
+
+	while( @ob_end_clean() ) {
+	}
+	if( ini_get( 'zlib.output_compression' ) && function_exists( 'ini_set' ) ) {
+		ini_set( 'zlib.output_compression', false );
+	}
+
+	http_security_headers();
+
+	$t_result = file_dwg_primary_get_head_content( $f_dwg_id );
+	if( $t_result === false ) {
+		trigger_error( ERROR_FILE_NOT_FOUND, ERROR );
+	}
+
+	$t_content      = $t_result['content'];
+	$t_filename     = file_get_display_name( $t_head['filename'] );
+	$t_content_type = $t_row['file_type'];
+
+	$t_content_type_override = file_get_content_type_override( $t_filename );
+	if( $t_content_type_override ) {
+		$t_content_type = $t_content_type_override;
+	}
+
+	header( 'Expires: ' . gmdate( 'D, d M Y H:i:s \G\M\T', time() ) );
+	header( 'Last-Modified: ' . gmdate( 'D, d M Y H:i:s \G\M\T', $t_head['date'] ) );
+	http_content_disposition_header( $t_filename, $f_show_inline );
+	header( 'Content-Type: ' . $t_content_type );
+	header( 'Content-Length: ' . strlen( $t_content ) );
+	header( 'X-Content-Type-Options: nosniff' );
+
+	echo $t_content;
+	exit;
+}
+
 $c_file_id = (integer)$f_file_id;
 
 # we handle the case where the file is attached to a bug

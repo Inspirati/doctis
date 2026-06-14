@@ -1162,7 +1162,7 @@ $g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwg_primar
 	filename			C(250)	NOTNULL DEFAULT \" '' \",
 	filesize			I		NOTNULL DEFAULT '0',
 	file_type			C(250)	NOTNULL DEFAULT \" '' \",
-	diskfile			C(250)	NOTNULL DEFAULT \" '' \",
+	git_sha				C(250)	NOTNULL DEFAULT \" '' \",
 	folder				C(250)	NOTNULL DEFAULT \" '' \",
 	content				B		NULL " . $t_blob_default . ",
 	date_added			I		UNSIGNED NOTNULL DEFAULT '1',
@@ -1171,6 +1171,11 @@ $g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwg_primar
 	$t_table_options
 	) );
 $g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_dwg_primary_file_dwg_id', db_get_table( 'dwg_primary_file' ), 'dwg_id', array( 'UNIQUE' ) ) );
+
+# Rename {dwg_primary_file}.diskfile → git_sha; the column holds a git commit SHA,
+# not a generic opaque disk identifier.
+$g_upgrade[$t_idx++] = array( 'RenameColumnSQL', array( db_get_table( 'dwg_primary_file' ), 'diskfile', 'git_sha', "
+	git_sha				C(250)	NOTNULL DEFAULT \" '' \" " ) );
 
 # IMPORTANT: keep these entries as the last indexes, as they will be deleted in release versions
 #			 (you will need to bump all the indexes when inserting tables database statements above here)
