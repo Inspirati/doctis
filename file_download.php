@@ -83,7 +83,7 @@ $f_type	= gpc_get_string( 'type' );
 if( $f_type === 'dwg_primary' ) {
 	$f_dwg_id = gpc_get_int( 'id' );
 
-	access_ensure_dwg_level( config_get( 'view_dwg_threshold' ), $f_dwg_id );
+	access_ensure_dwg_level( config_get( 'dwg_primary_document_threshold' ), $f_dwg_id );
 
 	$t_row = file_dwg_primary_get( $f_dwg_id );
 	if( $t_row === null ) {
@@ -130,7 +130,7 @@ if( $f_type === 'dwg_primary_head' ) {
 	# following this link.
 	$f_dwg_id = gpc_get_int( 'id' );
 
-	access_ensure_dwg_level( config_get( 'view_dwg_threshold' ), $f_dwg_id );
+	access_ensure_dwg_level( config_get( 'dwg_primary_document_threshold' ), $f_dwg_id );
 
 	$t_row = file_dwg_primary_get( $f_dwg_id );
 	if( $t_row === null ) {

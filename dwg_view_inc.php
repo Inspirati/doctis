@@ -1018,6 +1018,8 @@ if( $t_flags['sponsorships_show'] ) {
 }
 
 # ── Primary Document File ────────────────────────────────────────────────────
+# Panel is hidden from users below $g_dwg_primary_document_threshold (default REPORTER).
+if( access_has_dwg_level( config_get( 'dwg_primary_document_threshold' ), $f_dwg_id ) ):
 $t_primary_file = file_dwg_primary_get( $f_dwg_id );
 $t_can_upload_primary = !$t_force_readonly &&
 	access_has_dwg_level( config_get( 'update_dwg_threshold' ), $f_dwg_id );
@@ -1205,6 +1207,8 @@ $t_head_diverged = $t_git_head_sha !== null && $t_git_head_sha !== ( $t_primary_
 	</div>
 </div>
 </div>
+
+<?php endif; # dwg_primary_document_threshold ?>
 
 <?php
 # Bug Relationships

@@ -3503,6 +3503,18 @@ $g_view_bug_threshold = VIEWER;
 $g_view_dwg_threshold = VIEWER;
 
 /**
+ * Access level needed to view the Primary Document panel on the document view
+ * page and to download the primary document file.
+ *
+ * VIEWERs can see the document record (title, status, metadata) but are
+ * excluded from the file panel and its download links by default.  Set to
+ * VIEWER to restore unrestricted access to the file.
+ *
+ * @global int $g_dwg_primary_document_threshold
+ */
+$g_dwg_primary_document_threshold = REPORTER;
+
+/**
  * Access level needed to monitor bugs.
  *
  * @global int $g_monitor_bug_threshold
@@ -6346,6 +6358,7 @@ $g_public_config_names = array(
 	'view_attachments_threshold',
 	'view_bug_threshold',
 	'view_dwg_threshold',
+	'dwg_primary_document_threshold',
 	'view_changelog_threshold',
 	'view_configuration_threshold',
 	'view_filters',

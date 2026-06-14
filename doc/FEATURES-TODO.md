@@ -6,7 +6,7 @@ and enough detail to implement without revisiting the design discussion.
 
 ---
 
-## 1 — Gate the Primary Document panel on access level
+## 1 — Gate the Primary Document panel on access level ✔ done
 
 ### Intent
 
