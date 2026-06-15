@@ -835,18 +835,28 @@ function string_get_dwg_view_reference_url( $p_urlbase ) {
 
 function string_get_dwg_view_reference_link( $p_bug_id, $p_dwg_reference, $p_detail_info = true, $p_fqdn = false ) {
 	if( dwg_exists( $p_bug_id ) ) {
-		// $t_project_id = dwg_get_field( $p_bug_id, 'project_id' );
-		// 	$t_status = string_attribute( get_enum_element( 'status', dwg_get_field( $p_bug_id, 'status' ), $t_project_id ) );
-		// 	$t_link .= ' title="[' . $t_status . '] ' . $t_summary . '"';
+		# Check for a 40-character git SHA recorded in the primary file table.
+		# No git lookups — confirmed purely from the database.
+		if( preg_match( '/^[0-9a-f]{40}$/i', $p_dwg_reference ) ) {
+			$t_result = db_query(
+				'SELECT COUNT(*) FROM {dwg_primary_file} WHERE dwg_id = ' . db_param() . ' AND git_sha = ' . db_param(),
+				array( (int)$p_bug_id, $p_dwg_reference )
+			);
+			if( (int)db_result( $t_result ) > 0 ) {
+				return '<a href="file_download.php?type=dwg_primary&amp;id=' . (int)$p_bug_id . '"'
+					. ' title="' . htmlspecialchars( $p_dwg_reference ) . '"'
+					. '>' . $p_dwg_reference . '</a>';
+			}
+		}
 
 		$t_link = '<a href="';
-		if (preg_match('/[A-Z]{1,3}[0-9]{6,9}/', $p_dwg_reference)) {
+		if( preg_match( '/[A-Z]{1,3}[0-9]{6,9}/', $p_dwg_reference ) ) {
 			$t_link .= config_get_global( 'reference_url1' );
 			$t_link .= string_get_dwg_view_reference_url( $p_dwg_reference ) . '"';
 		} else {
 			$t_link .= config_get_global( 'reference_url2' );
 			$t_link .= $p_dwg_reference;
-		}		
+		}
 		$t_link .= '"';
 		$t_link .= '>' . $p_dwg_reference . '</a>';
 	} else {

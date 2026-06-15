@@ -41,7 +41,7 @@ adjustable per-installation without a code change.
 
 ---
 
-## 2 — Extend reference hyperlink detection to git repository references
+## 2 — Extend reference hyperlink detection to git repository references ✔ done (simplified)
 
 ### Intent
 
