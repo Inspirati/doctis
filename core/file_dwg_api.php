@@ -1582,6 +1582,13 @@ function file_dwg_primary_add( $p_dwg_id, $p_user_id, $p_tmp_file, $p_filename, 
 		$p_description,
 		'main',
 	) );
+
+	# When the GIT backend is in use, the SHA is the canonical reference to the
+	# stored document.  Write it to documents.reference so the list view and
+	# the reference hyperlink always reflect the actual approved file.
+	if( preg_match( '/^[0-9a-f]{40}$/i', $t_git_sha ) ) {
+		dwg_set_field( $p_dwg_id, 'reference', $t_git_sha );
+	}
 }
 
 /**
@@ -1739,6 +1746,9 @@ function file_dwg_primary_sync_head( int $p_dwg_id, int $p_acting_user_id ): voi
 			(int)$p_dwg_id,
 		)
 	);
+
+	# Keep documents.reference in sync with the newly approved SHA.
+	dwg_set_field( $p_dwg_id, 'reference', $t_head['sha'] );
 }
 
 function file_dwg_git_head_info( int $p_dwg_id ): ?array {

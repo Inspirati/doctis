@@ -845,7 +845,7 @@ function string_get_dwg_view_reference_link( $p_bug_id, $p_dwg_reference, $p_det
 			if( (int)db_result( $t_result ) > 0 ) {
 				return '<a href="file_download.php?type=dwg_primary&amp;id=' . (int)$p_bug_id . '"'
 					. ' title="' . htmlspecialchars( $p_dwg_reference ) . '"'
-					. '>' . $p_dwg_reference . '</a>';
+					. '>' . htmlspecialchars( substr( $p_dwg_reference, 0, 8 ) ) . '</a>';
 			}
 		}
 
