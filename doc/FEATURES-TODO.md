@@ -200,3 +200,58 @@ via the standard MantisBT per-project config override mechanism.
   handled by `ensure_git_home()` / `set_git_author()` in the backend class).
   Annotated is recommended; make it the default with a config override to
   revert to lightweight.
+
+---
+
+## 4 — Status-aware label in the Primary Document panel
+
+### Intent
+
+The "On Record" label on the recorded-SHA row of the Primary Document panel
+(`dwg_view.php`) should upgrade to **"Approved"** when the document's workflow
+status has reached a formally significant level — specifically when the status
+is at or above `accepted` (180) but below `archived` (195).  For all other
+statuses the label remains "On Record".
+
+This makes the panel self-documenting: a user glancing at the Primary Document
+section can immediately see whether the file they are looking at has been
+formally accepted through the review cycle, without cross-referencing the
+status field in the View Document Details panel above.
+
+### Status boundary
+
+Using the default `$g_dwg_status_enum_string` (`110:pending … 195:archived`):
+
+| Document status | Label shown |
+|-----------------|-------------|
+| < 180 (pending … rework … independent review) | On Record |
+| 180 — accepted | **Approved** |
+| 190 — incorporated | **Approved** |
+| 195 — archived | On Record (archived implies superseded, not current-approved) |
+
+The thresholds should be driven by config rather than hard-coded constants,
+to allow installations with a different status enum to tune the boundary:
+
+```php
+# config_defaults_inc.php
+$g_dwg_primary_approved_threshold = 180;   # accepted — first "approved" status
+$g_dwg_primary_archived_status    = 195;   # archived — above this, revert to 'On Record'
+```
+
+### Affected code
+
+| Location | What to change |
+|----------|----------------|
+| [dwg_view_inc.php](../dwg_view_inc.php) ~line 1070 | Where `lang_get('primary_document_approved')` is echoed inside the `<span class="label label-success">` — replace with a ternary that reads the dwg status and selects between `primary_document_approved` ('Approved') and `primary_document_on_record` ('On Record') |
+| [lang/strings_english.txt](../lang/strings_english.txt) | Add `$s_primary_document_on_record = 'On Record';` alongside the existing `$s_primary_document_approved = 'Approved';` (currently 'On Record' is the value of `approved` — split them into two distinct keys) |
+| [config_defaults_inc.php](../config_defaults_inc.php) | Add `$g_dwg_primary_approved_threshold` and `$g_dwg_primary_archived_status` with the defaults above |
+
+### Notes
+
+- The dwg status is already available in the `$t_result['issue']` array loaded
+  earlier in `dwg_view_inc.php`; no extra DB query is needed.
+- The `label-success` CSS class (green badge) should be used for "Approved" and
+  `label-default` (grey) for "On Record", to give a visual distinction
+  consistent with the rest of the status display.
+- This feature intentionally does not change the download link or any access
+  control — it is a display-only label change.
