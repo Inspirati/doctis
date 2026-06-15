@@ -255,3 +255,118 @@ $g_dwg_primary_archived_status    = 195;   # archived — above this, revert to 
   consistent with the rest of the status display.
 - This feature intentionally does not change the download link or any access
   control — it is a display-only label change.
+
+---
+
+## 5 — Snapshot the document SHA at issue creation time
+
+### Intent
+
+When an issue (bug) is raised against a Doctis document, the `documents.reference`
+field at that moment holds the git SHA of the primary document file currently
+"On Record".  That SHA must be captured and stored with the issue so that a
+reviewer can always retrieve the exact version of the document the issue was
+raised against — even after the primary document has been superseded by a later
+upload.
+
+Currently, the "View Issue Details" panel in `bug_view.php` shows
+`$t_document['reference']`, which is read live from `documents.reference` and
+therefore reflects the *current* primary file, not the historical one.  The two
+diverge the moment a new primary document version is uploaded after the issue
+was created.
+
+### Data model
+
+Add one column to the `bug` table:
+
+```sql
+ALTER TABLE {bug}
+    ADD COLUMN document_sha VARCHAR(40) NOT NULL DEFAULT '';
+```
+
+`document_sha` stores the full 40-character git SHA of `dwg_primary_file.git_sha`
+at the moment the issue is created.  It is set once and never updated
+subsequently — it is an immutable snapshot.  Empty string when:
+- the document has no primary file at issue creation time, or
+- the storage backend is not GIT (DISK / DATABASE have no meaningful SHA).
+
+### Capture point
+
+`bug_report.php` already reads `$t_document_id` at line 184 and passes it into
+`$t_issue['document']`.  The snapshot should be taken in the command layer
+(or directly in `bug_report.php` before calling `BugReportCommand`) once
+`document_id > 0`:
+
+```php
+if( $t_document_id > 0 ) {
+    $t_primary = file_dwg_primary_get( $t_document_id );
+    if( $t_primary && preg_match( '/^[0-9a-f]{40}$/i', $t_primary['git_sha'] ) ) {
+        $t_issue['document_sha'] = $t_primary['git_sha'];
+    }
+}
+```
+
+The value must then be written to `{bug}.document_sha` when the bug row is
+inserted (in `bug_api.php` `bug_add()` or the equivalent command).
+
+### Display
+
+In `bug_view_inc.php` `print_document_details()` (around line 416), replace the
+current `$t_document['reference']` display with logic that checks
+`$t_bug['document_sha']`:
+
+- If `document_sha` is a 40-char SHA — render it as an 8-character abbreviated
+  download link pointing to the historical SHA endpoint (see below), with the
+  full SHA in the `title` tooltip.
+- If `document_sha` is empty — fall back to displaying `$t_document['reference']`
+  as today (the current On Record reference, with the existing link logic).
+
+The column header label could change from `lang_get('dwg_reference')` to
+`lang_get('dwg_reference_at_creation')` when a SHA is present, to make clear
+it is a snapshot rather than the current reference.
+
+### Historical SHA download endpoint
+
+A new case in `file_download.php` is required to serve the document at an
+arbitrary historical git SHA (the current `dwg_primary` case only serves the
+current On Record version):
+
+```
+type=dwg_primary_at_sha   parameters: dwg_id, sha
+```
+
+Implementation mirrors `file_dwg_primary_get_head_content()` but targets the
+supplied SHA rather than git HEAD:
+
+```bash
+git --git-dir=<bare_repo> cat-file blob <sha>:<dwg_id>/<filename>
+```
+
+The filename at the historical commit must be found from the commit tree, e.g.
+`git ls-tree --name-only <sha> <dwg_id>/`.  Access is gated by
+`dwg_primary_document_threshold` (same as the existing primary download).
+
+### Affected code
+
+| Location | What to change |
+|----------|----------------|
+| Schema migration | `ALTER TABLE {bug} ADD COLUMN document_sha VARCHAR(40) NOT NULL DEFAULT ''` |
+| [bug_report.php](../bug_report.php) ~line 185 | Snapshot `dwg_primary_file.git_sha` into `$t_issue['document_sha']` when `document_id > 0` |
+| [core/bug_api.php](../core/bug_api.php) `bug_add()` | Write `document_sha` to the INSERT |
+| [bug_view_inc.php](../bug_view_inc.php) `print_document_details()` | Show historical SHA (abbreviated, as download link) when `document_sha` is set; fall back to current reference otherwise |
+| [file_download.php](../file_download.php) | Add `dwg_primary_at_sha` case |
+| [core/file_dwg_api.php](../core/file_dwg_api.php) | Add `file_dwg_primary_get_content_at_sha( int $p_dwg_id, string $p_sha ): array|false` |
+| [lang/strings_english.txt](../lang/strings_english.txt) | Add `$s_dwg_reference_at_creation` label |
+
+### Notes
+
+- The `document_sha` column is append-only: once set it is never modified.
+  Any update to the primary document after the issue is raised must not touch it.
+- The SOAP `mc_dwg_api.php` `mci_issue_data_to_array()` function should expose
+  `document_sha` as a read-only field in the issue data structure.
+- If `document_sha` equals the current `documents.reference` (i.e. the document
+  has not been updated since the issue was raised), the display may suppress the
+  redundancy and show only one link — but this is a UI refinement, not a
+  correctness requirement.
+- For non-GIT installations `document_sha` will always be empty and the column
+  is a harmless no-op.
