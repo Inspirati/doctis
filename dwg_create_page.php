@@ -653,11 +653,10 @@ $t_form_encoding = 'enctype="multipart/form-data"';
 	<tr>
 	<tr>
 		<th class="category">
-			<span class="required">*</span>
 			<label for="dwg_reference"><?php print_dwg_documentation_link( 'dwg_reference' ) ?></label>
 		</th>
 		<td>
-			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_reference" name="dwg_reference" size="105" maxlength="128" value="<?php echo string_attribute( $f_dwg_reference ) ?>" required />
+			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_reference" name="dwg_reference" size="105" maxlength="128" value="<?php echo string_attribute( $f_dwg_reference ) ?>" />
 		</td>
 	</tr>
 
@@ -966,7 +965,7 @@ $t_form_encoding = 'enctype="multipart/form-data"';
 
 <?php # ── Primary Document Upload ──────────────────────────────────────────────── ?>
 <div class="space-10"></div>
-<div class="widget-box widget-color-orange2">
+<div class="widget-box widget-color-blue2">
 	<div class="widget-header widget-header-small">
 		<h4 class="widget-title lighter">
 			<?php print_icon( 'fa-file', 'ace-icon' ); ?>

@@ -834,6 +834,10 @@ function string_get_dwg_view_reference_url( $p_urlbase ) {
 }
 
 function string_get_dwg_view_reference_link( $p_bug_id, $p_dwg_reference, $p_detail_info = true, $p_fqdn = false ) {
+	if( is_blank( $p_dwg_reference ) ) {
+		return '';
+	}
+
 	if( dwg_exists( $p_bug_id ) ) {
 		# Check for a 40-character git SHA recorded in the primary file table.
 		# No git lookups — confirmed purely from the database.
