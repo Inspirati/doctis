@@ -4884,6 +4884,36 @@ $g_qms_url = '';
  */
 $g_qms_icon = 'fa-certificate';
 
+##########
+# AI Engine #
+##########
+
+/**
+ * Anthropic API key for the built-in AI Assistant feature.
+ *
+ * Set this in config/config_inc.php.  Leave empty to disable the AI Assistant
+ * sidebar button and prevent access to ai_assist_page.php.
+ *
+ * Never commit the key value to git.
+ *
+ * @global string $g_anthropic_api_key
+ */
+$g_anthropic_api_key = '';
+
+/**
+ * Claude model used by the AI Assistant.
+ *
+ * @global string $g_ai_model
+ */
+$g_ai_model = 'claude-sonnet-4-6';
+
+/**
+ * Minimum access level required to use the AI Assistant.
+ *
+ * @global int $g_ai_assist_threshold
+ */
+$g_ai_assist_threshold = REPORTER;
+
 #########
 # Icons #
 #########

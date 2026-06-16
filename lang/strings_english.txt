@@ -1311,6 +1311,12 @@ $s_logout_link = 'Logout';
 $s_my_view_link = 'My View';
 $s_invite_users = 'Invite Users';
 $s_qms_link = 'QMS';
+$s_ai_assist_link = 'AI Assistant';
+$s_ai_assist_title = 'AI Assistant';
+$s_ai_assist_tab_help = 'Help';
+$s_ai_assist_tab_meeting = 'Meeting';
+$s_ai_assist_tab_sop = 'SOP';
+$s_ai_assist_tab_other = 'Other';
 
 # my_view_page.php deprecated in favour of my_view_bug_page.php
 $s_my_view_title_unassigned = 'Unassigned';

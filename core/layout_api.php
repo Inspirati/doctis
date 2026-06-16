@@ -853,6 +853,16 @@ function layout_print_sidebar( $p_active_sidebar_page = null ) {
 			$t_sidebar_items = array_merge( $t_sidebar_items, $t_config_menu_items );
 		}
 
+		# AI Assistant — built-in Claude-powered assistant
+		if( !is_blank( config_get_global( 'anthropic_api_key' ) ) &&
+		    access_has_global_level( config_get_global( 'ai_assist_threshold' ) ) ) {
+			$t_sidebar_items[] = array(
+				'url'   => 'ai_assist_page.php',
+				'title' => 'ai_assist_link',
+				'icon'  => 'fa-comments',
+			);
+		}
+
 		# QMS — external Quality Management System link
 		$t_qms_url = config_get_global( 'qms_url' );
 		if( !is_blank( $t_qms_url ) ) {
