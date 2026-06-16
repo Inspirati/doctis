@@ -172,8 +172,10 @@ foreach ( $t_issue_view['links'] as $t_plugin => $t_hooks ) {
 	}
 }
 
-# Jump to Bugnotes
-print_dwg_small_button( '#dwgnotes', lang_get( 'jump_to_dwgnotes' ) );
+# Jump to Bugnotes — only shown when the notes feature is enabled
+if( $t_flags['dwgnotes_show'] ) {
+	print_dwg_small_button( '#dwgnotes', lang_get( 'jump_to_dwgnotes' ) );
+}
 
 # Display or Jump to History
 if( $t_flags['history_show'] ) {
@@ -1016,6 +1018,8 @@ if( $t_flags['sponsorships_show'] ) {
 }
 
 # ── Primary Document File ────────────────────────────────────────────────────
+# Panel is hidden from users below $g_dwg_primary_document_threshold (default REPORTER).
+if( access_has_dwg_level( config_get( 'dwg_primary_document_threshold' ), $f_dwg_id ) ):
 $t_primary_file = file_dwg_primary_get( $f_dwg_id );
 $t_can_upload_primary = !$t_force_readonly &&
 	access_has_dwg_level( config_get( 'update_dwg_threshold' ), $f_dwg_id );
@@ -1203,6 +1207,8 @@ $t_head_diverged = $t_git_head_sha !== null && $t_git_head_sha !== ( $t_primary_
 	</div>
 </div>
 </div>
+
+<?php endif; # dwg_primary_document_threshold ?>
 
 <?php
 # Bug Relationships
@@ -1497,7 +1503,7 @@ print_dwg_license_add_form( $f_dwg_id );
 <?php
 }
 
-if( access_has_dwg_level( config_get( 'dwgnote_view_threshold' ), $f_dwg_id ) ) {
+if( $t_flags['dwgnotes_show'] && access_has_dwg_level( config_get( 'dwgnote_view_threshold' ), $f_dwg_id ) ) {
 	# Dwgnotes and "Add Note" box
 	if( 'ASC' == current_user_get_pref( 'dwgnote_order' ) ) {
 		define( 'DWGNOTE_VIEW_INC_ALLOW', true );

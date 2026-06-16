@@ -226,6 +226,8 @@ class DwgViewPageCommand extends Command {
 			config_get( 'enable_sponsorship' ) &&
 			access_has_dwg_level( config_get( 'view_sponsorship_total_threshold' ), $t_issue_id );
 
+		$t_flags['dwgnotes_show'] = in_array( 'dwgnotes', $t_fields );
+
 		$t_flags['profiles_show'] = config_get( 'enable_profiles' ) != OFF;
 		$t_flags['profiles_platform_show'] = $t_flags['profiles_show'] && in_array( 'platform', $t_fields );
 		$t_flags['profiles_os_show'] = $t_flags['profiles_show'] && in_array( 'os', $t_fields );

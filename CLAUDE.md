@@ -237,13 +237,8 @@ Expected output ends with: `Git store reset: N item(s) removed.`
 
 ### Step 2 — Drop, recreate, and install the database
 
-The script must be run **from its own directory** — it uses a relative path
-(`../../../doctis`) to decide the correct installer URL.  Running it from
-any other directory causes it to build a wrong URL and the schema install
-will fail with a 404.
-
 ```bash
-ssh hcr@vaio "echo 'yes' | bash -c 'cd /var/www/html/doctis/admin/tools && bash doctis-drop-and-create-new-database.sh'"
+ssh hcr@vaio "echo 'yes' | bash /var/www/html/doctis/admin/tools/doctis-drop-and-create-new-database.sh"
 ```
 
 Expected output includes:
@@ -266,14 +261,6 @@ ssh hcr@vaio "mysql -e 'SELECT id, name FROM doctis.project; SELECT id, username
 # Git store: directories should be absent or empty
 ssh hcr@vaio "ls /var/git/doctis/ /var/www/doctis/worktrees/ 2>&1"
 ```
-
-### Common failure: wrong working directory for Step 2
-
-If the database script outputs `curl: (22) The requested URL returned error: 404`
-and the installer log shows no GOOD/FAILED lines, the script was not run from
-its own directory.  The URL check `[ -d ../../../doctis ]` resolved against
-the shell's working directory, not the script's location.  Always use the
-`bash -c 'cd ... && bash ...'` form shown above.
 
 ## Curl-Based Live Testing
 

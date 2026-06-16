@@ -14,6 +14,8 @@
 # as parameters to this script or edit the entries below
 #
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 project="doctis"
 password="password"
 ipaddr=$(ip -4 route get 1.1.1.1 | sed -n 's/.* src \([0-9.]*\).*/\1/p')
@@ -86,7 +88,10 @@ run_install() {
     local target="$1"
     local logfile="${target}_install_$(date +%Y%m%d_%H%M%S).html"
 
-    if [ -d ../../../${target} ]; then
+    # Resolve the webroot check relative to the script's own location, not the
+    # caller's working directory.  ${SCRIPT_DIR} is admin/tools/ inside the
+    # project; three levels up lands at the webroot parent (e.g. /var/www/html).
+    if [ -d "${SCRIPT_DIR}/../../../${target}" ]; then
         local install_url="http://${domain_idname}/${target}/admin/install.php"
     else
         local install_url="http://${domain_idname}/admin/install.php"
@@ -97,7 +102,7 @@ run_install() {
     # Capture the full output with tee, then grep separately
     if curl -fsS -d "install=2" "${install_url}" \
         | tee "$logfile" \
-        | grep -q "installed successfully"; then
+        | grep -q "GOOD"; then
         echo -e "${INFO}✔ ${target} database install successful.${OFF}"
         echo "  → Full installer output saved to ${logfile}"
     else

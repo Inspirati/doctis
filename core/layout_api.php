@@ -793,13 +793,13 @@ function layout_print_sidebar( $p_active_sidebar_page = null ) {
 		// 	'access_level' => config_get( 'roadmap_view_threshold' )
 		// );
 
-		// # Summary Page
-		// $t_sidebar_items[] = array(
-		// 	'url' => 'summary_page.php',
-		// 	'title' => 'summary_link',
-		// 	'icon' => 'fa-bar-chart-o',
-		// 	'access_level' => config_get( 'view_summary_threshold' )
-		// );
+		# Summary Page
+		$t_sidebar_items[] = array(
+			'url' => 'summary_page.php',
+			'title' => 'summary_link',
+			'icon' => 'fa-bar-chart-o',
+			'access_level' => config_get( 'view_summary_threshold' )
+		);
 
 		# Project Documentation Page
 		if( ON == config_get( 'enable_project_documentation' ) ) {
