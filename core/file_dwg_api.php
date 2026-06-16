@@ -1587,8 +1587,26 @@ function file_dwg_primary_add( $p_dwg_id, $p_user_id, $p_tmp_file, $p_filename, 
 	# stored document.  Write it to documents.reference so the list view and
 	# the reference hyperlink always reflect the actual approved file.
 	if( preg_match( '/^[0-9a-f]{40}$/i', $t_git_sha ) ) {
-		dwg_set_field( $p_dwg_id, 'reference', $t_git_sha );
+		file_dwg_set_document_reference( $p_dwg_id, $t_git_sha );
 	}
+}
+
+/**
+ * Update the reference field in the {documents} table for the given dwg.
+ * The reference lives in {documents} (joined via {dwg}.document_id), not
+ * in {dwg} itself, so dwg_set_field() cannot be used.
+ *
+ * @param int    $p_dwg_id   Document tracker row id ({dwg}.id)
+ * @param string $p_reference New reference value
+ * @return void
+ */
+function file_dwg_set_document_reference( int $p_dwg_id, string $p_reference ): void {
+	db_param_push();
+	$t_query = 'UPDATE {documents} d'
+		. ' INNER JOIN {dwg} w ON w.document_id = d.id'
+		. ' SET d.reference = ' . db_param()
+		. ' WHERE w.id = ' . db_param();
+	db_query( $t_query, array( $p_reference, $p_dwg_id ) );
 }
 
 /**
@@ -1748,7 +1766,7 @@ function file_dwg_primary_sync_head( int $p_dwg_id, int $p_acting_user_id ): voi
 	);
 
 	# Keep documents.reference in sync with the newly approved SHA.
-	dwg_set_field( $p_dwg_id, 'reference', $t_head['sha'] );
+	file_dwg_set_document_reference( $p_dwg_id, $t_head['sha'] );
 }
 
 function file_dwg_git_head_info( int $p_dwg_id ): ?array {

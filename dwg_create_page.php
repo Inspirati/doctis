@@ -962,6 +962,8 @@ $t_form_encoding = 'enctype="multipart/form-data"';
 </table>
 </div>
 </div>
+</div>
+</div>
 
 <?php # ── Primary Document Upload ──────────────────────────────────────────────── ?>
 <div class="space-10"></div>
@@ -1008,8 +1010,6 @@ $t_form_encoding = 'enctype="multipart/form-data"';
 			</div>
 		</div>
 	</div>
-</div>
-
 <div class="widget-toolbox padding-8 clearfix">
 	<span class="required pull-right"> * <?php echo lang_get( 'required' ) ?></span>
 	<input <?php echo helper_get_tab_index() ?> type="submit" class="btn btn-primary btn-white btn-round" value="<?php echo lang_get( 'submit_dwg_button' ) ?>" />
