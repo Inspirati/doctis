@@ -403,8 +403,8 @@ function summary_dwg_print_by_age( array $p_filter = [] ) {
 	$t_private_bug_threshold = config_get( 'private_bug_threshold' );
 
 	while( $t_row = $t_query->fetch() ) {
-		# as we select all from bug_table, inject into the cache.
-		bug_cache_database_result( $t_row );
+		# as we select all from dwg table, inject into the cache.
+		dwg_cache_database_result( $t_row );
 
 		# Skip private bugs unless user has proper permissions
 		if( ( VS_PRIVATE == dwg_get_field( $t_row['id'], 'view_state' ) ) && ( false == access_has_dwg_level( $t_private_bug_threshold, $t_row['id'] ) ) ) {
@@ -492,7 +492,7 @@ function summary_dwg_print_by_developer( array $p_filter = [] ) {
  *
  * @return void
  */
-function summary_print_by_creator( array $p_filter = [] ) {
+function summary_dwg_print_by_creator( array $p_filter = [] ) {
 	$t_reporter_summary_limit = config_get( 'reporter_summary_limit' );
 
 	$t_project_id = helper_get_current_project();
@@ -740,9 +740,8 @@ function summary_dwg_print_by_project( array $p_projects = [], int $p_level = 0,
 		
 		$t_bugs_ratio = summary_helper_get_dwgratio( $t_bugs_open, $t_bugs_resolved, $t_bugs_closed, $t_bugs_total_count);
 
-# FILTER_PROPERTY_PROJECT_ID filter by project does not work ??
-#		$t_bug_link = '<a class="subtle" href="' . config_get( 'bug_count_hyperlink_prefix' ) . '&amp;' . FILTER_PROPERTY_PROJECT_ID . '=' . string_url( $t_project );
-#		summary_helper_build_dwglinks( $t_bug_link, $t_bugs_open, $t_bugs_resolved, $t_bugs_closed, $t_bugs_total );
+		$t_bug_link = summary_dwg_get_link_prefix( $p_filter ) . '&amp;' . FILTER_PROPERTY_PROJECT_ID . '=' . $t_project;
+		summary_helper_build_dwglinks( $t_bug_link, $t_bugs_open, $t_bugs_resolved, $t_bugs_closed, $t_bugs_total );
 
 		summary_dwg_helper_print_row( string_display_line( $t_name ), $t_bugs_open, $t_bugs_resolved, $t_bugs_closed, $t_bugs_total, $t_bugs_ratio[0], $t_bugs_ratio[1]);
 
@@ -750,7 +749,7 @@ function summary_dwg_print_by_project( array $p_projects = [], int $p_level = 0,
 			$t_subprojects = current_user_get_accessible_subprojects( $t_project );
 
 			if( count( $t_subprojects ) > 0 ) {
-				summary_dwg_print_by_project( $t_subprojects, $p_level + 1, $p_cache );
+				summary_dwg_print_by_project( $t_subprojects, $p_level + 1, $p_cache, $p_filter );
 			}
 		}
 	}
