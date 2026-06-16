@@ -133,6 +133,12 @@
 		var text = $input.value.trim();
 		if( !text || currentXhr ) return;
 
+		// Remove welcome message on first send
+		if( chatHistory.length === 0 ) {
+			var welcome = document.getElementById('ai-welcome-msg');
+			if( welcome ) welcome.parentNode.removeChild( welcome );
+		}
+
 		appendMessage('user', text);
 		chatHistory.push({ role: 'user', content: text });
 		$input.value = '';
@@ -203,10 +209,17 @@
 	/* ── Clear conversation ─────────────────────────────────────────────── */
 	function clearConversation() {
 		chatHistory = [];
-		var welcome = document.getElementById('ai-welcome-msg');
-		while( $messages.lastChild && $messages.lastChild !== welcome ) {
-			$messages.removeChild($messages.lastChild);
-		}
+		$messages.innerHTML = '';
+
+		// Restore welcome message
+		var welcome = document.createElement('div');
+		welcome.className = 'ai-msg-row assistant';
+		welcome.id = 'ai-welcome-msg';
+		welcome.innerHTML =
+			'<div class="ai-msg-avatar"><i class="ace-icon fa fa-comments-o"></i></div>' +
+			'<div class="ai-msg-bubble">Hello! How can I help you with Doctis today?</div>';
+		$messages.appendChild(welcome);
+
 		setStatus('');
 		$input.value = '';
 		updateCharCount();
