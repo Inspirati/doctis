@@ -133,21 +133,6 @@ print_summary_menu( 'summary_dwg_page.php', $t_filter );
 	</table>
 	</div>
 
-	<!-- BY SEVERITY -->
-<?php /* 
-	<div class="space-10"></div>
-	<div class="widget-box table-responsive">
-		<table class="table table-hover table-bordered table-condensed table-striped">
-		<thead>
-			<tr>
-				<th class="width-35"><?php echo lang_get( 'by_severity' ) ?></th>
-				<?php echo $t_summary_header ?>
-			</tr>
-		</thead>
-		<?php summary_dwg_print_by_enum( 'severity', $t_filter ) ?>
-	</table>
-	</div>
-*/ ?>
 	<!-- BY CATEGORY -->
 	<div class="space-10"></div>
 	<div class="widget-box table-responsive">
@@ -175,7 +160,7 @@ print_summary_menu( 'summary_dwg_page.php', $t_filter );
 			<td><?php echo lang_get( 'longest_open_bug' ) ?></td>
 			<td class="align-right"><?php
 				if( $t_time_stats['dwg_id'] > 0 )  {
-					print_bug_link( $t_time_stats['dwg_id'] );
+					echo string_get_dwg_view_link( $t_time_stats['dwg_id'] );
 				}
 			?></td>
 		</tr>
@@ -256,21 +241,6 @@ print_summary_menu( 'summary_dwg_page.php', $t_filter );
 	</table>
 	</div>
 
-	<!-- BY RESOLUTION -->
-<?php /*
-	<div class="space-10"></div>
-	<div class="widget-box table-responsive">
-		<table class="table table-hover table-bordered table-condensed table-striped">
-		<thead>
-			<tr>
-				<th class="width-35"><?php echo lang_get( 'by_resolution' ) ?></th>
-				<?php echo $t_summary_header ?>
-			</tr>
-		</thead>
-		<?php summary_dwg_print_by_enum( 'resolution', $t_filter ) ?>
-	</table>
-	</div>
-*/ ?>
 	<!-- BY PRIORITY -->
 	<div class="space-10"></div>
 	<div class="widget-box table-responsive">
@@ -295,78 +265,12 @@ print_summary_menu( 'summary_dwg_page.php', $t_filter );
 				<?php echo $t_summary_header ?>
 			</tr>
 		</thead>
-		<?php summary_print_by_creator( $t_filter ) ?>
-	</table>
-	</div>
-
-	<!-- CREATOR EFFECTIVENESS -->
-	<div class="space-10"></div>
-	<div class="widget-box table-responsive">
-		<table class="table table-hover table-bordered table-condensed table-striped">
-		<thead>
-			<tr>
-				<th class="width-35"><?php echo lang_get( 'creator_effectiveness' ) ?></th>
-				<th class="align-right"><?php echo lang_get( 'severity' ); ?></th>
-				<th class="align-right"><?php echo lang_get( 'errors' ); ?></th>
-				<th class="align-right"><?php echo lang_get( 'total' ); ?></th>
-			</tr>
-		</thead>
-		<?php /* summary_print_creator_effectiveness( config_get( 'severity_enum_string' ), config_get( 'resolution_enum_string' ), $t_filter ) */ ?>
+		<?php summary_dwg_print_by_creator( $t_filter ) ?>
 	</table>
 	</div>
 
 </div>
 
-<!-- BOTTOM -->
-<div class="col-md-12 col-xs-12">
-
-	<!-- REPORTER BY RESOLUTION -->
-	<div class="space-10"></div>
-	<div class="widget-box table-responsive">
-		<table class="table table-hover table-bordered table-condensed table-striped">
-		<thead>
-			<tr>
-				<th class="width-15"><?php echo lang_get( 'creator_by_resolution' ) ?></th>
-				<?php
-					$t_resolutions = MantisEnum::getValues( config_get( 'resolution_enum_string' ) );
-
-					foreach ( $t_resolutions as $t_resolution ) {
-						echo '<th class="align-right">', get_enum_element( 'resolution', $t_resolution ), "</th>\n";
-					}
-
-					echo '<th class="align-right">', lang_get( 'total' ), "</th>\n";
-					echo '<th class="align-right">', lang_get( 'percentage_errors' ), "</th>\n";
-				?>
-			</tr>
-		</thead>
-		<?php /* summary_dwg_print_reporter_resolution( config_get( 'resolution_enum_string' ), $t_filter ) */ ?>
-	</table>
-	</div>
-
-	<!-- DEVELOPER BY RESOLUTION -->
-	<div class="space-10"></div>
-	<div class="widget-box table-responsive">
-		<table class="table table-hover table-bordered table-condensed table-striped">
-		<thead>
-			<tr>
-				<th class="width-15"><?php echo lang_get( 'developer_by_resolution' ) ?></th>
-				<?php
-					$t_resolutions = MantisEnum::getValues( config_get( 'resolution_enum_string' ) );
-
-					foreach ( $t_resolutions as $t_resolution ) {
-						echo '<th class="align-right">', get_enum_element( 'resolution', $t_resolution ), "</th>\n";
-					}
-
-					echo '<th class="align-right">', lang_get( 'total' ), "</th>\n";
-					echo '<th class="align-right">', lang_get( 'percentage_fixed' ), "</th>\n";
-				?>
-			</tr>
-		</thead>
-		<?php /* summary_dwg_print_developer_resolution( config_get( 'resolution_enum_string' ), $t_filter ) */ ?>
-	</table>
-	</div>
-
-</div>
 
 </div>
 </div>
