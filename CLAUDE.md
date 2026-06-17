@@ -763,6 +763,13 @@ Key files:
 The API key (`$g_anthropic_api_key`) is set in `config/config_inc.php` (not committed).
 The sidebar button is suppressed entirely when the key is blank.
 
+**Adding new AI tables:** Any new database table must be added to `admin/schema.php`
+using ADOdb data dictionary syntax so that `admin/tools/doctis-drop-and-create-new-database.sh`
+creates it on fresh installs.  Standalone migration scripts under `admin/` (e.g.
+`admin/ai_sessions_migrate.php`) are development conveniences only — the installer
+does not call them.  Use `INT UNSIGNED` for timestamp columns (`db_now()` returns a
+Unix integer, not a datetime string).  See §5 of `doc/ai-todo.md` for details.
+
 ## Known Architectural Trade-offs
 
 1. **Filter hacks** — [core/filter_api.php](core/filter_api.php) lines 101, 1156, 1192 contain admitted "quick'n'dirty" hacks to route document queries through the bug filter pipeline without changing all call sites.

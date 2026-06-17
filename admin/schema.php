@@ -1172,10 +1172,26 @@ $g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwg_primar
 	) );
 $g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_dwg_primary_file_dwg_id', db_get_table( 'dwg_primary_file' ), 'dwg_id', array( 'UNIQUE' ) ) );
 
-# Rename {dwg_primary_file}.diskfile → git_sha; the column holds a git commit SHA,
-# not a generic opaque disk identifier.
-$g_upgrade[$t_idx++] = array( 'RenameColumnSQL', array( db_get_table( 'dwg_primary_file' ), 'diskfile', 'git_sha', "
-	git_sha				C(250)	NOTNULL DEFAULT \" '' \" " ) );
+# Step 249 was: RenameColumnSQL {dwg_primary_file}.diskfile → git_sha.
+# This was a one-time migration for instances created before the column was renamed.
+# Fresh installs already use git_sha in the CreateTableSQL above, so the rename
+# always fails on fresh installs and breaks the upgrade loop.  Set to null (no-op).
+$g_upgrade[$t_idx++] = null;
+
+# AI Assistant session persistence — one row per user per mode; history is the
+# full JSON conversation array re-sent to the Anthropic API on each turn.
+# created/updated are Unix timestamps (INT UNSIGNED), matching MantisBT convention.
+# XL maps to LONGTEXT in MySQL via ADOdb data dictionary.
+$g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'ai_sessions' ), "
+	id						I		UNSIGNED NOTNULL PRIMARY AUTOINCREMENT,
+	user_id					I		UNSIGNED NOTNULL DEFAULT '0',
+	mode					C(16)	NOTNULL DEFAULT \" 'help' \",
+	created					I		UNSIGNED NOTNULL DEFAULT '1',
+	updated					I		UNSIGNED NOTNULL DEFAULT '1',
+	history					XL		NOTNULL",
+	$t_table_options
+	) );
+$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_ai_sessions_user_mode', db_get_table( 'ai_sessions' ), 'user_id, mode' ) );
 
 # IMPORTANT: keep these entries as the last indexes, as they will be deleted in release versions
 #			 (you will need to bump all the indexes when inserting tables database statements above here)

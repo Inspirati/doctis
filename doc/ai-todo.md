@@ -196,6 +196,15 @@ This is generous for Help tab answers.  Meeting and SOP document-generation
 phases may need a higher value (e.g. 4096 for a full SOP draft).  Make this
 configurable when those modes are implemented.
 
+**New database tables must be added to `admin/schema.php`.**  
+Any table introduced for an AI feature must have a corresponding entry in
+`admin/schema.php` using ADOdb data dictionary syntax (`CreateTableSQL`,
+`CreateIndexSQL`).  This is the file that `admin/tools/doctis-drop-and-create-new-database.sh`
+uses to build a complete database from scratch.  The standalone migration
+scripts under `admin/` are for development use only and are not run by the
+installer.  Use `INT UNSIGNED` (not `DATETIME`) for timestamp columns —
+MantisBT stores all timestamps as Unix integers via `db_now()`.
+
 ---
 
 ## 6. To-do list
@@ -222,7 +231,8 @@ Items are grouped by priority.  Tick boxes are updated as work is completed.
   `created`/`updated` as INT UNSIGNED — Unix timestamps, MantisBT convention).
   `ai_assist_api.php` gained `load`, `clear`, and upsert-on-`chat` actions.
   JS calls `load` on page open and `clear` on Clear.  Session survives page
-  refresh.  Migration script: `admin/ai_sessions_migrate.php`.
+  refresh.  Migration script: `admin/ai_sessions_migrate.php` (development use
+  only — `admin/schema.php` is the authoritative definition for fresh installs).
 - [x] **Token usage display** — cumulative input/output tokens shown in the
   status bar after each reply (`#ai-token-count` span).  Resets to zero on Clear.
 - [x] **Richer Markdown rendering** — renderer now handles ordered and unordered
@@ -320,3 +330,4 @@ Implements GUID-SYS-007 Part B as the SOP tab.
 |------|--------|
 | 2026-06-17 | Initial version — documents Phase 1 implementation; drafts Phases 2–5 |
 | 2026-06-18 | Phase 2 complete — DB persistence, token display, Markdown lists/HR, context injection, copy-to-clipboard; streaming deferred |
+| 2026-06-18 | schema.php updated with ai_sessions (steps 250–251); step 249 (defunct RenameColumnSQL) set to null no-op to fix fresh-install loop break; schema.php requirement documented in CLAUDE.md and §5 |
