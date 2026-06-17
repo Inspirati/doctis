@@ -252,33 +252,49 @@ Items are grouped by priority.  Tick boxes are updated as work is completed.
   `Content-Type: text/event-stream`, `set_time_limit(0)`, Apache
   `php_flag output_buffering Off` for the API endpoint path.  Deferred.
 
-### Phase 3 — Meeting Assistant tab
+### Phase 3 — Meeting Assistant tab ✓ complete (core)
 
 Implements ENG-TASK-002 (Meeting Assistant Tool) as the Meeting tab.
 
-- [ ] **System prompt for Meeting mode** — encode the two-phase session flow
-  (Agenda Mode / Minutes Mode) from ENG-TASK-002 §4.4 as a JS constant in
-  `js/ai_assist.js` or a separate `js/ai_meeting.js`.  Pass with
-  `mode: 'meeting'`.
-- [ ] **Session persistence** — Meeting sessions span multiple visits (agenda
-  created now, minutes completed later).  Requires the `{ai_sessions}` table
-  from Phase 2, with `mode` and `doc_id` columns.
-- [ ] **HCRQMS file write** — on session completion, write the generated
-  Markdown meeting record to the HCRQMS repository at the configured path
-  (`$g_hcrqms_repo_path`, to be added to `config_defaults_inc.php`).  Reuse
-  the `shell_exec()` git pattern from `GitFileStorageBackend`.
-- [ ] **Git commit** — commit the generated file with the logged-in user's
-  name/email as author (from `user_get_field($t_user_id, 'realname')`
-  and `email`).  Use `GIT_AUTHOR_NAME` / `GIT_AUTHOR_EMAIL` env vars,
-  same pattern as `GitFileStorageBackend::store()`.
-- [ ] **Doctis document registration** — after commit, call `dwg_add()` (or
-  `DwgAddCommand`) to register the meeting record as a Doctis document.
-  Store the created `dwg_id` back in the `{ai_sessions}` row.
-- [ ] **Department → project mapping** — map the HCRQMS department codes
-  (ENG, SYS, HR…) from `departments.yaml` to Doctis project IDs so the
-  registered document lands in the correct project.
-- [ ] **Add `$g_hcrqms_repo_path` config default** to
-  `config_defaults_inc.php`.
+- [x] **System prompt for Meeting mode** — full two-phase session flow
+  (Agenda Mode / Minutes Mode) from ENG-TASK-002 §4.4 built server-side in
+  `ai_assist_api.php::ai_assist_meeting_system_prompt()`.  System prompt is
+  never sent to the browser (security); includes meeting template from HCRQMS
+  (when `$g_hcrqms_repo_path` is set) and departments list from config.
+  Claude outputs completed documents in `<<<MEETING_DOCUMENT...>>>` markers
+  which PHP detects and processes automatically.
+- [x] **Session persistence** — Meeting sessions use the existing `{ai_sessions}`
+  table with `mode='meeting'`.  `doc_id` and `dwg_id` columns added at schema
+  steps 252–253.  `load` and `clear` actions work identically to Help mode.
+- [x] **HCRQMS file write** — `ai_assist_process_meeting_document()` in
+  `ai_assist_api.php` detects `<<<MEETING_DOCUMENT>>>` markers in the AI reply,
+  extracts the Markdown, and writes to `$g_hcrqms_repo_path/{dept_path}/{doc_id}.md`.
+  Creates the output directory if needed.  Agendas are saved only (no commit);
+  minutes are saved then committed.  No-op when `$g_hcrqms_repo_path` is blank
+  (chat-only mode).
+- [x] **Git commit** — `ai_assist_git_commit_meeting()` runs `git add` +
+  `git commit` with `GIT_AUTHOR_NAME` / `GIT_COMMITTER_NAME` env vars set from
+  the logged-in user's `realname` and `email`.  `ensure_git_home()` pattern
+  from `GitFileStorageBackend` applied.  Returns commit SHA on success.
+- [x] **Department → project mapping** — `$g_ai_meeting_departments` config
+  array in `config_defaults_inc.php` maps department codes (SYS, ENG, MFG,
+  HR, IT, QA, SCM, EXEC) to HCRQMS output paths and Doctis project IDs.
+  Set `project_id` values in `config/config_inc.php` to enable Doctis
+  registration per department.
+- [x] **Add `$g_hcrqms_repo_path` config default** to `config_defaults_inc.php`.
+  Also added `$g_ai_meeting_departments` with full department table.
+- [x] **JS refactored to `createChatSession(cfg)` factory** — both Help and
+  Meeting tabs use the same factory; no code duplication.  Meeting tab has its
+  own DOM elements (`#ai-meeting-*`), independent chat state, and a
+  saved-document notification card shown when a document marker is detected.
+
+- [ ] **Doctis document registration** — `ai_assist_register_meeting_doctis()`
+  stub is in `ai_assist_api.php` (function exists with full TODO).  Triggered
+  only when `$g_ai_meeting_departments[$dept]['project_id'] > 0`.  Requires
+  completing the `DwgData` instantiation — see the TODO comment in the function.
+  `link_url` is the clean field to carry the HCRQMS file path (no file upload
+  required; confirmed via code review of `DwgData::create()`).  Deferred to a
+  follow-up commit once the DwgData field requirements are confirmed end-to-end.
 
 ### Phase 4 — SOP Interview tab
 
@@ -331,3 +347,4 @@ Implements GUID-SYS-007 Part B as the SOP tab.
 | 2026-06-17 | Initial version — documents Phase 1 implementation; drafts Phases 2–5 |
 | 2026-06-18 | Phase 2 complete — DB persistence, token display, Markdown lists/HR, context injection, copy-to-clipboard; streaming deferred |
 | 2026-06-18 | schema.php updated with ai_sessions (steps 250–251); step 249 (defunct RenameColumnSQL) set to null no-op to fix fresh-install loop break; schema.php requirement documented in CLAUDE.md and §5 |
+| 2026-06-18 | Phase 3 core complete — Meeting Assistant tab live; server-side system prompt (ENG-TASK-002 §4.4); HCRQMS file write; git commit with user attribution; department config; JS refactored to createChatSession factory; schema steps 252–253 (doc_id, dwg_id); Doctis registration stub deferred |

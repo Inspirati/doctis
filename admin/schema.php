@@ -1193,6 +1193,14 @@ $g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'ai_session
 	) );
 $g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_ai_sessions_user_mode', db_get_table( 'ai_sessions' ), 'user_id, mode' ) );
 
+# Meeting Assistant columns on {ai_sessions} — added in Phase 3.
+# doc_id: the HCRQMS document ID of the in-progress meeting record (e.g. MIN-ENG-20260618).
+# dwg_id: Doctis document ID assigned after the minutes are committed and registered.
+$g_upgrade[$t_idx++] = array( 'AddColumnSQL', array( db_get_table( 'ai_sessions' ),
+	"doc_id    C(80)     NULL" ) );
+$g_upgrade[$t_idx++] = array( 'AddColumnSQL', array( db_get_table( 'ai_sessions' ),
+	"dwg_id    I UNSIGNED NULL" ) );
+
 # IMPORTANT: keep these entries as the last indexes, as they will be deleted in release versions
 #			 (you will need to bump all the indexes when inserting tables database statements above here)
 # user access_level: '10:viewer,25:reporter,40:updater,55:developer,70:manager,90:administrator'
