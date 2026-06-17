@@ -741,6 +741,28 @@ temporary repos. Must pass before enabling `GIT` on any new server.
 | `example` project worktree | `/var/www/doctis/worktrees/example` — `main` branch, tracking `origin/main` |
 | `$g_file_upload_method` | Set to `GIT` in `config/config_inc.php` — active on vaio |
 
+## AI Assistant Feature
+
+The Doctis AI Assistant (`ai_assist_page.php`) embeds a Claude-powered chat interface
+using the Anthropic Messages API.  Before working on any AI-related code, read:
+
+- **[doc/ai-todo.md](doc/ai-todo.md)** — living implementation log: what is built, how
+  the pipeline works, configuration reference, known constraints, and the phased to-do
+  list (Phases 2–5).  Update this document as work is completed or decisions change.
+- **[doc/ai-engine.md](doc/ai-engine.md)** — architecture concept plan and platform
+  assessment.  Read before making structural changes to the AI pipeline.
+
+Key files:
+
+| File | Purpose |
+|------|---------|
+| `ai_assist_page.php` | Page shell: auth, tab layout, chat HTML, inline CSS, `<script src>` |
+| `ai_assist_api.php` | AJAX endpoint: validation, cURL to Anthropic, JSON response |
+| `js/ai_assist.js` | All client-side JS — **must** be external (CSP `script-src 'self'`) |
+
+The API key (`$g_anthropic_api_key`) is set in `config/config_inc.php` (not committed).
+The sidebar button is suppressed entirely when the key is blank.
+
 ## Known Architectural Trade-offs
 
 1. **Filter hacks** — [core/filter_api.php](core/filter_api.php) lines 101, 1156, 1192 contain admitted "quick'n'dirty" hacks to route document queries through the bug filter pipeline without changing all call sites.

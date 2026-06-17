@@ -8,8 +8,7 @@ hostname=$(hostname)
 printf '%q\n' "${name}"  # to print to stdout, quoted for use as shell input
 echo $timestamp
 
-tar --exclude=".git" \
-    --exclude="*.tar.gz" \
+tar --exclude="*.tar.gz" \
     --exclude=".Trash-*" \
     -czvf \
     ../${hostname}_${name}_${timestamp}.tar.gz *
