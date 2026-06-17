@@ -215,25 +215,32 @@ Items are grouped by priority.  Tick boxes are updated as work is completed.
 - [x] Error handling: Anthropic 401 / 429 / 529 mapped to user messages
 - [x] Bug fix: `this.responseText` captured before nulling `currentXhr`
 
-### Phase 2 — Help tab improvements
+### Phase 2 — Help tab improvements ✓ complete
 
-- [ ] **Persist conversation to database** between page loads.  Add a
-  `{ai_sessions}` table (session metadata + `history` JSON column).  Load on
-  page open, save on each turn.  See `doc/ai-engine.md` §4.4 for schema draft.
-- [ ] **Token usage display** — show cumulative input/output tokens in the
-  status bar.  The API already returns `usage` in each response; JS discards it.
+- [x] **Persist conversation to database** between page loads.  `{ai_sessions}`
+  table (one row per user per mode; `history` LONGTEXT column holding JSON;
+  `created`/`updated` as INT UNSIGNED — Unix timestamps, MantisBT convention).
+  `ai_assist_api.php` gained `load`, `clear`, and upsert-on-`chat` actions.
+  JS calls `load` on page open and `clear` on Clear.  Session survives page
+  refresh.  Migration script: `admin/ai_sessions_migrate.php`.
+- [x] **Token usage display** — cumulative input/output tokens shown in the
+  status bar after each reply (`#ai-token-count` span).  Resets to zero on Clear.
+- [x] **Richer Markdown rendering** — renderer now handles ordered and unordered
+  lists (converted to `<ol>`/`<ul>`), horizontal rules, and bold-italic (`***`).
+  Implemented directly in `js/ai_assist.js`; no external library needed.
+- [x] **Context injection** — `ai_assist_page.php` reads
+  `helper_get_current_project()` and the document count for that project via a
+  direct `COUNT(*)` query on `{dwg}`.  Values are embedded as `data-project`
+  and `data-doc-count` on `#ai-chat-messages`; JS appends a context sentence
+  to `SYSTEM_PROMPT` when a project is active.
+- [x] **Copy-to-clipboard button** on assistant bubbles — small button below
+  each assistant message; copies original Markdown text; shows tick icon for
+  1.5 s on success; fallback `execCommand` for non-HTTPS contexts.
+
 - [ ] **Streaming responses (SSE)** — pipe the Anthropic streaming API through
   PHP to the browser for word-by-word output.  Requires: `ob_end_clean()`,
   `Content-Type: text/event-stream`, `set_time_limit(0)`, Apache
-  `php_flag output_buffering Off` for the API endpoint path.
-- [ ] **Richer Markdown rendering** — current renderer handles only fenced
-  code, inline code, bold, and newlines.  Add ordered/unordered lists and
-  horizontal rules at minimum.  Consider a small external library (e.g.
-  `marked.js`) — must be hosted locally to satisfy CSP `script-src 'self'`.
-- [ ] **Context injection** — detect the user's current Doctis project and
-  inject project name + document count into the system prompt so Help answers
-  can be project-specific.
-- [ ] **Copy-to-clipboard button** on assistant bubbles.
+  `php_flag output_buffering Off` for the API endpoint path.  Deferred.
 
 ### Phase 3 — Meeting Assistant tab
 
@@ -312,3 +319,4 @@ Implements GUID-SYS-007 Part B as the SOP tab.
 | Date | Change |
 |------|--------|
 | 2026-06-17 | Initial version — documents Phase 1 implementation; drafts Phases 2–5 |
+| 2026-06-18 | Phase 2 complete — DB persistence, token display, Markdown lists/HR, context injection, copy-to-clipboard; streaming deferred |

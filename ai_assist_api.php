@@ -1,20 +1,24 @@
 <?php
 # Doctis — AI Assistant AJAX endpoint
 #
-# Receives a JSON POST from ai_assist_page.php, calls the Anthropic Messages
-# API, and returns the assistant's reply as JSON.
+# Receives a JSON POST from ai_assist_page.php and performs one of three
+# actions, selected by the `action` field in the request body:
+#
+#   action: 'chat'    — send a user message; calls Anthropic API; saves session
+#   action: 'load'    — return the stored conversation history for this user+mode
+#   action: 'clear'   — delete the stored session for this user+mode
 #
 # Request body (JSON):
+#   action  string   'chat' | 'load' | 'clear'
 #   mode    string   'help' | 'meeting' | 'sop' | 'other'
-#   system  string   System prompt constructed by the caller
-#   history array    [{role: 'user'|'assistant', content: string}, ...]
-#                    The last element is the new user message (already appended
-#                    by the JS before sending).
-#   token   string   CSRF form security token
+#   system  string   System prompt (chat action only)
+#   history array    Full message history (chat action only)
 #
 # Response body (JSON):
-#   reply   string   Assistant reply text (on success)
-#   error   string   Error message (on failure); null on success
+#   reply   string|null   Assistant reply (chat action on success)
+#   history array|null    Stored history (load action on success)
+#   error   string|null   Error message on failure; null on success
+#   usage   object|null   {input_tokens, output_tokens} (chat action)
 #
 # @package    Doctis
 # @copyright  Copyright 2025 Inspirati
@@ -38,30 +42,51 @@ if( $_SERVER['REQUEST_METHOD'] !== 'POST' ||
 auth_ensure_user_authenticated();
 access_ensure_global_level( config_get_global( 'ai_assist_threshold' ) );
 
-# Must have an API key configured.
-$t_api_key = config_get_global( 'anthropic_api_key' );
-if( is_blank( $t_api_key ) ) {
-	ai_assist_json_error( 'AI Assistant is not configured on this server.' );
-}
-
 # ── Parse request ─────────────────────────────────────────────────────────
 
-$t_raw = file_get_contents( 'php://input' );
+$t_raw   = file_get_contents( 'php://input' );
 $t_input = json_decode( $t_raw, true );
 
 if( !is_array( $t_input ) ) {
 	ai_assist_json_error( 'Invalid request body.' );
 }
 
-# CSRF mitigation: this endpoint is authenticated + XHR-only (checked above).
-# The X-Requested-With header cannot be set cross-origin by a browser, so
-# authentication + XHR check is sufficient.  No traditional form token needed.
+$t_action = $t_input['action'] ?? 'chat';
+$t_mode   = $t_input['mode']   ?? 'help';
 
-$t_mode    = $t_input['mode']    ?? 'help';
+if( !in_array( $t_action, [ 'chat', 'load', 'clear' ], true ) ) {
+	ai_assist_json_error( 'Unknown action.' );
+}
+if( !in_array( $t_mode, [ 'help', 'meeting', 'sop', 'other' ], true ) ) {
+	ai_assist_json_error( 'Unknown mode.' );
+}
+
+$t_user_id = auth_get_current_user_id();
+
+# ── Dispatch ──────────────────────────────────────────────────────────────
+
+if( $t_action === 'load' ) {
+	ai_assist_action_load( $t_user_id, $t_mode );
+}
+
+if( $t_action === 'clear' ) {
+	ai_assist_action_clear( $t_user_id, $t_mode );
+}
+
+# action === 'chat' — fall through to chat handling below
+
+# ── Must have an API key configured ───────────────────────────────────────
+
+$t_api_key = config_get_global( 'anthropic_api_key' );
+if( is_blank( $t_api_key ) ) {
+	ai_assist_json_error( 'AI Assistant is not configured on this server.' );
+}
+
+# ── Validate chat-specific fields ─────────────────────────────────────────
+
 $t_system  = $t_input['system']  ?? '';
 $t_history = $t_input['history'] ?? [];
 
-# Basic validation
 if( !is_array( $t_history ) || count( $t_history ) === 0 ) {
 	ai_assist_json_error( 'No message supplied.' );
 }
@@ -113,8 +138,8 @@ curl_setopt_array( $t_ch, [
 	CURLOPT_CONNECTTIMEOUT => 10,
 ] );
 
-$t_response = curl_exec( $t_ch );
-$t_http_code = curl_getinfo( $t_ch, CURLINFO_HTTP_CODE );
+$t_response   = curl_exec( $t_ch );
+$t_http_code  = curl_getinfo( $t_ch, CURLINFO_HTTP_CODE );
 $t_curl_error = curl_error( $t_ch );
 curl_close( $t_ch );
 
@@ -130,11 +155,9 @@ if( $t_response === false ) {
 $t_data = json_decode( $t_response, true );
 
 if( $t_http_code !== 200 ) {
-	# Anthropic error response: {"type":"error","error":{"type":"...","message":"..."}}
 	$t_err_msg = $t_data['error']['message'] ?? 'API error (HTTP ' . $t_http_code . ').';
 	error_log( 'ai_assist_api: Anthropic error ' . $t_http_code . ': ' . $t_err_msg );
 
-	# Translate common error codes into user-friendly messages.
 	switch( $t_http_code ) {
 		case 401:
 			ai_assist_json_error( 'AI service authentication failed. Check the API key in config.' );
@@ -150,12 +173,17 @@ if( $t_http_code !== 200 ) {
 	}
 }
 
-# Extract the text content from the response.
 $t_reply = $t_data['content'][0]['text'] ?? '';
 
 if( is_blank( $t_reply ) ) {
 	ai_assist_json_error( 'Empty response received from AI service.' );
 }
+
+# ── Persist the updated history ───────────────────────────────────────────
+# Append the assistant reply to form the full history to save.
+
+$t_messages[] = [ 'role' => 'assistant', 'content' => $t_reply ];
+ai_assist_session_save( $t_user_id, $t_mode, $t_messages );
 
 # ── Return success response ───────────────────────────────────────────────
 
@@ -170,6 +198,87 @@ echo json_encode( [
 ] );
 exit;
 
+
+# ── Action handlers ───────────────────────────────────────────────────────
+
+/**
+ * Load and return the stored conversation history for user+mode.
+ * Returns {history: [...]} on success; {history: null} if no session exists.
+ * Exits.
+ */
+function ai_assist_action_load( int $p_user_id, string $p_mode ): never {
+	$t_table  = db_get_table( 'ai_sessions' );
+	$t_result = db_query(
+		'SELECT history FROM ' . $t_table .
+		' WHERE user_id = ' . db_param() . ' AND mode = ' . db_param() .
+		' ORDER BY updated DESC LIMIT 1',
+		[ $p_user_id, $p_mode ]
+	);
+
+	$t_history = null;
+	if( db_num_rows( $t_result ) > 0 ) {
+		$t_row     = db_fetch_array( $t_result );
+		$t_history = json_decode( $t_row['history'], true );
+		if( !is_array( $t_history ) ) {
+			$t_history = null;
+		}
+	}
+
+	header( 'Content-Type: application/json; charset=utf-8' );
+	echo json_encode( [ 'history' => $t_history, 'error' => null ] );
+	exit;
+}
+
+/**
+ * Delete any stored session for user+mode.
+ * Returns {ok: true} and exits.
+ */
+function ai_assist_action_clear( int $p_user_id, string $p_mode ): never {
+	$t_table = db_get_table( 'ai_sessions' );
+	db_query(
+		'DELETE FROM ' . $t_table .
+		' WHERE user_id = ' . db_param() . ' AND mode = ' . db_param(),
+		[ $p_user_id, $p_mode ]
+	);
+
+	header( 'Content-Type: application/json; charset=utf-8' );
+	echo json_encode( [ 'ok' => true, 'error' => null ] );
+	exit;
+}
+
+/**
+ * Upsert the conversation history for user+mode.
+ * One row per user per mode; updates existing row or inserts a new one.
+ */
+function ai_assist_session_save( int $p_user_id, string $p_mode, array $p_messages ): void {
+	$t_table   = db_get_table( 'ai_sessions' );
+	$t_history = json_encode( $p_messages );
+	$t_now     = db_now();
+
+	$t_check = db_query(
+		'SELECT id FROM ' . $t_table .
+		' WHERE user_id = ' . db_param() . ' AND mode = ' . db_param(),
+		[ $p_user_id, $p_mode ]
+	);
+
+	if( db_num_rows( $t_check ) > 0 ) {
+		$t_row = db_fetch_array( $t_check );
+		db_query(
+			'UPDATE ' . $t_table .
+			' SET history = ' . db_param() . ', updated = ' . db_param() .
+			' WHERE id = ' . db_param(),
+			[ $t_history, $t_now, (int)$t_row['id'] ]
+		);
+	} else {
+		db_query(
+			'INSERT INTO ' . $t_table .
+			' (user_id, mode, created, updated, history)' .
+			' VALUES (' . db_param() . ', ' . db_param() . ', ' .
+			db_param() . ', ' . db_param() . ', ' . db_param() . ')',
+			[ $p_user_id, $p_mode, $t_now, $t_now, $t_history ]
+		);
+	}
+}
 
 # ── Helper ────────────────────────────────────────────────────────────────
 

@@ -22,8 +22,10 @@ require_once( 'core.php' );
 require_api( 'access_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'config_api.php' );
+require_api( 'helper_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
+require_api( 'project_api.php' );
 
 auth_ensure_user_authenticated();
 access_ensure_global_level( config_get_global( 'ai_assist_threshold' ) );
@@ -34,6 +36,19 @@ $t_user_id   = auth_get_current_user_id();
 $t_user_name = user_get_field( $t_user_id, 'realname' );
 if( is_blank( $t_user_name ) ) {
 	$t_user_name = user_get_field( $t_user_id, 'username' );
+}
+
+# ── Context injection — current project ───────────────────────────────────
+$t_project_id   = helper_get_current_project();
+$t_project_name = '';
+$t_doc_count    = '';
+if( $t_project_id > 0 && $t_project_id !== ALL_PROJECTS ) {
+	$t_project_name = project_get_field( $t_project_id, 'name' );
+	$t_result       = db_query(
+		'SELECT COUNT(*) FROM {dwg} WHERE project_id = ' . db_param(),
+		[ $t_project_id ]
+	);
+	$t_doc_count = (string) db_result( $t_result );
 }
 
 layout_page_header( lang_get( 'ai_assist_title' ) );
@@ -129,6 +144,26 @@ layout_page_begin( 'ai_assist_page.php' );
 #ai-char-count {
 	float: right;
 }
+#ai-token-count {
+	float: right;
+	margin-left: 10px;
+	color: #bbb;
+}
+
+/* Copy-to-clipboard button on assistant bubbles */
+.ai-copy-btn {
+	display: block;
+	margin-top: 6px;
+	padding: 2px 7px;
+	font-size: 11px;
+	color: #aaa;
+	background: none;
+	border: 1px solid #dde3ea;
+	border-radius: 3px;
+	cursor: pointer;
+	line-height: 1.4;
+}
+.ai-copy-btn:hover { color: #5b9bd5; border-color: #5b9bd5; }
 
 /* Tab panel: remove top-border radius that clashes with nav-tabs */
 .tab-content > .tab-pane > .widget-box {
@@ -204,7 +239,9 @@ layout_page_begin( 'ai_assist_page.php' );
 <?php endif; ?>
 
 			<!-- Message thread -->
-			<div id="ai-chat-messages" role="log" aria-live="polite" aria-label="Conversation">
+			<div id="ai-chat-messages" role="log" aria-live="polite" aria-label="Conversation"
+				data-project="<?php echo string_attribute( $t_project_name ) ?>"
+				data-doc-count="<?php echo (int) $t_doc_count ?>">
 				<!-- Welcome message (assistant) -->
 				<div class="ai-msg-row assistant" id="ai-welcome-msg">
 					<div class="ai-msg-avatar">
@@ -226,6 +263,7 @@ layout_page_begin( 'ai_assist_page.php' );
 			<!-- Status bar -->
 			<div id="ai-status-bar">
 				<span id="ai-status-text"></span>
+				<span id="ai-token-count"></span>
 				<span id="ai-char-count"></span>
 			</div>
 
