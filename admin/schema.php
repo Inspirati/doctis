@@ -1,46 +1,23 @@
 <?php
-# MantisBT - A PHP based bugtracking system
-
-# MantisBT is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 2 of the License, or
-# (at your option) any later version.
+# Doctis — flat schema definition
 #
-# MantisBT is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+# Every table is defined once in its current final form using a raw MySQL
+# CREATE TABLE IF NOT EXISTS statement.  There are no incremental ALTER TABLE
+# steps.  When the schema needs to change, edit the relevant CREATE TABLE here
+# and rebuild the database with:
 #
-# You should have received a copy of the GNU General Public License
-# along with MantisBT.  If not, see <http://www.gnu.org/licenses/>.
-
-/**
- * MantisBT schema definition
- * The schema is defined as a numbered list of updates, stored as an array.
- *
- * Each upgrade step consists of two elements:
- *
- * 1. The function to generate SQL statements. Available functions are
- *    - Data dictionary operations from ADOdb library; one of:
- *      CreateTableSQL, ChangeTableSQL, RenameTableSQL, DropTableSQL,
- *      AddColumnSQL, AlterColumnSQL, RenameColumnSQL, DropColumnSQL,
- *      CreateIndexSQL, DropIndexSQL
- *    - InsertData: local function to add data to the db
- *    - UpdateFunction: local function to perform arbitrary changes;
- *      the function must be defined in install_helper_functions_api.php
- *      with 'install_' prefix
- *    - null: no-op upgrade step
- *
- * 2. An array of the parameters to be passed to the function.
- *
- * The integrity of the schema relies on strict ordering of this array.
- * - ONLY ADD NEW CHANGES TO THE END OF THE TABLE!!!
- *   Always specify the schema step (array key), for documentation purposes
- * - NEVER SKIP AN INDEX IN THE SEQUENCE!!!
- *
- * 'Release markers' are placed right AFTER the last schema step that is
- * included in the corresponding release
- */
+#   bash admin/tools/doctis-drop-and-create-new-database.sh
+#
+# RULE: never append AddColumnSQL / RenameColumnSQL / AlterColumnSQL steps.
+#       Modify the base table definition and rebuild from scratch.
+#
+# Each array entry uses the 'UpdateSQL' operation so the installer executes
+# the raw SQL directly via ADOdb's ExecuteSQLArray, without any column-type
+# translation.
+#
+# @package    Doctis
+# @copyright  Copyright 2025 Inspirati
+# @license    GPL-2.0-or-later
 
 /**
  * @uses install_helper_functions_api.php
@@ -48,1164 +25,823 @@
 require_api( 'install_helper_functions_api.php' );
 
 /**
- * Standard table creation options
- * Array key is the ADOdb datadict driver's name
+ * Begin schema definition — one entry per table, flat, no incremental steps.
+ *
+ * IMPORTANT: {config} MUST be step 0 — the installer calls config_set()
+ * after each successful step to record database_version, so {config} must
+ * exist before step 1 executes.
  */
-$t_table_options = array(
-	'mysql' => 'DEFAULT CHARSET=utf8',
-	'pgsql' => 'WITHOUT OIDS',
+$g_upgrade = array();
+$t_idx = 0;
+
+# ── Step 0: config ──────────────────────────────────────────────────────────
+# MUST be first — installer writes database_version into config after each step.
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'config' ) . " (
+	  `config_id` varchar(64) NOT NULL,
+	  `project_id` int(11) NOT NULL DEFAULT 0,
+	  `user_id` int(11) NOT NULL DEFAULT 0,
+	  `access_reqd` int(11) DEFAULT 0,
+	  `type` int(11) DEFAULT 90,
+	  `value` longtext NOT NULL,
+	  PRIMARY KEY (`config_id`,`project_id`,`user_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
-# Special handling for Oracle (oci8):
-# - Field cannot be null with oci because empty string equals NULL
-# - Oci uses a different date literal syntax
-# - Default BLOBs to empty_blob() function
-if( db_is_oracle() ) {
-	$t_notnull = '';
-	$t_timestamp = 'timestamp' . installer_db_now();
-	$t_blob_default = 'DEFAULT " empty_blob() "';
-} else {
-	$t_notnull = 'NOTNULL';
-	$t_timestamp = '\'' . installer_db_now() . '\'';
-	$t_blob_default = '';
-}
-
-/**
- * Begin schema definition
- */
-$g_upgrade[0] = array( 'CreateTableSQL', array( db_get_table( 'config' ), "
-	config_id				C(64)	NOTNULL PRIMARY,
-	project_id				I		DEFAULT '0' PRIMARY,
-	user_id					I		DEFAULT '0' PRIMARY,
-	access_reqd				I		DEFAULT '0',
-	type					I		DEFAULT '90',
-	value					XL		NOTNULL",
-	$t_table_options
-	) );
-$g_upgrade[1] = array( 'CreateIndexSQL', array( 'idx_config', db_get_table( 'config' ), 'config_id' ) );
-$g_upgrade[2] = array( 'CreateTableSQL', array( db_get_table( 'bug_file' ), "
-	id						I		UNSIGNED NOTNULL PRIMARY AUTOINCREMENT,
-	bug_id					I		UNSIGNED NOTNULL DEFAULT '0',
-	title					C(250)	NOTNULL DEFAULT \" '' \",
-	description				C(250)	NOTNULL DEFAULT \" '' \",
-	diskfile				C(250)	NOTNULL DEFAULT \" '' \",
-	filename				C(250)	NOTNULL DEFAULT \" '' \",
-	folder					C(250)	NOTNULL DEFAULT \" '' \",
-	filesize				I		NOTNULL DEFAULT '0',
-	file_type				C(250)	NOTNULL DEFAULT \" '' \",
-	date_added				T		NOTNULL DEFAULT '" . db_null_date() . "',
-	content					B		NOTNULL " . $t_blob_default,
-	$t_table_options
-	) );
-$g_upgrade[3] = array( 'CreateIndexSQL', array( 'idx_bug_file_bug_id', db_get_table( 'bug_file' ), 'bug_id' ) );
-$g_upgrade[4] = array( 'CreateTableSQL', array( db_get_table( 'bug_history' ), "
-	id						I		UNSIGNED NOTNULL PRIMARY AUTOINCREMENT,
-	user_id					I		UNSIGNED NOTNULL DEFAULT '0',
-	bug_id					I		UNSIGNED NOTNULL DEFAULT '0',
-	date_modified			T		NOTNULL DEFAULT '" . db_null_date() . "',
-	field_name				C(32)	$t_notnull DEFAULT \" '' \",
-	old_value				C(128)	$t_notnull DEFAULT \" '' \",
-	new_value				C(128)	$t_notnull DEFAULT \" '' \",
-	type					I2		NOTNULL DEFAULT '0'",
-	$t_table_options
-	) );
-$g_upgrade[5] = array( 'CreateIndexSQL', array( 'idx_bug_history_bug_id', db_get_table( 'bug_history' ), 'bug_id' ) );
-$g_upgrade[6] = array( 'CreateIndexSQL', array( 'idx_history_user_id', db_get_table( 'bug_history' ), 'user_id' ) );
-$g_upgrade[7] = array( 'CreateTableSQL', array( db_get_table( 'bug_monitor' ), "
-	user_id					I		UNSIGNED NOTNULL PRIMARY DEFAULT '0',
-	bug_id					I		UNSIGNED NOTNULL PRIMARY DEFAULT '0'
-	",
-	$t_table_options
-	) );
-$g_upgrade[8] = array( 'CreateTableSQL', array( db_get_table( 'bug_relationship' ), "
-	id						I		UNSIGNED NOTNULL AUTOINCREMENT PRIMARY,
-	source_bug_id			I		UNSIGNED NOTNULL DEFAULT '0',
-	destination_bug_id		I		UNSIGNED NOTNULL DEFAULT '0',
-	relationship_type		I2		NOTNULL DEFAULT '0' ",
-	$t_table_options
-	) );
-$g_upgrade[9] = array( 'CreateIndexSQL', array( 'idx_relationship_source', db_get_table( 'bug_relationship' ), 'source_bug_id' ) );
-
-# ----------------------------------------------------------------------------
-# Schema version: 10
-#
-$g_upgrade[10] = array( 'CreateIndexSQL', array( 'idx_relationship_destination', db_get_table( 'bug_relationship' ), 'destination_bug_id' ) );
-$g_upgrade[11] = array( 'CreateTableSQL', array( db_get_table( 'bug' ), "
-	id						I		UNSIGNED PRIMARY NOTNULL AUTOINCREMENT,
-	project_id				I		UNSIGNED NOTNULL DEFAULT '0',
-	reporter_id				I		UNSIGNED NOTNULL DEFAULT '0',
-	handler_id				I		UNSIGNED NOTNULL DEFAULT '0',
-	duplicate_id			I		UNSIGNED NOTNULL DEFAULT '0',
-	priority				I2		NOTNULL DEFAULT '30',
-	severity				I2		NOTNULL DEFAULT '50',
-	reproducibility			I2		NOTNULL DEFAULT '10',
-	status					I2		NOTNULL DEFAULT '10',
-	resolution				I2		NOTNULL DEFAULT '10',
-	projection				I2		NOTNULL DEFAULT '10',
-	category				C(64)	NOTNULL DEFAULT \" '' \",
-	date_submitted			T		NOTNULL DEFAULT '" . db_null_date() . "',
-	last_updated			T		NOTNULL DEFAULT '" . db_null_date() . "',
-	eta						I2		NOTNULL DEFAULT '10',
-	bug_text_id				I		UNSIGNED NOTNULL DEFAULT '0',
-	os						C(32)	NOTNULL DEFAULT \" '' \",
-	os_build				C(32)	NOTNULL DEFAULT \" '' \",
-	platform				C(32)	NOTNULL DEFAULT \" '' \",
-	version					C(64)	NOTNULL DEFAULT \" '' \",
-	fixed_in_version		C(64)	NOTNULL DEFAULT \" '' \",
-	build					C(32)	NOTNULL DEFAULT \" '' \",
-	profile_id				I		UNSIGNED NOTNULL DEFAULT '0',
-	view_state				I2		NOTNULL DEFAULT '10',
-	summary					C(128)	NOTNULL DEFAULT \" '' \",
-	sponsorship_total		I		NOTNULL DEFAULT '0',
-	sticky					L		$t_notnull DEFAULT  \"'0'\" ",
-	$t_table_options
-	) );
-$g_upgrade[12] = array( 'CreateIndexSQL', array( 'idx_bug_sponsorship_total', db_get_table( 'bug' ), 'sponsorship_total' ) );
-$g_upgrade[13] = array( 'CreateIndexSQL', array( 'idx_bug_fixed_in_version', db_get_table( 'bug' ), 'fixed_in_version' ) );
-$g_upgrade[14] = array( 'CreateIndexSQL', array( 'idx_bug_status', db_get_table( 'bug' ), 'status' ) );
-$g_upgrade[15] = array( 'CreateIndexSQL', array( 'idx_project', db_get_table( 'bug' ), 'project_id' ) );
-$g_upgrade[16] = array( 'CreateTableSQL', array( db_get_table( 'bug_text' ), "
-	id						I		PRIMARY UNSIGNED NOTNULL AUTOINCREMENT,
-	description				XL		NOTNULL,
-	steps_to_reproduce		XL		$t_notnull,
-	additional_information	XL		$t_notnull",
-	$t_table_options
-	) );
-$g_upgrade[17] = array( 'CreateTableSQL', array( db_get_table( 'bugnote' ), "
-	id						I		UNSIGNED PRIMARY NOTNULL AUTOINCREMENT,
-	bug_id					I		UNSIGNED NOTNULL DEFAULT '0',
-	reporter_id				I		UNSIGNED NOTNULL DEFAULT '0',
-	bugnote_text_id			I		UNSIGNED NOTNULL DEFAULT '0',
-	view_state				I2		NOTNULL DEFAULT '10',
-	date_submitted			T		NOTNULL DEFAULT '" . db_null_date() . "',
-	last_modified			T		NOTNULL DEFAULT '" . db_null_date() . "',
-	note_type				I		DEFAULT '0',
-	note_attr				C(250)	DEFAULT \" '' \" ",
-	$t_table_options
-	) );
-$g_upgrade[18] = array( 'CreateIndexSQL', array( 'idx_bug', db_get_table( 'bugnote' ), 'bug_id' ) );
-$g_upgrade[19] = array( 'CreateIndexSQL', array( 'idx_last_mod', db_get_table( 'bugnote' ), 'last_modified' ) );
-
-# ----------------------------------------------------------------------------
-# Schema version: 20
-#
-$g_upgrade[20] = array( 'CreateTableSQL', array( db_get_table( 'bugnote_text' ), "
-	id						I		UNSIGNED NOTNULL PRIMARY AUTOINCREMENT,
-	note					XL		NOTNULL",
-	$t_table_options
-	) );
-$g_upgrade[21] = array( 'CreateTableSQL', array( db_get_table( 'custom_field_project' ), "
-	field_id				I		NOTNULL PRIMARY DEFAULT '0',
-	project_id				I		UNSIGNED PRIMARY NOTNULL DEFAULT '0',
-	sequence				I2		NOTNULL DEFAULT '0' ",
-	$t_table_options
-	) );
-$g_upgrade[22] = array( 'CreateTableSQL', array( db_get_table( 'custom_field_string' ), "
-	field_id				I		NOTNULL PRIMARY DEFAULT '0',
-	bug_id					I		NOTNULL PRIMARY DEFAULT '0',
-	value					C(255)	NOTNULL DEFAULT \" '' \" ",
-	$t_table_options
-	) );
-$g_upgrade[23] = array( 'CreateIndexSQL', array( 'idx_custom_field_bug', db_get_table( 'custom_field_string' ), 'bug_id' ) );
-$g_upgrade[24] = array( 'CreateTableSQL', array( db_get_table( 'custom_field' ), "
-	id						I		NOTNULL PRIMARY AUTOINCREMENT,
-	name					C(64)	NOTNULL DEFAULT \" '' \",
-	type					I2		NOTNULL DEFAULT '0',
-	possible_values			C(255)	NOTNULL DEFAULT \" '' \",
-	default_value			C(255)	NOTNULL DEFAULT \" '' \",
-	valid_regexp			C(255)	NOTNULL DEFAULT \" '' \",
-	access_level_r			I2		NOTNULL DEFAULT '0',
-	access_level_rw			I2		NOTNULL DEFAULT '0',
-	length_min				I		NOTNULL DEFAULT '0',
-	length_max				I		NOTNULL DEFAULT '0',
-	advanced				L		NOTNULL DEFAULT \" '0' \",
-	require_report			L		NOTNULL DEFAULT \" '0' \",
-	require_update			L		NOTNULL DEFAULT \" '0' \",
-	display_report			L		NOTNULL DEFAULT \" '0' \",
-	display_update			L		NOTNULL DEFAULT \" '1' \",
-	require_resolved		L		NOTNULL DEFAULT \" '0' \",
-	display_resolved		L		NOTNULL DEFAULT \" '0' \",
-	display_closed			L		NOTNULL DEFAULT \" '0' \",
-	require_closed			L		NOTNULL DEFAULT \" '0' \" ",
-	$t_table_options
-	) );
-$g_upgrade[25] = array( 'CreateIndexSQL', array( 'idx_custom_field_name', db_get_table( 'custom_field' ), 'name' ) );
-$g_upgrade[26] = array( 'CreateTableSQL', array( db_get_table( 'filters' ), "
-	id						I		UNSIGNED NOTNULL PRIMARY AUTOINCREMENT,
-	user_id					I		NOTNULL DEFAULT '0',
-	project_id				I		NOTNULL DEFAULT '0',
-	is_public				L		DEFAULT NULL,
-	name					C(64)	NOTNULL DEFAULT \" '' \",
-	filter_string			XL		NOTNULL",
-	$t_table_options
-	) );
-$g_upgrade[27] = array( 'CreateTableSQL', array( db_get_table( 'news' ), "
-	id						I		UNSIGNED PRIMARY NOTNULL AUTOINCREMENT,
-	project_id				I		UNSIGNED NOTNULL DEFAULT '0',
-	poster_id				I		UNSIGNED NOTNULL DEFAULT '0',
-	date_posted				T		NOTNULL DEFAULT '" . db_null_date() . "',
-	last_modified			T		NOTNULL DEFAULT '" . db_null_date() . "',
-	view_state				I2		NOTNULL DEFAULT '10',
-	announcement			L		NOTNULL DEFAULT \" '0' \",
-	headline				C(64)	NOTNULL DEFAULT \" '' \",
-	body					XL		NOTNULL",
-	$t_table_options
-	) );
-$g_upgrade[28] = array( 'CreateTableSQL', array( db_get_table( 'project_category' ), "
-	project_id				I		UNSIGNED NOTNULL PRIMARY DEFAULT '0',
-	category				C(64)	NOTNULL PRIMARY DEFAULT \" '' \",
-	user_id					I		UNSIGNED NOTNULL DEFAULT '0' ",
-	$t_table_options
-	) );
-$g_upgrade[29] = array( 'CreateTableSQL', array( db_get_table( 'project_file' ), "
-	id						I		UNSIGNED NOTNULL PRIMARY AUTOINCREMENT,
-	project_id				I		UNSIGNED NOTNULL DEFAULT '0',
-	title					C(250)	NOTNULL DEFAULT \" '' \",
-	description				C(250)	NOTNULL DEFAULT \" '' \",
-	diskfile				C(250)	NOTNULL DEFAULT \" '' \",
-	filename				C(250)	NOTNULL DEFAULT \" '' \",
-	folder					C(250)	NOTNULL DEFAULT \" '' \",
-	filesize				I		NOTNULL DEFAULT '0',
-	file_type				C(250)	NOTNULL DEFAULT \" '' \",
-	date_added				T		NOTNULL DEFAULT '" . db_null_date() . "',
-	content					B		NOTNULL " . $t_blob_default,
-	$t_table_options
-	) );
-
-# ----------------------------------------------------------------------------
-# Schema version: 30
-#
-$g_upgrade[30] = array( 'CreateTableSQL', array( db_get_table( 'project_hierarchy' ), "
-	child_id				I		UNSIGNED NOTNULL,
-	parent_id				I		UNSIGNED NOTNULL",
-	$t_table_options
-	) );
-$g_upgrade[31] = array( 'CreateTableSQL', array( db_get_table( 'project' ), "
-	id						I		UNSIGNED PRIMARY NOTNULL AUTOINCREMENT,
-	name					C(128)	NOTNULL DEFAULT \" '' \",
-	status					I2		NOTNULL DEFAULT '10',
-	enabled					L		NOTNULL DEFAULT \" '1' \",
-	view_state				I2		NOTNULL DEFAULT '10',
-	access_min				I2		NOTNULL DEFAULT '10',
-	file_path				C(250)	NOTNULL DEFAULT \" '' \",
-	description				XL		$t_notnull",
-	$t_table_options
-	) );
-
-# Index autocreated when oci used
-$g_upgrade[32] = db_is_oracle()
-	? null	# No-op - required to ensure schema version consistency
-	: array( 'CreateIndexSQL', array( 'idx_project_id', db_get_table( 'project' ), 'id' ) );
-
-$g_upgrade[33] = array( 'CreateIndexSQL', array( 'idx_project_name', db_get_table( 'project' ), 'name', array( 'UNIQUE' ) ) );
-$g_upgrade[34] = array( 'CreateIndexSQL', array( 'idx_project_view', db_get_table( 'project' ), 'view_state' ) );
-$g_upgrade[35] = array( 'CreateTableSQL', array( db_get_table( 'project_user_list' ), "
-	project_id				I		UNSIGNED PRIMARY NOTNULL DEFAULT '0',
-	user_id					I		UNSIGNED PRIMARY NOTNULL DEFAULT '0',
-	access_level			I2		NOTNULL DEFAULT '10' ",
-	$t_table_options
-	) );
-$g_upgrade[36] = array( 'CreateIndexSQL', array( 'idx_project_user', db_get_table( 'project_user_list' ), 'user_id' ) );
-$g_upgrade[37] = array( 'CreateTableSQL', array( db_get_table( 'project_version' ), "
-	id						I		NOTNULL PRIMARY AUTOINCREMENT,
-	project_id				I		UNSIGNED NOTNULL DEFAULT '0',
-	version					C(64)	NOTNULL DEFAULT \" '' \",
-	date_order				T		NOTNULL DEFAULT '" . db_null_date() . "',
-	description				XL		$t_notnull,
-	released				L		NOTNULL DEFAULT \" '1' \" ",
-	$t_table_options
-	) );
-$g_upgrade[38] = array( 'CreateIndexSQL', array( 'idx_project_version', db_get_table( 'project_version' ), 'project_id,version', array( 'UNIQUE' ) ) );
-$g_upgrade[39] = array( 'CreateTableSQL', array( db_get_table( 'sponsorship' ), "
-	id						I		NOTNULL PRIMARY AUTOINCREMENT,
-	bug_id					I		NOTNULL DEFAULT '0',
-	user_id					I		NOTNULL DEFAULT '0',
-	amount					I		NOTNULL DEFAULT '0',
-	logo					C(128)	NOTNULL DEFAULT \" '' \",
-	url						C(128)	NOTNULL DEFAULT \" '' \",
-	paid					L		NOTNULL DEFAULT \" '0' \",
-	date_submitted			T		NOTNULL DEFAULT '" . db_null_date() . "',
-	last_updated			T		NOTNULL DEFAULT '" . db_null_date() . "'",
-	$t_table_options
-	) );
-
-# ----------------------------------------------------------------------------
-# Schema version: 40
-#
-$g_upgrade[40] = array( 'CreateIndexSQL', array( 'idx_sponsorship_bug_id', db_get_table( 'sponsorship' ), 'bug_id' ) );
-$g_upgrade[41] = array( 'CreateIndexSQL', array( 'idx_sponsorship_user_id', db_get_table( 'sponsorship' ), 'user_id' ) );
-$g_upgrade[42] = array( 'CreateTableSQL', array( db_get_table( 'tokens' ), "
-	id						I		NOTNULL PRIMARY AUTOINCREMENT,
-	owner					I		NOTNULL,
-	type					I		NOTNULL,
-	timestamp				T		NOTNULL,
-	expiry					T,
-	value					XL		NOTNULL",
-	$t_table_options
-	) );
-$g_upgrade[43] = array( 'CreateTableSQL', array( db_get_table( 'user_pref' ), "
-	id								I		UNSIGNED NOTNULL PRIMARY AUTOINCREMENT,
-	user_id							I		UNSIGNED NOTNULL DEFAULT '0',
-	project_id						I		UNSIGNED NOTNULL DEFAULT '0',
-	default_profile					I		UNSIGNED NOTNULL DEFAULT '0',
-	default_project					I		UNSIGNED NOTNULL DEFAULT '0',
-	advanced_report					L		NOTNULL DEFAULT \" '0' \",
-	advanced_view					L		NOTNULL DEFAULT \" '0' \",
-	advanced_update					L		NOTNULL DEFAULT \" '0' \",
-	refresh_delay					I		NOTNULL DEFAULT '0',
-	redirect_delay					L		$t_notnull DEFAULT \" '0' \",
-	bugnote_order					C(4)	NOTNULL DEFAULT 'ASC',
-	email_on_new					L		NOTNULL DEFAULT \" '0' \",
-	email_on_assigned				L		NOTNULL DEFAULT \" '0' \",
-	email_on_feedback				L		NOTNULL DEFAULT \" '0' \",
-	email_on_resolved				L		NOTNULL DEFAULT \" '0' \",
-	email_on_closed					L		NOTNULL DEFAULT \" '0' \",
-	email_on_reopened				L		NOTNULL DEFAULT \" '0' \",
-	email_on_bugnote				L		NOTNULL DEFAULT \" '0' \",
-	email_on_status					L		$t_notnull DEFAULT \" '0' \",
-	email_on_priority				L		$t_notnull DEFAULT \" '0' \",
-	email_on_priority_min_severity	I2		NOTNULL DEFAULT '10',
-	email_on_status_min_severity	I2		NOTNULL DEFAULT '10',
-	email_on_bugnote_min_severity	I2		NOTNULL DEFAULT '10',
-	email_on_reopened_min_severity	I2		NOTNULL DEFAULT '10',
-	email_on_closed_min_severity	I2		NOTNULL DEFAULT '10',
-	email_on_resolved_min_severity	I2		NOTNULL DEFAULT '10',
-	email_on_feedback_min_severity	I2		NOTNULL DEFAULT '10',
-	email_on_assigned_min_severity	I2		NOTNULL DEFAULT '10',
-	email_on_new_min_severity		I2		NOTNULL DEFAULT '10',
-	email_bugnote_limit				I2		NOTNULL DEFAULT '0',
-	language						C(32)	NOTNULL DEFAULT 'english' ",
-	$t_table_options
-	) );
-$g_upgrade[44] = array( 'CreateTableSQL', array( db_get_table( 'user_print_pref' ), "
-	user_id					I		UNSIGNED NOTNULL PRIMARY DEFAULT '0',
-	print_pref				C(27)	NOTNULL DEFAULT \" '' \" ",
-	$t_table_options
-	) );
-$g_upgrade[45] = array( 'CreateTableSQL', array( db_get_table( 'user_profile' ), "
-	id						I		UNSIGNED NOTNULL PRIMARY AUTOINCREMENT,
-	user_id					I		UNSIGNED NOTNULL DEFAULT '0',
-	platform				C(32)	NOTNULL DEFAULT \" '' \",
-	os						C(32)	NOTNULL DEFAULT \" '' \",
-	os_build				C(32)	NOTNULL DEFAULT \" '' \",
-	description				XL		$t_notnull",
-	$t_table_options
-	) );
-$g_upgrade[46] = array( 'CreateTableSQL', array( db_get_table( 'user' ), "
-	id								I		UNSIGNED NOTNULL PRIMARY AUTOINCREMENT,
-	username						C(32)	NOTNULL DEFAULT \" '' \",
-	realname						C(64)	NOTNULL DEFAULT \" '' \",
-	email							C(64)	NOTNULL DEFAULT \" '' \",
-	password						C(32)	NOTNULL DEFAULT \" '' \",
-	date_created					T		NOTNULL DEFAULT '" . db_null_date() . "',
-	last_visit						T		NOTNULL DEFAULT '" . db_null_date() . "',
-	enabled							L		NOTNULL DEFAULT \" '1' \",
-	protected						L		NOTNULL DEFAULT \" '0' \",
-	access_level					I2		NOTNULL DEFAULT '10',
-	login_count						I		NOTNULL DEFAULT '0',
-	lost_password_request_count		I2		NOTNULL DEFAULT '0',
-	failed_login_count				I2		NOTNULL DEFAULT '0',
-	cookie_string					C(64)	NOTNULL DEFAULT \" '' \" ",
-	$t_table_options
-	) );
-$g_upgrade[47] = array( 'CreateIndexSQL', array( 'idx_user_cookie_string', db_get_table( 'user' ), 'cookie_string', array( 'UNIQUE' ) ) );
-$g_upgrade[48] = array( 'CreateIndexSQL', array( 'idx_user_username', db_get_table( 'user' ), 'username', array( 'UNIQUE' ) ) );
-$g_upgrade[49] = array( 'CreateIndexSQL', array( 'idx_enable', db_get_table( 'user' ), 'enabled' ) );
-
-# ----------------------------------------------------------------------------
-# Schema version: 50
-#
-$g_upgrade[50] = array( 'CreateIndexSQL', array( 'idx_access', db_get_table( 'user' ), 'access_level' ) );
-$g_upgrade[51] = array( 'InsertData', array( db_get_table( 'user' ), "(
-		username, realname, email, password,
-		date_created, last_visit, enabled, protected, access_level,
-		login_count, lost_password_request_count, failed_login_count,
-		cookie_string
-	)
-	VALUES (
-		'administrator', '', 'root@localhost', '63a9f0ea7bb98050796b649e85481845',
-		$t_timestamp, $t_timestamp, '1', '0', 90,
-		3, 0, 0, '"
-		. md5( mt_rand( 0, mt_getrandmax() ) + mt_rand( 0, mt_getrandmax() ) ) . md5( time() )
-		. "'
-	)" ) );
-
-# Release marker: 1.0.0 - 1.0.7
-
-$g_upgrade[52] = array( 'AlterColumnSQL', array( db_get_table( 'bug_history' ), "
-	old_value				C(255)	$t_notnull" ) );
-$g_upgrade[53] = array( 'AlterColumnSQL', array( db_get_table( 'bug_history' ), "
-	new_value				C(255)	$t_notnull" ) );
-
-$g_upgrade[54] = array( 'CreateTableSQL', array( db_get_table( 'email' ), "
-	email_id				I		UNSIGNED NOTNULL PRIMARY AUTOINCREMENT,
-	email					C(64)	NOTNULL DEFAULT \" '' \",
-	subject					C(250)	NOTNULL DEFAULT \" '' \",
-	submitted				T		NOTNULL DEFAULT '" . db_null_date() . "',
-	metadata				XL		NOTNULL,
-	body					XL		NOTNULL",
-	$t_table_options
-	) );
-
-# Index autocreated when oci used
-$g_upgrade[55] = db_is_oracle()
-	? null	# No-op - required to ensure schema version consistency
-	: array( 'CreateIndexSQL', array( 'idx_email_id', db_get_table( 'email' ), 'email_id' ) );
-
-$g_upgrade[56] = array( 'AddColumnSQL', array( db_get_table( 'bug' ), "
-	target_version			C(64)	NOTNULL DEFAULT \" '' \"" ) );
-$g_upgrade[57] = array( 'AddColumnSQL', array( db_get_table( 'bugnote' ), "
-	time_tracking			I		UNSIGNED NOTNULL DEFAULT \" 0 \"" ) );
-$g_upgrade[58] = array( 'CreateIndexSQL', array( 'idx_diskfile', db_get_table( 'bug_file' ), 'diskfile' ) );
-$g_upgrade[59] = array( 'AlterColumnSQL', array( db_get_table( 'user_print_pref' ), "
-	print_pref				C(64)	$t_notnull" ) );
-
-# ----------------------------------------------------------------------------
-# Schema version: 60
-#
-$g_upgrade[60] = array( 'AlterColumnSQL', array( db_get_table( 'bug_history' ), "
-	field_name				C(64)	$t_notnull" ) );
-
-# Release marker: 1.1.0a4
-
-$g_upgrade[61] = array( 'CreateTableSQL', array( db_get_table( 'tag' ), "
-	id						I		UNSIGNED NOTNULL PRIMARY AUTOINCREMENT,
-	user_id					I		UNSIGNED NOTNULL DEFAULT '0',
-	name					C(100)	NOTNULL PRIMARY DEFAULT \" '' \",
-	description				XL		$t_notnull,
-	date_created			T		NOTNULL DEFAULT '" . db_null_date() . "',
-	date_updated			T		NOTNULL DEFAULT '" . db_null_date() . "' ",
-	$t_table_options
-	) );
-$g_upgrade[62] = array( 'CreateTableSQL', array( db_get_table( 'bug_tag' ), "
-	bug_id					I		UNSIGNED NOTNULL PRIMARY DEFAULT '0',
-	tag_id					I		UNSIGNED NOTNULL PRIMARY DEFAULT '0',
-	user_id					I		UNSIGNED NOTNULL DEFAULT '0',
-	date_attached			T		NOTNULL DEFAULT '" . db_null_date() . "'",
-	$t_table_options
-	) );
-
-$g_upgrade[63] = array( 'CreateIndexSQL', array( 'idx_typeowner', db_get_table( 'tokens' ), 'type, owner' ) );
-
-# Release marker: 1.1.0 - 1.1.8
-# Release marker: 1.2.0-SVN
-
-$g_upgrade[64] = array( 'CreateTableSQL', array( db_get_table( 'plugin' ), "
-	basename				C(40)	NOTNULL PRIMARY,
-	enabled					L		NOTNULL DEFAULT \" '0' \" ",
-	$t_table_options
-	) );
-
-$g_upgrade[65] = array( 'AlterColumnSQL', array( db_get_table( 'user_pref' ), "
-	redirect_delay			I		$t_notnull DEFAULT 0" ) );
-
-# Apparently mysql now has a STRICT mode, where setting a DEFAULT value on a
-# blob/text is now an error, instead of being silently ignored
-$g_upgrade[66] = ( isset( $f_db_type ) && ( $f_db_type == 'mysqli' ) )
-	? array( 'AlterColumnSQL', array( db_get_table( 'custom_field' ), "
-		possible_values		X		NOTNULL" ) )
-	: array( 'AlterColumnSQL', array( db_get_table( 'custom_field' ), "
-		possible_values		X		NOTNULL DEFAULT \" '' \" " ) );
-
-
-$g_upgrade[67] = array( 'CreateTableSQL', array( db_get_table( 'category' ), "
-	id						I		UNSIGNED NOTNULL PRIMARY AUTOINCREMENT,
-	project_id				I		UNSIGNED NOTNULL DEFAULT '0',
-	user_id					I		UNSIGNED NOTNULL DEFAULT '0',
-	name					C(128)	NOTNULL DEFAULT \" '' \",
-	status					I		UNSIGNED NOTNULL DEFAULT '0' ",
-	$t_table_options
-	) );
-$g_upgrade[68] = array( 'CreateIndexSQL', array( 'idx_category_project_name', db_get_table( 'category' ), 'project_id, name', array( 'UNIQUE' ) ) );
-$g_upgrade[69] = array( 'InsertData', array( db_get_table( 'category' ), "
-	( project_id, user_id, name, status )
-	VALUES
-	( '0', '0', 'General', '0' )" ) );
-
-# ----------------------------------------------------------------------------
-# Schema version: 70
-#
-$g_upgrade[70] = array( 'AddColumnSQL', array( db_get_table( 'bug' ), "
-	category_id				I		UNSIGNED NOTNULL DEFAULT '1'" ) );
-$g_upgrade[71] = array( 'UpdateFunction', 'category_migrate' );
-$g_upgrade[72] = array( 'DropColumnSQL', array( db_get_table( 'bug' ), 'category' ) );
-$g_upgrade[73] = array( 'DropTableSQL', array( db_get_table( 'project_category' ) ) );
-$g_upgrade[74] = array( 'AddColumnSQL', array( db_get_table( 'project' ), "
-	category_id				I		UNSIGNED NOTNULL DEFAULT '1'" ) );
-
-# remove unnecessary indexes
-$g_upgrade[75] = array( 'CreateIndexSQL', array( 'idx_project_id', db_get_table( 'project' ), 'id', array( 'DROP' ) ), array( 'db_index_exists', array( db_get_table( 'project' ), 'idx_project_id' ) ) );
-$g_upgrade[76] = array( 'CreateIndexSQL', array( 'idx_config', db_get_table( 'config' ), 'config_id', array( 'DROP' ) ), array( 'db_index_exists', array( db_get_table( 'config' ), 'idx_config' ) ) );
-
-$g_upgrade[77] = array( 'InsertData', array( db_get_table( 'plugin' ), "
-	( basename, enabled )
-	VALUES
-	( 'MantisCoreFormatting', '1' )" ) );
-
-$g_upgrade[78] = array( 'AddColumnSQL', array( db_get_table( 'project' ), "
-	inherit_global			I		UNSIGNED NOTNULL DEFAULT '0'" ) );
-$g_upgrade[79] = array( 'AddColumnSQL', array( db_get_table( 'project_hierarchy' ), "
-	inherit_parent			I		UNSIGNED NOTNULL DEFAULT '0'" ) );
-
-# ----------------------------------------------------------------------------
-# Schema version: 80
-#
-$g_upgrade[80] = array( 'AddColumnSQL', array( db_get_table( 'plugin' ), "
-	protected				L		NOTNULL DEFAULT \" '0' \",
-	priority				I		UNSIGNED NOTNULL DEFAULT '3'
-	" ) );
-$g_upgrade[81] = array( 'AddColumnSQL', array( db_get_table( 'project_version' ), "
-	obsolete				L		NOTNULL DEFAULT \" '0' \"" ) );
-$g_upgrade[82] = array( 'AddColumnSQL', array( db_get_table( 'bug' ), "
-	due_date				T		NOTNULL DEFAULT '" . db_null_date() . "' " ) );
-
-# Release marker: 1.2.0a1
-
-$g_upgrade[83] = array( 'AddColumnSQL', array( db_get_table( 'custom_field' ), "
-	filter_by				L		NOTNULL DEFAULT \" '1' \"" ) );
-
-# Release marker: 1.2.0a2 - 1.2.0a3
-
-$g_upgrade[84] = array( 'CreateTableSQL', array( db_get_table( 'bug_revision' ), "
-	id						I		UNSIGNED NOTNULL PRIMARY AUTOINCREMENT,
-	bug_id					I		UNSIGNED NOTNULL,
-	bugnote_id				I		UNSIGNED NOTNULL DEFAULT '0',
-	user_id					I		UNSIGNED NOTNULL,
-	timestamp				T		NOTNULL DEFAULT '" . db_null_date() . "',
-	type					I		UNSIGNED NOTNULL,
-	value					XL		NOTNULL",
-	$t_table_options
-	) );
-$g_upgrade[85] = array( 'CreateIndexSQL', array( 'idx_bug_rev_id_time', db_get_table( 'bug_revision' ), 'bug_id, timestamp' ) );
-$g_upgrade[86] = array( 'CreateIndexSQL', array( 'idx_bug_rev_type', db_get_table( 'bug_revision' ), 'type' ) );
-
-# Date conversion
-$g_upgrade[87] = array( 'AddColumnSQL', array( db_get_table( 'bug' ), "
-	date_submitted_int		I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-$g_upgrade[88] = array( 'AddColumnSQL', array( db_get_table( 'bug' ), "
-	due_date_int			I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-$g_upgrade[89] = array( 'AddColumnSQL', array( db_get_table( 'bug' ), "
-	last_updated_int		I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-
-# ----------------------------------------------------------------------------
-# Schema version: 90
-#
-$g_upgrade[90] = array( 'UpdateFunction', 'date_migrate', array( db_get_table( 'bug' ), 'id', array( 'date_submitted', 'due_date', 'last_updated' ), array( 'date_submitted_int', 'due_date_int', 'last_updated_int' ) ) );
-
-$g_upgrade[91] = array( 'DropColumnSQL', array( db_get_table( 'bug' ), 'date_submitted' ) );
-$g_upgrade[92] = array( 'RenameColumnSQL', array( db_get_table( 'bug' ), 'date_submitted_int', 'date_submitted', "
-	date_submitted_int		I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-$g_upgrade[93] = array( 'DropColumnSQL', array( db_get_table( 'bug' ), 'due_date' ) );
-$g_upgrade[94] = array( 'RenameColumnSQL', array( db_get_table( 'bug' ), 'due_date_int', 'due_date', "
-	due_date_int			I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-$g_upgrade[95] = array( 'DropColumnSQL', array( db_get_table( 'bug' ), 'last_updated' ) );
-$g_upgrade[96] = array( 'RenameColumnSQL', array( db_get_table( 'bug' ), 'last_updated_int', 'last_updated', "
-	last_updated_int		I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-
-$g_upgrade[97] = array( 'CreateIndexSQL', array( 'idx_last_mod', db_get_table( 'bugnote' ), 'last_modified', array( 'DROP' ) ), array( 'db_index_exists', array( db_get_table( 'bugnote' ), 'idx_last_mod' ) ) );
-
-$g_upgrade[98] = array( 'AddColumnSQL', array( db_get_table( 'bugnote' ), "
-	last_modified_int		I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-$g_upgrade[99] = array( 'AddColumnSQL', array( db_get_table( 'bugnote' ), "
-	date_submitted_int		I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-
-# ----------------------------------------------------------------------------
-# Schema version: 100
-#
-$g_upgrade[100] = array( 'UpdateFunction', 'date_migrate', array( db_get_table( 'bugnote' ), 'id', array( 'last_modified', 'date_submitted' ), array( 'last_modified_int', 'date_submitted_int' ) ) );
-$g_upgrade[101] = array( 'DropColumnSQL', array( db_get_table( 'bugnote' ), 'last_modified' ) );
-$g_upgrade[102] = array( 'RenameColumnSQL', array( db_get_table( 'bugnote' ), 'last_modified_int', 'last_modified', "
-	last_modified_int		I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-$g_upgrade[103] = array( 'CreateIndexSQL', array( 'idx_last_mod', db_get_table( 'bugnote' ), 'last_modified' ) );
-$g_upgrade[104] = array( 'DropColumnSQL', array( db_get_table( 'bugnote' ), 'date_submitted' ) );
-$g_upgrade[105] = array( 'RenameColumnSQL', array( db_get_table( 'bugnote' ), 'date_submitted_int', 'date_submitted', "
-	date_submitted_int		I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-$g_upgrade[106] = array( 'AddColumnSQL', array( db_get_table( 'bug_file' ), "
-	date_added_int			I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-$g_upgrade[107] = array( 'UpdateFunction', 'date_migrate', array( db_get_table( 'bug_file' ), 'id', 'date_added', 'date_added_int' ) );
-$g_upgrade[108] = array( 'DropColumnSQL', array( db_get_table( 'bug_file' ), 'date_added' ) );
-$g_upgrade[109] = array( 'RenameColumnSQL', array( db_get_table( 'bug_file' ), 'date_added_int', 'date_added', "
-	date_added_int			I	UNSIGNED NOTNULL DEFAULT '1' " ) );
-
-# ----------------------------------------------------------------------------
-# Schema version: 110
-#
-
-$g_upgrade[110] = array( 'AddColumnSQL', array( db_get_table( 'project_file' ), "
-	date_added_int			I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-$g_upgrade[111] = array( 'UpdateFunction', 'date_migrate', array( db_get_table( 'project_file' ), 'id', 'date_added', 'date_added_int' ) );
-$g_upgrade[112] = array( 'DropColumnSQL', array( db_get_table( 'project_file' ), 'date_added' ) );
-$g_upgrade[113] = array( 'RenameColumnSQL', array( db_get_table( 'project_file' ), 'date_added_int', 'date_added', "
-	date_added_int			I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-
-$g_upgrade[114] = array( 'AddColumnSQL', array( db_get_table( 'bug_history' ), "
-	date_modified_int		I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-$g_upgrade[115] = array( 'UpdateFunction', 'date_migrate', array( db_get_table( 'bug_history' ), 'id', 'date_modified', 'date_modified_int' ) );
-$g_upgrade[116] = array( 'DropColumnSQL', array( db_get_table( 'bug_history' ), 'date_modified' ) );
-$g_upgrade[117] = array( 'RenameColumnSQL', array( db_get_table( 'bug_history' ), 'date_modified_int', 'date_modified', "
-	date_modified_int		I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-
-$g_upgrade[118] = array( 'AddColumnSQL', array( db_get_table( 'user' ), "
-	last_visit_int			I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-$g_upgrade[119] = array( 'AddColumnSQL', array( db_get_table( 'user' ), "
-	date_created_int		I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-
-# ----------------------------------------------------------------------------
-# Schema version: 120
-#
-
-$g_upgrade[120] = array( 'UpdateFunction', 'date_migrate', array( db_get_table( 'user' ), 'id', array( 'last_visit', 'date_created' ), array( 'last_visit_int', 'date_created_int' ) ) );
-
-$g_upgrade[121] = array( 'DropColumnSQL', array( db_get_table( 'user' ), 'date_created' ) );
-$g_upgrade[122] = array( 'RenameColumnSQL', array( db_get_table( 'user' ), 'date_created_int', 'date_created', "
-	date_created_int		I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-$g_upgrade[123] = array( 'DropColumnSQL', array( db_get_table( 'user' ), 'last_visit' ) );
-$g_upgrade[124] = array( 'RenameColumnSQL', array( db_get_table( 'user' ), 'last_visit_int', 'last_visit', "
-	last_visit_int			I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-
-$g_upgrade[125] = array( 'AddColumnSQL', array( db_get_table( 'email' ), "
-	submitted_int			I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-$g_upgrade[126] = array( 'UpdateFunction', 'date_migrate', array( db_get_table( 'email' ), 'email_id', 'submitted', 'submitted_int' ) );
-$g_upgrade[127] = array( 'DropColumnSQL', array( db_get_table( 'email' ), 'submitted' ) );
-$g_upgrade[128] = array( 'RenameColumnSQL', array( db_get_table( 'email' ), 'submitted_int', 'submitted', "
-	submitted_int			I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-
-$g_upgrade[129] = array( 'AddColumnSQL', array( db_get_table( 'tag' ), "
-	date_created_int		I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-
-# ----------------------------------------------------------------------------
-# Schema version: 130
-#
-$g_upgrade[130] = array( 'AddColumnSQL', array( db_get_table( 'tag' ), "
-	date_updated_int		I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-
-$g_upgrade[131] = array( 'UpdateFunction', 'date_migrate', array( db_get_table( 'tag' ), 'id', array( 'date_created', 'date_updated' ), array( 'date_created_int', 'date_updated_int' ) ) );
-
-$g_upgrade[132] = array( 'DropColumnSQL', array( db_get_table( 'tag' ), 'date_created' ) );
-$g_upgrade[133] = array( 'RenameColumnSQL', array( db_get_table( 'tag' ), 'date_created_int', 'date_created', "
-	date_created_int		I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-$g_upgrade[134] = array( 'DropColumnSQL', array( db_get_table( 'tag' ), 'date_updated' ) );
-$g_upgrade[135] = array( 'RenameColumnSQL', array( db_get_table( 'tag' ), 'date_updated_int', 'date_updated', "
-	date_updated_int		I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-
-$g_upgrade[136] = array( 'AddColumnSQL', array( db_get_table( 'bug_tag' ), "
-	date_attached_int		I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-$g_upgrade[137] = array( 'UpdateFunction', 'date_migrate', array( db_get_table( 'bug_tag' ), 'bug_id', 'date_attached', 'date_attached_int' ) );
-$g_upgrade[138] = array( 'DropColumnSQL', array( db_get_table( 'bug_tag' ), 'date_attached' ) );
-$g_upgrade[139] = array( 'RenameColumnSQL', array( db_get_table( 'bug_tag' ), 'date_attached_int', 'date_attached', "
-	date_attached_int		I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-
-# ----------------------------------------------------------------------------
-# Schema version: 140
-#
-
-$g_upgrade[140] = array( 'AddColumnSQL', array( db_get_table( 'tokens' ), "
-	timestamp_int			I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-$g_upgrade[141] = array( 'AddColumnSQL', array( db_get_table( 'tokens' ), "
-	expiry_int				I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-
-$g_upgrade[142] = array( 'UpdateFunction', 'date_migrate', array( db_get_table( 'tokens' ), 'id', array( 'timestamp', 'expiry' ), array( 'timestamp_int', 'expiry_int' ) ) );
-
-$g_upgrade[143] = array( 'DropColumnSQL', array( db_get_table( 'tokens' ), 'timestamp' ) );
-$g_upgrade[144] = array( 'RenameColumnSQL', array( db_get_table( 'tokens' ), 'timestamp_int', 'timestamp', "
-	timestamp_int			I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-$g_upgrade[145] = array( 'DropColumnSQL', array( db_get_table( 'tokens' ), 'expiry' ) );
-$g_upgrade[146] = array( 'RenameColumnSQL', array( db_get_table( 'tokens' ), 'expiry_int', 'expiry', "
-	expiry_int				I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-
-$g_upgrade[147] = array( 'AddColumnSQL', array( db_get_table( 'news' ), "
-	last_modified_int		I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-$g_upgrade[148] = array( 'AddColumnSQL', array( db_get_table( 'news' ), "
-	date_posted_int			I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-$g_upgrade[149] = array( 'UpdateFunction', 'date_migrate', array( db_get_table( 'news' ), 'id', array( 'date_posted', 'last_modified' ), array( 'date_posted_int', 'last_modified_int' ) ) );
-
-# ----------------------------------------------------------------------------
-# Schema version: 150
-#
-
-$g_upgrade[150] = array( 'DropColumnSQL', array( db_get_table( 'news' ), 'last_modified' ) );
-$g_upgrade[151] = array( 'RenameColumnSQL', array( db_get_table( 'news' ), 'last_modified_int', 'last_modified', "
-	last_modified_int		I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-$g_upgrade[152] = array( 'DropColumnSQL', array( db_get_table( 'news' ), 'date_posted' ) );
-$g_upgrade[153] = array( 'RenameColumnSQL', array( db_get_table( 'news' ), 'date_posted_int', 'date_posted', "
-	date_posted_int			I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-
-$g_upgrade[154] = array( 'CreateIndexSQL', array( 'idx_bug_rev_id_time', db_get_table( 'bug_revision' ), 'bug_id, timestamp', array( 'DROP' ) ), array( 'db_index_exists', array( db_get_table( 'bug_revision' ), 'idx_bug_rev_id_time' ) ) );
-$g_upgrade[155] = array( 'AddColumnSQL', array( db_get_table( 'bug_revision' ), "
-	timestamp_int			I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-$g_upgrade[156] = array( 'UpdateFunction', 'date_migrate', array( db_get_table( 'bug_revision' ), 'id', 'timestamp', 'timestamp_int' ) );
-$g_upgrade[157] = array( 'DropColumnSQL', array( db_get_table( 'bug_revision' ), 'timestamp' ) );
-$g_upgrade[158] = array( 'RenameColumnSQL', array( db_get_table( 'bug_revision' ), 'timestamp_int', 'timestamp', "
-	timestamp_int			I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-$g_upgrade[159] = array( 'CreateIndexSQL', array( 'idx_bug_rev_id_time', db_get_table( 'bug_revision' ), 'bug_id, timestamp' ) );
-
-# ----------------------------------------------------------------------------
-# Schema version: 160
-#
-
-$g_upgrade[160] = array( 'AddColumnSQL', array( db_get_table( 'user_pref' ), "
-	timezone C(32) NOTNULL DEFAULT '' " ) );
-
-$g_upgrade[161] = array( 'AddColumnSQL', array( db_get_table( 'project_version' ), "
-	date_order_int			I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-$g_upgrade[162] = array( 'UpdateFunction', 'date_migrate', array( db_get_table( 'project_version' ), 'id', 'date_order', 'date_order_int' ) );
-$g_upgrade[163] = array( 'DropColumnSQL', array( db_get_table( 'project_version' ), 'date_order' ) );
-$g_upgrade[164] = array( 'RenameColumnSQL', array( db_get_table( 'project_version' ), 'date_order_int', 'date_order', "
-	date_order_int			I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-
-$g_upgrade[165] = array( 'AddColumnSQL', array( db_get_table( 'sponsorship' ), "
-	date_submitted_int		I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-$g_upgrade[166] = array( 'AddColumnSQL', array( db_get_table( 'sponsorship' ), "
-	last_updated_int		I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-
-$g_upgrade[167] = array( 'UpdateFunction', 'date_migrate', array( db_get_table( 'sponsorship' ), 'id', array( 'date_submitted', 'last_updated' ), array( 'date_submitted_int', 'last_updated_int' ) ) );
-
-$g_upgrade[168] = array( 'DropColumnSQL', array( db_get_table( 'sponsorship' ), 'last_updated' ) );
-$g_upgrade[169] = array( 'RenameColumnSQL', array( db_get_table( 'sponsorship' ), 'last_updated_int', 'last_updated', "
-	last_updated_int		I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-
-# ----------------------------------------------------------------------------
-# Schema version: 170
-#
-$g_upgrade[170] = array( 'DropColumnSQL', array( db_get_table( 'sponsorship' ), 'date_submitted' ) );
-$g_upgrade[171] = array( 'RenameColumnSQL', array( db_get_table( 'sponsorship' ), 'date_submitted_int', 'date_submitted', "
-date_submitted_int			I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-
-$g_upgrade[172] = array( 'AddColumnSQL', array( db_get_table( 'project_file' ), "
-	user_id					I		UNSIGNED NOTNULL DEFAULT '0' " ) );
-$g_upgrade[173] = array( 'AddColumnSQL', array( db_get_table( 'bug_file' ), "
-	user_id					I		UNSIGNED NOTNULL DEFAULT '0' " ) );
-
-# Release marker: 1.2.0rc1
-
-$g_upgrade[174] = array( 'DropColumnSQL', array( db_get_table( 'custom_field' ), 'advanced' ) );
-$g_upgrade[175] = array( 'DropColumnSQL', array( db_get_table( 'user_pref' ), 'advanced_report' ) );
-$g_upgrade[176] = array( 'DropColumnSQL', array( db_get_table( 'user_pref' ), 'advanced_view' ) );
-$g_upgrade[177] = array( 'DropColumnSQL', array( db_get_table( 'user_pref' ), 'advanced_update' ) );
-$g_upgrade[178] = array( 'CreateIndexSQL', array( 'idx_project_hierarchy_child_id', db_get_table( 'project_hierarchy' ), 'child_id' ) );
-
-# Release marker: 1.2.0rc2
-
-# Decrease index name length for oci8 (30 chars max )
-if( db_is_oracle() ) {
-	$t_index_name = 'idx_prj_hier_parent_id';
-} else {
-	$t_index_name = 'idx_project_hierarchy_parent_id';
-}
-
-$g_upgrade[179] = array( 'CreateIndexSQL', array( $t_index_name, db_get_table( 'project_hierarchy' ), 'parent_id' ) );
-
-# ----------------------------------------------------------------------------
-# Schema version: 180
-#
-$g_upgrade[180] = array( 'CreateIndexSQL', array( 'idx_tag_name', db_get_table( 'tag' ), 'name' ) );
-$g_upgrade[181] = array( 'CreateIndexSQL', array( 'idx_bug_tag_tag_id', db_get_table( 'bug_tag' ), 'tag_id' ) );
-$g_upgrade[182] = array( 'CreateIndexSQL', array( 'idx_email_id', db_get_table( 'email' ), 'email_id', array( 'DROP' ) ), array( 'db_index_exists', array( db_get_table( 'email' ), 'idx_email_id' ) ) );
-
-# Release marker: 1.2.0
-
-$g_upgrade[183] = array( 'UpdateFunction', 'correct_multiselect_custom_fields_db_format' );
-
-# Release marker: 1.2.1 - 1.2.x
-
-$g_upgrade[184] = null;
-$g_upgrade[185] = array( 'AddColumnSQL', array( db_get_table( 'custom_field_string' ), "
-	text					XL		NULL DEFAULT NULL" ) );
-$g_upgrade[186] = array( 'UpdateFunction', 'update_history_long_custom_fields' );
-$g_upgrade[187] = array( 'CreateIndexSQL', array( 'idx_bug_id', db_get_table( 'bug_monitor' ), 'bug_id' ) );
-$g_upgrade[188] = array( 'AlterColumnSQL', array( db_get_table( 'project' ), "
-	inherit_global			L		$t_notnull DEFAULT '0'" ) );
-$g_upgrade[189] = array( 'AlterColumnSQL', array( db_get_table( 'project_hierarchy' ), "
-	inherit_parent			L		$t_notnull DEFAULT '0'" ) );
-
-# ----------------------------------------------------------------------------
-# Schema version: 190
-#
-$g_upgrade[190] = array( 'UpdateFunction', 'check_project_hierarchy', array() );
-$g_upgrade[191] = array( 'CreateIndexSQL', array( 'idx_project_hierarchy', db_get_table( 'project_hierarchy' ), 'child_id,parent_id', array( 'UNIQUE' ) ) );
-$g_upgrade[192] = array( 'CreateIndexSQL', array( 'idx_bug_history_date_modified', db_get_table( 'bug_history' ), 'date_modified' ) );
-$g_upgrade[193] = array( 'UpdateFunction', 'check_config_serialization', array() );
-$g_upgrade[194] = array( 'UpdateFunction', 'check_token_serialization', array() );
-$g_upgrade[195] = array( 'UpdateFunction', 'stored_filter_migrate', array() );
-
-# Steps 196, 197 and 199 used to increase length of user.username, user.realname
-# and user.email columns to 255 chars. This causes issues with utf8mb4 charset
-# on MySQL when using the InnoDB engine due to a limitation on index key size
-# to 767 bytes.
-# The columns will be reduced to 191 chars (see upgrade steps 206-208 below).
-$g_upgrade[196] = null;
-$g_upgrade[197] = null;
-$g_upgrade[198] = array( 'AlterColumnSQL', array( db_get_table( 'user' ), "
-	password				C(64)	$t_notnull DEFAULT \" '' \"" ) );
-$g_upgrade[199] = null;
-
-# Release marker: 1.3.0-beta.1 - 1.3.0-beta.3
-
-# ----------------------------------------------------------------------------
-# Schema version: 200
-#
-$g_upgrade[200] = array('CreateTableSQL', array( db_get_table( 'api_token' ), "
-	id						I		UNSIGNED NOTNULL PRIMARY AUTOINCREMENT,
-	user_id					I		NOTNULL DEFAULT '0',
-	name					C(128)	NOTNULL,
-	hash					C(128)	NOTNULL,
-	date_created			I		UNSIGNED NOTNULL DEFAULT '0',
-	date_used				I		UNSIGNED NOTNULL DEFAULT '0'",
-	$t_table_options
-	) );
-$g_upgrade[201] = array( 'CreateIndexSQL', array( 'idx_user_id_name', db_get_table( 'api_token' ), 'user_id, name', array( 'UNIQUE' ) ) );
-
-# Release marker: 1.3.0-rc.1
-
-$g_upgrade[202] = array( 'CreateIndexSQL', array( 'idx_email', db_get_table( 'user' ), 'email' ) );
-
-# Ensure consistent definition of file attachment blob columns, see #20547
-$g_upgrade[203] = array( 'AlterColumnSQL', array( db_get_table( 'bug_file' ), "
-	content					B		NULL " . $t_blob_default ) );
-$g_upgrade[204] = array( 'AlterColumnSQL', array( db_get_table( 'project_file' ), "
-	content					B		NULL " . $t_blob_default ) );
-
-# Enable gravatar plugin if avatars are enabled
-$g_upgrade[205] = array( 'UpdateFunction', 'gravatar_plugin', array() );
-
-# Limiting column size, planning for future MySQL utf8mb4 support (see #20465)
-$g_upgrade[206] = array( 'AlterColumnSQL', array( db_get_table( 'user' ), "
-	username				C(191)	$t_notnull DEFAULT \" '' \"" ) );
-$g_upgrade[207] = array( 'AlterColumnSQL', array( db_get_table( 'user' ), "
-	realname				C(191)	$t_notnull DEFAULT \" '' \"" ) );
-$g_upgrade[208] = array( 'AlterColumnSQL', array( db_get_table( 'user' ), "
-	email					C(191)	$t_notnull DEFAULT \" '' \"" ) );
-
-$g_upgrade[209] = array( 'AlterColumnSQL', array( db_get_table( 'api_token' ), "
-	user_id					I		UNSIGNED NOTNULL DEFAULT '0',
-	date_created			I		UNSIGNED NOTNULL DEFAULT '1',
-	date_used				I		UNSIGNED NOTNULL DEFAULT '1'"
-	) );
-
-# Release marker: 1.3.0
-
-# 0 - file was added pre-2.23.0 and not explicitly linked to an issue or a note.
-# null - file was added by 2.23.0 release or newer and associated with the issue.
-# otherwise - file was added or linked by 2.23.0 release or newer and associated with an issue note.
-$g_upgrade[210] = array( 'AddColumnSQL', array( db_get_table( 'bug_file' ), "
-	bugnote_id			I		UNSIGNED DEFAULT '0' " ) );
-
-# Release marker: 2.23.0
-
-$g_upgrade[211] = array( 'AlterColumnSQL', array( db_get_table( 'email' ), "
-	email					C(191)	$t_notnull DEFAULT \" '' \"" ) );
-
-# Release marker: 2.25.0
-
-# New default value for category status, see #31017
-$g_upgrade[212] = array( 'AlterColumnSQL', array( db_get_table( 'category' ), "
-	status					I		UNSIGNED NOTNULL DEFAULT '1' ") );
-$g_upgrade[213] = array( 'UpdateFunction', 'category_status_default' );
-
-# Release marker: 2.27.0
-
-
-# BEGIN Development marker: Inspirati (RobD)
-
-# WARNING: The following database upgrade statements are using an indexing system which
-#          is not suitable for release versions. It is intended for development convenience
-#          only and would likely lead to a loss of configuration control outside of a such
-#          an enviroment. It is currently being used under the assumption that all installs
-#          are to a fresh/clean database with the following being a totally new schema on
-#          every install. Use with caution even in a development environment.
-
-$t_idx = 214;  # the next upgrade sequence number from the released version when branched
-
-$g_upgrade[$t_idx++] = array( 'CreateTableSQL',
-	array( db_get_table( 'dwg' ), "
-		id				I		NOTNULL UNSIGNED AUTOINCREMENT PRIMARY,
-		project_id		I		UNSIGNED NOTNULL DEFAULT '0',
-		creator_id		I		UNSIGNED NOTNULL DEFAULT '0',
-		handler_id		I		UNSIGNED NOTNULL DEFAULT '0',
-		duplicate_id	I		UNSIGNED NOTNULL DEFAULT '0',
-		category_id		I		UNSIGNED NOTNULL DEFAULT '1',
-		document_id		I		UNSIGNED NOTNULL DEFAULT '1',
-		enabled			L		NOTNULL DEFAULT \" '1' \",
-		status			I2		NOTNULL DEFAULT '110',
-		priority		I2		NOTNULL DEFAULT '30',
-		view_state		I2		NOTNULL DEFAULT '10',
-		version			C(64)	NOTNULL DEFAULT \" '' \",
-		discipline		C(64)	NOTNULL DEFAULT \" '' \",
-		classification	C(64)	NOTNULL DEFAULT \" '' \",
-		summary			C(255)	NOTNULL DEFAULT \" '' \",
-		link_url		C(2048)	NOTNULL DEFAULT \" '' \",
-		date_submitted	I		UNSIGNED NOTNULL DEFAULT '1',
-		last_updated	I		UNSIGNED NOTNULL DEFAULT '1',
-		due_date		I		UNSIGNED NOTNULL DEFAULT '1',
-		dwg_text_id		I		UNSIGNED NOTNULL DEFAULT '0',
-		sticky			L		$t_notnull DEFAULT  \"'0'\" ",
-	$t_table_options
-	) );
-
-$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_dwg_status', db_get_table( 'dwg' ), 'status' ) );
-$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_dwg_project', db_get_table( 'dwg' ), 'project_id' ) );
-$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_dwg_document_id', db_get_table( 'dwg' ), 'document_id' ) );
-
-# Create a default 'Empty' dwg with status 'Archived' for issues which refer to documents which are to be deleted
-$g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'dwg' ), "
-	( dwg_text_id, status )
-	VALUES
-	( '1', '195' )" ) );
-
-
-$g_upgrade[$t_idx++] = array( 'CreateTableSQL',
-	array( db_get_table( 'documents' ), "
-		id				I		NOTNULL UNSIGNED AUTOINCREMENT PRIMARY,
-		title			C(255)	NOTNULL,
-		author			C(255)	NOTNULL DEFAULT \" '' \",
-		publisher		C(255)	NOTNULL DEFAULT \" '' \",
-		reference		C(64)	NOTNULL DEFAULT \" '' \",
-		number			C(64)	NOTNULL DEFAULT \" '' \",
-		edition			C(64)	NOTNULL DEFAULT \" '' \",
-		revision		C(64)	NOTNULL DEFAULT \" '' \",
-		link_url		C(2048)	NOTNULL DEFAULT \" '' \",
-		classification	C(64)	NOTNULL DEFAULT \" '' \",
-		revision_date	I		UNSIGNED NOTNULL DEFAULT '1',
-		release_date	I		UNSIGNED NOTNULL DEFAULT '1' ",
-		$t_table_options
-	) );
-
-# Create a default 'Empty' document with status 'Archived' for issues which refer to documents which are to be deleted
-$g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'documents' ), "
-	( title )
-	VALUES
-	( 'Empty' )" ) );
-
-$g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwg_text' ), "
-	id						I		PRIMARY UNSIGNED NOTNULL AUTOINCREMENT,
-	description				XL		$t_notnull,
-	steps_to_reproduce		XL		$t_notnull,
-	additional_information	XL		$t_notnull",
-	$t_table_options
-	) );
-
-$g_upgrade[$t_idx++] = array( 'InsertData', array( db_get_table( 'dwg_text' ), "
-	( description, steps_to_reproduce, additional_information )
-	VALUES
-	( 'Empty', 'Empty', 'Empty' )" ) );
-
-# @TODO RobD - extract from dwg_api.php ~line number 1982:
-#    "log changes except for duplicate_id which is obsolete and should be removed in MantisBT 1.3"
-
-# @TODO RobD: or we could instead rename the project_id field, as it should become unused
-$g_upgrade[$t_idx++] = array( 'AddColumnSQL', array( db_get_table( 'bug' ), "
-	document_id			I		UNSIGNED NOTNULL DEFAULT '0' " ) );
-
-# @TODO RobD: add field for project classification and reference url (for making references into hyperlinks to a data store)
-$g_upgrade[$t_idx++] = array( 'AddColumnSQL', array( db_get_table( 'project' ), "
-	reference_url1		C(255)	NOTNULL DEFAULT \" '' \",
-	reference_url2		C(255)	NOTNULL DEFAULT \" '' \",
-	classification		C(255)	NOTNULL DEFAULT \" '' \",
-	due_date			I		UNSIGNED NOTNULL DEFAULT '1' " ) );
-
-$g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwgnote' ), "
-	id						I		UNSIGNED PRIMARY NOTNULL AUTOINCREMENT,
-	dwg_id					I		UNSIGNED NOTNULL DEFAULT '0',
-	creator_id				I		UNSIGNED NOTNULL DEFAULT '0',
-	dwgnote_text_id			I		UNSIGNED NOTNULL DEFAULT '0',
-	view_state				I2		NOTNULL DEFAULT '10',
-	date_submitted			I		UNSIGNED NOTNULL DEFAULT '1',
-	last_modified			I		UNSIGNED NOTNULL DEFAULT '1',
-	note_type				I		DEFAULT '0',
-	time_tracking			I		UNSIGNED NOTNULL DEFAULT \" 0 \",
-	note_attr				C(250)	DEFAULT \" '' \" ",
-	$t_table_options
-	) );
-
-$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_dwg', db_get_table( 'dwgnote' ), 'dwg_id' ) );
-$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_dwg_last_mod', db_get_table( 'dwgnote' ), 'last_modified' ) );
-
-$g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwgnote_text' ), "
-	id						I		UNSIGNED NOTNULL PRIMARY AUTOINCREMENT,
-	note					XL		NOTNULL",
-	$t_table_options
-	) );
-
-$g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwg_monitor' ), "
-	user_id					I		UNSIGNED NOTNULL PRIMARY DEFAULT '0',
-	dwg_id					I		UNSIGNED NOTNULL PRIMARY DEFAULT '0'
-	",
-	$t_table_options
-	) );
-$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_dwg_id', db_get_table( 'dwg_monitor' ), 'dwg_id' ) );
-
-$g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwg_relationship' ), "
-	id						I		UNSIGNED NOTNULL AUTOINCREMENT PRIMARY,
-	source_dwg_id			I		UNSIGNED NOTNULL DEFAULT '0',
-	destination_dwg_id		I		UNSIGNED NOTNULL DEFAULT '0',
-	relationship_type		I2		NOTNULL DEFAULT '0' ",
-	$t_table_options
-	) );
-$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_dwg_relationship_source', db_get_table( 'dwg_relationship' ), 'source_dwg_id' ) );
-$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_dwg_relationship_destination', db_get_table( 'dwg_relationship' ), 'destination_dwg_id' ) );
-
-$g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwg_filters' ), "
-	id						I		UNSIGNED NOTNULL PRIMARY AUTOINCREMENT,
-	user_id					I		NOTNULL DEFAULT '0',
-	project_id				I		NOTNULL DEFAULT '0',
-	is_public				L		DEFAULT NULL,
-	name					C(64)	NOTNULL DEFAULT \" '' \",
-	filter_string			XL		NOTNULL",
-	$t_table_options
-	) );
-
-$g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwg_file' ), "
-	id						I		UNSIGNED NOTNULL PRIMARY AUTOINCREMENT,
-	dwg_id					I		UNSIGNED NOTNULL DEFAULT '0',
-	user_id					I		UNSIGNED NOTNULL DEFAULT '0',
-	dwgnote_id				I		UNSIGNED DEFAULT '0',
-	title					C(250)	NOTNULL DEFAULT \" '' \",
-	description				C(250)	NOTNULL DEFAULT \" '' \",
-	diskfile				C(250)	NOTNULL DEFAULT \" '' \",
-	filename				C(250)	NOTNULL DEFAULT \" '' \",
-	folder					C(250)	NOTNULL DEFAULT \" '' \",
-	filesize				I		NOTNULL DEFAULT '0',
-	file_type				C(250)	NOTNULL DEFAULT \" '' \",
-	date_added				I		UNSIGNED NOTNULL DEFAULT '1',
-	content					B		NULL " . $t_blob_default,
-	$t_table_options
-	) );
-
-$g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwg_history' ), "
-	id						I		UNSIGNED NOTNULL PRIMARY AUTOINCREMENT,
-	dwg_id					I		UNSIGNED NOTNULL DEFAULT '0',
-	user_id					I		UNSIGNED NOTNULL DEFAULT '0',
-	field_name				C(64)	$t_notnull,
-	old_value				C(255)	$t_notnull,
-	new_value				C(255)	$t_notnull,
-	type					I2		NOTNULL DEFAULT '0',
-	date_modified			I		UNSIGNED NOTNULL DEFAULT '1'",
-	$t_table_options
-	) );
-$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_dwg_history_dwg_id', db_get_table( 'dwg_history' ), 'dwg_id' ) );
-
-
-$g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwg_revision' ), "
-	id						I		UNSIGNED NOTNULL PRIMARY AUTOINCREMENT,
-	dwg_id					I		UNSIGNED NOTNULL DEFAULT '0',
-	user_id					I		UNSIGNED NOTNULL DEFAULT '0',
-	dwgnote_id				I		UNSIGNED NOTNULL DEFAULT '0',
-	timestamp				I		UNSIGNED NOTNULL DEFAULT '1',
-	type					I		UNSIGNED NOTNULL,
-	value					XL		NOTNULL",
-	$t_table_options
-	) );
-$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_dwg_rev_id_time', db_get_table( 'dwg_revision' ), 'dwg_id, timestamp' ) );
-$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_dwg_rev_type', db_get_table( 'dwg_revision' ), 'type' ) );
-
-$g_upgrade[$t_idx++] = array( 'AddColumnSQL', array( db_get_table( 'user_pref' ), "
-	dwgnote_order					C(4)	NOTNULL DEFAULT 'ASC',
-	email_dwgnote_limit				I2		NOTNULL DEFAULT '0'	" ) );
-
-$g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwg_tag' ), "
-	dwg_id					I		UNSIGNED NOTNULL PRIMARY DEFAULT '0',
-	tag_id					I		UNSIGNED NOTNULL PRIMARY DEFAULT '0',
-	user_id					I		UNSIGNED NOTNULL DEFAULT '0',
-	date_attached			I		UNSIGNED NOTNULL DEFAULT '1' ",
-	$t_table_options
-	) );
-$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_dwg_tag_tag_id', db_get_table( 'dwg_tag' ), 'tag_id' ) );
-
-$g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'license' ), "
-	id						I		UNSIGNED NOTNULL PRIMARY AUTOINCREMENT,
-	project_id				I		UNSIGNED NOTNULL DEFAULT '0',
-	enabled					L		NOTNULL DEFAULT \" '1' \",
-	name					C(128)	NOTNULL DEFAULT \" '' \",
-	match_str				C(128)	NOTNULL DEFAULT \" '' \",
-	type					C(128)	NOTNULL DEFAULT \" '' \",
-	status					I2		NOTNULL DEFAULT '10',
-	view_state				I2		NOTNULL DEFAULT '10',
-	access_min				I2		NOTNULL DEFAULT '10',
-	description				XL		$t_notnull",
-	$t_table_options
-	) );
-
-$g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'license_dwg_list' ), "
-	id						I		UNSIGNED NOTNULL PRIMARY AUTOINCREMENT,
-	dwg_id					I		UNSIGNED NOTNULL DEFAULT '0',
-	license_id				I		UNSIGNED NOTNULL DEFAULT '0',
-	status					I2		NOTNULL DEFAULT '10',
-	date_added				I		UNSIGNED NOTNULL DEFAULT '1' ",
-	$t_table_options
-	) );
-
-$g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'license_user_list' ), "
-	id						I		UNSIGNED NOTNULL PRIMARY AUTOINCREMENT,
-	user_id					I		UNSIGNED NOTNULL DEFAULT '0',
-	license_id				I		UNSIGNED NOTNULL DEFAULT '0',
-	status					I2		NOTNULL DEFAULT '10',
-	date_added				I		UNSIGNED NOTNULL DEFAULT '1' ",
-	$t_table_options
-	) );
-
-// $g_upgrade[$t_idx++] = array( 'AddColumnSQL', array( db_get_table( 'user' ), "
-// 	license_authority		L		NOTNULL DEFAULT \" '0' \" ") );
-
-// $g_upgrade[$t_idx++] = array( 'AddColumnSQL', array( db_get_table( 'user' ), "
-//	license_authority		L		NOTNULL DEFAULT \" '0' \",
-//	oauth_provider			C(50)	NOTNULL DEFAULT \" '' \",
-//	oauth_uid				C(100)	NOTNULL DEFAULT \" '' \" ") );
-
-# Primary document file — one canonical file per dwg record, stored via GIT backend.
-# Distinct from {dwg_file} which holds note attachments.
-# Storage backend columns (diskfile, folder, content) mirror {dwg_file} for API consistency.
-# Git-specific fields (git_branch) are included from the outset to avoid future migrations.
-$g_upgrade[$t_idx++] = array( 'CreateTableSQL', array( db_get_table( 'dwg_primary_file' ), "
-	id					I		UNSIGNED NOTNULL PRIMARY AUTOINCREMENT,
-	dwg_id				I		UNSIGNED NOTNULL DEFAULT '0',
-	user_id				I		UNSIGNED NOTNULL DEFAULT '0',
-	filename			C(250)	NOTNULL DEFAULT \" '' \",
-	filesize			I		NOTNULL DEFAULT '0',
-	file_type			C(250)	NOTNULL DEFAULT \" '' \",
-	git_sha				C(250)	NOTNULL DEFAULT \" '' \",
-	folder				C(250)	NOTNULL DEFAULT \" '' \",
-	content				B		NULL " . $t_blob_default . ",
-	date_added			I		UNSIGNED NOTNULL DEFAULT '1',
-	description			C(255)	NOTNULL DEFAULT \" '' \",
-	git_branch			C(64)	NOTNULL DEFAULT \" 'main' \" ",
-	$t_table_options
-	) );
-$g_upgrade[$t_idx++] = array( 'CreateIndexSQL', array( 'idx_dwg_primary_file_dwg_id', db_get_table( 'dwg_primary_file' ), 'dwg_id', array( 'UNIQUE' ) ) );
-
-# Rename {dwg_primary_file}.diskfile → git_sha; the column holds a git commit SHA,
-# not a generic opaque disk identifier.
-$g_upgrade[$t_idx++] = array( 'RenameColumnSQL', array( db_get_table( 'dwg_primary_file' ), 'diskfile', 'git_sha', "
-	git_sha				C(250)	NOTNULL DEFAULT \" '' \" " ) );
-
-# IMPORTANT: keep these entries as the last indexes, as they will be deleted in release versions
-#			 (you will need to bump all the indexes when inserting tables database statements above here)
-# user access_level: '10:viewer,25:reporter,40:updater,55:developer,70:manager,90:administrator'
-# default password: 'pass' == 1a1dc91c907325c69271ddf0c944bc72
-/*
-#
-# @TODO RobD - 
-#
-Add table(s) for approval/acceptance: one being for approval required by (user) list, another being approved by (user) list. feature a fields to indicate which (approve/accept/both?), and also which level is required
-Add a field to the users table for level, being an authority code for TA, DAR, other etc..
-Add a field to the users table for groups they belong to, and for the other fields mentioned here, that records can be user/group/either etc
-Add a field to the documents table for approval level required, another field for status of having been approved/accepted etc (ie. done and ready to go)
-So the approvals table has individual entries for users->documents->approval-code
-
-//	licences_id			C(255)	NOTNULL DEFAULT \" '' \" " ) );
-// even more advanced, we could have a table of classifications, and a table of documents<->classifications
-
-// @TODO RobD - need some enum for status field, ie. OPEN, PENDING, CLOSED, APPROVED, ACCEPTED, REJECTED
-// How about an acceptance table, record of documents accepted, by user & revision number with date, summary, caveats, attachments etc. also perhaps a signoff table?
- */
-# END Development marker: Inspirati - RobD
-
-
-# ----------------------------------------------------------------------------
-# End of schema definition, clear local variables
-#
-unset(
-	$t_table_options,
-	$t_notnull,
-	$t_timestamp,
-	$t_blob_default
+# ── Step 1: ai_sessions ─────────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'ai_sessions' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `mode` varchar(16) NOT NULL DEFAULT 'help',
+	  `created` int(10) unsigned NOT NULL DEFAULT 1,
+	  `updated` int(10) unsigned NOT NULL DEFAULT 1,
+	  `history` longtext NOT NULL,
+	  `doc_id` varchar(80) DEFAULT NULL,
+	  `dwg_id` int(10) unsigned DEFAULT NULL,
+	  PRIMARY KEY (`id`),
+	  KEY `idx_ai_sessions_user_mode` (`user_id`,`mode`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
+
+# ── Step 2: api_token ───────────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'api_token' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `name` varchar(128) NOT NULL,
+	  `hash` varchar(128) NOT NULL,
+	  `date_created` int(10) unsigned NOT NULL DEFAULT 1,
+	  `date_used` int(10) unsigned NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`id`),
+	  UNIQUE KEY `idx_user_id_name` (`user_id`,`name`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 3: bug ─────────────────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'bug' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `project_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `reporter_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `handler_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `duplicate_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `priority` smallint(6) NOT NULL DEFAULT 30,
+	  `severity` smallint(6) NOT NULL DEFAULT 50,
+	  `reproducibility` smallint(6) NOT NULL DEFAULT 10,
+	  `status` smallint(6) NOT NULL DEFAULT 10,
+	  `resolution` smallint(6) NOT NULL DEFAULT 10,
+	  `projection` smallint(6) NOT NULL DEFAULT 10,
+	  `eta` smallint(6) NOT NULL DEFAULT 10,
+	  `bug_text_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `os` varchar(32) NOT NULL DEFAULT '',
+	  `os_build` varchar(32) NOT NULL DEFAULT '',
+	  `platform` varchar(32) NOT NULL DEFAULT '',
+	  `version` varchar(64) NOT NULL DEFAULT '',
+	  `fixed_in_version` varchar(64) NOT NULL DEFAULT '',
+	  `build` varchar(32) NOT NULL DEFAULT '',
+	  `profile_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `view_state` smallint(6) NOT NULL DEFAULT 10,
+	  `summary` varchar(128) NOT NULL DEFAULT '',
+	  `sponsorship_total` int(11) NOT NULL DEFAULT 0,
+	  `sticky` tinyint(4) NOT NULL DEFAULT 0,
+	  `target_version` varchar(64) NOT NULL DEFAULT '',
+	  `category_id` int(10) unsigned NOT NULL DEFAULT 1,
+	  `date_submitted` int(10) unsigned NOT NULL DEFAULT 1,
+	  `due_date` int(10) unsigned NOT NULL DEFAULT 1,
+	  `last_updated` int(10) unsigned NOT NULL DEFAULT 1,
+	  `document_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  PRIMARY KEY (`id`),
+	  KEY `idx_bug_sponsorship_total` (`sponsorship_total`),
+	  KEY `idx_bug_fixed_in_version` (`fixed_in_version`),
+	  KEY `idx_bug_status` (`status`),
+	  KEY `idx_project` (`project_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 4: bug_file ────────────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'bug_file' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `bug_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `title` varchar(250) NOT NULL DEFAULT '',
+	  `description` varchar(250) NOT NULL DEFAULT '',
+	  `diskfile` varchar(250) NOT NULL DEFAULT '',
+	  `filename` varchar(250) NOT NULL DEFAULT '',
+	  `folder` varchar(250) NOT NULL DEFAULT '',
+	  `filesize` int(11) NOT NULL DEFAULT 0,
+	  `file_type` varchar(250) NOT NULL DEFAULT '',
+	  `content` longblob DEFAULT NULL,
+	  `date_added` int(10) unsigned NOT NULL DEFAULT 1,
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `bugnote_id` int(10) unsigned DEFAULT 0,
+	  PRIMARY KEY (`id`),
+	  KEY `idx_bug_file_bug_id` (`bug_id`),
+	  KEY `idx_diskfile` (`diskfile`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 5: bug_history ─────────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'bug_history' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `bug_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `field_name` varchar(64) NOT NULL,
+	  `old_value` varchar(255) NOT NULL,
+	  `new_value` varchar(255) NOT NULL,
+	  `type` smallint(6) NOT NULL DEFAULT 0,
+	  `date_modified` int(10) unsigned NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`id`),
+	  KEY `idx_bug_history_bug_id` (`bug_id`),
+	  KEY `idx_history_user_id` (`user_id`),
+	  KEY `idx_bug_history_date_modified` (`date_modified`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 6: bug_monitor ─────────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'bug_monitor' ) . " (
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `bug_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  PRIMARY KEY (`user_id`,`bug_id`),
+	  KEY `idx_bug_id` (`bug_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 7: bug_relationship ────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'bug_relationship' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `source_bug_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `destination_bug_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `relationship_type` smallint(6) NOT NULL DEFAULT 0,
+	  PRIMARY KEY (`id`),
+	  KEY `idx_relationship_source` (`source_bug_id`),
+	  KEY `idx_relationship_destination` (`destination_bug_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 8: bug_revision ────────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'bug_revision' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `bug_id` int(10) unsigned NOT NULL,
+	  `bugnote_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `user_id` int(10) unsigned NOT NULL,
+	  `type` int(10) unsigned NOT NULL,
+	  `value` longtext NOT NULL,
+	  `timestamp` int(10) unsigned NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`id`),
+	  KEY `idx_bug_rev_type` (`type`),
+	  KEY `idx_bug_rev_id_time` (`bug_id`,`timestamp`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 9: bug_tag ─────────────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'bug_tag' ) . " (
+	  `bug_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `tag_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `date_attached` int(10) unsigned NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`bug_id`,`tag_id`),
+	  KEY `idx_bug_tag_tag_id` (`tag_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 10: bug_text ───────────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'bug_text' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `description` longtext NOT NULL,
+	  `steps_to_reproduce` longtext NOT NULL,
+	  `additional_information` longtext NOT NULL,
+	  PRIMARY KEY (`id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 11: bugnote ────────────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'bugnote' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `bug_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `reporter_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `bugnote_text_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `view_state` smallint(6) NOT NULL DEFAULT 10,
+	  `note_type` int(11) DEFAULT 0,
+	  `note_attr` varchar(250) DEFAULT '',
+	  `time_tracking` int(10) unsigned NOT NULL DEFAULT 0,
+	  `last_modified` int(10) unsigned NOT NULL DEFAULT 1,
+	  `date_submitted` int(10) unsigned NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`id`),
+	  KEY `idx_bug` (`bug_id`),
+	  KEY `idx_last_mod` (`last_modified`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 12: bugnote_text ───────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'bugnote_text' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `note` longtext NOT NULL,
+	  PRIMARY KEY (`id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 13: category ───────────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'category' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `project_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `name` varchar(128) NOT NULL DEFAULT '',
+	  `status` int(10) unsigned NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`id`),
+	  UNIQUE KEY `idx_category_project_name` (`project_id`,`name`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 14: custom_field ───────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'custom_field' ) . " (
+	  `id` int(11) NOT NULL AUTO_INCREMENT,
+	  `name` varchar(64) NOT NULL DEFAULT '',
+	  `type` smallint(6) NOT NULL DEFAULT 0,
+	  `possible_values` text NOT NULL,
+	  `default_value` varchar(255) NOT NULL DEFAULT '',
+	  `valid_regexp` varchar(255) NOT NULL DEFAULT '',
+	  `access_level_r` smallint(6) NOT NULL DEFAULT 0,
+	  `access_level_rw` smallint(6) NOT NULL DEFAULT 0,
+	  `length_min` int(11) NOT NULL DEFAULT 0,
+	  `length_max` int(11) NOT NULL DEFAULT 0,
+	  `require_report` tinyint(4) NOT NULL DEFAULT 0,
+	  `require_update` tinyint(4) NOT NULL DEFAULT 0,
+	  `display_report` tinyint(4) NOT NULL DEFAULT 0,
+	  `display_update` tinyint(4) NOT NULL DEFAULT 1,
+	  `require_resolved` tinyint(4) NOT NULL DEFAULT 0,
+	  `display_resolved` tinyint(4) NOT NULL DEFAULT 0,
+	  `display_closed` tinyint(4) NOT NULL DEFAULT 0,
+	  `require_closed` tinyint(4) NOT NULL DEFAULT 0,
+	  `filter_by` tinyint(4) NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`id`),
+	  KEY `idx_custom_field_name` (`name`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 15: custom_field_project ───────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'custom_field_project' ) . " (
+	  `field_id` int(11) NOT NULL DEFAULT 0,
+	  `project_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `sequence` smallint(6) NOT NULL DEFAULT 0,
+	  PRIMARY KEY (`field_id`,`project_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 16: custom_field_string ────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'custom_field_string' ) . " (
+	  `field_id` int(11) NOT NULL DEFAULT 0,
+	  `bug_id` int(11) NOT NULL DEFAULT 0,
+	  `value` varchar(255) NOT NULL DEFAULT '',
+	  `text` longtext DEFAULT NULL,
+	  PRIMARY KEY (`field_id`,`bug_id`),
+	  KEY `idx_custom_field_bug` (`bug_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 17: documents ──────────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'documents' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `title` varchar(255) NOT NULL,
+	  `author` varchar(255) NOT NULL DEFAULT '',
+	  `publisher` varchar(255) NOT NULL DEFAULT '',
+	  `reference` varchar(64) NOT NULL DEFAULT '',
+	  `number` varchar(64) NOT NULL DEFAULT '',
+	  `edition` varchar(64) NOT NULL DEFAULT '',
+	  `revision` varchar(64) NOT NULL DEFAULT '',
+	  `link_url` varchar(2048) NOT NULL DEFAULT '',
+	  `classification` varchar(64) NOT NULL DEFAULT '',
+	  `revision_date` int(10) unsigned NOT NULL DEFAULT 1,
+	  `release_date` int(10) unsigned NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 18: dwg ────────────────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'dwg' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `project_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `creator_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `handler_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `duplicate_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `category_id` int(10) unsigned NOT NULL DEFAULT 1,
+	  `document_id` int(10) unsigned NOT NULL DEFAULT 1,
+	  `enabled` tinyint(4) NOT NULL DEFAULT 1,
+	  `status` smallint(6) NOT NULL DEFAULT 110,
+	  `priority` smallint(6) NOT NULL DEFAULT 30,
+	  `view_state` smallint(6) NOT NULL DEFAULT 10,
+	  `version` varchar(64) NOT NULL DEFAULT '',
+	  `discipline` varchar(64) NOT NULL DEFAULT '',
+	  `classification` varchar(64) NOT NULL DEFAULT '',
+	  `summary` varchar(255) NOT NULL DEFAULT '',
+	  `link_url` varchar(2048) NOT NULL DEFAULT '',
+	  `date_submitted` int(10) unsigned NOT NULL DEFAULT 1,
+	  `last_updated` int(10) unsigned NOT NULL DEFAULT 1,
+	  `due_date` int(10) unsigned NOT NULL DEFAULT 1,
+	  `dwg_text_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `sticky` tinyint(4) NOT NULL DEFAULT 0,
+	  PRIMARY KEY (`id`),
+	  KEY `idx_dwg_status` (`status`),
+	  KEY `idx_dwg_project` (`project_id`),
+	  KEY `idx_dwg_document_id` (`document_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 19: dwg_file ───────────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'dwg_file' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `dwg_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `dwgnote_id` int(10) unsigned DEFAULT 0,
+	  `title` varchar(250) NOT NULL DEFAULT '',
+	  `description` varchar(250) NOT NULL DEFAULT '',
+	  `diskfile` varchar(250) NOT NULL DEFAULT '',
+	  `filename` varchar(250) NOT NULL DEFAULT '',
+	  `folder` varchar(250) NOT NULL DEFAULT '',
+	  `filesize` int(11) NOT NULL DEFAULT 0,
+	  `file_type` varchar(250) NOT NULL DEFAULT '',
+	  `date_added` int(10) unsigned NOT NULL DEFAULT 1,
+	  `content` longblob DEFAULT NULL,
+	  PRIMARY KEY (`id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 20: dwg_filters ────────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'dwg_filters' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `user_id` int(11) NOT NULL DEFAULT 0,
+	  `project_id` int(11) NOT NULL DEFAULT 0,
+	  `is_public` tinyint(4) DEFAULT NULL,
+	  `name` varchar(64) NOT NULL DEFAULT '',
+	  `filter_string` longtext NOT NULL,
+	  PRIMARY KEY (`id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 21: dwg_history ────────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'dwg_history' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `dwg_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `field_name` varchar(64) NOT NULL,
+	  `old_value` varchar(255) NOT NULL,
+	  `new_value` varchar(255) NOT NULL,
+	  `type` smallint(6) NOT NULL DEFAULT 0,
+	  `date_modified` int(10) unsigned NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`id`),
+	  KEY `idx_dwg_history_dwg_id` (`dwg_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 22: dwg_monitor ────────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'dwg_monitor' ) . " (
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `dwg_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  PRIMARY KEY (`user_id`,`dwg_id`),
+	  KEY `idx_dwg_id` (`dwg_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 23: dwg_primary_file ───────────────────────────────────────────────
+# One canonical primary document file per dwg record.
+# git_sha holds the commit SHA when using the GIT storage backend.
+# git_branch records the branch at time of upload.
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'dwg_primary_file' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `dwg_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `filename` varchar(250) NOT NULL DEFAULT '',
+	  `filesize` int(11) NOT NULL DEFAULT 0,
+	  `file_type` varchar(250) NOT NULL DEFAULT '',
+	  `git_sha` varchar(250) NOT NULL DEFAULT '',
+	  `folder` varchar(250) NOT NULL DEFAULT '',
+	  `content` longblob DEFAULT NULL,
+	  `date_added` int(10) unsigned NOT NULL DEFAULT 1,
+	  `description` varchar(255) NOT NULL DEFAULT '',
+	  `git_branch` varchar(64) NOT NULL DEFAULT 'main',
+	  PRIMARY KEY (`id`),
+	  UNIQUE KEY `idx_dwg_primary_file_dwg_id` (`dwg_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 24: dwg_relationship ───────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'dwg_relationship' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `source_dwg_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `destination_dwg_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `relationship_type` smallint(6) NOT NULL DEFAULT 0,
+	  PRIMARY KEY (`id`),
+	  KEY `idx_dwg_relationship_source` (`source_dwg_id`),
+	  KEY `idx_dwg_relationship_destination` (`destination_dwg_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 25: dwg_revision ───────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'dwg_revision' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `dwg_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `dwgnote_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `timestamp` int(10) unsigned NOT NULL DEFAULT 1,
+	  `type` int(10) unsigned NOT NULL,
+	  `value` longtext NOT NULL,
+	  PRIMARY KEY (`id`),
+	  KEY `idx_dwg_rev_id_time` (`dwg_id`,`timestamp`),
+	  KEY `idx_dwg_rev_type` (`type`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 26: dwg_tag ────────────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'dwg_tag' ) . " (
+	  `dwg_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `tag_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `date_attached` int(10) unsigned NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`dwg_id`,`tag_id`),
+	  KEY `idx_dwg_tag_tag_id` (`tag_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 27: dwg_text ───────────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'dwg_text' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `description` longtext NOT NULL,
+	  `steps_to_reproduce` longtext NOT NULL,
+	  `additional_information` longtext NOT NULL,
+	  PRIMARY KEY (`id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 28: dwgnote ────────────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'dwgnote' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `dwg_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `creator_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `dwgnote_text_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `view_state` smallint(6) NOT NULL DEFAULT 10,
+	  `date_submitted` int(10) unsigned NOT NULL DEFAULT 1,
+	  `last_modified` int(10) unsigned NOT NULL DEFAULT 1,
+	  `note_type` int(11) DEFAULT 0,
+	  `time_tracking` int(10) unsigned NOT NULL DEFAULT 0,
+	  `note_attr` varchar(250) DEFAULT '',
+	  PRIMARY KEY (`id`),
+	  KEY `idx_dwg` (`dwg_id`),
+	  KEY `idx_dwg_last_mod` (`last_modified`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 29: dwgnote_text ───────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'dwgnote_text' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `note` longtext NOT NULL,
+	  PRIMARY KEY (`id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 30: email ──────────────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'email' ) . " (
+	  `email_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `email` varchar(191) NOT NULL DEFAULT '',
+	  `subject` varchar(250) NOT NULL DEFAULT '',
+	  `metadata` longtext NOT NULL,
+	  `body` longtext NOT NULL,
+	  `submitted` int(10) unsigned NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`email_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 31: filters ────────────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'filters' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `user_id` int(11) NOT NULL DEFAULT 0,
+	  `project_id` int(11) NOT NULL DEFAULT 0,
+	  `is_public` tinyint(4) DEFAULT NULL,
+	  `name` varchar(64) NOT NULL DEFAULT '',
+	  `filter_string` longtext NOT NULL,
+	  PRIMARY KEY (`id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 32: license ────────────────────────────────────────────────────────
+# Doctis-specific: a skill, clearance, or qualification held by a user.
+# Controls document access. Unrelated to software licensing.
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'license' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `project_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `enabled` tinyint(4) NOT NULL DEFAULT 1,
+	  `name` varchar(128) NOT NULL DEFAULT '',
+	  `match_str` varchar(128) NOT NULL DEFAULT '',
+	  `type` varchar(128) NOT NULL DEFAULT '',
+	  `status` smallint(6) NOT NULL DEFAULT 10,
+	  `view_state` smallint(6) NOT NULL DEFAULT 10,
+	  `access_min` smallint(6) NOT NULL DEFAULT 10,
+	  `description` longtext NOT NULL,
+	  PRIMARY KEY (`id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 33: license_dwg_list ───────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'license_dwg_list' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `dwg_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `license_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `status` smallint(6) NOT NULL DEFAULT 10,
+	  `date_added` int(10) unsigned NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 34: license_user_list ──────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'license_user_list' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `license_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `status` smallint(6) NOT NULL DEFAULT 10,
+	  `date_added` int(10) unsigned NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 35: news ───────────────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'news' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `project_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `poster_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `view_state` smallint(6) NOT NULL DEFAULT 10,
+	  `announcement` tinyint(4) NOT NULL DEFAULT 0,
+	  `headline` varchar(64) NOT NULL DEFAULT '',
+	  `body` longtext NOT NULL,
+	  `last_modified` int(10) unsigned NOT NULL DEFAULT 1,
+	  `date_posted` int(10) unsigned NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 36: plugin ─────────────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'plugin' ) . " (
+	  `basename` varchar(40) NOT NULL,
+	  `enabled` tinyint(4) NOT NULL DEFAULT 0,
+	  `protected` tinyint(4) NOT NULL DEFAULT 0,
+	  `priority` int(10) unsigned NOT NULL DEFAULT 3,
+	  PRIMARY KEY (`basename`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 37: project ────────────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'project' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `name` varchar(128) NOT NULL DEFAULT '',
+	  `status` smallint(6) NOT NULL DEFAULT 10,
+	  `enabled` tinyint(4) NOT NULL DEFAULT 1,
+	  `view_state` smallint(6) NOT NULL DEFAULT 10,
+	  `access_min` smallint(6) NOT NULL DEFAULT 10,
+	  `file_path` varchar(250) NOT NULL DEFAULT '',
+	  `description` longtext NOT NULL,
+	  `category_id` int(10) unsigned NOT NULL DEFAULT 1,
+	  `inherit_global` tinyint(4) NOT NULL DEFAULT 0,
+	  `reference_url1` varchar(255) NOT NULL DEFAULT '',
+	  `reference_url2` varchar(255) NOT NULL DEFAULT '',
+	  `classification` varchar(255) NOT NULL DEFAULT '',
+	  `due_date` int(10) unsigned NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`id`),
+	  UNIQUE KEY `idx_project_name` (`name`),
+	  KEY `idx_project_view` (`view_state`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 38: project_file ───────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'project_file' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `project_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `title` varchar(250) NOT NULL DEFAULT '',
+	  `description` varchar(250) NOT NULL DEFAULT '',
+	  `diskfile` varchar(250) NOT NULL DEFAULT '',
+	  `filename` varchar(250) NOT NULL DEFAULT '',
+	  `folder` varchar(250) NOT NULL DEFAULT '',
+	  `filesize` int(11) NOT NULL DEFAULT 0,
+	  `file_type` varchar(250) NOT NULL DEFAULT '',
+	  `content` longblob DEFAULT NULL,
+	  `date_added` int(10) unsigned NOT NULL DEFAULT 1,
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  PRIMARY KEY (`id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 39: project_hierarchy ──────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'project_hierarchy' ) . " (
+	  `child_id` int(10) unsigned NOT NULL,
+	  `parent_id` int(10) unsigned NOT NULL,
+	  `inherit_parent` tinyint(4) NOT NULL DEFAULT 0,
+	  UNIQUE KEY `idx_project_hierarchy` (`child_id`,`parent_id`),
+	  KEY `idx_project_hierarchy_child_id` (`child_id`),
+	  KEY `idx_project_hierarchy_parent_id` (`parent_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 40: project_user_list ──────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'project_user_list' ) . " (
+	  `project_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `access_level` smallint(6) NOT NULL DEFAULT 10,
+	  PRIMARY KEY (`project_id`,`user_id`),
+	  KEY `idx_project_user` (`user_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 41: project_version ────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'project_version' ) . " (
+	  `id` int(11) NOT NULL AUTO_INCREMENT,
+	  `project_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `version` varchar(64) NOT NULL DEFAULT '',
+	  `description` longtext NOT NULL,
+	  `released` tinyint(4) NOT NULL DEFAULT 1,
+	  `obsolete` tinyint(4) NOT NULL DEFAULT 0,
+	  `date_order` int(10) unsigned NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`id`),
+	  UNIQUE KEY `idx_project_version` (`project_id`,`version`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 42: sponsorship ────────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'sponsorship' ) . " (
+	  `id` int(11) NOT NULL AUTO_INCREMENT,
+	  `bug_id` int(11) NOT NULL DEFAULT 0,
+	  `user_id` int(11) NOT NULL DEFAULT 0,
+	  `amount` int(11) NOT NULL DEFAULT 0,
+	  `logo` varchar(128) NOT NULL DEFAULT '',
+	  `url` varchar(128) NOT NULL DEFAULT '',
+	  `paid` tinyint(4) NOT NULL DEFAULT 0,
+	  `date_submitted` int(10) unsigned NOT NULL DEFAULT 1,
+	  `last_updated` int(10) unsigned NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`id`),
+	  KEY `idx_sponsorship_bug_id` (`bug_id`),
+	  KEY `idx_sponsorship_user_id` (`user_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 43: tag ────────────────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'tag' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `name` varchar(100) NOT NULL DEFAULT '',
+	  `description` longtext NOT NULL,
+	  `date_created` int(10) unsigned NOT NULL DEFAULT 1,
+	  `date_updated` int(10) unsigned NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`id`,`name`),
+	  KEY `idx_tag_name` (`name`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 44: tokens ─────────────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'tokens' ) . " (
+	  `id` int(11) NOT NULL AUTO_INCREMENT,
+	  `owner` int(11) NOT NULL,
+	  `type` int(11) NOT NULL,
+	  `value` longtext NOT NULL,
+	  `timestamp` int(10) unsigned NOT NULL DEFAULT 1,
+	  `expiry` int(10) unsigned NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`id`),
+	  KEY `idx_typeowner` (`type`,`owner`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 45: user ───────────────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'user' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `username` varchar(191) NOT NULL DEFAULT '',
+	  `realname` varchar(191) NOT NULL DEFAULT '',
+	  `email` varchar(191) NOT NULL DEFAULT '',
+	  `password` varchar(64) NOT NULL DEFAULT '',
+	  `enabled` tinyint(4) NOT NULL DEFAULT 1,
+	  `protected` tinyint(4) NOT NULL DEFAULT 0,
+	  `access_level` smallint(6) NOT NULL DEFAULT 10,
+	  `login_count` int(11) NOT NULL DEFAULT 0,
+	  `lost_password_request_count` smallint(6) NOT NULL DEFAULT 0,
+	  `failed_login_count` smallint(6) NOT NULL DEFAULT 0,
+	  `cookie_string` varchar(64) NOT NULL DEFAULT '',
+	  `last_visit` int(10) unsigned NOT NULL DEFAULT 1,
+	  `date_created` int(10) unsigned NOT NULL DEFAULT 1,
+	  `position_title` varchar(128) NOT NULL DEFAULT '',
+	  `company` varchar(128) NOT NULL DEFAULT '',
+	  `phone` varchar(32) NOT NULL DEFAULT '',
+	  `department` varchar(64) NOT NULL DEFAULT '',
+	  `meeting_invite` tinyint(4) NOT NULL DEFAULT 0,
+	  `email_secondary` varchar(191) NOT NULL DEFAULT '',
+	  PRIMARY KEY (`id`),
+	  UNIQUE KEY `idx_user_cookie_string` (`cookie_string`),
+	  UNIQUE KEY `idx_user_username` (`username`),
+	  KEY `idx_enable` (`enabled`),
+	  KEY `idx_access` (`access_level`),
+	  KEY `idx_email` (`email`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 46: user_pref ──────────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'user_pref' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `project_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `default_profile` int(10) unsigned NOT NULL DEFAULT 0,
+	  `default_project` int(10) unsigned NOT NULL DEFAULT 0,
+	  `refresh_delay` int(11) NOT NULL DEFAULT 0,
+	  `redirect_delay` int(11) NOT NULL DEFAULT 0,
+	  `bugnote_order` varchar(4) NOT NULL DEFAULT 'ASC',
+	  `email_on_new` tinyint(4) NOT NULL DEFAULT 0,
+	  `email_on_assigned` tinyint(4) NOT NULL DEFAULT 0,
+	  `email_on_feedback` tinyint(4) NOT NULL DEFAULT 0,
+	  `email_on_resolved` tinyint(4) NOT NULL DEFAULT 0,
+	  `email_on_closed` tinyint(4) NOT NULL DEFAULT 0,
+	  `email_on_reopened` tinyint(4) NOT NULL DEFAULT 0,
+	  `email_on_bugnote` tinyint(4) NOT NULL DEFAULT 0,
+	  `email_on_status` tinyint(4) NOT NULL DEFAULT 0,
+	  `email_on_priority` tinyint(4) NOT NULL DEFAULT 0,
+	  `email_on_priority_min_severity` smallint(6) NOT NULL DEFAULT 10,
+	  `email_on_status_min_severity` smallint(6) NOT NULL DEFAULT 10,
+	  `email_on_bugnote_min_severity` smallint(6) NOT NULL DEFAULT 10,
+	  `email_on_reopened_min_severity` smallint(6) NOT NULL DEFAULT 10,
+	  `email_on_closed_min_severity` smallint(6) NOT NULL DEFAULT 10,
+	  `email_on_resolved_min_severity` smallint(6) NOT NULL DEFAULT 10,
+	  `email_on_feedback_min_severity` smallint(6) NOT NULL DEFAULT 10,
+	  `email_on_assigned_min_severity` smallint(6) NOT NULL DEFAULT 10,
+	  `email_on_new_min_severity` smallint(6) NOT NULL DEFAULT 10,
+	  `email_bugnote_limit` smallint(6) NOT NULL DEFAULT 0,
+	  `language` varchar(32) NOT NULL DEFAULT 'english',
+	  `timezone` varchar(32) NOT NULL DEFAULT '',
+	  `dwgnote_order` varchar(4) NOT NULL DEFAULT 'ASC',
+	  `email_dwgnote_limit` smallint(6) NOT NULL DEFAULT 0,
+	  PRIMARY KEY (`id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 47: user_print_pref ────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'user_print_pref' ) . " (
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `print_pref` varchar(64) NOT NULL,
+	  PRIMARY KEY (`user_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 48: user_profile ───────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'user_profile' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `platform` varchar(32) NOT NULL DEFAULT '',
+	  `os` varchar(32) NOT NULL DEFAULT '',
+	  `os_build` varchar(32) NOT NULL DEFAULT '',
+	  `description` longtext NOT NULL,
+	  PRIMARY KEY (`id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── End of schema definition ─────────────────────────────────────────────────
+# $t_idx = 49 → database_version = 48 on a fresh install.
+#
+# To add a new table: append a new step here and rebuild the database.
+# Do NOT insert steps between existing entries — always append.
+# Do NOT add incremental ALTER TABLE steps — modify the base CREATE TABLE.
+
+unset( $t_idx );

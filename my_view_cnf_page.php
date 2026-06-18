@@ -45,6 +45,7 @@ require_api( 'current_user_api.php' );
 require_api( 'event_api.php' );
 require_api( 'filter_api.php' );
 require_api( 'filter_dwg_api.php' );
+require_api( 'form_api.php' );
 require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'html_api.php' );
@@ -87,6 +88,10 @@ layout_page_header( lang_get( 'my_view_link' ) );
 layout_page_begin( 'my_view_bug_page.php', true );
 
 print_my_view_menu( 'my_view_cnf_page.php' );
+
+# ── My Profile — load current user values ────────────────────────────────────
+$t_profile_row = user_get_row( $t_current_user_id );
+$t_profile_updated = gpc_get_bool( 'updated', false );
 
 
 ?>
@@ -307,6 +312,158 @@ foreach( $t_boxes as $t_box_title => $t_box_display ) {
 <?php } ?>
  */ ?>
 
+
+<?php
+# ── My Profile widget ────────────────────────────────────────────────────────
+$t_meeting_invite_options = [
+	0 => lang_get( 'meeting_invite_never' ),
+	1 => lang_get( 'meeting_invite_dept' ),
+	2 => lang_get( 'meeting_invite_all' ),
+];
+?>
+<div class="col-md-12 col-xs-12">
+	<div class="space-10"></div>
+	<div id="my-profile-div" class="form-container">
+	<form id="my-profile-form" method="post" action="my_view_cnf_update.php">
+	<?php echo form_security_field( 'my_view_cnf_update' ) ?>
+
+	<div class="widget-box widget-color-blue2">
+	<div class="widget-header widget-header-small">
+		<h4 class="widget-title lighter">
+			<?php print_icon( 'fa-user', 'ace-icon' ); ?>
+			<?php echo lang_get( 'my_profile_section' ) ?>
+		</h4>
+	</div>
+	<div class="widget-body">
+	<div class="widget-main no-padding">
+	<div class="table-responsive">
+	<table class="table table-bordered table-striped" style="width:100%; table-layout:fixed;">
+	<colgroup>
+		<col style="width:180px;" />
+		<col />
+	</colgroup>
+	<tbody>
+
+<?php if( $t_profile_updated ): ?>
+	<tr>
+		<td colspan="2">
+			<div class="alert alert-success" style="margin:6px 0; padding:6px 12px; font-size:12px;">
+				<?php print_icon( 'fa-check', 'ace-icon' ); ?>
+				<?php echo lang_get( 'my_profile_updated' ) ?>
+			</div>
+		</td>
+	</tr>
+<?php endif; ?>
+
+		<tr>
+			<td class="category" style="vertical-align:middle; white-space:nowrap;"><?php echo lang_get( 'realname' ) ?></td>
+			<td>
+				<input class="form-control" type="text"
+					name="realname"
+					id="realname"
+					maxlength="<?php echo DB_FIELD_SIZE_REALNAME ?>"
+					value="<?php echo string_attribute( $t_profile_row['realname'] ?? '' ) ?>"
+				/>
+			</td>
+		</tr>
+		<tr>
+			<td class="category" style="vertical-align:middle; white-space:nowrap;"><?php echo lang_get( 'position_title' ) ?></td>
+			<td>
+				<input class="form-control" type="text"
+					name="position_title"
+					id="position_title"
+					maxlength="<?php echo DB_FIELD_SIZE_POSITION_TITLE ?>"
+					value="<?php echo string_attribute( $t_profile_row['position_title'] ?? '' ) ?>"
+				/>
+			</td>
+		</tr>
+		<tr>
+			<td class="category" style="vertical-align:middle; white-space:nowrap;"><?php echo lang_get( 'company' ) ?></td>
+			<td>
+				<input class="form-control" type="text"
+					name="company"
+					id="company"
+					maxlength="<?php echo DB_FIELD_SIZE_COMPANY ?>"
+					value="<?php echo string_attribute( $t_profile_row['company'] ?? '' ) ?>"
+				/>
+			</td>
+		</tr>
+		<tr>
+			<td class="category" style="vertical-align:middle; white-space:nowrap;"><?php echo lang_get( 'department' ) ?></td>
+			<td>
+				<input class="form-control" type="text"
+					name="department"
+					id="department"
+					maxlength="<?php echo DB_FIELD_SIZE_DEPARTMENT ?>"
+					value="<?php echo string_attribute( $t_profile_row['department'] ?? '' ) ?>"
+				/>
+			</td>
+		</tr>
+		<tr>
+			<td class="category" style="vertical-align:middle; white-space:nowrap;"><?php echo lang_get( 'phone' ) ?></td>
+			<td>
+				<input class="form-control" type="tel"
+					name="phone"
+					id="phone"
+					maxlength="<?php echo DB_FIELD_SIZE_PHONE ?>"
+					value="<?php echo string_attribute( $t_profile_row['phone'] ?? '' ) ?>"
+				/>
+			</td>
+		</tr>
+		<tr>
+			<td class="category" style="vertical-align:middle; white-space:nowrap;"><?php echo lang_get( 'meeting_invite' ) ?></td>
+			<td>
+				<select class="form-control" name="meeting_invite" id="meeting_invite">
+					<?php foreach( $t_meeting_invite_options as $t_val => $t_label ): ?>
+					<option value="<?php echo $t_val ?>"
+						<?php echo ( (int)( $t_profile_row['meeting_invite'] ?? 0 ) === $t_val ) ? 'selected="selected"' : '' ?>>
+						<?php echo string_html_specialchars( $t_label ) ?>
+					</option>
+					<?php endforeach; ?>
+				</select>
+				<p class="help-block" style="font-size:11px; color:#999; margin:3px 0 0;">
+					<?php print_icon( 'fa-info-circle', 'ace-icon' ); ?>
+					Used by the AI Meeting Assistant when building candidate lists. Feature under development.
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td class="category" style="vertical-align:middle; white-space:nowrap;"><?php echo lang_get( 'email_secondary' ) ?></td>
+			<td>
+				<input class="form-control" type="email"
+					name="email_secondary"
+					id="email_secondary"
+					maxlength="191"
+					value="<?php echo string_attribute( $t_profile_row['email_secondary'] ?? '' ) ?>"
+				/>
+				<p class="help-block" style="font-size:11px; color:#999; margin:3px 0 0;">
+					<?php print_icon( 'fa-info-circle', 'ace-icon' ); ?>
+					<?php echo lang_get( 'email_secondary_hint' ) ?>
+				</p>
+			</td>
+		</tr>
+
+	</tbody>
+	</table>
+	</div>
+	</div>
+	<div class="widget-toolbox padding-8 clearfix">
+		<input type="submit"
+			class="btn btn-primary btn-white btn-round"
+			value="<?php echo lang_get( 'update_profile_button' ) ?>"
+		/>
+		<span style="font-size:11px; color:#999; margin-left:12px;">
+			<?php print_icon( 'fa-lock', 'ace-icon' ); ?>
+			To change your username, primary email, or password visit
+			<a href="account_page.php">Account Settings</a>.
+		</span>
+	</div>
+	</div>
+	</div>
+
+	</form>
+	</div>
+</div>
 
 <?php
 # License Menu Form BEGIN
