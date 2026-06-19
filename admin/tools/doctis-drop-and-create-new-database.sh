@@ -161,14 +161,34 @@ load_testing_user() {
     ${db_cmd} <<EOF
 USE ${mysqldatabase};
 $(cat <<'SQL'
-INSERT INTO `user` (`username`, `realname`, `email`, `password`, `enabled`, `protected`, `access_level`, `login_count`, `lost_password_request_count`, `failed_login_count`, `cookie_string`, `last_visit`, `date_created`) VALUES
-('user', '', 'doctis.user@gmail.com', 'd41d8cd98f00b204e9800998ecf8427e', 1, 0, 25, 3, 0, 0, '2f0adeec1f967ae6c23abf54f8e7487d6ae8ca98185bd228469f5ce4478346f9', 1757927188, 1757927188),
-('viewer', '', 'doctis.viewer@gmail.com', 'd41d8cd98f00b204e9800998ecf8427e', 1, 0, 10, 3, 0, 0, '96cf4e972760ca2b25da0883b157808e6ae8ca98185bd228469f5ce4478346f9', 1757927188, 1757927188),
-('reporter', '', 'doctis.reporter@gmail.com', 'd41d8cd98f00b204e9800998ecf8427e', 1, 0, 25, 3, 0, 0, '7be89c3bacb19567c52d56ba4d7b12726ae8ca98185bd228469f5ce4478346f9', 1757927188, 1757927188),
-('updater', '', 'doctis.updater@gmail.com', 'd41d8cd98f00b204e9800998ecf8427e', 1, 0, 40, 3, 0, 0, '63f66ba20df9c98303fc2ed9b7708fc06ae8ca98185bd228469f5ce4478346f9', 1757927188, 1757927188),
-('developer', '', 'doctis.developer@gmail.com', 'd41d8cd98f00b204e9800998ecf8427e', 1, 0, 55, 3, 0, 0, '716bd2ac4467b24752348d1772b4baee6ae8ca98185bd228469f5ce4478346f9', 1757927188, 1757927188),
-('manager', '', 'doctis.manager@gmail.com', 'd41d8cd98f00b204e9800998ecf8427e', 1, 0, 70, 3, 0, 0, '9f7dc77b274b9a7466466da2007ef1a26ae8ca98185bd228469f5ce4478346f9', 1757927188, 1757927188),
-('admin', '', 'doctis.owner@gmail.com', '5f4dcc3b5aa765d61d8327deb882cf99', 1, 0, 90, 3, 0, 0, 'f79e4810068402b52f4856cd8953f8976ae8ca98185bd228469f5ce4478346f9', 1757927188, 1757927188);
+-- Column order matches the current user table schema including all profile fields.
+-- password hash 'd41d8cd98f00b204e9800998ecf8427e' = blank password ''
+-- password hash '5f4dcc3b5aa765d61d8327deb882cf99' = 'password'
+-- access_level: 10=viewer 25=reporter 40=updater 55=developer 70=manager 90=administrator
+-- meeting_invite: 0=never 1=department only 2=all meetings
+INSERT INTO `user` (
+    `username`, `realname`, `email`, `password`,
+    `enabled`, `protected`, `access_level`,
+    `login_count`, `lost_password_request_count`, `failed_login_count`,
+    `cookie_string`, `last_visit`, `date_created`,
+    `position_title`, `company`, `phone`, `department`, `meeting_invite`, `email_secondary`
+) VALUES
+-- ── Role-named test accounts (existing) ──────────────────────────────────────
+('user',      '', 'doctis.user@gmail.com',      'd41d8cd98f00b204e9800998ecf8427e', 1, 0, 25, 3, 0, 0, '2f0adeec1f967ae6c23abf54f8e7487d6ae8ca98185bd228469f5ce4478346f9', 1757927188, 1757927188, '', '', '', '', 0, ''),
+('viewer',    '', 'doctis.viewer@gmail.com',    'd41d8cd98f00b204e9800998ecf8427e', 1, 0, 10, 3, 0, 0, '96cf4e972760ca2b25da0883b157808e6ae8ca98185bd228469f5ce4478346f9', 1757927188, 1757927188, '', '', '', '', 0, ''),
+('reporter',  '', 'doctis.reporter@gmail.com',  'd41d8cd98f00b204e9800998ecf8427e', 1, 0, 25, 3, 0, 0, '7be89c3bacb19567c52d56ba4d7b12726ae8ca98185bd228469f5ce4478346f9', 1757927188, 1757927188, '', '', '', '', 0, ''),
+('updater',   '', 'doctis.updater@gmail.com',   'd41d8cd98f00b204e9800998ecf8427e', 1, 0, 40, 3, 0, 0, '63f66ba20df9c98303fc2ed9b7708fc06ae8ca98185bd228469f5ce4478346f9', 1757927188, 1757927188, '', '', '', '', 0, ''),
+('developer', '', 'doctis.developer@gmail.com', 'd41d8cd98f00b204e9800998ecf8427e', 1, 0, 55, 3, 0, 0, '716bd2ac4467b24752348d1772b4baee6ae8ca98185bd228469f5ce4478346f9', 1757927188, 1757927188, '', '', '', '', 0, ''),
+('manager',   '', 'doctis.manager@gmail.com',   'd41d8cd98f00b204e9800998ecf8427e', 1, 0, 70, 3, 0, 0, '9f7dc77b274b9a7466466da2007ef1a26ae8ca98185bd228469f5ce4478346f9', 1757927188, 1757927188, '', '', '', '', 0, ''),
+('admin',     '', 'doctis.owner@gmail.com',     '5f4dcc3b5aa765d61d8327deb882cf99', 1, 0, 90, 3, 0, 0, 'f79e4810068402b52f4856cd8953f8976ae8ca98185bd228469f5ce4478346f9', 1757927188, 1757927188, '', '', '', '', 0, ''),
+-- ── Named example users (Lord of the Rings characters) with full profile data ─
+('frodo',   'Frodo Baggins',     'frodo@shire.example',   'd41d8cd98f00b204e9800998ecf8427e', 1, 0, 55, 0, 0, 0, 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2', 1757927188, 1757927188, 'Ring-bearer',             'The Fellowship', '+64 9 000 0001', 'Shire',           2, ''),
+('sam',     'Samwise Gamgee',    'sam@shire.example',     'd41d8cd98f00b204e9800998ecf8427e', 1, 0, 40, 0, 0, 0, 'b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3', 1757927188, 1757927188, 'Gardener',                'Bag End',        '+64 9 000 0002', 'Shire',           1, 'samwise@bagend.example'),
+('pip',     'Peregrin Took',     'pip@shire.example',     'd41d8cd98f00b204e9800998ecf8427e', 1, 0, 40, 0, 0, 0, 'c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4', 1757927188, 1757927188, 'Guard of the Citadel',   'Gondor',         '+64 9 000 0003', 'Minas Tirith',    1, ''),
+('merry',   'Meriadoc Brandybuck', 'merry@shire.example', 'd41d8cd98f00b204e9800998ecf8427e', 1, 0, 40, 0, 0, 0, 'd5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6', 1757927188, 1757927188, 'Rider of Rohan',          'The Fellowship', '+64 9 000 0007', 'Rohan',           1, ''),
+('gimli',   'Gimli son of Gloin','gimli@erebor.example',  'd41d8cd98f00b204e9800998ecf8427e', 1, 0, 55, 0, 0, 0, 'd4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5', 1757927188, 1757927188, 'Lord of Glittering Caves','The Fellowship', '+64 9 000 0004', 'Erebor',          1, ''),
+('legolas', 'Legolas Greenleaf', 'legolas@mirkwood.example','d41d8cd98f00b204e9800998ecf8427e', 1, 0, 55, 0, 0, 0, 'e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6', 1757927188, 1757927188, 'Prince of Mirkwood',     'The Fellowship', '+64 9 000 0005', 'Mirkwood',        2, ''),
+('gandalf', 'Gandalf the Grey',  'gandalf@istari.example','d41d8cd98f00b204e9800998ecf8427e', 1, 0, 70, 0, 0, 0, 'f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7', 1757927188, 1757927188, 'Wizard',                 'Order of Istari','+64 9 000 0006', 'Middle-earth',    2, '');
 SQL
 )
 EOF

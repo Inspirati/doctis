@@ -2250,3 +2250,18 @@ $s_primary_document_tag_invalid        = 'Invalid tag name. Use letters, digits,
 $s_primary_document_tag_exists         = 'A tag with that name already exists in this repository.';
 $s_primary_document_touch              = 'Touch';
 $s_primary_document_touch_confirm      = 'This will create an empty git commit on the project repository, advancing the HEAD SHA without modifying any file content. The Doctis Approved record will appear out-of-sync with git HEAD until synced. Intended for testing. Continue?';
+
+# My Profile — user-editable fields on my_view_cnf_page.php
+$s_my_profile_section              = 'My Profile';
+$s_my_profile_updated              = 'Your profile has been updated.';
+$s_position_title                  = 'Position Title';
+$s_company                         = 'Company';
+$s_phone                           = 'Phone Number';
+$s_department                      = 'Department';
+$s_meeting_invite                  = 'Meeting Invites';
+$s_meeting_invite_never            = 'Never invite to meetings';
+$s_meeting_invite_dept             = 'Invite to departmental meetings only';
+$s_meeting_invite_all              = 'Invite to all meetings';
+$s_email_secondary                 = 'Notification Email';
+$s_email_secondary_hint            = 'Optional. When set, system notifications are sent here instead of your primary email.';
+$s_update_profile_button           = 'Update Profile';
