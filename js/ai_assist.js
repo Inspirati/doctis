@@ -1,13 +1,18 @@
-/* ── AI Assistant — Help and Meeting tabs ────────────────────────────────── *
- * External script loaded by ai_assist_page.php.                              *
- * Kept external so MantisBT's script-src 'self' CSP is satisfied.           *
+/* ── AI Assistant — shared core ───────────────────────────────────────────── *
+ * External script loaded by ai_assist_page.php.                               *
+ * Kept external so MantisBT's script-src 'self' CSP is satisfied.            *
+ *                                                                              *
+ * Exports window.AiAssist = { createChatSession } for use by the mode-        *
+ * specific scripts that are loaded immediately after this one:                 *
+ *   js/ai_assist_help.js    — Help tab instance                                *
+ *   js/ai_assist_meeting.js — Meeting tab instance                             *
  * ─────────────────────────────────────────────────────────────────────────── */
 (function() {
 	'use strict';
 
 	/* ── Markdown renderer ─────────────────────────────────────────────────── *
-	 * Handles: fenced code, inline code, bold+italic, unordered lists,        *
-	 * ordered lists, horizontal rules, and line breaks.                        *
+	 * Handles: fenced code, inline code, bold+italic, unordered lists,         *
+	 * ordered lists, horizontal rules, and line breaks.                         *
 	 * ─────────────────────────────────────────────────────────────────────────*/
 	function renderMarkdown(text) {
 		/* Fenced code blocks — must come before inline-code pass */
@@ -47,23 +52,23 @@
 	}
 
 	/* ── Chat session factory ──────────────────────────────────────────────── *
-	 * Creates an independent chat session bound to a specific set of DOM       *
-	 * elements.  Used for both the Help tab and the Meeting tab.               *
-	 *                                                                           *
-	 * cfg fields:                                                               *
-	 *   mode            string   'help' | 'meeting' | 'sop' | 'other'          *
-	 *   systemPrompt    string   client-side system prompt ('' = server builds) *
-	 *   messages        Element  scroll container (#ai-*-messages)              *
-	 *   input           Element  <textarea>                                     *
-	 *   sendBtn         Element  Send <button>                                  *
-	 *   stopBtn         Element  Stop <button>                                  *
-	 *   clearBtn        Element  Clear <button>                                 *
-	 *   statusTxt       Element  status text <span>                             *
-	 *   charCount       Element  char count <span>                              *
-	 *   tokenTxt        Element  token count <span>                             *
-	 *   welcomeId       string   ID of the initial welcome element              *
-	 *   compactWelcome  string   innerHTML for the compact post-clear welcome   *
-	 *   onSavedDocument function|null  callback(data) when server saves a doc   *
+	 * Creates an independent chat session bound to a specific set of DOM        *
+	 * elements.  Used by ai_assist_help.js and ai_assist_meeting.js.            *
+	 *                                                                            *
+	 * cfg fields:                                                                *
+	 *   mode            string   'help' | 'meeting' | 'sop' | 'other'           *
+	 *   systemPrompt    string   always '' — both modes build prompts server-side*
+	 *   messages        Element  scroll container (#ai-*-messages)               *
+	 *   input           Element  <textarea>                                      *
+	 *   sendBtn         Element  Send <button>                                   *
+	 *   stopBtn         Element  Stop <button>                                   *
+	 *   clearBtn        Element  Clear <button>                                  *
+	 *   statusTxt       Element  status text <span>                              *
+	 *   charCount       Element  char count <span>                               *
+	 *   tokenTxt        Element  token count <span>                              *
+	 *   welcomeId       string   ID of the initial welcome element               *
+	 *   compactWelcome  string   innerHTML for the compact post-clear welcome    *
+	 *   onSavedDocument function|null  callback(data) when server saves a doc    *
 	 * ─────────────────────────────────────────────────────────────────────────*/
 	function createChatSession(cfg) {
 		var mode           = cfg.mode;
@@ -286,7 +291,6 @@
 			var payload = JSON.stringify({
 				action : 'chat',
 				mode   : mode,
-				system : systemPrompt,   // empty for meeting — server builds it
 				history: chatHistory
 			});
 
@@ -432,85 +436,7 @@
 
 
 	/* ═══════════════════════════════════════════════════════════════════════ *
-	 * Help tab instance                                                       *
-	 * ═══════════════════════════════════════════════════════════════════════ */
-	var $helpMessages = document.getElementById('ai-chat-messages');
-	if( $helpMessages ) {
-		/* Context injected by ai_assist_page.php via data attributes */
-		var ctxProject  = $helpMessages.dataset.project  || '';
-		var ctxDocCount = $helpMessages.dataset.docCount || '';
-
-		var HELP_SYSTEM_PROMPT =
-			'You are the Doctis AI Assistant, running inside the Doctis document ' +
-			'issue-tracking system. Doctis is a PHP/MariaDB web application built ' +
-			'on MantisBT that tracks controlled documents and the review issues ' +
-			'raised against them during formal document review cycles.\n\n' +
-			'Your role in this session is to help users with:\n' +
-			'- Using Doctis features: creating documents, raising issues, filtering, ' +
-			'  the review workflow, uploading primary document files, managing revisions\n' +
-			'- Understanding document statuses (pending \u2192 received \u2192 triage \u2192 JoS \u2192 ' +
-			'  assigned to \u2192 review \u2192 rework \u2192 independent review \u2192 accepted \u2192 ' +
-			'  incorporated \u2192 archived)\n' +
-			'- QMS document control concepts: what a controlled document is, why ' +
-			'  revision tracking matters, ISO 9001 Clause 7.5 requirements\n' +
-			'- Finding the right Doctis page or function for a given task\n' +
-			'- Understanding the difference between a Doctis Document and an Issue\n\n' +
-			'Be concise and practical. Refer to Doctis page names where helpful ' +
-			'(e.g. dwg_create_page.php, dwg_view.php, view_dwg_page.php). ' +
-			'Do not invent features that do not exist. If you are unsure of a ' +
-			'specific Doctis implementation detail, say so.' +
-			( ctxProject
-				? '\n\nThe user is currently working in the Doctis project \u201c' + ctxProject + '\u201d' +
-				  ( ctxDocCount ? ' which contains ' + ctxDocCount + ' document(s)' : '' ) + '.'
-				: '' );
-
-		createChatSession({
-			mode          : 'help',
-			systemPrompt  : HELP_SYSTEM_PROMPT,
-			messages      : $helpMessages,
-			input         : document.getElementById('ai-chat-input'),
-			sendBtn       : document.getElementById('ai-send-btn'),
-			stopBtn       : document.getElementById('ai-stop-btn'),
-			clearBtn      : document.getElementById('ai-clear-btn'),
-			statusTxt     : document.getElementById('ai-status-text'),
-			charCount     : document.getElementById('ai-char-count'),
-			tokenTxt      : document.getElementById('ai-token-count'),
-			welcomeId     : 'ai-welcome-msg',
-			compactWelcome:
-				'<div class="ai-msg-avatar"><i class="ace-icon fa fa-comments-o"></i></div>' +
-				'<div class="ai-msg-bubble">Hello! How can I help you with Doctis today?</div>',
-		});
-
-		document.getElementById('ai-chat-input').focus();
-	}
-
-
-	/* ═══════════════════════════════════════════════════════════════════════ *
-	 * Meeting tab instance                                                    *
-	 * ═══════════════════════════════════════════════════════════════════════ */
-	var $meetingMessages = document.getElementById('ai-meeting-messages');
-	if( $meetingMessages ) {
-		createChatSession({
-			mode          : 'meeting',
-			systemPrompt  : '',   // empty — server builds the meeting system prompt
-			messages      : $meetingMessages,
-			input         : document.getElementById('ai-meeting-input'),
-			sendBtn       : document.getElementById('ai-meeting-send-btn'),
-			stopBtn       : document.getElementById('ai-meeting-stop-btn'),
-			clearBtn      : document.getElementById('ai-meeting-clear-btn'),
-			statusTxt     : document.getElementById('ai-meeting-status-text'),
-			charCount     : document.getElementById('ai-meeting-char-count'),
-			tokenTxt      : document.getElementById('ai-meeting-token-count'),
-			welcomeId     : 'ai-meeting-welcome-msg',
-			compactWelcome:
-				'<div class="ai-msg-avatar"><i class="ace-icon fa fa-calendar-o"></i></div>' +
-				'<div class="ai-msg-bubble">Hello! Type <em>agenda</em> or <em>minutes</em> to start a new meeting record.</div>',
-		});
-	}
-
-
-	/* ═══════════════════════════════════════════════════════════════════════ *
-	 * Tab management                                                          *
+	 * Tab management                                                           *
 	 * ═══════════════════════════════════════════════════════════════════════ */
 
 	/* Restore active tab from URL hash on load */
@@ -529,5 +455,13 @@
 			if( href ) history.replaceState(null, null, href);
 		});
 	});
+
+
+	/* ═══════════════════════════════════════════════════════════════════════ *
+	 * Public API — consumed by ai_assist_help.js and ai_assist_meeting.js    *
+	 * ═══════════════════════════════════════════════════════════════════════ */
+	window.AiAssist = {
+		createChatSession: createChatSession
+	};
 
 })();
