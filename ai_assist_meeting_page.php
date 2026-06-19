@@ -58,12 +58,13 @@
 					</div>
 					<div class="ai-msg-bubble">
 						Hello<?php if( !is_blank( $t_user_name ) ) echo ', ' . string_display_line( $t_user_name ); ?>!
-						I&rsquo;m the Doctis Meeting Assistant. I can help you produce a QMS-compliant meeting record:
-						<ul style="margin: 6px 0 0 16px; padding: 0;">
-							<li>Set up an <strong>agenda</strong> before a meeting</li>
-							<li>Complete the <strong>minutes</strong> after a meeting</li>
-						</ul>
-						Type <em>agenda</em> or <em>minutes</em> to get started.
+						I&rsquo;m the Doctis Meeting Assistant. Tell me about the meeting in one sentence and I&rsquo;ll draft the agenda.
+						<br><br>
+						<span style="color:#666;font-size:12px;">
+							<strong>Example:</strong> <em>&ldquo;Agenda for Phil, Sanjay and Sudheer on 20 June at 11am to discuss Doctis development progress, less than one hour.&rdquo;</em>
+						</span>
+						<br><br>
+						Or type <em>minutes</em> to complete the record after a meeting.
 					</div>
 				</div>
 			</div><!-- /#ai-meeting-messages -->

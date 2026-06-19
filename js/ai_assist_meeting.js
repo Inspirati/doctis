@@ -25,7 +25,7 @@
 		welcomeId     : 'ai-meeting-welcome-msg',
 		compactWelcome:
 			'<div class="ai-msg-avatar"><i class="ace-icon fa fa-calendar-o"></i></div>' +
-			'<div class="ai-msg-bubble">Hello! Type <em>agenda</em> or <em>minutes</em> to start a new meeting record.</div>',
+			'<div class="ai-msg-bubble">Tell me about the meeting in one sentence and I\'ll draft the agenda. Or type <em>minutes</em> to complete an existing record.</div>',
 	});
 
 })();

@@ -2,11 +2,13 @@
 # Doctis — AI Assistant Meeting mode functions
 #
 # Contains all server-side logic specific to Meeting mode:
-#   ai_assist_meeting_system_prompt() — builds the meeting session system prompt
-#   ai_assist_process_meeting_document() — extracts and saves <<<MEETING_DOCUMENT>>> blocks
-#   ai_assist_git() — runs a git command inside the HCRQMS repository
-#   ai_assist_git_commit_meeting() — stages and commits a meeting record file
-#   ai_assist_register_meeting_doctis() — registers the committed record in Doctis
+#   ai_assist_get_meeting_candidates() — query user table for potential invitees
+#   ai_assist_meeting_system_prompt()  — build the meeting session system prompt
+#   ai_assist_process_meeting_document() — extract, save, email <<<MEETING_DOCUMENT>>> blocks
+#   ai_assist_send_agenda_emails()     — email agenda to matched invitees
+#   ai_assist_git()                    — run a git command in the HCRQMS repo
+#   ai_assist_git_commit_meeting()     — stage and commit a meeting record file
+#   ai_assist_register_meeting_doctis() — register committed record in Doctis
 #
 # Required by ai_assist_api.php via require_once.
 #
@@ -20,281 +22,222 @@ require_api( 'user_api.php' );
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# Candidate invitees
+# ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Query the user table for potential meeting invitees (meeting_invite != 0).
+ * Returns an array of rows: id, username, realname, position_title,
+ * company, department, email, email_secondary, meeting_invite.
+ *
+ * @return array
+ */
+function ai_assist_get_meeting_candidates(): array {
+	$t_result = db_query(
+		'SELECT id, username, realname, position_title, company, department,' .
+		'       email, email_secondary, meeting_invite' .
+		' FROM {user}' .
+		' WHERE meeting_invite != 0 AND enabled = 1' .
+		' ORDER BY realname, username'
+	);
+
+	$t_candidates = [];
+	while( $t_row = db_fetch_array( $t_result ) ) {
+		$t_candidates[] = $t_row;
+	}
+	return $t_candidates;
+}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # System prompt
 # ═══════════════════════════════════════════════════════════════════════════════
 
 /**
  * Build the server-side system prompt for Meeting mode.
  *
- * Includes the full two-phase session flow (ENG-TASK-002 §4.4), the
- * HCRQMS meeting template structure, and department configuration.
- * The prompt is generated here so that config data never reaches the browser.
+ * Design goal: the AI should draft a complete agenda in one turn from a
+ * single natural-language opening message, then confirm and generate in
+ * one or two more turns.  Total interaction: 2-4 exchanges.
  *
- * @param int $p_user_id  Current user ID (injected for personalisation).
+ * @param int $p_user_id  Current user ID.
  * @return string
  */
 function ai_assist_meeting_system_prompt( int $p_user_id ): string {
 	$t_departments = config_get_global( 'ai_meeting_departments' );
 	$t_repo_path   = config_get_global( 'hcrqms_repo_path' );
 	$t_repo_set    = !is_blank( $t_repo_path );
+	$t_candidates  = ai_assist_get_meeting_candidates();
 
-	# Build department list for the prompt
+	# ── Department list ──────────────────────────────────────────────────────
 	$t_dept_lines = [];
 	foreach( $t_departments as $t_code => $t_dept ) {
-		$t_dept_lines[] = '  ' . $t_code . ' — ' . $t_dept['name'];
+		$t_dept_lines[] = $t_code . ' — ' . $t_dept['name'];
 	}
 	$t_dept_text = implode( "\n", $t_dept_lines );
 
-	# Read the meeting template from HCRQMS if available
+	# ── Candidate invitees table ──────────────────────────────────────────────
+	if( empty( $t_candidates ) ) {
+		$t_candidates_text = "(No users have opted in to meeting invitations yet.)";
+	} else {
+		$t_cand_lines = [];
+		foreach( $t_candidates as $t_c ) {
+			$t_notify_email = !is_blank( $t_c['email_secondary'] )
+				? $t_c['email_secondary']
+				: $t_c['email'];
+			$t_scope = $t_c['meeting_invite'] == 1 ? 'dept' : 'all';
+			$t_cand_lines[] = sprintf(
+				'id=%-3s | %-14s | %-28s | %-28s | %-18s | %-18s | %s (%s)',
+				$t_c['id'],
+				$t_c['username'],
+				is_blank( $t_c['realname'] ) ? '—' : $t_c['realname'],
+				is_blank( $t_c['position_title'] ) ? '—' : $t_c['position_title'],
+				is_blank( $t_c['department'] ) ? '—' : $t_c['department'],
+				is_blank( $t_c['company'] ) ? '—' : $t_c['company'],
+				$t_notify_email,
+				$t_scope
+			);
+		}
+		$t_candidates_text = implode( "\n", $t_cand_lines );
+	}
+
+	# ── HCRQMS file-save instruction ─────────────────────────────────────────
+	$t_file_save_instruction = $t_repo_set
+		? 'When you generate the document wrap it in the MEETING_DOCUMENT markers
+below. Doctis will save the file and email it to matched invitees automatically.'
+		: 'HCRQMS repository is not configured on this server. You can still
+produce the document in the markers; the content will be shown to the user
+but will not be saved to a file automatically.';
+
+	# ── Meeting template ──────────────────────────────────────────────────────
 	$t_template_text = '';
 	if( $t_repo_set ) {
 		$t_tmpl_path = $t_repo_path . '/system/templates/Meeting-Agenda-and-Minutes.md';
 		if( is_readable( $t_tmpl_path ) ) {
 			$t_raw = file_get_contents( $t_tmpl_path );
-			# Strip the "How to Use" preamble (everything up to and including the
-			# first "delete everything above this line" note)
 			$t_cut = strpos( $t_raw, '<!-- markdownlint-disable MD025 -->' );
 			$t_template_text = $t_cut !== false ? trim( substr( $t_raw, $t_cut ) ) : $t_raw;
 		}
 	}
 
-	$t_file_save_instruction = $t_repo_set
-		? 'When you produce a complete meeting document (agenda or minutes), wrap it
-in the special markers described in the DOCUMENT GENERATION section below.
-Doctis will detect these markers, save the file to the HCRQMS repository
-automatically, and commit it to git where required.'
-		: 'Note: HCRQMS repository integration is not configured on this server.
-You can still guide the user through producing meeting record content and
-present the finished document in your reply, but Doctis will not save it
-to a file automatically. Advise the user to copy the document manually.';
+	$t_template_section = !is_blank( $t_template_text )
+		? "## MEETING TEMPLATE (TMPL-SYS-001)\n\n" . $t_template_text
+		: "## MEETING TEMPLATE\n\n" .
+		  "(Template not available. Follow standard HC-Robotics format: YAML frontmatter, " .
+		  "then sections: Invitees, Pre-Reading, Agenda, Attendees, Minutes, Decisions, " .
+		  "Actions, Next Meeting, Distribution, Approval.)";
 
+	# ── Assemble prompt ───────────────────────────────────────────────────────
 	$t_prompt = <<<PROMPT
-You are the HC-Robotics Meeting Assistant embedded in Doctis, the HC-Robotics
-document management system. Your role is to help users produce properly structured
-QMS meeting records conforming to the HC-Robotics meeting template (TMPL-SYS-001).
-
-You are not a general assistant in this session. Do not answer unrelated questions,
-offer opinions on meeting content, or perform any action outside the scope of
-producing the meeting record. If asked to do something outside this scope,
-respond: "I'm set up specifically to help with meeting records. Shall we continue?"
+You are the HC-Robotics Meeting Assistant embedded in Doctis. Your job is to
+produce QMS-compliant meeting agendas and minutes records with minimal friction.
 
 {$t_file_save_instruction}
 
 ---
 
-## Persona and Tone
+## CORE PRINCIPLE: INFER, DON'T ASK
 
-Be brief, warm, and efficient. Ask one question at a time. Confirm answers before
-moving on if there is any ambiguity. Do not use jargon: no mention of YAML,
-Markdown, Git, doc_id, or frontmatter — just ask for the information you need in
-plain English.
-
----
-
-## Session Flow
-
-Begin every session by asking:
-
-> "Welcome. I can help you with one of two things:
->
-> 1. Set up an **agenda** for an upcoming meeting — I'll ask a few questions
->    and produce a document you can send to your invitees.
->
-> 2. Complete the **minutes** for a meeting that has already happened —
->    I'll ask what was discussed, decided, and assigned, and produce the formal record.
->
-> Which would you like to do?"
-
-Then proceed to the appropriate phase sequence below.
+Extract everything possible from what the user provides.
+Fill gaps using context and common knowledge.
+Do not ask for information you can infer.
+Reserve questions only for information that is entirely absent AND genuinely required.
 
 ---
 
-## Agenda Mode
+## SESSION FLOW
 
-### A1 — Meeting Identity
+### Turn 1 — Extract, Infer, Draft (your first response)
 
-Ask in sequence, one question at a time:
+From the user's opening message, extract:
+- **Date and time** — stated directly; convert "20 June 2026 at 11am" → date: 2026-06-20, time: 11:00
+- **Duration** — if stated ("less than one hour", "90 minutes"), use that; otherwise **default to 60 minutes**
+- **Attendees** — all names mentioned; match each to the CANDIDATE INVITEES list below
+- **Subject / title** — what the meeting is about; infer meeting type from keywords
+- **Department** — infer from attendee departments or subject keywords; pick best match from DEPARTMENTS list
+- **Chair** — if not stated, default to the current user or first named attendee
+- **Minute taker** — default to the current user if not stated
 
-1. "What type of meeting is this?" (offer examples: Team Meeting, Project Review,
-   Design Review, Technical Review, Management Review, Customer Meeting, or Other)
-2. "What is the subject or title of the meeting?"
-3. "Which department or team is this meeting for?" (describe departments in plain terms)
-4. "Is this meeting related to a specific project? If so, what is the project name?
-   Or is it a general team meeting?"
-5. "What date is the meeting? And what time does it start and end?"
-6. "Where will it be held — a room name, or a remote platform like Teams or Zoom?"
-7. "Who will chair the meeting?"
-8. "Who will be taking the minutes? Is that you, or someone else?"
+Then produce a complete, time-allocated draft agenda:
+- Standard opening items: apologies / quorum (2 min), approval of last minutes if not first meeting (3 min)
+- Main items: inferred from the meeting subject, allocated proportionally to fill the available time
+- Any other business (5 min)
+- Close / next meeting (3 min)
+- All items must sum to the stated or default duration
 
-From the answers, determine:
-- `dept_code` — from the departments list below (e.g. ENG, SYS, HR)
-- `date_str` — in YYYYMMDD format
-- `proj_code` — if project-specific, a short uppercase slug (e.g. MUXED); otherwise omit
-- `doc_id` — assemble as MIN-{dept_code}-{date_str} or MIN-{dept_code}-{proj_code}-{date_str}
+**Present the draft plan** to the user in a concise readable format (not the raw document — a clean summary they can review).
 
-### A2 — Invitees
+End with **one question only**: "Ready to generate and send? Or let me know what to change."
 
-Say: "Now let's build the invitee list. Tell me the name and role of each person
-you're inviting. Also tell me whether each person's attendance is required or
-optional. Tell me when you've listed everyone."
+### Turn 2+ — Adjust or Generate
 
-Collect invitees iteratively. For each: name and role/department, Required or Optional.
+If the user confirms (any of: "yes", "send", "looks good", "go ahead", "that's fine", or similar):
+→ Generate the <<<MEETING_DOCUMENT>>> block immediately. Do not ask again.
 
-### A3 — Pre-Reading
+If the user requests changes:
+→ Apply every change mentioned, show a brief updated summary.
+→ Ask once more: "Anything else, or shall I generate and send?"
 
-Ask: "Is there anything attendees should read or prepare before the meeting —
-any documents, reports, or data?"
-
-If yes, capture each item and what action is required (read, bring data, etc.).
-If no, skip this section in the output.
-
-### A4 — Agenda Items
-
-Say: "Now the agenda. Tell me each item you want to cover, one at a time.
-For each, I'll ask who owns that item and roughly how long you expect it to take."
-
-Always include as the first two standard items:
-- 3.1 Apologies and confirmation of quorum (Chair, 2 min)
-- 3.2 Approval of previous minutes (Chair, 5 min) — omit if first meeting of this group
-- 3.3 Review of open action items from previous meeting (Minute Taker, 5 min) — omit if first meeting
-
-Number the user's items from 3.2 or 3.4 onwards as appropriate.
-
-Always end with:
-- Any other business (Chair, 5 min)
-- Next meeting — date, location, preliminary agenda (Chair, 2 min)
-
-### A5 — Generate Agenda File
-
-Confirm: "I have everything I need. Before I generate the document, is there
-anything you want to change?"
-
-Then generate the complete agenda document and output it using the
-DOCUMENT GENERATION format specified below.
+**Never ask more than one question per turn. Never prompt for confirmation of individual details.**
 
 ---
 
-## Minutes Mode
+## NAME MATCHING
 
-### M1 — Locate the Meeting
-
-Ask: "Which meeting are we completing the minutes for? You can tell me the
-date and department, and I'll find the file — or if there isn't one yet,
-we can start from scratch."
-
-If no file exists, run Agenda Mode first to capture the meeting details, then
-continue with Minutes Mode. Inform the user: "I don't have an agenda file for
-that meeting. Let me ask a few quick questions to set it up, then we'll move
-straight into the minutes."
-
-### M2 — Attendance
-
-Say: "Let's start with who was actually in the room. I'll read out the invitee
-list — just tell me who showed up and who sent apologies."
-
-Read out each invitee name. Record as Attended or Apologies. Ask for any
-additional attendees not on the invitee list. Ask about quorum if the meeting
-type implies a quorum requirement.
-
-### M3 — Approval of Previous Minutes
-
-Ask: "Were the minutes of the previous meeting approved at this meeting?
-If so, were there any corrections?"
-
-If this is the first meeting of this group, skip this section.
-
-### M4 — Open Actions
-
-Ask: "Were there any action items carried over from the previous meeting?
-If so, what is the status of each — complete, in progress, or still outstanding?"
-
-If this is the first meeting, skip this section.
-
-### M5 — Minutes by Agenda Item
-
-Work through each agenda item in sequence. For each, say:
-
-> "Agenda item [number]: [title]. What was discussed or presented?"
-
-Prompt for substance, not transcript. If the answer is very brief, ask:
-"Was there anything else worth noting on that item?" once only.
-
-For any item that produced a formal decision, flag it: "It sounds like a decision
-was made there — I'll record it in the decisions section."
-
-### M6 — Decisions
-
-After all agenda items, consolidate all flagged decisions. For each, confirm:
-"Let me confirm the decision on [topic]. Was it: [restate as clear statement]?
-And who made that decision — the chair, the whole group, or a named individual?"
-
-Number decisions D1, D2, etc.
-
-### M7 — Action Items
-
-Ask: "Now let's capture the action items. Tell me each task that was assigned —
-who owns it and when it needs to be done by. Tell me when you've listed them all."
-
-For each action: description, named owner (one person only), deadline.
-Number actions A1, A2, etc.
-
-### M8 — Next Meeting
-
-Ask: "Was a next meeting agreed? If so, what date, time, and location?
-And are there any items already earmarked for the agenda?"
-
-### M9 — Generate and Commit
-
-Confirm: "I have everything. Here is a summary of what I'm about to record:
-[brief summary of attendees, key decisions, number of action items].
-Shall I produce the document?"
-
-On confirmation, generate the complete minutes document and output it using
-the DOCUMENT GENERATION format specified below.
+Match names the user mentions to the CANDIDATE INVITEES list. Rules:
+- First-name match: "Phil" matches any candidate whose realname starts with "Phil" or "Philip"
+- Surname match: "Wright" matches realname containing "Wright"
+- Username match: "sanjay" matches username "sanjay"
+- Partial / fuzzy match is acceptable — accuracy is the user's responsibility to correct
+- If a name has no match in the list, include them as a plain-text attendee (no user_id)
+- Collect matched IDs for the invitee_ids attribute; these drive email distribution
 
 ---
 
-## Error Handling
+## AGENDA ITEM TIME ALLOCATION
 
-- If the user wants to stop mid-session: summarise what has been captured so far
-  and ask if they want to resume later.
-- If a required field cannot be determined: ask directly rather than guessing.
-- Never invent or assume action item owners, deadlines, or decisions.
-  These must come from the user.
+Use common knowledge to infer realistic items and times. Examples by meeting type:
+
+**Progress review (60 min):**
+3.1 Apologies / quorum — 2 min (Chair)
+3.2 Approval of last minutes — 3 min (Chair)
+3.3 Open action items review — 5 min (Minute Taker)
+3.4 Development progress update — 20 min (Lead Dev / owner)
+3.5 Issues and blockers — 10 min (All)
+3.6 Upcoming milestones and priorities — 10 min (All)
+3.7 Any other business — 5 min (Chair)
+3.8 Next meeting and close — 5 min (Chair)
+Total: 60 min
+
+**Design review (60 min):**
+3.1 Apologies / quorum — 2 min
+3.2 Approval of last minutes — 3 min
+3.3 Document walkthrough — 25 min
+3.4 Issues raised — 15 min
+3.5 Decisions and action items — 10 min
+3.6 Any other business — 5 min
+Total: 60 min
+
+Adjust proportionally for other durations.
 
 ---
 
 ## DOCUMENT GENERATION
 
-When you have gathered all the information and are ready to produce a meeting
-document, wrap the complete Markdown document in these EXACT markers.
-Do not add anything between the opening marker and the document content.
-Do not add anything between the document content and the closing marker.
+When generating the document, wrap it in these exact markers:
 
 For an agenda:
-
-<<<MEETING_DOCUMENT type="agenda" doc_id="MIN-DEPT-YYYYMMDD" dept="DEPT">>>
-[complete Markdown document content here]
+<<<MEETING_DOCUMENT type="agenda" doc_id="MIN-{dept}-{YYYYMMDD}" dept="{dept}" title="{title}" invitee_ids="{comma-separated matched user IDs}">>>
+[complete Markdown document following TMPL-SYS-001]
 <<<END_MEETING_DOCUMENT>>>
 
 For completed minutes:
-
-<<<MEETING_DOCUMENT type="minutes" doc_id="MIN-DEPT-YYYYMMDD" dept="DEPT" title="Meeting title">>>
-[complete Markdown document content here]
+<<<MEETING_DOCUMENT type="minutes" doc_id="MIN-{dept}-{YYYYMMDD}" dept="{dept}" title="{title}" invitee_ids="{comma-separated matched user IDs}">>>
+[complete Markdown document following TMPL-SYS-001]
 <<<END_MEETING_DOCUMENT>>>
 
-After the closing marker, add a brief, friendly confirmation to the user.
-For agendas: tell them to circulate it to invitees and come back after the
-meeting to complete the minutes.
-For minutes: tell them the record has been saved and committed, and that they
-should circulate it to attendees for review and correction within 2 business days.
-
-The document content must:
-1. Open with correctly populated YAML frontmatter
-2. Follow the structure from TMPL-SYS-001 (see template below)
-3. For agendas: include all pre-meeting sections; leave post-meeting sections
-   as unfilled template placeholders (Attendees, Minutes, Decisions, etc.)
-4. For minutes: include all sections fully completed
+After the closing marker add a brief confirmation. For agendas: state which attendees
+will receive an email (by name). For minutes: state the record has been saved and committed.
 
 ---
 
@@ -304,20 +247,18 @@ The document content must:
 
 ---
 
-## MEETING TEMPLATE (TMPL-SYS-001)
+## CANDIDATE INVITEES (from Doctis user database, meeting_invite ≠ 0)
 
-The documents you produce must follow this structure precisely.
+Match names from the user's message against this list. Use the id values in invitee_ids.
+The email column shows the address that will be used (email_secondary if set, otherwise email).
+Scope: dept = departmental meetings only, all = all meetings.
+
+{$t_candidates_text}
+
+---
+
+{$t_template_section}
 PROMPT;
-
-	if( !is_blank( $t_template_text ) ) {
-		$t_prompt .= "\n\n" . $t_template_text;
-	} else {
-		$t_prompt .= "\n\n" .
-			"(Template not available — HCRQMS repository not configured on this server.\n" .
-			"Follow the standard HC-Robotics meeting record format with YAML frontmatter,\n" .
-			"sections: Invitees, Pre-Reading, Agenda, Attendees, Minutes, Decisions, Actions,\n" .
-			"Next Meeting, Distribution, Approval.)";
-	}
 
 	return $t_prompt;
 }
@@ -329,7 +270,8 @@ PROMPT;
 
 /**
  * Scan the AI reply for <<<MEETING_DOCUMENT ...>>> markers.
- * If found: extract the Markdown, save to HCRQMS, optionally git-commit.
+ * If found: extract the Markdown, save to HCRQMS, email invitees for agendas,
+ * git-commit for minutes.
  * Returns an array with save results (and 'stripped_reply' key), or null.
  *
  * @param string $p_reply    Raw AI reply text.
@@ -347,14 +289,13 @@ function ai_assist_process_meeting_document( string $p_reply, int $p_user_id ): 
 	preg_match_all( '/(\w+)="([^"]*)"/', $t_attr_str, $t_attr_pairs );
 	$t_attrs = array_combine( $t_attr_pairs[1], $t_attr_pairs[2] );
 
-	$t_type   = $t_attrs['type']   ?? 'agenda';
-	$t_doc_id = $t_attrs['doc_id'] ?? '';
-	$t_dept   = $t_attrs['dept']   ?? '';
-	$t_title  = $t_attrs['title']  ?? $t_doc_id;
+	$t_type          = $t_attrs['type']         ?? 'agenda';
+	$t_doc_id        = $t_attrs['doc_id']        ?? '';
+	$t_dept          = $t_attrs['dept']          ?? '';
+	$t_title         = $t_attrs['title']         ?? $t_doc_id;
+	$t_invitee_ids   = $t_attrs['invitee_ids']   ?? '';
 
-	$t_content = trim( $t_matches[2] );
-
-	# Strip markers from the reply shown to the user
+	$t_content  = trim( $t_matches[2] );
 	$t_stripped = trim( preg_replace( $t_pattern, '', $p_reply ) );
 
 	$t_result = [
@@ -366,12 +307,18 @@ function ai_assist_process_meeting_document( string $p_reply, int $p_user_id ): 
 		'committed'      => false,
 		'commit_sha'     => null,
 		'dwg_id'         => null,
+		'emails_sent'    => [],
 		'error'          => null,
 	];
 
 	$t_repo_path = config_get_global( 'hcrqms_repo_path' );
 	if( is_blank( $t_repo_path ) ) {
-		# No repo configured — chat-only mode; document not saved
+		# No repo configured — still email if invitees given
+		if( $t_type === 'agenda' && !is_blank( $t_invitee_ids ) ) {
+			$t_result['emails_sent'] = ai_assist_send_agenda_emails(
+				$t_invitee_ids, $t_doc_id, $t_title, $t_content
+			);
+		}
 		return $t_result;
 	}
 
@@ -390,7 +337,6 @@ function ai_assist_process_meeting_document( string $p_reply, int $p_user_id ): 
 	$t_abs_dir  = rtrim( $t_repo_path, '/' ) . '/' . $t_rel_dir;
 	$t_abs_path = $t_abs_dir . '/' . $t_filename;
 
-	# Create directory if needed
 	if( !is_dir( $t_abs_dir ) ) {
 		if( !mkdir( $t_abs_dir, 0775, true ) ) {
 			$t_result['error'] = 'Could not create output directory.';
@@ -399,7 +345,6 @@ function ai_assist_process_meeting_document( string $p_reply, int $p_user_id ): 
 		}
 	}
 
-	# Write the file
 	if( file_put_contents( $t_abs_path, $t_content ) === false ) {
 		$t_result['error'] = 'Could not write meeting record file.';
 		error_log( 'ai_assist_meeting_api: file_put_contents failed for ' . $t_abs_path );
@@ -409,12 +354,17 @@ function ai_assist_process_meeting_document( string $p_reply, int $p_user_id ): 
 	$t_result['saved']     = true;
 	$t_result['file_path'] = $t_rel_path;
 
-	# For agenda: save only (no git commit; agenda is a draft)
+	# ── Agenda: email invitees; no git commit (draft) ─────────────────────
 	if( $t_type === 'agenda' ) {
+		if( !is_blank( $t_invitee_ids ) ) {
+			$t_result['emails_sent'] = ai_assist_send_agenda_emails(
+				$t_invitee_ids, $t_doc_id, $t_title, $t_content
+			);
+		}
 		return $t_result;
 	}
 
-	# For minutes: git add + commit
+	# ── Minutes: git add + commit ─────────────────────────────────────────
 	$t_user_name  = user_get_field( $p_user_id, 'realname' );
 	$t_user_email = user_get_field( $p_user_id, 'email' );
 	if( is_blank( $t_user_name ) ) {
@@ -433,16 +383,11 @@ function ai_assist_process_meeting_document( string $p_reply, int $p_user_id ): 
 		$t_result['error'] = 'File saved but git commit failed — check Apache error log.';
 	}
 
-	# Doctis document registration
-	# Only registers if the department has a project_id configured
+	# Doctis document registration (department must have project_id)
 	$t_project_id = (int)( $t_dept_config['project_id'] ?? 0 );
 	if( $t_project_id > 0 && $t_result['committed'] ) {
 		$t_dwg_id = ai_assist_register_meeting_doctis(
-			$t_project_id,
-			$t_doc_id,
-			$t_title,
-			$t_rel_path,
-			$p_user_id
+			$t_project_id, $t_doc_id, $t_title, $t_rel_path, $p_user_id
 		);
 		if( $t_dwg_id !== null ) {
 			$t_result['dwg_id'] = $t_dwg_id;
@@ -450,6 +395,61 @@ function ai_assist_process_meeting_document( string $p_reply, int $p_user_id ): 
 	}
 
 	return $t_result;
+}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Email distribution
+# ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Email a meeting agenda to a list of Doctis user IDs.
+ *
+ * Uses email_secondary if set (user's preferred notification address),
+ * otherwise falls back to the primary email.
+ * The agenda content is sent as the message body.
+ *
+ * @param string $p_invitee_ids_str  Comma-separated Doctis user IDs.
+ * @param string $p_doc_id           HCRQMS document ID (e.g. MIN-ENG-20260620).
+ * @param string $p_title            Meeting title.
+ * @param string $p_content          Full Markdown agenda content.
+ * @return array  Each element: ['name' => '...', 'email' => '...']
+ */
+function ai_assist_send_agenda_emails(
+	string $p_invitee_ids_str,
+	string $p_doc_id,
+	string $p_title,
+	string $p_content
+): array {
+	require_api( 'email_api.php' );
+
+	$t_subject = '[Doctis] Meeting Agenda: ' . $p_doc_id .
+		( !is_blank( $p_title ) ? ' — ' . $p_title : '' );
+
+	$t_sent = [];
+	$t_ids  = array_filter( array_map( 'intval', explode( ',', $p_invitee_ids_str ) ) );
+
+	foreach( $t_ids as $t_uid ) {
+		if( $t_uid <= 0 ) continue;
+		if( !user_exists( $t_uid ) ) continue;
+
+		# Use email_secondary if the user has set one
+		$t_email = user_get_field( $t_uid, 'email_secondary' );
+		if( is_blank( $t_email ) ) {
+			$t_email = user_get_email( $t_uid );
+		}
+		if( is_blank( $t_email ) ) continue;
+
+		$t_name = user_get_field( $t_uid, 'realname' );
+		if( is_blank( $t_name ) ) {
+			$t_name = user_get_field( $t_uid, 'username' );
+		}
+
+		email_store( $t_email, $t_subject, $p_content );
+		$t_sent[] = [ 'name' => $t_name, 'email' => $t_email ];
+	}
+
+	return $t_sent;
 }
 
 
@@ -538,10 +538,6 @@ function ai_assist_git_commit_meeting(
 /**
  * Register a committed meeting record as a Doctis document.
  *
- * Uses DwgData to create a minimal document entry with the HCRQMS file path
- * stored in link_url.  Only called when the department has a project_id > 0
- * in $g_ai_meeting_departments.
- *
  * @param int    $p_project_id  Doctis project ID for the department.
  * @param string $p_doc_id      HCRQMS document ID (e.g. MIN-ENG-20260618).
  * @param string $p_title       Meeting title.
@@ -556,21 +552,6 @@ function ai_assist_register_meeting_doctis(
 	string $p_rel_path,
 	int $p_user_id
 ): ?int {
-	# TODO (Phase 3 — Doctis registration):
-	# Instantiate DwgData, set the minimum required fields, and call ->create().
-	# The link_url field carries the HCRQMS relative path.
-	# Example (requires DwgData to be loaded; check core/classes/DwgData.class.php):
-	#
-	#   require_api('dwg_api.php');
-	#   $t_dwg = new DwgData();
-	#   $t_dwg->project_id = $p_project_id;
-	#   $t_dwg->title      = $p_title;
-	#   $t_dwg->reference  = $p_doc_id;
-	#   $t_dwg->link_url   = $p_rel_path;
-	#   $t_dwg->creator_id = $p_user_id;
-	#   return $t_dwg->create();
-	#
-	# Deferred: requires understanding of all mandatory fields and the category
-	# assignment logic in DwgData::create().  See doc/ai-todo.md Phase 3.
+	# TODO (Phase 3 — Doctis registration): see doc/ai-todo.md
 	return null;
 }

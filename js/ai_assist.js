@@ -206,6 +206,11 @@
 			if( doc.file_path )  detail += ' &mdash; <code style="font-size:11px">' + doc.file_path + '</code>';
 			if( doc.commit_sha ) detail += '<br><span style="color:#888;font-size:11px;">Commit: ' + doc.commit_sha.substring(0,8) + '</span>';
 			if( doc.dwg_id )     detail += '<br><span style="color:#888;font-size:11px;">Registered in Doctis as document #' + doc.dwg_id + '</span>';
+			if( doc.emails_sent && doc.emails_sent.length > 0 ) {
+				var names = doc.emails_sent.map(function(r) { return r.name || r.email; }).join(', ');
+				detail += '<br><span style="color:#2d6a4f;font-size:11px;">' +
+					'<i class="ace-icon fa fa-envelope-o"></i> Agenda emailed to: ' + names + '</span>';
+			}
 
 			card.innerHTML = icon + '<strong>' + title + '</strong>' + ( detail ? '<br>' + detail : '' );
 			$messages.appendChild(card);
