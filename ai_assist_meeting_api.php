@@ -161,6 +161,7 @@ From the user's opening message, extract:
 - **Attendees** — all names mentioned; match each to the CANDIDATE INVITEES list below
 - **Subject / title** — what the meeting is about; infer meeting type from keywords
 - **Department** — infer from attendee departments or subject keywords; pick best match from DEPARTMENTS list
+- **Location** — always **Microsoft Teams** unless the user explicitly states otherwise
 - **Chair** — always the Doctis user running this session: **{$t_chair_name}**
   Use this exact value in the `chair:` YAML field. Never write "Current User".
 - **Minute taker** — the **first person named** in the user's invitee list
