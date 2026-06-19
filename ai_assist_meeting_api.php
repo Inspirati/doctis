@@ -127,6 +127,12 @@ but will not be saved to a file automatically.';
 		  "then sections: Invitees, Pre-Reading, Agenda, Attendees, Minutes, Decisions, " .
 		  "Actions, Next Meeting, Distribution, Approval.)";
 
+	# ── Current user name for chair field ────────────────────────────────────
+	$t_chair_name = user_get_field( $p_user_id, 'realname' );
+	if( is_blank( $t_chair_name ) ) {
+		$t_chair_name = user_get_field( $p_user_id, 'username' );
+	}
+
 	# ── Assemble prompt ───────────────────────────────────────────────────────
 	$t_prompt = <<<PROMPT
 You are the HC-Robotics Meeting Assistant embedded in Doctis. Your job is to
@@ -155,8 +161,12 @@ From the user's opening message, extract:
 - **Attendees** — all names mentioned; match each to the CANDIDATE INVITEES list below
 - **Subject / title** — what the meeting is about; infer meeting type from keywords
 - **Department** — infer from attendee departments or subject keywords; pick best match from DEPARTMENTS list
-- **Chair** — if not stated, default to the current user or first named attendee
-- **Minute taker** — default to the current user if not stated
+- **Chair** — always the Doctis user running this session: **{$t_chair_name}**
+  Use this exact value in the `chair:` YAML field. Never write "Current User".
+- **Minute taker** — the **first person named** in the user's invitee list
+  (the first name they mention after "with", "for", or similar phrasing).
+  The rationale: you list the minute taker first because a meeting requires one.
+  Never default to the current user. Never write "Current User".
 
 Then produce a complete, time-allocated draft agenda:
 - Standard opening items: apologies / quorum (2 min), approval of last minutes if not first meeting (3 min)
