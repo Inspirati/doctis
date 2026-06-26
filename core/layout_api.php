@@ -810,14 +810,14 @@ function layout_print_sidebar( $p_active_sidebar_page = null ) {
 			);
 		}
 
-		// # Project Wiki
-		// if( ON == config_get_global( 'wiki_enable' )  ) {
-		// 	$t_sidebar_items[] = array(
-		// 		'url' => 'wiki.php?type=project&amp;id=' . $t_current_project,
-		// 		'title' => 'wiki',
-		// 		'icon' => 'fa-book'
-		// 	);
-		// }
+		# Project Wiki
+		if( ON == config_get_global( 'wiki_enable' )  ) {
+			$t_sidebar_items[] = array(
+				'url' => 'wiki.php?type=project&amp;id=' . $t_current_project,
+				'title' => 'wiki',
+				'icon' => 'fa-book'
+			);
+		}
 
 		# Manage Users (admins) or Manage Project (managers) or Manage Custom Fields
 		$t_link = layout_manage_menu_link();
