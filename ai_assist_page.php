@@ -1,18 +1,21 @@
 <?php
 # Doctis — AI Assistant page
 #
-# Hosts the built-in Claude-powered assistant.  Four tab panels:
-#   Help     — Doctis / QMS usage questions (proof-of-concept)
-#   Meeting  — Meeting agenda and minutes assistant (planned)
-#   SOP      — Standard Operating Procedure interview tool (planned)
-#   Other    — General / uncategorised queries (planned)
+# Page shell: authentication, shared CSS, tab navigation, and script loading.
+# The two active tab panels are rendered by separate include files:
 #
-# The active tab is preserved across page loads via the URL fragment (#tab-help
-# etc.).  The conversation history is held in browser memory (JS array) for the
-# duration of the session and is not persisted server-side in this initial
-# implementation.
+#   ai_assist_help_page.php    — Help tab panel
+#   ai_assist_meeting_page.php — Meeting tab panel
 #
-# Backend: ai_assist_api.php (AJAX endpoint; calls Anthropic Messages API).
+# JavaScript is split across three external files (CSP: script-src 'self'):
+#
+#   js/ai_assist.js         — shared: renderMarkdown, createChatSession factory, tab management
+#   js/ai_assist_help.js    — Help tab instance
+#   js/ai_assist_meeting.js — Meeting tab instance
+#
+# AJAX backend: ai_assist_api.php
+#   ai_assist_help_api.php    — Help mode system prompt (server-side)
+#   ai_assist_meeting_api.php — Meeting mode system prompt and document processing
 #
 # @package    Doctis
 # @copyright  Copyright 2025 Inspirati
@@ -22,8 +25,11 @@ require_once( 'core.php' );
 require_api( 'access_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'config_api.php' );
+require_api( 'helper_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
+require_api( 'string_api.php' );
+require_api( 'user_api.php' );
 
 auth_ensure_user_authenticated();
 access_ensure_global_level( config_get_global( 'ai_assist_threshold' ) );
@@ -41,7 +47,7 @@ layout_page_begin( 'ai_assist_page.php' );
 ?>
 
 <style>
-/* ── AI Assistant chat styles ────────────────────────────────────────────── */
+/* ── AI Assistant chat styles (shared across all tabs) ───────────────────── */
 #ai-chat-messages {
 	height: 440px;
 	overflow-y: auto;
@@ -59,7 +65,7 @@ layout_page_begin( 'ai_assist_page.php' );
 	align-items: flex-end;
 	gap: 8px;
 }
-.ai-msg-row.user     { flex-direction: row-reverse; }
+.ai-msg-row.user      { flex-direction: row-reverse; }
 .ai-msg-row.assistant { flex-direction: row; }
 
 .ai-msg-avatar {
@@ -129,6 +135,26 @@ layout_page_begin( 'ai_assist_page.php' );
 #ai-char-count {
 	float: right;
 }
+#ai-token-count {
+	float: right;
+	margin-left: 10px;
+	color: #bbb;
+}
+
+/* Copy-to-clipboard button on assistant bubbles */
+.ai-copy-btn {
+	display: block;
+	margin-top: 6px;
+	padding: 2px 7px;
+	font-size: 11px;
+	color: #aaa;
+	background: none;
+	border: 1px solid #dde3ea;
+	border-radius: 3px;
+	cursor: pointer;
+	line-height: 1.4;
+}
+.ai-copy-btn:hover { color: #5b9bd5; border-color: #5b9bd5; }
 
 /* Tab panel: remove top-border radius that clashes with nav-tabs */
 .tab-content > .tab-pane > .widget-box {
@@ -148,7 +174,7 @@ layout_page_begin( 'ai_assist_page.php' );
 <div class="col-md-12 col-xs-12">
 <div class="space-10"></div>
 
-<!-- ── Tab navigation ──────────────────────────────────────────────────── -->
+<!-- ── Tab navigation ──────────────────────────────────────────────────────── -->
 <ul class="nav nav-tabs padding-18" id="ai-tab-nav">
 	<li class="active">
 		<a href="#tab-help"    data-toggle="tab"><?php echo lang_get( 'ai_assist_tab_help' ) ?></a>
@@ -164,127 +190,15 @@ layout_page_begin( 'ai_assist_page.php' );
 	</li>
 </ul>
 
-<!-- ── Tab content ────────────────────────────────────────────────────── -->
+<!-- ── Tab content ────────────────────────────────────────────────────────── -->
 <div class="tab-content">
 
-	<!-- ═══ HELP TAB ═══════════════════════════════════════════════════ -->
-	<div class="tab-pane active" id="tab-help">
+<?php include 'ai_assist_help_page.php'; ?>
 
-		<div class="widget-box widget-color-blue2">
-		<div class="widget-header widget-header-small">
-			<h4 class="widget-title lighter">
-				<?php print_icon( 'fa-comments', 'ace-icon' ); ?>
-				<?php echo lang_get( 'ai_assist_title' ) ?> &mdash; <?php echo lang_get( 'ai_assist_tab_help' ) ?>
-			</h4>
-			<div class="widget-toolbar">
-				<button class="btn btn-minier btn-default" id="ai-clear-btn" title="Clear conversation">
-					<?php print_icon( 'fa-trash-o', 'ace-icon' ); ?> Clear
-				</button>
-			</div>
-		</div><!-- /.widget-header -->
-
-		<div class="widget-body">
-		<div class="widget-main">
-
-			<!-- Context strip / configuration notice -->
-<?php if( !$t_api_configured ): ?>
-			<div class="alert alert-warning" style="padding: 8px 14px; margin-bottom: 10px; font-size: 12px;">
-				<?php print_icon( 'fa-exclamation-triangle', 'ace-icon' ); ?>
-				<strong>AI Assistant not configured.</strong>
-				Set <code>$g_anthropic_api_key</code> in <code>config/config_inc.php</code> to enable this feature.
-				The chat interface is shown below for layout preview only — messages cannot be sent until the key is set.
-			</div>
-<?php else: ?>
-			<div class="alert alert-info" style="padding: 6px 12px; margin-bottom: 10px; font-size: 12px;">
-				<?php print_icon( 'fa-info-circle', 'ace-icon' ); ?>
-				<strong>Help mode.</strong>
-				Ask questions about using Doctis, the document review workflow, or the QMS system.
-				Conversations are not saved when you leave this page.
-			</div>
-<?php endif; ?>
-
-			<!-- Message thread -->
-			<div id="ai-chat-messages" role="log" aria-live="polite" aria-label="Conversation">
-				<!-- Welcome message (assistant) -->
-				<div class="ai-msg-row assistant" id="ai-welcome-msg">
-					<div class="ai-msg-avatar">
-						<?php print_icon( 'fa-comments-o', 'ace-icon' ); ?>
-					</div>
-					<div class="ai-msg-bubble">
-						Hello<?php if( !is_blank( $t_user_name ) ) echo ', ' . string_display_line( $t_user_name ); ?>! I&rsquo;m the Doctis AI Assistant. I can help you with:
-						<ul style="margin: 6px 0 0 16px; padding: 0;">
-							<li>Using Doctis features and document workflows</li>
-							<li>Understanding document statuses and review cycles</li>
-							<li>QMS document control questions</li>
-							<li>Finding the right page or function</li>
-						</ul>
-						What would you like to know?
-					</div>
-				</div>
-			</div><!-- /#ai-chat-messages -->
-
-			<!-- Status bar -->
-			<div id="ai-status-bar">
-				<span id="ai-status-text"></span>
-				<span id="ai-char-count"></span>
-			</div>
-
-			<!-- Input area -->
-			<div id="ai-input-area">
-				<textarea
-					id="ai-chat-input"
-					class="form-control"
-					rows="3"
-					placeholder="Type your question here… (Ctrl+Enter or Shift+Enter to send)"
-					maxlength="4000"
-					aria-label="Message input"
-				></textarea>
-				<div style="margin-top: 8px; display: flex; justify-content: space-between; align-items: center;">
-					<span style="font-size: 11px; color: #aaa;">
-						<?php print_icon( 'fa-keyboard-o', 'ace-icon' ); ?>
-						Ctrl+Enter to send &nbsp;&bull;&nbsp; Shift+Enter for new line
-					</span>
-					<div>
-						<button class="btn btn-sm btn-white btn-default" id="ai-stop-btn" disabled style="margin-right:4px;">
-							<?php print_icon( 'fa-stop-circle-o', 'ace-icon' ); ?> Stop
-						</button>
-						<button class="btn btn-sm btn-primary" id="ai-send-btn"<?php if( !$t_api_configured ) echo ' disabled title="API key not configured"' ?>>
-							<?php print_icon( 'fa-paper-plane', 'ace-icon' ); ?> Send
-						</button>
-					</div>
-				</div>
-			</div><!-- /#ai-input-area -->
-
-		</div><!-- /.widget-main -->
-		</div><!-- /.widget-body -->
-		</div><!-- /.widget-box -->
-
-	</div><!-- /#tab-help -->
+<?php include 'ai_assist_meeting_page.php'; ?>
 
 
-	<!-- ═══ MEETING TAB ═════════════════════════════════════════════════ -->
-	<div class="tab-pane" id="tab-meeting">
-		<div class="widget-box widget-color-blue2">
-		<div class="widget-header widget-header-small">
-			<h4 class="widget-title lighter">
-				<?php print_icon( 'fa-calendar', 'ace-icon' ); ?>
-				<?php echo lang_get( 'ai_assist_title' ) ?> &mdash; <?php echo lang_get( 'ai_assist_tab_meeting' ) ?>
-			</h4>
-		</div>
-		<div class="widget-body">
-		<div class="widget-main">
-			<div class="ai-coming-soon">
-				<?php print_icon( 'fa-calendar-o', 'ace-icon' ); ?>
-				<h4>Meeting Assistant</h4>
-				<p>Guided agenda and minutes capture (ENG-TASK-002). Coming soon.</p>
-			</div>
-		</div>
-		</div>
-		</div>
-	</div><!-- /#tab-meeting -->
-
-
-	<!-- ═══ SOP TAB ═════════════════════════════════════════════════════ -->
+	<!-- ═══ SOP TAB ══════════════════════════════════════════════════════════ -->
 	<div class="tab-pane" id="tab-sop">
 		<div class="widget-box widget-color-blue2">
 		<div class="widget-header widget-header-small">
@@ -306,7 +220,7 @@ layout_page_begin( 'ai_assist_page.php' );
 	</div><!-- /#tab-sop -->
 
 
-	<!-- ═══ OTHER TAB ════════════════════════════════════════════════════ -->
+	<!-- ═══ OTHER TAB ════════════════════════════════════════════════════════ -->
 	<div class="tab-pane" id="tab-other">
 		<div class="widget-box widget-color-blue2">
 		<div class="widget-header widget-header-small">
@@ -332,6 +246,8 @@ layout_page_begin( 'ai_assist_page.php' );
 </div><!-- /.col-md-12 -->
 
 <script src="<?php echo helper_mantis_url( 'js/ai_assist.js' ) ?>"></script>
+<script src="<?php echo helper_mantis_url( 'js/ai_assist_help.js' ) ?>"></script>
+<script src="<?php echo helper_mantis_url( 'js/ai_assist_meeting.js' ) ?>"></script>
 
 <?php
 layout_page_end();

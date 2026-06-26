@@ -4914,6 +4914,51 @@ $g_ai_model = 'claude-sonnet-4-6';
  */
 $g_ai_assist_threshold = REPORTER;
 
+/**
+ * Path to the HCRQMS repository on this server.
+ *
+ * Used by the Meeting Assistant (Meeting tab) to save generated meeting
+ * records (agendas and minutes) to the HCRQMS document repository, and to
+ * commit minutes to git.
+ *
+ * Leave empty (the default) to operate in chat-only mode — the Meeting tab
+ * still works as a conversational assistant but does not write any files.
+ *
+ * The web-server user (www-data) must have read+write access to this path.
+ *
+ * Example: '/var/www/hcrqms'
+ *
+ * @global string $g_hcrqms_repo_path
+ */
+$g_hcrqms_repo_path = '';
+
+/**
+ * Meeting Assistant department configuration.
+ *
+ * Maps HCRQMS department codes to output subdirectories (relative to
+ * $g_hcrqms_repo_path) and Doctis project IDs.
+ *
+ * 'path'       — subdirectory within the HCRQMS repo where meeting records
+ *                for this department are stored.
+ * 'project_id' — Doctis project ID to register the meeting document under
+ *                (0 = no Doctis registration for this department).
+ *
+ * Override in config/config_inc.php to set project_id values matching your
+ * Doctis installation.
+ *
+ * @global array $g_ai_meeting_departments
+ */
+$g_ai_meeting_departments = [
+	'SYS'  => [ 'name' => 'System / Governance / Management', 'path' => 'system/meetings',                'project_id' => 0 ],
+	'ENG'  => [ 'name' => 'Engineering',                      'path' => 'content/engineering/meetings',   'project_id' => 0 ],
+	'MFG'  => [ 'name' => 'Manufacturing',                    'path' => 'content/manufacturing/meetings', 'project_id' => 0 ],
+	'HR'   => [ 'name' => 'Human Resources',                  'path' => 'content/hr/meetings',            'project_id' => 0 ],
+	'IT'   => [ 'name' => 'Information Technology',           'path' => 'content/it/meetings',            'project_id' => 0 ],
+	'QA'   => [ 'name' => 'Quality Assurance',                'path' => 'content/quality/meetings',       'project_id' => 0 ],
+	'SCM'  => [ 'name' => 'Supply Chain Management',         'path' => 'content/supply-chain/meetings',  'project_id' => 0 ],
+	'EXEC' => [ 'name' => 'Executive',                        'path' => 'content/executive/meetings',     'project_id' => 0 ],
+];
+
 #########
 # Icons #
 #########

@@ -109,8 +109,8 @@ foreach( $f_license_id as $t_license_id ) {
 		)
 	);
 	*/
-		// $t_command = new LicenseUserUpdateCommand( $t_data );
-		// $t_command->execute();
+		$t_command = new LicenseUserUpdateCommand( $t_data );
+		$t_command->execute();
 }
 // $t_command = new LicenseDwgUpdateCommand( $t_data );
 
