@@ -182,6 +182,46 @@ function doctis_get_git_version_info() {
 	</div>
 	</div>
 </div>
+<?php if( current_user_is_administrator() ) { ?>
+<div class="col-md-12 col-xs-12">
+	<div class="space-10"></div>
+	<div class="widget-box widget-color-orange">
+	<div class="widget-header widget-header-small">
+		<h4 class="widget-title lighter">
+			<?php print_icon( 'fa-wrench', 'ace-icon' ); ?>
+			System Operations
+		</h4>
+	</div>
+	<div class="widget-body">
+	<div class="widget-main">
+		<a href="manage_config_file_page.php" class="btn btn-sm btn-default">
+			<?php print_icon( 'fa-file-text', 'ace-icon' ); ?> Config File
+		</a>
+		&nbsp;
+		<a href="manage_db_backup_page.php" class="btn btn-sm btn-default">
+			<?php print_icon( 'fa-database', 'ace-icon' ); ?> Backup Database
+		</a>
+		&nbsp;
+		<a href="manage_git_backup_page.php" class="btn btn-sm btn-default">
+			<?php print_icon( 'fa-archive', 'ace-icon' ); ?> Backup Git Store
+		</a>
+		&nbsp;
+		<a href="manage_git_pull_page.php" class="btn btn-sm btn-primary">
+			<?php print_icon( 'fa-download', 'ace-icon' ); ?> Git Pull (Update)
+		</a>
+		&nbsp;
+		<a href="manage_db_load_sample_page.php" class="btn btn-sm btn-warning">
+			<?php print_icon( 'fa-refresh', 'ace-icon' ); ?> Load Sample Data
+		</a>
+		&nbsp;
+		<a href="manage_db_rebuild_page.php" class="btn btn-sm btn-danger">
+			<?php print_icon( 'fa-trash', 'ace-icon' ); ?> Rebuild Database
+		</a>
+	</div>
+	</div>
+	</div>
+</div>
+<?php } ?>
 <?php
 layout_page_end();
 

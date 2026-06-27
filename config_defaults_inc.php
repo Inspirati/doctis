@@ -3775,16 +3775,16 @@ $g_delete_license_threshold = ADMINISTRATOR;
  *
  * @global int $g_create_project_threshold
  */
-$g_create_project_threshold = ADMINISTRATOR;
-$g_create_license_threshold = ADMINISTRATOR;
+$g_create_project_threshold = MANAGER;
+$g_create_license_threshold = MANAGER;
 
 /**
  * Threshold needed to be automatically included in private projects.
  *
  * @global int $g_private_project_threshold
  */
-$g_private_project_threshold = ADMINISTRATOR;
-$g_private_license_threshold = ADMINISTRATOR;
+$g_private_project_threshold = MANAGER;
+$g_private_license_threshold = MANAGER;
 
 /**
  * Threshold needed to manage user access to a project.
@@ -3799,7 +3799,7 @@ $g_license_user_threshold = UPDATER;
  *
  * @global int $g_manage_user_threshold
  */
-$g_manage_user_threshold = ADMINISTRATOR;
+$g_manage_user_threshold = MANAGER;
 
 /**
  * Threshold needed to impersonate a user or NOBODY to disable the feature.
