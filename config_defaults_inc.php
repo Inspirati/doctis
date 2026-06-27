@@ -1004,7 +1004,7 @@ $g_email_retry_in_days = 7;
  */
 // $g_show_version = OFF;
 $g_show_version_suffix = ON;
-$g_show_copyright_footer = ON;
+$g_show_copyright_footer = OFF;
 
 /**
  * String appended to the MantisBT version when displayed to the user.
@@ -4874,7 +4874,8 @@ $g_main_menu_custom_options = array();
  *
  * @global string $g_qms_url
  */
-$g_qms_url = '';
+$g_qms_url  = '../site/';   # or whatever the URL is
+
 
 /**
  * Font Awesome 4 icon name for the QMS sidebar button, or an 'img:'-prefixed
@@ -4882,7 +4883,7 @@ $g_qms_url = '';
  *
  * @global string $g_qms_icon
  */
-$g_qms_icon = 'fa-certificate';
+$g_qms_icon = 'fa-institution';           # or 'img:images/qms-icon.svg'
 
 ##########
 # AI Engine #
@@ -4898,7 +4899,7 @@ $g_qms_icon = 'fa-certificate';
  *
  * @global string $g_anthropic_api_key
  */
-$g_anthropic_api_key = '';
+$g_anthropic_api_key = getenv('ANTHROPIC_API_KEY') ?: '';
 
 /**
  * Claude model used by the AI Assistant.
@@ -4930,7 +4931,7 @@ $g_ai_assist_threshold = REPORTER;
  *
  * @global string $g_hcrqms_repo_path
  */
-$g_hcrqms_repo_path = '';
+$g_hcrqms_repo_path = '/var/git/doctis';
 
 /**
  * Meeting Assistant department configuration.

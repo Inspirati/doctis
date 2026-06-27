@@ -803,6 +803,7 @@ $s_dwg_version = 'Version';
 $s_dwg_edition = 'Edition';
 $s_dwg_revision = 'Revision';
 $s_dwg_reference = 'Reference';
+$s_dwg_reference_at_creation = 'Ref at Issue Creation';
 $s_dwg_discipline = 'Discipline';
 $s_dwg_date = 'Date';
 $s_dwg_link_url = 'Link URL';

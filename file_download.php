@@ -177,6 +177,57 @@ if( $f_type === 'dwg_primary_head' ) {
 	exit;
 }
 
+if( $f_type === 'dwg_primary_at_sha' ) {
+	# Serve the primary document at the exact git SHA recorded when a specific
+	# issue was created, allowing historical retrieval after later uploads.
+	$f_dwg_id = gpc_get_int( 'id' );
+	$f_sha    = gpc_get_string( 'sha', '' );
+
+	access_ensure_dwg_level( config_get( 'dwg_primary_document_threshold' ), $f_dwg_id );
+
+	if( !preg_match( '/^[0-9a-f]{40}$/i', $f_sha ) ) {
+		trigger_error( ERROR_FILE_NOT_FOUND, ERROR );
+	}
+
+	$t_row = file_dwg_primary_get( $f_dwg_id );
+	if( $t_row === null ) {
+		error_parameters( $f_dwg_id );
+		trigger_error( ERROR_FILE_NOT_FOUND, ERROR );
+	}
+
+	while( @ob_end_clean() ) {
+	}
+	if( ini_get( 'zlib.output_compression' ) && function_exists( 'ini_set' ) ) {
+		ini_set( 'zlib.output_compression', false );
+	}
+
+	http_security_headers();
+
+	$t_result = file_dwg_primary_get_content_at_sha( $f_dwg_id, $f_sha );
+	if( $t_result === false ) {
+		trigger_error( ERROR_FILE_NOT_FOUND, ERROR );
+	}
+
+	$t_content      = $t_result['content'];
+	$t_filename     = file_get_display_name( $t_result['filename'] );
+	$t_content_type = $t_row['file_type'];
+
+	$t_content_type_override = file_get_content_type_override( $t_filename );
+	if( $t_content_type_override ) {
+		$t_content_type = $t_content_type_override;
+	}
+
+	header( 'Expires: ' . gmdate( 'D, d M Y H:i:s \G\M\T', time() ) );
+	header( 'Last-Modified: ' . gmdate( 'D, d M Y H:i:s \G\M\T', (int)$t_row['date_added'] ) );
+	http_content_disposition_header( $t_filename, $f_show_inline );
+	header( 'Content-Type: ' . $t_content_type );
+	header( 'Content-Length: ' . strlen( $t_content ) );
+	header( 'X-Content-Type-Options: nosniff' );
+
+	echo $t_content;
+	exit;
+}
+
 $c_file_id = (integer)$f_file_id;
 
 # we handle the case where the file is attached to a bug

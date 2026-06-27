@@ -214,6 +214,54 @@ composer install
 
 REST/SOAP integration tests live under `tests/`. Bootstrap: `tests/bootstrap.php.sample` → copy to `tests/bootstrap.php` and configure.
 
+## Database Schema Changes
+
+**Rule: `admin/schema.php` is the single source of truth for the database schema.
+Never apply `ALTER TABLE` directly. Never write standalone migration scripts.**
+
+Every table is defined in its current, final form as a `CREATE TABLE IF NOT EXISTS`
+statement in [admin/schema.php](admin/schema.php).  When you need to add a column,
+add a table, rename a column, or change a type:
+
+1. **Edit `admin/schema.php`** — find the relevant `CREATE TABLE` block and update it
+   in place.  There are no incremental `AddColumnSQL` / `AlterColumnSQL` steps; just
+   modify the base definition.
+2. **Rebuild the database on vaio**:
+   ```bash
+   ssh hcr@vaio "echo 'yes' | bash /var/www/html/doctis/admin/tools/doctis-drop-and-create-new-database.sh"
+   ```
+3. **Reload sample data**:
+   ```bash
+   ssh hcr@vaio "echo 'yes' | bash /var/www/html/doctis/admin/tools/doctis-load-sample-data.sh"
+   ```
+
+Steps 2 and 3 together replace the database completely from the schema and restore
+the standard test dataset.  The git document store is unaffected; only the database
+is rebuilt.  If a full clean-room reset is also needed (e.g. after a test run that
+created document records), see **Resetting to a Clean Slate for Testing** below,
+which additionally wipes the git store.
+
+### Conventions
+
+- Use `INT UNSIGNED` for timestamp columns — `db_now()` returns a Unix integer,
+  not a datetime string.
+- Use `NOT NULL DEFAULT ''` for optional string columns rather than `DEFAULT NULL`,
+  to avoid nullable string comparisons throughout the PHP layer.
+- After editing `schema.php`, always rebuild immediately and confirm with:
+  ```bash
+  ssh hcr@vaio "mysql -e 'DESCRIBE doctis.<table_name>;'"
+  ```
+- The schema comment at the top of `schema.php` restates these rules — keep it
+  accurate if conventions change.
+
+### What NOT to do
+
+| Prohibited | Why |
+|------------|-----|
+| `ALTER TABLE doctis.foo ADD COLUMN ...` run directly on vaio | Schema.php will not reflect the change; a future rebuild will silently drop the column |
+| Standalone `admin/foo_migrate.php` scripts | The installer does not call them; they create false confidence that the schema is up to date |
+| `AddColumnSQL` / `AlterColumnSQL` entries appended to schema.php | Contradicts the flat-schema design; makes the definition hard to read and impossible to audit against the live DB |
+
 ## Resetting to a Clean Slate for Testing
 
 A full clean-room reset wipes both the MariaDB database and the git document
@@ -763,12 +811,10 @@ Key files:
 The API key (`$g_anthropic_api_key`) is set in `config/config_inc.php` (not committed).
 The sidebar button is suppressed entirely when the key is blank.
 
-**Adding new AI tables:** Any new database table must be added to `admin/schema.php`
-using ADOdb data dictionary syntax so that `admin/tools/doctis-drop-and-create-new-database.sh`
-creates it on fresh installs.  Standalone migration scripts under `admin/` (e.g.
-`admin/ai_sessions_migrate.php`) are development conveniences only — the installer
-does not call them.  Use `INT UNSIGNED` for timestamp columns (`db_now()` returns a
-Unix integer, not a datetime string).  See §5 of `doc/ai-todo.md` for details.
+**Adding new AI tables:** Follow the standard schema change workflow — edit
+`admin/schema.php` and rebuild the database.  See **Database Schema Changes** above
+for the full procedure and conventions.  See §5 of `doc/ai-todo.md` for AI-specific
+table design notes.
 
 ## Known Architectural Trade-offs
 

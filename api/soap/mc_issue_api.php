@@ -1705,6 +1705,7 @@ function mci_issue_data_as_array( BugData $p_issue_data, $p_user_id, $p_lang, $p
 		// @TODO RobD - this is probably not what we need, as it is just a copy of how categories are handled
 		$t_issue['document'] = mci_get_document( $p_issue_data->document_id );
 		$t_issue['document_id'] = $p_issue_data->document_id;
+		$t_issue['document_sha'] = $p_issue_data->document_sha ?? '';
 
 		// this is where we can return an array of documents which this issue relates to - in an array of structures with id, name, etc..
 	}
@@ -1931,6 +1932,7 @@ function mci_issue_data_as_header_array( BugData $p_issue_data ) {
 		// @TODO RobD - we probably don't need both of these (cleanup)
 		$t_issue['document'] = mci_get_document( $p_issue_data->document_id );
 		$t_issue['document_id'] = $p_issue_data->document_id;
+		$t_issue['document_sha'] = $p_issue_data->document_sha ?? '';
 		$t_issue['priority'] = $p_issue_data->priority;
 		$t_issue['severity'] = $p_issue_data->severity;
 		$t_issue['status'] = $p_issue_data->status;

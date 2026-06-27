@@ -378,7 +378,8 @@ function print_document_section( $t_issue, $t_force_readonly ) {
 			$t_document_flags = $t_dwgresult['flags'];
 
 			if( $t_document_flags['project_show'] ) {
-				print_document_details( $t_document, $t_document_flags );
+				$t_document_sha = $t_issue['document_sha'] ?? '';
+				print_document_details( $t_document, $t_document_flags, $t_document_sha );
 			}
 		}
 	}
@@ -388,12 +389,15 @@ function print_document_section( $t_issue, $t_force_readonly ) {
 # Document, Reference, Author
 #
 
-function print_document_details( $t_document, $t_document_flags ) {
+function print_document_details( $t_document, $t_document_flags, $t_document_sha = '' ) {
+
+	$t_has_sha = preg_match( '/^[0-9a-f]{40}$/i', $t_document_sha );
+	$t_ref_label = $t_has_sha ? lang_get( 'dwg_reference_at_creation' ) : lang_get( 'dwg_reference' );
 
 	# Labels
 	echo '<tr class="bug-header">';
 	echo '<th class="bug-project category width-15">', $t_document_flags['project_show'] ? lang_get( 'dwg_title' ) : '', '</th>';
-	echo '<th class="bug-project category width-15">', $t_document_flags['project_show'] ? lang_get( 'dwg_reference' ) : '', '</th>';
+	echo '<th class="bug-project category width-15">', $t_document_flags['project_show'] ? $t_ref_label : '', '</th>';
 	echo '<th class="bug-project category width-20">', $t_document_flags['project_show'] ? lang_get( 'dwg_number' ) : '', '</th>';
 	echo '<th class="bug-project category width-15">', $t_document_flags['project_show'] ? lang_get( 'dwg_revision' ) : '', '</th>';
 	echo '<th class="bug-project category width-15">', $t_document_flags['project_show'] ? lang_get( 'dwg_release_date' ) : '', '</th>';
@@ -413,12 +417,19 @@ function print_document_details( $t_document, $t_document_flags ) {
 	}
 	echo '</td>';
 
-//	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['reference'] ) ? string_display_line( $t_document['reference'] ) : '', '</td>';
-	# Document Reference
+	# Document Reference — show historical SHA snapshot link if captured at issue creation;
+	# fall back to the current on-record reference otherwise.
 	if( $t_document_flags['project_show'] ) {
 		echo '<td class="bug-project">';
-//		echo string_display_line( $t_issue['reference'] );
-		print_dwg_reference_link( $t_document['id'], $t_document['reference'], false );
+		if( $t_has_sha ) {
+			$t_short_sha = substr( $t_document_sha, 0, 8 );
+			$t_url = 'file_download.php?type=dwg_primary_at_sha&id=' . $t_document['id'] . '&sha=' . urlencode( $t_document_sha );
+			echo '<a href="', string_html_specialchars( $t_url ), '"',
+			     ' title="', string_html_specialchars( $t_document_sha ), '"',
+			     '>', string_html_specialchars( $t_short_sha ), '</a>';
+		} else {
+			print_dwg_reference_link( $t_document['id'], $t_document['reference'], false );
+		}
 		echo '</td>';
 	}
 	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['number'] ) ? string_display_line( $t_document['number'] ) : '', '</td>';

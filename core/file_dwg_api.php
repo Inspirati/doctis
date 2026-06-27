@@ -1709,6 +1709,61 @@ function file_dwg_primary_get_head_content( int $p_dwg_id ) {
 }
 
 /**
+ * Retrieve the content of the primary document file at an arbitrary historical git SHA.
+ *
+ * Used by file_download.php?type=dwg_primary_at_sha to serve the exact document
+ * version that was on record when a specific issue was raised.
+ *
+ * @param int    $p_dwg_id  Document ID
+ * @param string $p_sha     Full 40-character git commit SHA
+ * @return array|false  ['type' => mime, 'content' => bytes, 'filename' => name]
+ *                      or false if the file or commit cannot be found.
+ */
+function file_dwg_primary_get_content_at_sha( int $p_dwg_id, string $p_sha ) {
+	if( !preg_match( '/^[0-9a-f]{40}$/i', $p_sha ) ) {
+		return false;
+	}
+
+	$t_row = file_dwg_primary_get( $p_dwg_id );
+	if( !$t_row ) {
+		return false;
+	}
+
+	$t_project_id = dwg_get_field( $p_dwg_id, 'project_id' );
+	$t_backend    = file_dwg_get_storage_backend();
+
+	# Resolve the filename at the historical commit via git ls-tree.
+	$t_bare    = $t_row['folder'];
+	$t_prefix  = escapeshellarg( (string)$p_dwg_id . '/' );
+	$t_sha_arg = escapeshellarg( $p_sha );
+	$t_ls      = shell_exec(
+		'git --git-dir=' . escapeshellarg( $t_bare ) .
+		' ls-tree --name-only ' . $t_sha_arg . ' -- ' . $t_prefix
+	);
+	if( $t_ls === null ) {
+		return false;
+	}
+	$t_files = array_filter( array_map( 'trim', explode( "\n", $t_ls ) ) );
+	if( empty( $t_files ) ) {
+		return false;
+	}
+	$t_rel_path = reset( $t_files );
+	$t_filename = basename( $t_rel_path );
+
+	$t_sha_row             = $t_row;
+	$t_sha_row['git_sha']  = $p_sha;
+	$t_sha_row['filename'] = $t_filename;
+
+	$t_result = $t_backend->retrieve( $t_sha_row, $t_project_id );
+	if( $t_result === false ) {
+		return false;
+	}
+
+	$t_result['filename'] = $t_filename;
+	return $t_result;
+}
+
+/**
  * Sync the Doctis {dwg_primary_file} record to the current git HEAD commit.
  *
  * Overwrites the stored git_sha, filename, filesize, and date_added with the

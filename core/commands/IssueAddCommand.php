@@ -35,6 +35,7 @@ require_api( 'user_api.php' );
 
 require_api( 'document_api.php' );  // @TODO RobD - investigate why this is required whilst category_api.php is not?
 									// ANSWER - it is because we have introduced the call to mci_get_document_id()
+require_api( 'file_dwg_api.php' );
 
 $t_soap_dir = dirname( __DIR__, 2 ) . '/api/soap/';
 require_once( $t_soap_dir . 'mc_api.php' );
@@ -272,6 +273,17 @@ class IssueAddCommand extends Command {
 		$this->issue->projection = $t_projection_id;
 		$this->issue->category_id = $t_category_id;
 		$this->issue->document_id = $t_document_id;
+
+		# Snapshot the git SHA of the primary document file at creation time.
+		# Stored once; never updated — lets reviewers retrieve the exact version
+		# the issue was raised against even after later uploads supersede it.
+		if( $t_document_id > 0 ) {
+			$t_primary = file_dwg_primary_get( $t_document_id );
+			if( $t_primary && preg_match( '/^[0-9a-f]{40}$/i', $t_primary['git_sha'] ?? '' ) ) {
+				$this->issue->document_sha = $t_primary['git_sha'];
+			}
+		}
+
 		$this->issue->eta = $t_eta_id;
 		$this->issue->os = $t_issue['os'] ?? '';
 		$this->issue->os_build = $t_issue['os_build'] ?? '';

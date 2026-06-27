@@ -183,6 +183,12 @@ class BugData {
 	protected $document_id = 1;
 
 	/**
+	 * Git SHA of the primary document file at the moment this issue was created.
+	 * Immutable snapshot; empty string when no GIT primary file existed at creation time.
+	 */
+	protected $document_sha = '';
+
+	/**
 	 * Date Submitted
 	 */
 	protected $date_submitted = '';
@@ -604,7 +610,7 @@ class BugData {
 					      last_updated,eta, bug_text_id,
 					      os, os_build,platform, version,build,
 					      profile_id, summary, view_state, sponsorship_total, sticky, fixed_in_version,
-					      target_version, due_date, document_id
+					      target_version, due_date, document_id, document_sha
 					    )
 					  VALUES
 					    ( ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
@@ -614,9 +620,9 @@ class BugData {
 					      ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
 					      ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
 					      ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
-						  ' . db_param() . '
+						  ' . db_param() . ',' . db_param() . '
 						  )';
-		db_query( $t_query, array( $this->project_id, $this->reporter_id, $this->handler_id, $this->duplicate_id, $this->priority, $this->severity, $this->reproducibility, $t_status, $this->resolution, $this->projection, $this->category_id, $this->date_submitted, $this->last_updated, $this->eta, $t_text_id, $this->os, $this->os_build, $this->platform, $this->version, $this->build, $this->profile_id, $this->summary, $this->view_state, $this->sponsorship_total, $this->sticky, $this->fixed_in_version, $this->target_version, $this->due_date, $this->document_id ) );
+		db_query( $t_query, array( $this->project_id, $this->reporter_id, $this->handler_id, $this->duplicate_id, $this->priority, $this->severity, $this->reproducibility, $t_status, $this->resolution, $this->projection, $this->category_id, $this->date_submitted, $this->last_updated, $this->eta, $t_text_id, $this->os, $this->os_build, $this->platform, $this->version, $this->build, $this->profile_id, $this->summary, $this->view_state, $this->sponsorship_total, $this->sticky, $this->fixed_in_version, $this->target_version, $this->due_date, $this->document_id, $this->document_sha ) );
 
 		$this->id = db_insert_id( db_get_table( 'bug' ) );
 
