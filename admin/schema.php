@@ -838,8 +838,64 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
+# ── Step 49: seed — default Global category ─────────────────────────────────
+# id=1, project_id=0 = global (available to all projects).
+# project.category_id defaults to 1, so this row must exist on a fresh install.
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"INSERT INTO " . db_get_table( 'category' ) . "
+	 (project_id, user_id, name, status)
+	 VALUES (0, 0, 'General', 1)"
+);
+
+# ── Step 50: seed — MantisCoreFormatting plugin ─────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"INSERT INTO " . db_get_table( 'plugin' ) . "
+	 (basename, enabled)
+	 VALUES ('MantisCoreFormatting', 1)"
+);
+
+# ── Step 51: seed — default administrator user ──────────────────────────────
+# Password is 'administrator' (MD5).  The cookie_string is randomised at
+# install time so it is unique per installation.
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"INSERT INTO " . db_get_table( 'user' ) . "
+	 (username, realname, email, password,
+	  enabled, protected, access_level,
+	  login_count, lost_password_request_count, failed_login_count,
+	  cookie_string, last_visit, date_created)
+	 VALUES ('administrator', '', 'root@localhost', '63a9f0ea7bb98050796b649e85481845',
+	         1, 0, 90, 3, 0, 0,
+	         '" . md5( mt_rand( 0, mt_getrandmax() ) + mt_rand( 0, mt_getrandmax() ) ) . md5( time() ) . "',
+	         UNIX_TIMESTAMP(), UNIX_TIMESTAMP())"
+);
+
+# ── Step 52: seed — dwg_text anchor row (id=1) ──────────────────────────────
+# The placeholder dwg row (step 54) references dwg_text_id=1.
+# longtext columns have no DEFAULT so all three must be specified.
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"INSERT INTO " . db_get_table( 'dwg_text' ) . "
+	 (description, steps_to_reproduce, additional_information)
+	 VALUES ('Empty', 'Empty', 'Empty')"
+);
+
+# ── Step 53: seed — documents anchor row (id=1) ─────────────────────────────
+# The placeholder dwg row (step 54) has document_id DEFAULT 1.
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"INSERT INTO " . db_get_table( 'documents' ) . "
+	 (title)
+	 VALUES ('Empty')"
+);
+
+# ── Step 54: seed — placeholder dwg row (id=1, status=archived) ─────────────
+# Issues whose target document has been deleted are reassigned to this dwg.
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"INSERT INTO " . db_get_table( 'dwg' ) . "
+	 (dwg_text_id, status)
+	 VALUES (1, 195)"
+);
+
 # ── End of schema definition ─────────────────────────────────────────────────
-# $t_idx = 49 → database_version = 48 on a fresh install.
+# $t_idx = 55 → database_version = 54 on a fresh install.
 #
 # To add a new table: append a new step here and rebuild the database.
 # Do NOT insert steps between existing entries — always append.
