@@ -262,10 +262,27 @@ function news_get_limited_rows( $p_offset, $p_project_id = null ) {
 
 	$c_offset = (int)$p_offset;
 
-	$t_projects = current_user_get_all_accessible_subprojects( $p_project_id );
-	$t_projects[] = (int)$p_project_id;
-	if( ALL_PROJECTS != $p_project_id ) {
+	if( ALL_PROJECTS == $p_project_id ) {
+		# user_get_accessible_subprojects(ALL_PROJECTS) only returns child projects,
+		# missing top-level projects where news is typically posted.
+		# Build the full list from top-level accessible projects and their children,
+		# then include project_id=0 so site-wide news (posted from All Projects) is
+		# also shown.
+		$t_user_id   = auth_get_current_user_id();
+		$t_top       = user_get_accessible_projects( $t_user_id );
+		$t_projects  = array_map( 'intval', $t_top );
+		foreach( $t_top as $t_pid ) {
+			$t_sub      = user_get_all_accessible_subprojects( $t_user_id, $t_pid );
+			$t_projects = array_merge( $t_projects, array_map( 'intval', $t_sub ) );
+		}
 		$t_projects[] = ALL_PROJECTS;
+		$t_projects = array_unique( $t_projects );
+	} else {
+		$t_projects = current_user_get_all_accessible_subprojects( $p_project_id );
+		$t_projects[] = (int)$p_project_id;
+		if( ALL_PROJECTS != $p_project_id ) {
+			$t_projects[] = ALL_PROJECTS;
+		}
 	}
 
 	$t_news_view_limit = config_get( 'news_view_limit' );

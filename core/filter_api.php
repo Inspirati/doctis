@@ -1195,7 +1195,7 @@ function filter_get_bug_rows_dwg( &$p_page_number, &$p_per_page, &$p_page_count,
 	global $g_filter_document_id;
 
 	$g_filter_document_id = $p_document_id;
-	$t_rows = filter_get_bug_rows( $f_page_number, $t_per_page, $t_page_count, $t_bug_count, null, null, null, true );
+	$t_rows = filter_get_bug_rows( $p_page_number, $p_per_page, $p_page_count, $p_bug_count, null, null, null, true );
 	$g_filter_document_id = 0;
 
 	return $t_rows;

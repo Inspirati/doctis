@@ -327,7 +327,9 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	  `classification` varchar(64) NOT NULL DEFAULT '',
 	  `revision_date` int(10) unsigned NOT NULL DEFAULT 1,
 	  `release_date` int(10) unsigned NOT NULL DEFAULT 1,
-	  PRIMARY KEY (`id`)
+	  PRIMARY KEY (`id`),
+	  KEY `idx_documents_reference` (`reference`),
+	  KEY `idx_documents_number` (`number`)
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
@@ -357,8 +359,13 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	  `sticky` tinyint(4) NOT NULL DEFAULT 0,
 	  PRIMARY KEY (`id`),
 	  KEY `idx_dwg_status` (`status`),
-	  KEY `idx_dwg_project` (`project_id`),
-	  KEY `idx_dwg_document_id` (`document_id`)
+	  KEY `idx_dwg_project_status` (`project_id`, `status`),
+	  KEY `idx_dwg_document_id` (`document_id`),
+	  KEY `idx_dwg_last_updated` (`last_updated`),
+	  KEY `idx_dwg_date_submitted` (`date_submitted`),
+	  KEY `idx_dwg_creator` (`creator_id`),
+	  KEY `idx_dwg_handler` (`handler_id`),
+	  KEY `idx_dwg_view_state` (`view_state`)
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
