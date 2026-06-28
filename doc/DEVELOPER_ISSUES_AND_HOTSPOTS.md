@@ -258,3 +258,136 @@ The License entity is entirely Doctis-specific with no MantisBT equivalent. A go
 4. **Read** `core/filter_api.php` lines 95–200 and `core/filter_dwg_api.php` to understand the filter split.
 5. **Pick one** of the `@TODO RobD` items from `core/email_dwg_api.php` and resolve it.
 6. **Write** a failing test in `tests/` to document a discovered gap before fixing it.
+
+---
+
+## Part 5 — Implementation Priority Plan (added 2026-06-28)
+
+Issues are ordered by the risk they pose to data correctness and production safety.
+Each item includes a test strategy so coverage can be verified before and after the fix.
+
+### Priority 0 — Immediate Data Correctness (fix before any further feature work)
+
+#### P0-A: `classification` / `link_url` / `id` column shadowing in `dwg_cache_row()`
+
+`core/dwg_api.php` line ~794:
+```php
+SELECT * FROM {dwg} a INNER JOIN {documents} b ON a.document_id=b.id WHERE a.id=?
+```
+`SELECT *` on a JOIN causes `doc.id`, `doc.classification`, and `doc.link_url` to
+overwrite the corresponding `dwg` columns in every ADOdb result row. This is the
+single-document fetch path — it is called on every document view page load.
+
+*Also noted:* `DwgFilterQuery::build_main()` had the same bug and was fixed in the
+`db-optimise` branch (commit `3335de2`). This is the remaining occurrence.
+
+**Fix:** Replace `SELECT *` with an explicit column list, aliasing the conflicting
+`doc` columns (`doc.classification AS doc_classification`, etc.), mirroring the
+fix already applied in `DwgFilterQuery`.
+
+**Test strategy:** Create a document where `dwg.classification = 'SECRET'` and the
+linked `documents.classification = 'UNCLASSIFIED'`. Load the document view page and
+assert the displayed classification reads `SECRET`. After the fix the correct value
+must appear; before it reads `UNCLASSIFIED` (the `doc` column silently wins).
+
+#### P0-B: `DWGNOTE = 0` in `core/constant_inc.php:643`
+
+Zero is falsy in PHP. Any `if($t_type)` check or switch fall-through that treats
+zero as "no type set" will silently misclassify a document note. The existing value
+was noted as needing a bump to `4`.
+
+**Fix:** Change `define('DWGNOTE', 0)` to `define('DWGNOTE', 4)` and update every
+`switch` / `case` / comparison that references `DWGNOTE` or the literal `0` in a
+type-discriminator context.
+
+**Test strategy:** `grep -rn 'DWGNOTE\|case 0' core/` to enumerate all call sites
+before the change. After the change: add a note to a document and assert it is
+stored with `type = 4` and retrieved without being dropped by a falsy check. A
+constant-value assertion (`$this->assertNotEquals(0, DWGNOTE)`) in PHPUnit acts as
+a permanent regression guard.
+
+---
+
+### Priority 1 — High-Impact Correctness
+
+#### P1-A: Status field semantic confusion in `document_api.php`
+
+Line ~571: the same `status` column conflates document lifecycle state
+(110=pending … 195=archived) with category active/inactive (0/1). Requires an
+audit of every `status` reference in `core/document_api.php`.
+
+**Test strategy:** For each `@TODO RobD` near `status`, assert before and after:
+`document_get($id)->status` must match a lifecycle enum value, not a boolean.
+Run `phpunit` after each individual fix.
+
+#### P1-B: Email notifications — missing document fields (`core/email_dwg_api.php`)
+
+Ten-plus `@TODO RobD` markers where bug-oriented fields (`severity`,
+`reproducibility`, `resolution`, `target_version`) are referenced but do not exist
+on documents. Causes PHP notices on every document-update email.
+
+**Test strategy:** Enable email debug logging; trigger every document lifecycle
+transition (create → assign → review → sign → archive); grep the PHP error log for
+notices. After fixes: zero notices for the full lifecycle.
+
+---
+
+### Priority 2 — Before Any External Deployment
+
+#### P2-A: Docker credentials and destructive bootstrap (`docker-live/`)
+
+Hard-coded `password` everywhere; bootstrap drops the database on every container
+restart.
+
+**Fix:** Replace credential literals with Docker secrets / `.env` references. Guard
+the DB init call so it only runs if the schema does not already exist.
+
+**Test strategy:** `grep -r "password" docker-live/` must return zero credential
+literals. Bring up the stack, insert a sentinel row, `docker compose restart`,
+assert the sentinel row survives.
+
+---
+
+### Priority 3 — REST API (enables programmatic clients)
+
+#### P3-A: Document and license REST endpoints
+
+No `documents_rest.php` or `licenses_rest.php` exist. The Command layer is ready.
+
+**Approach:** TDD — write failing tests in `tests/rest/` first, then implement Slim
+routes. Order: `GET /documents` → `GET /documents/{id}` → `POST /documents` →
+`PATCH /documents/{id}` → `DELETE /documents/{id}` → licenses.
+
+---
+
+### Priority 4 — Medium Cleanup
+
+#### P4-A: Filter layer hacks (`core/filter_api.php` lines 101, 1156, 1192)
+
+Load-bearing but fragile. Refactor risk is high — tackle after the REST suite
+provides a regression safety net.
+
+**Test strategy:** Write integration tests covering every filter property before
+touching the code; those tests become the refactor guard.
+
+#### P4-B: Bulk document import (no UI)
+
+**Test strategy:** Prepare a CSV with 5 rows including edge cases (missing optional
+fields, duplicate reference numbers). Import; assert 5 `dwg` rows created, correct
+metadata, duplicate reference rejected with a clean error.
+
+#### P4-C: Install script stub handlers (`admin/tools/install-check.sh`)
+
+Collapse `install_vbox / install_qemu / install_droplet / install_baremetal` to a
+single generic Linux path until each environment-specific variant is needed.
+
+---
+
+### Priority 5 — Low-Risk Housekeeping (batch together)
+
+| Item | File | Action |
+|------|------|--------|
+| Stale file header | `core/document_api.php` | Update docblock to `Document API` |
+| Package identity | `composer.json` | Change name to `inspirati/doctis` |
+| PHP platform floor | `composer.json` | Raise `platform.php` to `8.1`; run `composer update` |
+| Commit convention | repo root | Add `.gitmessage` template; document in `CONTRIBUTING.md` |
