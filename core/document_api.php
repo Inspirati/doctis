@@ -15,10 +15,10 @@
 # along with MantisBT.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Category API
+ * Document API
  *
  * @package CoreAPI
- * @subpackage CategoryAPI
+ * @subpackage DocumentAPI
  * @copyright Copyright 2000 - 2002  Kenzaburo Ito - kenito@300baud.org
  * @copyright Copyright 2002  MantisBT Team - mantisbt-dev@lists.sourceforge.net
  * @link http://www.mantisbt.org
@@ -48,7 +48,7 @@ require_api( 'project_api.php' );
 require_api( 'project_hierarchy_api.php' );
 require_api( 'utility_api.php' );
 
-# Category data cache (to prevent excessive db queries)
+# Document data cache (to prevent excessive db queries)
 $g_document_cache = array();
 
 /**

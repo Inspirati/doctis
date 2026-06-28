@@ -350,13 +350,29 @@ assert the sentinel row survives.
 
 ### Priority 3 — REST API (enables programmatic clients)
 
-#### P3-A: Document and license REST endpoints
+#### P3-A: Document and license REST endpoints — **DONE**
 
-No `documents_rest.php` or `licenses_rest.php` exist. The Command layer is ready.
+`api/rest/restcore/documents_rest.php` and `licenses_rest.php` implemented and
+registered in `api/rest/index.php`. All eight CRUD operations live-tested:
 
-**Approach:** TDD — write failing tests in `tests/rest/` first, then implement Slim
-routes. Order: `GET /documents` → `GET /documents/{id}` → `POST /documents` →
-`PATCH /documents/{id}` → `DELETE /documents/{id}` → licenses.
+| Endpoint | Result |
+|----------|--------|
+| GET /documents | 200 — list with pagination |
+| GET /documents/{id} | 200 — full document including description |
+| POST /documents | 201 — document created, id returned |
+| PATCH /documents/{id} | 200 — partial update (any subset of fields) |
+| DELETE /documents/{id} | 204 — confirmed not found after delete |
+| GET /licenses | 200 — list (brief: id + name) |
+| GET /licenses/{id} | 200 — full detail |
+| POST /licenses | 201 — license created |
+| PATCH /licenses/{id} | 200 — partial update |
+| DELETE /licenses/{id} | 204 |
+
+**Implementation notes:**
+- Requires `AllowOverride FileInfo AuthConfig` on `/var/www/html/doctis/api/rest` (set in vaio's Apache config) and `mod_rewrite` enabled.
+- `rest_document_update()` auto-fills `summary` from `title` when blank — `dwg.summary` is never inserted by `DwgData::create()` but `mc_dwg_update()` requires it non-blank.
+- `DwgAddCommand::validate()` now uses `?? ''` defaults for all document-specific string fields (`version`, `link_url`, `title`, `author`, `publisher`, `number`, `edition`, `revision`, `reference`, `classification`, `summary`, `description`).
+- Base URL is `/api/rest/documents` (no `/v1/` prefix — Slim strips the script directory, not the filename).
 
 ---
 

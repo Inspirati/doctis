@@ -112,17 +112,17 @@ class DwgAddCommand extends Command {
 
 		// @TODO RobD - new fields specific to 'documents'
 
-		$t_version				= $t_issue['version'];
-		$t_title				= $t_issue['title'];
-		$t_author				= $t_issue['author'];
-		$t_publisher			= $t_issue['publisher'];
-		$t_number				= $t_issue['number'];
-		$t_edition				= $t_issue['edition'];
-		$t_revision				= $t_issue['revision'];
+		$t_version				= $t_issue['version'] ?? '';
+		$t_title				= $t_issue['title'] ?? '';
+		$t_author				= $t_issue['author'] ?? '';
+		$t_publisher			= $t_issue['publisher'] ?? '';
+		$t_number				= $t_issue['number'] ?? '';
+		$t_edition				= $t_issue['edition'] ?? '';
+		$t_revision				= $t_issue['revision'] ?? '';
 //		$t_category				= $t_issue['category'];
-		$t_reference			= $t_issue['reference'];
-		$t_link_url				= $t_issue['link_url'];
-		$t_classification		= $t_issue['classification'];
+		$t_reference			= $t_issue['reference'] ?? '';
+		$t_link_url				= $t_issue['link_url'] ?? '';
+		$t_classification		= $t_issue['classification'] ?? '';
 		$t_revision_date		= $t_issue['revision_date'] ?? null;
 		$t_release_date			= $t_issue['release_date'] ?? null;
 		$t_due_date				= $t_issue['due_date'] ?? null;
@@ -136,7 +136,7 @@ class DwgAddCommand extends Command {
 		// 		array( 'summary' ) );
 		// }
 
-		$t_summary = $t_issue['summary'];
+		$t_summary = $t_issue['summary'] ?? '';
 
 		// if( !isset( $t_issue['description'] ) || is_blank( $t_issue['description'] ) )  {
 		// 	throw new ClientException(
@@ -145,7 +145,7 @@ class DwgAddCommand extends Command {
 		// 		array( 'description' ) );
 		// }
 
-		$t_description = $t_issue['description'];
+		$t_description = $t_issue['description'] ?? '';
 
 		if( !isset( $t_issue['project'] ) )  {
 			throw new ClientException(

@@ -1729,19 +1729,17 @@ function mci_dwg_data_as_array( DwgData $p_issue_data, $p_user_id, $p_lang, $p_f
 		$t_issue['summary'] = mci_sanitize_xml_string( $p_issue_data->summary );
 	}
 
-	// if( $t_fields === null || isset( $t_fields['description'] ) ) {
-	// 	$t_issue['description'] = mci_sanitize_xml_string( dwg_get_text_field( $t_id, 'description' ) );
-	// }
+	if( $t_fields === null || isset( $t_fields['description'] ) ) {
+		$t_issue['description'] = mci_sanitize_xml_string( $p_issue_data->description );
+	}
 
-	// if( $t_fields === null || isset( $t_fields['steps_to_reproduce'] ) ) {
-	// 	$t_steps_to_reproduce = dwg_get_text_field( $t_id, 'steps_to_reproduce' );
-	// 	$t_issue['steps_to_reproduce'] = mci_null_if_empty( mci_sanitize_xml_string( $t_steps_to_reproduce ) );
-	// }
+	if( $t_fields === null || isset( $t_fields['steps_to_reproduce'] ) ) {
+		$t_issue['steps_to_reproduce'] = mci_null_if_empty( mci_sanitize_xml_string( $p_issue_data->steps_to_reproduce ) );
+	}
 
-	// if( $t_fields === null || isset( $t_fields['additional_information'] ) ) {
-	// 	$t_additional_information = dwg_get_text_field( $t_id, 'additional_information' );
-	// 	$t_issue['additional_information'] = mci_null_if_empty( mci_sanitize_xml_string( $t_additional_information ) );
-	// }
+	if( $t_fields === null || isset( $t_fields['additional_information'] ) ) {
+		$t_issue['additional_information'] = mci_null_if_empty( mci_sanitize_xml_string( $p_issue_data->additional_information ) );
+	}
 
 	if( $t_fields === null || isset( $t_fields['project'] ) ) {
 		$t_issue['project'] = mci_project_as_array_by_id( $p_issue_data->project_id );
