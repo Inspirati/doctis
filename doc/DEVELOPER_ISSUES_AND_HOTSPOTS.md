@@ -237,10 +237,10 @@ The License entity is entirely Doctis-specific with no MantisBT equivalent. A go
 |------|--------|----------|
 | Replace hard-coded DB credentials in docker-compose | Not done | Critical |
 | Guard DB bootstrap against data loss on restart | Not done | Critical |
-| Resolve `classification` field ambiguity | Not done | High |
+| Resolve `classification` field ambiguity | **Done** — explicit SELECT in `dwg_cache_row()`, `dwg_cache_array_rows()`, `DwgFilterQuery` | High |
 | Change default admin password in docs / enforce on first login | Not done | High |
 | Add REST API routes for documents | Not done | High |
-| Fix `DWGNOTE` constant from 0 to non-zero | Not done | High |
+| `DWGNOTE = 0` — not a bug; same value as `BUGNOTE` is intentional (both mean "entity note" in their domain) | N/A | ~~High~~ |
 | Resolve email_dwg_api.php missing-field TODOs | Not done | Medium |
 | Implement or stub-collapse install-check.sh handlers | Not done | Medium |
 | Add bulk import UI for documents | Not done | Medium |
