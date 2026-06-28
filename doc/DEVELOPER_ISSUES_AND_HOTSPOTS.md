@@ -241,7 +241,7 @@ The License entity is entirely Doctis-specific with no MantisBT equivalent. A go
 | Change default admin password in docs / enforce on first login | Not done | High |
 | Add REST API routes for documents | Not done | High |
 | `DWGNOTE = 0` — not a bug; same value as `BUGNOTE` is intentional (both mean "entity note" in their domain) | N/A | ~~High~~ |
-| Resolve email_dwg_api.php missing-field TODOs | Not done | Medium |
+| Resolve email_dwg_api.php missing-field TODOs | **Done** — dead commented blocks removed; description/additional_info/steps_to_reproduce enabled via `dwg_get_extended_row()` | Medium |
 | Implement or stub-collapse install-check.sh handlers | Not done | Medium |
 | Add bulk import UI for documents | Not done | Medium |
 | Fix `document_api.php` file header | Not done | Low |
@@ -256,7 +256,7 @@ The License entity is entirely Doctis-specific with no MantisBT equivalent. A go
 2. **Spin up** the dev Docker environment (`docker/docker-compose.dev.yml`) and log in.
 3. **Create a document** in the UI; follow the code path from `dwg_create_page.php` → `dwg_create.php` → `DwgAddCommand.php` → `dwg_api.php::create()`.
 4. **Read** `core/filter_api.php` lines 95–200 and `core/filter_dwg_api.php` to understand the filter split.
-5. **Pick one** of the `@TODO RobD` items from `core/email_dwg_api.php` and resolve it.
+5. **Pick one** of the outstanding P1 items from Part 5 and resolve it.
 6. **Write** a failing test in `tests/` to document a discovered gap before fixing it.
 
 ---
@@ -320,15 +320,15 @@ audit of every `status` reference in `core/document_api.php`.
 `document_get($id)->status` must match a lifecycle enum value, not a boolean.
 Run `phpunit` after each individual fix.
 
-#### P1-B: Email notifications — missing document fields (`core/email_dwg_api.php`)
+#### P1-B: Email notifications — missing document fields (`core/email_dwg_api.php`) ✓ DONE
 
-Ten-plus `@TODO RobD` markers where bug-oriented fields (`severity`,
-`reproducibility`, `resolution`, `target_version`) are referenced but do not exist
-on documents. Causes PHP notices on every document-update email.
-
-**Test strategy:** Enable email debug logging; trigger every document lifecycle
-transition (create → assign → review → sign → archive); grep the PHP error log for
-notices. After fixes: zero notices for the full lifecycle.
+All `@TODO RobD` markers resolved:
+- Dead commented blocks for `severity`, `reproducibility`, `resolution`,
+  `target_version` removed from both data-collection and formatting functions.
+- `description`, `additional_information`, and `steps_to_reproduce` enabled —
+  all three are available via `dwg_get_extended_row()` which joins `dwg_text`.
+- Tested via CLI: `email_build_visible_dwg_data()` and `email_format_dwg_message()`
+  run with zero PHP notices and description appears correctly in the email body.
 
 ---
 
