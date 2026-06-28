@@ -30,14 +30,14 @@ import time
 # CONSTANTS — tune these before each run
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-N_PROJECTS       = 8    # top-level projects
-N_SUB            = 4    # sub-projects per top-level project
-N_SUBSUB         = 2    # sub-sub-projects per sub-project (set 0 to omit)
-N_DOCS_PER_PRJ   = 26    # documents at EACH project level (top + sub + subsub)
-N_ISSUES_PER_DOC = 15    # bug/issue rows per document
-N_USERS          = 120   # stress users to add (above the existing sample accounts)
-N_LICENSES       = 50   # stress licenses to add (above the existing sample licenses)
-N_NEWS           = 1500   # news stories spread across top-level projects
+N_PROJECTS       = 2    # top-level projects
+N_SUB            = 1    # sub-projects per top-level project
+N_SUBSUB         = 0    # sub-sub-projects per sub-project (set 0 to omit)
+N_DOCS_PER_PRJ   = 3    # documents at EACH project level (top + sub + subsub)
+N_ISSUES_PER_DOC = 2    # bug/issue rows per document
+N_USERS          = 10   # stress users to add (above the existing sample accounts)
+N_LICENSES       = 5   # stress licenses to add (above the existing sample licenses)
+N_NEWS           = 10   # news stories spread across top-level projects
 
 # ── Starting IDs — must not collide with existing seed/sample data ────────────
 #
@@ -143,14 +143,15 @@ def main():
     random.seed(RNG_SEED)
 
     total_projects = N_PROJECTS * (1 + N_SUB + N_SUB * N_SUBSUB)
-    total_docs     = total_projects * N_DOCS_PER_PRJ
+    # +N_DOCS_PER_PRJ for the pre-existing "example" project (id=1)
+    total_docs     = (total_projects + 1) * N_DOCS_PER_PRJ
     total_issues   = total_docs * N_ISSUES_PER_DOC
 
     # ── Header ────────────────────────────────────────────────────────────────
     print('-- Doctis stress-test dataset')
     print(f'-- Generated : {time.strftime("%Y-%m-%d %H:%M:%S")}')
-    print(f'-- Projects  : {N_PROJECTS} top × {N_SUB} sub × {N_SUBSUB} subsub = {total_projects} total')
-    print(f'-- Documents : {N_DOCS_PER_PRJ} per level = {total_docs} total')
+    print(f'-- Projects  : {N_PROJECTS} top × {N_SUB} sub × {N_SUBSUB} subsub = {total_projects} stress + 1 example = {total_projects + 1} total')
+    print(f'-- Documents : {N_DOCS_PER_PRJ} per project = {total_docs} total (incl. example)')
     print(f'-- Issues    : {N_ISSUES_PER_DOC} per doc = {total_issues} total')
     print(f'-- Users     : {N_USERS}   Licenses: {N_LICENSES}   News: {N_NEWS}')
     print()
@@ -345,8 +346,16 @@ def main():
                 bug_text_id += 1
                 bug_id      += 1
 
+    # ── Populate the existing "example" project (id=1) so the default UI view
+    #    shows data immediately without requiring the user to switch projects.
+    print('-- example project (id=1): user assignments + documents + issues')
+    for uid in user_ids:
+        proj_user_b.add(1, uid, ACCESS_REPORTER)
+    proj_user_b.flush()
+    emit_docs(1, 'example')
+
     # Collect top-level project IDs for news generation after the main loop
-    top_project_ids = []
+    top_project_ids = [1]
 
     for p in range(1, N_PROJECTS + 1):
         top_pid  = proj_id
@@ -407,8 +416,8 @@ def main():
     print('-- Dataset summary:')
     print(f'--   Users        : {N_USERS}')
     print(f'--   Licenses     : {N_LICENSES}')
-    print(f'--   Projects     : {total_projects}')
-    print(f'--   Documents    : {total_docs}')
+    print(f'--   Projects     : {total_projects} stress + 1 example')
+    print(f'--   Documents    : {total_docs}  (incl. {N_DOCS_PER_PRJ} in example project)')
     print(f'--   Issues       : {total_issues}')
     print(f'--   News stories : {N_NEWS}')
 

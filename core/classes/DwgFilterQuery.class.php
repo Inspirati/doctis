@@ -269,7 +269,8 @@ class DwgFilterQuery extends DbQuery {
 		$t_query_count->set_limit();
 		$t_query_count->set_offset();
 		$t_query_count->execute();
-		return $t_query_count->value();
+		$t_count = $t_query_count->value();
+		return $t_count;
 	}
 
 	/**
@@ -401,8 +402,16 @@ class DwgFilterQuery extends DbQuery {
 	protected function build_main() {
 		$this->rt_stop_build = false;
 		$this->add_from( '{dwg} dwg INNER JOIN {documents} doc ON doc.id = {dwg}.document_id' );
-		// $this->add_select( '{dwg}.*, doc.title as title' );
-		$this->add_select( '{dwg}.*, doc.*' );
+		# Select all dwg columns, then only the specific doc columns needed.
+		# doc.* is intentionally avoided: it would include doc.id (shadowing dwg.id),
+		# and doc.classification / doc.link_url (shadowing same-named dwg columns).
+		# The two conflicting doc columns are aliased to doc_classification / doc_link_url.
+		$this->add_select( '{dwg}.*' );
+		$this->add_select(
+			'doc.title, doc.author, doc.publisher, doc.reference, doc.number,' .
+			' doc.edition, doc.revision, doc.revision_date, doc.release_date,' .
+			' doc.classification AS doc_classification, doc.link_url AS doc_link_url'
+		);
 
 		if( $this->filter[FILTER_PROPERTY_MATCH_TYPE] == FILTER_MATCH_ANY ) {
 			$this->filter_operator = ' OR ';
