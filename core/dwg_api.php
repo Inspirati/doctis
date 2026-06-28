@@ -801,9 +801,14 @@ function dwg_cache_row( $p_bug_id, $p_trigger_errors = true ) {
 	$c_bug_id = (int)$p_bug_id;
 
 	db_param_push();
-	// $t_query = 'SELECT * FROM {dwg} a WHERE id=' . db_param();
-	// @TODO RobD - beware we currently have field 'classification' in both tables; either drop one or be specific as right now it'd be indeterminate
-	$t_query = 'SELECT * FROM {dwg} a INNER JOIN {documents} b ON a.document_id=b.id WHERE a.id=' . db_param();
+	# Select all dwg columns, then only the specific doc columns needed.
+	# doc.* is avoided: it would shadow dwg.id, dwg.classification and dwg.link_url.
+	# Conflicting doc columns are aliased to doc_classification / doc_link_url.
+	$t_query = 'SELECT a.*,'
+		. ' b.title, b.author, b.publisher, b.reference, b.number,'
+		. ' b.edition, b.revision, b.revision_date, b.release_date,'
+		. ' b.classification AS doc_classification, b.link_url AS doc_link_url'
+		. ' FROM {dwg} a INNER JOIN {documents} b ON a.document_id=b.id WHERE a.id=' . db_param();
 	$t_result = db_query( $t_query, array( $c_bug_id ) );
 
 	$t_row = db_fetch_array( $t_result );
@@ -842,8 +847,12 @@ function dwg_cache_array_rows( array $p_bug_id_array ) {
 		return;
 	}
 
-	// $t_query = 'SELECT * FROM {dwg} WHERE id IN (' . implode( ',', $c_bug_id_array ) . ')';
-	$t_query = 'SELECT * FROM {dwg} a INNER JOIN {documents} b ON a.document_id=b.id WHERE a.id IN (' . implode( ',', $c_bug_id_array ) . ')';
+	# Explicit column list matching dwg_cache_row() — avoids id/classification/link_url shadowing.
+	$t_query = 'SELECT a.*,'
+		. ' b.title, b.author, b.publisher, b.reference, b.number,'
+		. ' b.edition, b.revision, b.revision_date, b.release_date,'
+		. ' b.classification AS doc_classification, b.link_url AS doc_link_url'
+		. ' FROM {dwg} a INNER JOIN {documents} b ON a.document_id=b.id WHERE a.id IN (' . implode( ',', $c_bug_id_array ) . ')';
 	$t_result = db_query( $t_query );
 
 	while( $t_row = db_fetch_array( $t_result ) ) {
