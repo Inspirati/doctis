@@ -63,15 +63,19 @@ $t_rel_shell     = escapeshellarg( $t_rel_path );
 $t_head_sha_full = htmlspecialchars( $t_head['sha'] );
 $t_head_sha_abbr = htmlspecialchars( substr( $t_head['sha'], 0, 8 ) );
 
-# Server name as seen by the user (for SSH example).
-$t_server_host = htmlspecialchars( $_SERVER['SERVER_NAME'] ?? $_SERVER['HTTP_HOST'] ?? 'vaio' );
-$t_server_user = 'hcr';   # typical ssh user on this server
-
-# Pre-compose the command strings (already shell-safe).
+# Pre-compose the server-side command strings (already shell-safe).
 $t_cmd_show_head = 'git --git-dir=' . $t_bare_shell . ' show HEAD:' . $t_rel_shell;
 $t_cmd_log       = 'git --git-dir=' . $t_bare_shell . ' log --follow -- ' . $t_rel_shell;
 $t_cmd_show_sha  = 'git --git-dir=' . $t_bare_shell . ' show ' . $t_head_sha_abbr . ':' . $t_rel_shell;
 $t_cmd_clone     = 'git clone ' . $t_bare_shell . ' /tmp/' . htmlspecialchars( $t_slug );
+
+# Remote (workstation) clone over Smart HTTP — the recommended method.
+$t_git_http_on   = ( ON == config_get_global( 'git_http_enabled' ) );
+$t_scheme        = ( !empty( $_SERVER['HTTPS'] ) && $_SERVER['HTTPS'] !== 'off' ) ? 'https' : 'http';
+$t_host_raw      = $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? 'vaio';
+$t_current_user  = user_get_username( auth_get_current_user_id() );
+$t_clone_url     = $t_scheme . '://' . $t_host_raw . '/git/' . $t_slug . '.git';
+$t_cmd_clone_remote = 'git clone ' . $t_scheme . '://' . $t_current_user . '@' . $t_host_raw . '/git/' . $t_slug . '.git';
 
 # ── Render the page ────────────────────────────────────────────────────────
 
@@ -106,23 +110,71 @@ layout_page_begin();
 		</div>
 		<div class="widget-body">
 			<div class="widget-main padding-16">
-				<p>
-					The primary document for <strong>Document <?php echo (int)$f_dwg_id ?></strong>
-					is stored in a git bare repository at the path shown below.
-					Advanced users with shell access to the server can read, compare,
-					and retrieve any version of the file directly using standard git commands.
-					No working tree clone is required — all commands operate against the
-					bare repository using <code>--git-dir</code>.
-				</p>
 
+				<!-- ── Recommended: clone to your own workstation ──────────── -->
+<?php if( $t_git_http_on ) { ?>
+				<h4 class="blue">Clone this project repository to your workstation</h4>
+				<p>
+					You can clone the entire <strong><?php echo htmlspecialchars( $t_project_name ) ?></strong>
+					project document repository to your own computer using ordinary git
+					over the network, authenticated with your Doctis account &mdash;
+					<strong>no server login or Linux account is required</strong>.
+				</p>
+				<ol>
+					<li>
+						Create a personal API token under
+						<a href="api_tokens_page.php">My&nbsp;Account &rarr; API&nbsp;Tokens</a>.
+						Copy it immediately &mdash; it is shown only once.
+					</li>
+					<li>
+						Run the clone command below.  When git prompts for a
+						<em>password</em>, paste your <strong>API token</strong>
+						(your account password will not work):
+						<pre class="bigger-110"><code><?php echo htmlspecialchars( $t_cmd_clone_remote ) ?></code></pre>
+					</li>
+				</ol>
+
+				<table class="table table-bordered table-condensed">
+					<tr>
+						<th class="category width-25">Clone URL</th>
+						<td><code><?php echo htmlspecialchars( $t_clone_url ) ?></code></td>
+					</tr>
+					<tr>
+						<th class="category">Username</th>
+						<td>your Doctis username (<code><?php echo htmlspecialchars( $t_current_user ) ?></code>)</td>
+					</tr>
+					<tr>
+						<th class="category">Password</th>
+						<td>a personal <strong>API token</strong> &mdash; <em>not</em> your account password</td>
+					</tr>
+				</table>
+
+				<p class="small">
+					<strong>What you get:</strong> every <em>registered</em> document in this
+					project &mdash; one directory per document id (this document is
+					<code><?php echo htmlspecialchars( $t_rel_path ) ?></code>) &mdash; with full
+					revision history.  Attachments are <em>not</em> included.
+					<br>
+					<strong>Access:</strong> requires <strong>Developer</strong> access (or higher)
+					to the project, and is currently <strong>read-only</strong> &mdash; pushing
+					changes back is not yet enabled.  The Approved version shown in Doctis is the
+					commit pinned by the SHA recorded in the database, which may differ from the
+					latest <code>HEAD</code> in your clone.
+				</p>
+<?php } else { ?>
+				<p class="alert alert-info">
+					Remote git access is not enabled on this server
+					(<code>$g_git_http_enabled</code> is off).  Contact your administrator to
+					enable cloning project repositories to your workstation.
+				</p>
+<?php } ?>
+
+				<!-- ── Repository reference ─────────────────────────────────── -->
+				<h5>Repository reference</h5>
 				<table class="table table-bordered table-condensed">
 					<tr>
 						<th class="category width-25">Project</th>
 						<td><?php echo htmlspecialchars( $t_project_name ) ?></td>
-					</tr>
-					<tr>
-						<th class="category">Bare repository</th>
-						<td><code><?php echo htmlspecialchars( $t_bare ) ?></code></td>
 					</tr>
 					<tr>
 						<th class="category">Document path in repo</th>
@@ -137,9 +189,21 @@ layout_page_begin();
 					</tr>
 				</table>
 
-				<h5>Commands (run on the server, or prefix with <code>ssh <?php echo $t_server_user ?>@<?php echo $t_server_host ?> "..."</code>)</h5>
-
-				<table class="table table-bordered table-condensed">
+				<!-- ── Deprecated: server-side shell access ─────────────────── -->
+				<h5 class="grey">
+					<i class="fa fa-exclamation-triangle"></i>
+					Deprecated: direct server-side access (administrators only)
+				</h5>
+				<p class="small">
+					<strong>The commands below are deprecated for Doctis users.</strong>
+					They operate on the bare repository <em>on the server itself</em>
+					(<code><?php echo htmlspecialchars( $t_bare ) ?></code>) and require shell
+					access as <code>www-data</code>.  A server-local clone is of no use to a
+					Doctis user working from their own machine &mdash; use the
+					<strong>workstation clone</strong> above instead.  These are retained for
+					administrator diagnostics only.
+				</p>
+				<table class="table table-bordered table-condensed grey">
 					<tr>
 						<th class="category width-35">Read current HEAD version</th>
 						<td><code><?php echo htmlspecialchars( $t_cmd_show_head ) ?></code></td>
@@ -156,17 +220,14 @@ layout_page_begin();
 						<td><code><?php echo htmlspecialchars( $t_cmd_log ) ?></code></td>
 					</tr>
 					<tr>
-						<th class="category">Clone repository locally</th>
-						<td><code><?php echo htmlspecialchars( $t_cmd_clone ) ?></code></td>
+						<th class="category text-muted"><del>Clone repository locally</del> &mdash; deprecated</th>
+						<td><code class="text-muted"><?php echo htmlspecialchars( $t_cmd_clone ) ?></code></td>
 					</tr>
 				</table>
 
 				<p class="small">
-					<strong>Note:</strong> The bare repository is owned by the web server process.
-					Shell access typically requires <code>sudo&nbsp;-u&nbsp;www-data</code> or
-					membership of the appropriate group.  The Approved version visible in Doctis
-					is identified by the SHA recorded in the database; git history is permanent
-					and all previous file content is retrievable even after a Doctis &ldquo;delete&rdquo;.
+					<strong>Note:</strong> git history is permanent &mdash; all previous file
+					content is retrievable even after a Doctis &ldquo;delete&rdquo;.
 				</p>
 			</div>
 		</div>
