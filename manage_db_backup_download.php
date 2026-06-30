@@ -8,9 +8,14 @@ require_once( 'core.php' );
 require_api( 'access_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'constant_inc.php' );
+require_api( 'system_ops_api.php' );
 
 auth_reauthenticate();
 access_ensure_global_level( ADMINISTRATOR );
+
+# Resolve the sudo prefix before sending any headers, so a misconfiguration
+# (unset $g_updater_run_as_user) surfaces as a normal error page.
+$t_sudo_prefix = system_ops_sudo_prefix();
 
 $t_filename = 'doctis_db_backup_' . date( 'Ymd_His' ) . '.sql.gz';
 
@@ -24,7 +29,7 @@ while( ob_get_level() ) {
 flush();
 
 $t_script = '/var/www/html/doctis/admin/tools/doctis-backup-database.sh';
-$t_cmd = 'sudo -u hcr ' . escapeshellarg( $t_script ) . ' | /bin/gzip';
+$t_cmd = $t_sudo_prefix . escapeshellarg( $t_script ) . ' | /bin/gzip';
 $t_handle = popen( $t_cmd, 'r' );
 if( $t_handle === false ) {
 	trigger_error( ERROR_GENERIC, ERROR );

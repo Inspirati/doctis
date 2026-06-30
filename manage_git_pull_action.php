@@ -8,6 +8,7 @@ require_api( 'constant_inc.php' );
 require_api( 'form_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
+require_api( 'system_ops_api.php' );
 
 form_security_validate( 'manage_git_pull' );
 
@@ -16,7 +17,7 @@ access_ensure_global_level( ADMINISTRATOR );
 
 form_security_purge( 'manage_git_pull' );
 
-exec( 'sudo -u hcr /usr/bin/git -C /var/www/html/doctis pull 2>&1', $t_lines, $t_rc );
+exec( system_ops_sudo_prefix() . '/usr/bin/git -C /var/www/html/doctis pull 2>&1', $t_lines, $t_rc );
 $t_output = implode( "\n", $t_lines );
 
 error_log( 'ADMIN: ' . current_user_get_field( 'username' ) . ' ran git pull at ' . date( 'c' ) . ' (exit ' . $t_rc . ')' );

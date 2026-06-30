@@ -2448,6 +2448,65 @@ $g_git_storage_root = '';
 $g_git_worktree_root = '';
 
 /**
+ * Remote Git access (Smart HTTP): master enable flag.
+ *
+ * When OFF, the git_http.php gateway refuses all requests (404).  When ON, it
+ * serves per-project bare repositories under $g_git_storage_root via
+ * git-http-backend, authenticated by a Doctis API token (HTTP Basic password)
+ * and authorised by project-level access level.  Requires Apache routing of
+ * /git/ to git_http.php (see admin/tools git-serve.conf).
+ *
+ * See doc/PROJECT_REPOS.md Part 2 and doc/PROJECT_REPOS_PLAN.md.
+ *
+ * @global int $g_git_http_enabled
+ */
+$g_git_http_enabled = OFF;
+
+/**
+ * Absolute path to the git-http-backend CGI executable used by the gateway.
+ *
+ * @global string $g_git_http_backend
+ */
+$g_git_http_backend = '/usr/lib/git-core/git-http-backend';
+
+/**
+ * Minimum project access level required to clone/fetch (read) a project
+ * repository over remote git.  Git serves whole repositories, so this is a
+ * project-level entitlement: per-document view thresholds and license gating
+ * are NOT enforced over git.
+ *
+ * @global int $g_git_http_read_threshold
+ */
+$g_git_http_read_threshold = DEVELOPER;
+
+/**
+ * Minimum project access level required to push (write) to a project repository
+ * over remote git.  Push is not served until Phase 2 (see
+ * doc/PROJECT_REPOS_PLAN.md); this key reserves the entitlement and is a higher
+ * bar than read by design.
+ *
+ * @global int $g_git_http_write_threshold
+ */
+$g_git_http_write_threshold = MANAGER;
+
+/**
+ * System Operations: the OS account that privileged admin operations
+ * (the manage_*_action.php pages — git pull / DB rebuild / sample data /
+ * config write / DB backup) run as via "sudo -u".
+ *
+ * This account must own the application working tree, hold the git-remote and
+ * database credentials, and have matching NOPASSWD rules in
+ * /etc/sudoers.d/doctis-web.  The installer (configure_target() in
+ * admin/tools/install-target.sh) sets this to the account performing the
+ * install.  Leave empty to disable the sudo-backed System Operations — they
+ * will report a clear "not configured" error rather than running as the wrong
+ * user.  See doc/doctis-git-server-setup.txt STEP 9 and doc/UPDATER-PLAN.md.
+ *
+ * @global string $g_updater_run_as_user
+ */
+$g_updater_run_as_user = '';
+
+/**
  * Enable support for sending files to users via a more efficient X-Sendfile
  * method.
  *

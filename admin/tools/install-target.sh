@@ -227,6 +227,12 @@ if [ ${target} = "doctis" ]; then
 \$g_dwg_upload_method   = GIT;		# document (dwg) attachments
 \$g_git_storage_root    = '/var/git/doctis';
 \$g_git_worktree_root   = '/var/www/doctis/worktrees';
+
+# --- System Operations ---
+# OS account that admin manage_*_action.php pages run privileged operations as
+# (git pull, DB rebuild/backup, sample data, config write).  Set to the account
+# performing this install — it owns the working tree and holds the sudoers rules.
+\$g_updater_run_as_user = '$(whoami)';
 EOF
 fi
 if [ "$2" = "nodbprepostfix" ]; then

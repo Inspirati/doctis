@@ -9,6 +9,7 @@ require_api( 'form_api.php' );
 require_api( 'gpc_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
+require_api( 'system_ops_api.php' );
 
 form_security_validate( 'manage_config_file_upload' );
 
@@ -39,7 +40,7 @@ if( strncmp( $t_content, '<?php', 5 ) !== 0 ) {
 
 $t_script = '/var/www/html/doctis/admin/tools/doctis-write-config.sh';
 $t_proc = proc_open(
-	'sudo -u hcr ' . escapeshellarg( $t_script ),
+	system_ops_sudo_prefix() . escapeshellarg( $t_script ),
 	array(
 		0 => array( 'pipe', 'r' ),
 		1 => array( 'pipe', 'w' ),

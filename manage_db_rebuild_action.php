@@ -10,6 +10,7 @@ require_api( 'form_api.php' );
 require_api( 'gpc_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
+require_api( 'system_ops_api.php' );
 
 form_security_validate( 'manage_db_rebuild' );
 
@@ -25,7 +26,7 @@ if( gpc_get_string( 'confirm', '' ) !== 'REBUILD' ) {
 form_security_purge( 'manage_db_rebuild' );
 
 $t_script = '/var/www/html/doctis/admin/tools/doctis-drop-and-create-new-database.sh';
-exec( 'echo yes | sudo -u hcr ' . escapeshellarg( $t_script ) . ' 2>&1', $t_lines, $t_rc );
+exec( 'echo yes | ' . system_ops_sudo_prefix() . escapeshellarg( $t_script ) . ' 2>&1', $t_lines, $t_rc );
 $t_output = implode( "\n", $t_lines );
 
 $t_success = ( $t_rc === 0 && strpos( $t_output, 'database install successful' ) !== false );
