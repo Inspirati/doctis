@@ -733,7 +733,8 @@ function layout_print_sidebar( $p_active_sidebar_page = null ) {
 			$t_sidebar_items[] = array(
 				'url' => 'my_view_bug_page.php',
 				'title' => 'my_view_link',
-				'icon' => 'fa-dashboard',
+				// 'icon' => 'fa-dashboard',
+				'icon' => 'fa-home',
 			);
 		}
 
@@ -757,7 +758,7 @@ function layout_print_sidebar( $p_active_sidebar_page = null ) {
 		$t_sidebar_items[] = array(
 			'url' => 'view_dwg_page.php',
 			'title' => 'view_dwgs_link',
-			'icon' => 'fa-list-alt'
+			'icon' => 'fa-newspaper-o'
 		);
 
 		# Create Documents
@@ -765,7 +766,7 @@ function layout_print_sidebar( $p_active_sidebar_page = null ) {
 			$t_sidebar_items[] = array(
 				'url' => string_get_dwg_create_url(),
 				'title' => 'create_dwg_link',
-				'icon' => 'fa-edit'
+				'icon' => 'fa-file-text-o'
 			);
 		}
 
@@ -815,7 +816,7 @@ function layout_print_sidebar( $p_active_sidebar_page = null ) {
 			$t_sidebar_items[] = array(
 				'url' => 'wiki.php?type=project&amp;id=' . $t_current_project,
 				'title' => 'wiki',
-				'icon' => 'fa-book'
+				'icon' => 'fa-wikipedia-w'
 			);
 		}
 
