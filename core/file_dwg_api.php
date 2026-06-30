@@ -722,6 +722,30 @@ function file_dwg_get_storage_backend(): FileStorageBackendInterface {
 }
 
 /**
+ * Return the storage backend for document ATTACHMENTS.
+ *
+ * The GIT backend is reserved for the primary registered document, which is the
+ * only revision-controlled artefact.  Attachments are Doctis-specific
+ * "assisting metadata" and are never stored in git: when $g_dwg_upload_method is
+ * GIT they fall back to DATABASE, mirroring how bug attachments behave in
+ * file_api.php.  DISK and DATABASE are honoured as-is.
+ *
+ * @return FileStorageBackendInterface
+ * @throws ServiceException on unknown dwg_upload_method
+ */
+function file_dwg_get_attachment_storage_backend(): FileStorageBackendInterface {
+	switch( config_get( 'dwg_upload_method' ) ) {
+		case DISK:
+			return new DiskFileStorageBackend();
+		case DATABASE:
+		case GIT:
+			return new DatabaseFileStorageBackend();
+		default:
+			throw new \Mantis\Exceptions\ServiceException( 'Unknown file upload method', ERROR_GENERIC );
+	}
+}
+
+/**
  * Delete File.
  *
  * @param int    $p_file_id    File identifier.
@@ -741,7 +765,7 @@ function file_dwg_delete( $p_file_id, $p_table = 'dwg', $p_bugnote_id = 0 ) {
 	# Resolve project_id through the document record (works for both table types)
 	$t_project_id = (int)dwg_get_field( $t_dwg_id, 'project_id' );
 
-	file_dwg_get_storage_backend()->delete( $t_diskfile, $t_project_id, array(
+	file_dwg_get_attachment_storage_backend()->delete( $t_diskfile, $t_project_id, array(
 		'dwg_id'   => $t_dwg_id,
 		'filename' => $t_filename,
 		'user_id'  => auth_get_current_user_id(),
@@ -1018,7 +1042,7 @@ function file_dwg_add( $p_bug_id, array $p_file, $p_table = 'dwg', $p_title = ''
 
 	$t_unique_name = file_dwg_generate_unique_name( $t_file_path );
 
-	$t_stored = file_dwg_get_storage_backend()->store(
+	$t_stored = file_dwg_get_attachment_storage_backend()->store(
 		$t_tmp_file,
 		$t_file_size,
 		$t_unique_name,
@@ -1301,7 +1325,7 @@ function file_dwg_get_content( $p_file_id, $p_type = 'dwg' ) {
 		$t_project_id = $t_row['dwg_id'];
 	}
 
-	return file_dwg_get_storage_backend()->retrieve( $t_row, $t_project_id );
+	return file_dwg_get_attachment_storage_backend()->retrieve( $t_row, $t_project_id );
 }
 
 /**

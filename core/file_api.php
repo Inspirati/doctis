@@ -1035,6 +1035,9 @@ function file_add( $p_bug_id, array $p_file, $p_table = 'bug', $p_title = '', $p
 				throw new ClientException( 'Duplicate file', ERROR_FILE_DUPLICATE );
 			}
 			break;
+		case GIT:
+			# GIT is reserved for the primary registered document; bug/issue
+			# attachments are never versioned in git and fall back to DATABASE.
 		case DATABASE:
 			$c_content = db_prepare_binary_string( fread( fopen( $t_tmp_file, 'rb' ), $t_file_size ) );
 			$t_file_path = '';
@@ -1325,6 +1328,9 @@ function file_get_content( $p_file_id, $p_type = 'bug' ) {
 				return array( 'type' => $t_content_type, 'content' => file_get_contents( $t_local_disk_file ) );
 			}
 			return false;
+		case GIT:
+			# GIT is reserved for the primary registered document; bug/issue
+			# attachments are never versioned in git and fall back to DATABASE.
 		case DATABASE:
 			$t_file_info_type = file_get_mime_type_for_content( $t_row['content'] );
 

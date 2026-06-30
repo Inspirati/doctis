@@ -2233,16 +2233,18 @@ function print_dwg_attachment_preview_text( array $p_attachment ) {
 				$t_content = file_dwg_get_contents( $p_attachment['diskfile'] );
 			}
 			break;
+		case GIT:
+//			$t_file_info = file_dwg_get_content( (int)$p_attachment['id'] );
+//			$t_content = $t_file_info ? $t_file_info['content'] : '';
+//			break;
+			# GIT is reserved for the primary registered document; attachments
+			# are never versioned in git and their content lives in the DB row.
 		case DATABASE:
 			db_param_push();
 			$t_query = 'SELECT * FROM {dwg_file} WHERE id=' . db_param();
 			$t_result = db_query( $t_query, array( (int)$p_attachment['id'] ) );
 			$t_row = db_fetch_array( $t_result );
 			$t_content = $t_row['content'];
-			break;
-		case GIT:
-			$t_file_info = file_dwg_get_content( (int)$p_attachment['id'] );
-			$t_content = $t_file_info ? $t_file_info['content'] : '';
 			break;
 		default:
 			trigger_error( ERROR_GENERIC, ERROR );
