@@ -151,9 +151,22 @@ Display `$t_output` in a `<pre>` block. Surface `$t_rc !== 0` as an error.
 `git pull` fails cleanly (exit 1, no destructive action) if there are
 uncommitted local changes — display the raw message verbatim.
 
-The `safe.directory` for `/var/www/html/doctis` is already set in the system
-gitconfig.  The sudoers stanza does not need `env_keep HOME` because
-`/usr/bin/git` run as hcr will find `/home/hcr/.gitconfig` naturally.
+**`safe.directory` is a hard prerequisite.** The application tree
+`/var/www/html/doctis` is owned by the deploying user (e.g. `robert:share`),
+not by `www-data` or `hcr`, so modern git refuses to operate on it ("dubious
+ownership") unless it is whitelisted in the **system** gitconfig:
+
+```bash
+sudo git config --system --add safe.directory /var/www/html/doctis
+```
+
+This applies to both `www-data` (the page's direct `rev-parse`/`config` calls)
+and `hcr` (the sudo'd `pull`).  It is set on vaio but **must be created on every
+fresh host** — its absence is why Self-Update works on vaio but not on a clean
+VM.  See STEP 9 of `doc/doctis-git-server-setup.txt` for the full procedure.
+
+The sudoers stanza does not need `env_keep HOME` because `/usr/bin/git` run as
+hcr will find `/home/hcr/.gitconfig` naturally.
 
 ---
 
@@ -474,13 +487,17 @@ Visual risk hierarchy: grey (safe) → blue (reversible update) → amber
 ## 11. One-Time Infrastructure Setup (vaio, manual)
 
 ```bash
-# 1. Create sudoers file
-sudo tee /etc/sudoers.d/doctis-web << 'EOF'
-www-data ALL=(hcr) NOPASSWD: /usr/bin/git -C /var/www/html/doctis pull
-www-data ALL=(hcr) NOPASSWD: /var/www/html/doctis/admin/tools/doctis-write-config.sh
-www-data ALL=(hcr) NOPASSWD: /var/www/html/doctis/admin/tools/doctis-drop-and-create-new-database.sh
-www-data ALL=(hcr) NOPASSWD: /var/www/html/doctis/admin/tools/doctis-load-sample-data.sh
-www-data ALL=(hcr) NOPASSWD: /var/www/html/doctis/admin/tools/doctis-backup-database.sh
+# 1. Create sudoers file.  Run as the deploy account (NOT root) so $USER
+#    expands to it; the UNQUOTED heredoc bakes the literal name into the file.
+#    This run-as account must match $g_updater_run_as_user in config_inc.php
+#    (the PHP action pages build 'sudo -u <that user>' via the shared helper
+#    system_ops_sudo_prefix(); the installer sets the key to $(whoami)).
+sudo tee /etc/sudoers.d/doctis-web << EOF
+www-data ALL=($USER) NOPASSWD: /usr/bin/git -C /var/www/html/doctis pull
+www-data ALL=($USER) NOPASSWD: /var/www/html/doctis/admin/tools/doctis-write-config.sh
+www-data ALL=($USER) NOPASSWD: /var/www/html/doctis/admin/tools/doctis-drop-and-create-new-database.sh
+www-data ALL=($USER) NOPASSWD: /var/www/html/doctis/admin/tools/doctis-load-sample-data.sh
+www-data ALL=($USER) NOPASSWD: /var/www/html/doctis/admin/tools/doctis-backup-database.sh
 EOF
 
 # 2. Verify syntax
@@ -494,8 +511,14 @@ chmod +x /var/www/html/doctis/admin/tools/doctis-backup-database.sh
 # Config write (non-destructive — uses backup, but restores itself)
 sudo -u www-data bash -c 'echo "<?php # test" | sudo -u hcr /var/www/html/doctis/admin/tools/doctis-write-config.sh'
 
-# Git pull
-sudo -u www-data sudo -u hcr /usr/bin/git -C /var/www/html/doctis status
+# Git pull — verify the prerequisites (NON-destructive).
+# NOTE: do NOT test with 'sudo -u hcr git ... status' — only 'git ... pull' is
+# in the sudoers allowlist, so 'status' prompts for a www-data password and
+# looks broken.  Instead verify the two real requirements:
+#   (a) www-data can read the repo directly (needs system safe.directory):
+sudo -u www-data git -C /var/www/html/doctis rev-parse --abbrev-ref HEAD
+#   (b) the pull sudoers rule is present:
+sudo -l -U www-data | grep 'doctis pull'
 
 # DB backup (just check it produces output)
 sudo -u www-data bash -c 'sudo -u hcr /var/www/html/doctis/admin/tools/doctis-backup-database.sh | head -5'

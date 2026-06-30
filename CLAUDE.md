@@ -700,11 +700,28 @@ retrieve(row, project_id) → [type, content] | false
 delete(diskfile, project_id, metadata[]) → void
 ```
 
-**Factory:** `file_dwg_get_storage_backend()` in [core/file_dwg_api.php](core/file_dwg_api.php)
+**Factories:**
+- `file_dwg_get_storage_backend()` in [core/file_dwg_api.php](core/file_dwg_api.php)
+  — used **only** for the primary registered document; returns the GIT backend
+  when configured.
+- `file_dwg_get_attachment_storage_backend()` in [core/file_dwg_api.php](core/file_dwg_api.php)
+  — used for **all** document attachments; honours `DISK`/`DATABASE` and maps
+  `GIT → DATABASE` (attachments are never stored in git).
 
-**Scope:** GIT is a document-only backend. Bug/bugnote attachments (`file_api.php`)
-always fall back to DATABASE when `GIT` is configured. This is enforced by
-fall-through case statements in `file_api.php`.
+**Scope:** GIT stores **only the primary registered document** — the single
+revision-controlled artefact. **All attachments are stored via DISK or DATABASE,
+never git** — this applies to both document (`dwg_file`) and bug/issue
+(`bug_file`) attachments. When the configured method is `GIT`:
+- document attachments fall back to DATABASE via `file_dwg_get_attachment_storage_backend()`;
+- bug/bugnote attachments fall back to DATABASE via `case GIT:` fall-through in
+  `file_api.php` (upload + content-retrieval switches);
+- `file_download.php` and `print_dwg_attachment_preview_text()` remap `GIT → DATABASE`
+  for attachment download/preview.
+
+Rationale: the registered document is the only item a `git clone` user should
+see and the only revision-controlled record (its approved SHA is in
+`{dwg_primary_file}.git_sha`); attachments are Doctis "assisting metadata". See
+[doc/PROJECT_REPOS.md](doc/PROJECT_REPOS.md) §8.
 
 ### GIT backend specifics
 
@@ -761,10 +778,10 @@ Beyond the new backend classes, every existing file that switches on
 |------|----------------|
 | [core/constant_inc.php](core/constant_inc.php) | `define('GIT', 3)` |
 | [config_defaults_inc.php](config_defaults_inc.php) | `$g_git_storage_root`, `$g_git_worktree_root` defaults |
-| [core/file_dwg_api.php](core/file_dwg_api.php) | Factory `file_dwg_get_storage_backend()`, updated `file_dwg_add()` / `file_dwg_get_content()` / `file_dwg_delete()` |
-| [core/file_api.php](core/file_api.php) | GIT falls through to DATABASE in upload and retrieve switches (bug attachments unaffected) |
-| [core/print_dwg_api.php](core/print_dwg_api.php) | GIT case in `print_dwg_attachment_preview_text()` |
-| [file_download.php](file_download.php) | GIT case in MIME detection and content output; `require_api('file_dwg_api.php')` added |
+| [core/file_dwg_api.php](core/file_dwg_api.php) | Two factories: `file_dwg_get_storage_backend()` (primary doc — may be GIT) and `file_dwg_get_attachment_storage_backend()` (attachments — GIT→DATABASE). `file_dwg_add()` / `file_dwg_get_content()` / `file_dwg_delete()` use the attachment factory |
+| [core/file_api.php](core/file_api.php) | `case GIT:` falls through to DATABASE in upload + content-retrieval switches — bug/issue attachments are never stored in git |
+| [core/print_dwg_api.php](core/print_dwg_api.php) | `print_dwg_attachment_preview_text()` reads attachment content from the DB row (`GIT` folded into the DATABASE branch) |
+| [file_download.php](file_download.php) | Primary-document download (`dwg_primary*` types) uses GIT; attachment download remaps `GIT → DATABASE` (no git case); `require_api('file_dwg_api.php')` added |
 
 ### Integration test
 
@@ -822,6 +839,6 @@ table design notes.
 2. **`document_api.php`** — currently a thin wrapper; some category-style logic was copied from `category_api.php` and has a stale file header.
 3. **REST API** — no dwg/document/license REST endpoints exist yet; Commands are used internally only.
 4. **Bulk import** — no UI; must use `phpMyAdmin` or CLI directly.
-5. **`file_upload_method` is global** — one config key controls both bug and document file storage. Setting it to `GIT` causes bug attachments to fall back silently to DATABASE. This is intentional for now but means bug attachments do not benefit from git versioning.
+5. **Two upload-method config keys; GIT is primary-document-only** — bug/issue attachments use `$g_file_upload_method`; documents use `$g_dwg_upload_method` (they are *separate* keys). `GIT` is only meaningful for the **primary registered document**. All attachments (both `bug_file` and `dwg_file`) are stored via DISK/DATABASE; any `GIT` setting falls back to DATABASE for attachments. This is intentional — attachments are "assisting metadata", not revision-controlled. See `doc/PROJECT_REPOS.md` §8.
 6. **`file_api.php` switch statements** — MantisBT's original bug attachment code has multiple `switch($file_upload_method)` blocks. Each new storage method requires a case in all of them. Discovered locations: upload (around line 1009), MIME detection (line 1314), content output (`file_download.php` line 238). Search for `file_upload_method` when adding future methods.
 7. **GIT config written before infrastructure exists** — `install-target.sh`:`configure_target()` writes `$g_dwg_upload_method = GIT` (and the storage paths) into `config_inc.php` at config-generation time, before `install_git_storage()` has run. If `install_git_storage()` subsequently fails (e.g. git not installed, permission error creating `/var/git/doctis/`), the config will advertise GIT but the bare repos and worktrees will not exist. Document file uploads will then error at runtime. **Future hardening:** `install_git_storage()` should revert those three config keys to their DATABASE defaults if it exits non-zero.

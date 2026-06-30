@@ -57,6 +57,7 @@ EOF
 
 initialise_database() {
     echo -e "${INFO}Initialising database...${OFF}"
+    # Ensure MySQL/MariaDB is running and enabled
     if ! systemctl is-enabled --quiet "${database}"; then
         echo "Enabling ${database} to start on boot..."
         sudo systemctl enable "${database}"
@@ -77,6 +78,7 @@ configure_database() {
     local mysqlusername="${target}${dbuserpostfix}"
     local mysqldatabase="${target}${dbdatapostfix}"
     echo -e "${INFO}Configuring ${database} for ${target}...${OFF}"
+    # Create database & user if they don't already exist
     ${db_cmd} <<EOF
 CREATE DATABASE IF NOT EXISTS ${mysqldatabase} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 #CREATE USER IF NOT EXISTS '${mysqlusername}'@'localhost' IDENTIFIED BY '${mysqlpassword}';
@@ -91,6 +93,9 @@ run_install() {
     local target="$1"
     local logfile="${SCRIPT_DIR}/${target}_install_$(date +%Y%m%d_%H%M%S).html"
 
+    # Resolve the webroot check relative to the script's own location, not the
+    # caller's working directory.  ${SCRIPT_DIR} is admin/tools/ inside the
+    # project; three levels up lands at the webroot parent (e.g. /var/www/html).
     if [ -d "${SCRIPT_DIR}/../../../${target}" ]; then
         local install_url="http://${domain_idname}/${target}/admin/install.php"
     else
@@ -99,6 +104,7 @@ run_install() {
 
     echo -e "${INFO}Running ${target} database install/upgrade...${OFF}"
     echo -e "${INFO}${install_url}${OFF}"
+    # Capture the full output with tee, then grep separately
     if curl -fsS -d "install=2" "${install_url}" \
         | tee "$logfile" \
         | grep -q "GOOD"; then

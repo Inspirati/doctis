@@ -64,7 +64,7 @@ admin/tools/*_install_*.html
 # Settings below are for convenience when switching branches on Dev machines
 
 # v1.2.x config files
-# config_inc.php
+config_inc.php
 custom_constants_inc.php
 custom_functions_inc.php
 custom_relationships_inc.php
@@ -77,5 +77,7 @@ api/soap/mc_config_inc.php
 #/docker-test/
 
 # Do not commit the Anthropic/Claude initialisation file(s)
-#CLAUDE.md
-#.claude/
+CLAUDE.md
+.claude/
+
+lang/*

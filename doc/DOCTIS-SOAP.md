@@ -1,8 +1,14 @@
-# Doctis SOAP API — Audit and Extension Plan
+# Doctis SOAP API — Audit and Status
 
-**Date:** 2026-06-12
-**Branch at time of audit:** `git-structure-2`
-**Scope:** `api/soap/` (17 files, ~9 000 lines)
+**Updated:** 2026-06-29
+**Original audit date:** 2026-06-12 (branch `git-structure-2`)
+**Current branch:** `admin-tools`
+**Scope:** `api/soap/` (19 files, ~12 000 lines)
+
+> **Usage examples** (curl envelopes, authentication, REST endpoints, server setup) are in
+> [`doc/REST-AND-SOAP-API.md`](REST-AND-SOAP-API.md).  This document is the internal
+> developer reference: file inventory, method catalogue, data structures, and remaining
+> implementation gaps.
 
 ---
 
@@ -11,11 +17,14 @@
 Doctis inherits the MantisBT SOAP layer intact.  MantisBT exposes its data
 via a `SoapServer` that auto-discovers every PHP function whose name begins
 with `mc_`.  The server is bootstrapped in `mantisconnect.php`, which sources
-`mc_core.php`, which in turn includes the per-domain API files.
+`mc_core.php`, which in turn includes the per-domain API files via explicit
+`require_once` statements.
 
 A parallel document (`dwg`) CRUD set — `mc_dwg_api.php` — was added by
-Doctis, mirroring `mc_issue_api.php` in structure.  This gives documents
-first-class SOAP support equivalent to that of bugs.
+Doctis, mirroring `mc_issue_api.php` in structure.  A document attachment API
+(`mc_dwg_attachment_api.php`) and a primary document file API
+(`mc_dwg_primary_api.php`) have since been added, giving documents first-class
+SOAP support that now exceeds the issue attachment surface.
 
 ---
 
@@ -24,14 +33,16 @@ first-class SOAP support equivalent to that of bugs.
 | File | Lines | Role |
 |------|------:|------|
 | `mantisconnect.php` | ~80 | Entry point; starts `SoapServer`, discovers `mc_*` functions |
-| `mc_core.php` | ~60 | Central include; sources all `mc_*_api.php` files |
+| `mc_core.php` | ~50 | Central include; sources all `mc_*_api.php` files via explicit `require_once` |
 | `mc_api.php` | ~1 400 | Shared helpers: login, marshalling, enum conversion, fault generation |
 | `mc_account_api.php` | ~120 | User and license account helpers |
-| `mc_enum_api.php` | ~400 | Enumeration endpoints |
-| `mc_filter_api.php` | ~550 | Filter retrieval and search |
+| `mc_enum_api.php` | ~400 | Enumeration endpoints; includes `mc_enum_dwg_status` |
+| `mc_filter_api.php` | ~550 | Filter retrieval and search (bugs only) |
 | `mc_issue_api.php` | ~2 300 | Bug/issue CRUD — 16 public methods |
-| `mc_dwg_api.php` | ~2 400 | Document CRUD — 16 public methods *(Doctis)* |
+| `mc_dwg_api.php` | ~2 100 | Document CRUD — 16 public methods *(Doctis)* |
 | `mc_issue_attachment_api.php` | ~130 | Issue file-attachment endpoints |
+| `mc_dwg_attachment_api.php` | ~170 | Document file-attachment endpoints *(Doctis — new)* |
+| `mc_dwg_primary_api.php` | ~200 | Primary document file endpoints *(Doctis — new)* |
 | `mc_project_attachment_api.php` | ~130 | Project-level file-attachment endpoints |
 | `mc_project_api.php` | ~1 400 | Project management — 21 public methods |
 | `mc_file_api.php` | ~260 | File upload/download helpers; extended for `dwg` type |
@@ -41,16 +52,9 @@ first-class SOAP support equivalent to that of bugs.
 | `mc_user_profile_api.php` | ~80 | Developer environment profiles |
 | `mc_tag_api.php` | ~210 | Tag management |
 
-### Notable omission in `mc_core.php`
-
-`mc_dwg_api.php` is **not** explicitly `require_once`'d in `mc_core.php`.
-Its `mc_dwg_*` functions are discovered at runtime by `mantisconnect.php`
-because `mc_dwg_api.php` is included elsewhere before the discovery loop runs.
-This is fragile.  See §7.1.
-
 ---
 
-## 3. Public SOAP methods — complete list (91 total)
+## 3. Public SOAP methods — complete list (98 total)
 
 ### 3.1 Authentication and version (2)
 
@@ -59,9 +63,11 @@ This is fragile.  See §7.1.
 | `mc_login(u, p)` | AccountData + access level + timezone | All methods below require valid `u`/`p` |
 | `mc_version()` | string | Returns `MANTIS_VERSION`; no auth required |
 
-### 3.2 Document management — Doctis (16)
+### 3.2 Document management — Doctis (22)
 
-Operates on `{documents}` / `DwgData`.
+Operates on `{documents}` / `{dwg}` / `{dwg_text}` via `DwgData`.
+
+Core CRUD (16):
 
 | Method | Returns |
 |--------|---------|
@@ -79,8 +85,24 @@ Operates on `{documents}` / `DwgData`.
 | `mc_dwg_relationship_add(u, p, dwg_id, rel)` | relationship_id |
 | `mc_dwg_relationship_delete(u, p, dwg_id, rel_id)` | bool |
 | `mc_dwg_set_tags(u, p, dwg_id, tags[])` | bool |
-| `mc_dwgs_get(u, p, project_id, filter, page, per_page)` | DwgData[] + page info |
-| `mc_dwgs_get_header(u, p, project_id, filter, page, per_page)` | DwgHeaderData[] |
+| `mc_dwgs_get(u, p, dwg_ids[])` | DwgData[] |
+| `mc_dwgs_get_header(u, p, dwg_ids[])` | DwgHeaderData[] |
+
+Attachments (3) — in `mc_dwg_attachment_api.php`:
+
+| Method | Returns |
+|--------|---------|
+| `mc_dwg_attachment_get(u, p, attachment_id)` | base64Binary content |
+| `mc_dwg_attachment_add(u, p, dwg_id, name, file_type, content)` | attachment_id |
+| `mc_dwg_attachment_delete(u, p, attachment_id)` | bool |
+
+Primary document file (3) — in `mc_dwg_primary_api.php`:
+
+| Method | Returns |
+|--------|---------|
+| `mc_dwg_primary_get(u, p, dwg_id)` | PrimaryFileData (or empty) |
+| `mc_dwg_primary_upload(u, p, dwg_id, name, file_type, content[, description])` | bool |
+| `mc_dwg_primary_delete(u, p, dwg_id)` | bool |
 
 ### 3.3 Issue/bug management — upstream MantisBT (16)
 
@@ -92,13 +114,14 @@ Parallel to §3.2; operates on `{bugs}` / `BugData`.  Methods: `mc_issue_exists`
 `mc_issue_relationship_delete`, `mc_issue_set_tags`, `mc_issues_get`,
 `mc_issues_get_header`.
 
-### 3.4 Enumerations (13)
+### 3.4 Enumerations (14)
 
 `mc_enum_status`, `mc_enum_priorities`, `mc_enum_severities`,
 `mc_enum_reproducibilities`, `mc_enum_projections`, `mc_enum_etas`,
 `mc_enum_resolutions`, `mc_enum_access_levels`, `mc_enum_project_status`,
 `mc_enum_project_view_states`, `mc_enum_view_states`,
-`mc_enum_custom_field_types`, `mc_enum_get`.
+`mc_enum_custom_field_types`, `mc_enum_get`,
+**`mc_enum_dwg_status`** *(Doctis — new)*.
 
 All return `{id, name}` tuple arrays; names are localised.
 
@@ -108,7 +131,7 @@ All return `{id, name}` tuple arrays; names are localised.
 `mc_filter_search_issues`, `mc_filter_search_issue_ids`,
 `mc_filter_search_issue_headers`.
 
-All six operate on **bugs only**.  There is no document equivalent.
+All six operate on **bugs only**.  There is no document equivalent — see §7.1.
 
 ### 3.6 Project management (21)
 
@@ -123,12 +146,15 @@ All six operate on **bugs only**.  There is no document equivalent.
 `mc_project_get_issues_for_user` accepts a `'document'` filter type
 (Doctis addition).
 
-### 3.7 File attachments (6)
+### 3.7 File attachments (12)
 
-`mc_issue_attachment_get/add/delete`,
-`mc_project_attachment_get/add/delete`.
+Issue attachments (3): `mc_issue_attachment_get/add/delete`
+Document attachments (3): `mc_dwg_attachment_get/add/delete`
+Primary document file (3): `mc_dwg_primary_get/upload/delete`
+Project attachments (3): `mc_project_attachment_get/add/delete`
 
-No document-attachment equivalents (`mc_dwg_attachment_*`) exist.
+The `content` parameter in all `_add` and `_get` variants uses `xsd:base64Binary`.
+See §5.5 for the double-encoding requirement when calling from raw curl.
 
 ### 3.8 Tags, config, preferences, profiles (7)
 
@@ -143,38 +169,54 @@ No document-attachment equivalents (`mc_dwg_attachment_*`) exist.
 
 Doctis-specific fields on top of the IssueData baseline:
 
-| Field | Type | Notes |
-|-------|------|-------|
-| `title` | string | Document title |
-| `author` | string | |
-| `publisher` | string | |
-| `number` | string | Document number |
-| `edition` | string | |
-| `revision` | string | |
-| `reference` | string | External reference code |
-| `link_url` | string | URL to external document system |
-| `classification` | string | e.g. UNCLASSIFIED |
-| `revision_date` | datetime | |
-| `release_date` | datetime | |
+| Field | Type | Source table |
+|-------|------|-------------|
+| `title` | string | `documents` |
+| `author` | string | `documents` |
+| `publisher` | string | `documents` |
+| `number` | string | `documents` |
+| `edition` | string | `documents` |
+| `revision` | string | `documents` |
+| `reference` | string | `documents` |
+| `link_url` | string | `documents` |
+| `classification` | string | `dwg` (shadowed from `documents`) |
+| `revision_date` | datetime | `documents` |
+| `release_date` | datetime | `documents` |
+| `description` | string | `dwg_text` |
+| `steps_to_reproduce` | string | `dwg_text` |
+| `additional_information` | string | `dwg_text` |
 
-Fields shared with IssueData: `id`, `summary`, `description`, `project`,
-`category`, `priority`, `severity`, `status`, `resolution`, `view_state`,
-`creator`/`reporter`, `handler`, `created_at`, `updated_at`, `due_date`,
-`custom_fields`, `attachments`, `notes`, `relationships`, `monitors`,
-`tags`, `sticky`.
+Fields shared with IssueData: `id`, `summary` (vestigial — always blank, see §6.3),
+`project`, `category`, `priority`, `status`, `view_state`, `creator`/`reporter`,
+`handler`, `created_at`, `updated_at`, `due_date`, `custom_fields`, `attachments`,
+`notes`, `relationships`, `monitors`, `tags`, `sticky`.
 
 `status` uses the `dwg_status` enum rather than the MantisBT `status` enum.
+Use `mc_enum_dwg_status` to discover valid values.
 
-### 4.2 DwgNoteData
+### 4.2 PrimaryFileData
+
+Returned by `mc_dwg_primary_get` when a primary file exists; empty struct when not.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `filename` | string | Original upload filename |
+| `filesize` | int | Bytes |
+| `file_type` | string | MIME type |
+| `date_added` | datetime | Upload timestamp |
+| `description` | string | Optional description text |
+| `download_url` | string | Direct download URL for the file |
+
+### 4.3 DwgNoteData
 
 Identical in structure to `IssueNoteData` (BugNoteData).
 
-### 4.3 DwgHeaderData
+### 4.4 DwgHeaderData
 
 Lightweight list row: `id`, `title`, `project`, `status`, `priority`,
-`severity`, `created_at`, `updated_at`.
+`created_at`, `updated_at`.
 
-### 4.4 Other structures (upstream, unchanged)
+### 4.5 Other structures (upstream, unchanged)
 
 `IssueData`, `IssueHeaderData`, `IssueNoteData`, `AttachmentData`,
 `RelationshipData`, `ProjectData`, `ProjectVersionData`, `CategoryData`,
@@ -182,7 +224,7 @@ Lightweight list row: `id`, `title`, `project`, `status`, `priority`,
 
 ---
 
-## 5. Doctis additions already in the SOAP layer
+## 5. Doctis additions in the SOAP layer — current state
 
 ### 5.1 `mc_dwg_api.php` — document CRUD
 
@@ -196,8 +238,28 @@ Internally calls the same Doctis core APIs used by the web layer:
 - `dwg_get_monitors()`, `dwg_monitor()`, `dwg_unmonitor()` for monitors
 - `file_dwg_get_visible_attachments()` for note attachments
 - `filter_dwg_get_dwg_rows()` for list/search
+- `mci_tag_set_for_dwg()` for tag assignment on create (active)
 
-### 5.2 `mc_api.php` — shared helper extensions
+Loaded explicitly by `mc_core.php` line 38.
+
+### 5.2 `mc_dwg_attachment_api.php` — document attachments
+
+Mirrors `mc_issue_attachment_api.php` with `dwg` substituted for `bug`/`issue`.
+Uses `file_dwg_*` API functions.  Access control: read uses `view_dwg_threshold`;
+write/delete use `upload_dwg_file_threshold` / `delete_attachments_threshold`.
+
+Loaded explicitly by `mc_core.php` line 39.
+
+### 5.3 `mc_dwg_primary_api.php` — primary document file
+
+Provides get/upload/delete for the single canonical file stored per document in
+the GIT backend (or DISK/DATABASE if configured).  `mc_dwg_primary_upload` encodes
+content as base64; `mc_dwg_primary_get` returns a `PrimaryFileData` struct.
+Access control: read uses `view_dwg_threshold`; write/delete use `update_dwg_threshold`.
+
+Loaded explicitly by `mc_core.php` line 40.
+
+### 5.4 `mc_api.php` — shared helper extensions
 
 - `mci_license_get(license_id, lang, detail)` — marshal license entity
 - `mci_get_license_id(license, default)` — resolve license object to ID
@@ -206,280 +268,200 @@ Internally calls the same Doctis core APIs used by the web layer:
 - `mci_get_document(document_id)` — retrieve document title
 - `mci_get_document_id(document, project_id)` — resolve document to ID
 
-### 5.3 `mc_account_api.php` — license account helpers
+### 5.5 `mc_enum_api.php` — `mc_enum_dwg_status`
+
+One-liner delegating to `mci_enum_get_array_by_id` with the `'dwg_status_enum_string'`
+config key.  Returns the Doctis document status list (pending, received, assigned,
+in-review, reviewed, approved, reserved, rejected, archived) as `{id, name}` tuples.
+
+### 5.6 `mc_account_api.php` — license account helpers
 
 - `mci_license_get_array_by_id(license_id)` — single license marshalling
 - `mci_license_get_array_by_ids(license_ids[])` — bulk license marshalling
 
-### 5.4 `mc_file_api.php` — extended for `dwg` type
+### 5.7 `mc_file_api.php` — extended for `dwg` type
 
 `mci_file_get()` handles `'dwg'` alongside `'bug'` and `'doc'`, querying
 `{dwg_file}` and checking `access_has_dwg_level()`.
 
-### 5.5 `mc_project_api.php` — document filter in `get_issues_for_user`
+### 5.8 `mc_project_api.php` — document filter in `get_issues_for_user`
 
 Accepts `'document'` as a `filter_type` value, delegating to
 `filter_create_document()`.
 
+### 5.9 base64Binary double-encoding requirement
+
+PHP's `SoapServer` pre-decodes `xsd:base64Binary` input before passing to the
+PHP handler.  PHP's `SoapClient` compensates by double-encoding.  Raw `curl`
+callers must therefore also double-encode content going IN and double-decode
+content coming OUT.  See CLAUDE.md §SOAP API Testing for curl examples.  This
+does not affect PHPUnit tests using SoapClient.
+
 ---
 
-## 6. What is missing / incomplete
+## 6. Status of previously-identified gaps
 
-### 6.1 `mc_dwg_api.php` not in `mc_core.php`
+| Ref | Item | Status |
+|-----|------|--------|
+| 6.1 | `mc_dwg_api.php` not explicitly in `mc_core.php` | **FIXED** — now line 38; `mc_dwg_attachment_api.php` (line 39) and `mc_dwg_primary_api.php` (line 40) also added |
+| 6.2 | No `mc_dwg_attachment_*` endpoints | **DONE** — `mc_dwg_attachment_api.php` (170 lines) |
+| 6.3 | No `mc_dwg_primary_*` endpoints | **DONE** — `mc_dwg_primary_api.php` (200 lines) |
+| 6.4 | No document filter SOAP endpoints | **Open** — see §7.1 |
+| 6.5 | No license CRUD SOAP endpoints | **Open** — see §7.2; REST endpoints exist as the primary interface |
+| 6.6 | Tag-setting commented out in `mc_dwg_add` | **FIXED** — `mci_tag_set_for_dwg()` called at line 1229 |
+| 6.7 | `mc_enum_dwg_status` missing | **DONE** — `mc_enum_api.php` line 198 |
+| 6.8 | REST API had no document CRUD | **DONE** — `documents_rest.php` and `licenses_rest.php` added (P3-A) |
 
-**Risk:** The file is picked up via a side-effect of another include rather
-than an explicit `require_once`.  If include order changes the `mc_dwg_*`
-functions will not be exposed.
+### New issue — `mc_dwg_hash` naming
 
-**Fix (one line):** add to `mc_core.php`:
-```php
-require_once( $t_current_dir . 'mc_dwg_api.php' );
-```
+`mc_dwg_api.php` contains a function `mc_dwg_hash()` (line 2092) that computes
+an ETag hash of a document record.  Because its name starts with `mc_`, the
+SoapServer auto-discovers and registers it as a public SOAP method, even though
+it is intended as an internal helper (the equivalent of `mci_issue_hash`, not
+`mc_issue_hash`).  It has no WSDL entry and no access-control check.  It cannot
+be called via a standard SoapClient but is callable via raw SOAP.
 
-### 6.2 No document attachment endpoints (`mc_dwg_attachment_*`)
+**Fix:** rename to `mci_dwg_hash` to match the internal helper naming convention
+and remove it from the auto-discovered public surface.
 
-The SOAP layer has `mc_issue_attachment_get/add/delete` but no document
-equivalents.  Callers cannot upload or download note attachments on documents
-via SOAP.
+---
 
-**Needed:**
-- `mc_dwg_attachment_get(u, p, attachment_id)` → base64 content
-- `mc_dwg_attachment_add(u, p, dwg_id, name, mime_type, content)` → attachment_id
-- `mc_dwg_attachment_delete(u, p, attachment_id)` → bool
+## 7. Remaining work items
 
-Implementation pattern: copy `mc_issue_attachment_api.php`, replace `bug`/`issue`
-with `dwg`, use `file_dwg_*` API functions.
+### 7.1 — Document filter SOAP methods (medium-high effort)
 
-### 6.3 No primary document file endpoints
-
-The `{dwg_primary_file}` table (one canonical file per document record,
-always stored in the GIT backend) is not exposed via SOAP at all.
-
-**Needed:**
-- `mc_dwg_primary_get(u, p, dwg_id)` → PrimaryFileData (filename, size, date, description, download_url)
-- `mc_dwg_primary_upload(u, p, dwg_id, name, mime_type, content, description)` → bool (calls `file_dwg_primary_add()`)
-- `mc_dwg_primary_delete(u, p, dwg_id)` → bool (calls `file_dwg_primary_delete()`)
-
-New struct `PrimaryFileData`: `filename`, `filesize`, `file_type`, `date_added`,
-`description`, `download_url`.
-
-Access control: upload/delete gate on `update_dwg_threshold`;
-get/download gate on `view_dwg_threshold`.
-
-### 6.4 No document filter endpoints (`mc_dwg_filter_*`)
-
-The six `mc_filter_*` methods all operate on bugs.  There are no document
-equivalents, so SOAP clients cannot execute saved document filters or search
-documents by structured criteria.
+No SOAP equivalents exist for the six `mc_filter_*` methods, so SOAP clients
+cannot execute saved document filters or perform structured document searches.
 
 **Needed:**
-- `mc_dwg_filter_get(u, p, project_id)` → DwgFilterData[] (user's saved document filters)
-- `mc_dwg_filter_search(u, p, filter_struct, page, per_page)` → DwgData[]
-- `mc_dwg_filter_search_ids(u, p, filter_struct, page, per_page)` → int[]
-- `mc_dwg_filter_search_headers(u, p, filter_struct, page, per_page)` → DwgHeaderData[]
+
+| Function | Purpose |
+|----------|---------|
+| `mc_dwg_filter_get(u, p, project_id)` | Return user's saved document filters |
+| `mc_dwg_filter_search(u, p, filter, page, per_page)` | Return DwgData[] matching filter |
+| `mc_dwg_filter_search_ids(u, p, filter, page, per_page)` | Return matching dwg ids |
+| `mc_dwg_filter_search_headers(u, p, filter, page, per_page)` | Return DwgHeaderData[] |
 
 Implementation: delegate to `filter_dwg_*` API functions (already used inside
-`mc_dwg_api.php` for `mc_dwgs_get`).
+`mc_dwg_api.php` for `mc_dwgs_get`).  New file `mc_dwg_filter_api.php` +
+`require_once` in `mc_core.php`.
 
-### 6.5 No license CRUD endpoints
+New struct `DwgFilterData`: mirrors `FilterData`; document-specific fields
+(title, number, revision, reference, classification, discipline) need their
+own filter keys in the struct.
 
-Helper functions for marshalling license data exist in `mc_api.php` and
-`mc_account_api.php`, but there are no public `mc_license_*` SOAP methods.
-External clients cannot query which licenses a document requires, or manage
-licenses, via SOAP.
+Effort: 2–3 days.
 
-**Needed (if `$g_licenses_enabled = ON`):**
-- `mc_license_get(u, p, license_id)` → LicenseData
-- `mc_license_get_all(u, p, project_id)` → LicenseData[]
-- `mc_dwg_license_add(u, p, dwg_id, license_id)` → bool
-- `mc_dwg_license_delete(u, p, dwg_id, license_id)` → bool
-- `mc_dwg_license_get(u, p, dwg_id)` → LicenseData[] (licenses required by a document)
+### 7.2 — License CRUD SOAP methods (medium effort, conditional on `$g_licenses_enabled`)
 
-New struct `LicenseData`: `id`, `name`, `type`, `status`, `match_str`,
-`description`, `project` (or global), `view_state`, `access_min`.
-
-All endpoints should return an empty result or be omitted entirely when
-`$g_licenses_enabled = OFF` (consistent with the web layer guard).
-
-### 6.6 Tag-setting commented out in `mc_dwg_add`
-
-In `mc_dwg_api.php` the line that sets tags on a newly-created document is
-commented out:
-```php
-// mci_tag_set_for_issue( $p_issue_id, $p_issue['tags'], $t_user_id );
-```
-The issue equivalent in `mc_issue_api.php` is active.  Tags on documents
-therefore cannot be set via `mc_dwg_add`.
-
-**Fix:** uncomment and rename to the dwg-specific equivalent, or verify that
-`mci_tag_set_for_issue` works generically for both entity types.
-
-### 6.7 `mc_enum_dwg_status` missing
-
-`mc_dwgs_get` and `mc_dwg_get` use `dwg_status` enum values, but there is no
-`mc_enum_dwg_status()` endpoint.  Clients have no machine-readable way to
-discover the document status values and their IDs.
+License management is currently REST-only (`/api/rest/licenses`).  The
+marshalling helpers already exist in `mc_api.php` and `mc_account_api.php`.
+The missing piece is the public SOAP endpoint layer.
 
 **Needed:**
-- `mc_enum_dwg_status(u, p)` → `{id, name}[]`
 
-Implementation: one-liner delegating to `mci_enum_get_array_by_id` with
-`'dwg_status_enum_string'` config key.
+| Function | Purpose |
+|----------|---------|
+| `mc_license_get(u, p, license_id)` | Return LicenseData |
+| `mc_license_get_all(u, p, project_id)` | Return LicenseData[] for a project (or global) |
+| `mc_dwg_license_add(u, p, dwg_id, license_id)` | Associate a license requirement with a document |
+| `mc_dwg_license_delete(u, p, dwg_id, license_id)` | Remove a license requirement |
+| `mc_dwg_license_get(u, p, dwg_id)` | Return licenses required by a document |
 
-### 6.8 REST API has no document CRUD
+All endpoints should return an empty result (not a fault) when
+`$g_licenses_enabled = OFF`, consistent with the web layer guard.
 
-The REST layer (`api/rest/restcore/`) has no `/dwg` or `/documents` routes.
-`pages_rest.php` provides a single `/dwg/view/{id}` endpoint that renders the
-web view page — useful for embedding but not for machine consumption.
+New struct `LicenseData`: `id`, `name`, `type`, `status`, `match_str`,
+`description`, `project`, `view_state`, `access_min`.
 
-This is a separate concern from SOAP but worth noting: any external integration
-that prefers REST over SOAP must currently use the web UI for all document
-operations.
+New file `mc_license_api.php` + `require_once` in `mc_core.php`.  Effort: 1–2 days.
 
----
+### 7.3 — `mc_dwg_hash` naming fix (trivial)
 
-## 7. Plan — recommended work items
-
-Items are grouped by priority.  None of §6.2–6.8 is required for the SOAP layer
-to function; the existing `mc_dwg_*` methods cover the core document workflow.
-
-### Priority 1 — Correctness fixes (low effort, high value)
-
-| # | Item | File(s) | Effort |
-|---|------|---------|--------|
-| 7.1 | Add explicit `require_once` for `mc_dwg_api.php` in `mc_core.php` | `mc_core.php` | Minutes |
-| 7.2 | Uncomment / fix tag-setting in `mc_dwg_add` | `mc_dwg_api.php` | < 1 hour |
-| 7.3 | Add `mc_enum_dwg_status` endpoint | `mc_enum_api.php` | < 1 hour |
-
-### Priority 2 — Document attachment SOAP methods (medium effort)
-
-| # | Item | File(s) | Effort |
-|---|------|---------|--------|
-| 7.4 | `mc_dwg_attachment_get/add/delete` | new `mc_dwg_attachment_api.php` | 1–2 days |
-| 7.5 | Add `mc_dwg_attachment_api.php` to `mc_core.php` | `mc_core.php` | Minutes |
-
-The new file should mirror `mc_issue_attachment_api.php` exactly, substituting
-`dwg` for `bug`/`issue` and `file_dwg_*` for `file_*` API calls.  Access
-control follows `upload_dwg_file_threshold` / `download_attachments_threshold`.
-
-### Priority 3 — Primary document file SOAP methods (medium effort)
-
-| # | Item | File(s) | Effort |
-|---|------|---------|--------|
-| 7.6 | `mc_dwg_primary_get/upload/delete` | new `mc_dwg_primary_api.php` | 1–2 days |
-| 7.7 | `PrimaryFileData` struct definition | `mc_dwg_primary_api.php` | Included above |
-| 7.8 | Add to `mc_core.php` | `mc_core.php` | Minutes |
-
-Upload encodes file content as base64 (same pattern as `mc_issue_attachment_add`),
-decodes and passes decoded bytes to `file_dwg_primary_add()`.  Download uses
-`file_dwg_primary_get_content()` and returns base64-encoded result.
-
-### Priority 4 — Document filter SOAP methods (medium-high effort)
-
-| # | Item | File(s) | Effort |
-|---|------|---------|--------|
-| 7.9 | `mc_dwg_filter_get/search/search_ids/search_headers` | new `mc_dwg_filter_api.php` | 2–3 days |
-| 7.10 | `DwgFilterData` struct definition | included above | — |
-| 7.11 | Add to `mc_core.php` | `mc_core.php` | Minutes |
-
-Delegate to `filter_dwg_*` API functions.  The filter struct mirrors the bug
-filter struct; document-specific fields (title, number, revision, etc.) need
-their own filter keys.
-
-### Priority 5 — License SOAP methods (medium effort, conditional)
-
-| # | Item | File(s) | Effort |
-|---|------|---------|--------|
-| 7.12 | `mc_license_get/get_all` | new `mc_license_api.php` | 1 day |
-| 7.13 | `mc_dwg_license_add/delete/get` | `mc_license_api.php` | 1 day |
-| 7.14 | `LicenseData` struct definition | included above | — |
-| 7.15 | Guard all license endpoints with `$g_licenses_enabled` check | `mc_license_api.php` | Included above |
-| 7.16 | Add to `mc_core.php` | `mc_core.php` | Minutes |
-
-All marshalling helpers already exist in `mc_api.php` and
-`mc_account_api.php`.  The missing piece is the public endpoint layer.
-
-### Priority 6 — REST document CRUD (high effort, separate track)
-
-| # | Item | File(s) | Effort |
-|---|------|---------|--------|
-| 7.17 | `/dwg` REST routes: GET, POST, PUT, DELETE | new `documents_rest.php` | 3–5 days |
-| 7.18 | `/dwg/{id}/primary-file` REST routes | `documents_rest.php` | 1 day (if §7.6 done first) |
-| 7.19 | `/dwg/{id}/attachments` REST routes | `documents_rest.php` | 1 day (if §7.4 done first) |
-| 7.20 | Wire new routes into Slim app bootstrap | `api/rest/index.php` | Hours |
-
-REST work is independent of SOAP and should only be undertaken once the SOAP
-layer is complete — SOAP is the more mature integration path for existing clients.
+Rename `mc_dwg_hash` → `mci_dwg_hash` in `mc_dwg_api.php` and update any
+callers.  Removes the function from the auto-discovered public SOAP surface.
+Effort: < 30 minutes.
 
 ---
 
-## 8. Access control summary for planned endpoints
+## 8. Access control summary
 
 | Endpoint group | Read gate | Write gate | Delete gate |
 |----------------|-----------|------------|-------------|
+| Document CRUD | `view_dwg_threshold` | `report_dwg_threshold` / `update_dwg_threshold` | `delete_dwg_threshold` |
 | Document attachments | `view_dwg_threshold` | `upload_dwg_file_threshold` | `delete_attachments_threshold` |
 | Primary document file | `view_dwg_threshold` | `update_dwg_threshold` | `update_dwg_threshold` |
 | Document filters | `view_dwg_threshold` | — | — |
 | Licenses | `view_dwg_threshold` | `manage_license_threshold` | `manage_license_threshold` |
 
 All gates use `access_has_dwg_level()` for document-scoped checks and
-`access_has_project_level()` for project-scoped checks, consistent with the
-existing `mc_dwg_*` implementation.  When `$g_licenses_enabled = OFF` all
-license endpoints return an empty result rather than a fault.
+`access_has_project_level()` for project-scoped checks, consistent with
+the existing `mc_dwg_*` implementation.
 
 ---
 
-## 9. New file plan
+## 9. Testing
 
+The runnable smoke test covers 13 SOAP operations end-to-end:
+
+```bash
+ssh hcr@vaio "bash /var/www/html/doctis/admin/tools/doctis-soap-test.sh"
 ```
-api/soap/
-├── mc_core.php                   — add 3 require_once lines (§7.1, 7.5, 7.8, 7.11, 7.16)
-├── mc_enum_api.php               — add mc_enum_dwg_status (§7.3)
-├── mc_dwg_api.php                — fix tag-setting (§7.2)
-├── mc_dwg_attachment_api.php     — NEW (§7.4)
-├── mc_dwg_primary_api.php        — NEW (§7.6)
-├── mc_dwg_filter_api.php         — NEW (§7.9)
-└── mc_license_api.php            — NEW (§7.12–7.15)
+
+See `admin/tools/README.md` for the full test sequence.  It is idempotent and
+cleans up leftover state.  Exit code 0 = all pass.
+
+For PHPUnit SOAP tests, bootstrap with `tests/bootstrap.php` and use a
+`SoapClient` pointed at the vaio WSDL:
+
+```php
+$client = new SoapClient('http://10.0.0.10/doctis/api/soap/mantisconnect.php?wsdl');
+$result = $client->mc_dwg_get('manager', '', $dwg_id);
 ```
+
+For the primary file methods, the recommended test sequence is:
+
+1. `mc_dwg_primary_get` with no file → expect empty `PrimaryFileData`
+2. `mc_dwg_primary_upload` → upload a small file; verify `true` returned
+3. `mc_dwg_primary_get` → verify filename, size, description
+4. Download URL in returned struct → verify file content via HTTP GET
+5. `mc_dwg_primary_upload` again → verify replace semantics (old file gone from git HEAD)
+6. `mc_dwg_primary_delete` → verify row removed and git soft-delete committed
+7. `mc_dwg_primary_get` → verify returns empty again
+
+When implementing §7.1 or §7.2, add a dedicated `admin/test-soap-extensions.php`
+script covering the new methods before merging.
 
 ---
 
 ## 10. Relationship to REST API
 
-The REST layer currently provides:
-- Full bug/issue CRUD (via `issues_rest.php`)
-- Project management (via `projects_rest.php`)
-- User, filter, config, lang endpoints
-- Document view-page render only (via `pages_rest.php` `/dwg/view/{id}`)
+As of branch `admin-tools`:
 
-SOAP provides full document CRUD; REST does not.  Clients that prefer REST
-must use the web UI for document operations until §7.17–7.20 is implemented.
+| Domain | REST | SOAP |
+|--------|------|------|
+| Documents (CRUD) | **Done** — `/api/rest/documents` | **Done** — `mc_dwg_*` |
+| Document attachments | Via REST document response | **Done** — `mc_dwg_attachment_*` |
+| Primary document file | Not implemented | **Done** — `mc_dwg_primary_*` |
+| Document filters | Via `GET /documents?project_id=` | Not implemented (§7.1) |
+| Licenses (CRUD) | **Done** — `/api/rest/licenses` | Not implemented (§7.2) |
+| Issues/bugs (CRUD) | **Done** — `/api/rest/issues` | **Done** — `mc_issue_*` |
+| Projects | **Done** — `/api/rest/projects` | **Done** — `mc_project_*` |
 
-There is no technical blocker to implementing REST in parallel with SOAP — the
-underlying Doctis core API functions are transport-agnostic — but SOAP is the
-better-established path and should be completed first.
+The underlying Doctis core API functions (`dwg_api.php`, `license_api.php`, etc.)
+are transport-agnostic.  REST and SOAP are both thin adapter layers calling the
+same PHP functions.  There is no technical dependency between the two tracks; they
+can be extended in parallel.
 
----
+The REST layer is better suited for:
+- Machine-readable integrations (JSON, structured pagination)
+- Token-authenticated CI/CD pipelines
+- License management
 
-## 11. Testing approach
+The SOAP layer is better suited for:
+- File transfer (base64Binary with chunked support)
+- Legacy integrations using WSDL-generated client stubs
+- Existing MantisBT client libraries
 
-Each new or corrected SOAP method should be exercised with a SoapClient
-script before merging.  The existing pattern is:
-
-```php
-$client = new SoapClient( 'http://10.0.0.10/doctis/api/soap/mantisconnect.php?wsdl' );
-$result = $client->mc_dwg_get( 'manager', '', $dwg_id );
-var_dump( $result );
-```
-
-A dedicated `admin/test-soap.php` script (parallel to `admin/test-git-php.php`)
-should be created to cover all planned methods in sequence.  Test sequence for
-primary file methods:
-
-1. `mc_dwg_primary_get` on a document with no file — expect null/empty
-2. `mc_dwg_primary_upload` — upload a small file, verify return is true
-3. `mc_dwg_primary_get` — verify filename, size, description returned
-4. Download URL in returned struct — verify file content via HTTP GET
-5. `mc_dwg_primary_upload` again — verify replace semantics (old file gone from git HEAD)
-6. `mc_dwg_primary_delete` — verify row removed and git soft-delete committed
-7. `mc_dwg_primary_get` — verify returns null/empty again
+See [`doc/REST-AND-SOAP-API.md`](REST-AND-SOAP-API.md) for integration guide,
+curl examples, authentication setup, and web server configuration.
