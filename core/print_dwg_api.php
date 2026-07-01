@@ -446,9 +446,9 @@ function print_dwg_license_request_form( $p_dwg_id, $p_string = '' ) {
 /*
 			<form method="post" action="dwg_license_update.php" class="form-inline noprint">
 				<?php echo form_security_field( 'dwg_license_update' ) ?>
-				<input type="hidden" name="bug_id" value="<?php echo (integer)$f_issue_id; ?>" />
-				<input type="hidden" name="user_id" value="<?php echo (integer)$t_current_user_id; ?>" />
-				<input type="hidden" name="project_id" value="<?php echo (integer)$t_issue['project']; ?>" />
+				<input type="hidden" name="bug_id" value="<?php echo (int)$f_issue_id; ?>" />
+				<input type="hidden" name="user_id" value="<?php echo (int)$t_current_user_id; ?>" />
+				<input type="hidden" name="project_id" value="<?php echo (int)$t_issue['project']; ?>" />
 				<input type="hidden" name="access_level" value="10" />
 				<?php
 					foreach( $t_license_apply_for as $t_license ) {
@@ -1378,7 +1378,7 @@ function print_dwg_project_user_list_option_list2( $p_user_id ) {
  * @return void
  */
 function print_dwg_custom_field_projects_list( $p_field_id ) {
-	$c_field_id = (integer)$p_field_id;
+	$c_field_id = (int)$p_field_id;
 	$t_project_ids = custom_field_get_project_ids( $p_field_id );
 
 	$t_security_token = form_security_param( 'manage_proj_custom_field_remove' );
