@@ -227,6 +227,7 @@ if [ ${target} = "doctis" ]; then
 \$g_dwg_upload_method   = GIT;		# document (dwg) attachments
 \$g_git_storage_root    = '/var/git/doctis';
 \$g_git_worktree_root   = '/var/www/doctis/worktrees';
+\$g_git_http_enabled    = ON;		# Smart HTTP remote clone gateway
 
 # --- System Operations ---
 # OS account that admin manage_*_action.php pages run privileged operations as

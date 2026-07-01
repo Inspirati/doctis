@@ -252,6 +252,78 @@ Content."
         _write_config_key "$config" "g_dwg_upload_method"  "\$g_dwg_upload_method  = GIT;"
         _write_config_key "$config" "g_git_storage_root"   "\$g_git_storage_root   = '${BARE_ROOT}';"
         _write_config_key "$config" "g_git_worktree_root"  "\$g_git_worktree_root  = '${WORKTREE_ROOT}';"
+        _write_config_key "$config" "g_git_http_enabled"   "\$g_git_http_enabled   = ON;"
+    fi
+
+    # ── Step 8 — Apache Smart HTTP gateway ──────────────────────────────────────
+    _gst_step "Step 8 — Configure Apache Smart HTTP gateway"
+
+    local conf_src="${_webroot}/admin/tools/git-serve.conf"
+    local conf_dst="/etc/apache2/conf-available/git-serve.conf"
+
+    if [ ! -f "$conf_src" ]; then
+        _gst_warn "$conf_src not found — skipping Smart HTTP Apache setup"
+    else
+        _gst_chk "a2enmod alias setenvif"
+        a2enmod alias setenvif &>/dev/null \
+            || { _gst_fail "a2enmod alias setenvif failed"; return 1; }
+        _gst_pass
+
+        _gst_chk "install git-serve.conf"
+        cp "$conf_src" "$conf_dst" \
+            || { _gst_fail "cp $conf_src $conf_dst failed"; return 1; }
+        _gst_pass
+
+        _gst_chk "a2enconf git-serve"
+        a2enconf git-serve &>/dev/null \
+            || { _gst_fail "a2enconf git-serve failed"; return 1; }
+        _gst_pass
+
+        _gst_chk "apache2ctl configtest"
+        apache2ctl configtest &>/dev/null \
+            || { _gst_fail "Apache config test failed — run: apache2ctl configtest"; return 1; }
+        _gst_pass
+
+        _gst_chk "systemctl reload apache2"
+        systemctl reload apache2 \
+            || { _gst_fail "apache2 reload failed"; return 1; }
+        _gst_pass
+
+        _gst_ok "Smart HTTP gateway active: git clone http://<user>:<token>@<host>/git/<slug>.git"
+    fi
+
+    # ── Step 9 — Application self-update prerequisites ──────────────────────────
+    _gst_step "Step 9 — Application self-update prerequisites"
+
+    _gst_chk "system gitconfig safe.directory"
+    if git config --system --get-all safe.directory 2>/dev/null | grep -qxF "${_webroot}"; then
+        _gst_pass "(already present)"
+    elif git config --system --add safe.directory "${_webroot}" 2>/dev/null; then
+        _gst_pass "added (${_webroot})"
+    else
+        printf "\n"
+        _gst_warn "Could not write /etc/gitconfig — 'git pull' page may show 'dubious ownership' errors"
+        _gst_info "  Manual fix: sudo git config --system --add safe.directory ${_webroot}"
+    fi
+
+    local deploy_user="${SUDO_USER:-}"
+    _gst_chk "sudoers rule (/etc/sudoers.d/doctis-web)"
+    if [ -z "$deploy_user" ]; then
+        printf "\n"
+        _gst_warn "SUDO_USER not set — skipping sudoers rule"
+        _gst_info "  Manual fix: sudo tee /etc/sudoers.d/doctis-web <<< \"www-data ALL=(\$USER) NOPASSWD: /usr/bin/git -C ${_webroot} pull\""
+    else
+        local sudoers_file="/etc/sudoers.d/doctis-web"
+        if [ -f "$sudoers_file" ] && grep -qF "$deploy_user" "$sudoers_file" 2>/dev/null; then
+            _gst_pass "(already present for $deploy_user)"
+        else
+            printf "www-data ALL=(%s) NOPASSWD: /usr/bin/git -C %s pull\n" \
+                "$deploy_user" "${_webroot}" > "$sudoers_file" \
+                && chmod 0440 "$sudoers_file" \
+                && visudo -c -f "$sudoers_file" &>/dev/null \
+                || { rm -f "$sudoers_file"; _gst_fail "sudoers rule creation failed"; return 1; }
+            _gst_pass "created for $deploy_user"
+        fi
     fi
 
     printf "\n${DIAG}Git storage setup complete.${OFF}\n"
