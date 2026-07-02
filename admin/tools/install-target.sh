@@ -497,6 +497,11 @@ install_git_storage() {
         # writes /var/www/.gitconfig). install-target.sh runs without sudo, so
         # invoke the script directly under sudo rather than sourcing it.
         sudo bash "$git_setup" "${webroot}/${target}"
+        local _exit=$?
+        if [ $_exit -ne 0 ]; then
+            echo -e "${FAIL}doctis-git-setup.sh exited with code $_exit — git storage setup incomplete.${OFF}" >&2
+            echo -e "${FAIL}Re-run manually after install: sudo bash ${git_setup} ${webroot}/${target}${OFF}" >&2
+        fi
     else
         echo -e "${WARN}doctis-git-setup.sh not found at ${git_setup} — skipping git storage setup${OFF}"
     fi
