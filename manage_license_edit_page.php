@@ -99,7 +99,7 @@ $t_can_manage_users = access_has_license_level( config_get( 'license_user_thresh
 // require_js( 'manage_license_edit_page.js' );
 require_js( 'manage_proj_edit_page.js' ); // the javascript for project page is identical to what it would need to be for licenses
 
-layout_page_header( project_get_field( $f_project_id, 'name' ) );
+layout_page_header( license_get_name( $f_license_id ) );
 layout_page_begin( 'manage_overview_page.php' );
 
 print_manage_menu( 'manage_license_page.php' );
@@ -290,13 +290,29 @@ event_signal( 'EVENT_MANAGE_LICENSE_PAGE', array( $f_license_id ) );
 					<form id="manage-project-users-copy-form" method="post" action="manage_license_user_copy.php" class="form-inline">
 						<fieldset>
 							<?php echo form_security_field( 'manage_license_user_copy' ) ?>
-							<input type="hidden" name="project_id" value="<?php echo $f_project_id ?>" />
+							<input type="hidden" name="license_id" value="<?php echo $f_license_id ?>" />
 							<!--suppress HtmlFormInputWithoutLabel -->
-							<select name="other_project_id" class="input-sm" required>
+							<select name="other_license_id" class="input-sm" required>
 								<option selected disabled value="">
 									<?php echo '[', lang_get( 'select_project_button' ), ']' ?>
 								</option>
-								<?php print_project_option_list( null, false, $f_project_id ); ?>
+<?php
+	# List the other licenses the user can access, excluding this one, as
+	# the copy source/target.
+	$t_other_license_ids = user_get_accessible_licenses( auth_get_current_user_id(), true );
+	$t_other_licenses = array();
+	foreach( $t_other_license_ids as $t_other_license_id ) {
+		if( $t_other_license_id == $f_license_id ) {
+			continue;
+		}
+		$t_other_licenses[] = license_get_row( $t_other_license_id );
+	}
+	$t_other_licenses = multi_sort( $t_other_licenses, 'name', ASCENDING );
+	foreach( $t_other_licenses as $t_other_license ) {
+		echo '<option value="', $t_other_license['id'], '">',
+			string_attribute( $t_other_license['name'] ), '</option>';
+	}
+?>
 							</select>
 							<span class="form-inline">
 								<button name="copy_from" class="btn btn-sm btn-primary btn-white btn-round" value="1">
@@ -310,7 +326,7 @@ event_signal( 'EVENT_MANAGE_LICENSE_PAGE', array( $f_license_id ) );
 					</form>
 				</div>
 	<?php
-	$t_users = project_get_all_user_rows( $f_project_id, ANYBODY, $f_show_global_users );
+	$t_users = license_get_all_user_rows( $f_license_id, ANYBODY, $f_show_global_users );
 	$t_users_count = count( $t_users );
 
 	if( $t_users_count > 0 ) {
@@ -355,6 +371,7 @@ event_signal( 'EVENT_MANAGE_LICENSE_PAGE', array( $f_license_id ) );
 			lang_get( $f_show_global_users ? 'hide_global_users' : 'show_global_users' ),
 			array(
 				'project_id' => $f_project_id,
+				'license_id' => $f_license_id,
 				'show_global_users' => !$f_show_global_users
 			),
 			OFF,
@@ -369,9 +386,10 @@ event_signal( 'EVENT_MANAGE_LICENSE_PAGE', array( $f_license_id ) );
 				</div>
 
 				<div class="widget-main no-padding" >
-					<form id="manage-project-users-form" method="post" action="manage_proj_user_update.php">
+					<form id="manage-project-users-form" method="post" action="manage_license_user_update.php">
 						<input type="hidden" name="project_id" value="<?php echo $f_project_id ?>" />
-						<?php echo form_security_field( 'manage_proj_user_update' ) ?>
+						<input type="hidden" name="license_id" value="<?php echo $f_license_id ?>" />
+						<?php echo form_security_field( 'manage_license_user_update' ) ?>
 						<div class="table-responsive listjs-table">
 							<table class="table table-striped table-bordered table-condensed">
 								<thead>
@@ -388,7 +406,7 @@ event_signal( 'EVENT_MANAGE_LICENSE_PAGE', array( $f_license_id ) );
 										</th>
 										<th class="col-md-4">
 											<div class="sort" role="button" data-sort="key-access">
-												<?php echo lang_get( 'access_level' ) ?>
+												<?php echo lang_get( 'status' ) ?>
 											</div>
 										</th>
 										<th>
@@ -401,14 +419,14 @@ event_signal( 'EVENT_MANAGE_LICENSE_PAGE', array( $f_license_id ) );
 		# If including global users, fetch here all local user to later distinguish them
 		$t_local_users = array();
 		if( $f_show_global_users ) {
-			$t_local_users = project_get_all_user_rows( $f_project_id, ANYBODY, false );
+			$t_local_users = license_get_all_user_rows( $f_license_id, ANYBODY, false );
 		}
 
 		foreach( $t_users as $t_user ) {
 			$t_username =  $t_user['display_name'];
 			$t_email = user_get_email( $t_user['id'] );
 			$t_can_manage_this_user = $t_can_manage_users
-					&& access_has_project_level( $t_user['access_level'], $f_project_id )
+					&& access_has_license_level( $t_user['access_level'], $f_license_id )
 					&& ( !$f_show_global_users || isset( $t_local_users[$t_user['id']]) );
 ?>
 		<tr>
@@ -421,30 +439,13 @@ event_signal( 'EVENT_MANAGE_LICENSE_PAGE', array( $f_license_id ) );
 				<?php print_email_link( $t_email, $t_email ); ?>
 			</td>
 			<?php
-			$t_current_level_string = get_enum_element( 'access_levels', $t_user['access_level'] );
+			# Licenses have no per-user access level; the value is a grant
+			# status (applied/granted), shown read-only. Revoking a user is done
+			# via the remove checkbox in the next column.
+			$t_current_status_string = license_user_status_str( $t_user['access_level'] );
 			?>
-			<td class="key-access" data-sortvalue="<?php echo $t_current_level_string ?>">
-				<?php
-				if( $t_can_manage_this_user ) {
-					echo '<div class="editable_access_level">';
-					echo "<span>$t_current_level_string</span>";
-					echo '<span class="hidden unchanged">';
-					echo '&nbsp;<a href="#" class="edit_link">[' . lang_get( 'edit' ) . ']</a>';
-					echo '</span>';
-					$t_arrow = layout_is_rtl() ? 'fa-long-arrow-left' : 'fa-long-arrow-right';
-					echo ' <span class="changed_to">';
-					print_icon( $t_arrow, 'fa-lg' );
-					echo '</span>';
-					echo '<select name="user_access_level[' . $t_user['id'] . ']" class="input-xs user_access_level"'
-							. ' data-original_val="' . $t_user['access_level'] . '" data-user_id="' . $t_user['id'] . '">';
-					# only access levels that are less than or equal current user access level for current project
-					print_project_access_levels_option_list( (int)$t_user['access_level'], $f_project_id );
-					echo '</select>';
-					echo '</div>';
-				} else {
-					echo $t_current_level_string;
-				}
-				?>
+			<td class="key-access" data-sortvalue="<?php echo string_attribute( $t_current_status_string ) ?>">
+				<?php echo string_display_line( $t_current_status_string ); ?>
 			</td>
 			<td class="center">
 				<?php
@@ -480,10 +481,10 @@ event_signal( 'EVENT_MANAGE_LICENSE_PAGE', array( $f_license_id ) );
 								</button>
 							</div>
 							<div class="form-inline pull-right">
-								<?php echo form_security_field( 'manage_proj_user_remove' ) ?>
+								<?php echo form_security_field( 'manage_license_user_remove' ) ?>
 								<button name="btn-remove-all"
 									    class="btn btn-primary btn-white btn-round"
-									    formaction="manage_proj_user_remove.php">
+									    formaction="manage_license_user_remove.php">
 									<?php echo lang_get( 'remove_all_link' ) ?>
 								</button>
 								<button name="btn-undo-remove-all" class="hidden btn btn-primary btn-white btn-round">

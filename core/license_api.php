@@ -746,9 +746,12 @@ function license_get_all_user_rows( $p_license_id = ALL_LICENSES, $p_access_leve
 	}
 
 	if( $c_license_id != ALL_LICENSES ) {
-		# Get the license overrides
+		# Get the license overrides.
+		# The license_user_list table has no access_level column; the grant
+		# state is held in `status` (see license_add_users()). Alias it so the
+		# rest of this function and its callers can treat it uniformly.
 		$t_query = new DbQuery();
-		$t_query->sql( 'SELECT u.id, u.username, u.realname, l.access_level
+		$t_query->sql( 'SELECT u.id, u.username, u.realname, l.status AS access_level
 			FROM {license_user_list} l, {user} u
 			WHERE l.user_id = u.id
 			AND u.enabled = ' . $t_query->param( $t_on ) . '
@@ -1113,19 +1116,17 @@ function license_copy_users( $p_destination_id, $p_source_id, $p_access_level_li
 	for( $i = 0; $i < $t_count; $i++ ) {
 		$t_row = $t_rows[$i];
 
-		if( $p_access_level_limit !== null &&
-			$t_row['access_level'] > $p_access_level_limit ) {
-			$t_destination_access_level = $p_access_level_limit;
-		} else {
-			$t_destination_access_level = $t_row['access_level'];
-		}
+		# license_user_list carries a grant status (applied/granted), not an
+		# access level, so the access-level limit does not apply; the source
+		# status is copied verbatim to the destination.
+		$t_destination_status = $t_row['status'];
 
 		# if there is no duplicate then add a new entry
-		# otherwise just update the access level for the existing entry
+		# otherwise just update the status for the existing entry
 		if( license_includes_user( $p_destination_id, $t_row['user_id'] ) ) {
-			license_update_user_access( $p_destination_id, $t_row['user_id'], $t_destination_access_level );
+			license_update_user_access( $p_destination_id, $t_row['user_id'], $t_destination_status );
 		} else {
-			license_add_user( $p_destination_id, $t_row['user_id'], $t_destination_access_level );
+			license_add_user( $p_destination_id, $t_row['user_id'], $t_destination_status );
 		}
 	}
 }
@@ -1216,6 +1217,26 @@ function license_user_has_access( $p_license_id ) {
 	);
 	$t_query->execute();
 	return $t_query->value();
+}
+
+/**
+ * Return a localized label for a license_user_list grant status.
+ *
+ * The license_user_list.status column is a grant state (not an access level):
+ *   10 = applied (pending), 20 = granted. Any other value is shown verbatim.
+ *
+ * @param int $p_status A license_user_list.status value.
+ * @return string Localized status label.
+ */
+function license_user_status_str( $p_status ) {
+	switch( (int)$p_status ) {
+		case 20:
+			return lang_get( 'license_user_status_granted' );
+		case 10:
+			return lang_get( 'license_user_status_applied' );
+		default:
+			return (string)$p_status;
+	}
 }
 
 function license_user_has_applied( $p_license_id, $p_status = 0 ) {

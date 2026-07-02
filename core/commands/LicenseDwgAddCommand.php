@@ -84,10 +84,11 @@ class LicenseDwgAddCommand extends Command {
 			throw new ClientException( 'Project not specified', ERROR_EMPTY_FIELD, array( 'project' ) );
 		}
 
+		# A license's project_id may legitimately be ALL_PROJECTS (a global
+		# license), so unlike a real project id, 0 is not invalid here.
+		# Actual non-existent projects are still caught by
+		# project_ensure_exists() below.
 		$this->project_id = mci_get_project_id( $t_project );
-		if( $this->project_id < 1 ) {
-			throw new ClientException( 'Invalid Project', ERROR_INVALID_FIELD_VALUE, array( 'project' ) );
-		}
 
 		$t_license = $this->payload( 'license' );
 		if( is_null( $t_license ) ) {

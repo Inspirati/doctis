@@ -17,30 +17,31 @@
 use Mantis\Exceptions\ClientException;
 
 require_api( 'authentication_api.php' );
-require_api( 'user_pref_api.php' );
+require_api( 'constant_inc.php' );
+require_api( 'config_api.php' );
+require_api( 'helper_api.php' );
 require_api( 'license_api.php' );
-require_api( 'dwg_api.php' );
+require_api( 'user_api.php' );
 
 $t_soap_dir = dirname( __DIR__, 2 ) . '/api/soap/';
 require_once( $t_soap_dir . 'mc_api.php' );
 
 /**
+ * A command that removes a user's access to a license. If user id 0
+ * (ALL_USERS) is specified, then all users will be removed from the license.
+ *
  * Sample:
  * {
  *   "payload": {
- *     "project": { "name": "My Project" },    // can also be { "id : 1 }
- *     "user": { "name": "administrator" },    // can also be { "id": 1 }
- *     "access_level": { "name": "developer" } // can also be { "id": 25 }
+ *     "project": { "id": 1 },                  // license's project scope; may be ALL_PROJECTS
+ *     "license": { "id": 3 },                  // can also be { "name": "SC Clearance" }
+ *     "user": { "name": "administrator" }      // can also be { "id": 1 }, or 0 for ALL_USERS
  *   }
  * }
  */
-
-/**
- * A command to add a user to a project or update their access to a project.
- */
-class LicenseDwgUpdateCommand extends Command {
+class LicenseUsersDeleteCommand extends Command {
 	/**
-	 * @var integer The project id
+	 * @var integer The project id (license scope; may be ALL_PROJECTS)
 	 */
 	private $project_id;
 
@@ -50,17 +51,14 @@ class LicenseDwgUpdateCommand extends Command {
 	private $license_id;
 
 	/**
-	 * @var integer The document id
+	 * @var integer The user id (ALL_USERS to remove every user)
 	 */
-	private $document_id;
+	private $user_id;
 
 	/**
-	 * The minimum access level, users with access level greater or equal to this access level
-	 * will be returned.
-	 *
-	 * @var integer
+	 * @var integer The logged in user id.
 	 */
-	private $access_level;
+	private $actor_id;
 
 	/**
 	 * Constructor
@@ -78,16 +76,12 @@ class LicenseDwgUpdateCommand extends Command {
 	 * @throws ClientException
 	 */
 	function validate() {
-
 		$t_project = $this->payload( 'project' );
 		if( is_null( $t_project ) ) {
 			throw new ClientException( 'Project not specified', ERROR_EMPTY_FIELD, array( 'project' ) );
 		}
 
-		# A license's project_id may legitimately be ALL_PROJECTS (a global
-		# license), so unlike a real project id, 0 is not invalid here.
-		# Actual non-existent projects are still caught by
-		# project_ensure_exists() below.
+		# A license's project_id may legitimately be ALL_PROJECTS (a global license).
 		$this->project_id = mci_get_project_id( $t_project );
 
 		$t_license = $this->payload( 'license' );
@@ -100,37 +94,38 @@ class LicenseDwgUpdateCommand extends Command {
 			throw new ClientException( 'Invalid License', ERROR_INVALID_FIELD_VALUE, array( 'license' ) );
 		}
 
-		$t_dwg = $this->payload( 'document' );
-		if( is_null( $t_dwg ) ) {
-			throw new ClientException( 'Document not specified', ERROR_EMPTY_FIELD, array( 'document' ) );
+		$t_user = $this->payload( 'user' );
+		if( is_null( $t_user ) ) {
+			throw new ClientException( 'User not specified', ERROR_EMPTY_FIELD, array( 'user' ) );
 		}
 
-		$this->document_id = mci_get_document_id( $t_dwg, $this->project_id );
-		if( $this->document_id < 1 ) {
-			throw new ClientException( 'Invalid Document', ERROR_INVALID_FIELD_VALUE, array( 'document' ) );
+		$this->user_id = mci_get_user_id( $t_user, /* default */ null, /* allow all users */ true );
+		if( is_null( $this->user_id ) ) {
+			throw new ClientException( 'Invalid User', ERROR_INVALID_FIELD_VALUE, array( 'user' ) );
 		}
 
-		// $this->access_level = access_parse_array( $t_access_level );
-		$this->access_level = 0;
+		# ALL_USERS is a valid case for removing every user from the license
+		if( $this->user_id != ALL_USERS ) {
+			user_ensure_exists( $this->user_id );
+		}
 
-		dwg_ensure_exists( $this->document_id );
-		if( 0 !=  $this->project_id ) {
+		if( ALL_PROJECTS != $this->project_id ) {
 			project_ensure_exists( $this->project_id );
 		}
 		license_ensure_exists( $this->license_id );
 
-		$t_actor_id = auth_get_current_user_id();
+		$this->actor_id = auth_get_current_user_id();
 
-		# We should check both since we are in the project section and an
+		# We should check both since we are in the license section and an
 		# admin might raise the first threshold and not realize they need
 		# to raise the second
 		$t_access_check = access_has_license_level(
-			config_get( 'manage_license_threshold', /* default */ null, $t_actor_id, $this->project_id ),
+			config_get( 'manage_license_threshold', /* default */ null, $this->actor_id, $this->project_id ),
 			$this->license_id );
 
 		$t_access_check = $t_access_check &&
 			access_has_license_level(
-				config_get( 'license_user_threshold', /* default */ null, $t_actor_id, $this->project_id ),
+				config_get( 'license_user_threshold', /* default */ null, $this->actor_id, $this->project_id ),
 				$this->license_id );
 
 		if( !$t_access_check ) {
@@ -141,10 +136,15 @@ class LicenseDwgUpdateCommand extends Command {
 	/**
 	 * Process the command.
 	 *
-	 * @return void
+	 * @return array Command response
 	 */
 	protected function process() {
-		# This is an upsert, it will work for adding a user or modifying their access level.
-		license_add_dwg( $this->license_id, $this->document_id, $this->access_level );
+		if( $this->user_id === ALL_USERS ) {
+			license_remove_all_users( $this->license_id );
+		} else {
+			license_remove_user( $this->license_id, $this->user_id );
+		}
+
+		return array();
 	}
 }

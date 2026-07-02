@@ -1176,6 +1176,8 @@ $s_license_name = 'License Name';
 $s_license_name_label = 'License Name:';
 $s_update_license_button = 'Update License';
 $s_delete_license_button = 'Delete License';
+$s_license_user_status_applied = 'Applied';
+$s_license_user_status_granted = 'Granted';
 
 $s_add_user_license_title = 'Add User to License';
 $s_add_document_license_title = 'Add Document to License';

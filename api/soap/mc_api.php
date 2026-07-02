@@ -1180,8 +1180,14 @@ function mci_get_document_id( $p_document, $p_project_id ) {
 		);
 	}
 
-	# Make sure the document belongs to the given project's hierarchy
-	document_ensure_exists_in_project( $t_document_id, $p_project_id );
+	# Make sure the document belongs to the given project's hierarchy.
+	# ALL_PROJECTS (e.g. a global license) is not itself a project to scope
+	# to, so just confirm the document exists at all.
+	if( ALL_PROJECTS == $p_project_id ) {
+		document_ensure_exists( $t_document_id );
+	} else {
+		document_ensure_exists_in_project( $t_document_id, $p_project_id );
+	}
 
 	return $t_document_id;
 }

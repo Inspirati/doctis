@@ -82,6 +82,9 @@ class LicenseUserUpdateCommand extends Command {
 			throw new ClientException( 'Project not specified', ERROR_EMPTY_FIELD, array( 'project' ) );
 		}
 
+		# A license's project_id may legitimately be ALL_PROJECTS (a global license).
+		$this->project_id = mci_get_project_id( $t_project );
+
 		$t_license = $this->payload( 'license' );
 		if( is_null( $t_license ) ) {
 			throw new ClientException( 'License not specified', ERROR_EMPTY_FIELD, array( 'license' ) );

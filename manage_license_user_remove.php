@@ -40,6 +40,7 @@ require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
+require_api( 'license_api.php' );
 require_api( 'print_api.php' );
 require_api( 'user_api.php' );
 
@@ -47,11 +48,13 @@ form_security_validate( 'manage_license_user_remove' );
 auth_reauthenticate();
 
 $f_project_id = gpc_get_int( 'project_id' );
+$f_license_id = gpc_get_int( 'license_id' );
 $f_user_id = gpc_get_int( 'user_id', 0 );
 
 $t_data = array(
 	'payload' => array(
 		'project' => array( 'id' => $f_project_id ),
+		'license' => array( 'id' => $f_license_id ),
 		'user' => array( 'id' => $f_user_id )
 	)
 );
@@ -69,7 +72,7 @@ if( 0 == $f_user_id ) {
 	helper_ensure_confirmed(
 		sprintf( lang_get( 'remove_user_sure_msg' ),
 			string_attribute( $t_user['username'] ),
-			string_attribute( license_get_name( $f_project_id ) )
+			string_attribute( license_get_name( $f_license_id ) )
 		),
 		lang_get( 'remove_user_button' )
 	);
@@ -79,5 +82,5 @@ $t_command->execute();
 
 form_security_purge( 'manage_license_user_remove' );
 
-$t_redirect_url = 'manage_license_edit_page.php?project_id=' . $f_project_id;
+$t_redirect_url = 'manage_license_edit_page.php?project_id=' . $f_project_id . '&license_id=' . $f_license_id . '#license-users';
 print_header_redirect( $t_redirect_url );
