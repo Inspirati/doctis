@@ -182,7 +182,7 @@ print_manage_menu( 'manage_license_page.php' );
 			$t_license = array_shift( $t_licenses );
 			$t_license_id = $t_license['id'];
 			$t_level      = count( $t_stack );
-$t_project_id = helper_get_current_project();
+$t_project_id = $t_license['project_id'];
 			# only print row if user has license management privileges
 			// if( access_has_license_level( $t_manage_license_threshold, $t_license_id, auth_get_current_user_id() ) ) { ?>
 			<tr>

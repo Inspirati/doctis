@@ -5483,8 +5483,8 @@ $g_tag_edit_own_threshold = REPORTER;
  * @global int $g_licenses_enabled
  */
 // @TODO RobD - note this may not be required as we can disable the licenses feature via 'g_show_license_list_threshold' and 'g_manage_license_threshold'
-$g_licenses_enabled = OFF;
-// $g_licenses_enabled = ON;
+// $g_licenses_enabled = OFF;
+$g_licenses_enabled = ON;
 
 
 #################

@@ -79,15 +79,14 @@ $f_license_id = gpc_get_int( 'license_id', 0 );
 $f_document_id = gpc_get_int( 'document_id', 0 );
 $f_show_global_users = gpc_get_bool( 'show_global_users' );
 
-// function mci_get_project_id( $p_project, $p_default = ALL_PROJECTS ) {
-if( ALL_PROJECTS == $f_project_id ) {
-	$f_project_id = helper_get_current_project();
-	project_ensure_exists( $f_project_id );
-}
-// if( ALL_PROJECTS != $f_project_id) {
-// 	project_ensure_exists( $f_project_id );
-// }
 license_ensure_exists( $f_license_id );
+
+# A license's project_id may legitimately be ALL_PROJECTS (a global license),
+# so unlike a real project id it must not be passed to project_ensure_exists().
+# When the caller didn't specify one, fall back to the license's own scope.
+if( ALL_PROJECTS == $f_project_id ) {
+	$f_project_id = license_get_field( $f_license_id, 'project_id' );
+}
 // $g_project_override = $f_project_id;
 access_ensure_project_level( config_get( 'manage_project_threshold' ), $f_project_id );
 access_ensure_license_level( config_get( 'manage_license_threshold' ), $f_license_id );
