@@ -32,6 +32,7 @@
  */
 
 require_once( 'core.php' );
+require_api( 'dwg_api.php' );
 require_api( 'error_api.php' );
 require_api( 'form_api.php' );
 require_api( 'gpc_api.php' );
@@ -43,30 +44,49 @@ require_api( 'license_api.php' );
 
 form_security_validate( 'dwg_license_add' );
 
-$f_project_id = 1;
 $f_dwg_id = gpc_get_int( 'bug_id' );
+# Free-text box on dwg_view (name/s) and the combo-box form's text field.
 $f_licenses = trim( gpc_get_string( 'license_to_add', '' ) );
+$f_license_string = trim( gpc_get_string( 'license_string', '' ) );
+# Existing-licenses dropdown submits the selected license id (0 = none).
+$f_license_select = gpc_get_int( 'license_select', 0 );
 
-if( !is_blank( $f_licenses ) ) {
-    $t_licensenames = preg_split( '/[,|]/', $f_licenses, -1, PREG_SPLIT_NO_EMPTY );
-    foreach( $t_licensenames as $t_licensename ) {
-		$t_match_str = preg_replace('/[^A-Z0-9]/', '', strtoupper( $t_licensename ) );
-		$t_data = array(
-			'payload' => array(
-				'project' => array(
-					'id' => $f_project_id
-				),
-				'license' => array(
-					'name' => trim( $t_licensename )
-				),
-				'document' => array(
-					'id' => $f_dwg_id
-				),
-			)
-		);
-		$t_command = new LicenseDwgAddCommand( $t_data );
-		$t_command->execute();
-    }
+# Scope license/document validation to the document's own project.
+$f_project_id = dwg_get_field( $f_dwg_id, 'project_id' );
+
+# Collect the licenses to add: name(s) from either text input plus the id
+# chosen in the existing-licenses dropdown.
+$t_license_refs = array();
+
+$t_text = trim( $f_licenses . ',' . $f_license_string, ", \t\n\r\0\x0B" );
+if( !is_blank( $t_text ) ) {
+	$t_licensenames = preg_split( '/[,|]/', $t_text, -1, PREG_SPLIT_NO_EMPTY );
+	foreach( $t_licensenames as $t_licensename ) {
+		$t_licensename = trim( $t_licensename );
+		if( !is_blank( $t_licensename ) ) {
+			$t_license_refs[] = array( 'name' => $t_licensename );
+		}
+	}
+}
+
+if( $f_license_select > 0 ) {
+	$t_license_refs[] = array( 'id' => $f_license_select );
+}
+
+foreach( $t_license_refs as $t_license_ref ) {
+	$t_data = array(
+		'payload' => array(
+			'project' => array(
+				'id' => $f_project_id
+			),
+			'license' => $t_license_ref,
+			'document' => array(
+				'id' => $f_dwg_id
+			),
+		)
+	);
+	$t_command = new LicenseDwgAddCommand( $t_data );
+	$t_command->execute();
 }
 
 form_security_purge( 'dwg_license_add' );

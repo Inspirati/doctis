@@ -419,7 +419,7 @@ function print_dwg_license_add_form( $p_dwg_id, $p_string = '' ) {
 ?>
 	<form method="post" action="dwg_license_add.php" class="form-inline">
 	<?php echo form_security_field( 'dwg_license_add' )?>
-	<input type="hidden" name="dwg_id" value="<?php echo $p_dwg_id?>" class="input-sm" />
+	<input type="hidden" name="bug_id" value="<?php echo $p_dwg_id?>" class="input-sm" />
 	<?php print_dwg_license_input( $p_dwg_id, $p_string ); ?>
 	<input type="submit" value="<?php echo lang_get( 'license_add' )?>" class="btn btn-primary btn-sm btn-white btn-round" />
 	</form>
