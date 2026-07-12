@@ -60,8 +60,14 @@ _gst_fail()  { printf "\n${FAIL}[FAIL] %s${OFF}\n" "$*" >&2; return 1; }
 _gst_chk()   { printf "  %-52s" "• $* ..."; }
 _gst_pass()  { printf " ${DIAG}OK${OFF}  %s\n" "${1:-}"; }
 
-# Run a command as WEB_USER with HOME set to their passwd home directory.
-_as_web() { sudo -H -u "$WEB_USER" "$@"; }
+# Run a command as WEB_USER with HOME set to their passwd home directory, from
+# a CWD every account can stat.  sudo inherits the caller's CWD; when the
+# installer is launched from a home directory WEB_USER cannot traverse, git
+# (which stats CWD on startup) aborts even for CWD-independent commands such as
+# 'git config --global --list', taking the whole setup down before Step 8.
+# cd to / first so the git identity/verify steps never depend on where the
+# admin happened to invoke the script.  All call sites use absolute paths.
+_as_web() { ( cd / && sudo -H -u "$WEB_USER" "$@" ); }
 
 # ---------------------------------------------------------------------------
 # set_webroot — reuse from parent script if already defined, otherwise detect
