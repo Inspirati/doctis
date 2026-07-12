@@ -1,7 +1,12 @@
 # Doctis Git Integration — Solution Space Analysis
 
-Status: **ANALYSIS / DECISION DOCUMENT** — written 2026-07-12, prompted by the
-repository-import requirement ([GIT_IMPORTER.md](GIT_IMPORTER.md)).
+Status: **DECIDED AND IMPLEMENTED** — written 2026-07-12, prompted by the
+repository-import requirement ([GIT_IMPORTER.md](GIT_IMPORTER.md)); the C1
+recommendation (§6) was implemented the same day (WP1–WP6; see
+[GIT_TODO.md §6](GIT_TODO.md) for the implementation record and
+[GIT_ARCHITECTURE.md](GIT_ARCHITECTURE.md) for the resulting architecture).
+WP7 — the importer — remains outstanding.  This document is retained as the
+design rationale.
 
 ## 0. Premise — We Are Not Constrained by the Current Implementation
 

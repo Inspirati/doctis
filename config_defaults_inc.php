@@ -2329,10 +2329,15 @@ $g_allow_file_upload = ON;
 $g_file_upload_method = DATABASE;
 
 /**
- * Upload destination for document (dwg) attachments.
+ * Upload destination for document (dwg) ATTACHMENTS.
  *
  * Mirrors $g_file_upload_method but applies only to the document (dwg) side.
- * Valid values: DISK, DATABASE, GIT.
+ * Valid values: DISK, DATABASE (GIT is accepted and maps to DATABASE —
+ * attachments are assisting metadata and are never stored in git).
+ *
+ * PRIMARY registered documents are not governed by this setting: they are
+ * stored exclusively in git (see core/repository_api.php and
+ * file_dwg_get_storage_backend()); git is an install prerequisite.
  *
  * @global int $g_dwg_upload_method
  */
@@ -2430,9 +2435,10 @@ $g_absolute_path_default_upload_folder = '';
 /**
  * Git document storage: absolute path to the bare repository root.
  *
- * Each Doctis project gets its own bare repo:
- * <git_storage_root>/<slug>-<project_id>.git (see dwg_project_repo_basename()).
- * Only used when $g_dwg_upload_method = GIT.
+ * Each {repository} entity is a bare repo:
+ * <git_storage_root>/<slug>-r<repository_id>.git (see repository_basename()
+ * in core/repository_api.php).  A repository is shared by a project tree
+ * unless a sub-project is explicitly linked to its own.
  *
  * @global string $g_git_storage_root
  */
@@ -2441,12 +2447,31 @@ $g_git_storage_root = '';
 /**
  * Git document storage: absolute path to the working tree root.
  *
- * Each project gets a working tree: <git_worktree_root>/<slug>-<project_id>
- * Only used when $g_dwg_upload_method = GIT.
+ * Each repository gets a server working tree (write staging area):
+ * <git_worktree_root>/<slug>-r<repository_id>
  *
  * @global string $g_git_worktree_root
  */
 $g_git_worktree_root = '';
+
+/**
+ * Path template for NEW primary documents within their repository.
+ *
+ * Tokens: {dwg_id}, {filename}, {category}.  The default
+ * '{dwg_id}/{filename}' is collision-free by construction; a template such
+ * as '{category}/{filename}' produces human-legible repositories at the
+ * cost of a creation-time collision check (uploads fail with a validation
+ * error when the path is already registered to another document).
+ *
+ * The template applies only when a document has no registered path yet:
+ * replacements keep the registered directory, and documents registered by
+ * the repository importer keep their native paths verbatim.
+ *
+ * May be overridden per project via the standard config mechanism.
+ *
+ * @global string $g_dwg_repo_path_template
+ */
+$g_dwg_repo_path_template = '{dwg_id}/{filename}';
 
 /**
  * Remote Git access (Smart HTTP): master enable flag.

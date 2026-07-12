@@ -429,9 +429,15 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 );
 
 # ── Step 23: dwg_primary_file ───────────────────────────────────────────────
-# One canonical primary document file per dwg record.
-# git_sha holds the commit SHA when using the GIT storage backend.
-# git_branch records the branch at time of upload.
+# One canonical primary document file per dwg record.  Primary documents are
+# stored exclusively in git (see core/repository_api.php):
+#   git_path   — repo-relative path of the file (path-as-data; set at
+#                creation from $g_dwg_repo_path_template, or verbatim on
+#                repository import).  Unique per repository, enforced by
+#                file_dwg_primary_register().
+#   git_sha    — the registered/on-record commit SHA.
+#   git_branch — branch at time of registration.
+# filename is the basename of git_path, kept for display/Content-Disposition.
 $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'dwg_primary_file' ) . " (
 	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -441,13 +447,46 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	  `filesize` int(11) NOT NULL DEFAULT 0,
 	  `file_type` varchar(250) NOT NULL DEFAULT '',
 	  `git_sha` varchar(250) NOT NULL DEFAULT '',
-	  `folder` varchar(250) NOT NULL DEFAULT '',
-	  `content` longblob DEFAULT NULL,
+	  `git_path` varchar(1024) NOT NULL DEFAULT '',
 	  `date_added` int(10) unsigned NOT NULL DEFAULT 1,
 	  `description` varchar(255) NOT NULL DEFAULT '',
 	  `git_branch` varchar(64) NOT NULL DEFAULT 'main',
 	  PRIMARY KEY (`id`),
 	  UNIQUE KEY `idx_dwg_primary_file_dwg_id` (`dwg_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 23a: repository ────────────────────────────────────────────────────
+# First-class git repository entity (see core/repository_api.php).
+# On-disk basename is "<slug>-r<id>"; the immutable "-r<id>" suffix is what
+# all lookup resolves by, the slug is cosmetic and follows the owner project
+# name.  adopted_from records the source URL/path when the repository was
+# imported rather than created empty.
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'repository' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `name` varchar(128) NOT NULL,
+	  `slug` varchar(128) NOT NULL DEFAULT '',
+	  `default_branch` varchar(64) NOT NULL DEFAULT 'main',
+	  `owner_project_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `adopted_from` varchar(2048) NOT NULL DEFAULT '',
+	  `date_created` int(10) unsigned NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`id`),
+	  KEY `idx_repository_owner_project` (`owner_project_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 23b: project_repository ────────────────────────────────────────────
+# Explicit project → repository link.  A project with no row inherits its
+# repository by walking up the project hierarchy; a repository is created at
+# the top-level project on first need.  Kept as a Doctis-parallel link table
+# so the MantisBT {project} table stays untouched.
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'project_repository' ) . " (
+	  `project_id` int(10) unsigned NOT NULL,
+	  `repository_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  PRIMARY KEY (`project_id`),
+	  KEY `idx_project_repository_repository` (`repository_id`)
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 

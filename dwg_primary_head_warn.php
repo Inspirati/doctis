@@ -39,13 +39,19 @@ if( $t_row === null ) {
 }
 
 $t_head = file_dwg_git_head_info( $f_dwg_id );
-if( $t_head === null || $t_head['filename'] === null ) {
+if( $t_head === null ) {
 	error_parameters( $f_dwg_id );
 	trigger_error( ERROR_FILE_NOT_FOUND, ERROR );
 }
 
+# filename === null with a valid HEAD means the registered git_path no longer
+# exists at HEAD (renamed or deleted by an external push) — the "dangling
+# path" state.  The page still renders (the git-access information remains
+# useful); the download confirmation is replaced by a warning.
+$t_path_dangling = ( $t_head['filename'] === null );
+
 # If the user has already confirmed, redirect straight to the download.
-if( true == gpc_get_bool( '_confirmed' ) ) {
+if( !$t_path_dangling && true == gpc_get_bool( '_confirmed' ) ) {
 	print_header_redirect( 'file_download.php?type=dwg_primary_head&id=' . $f_dwg_id );
 }
 
@@ -55,7 +61,7 @@ $t_project_id   = dwg_get_field( $f_dwg_id, 'project_id' );
 $t_project_name = project_get_field( $t_project_id, 'name' );
 $t_repo_base    = dwg_project_repo_basename( $t_project_id );
 $t_bare         = dwg_project_bare_repo_path( $t_project_id );
-$t_rel_path     = $f_dwg_id . '/' . $t_head['filename'];
+$t_rel_path     = $t_row['git_path'];
 
 # Shell-safe versions for display in <code> blocks.
 $t_bare_shell    = escapeshellarg( $t_bare );
@@ -92,6 +98,22 @@ layout_page_begin();
 
 	<!-- ── Section 1: Warning and confirmation ─────────────────────────── -->
 	<div class="space-10"></div>
+<?php if( $t_path_dangling ) { ?>
+	<div class="alert alert-danger center">
+		<p class="bigger-110">
+			The registered document path
+			<code><?php echo htmlspecialchars( $t_rel_path ) ?></code>
+			no longer exists at the repository <code>HEAD</code> &mdash; it has been
+			renamed or deleted by a push made outside Doctis.
+		</p>
+		<p>
+			The approved (On-Record) version remains fully retrievable from its
+			pinned commit.  A manager must either re-upload the document (which
+			re-establishes the path) or register the file's new location before
+			the draft can be promoted.
+		</p>
+	</div>
+<?php } else { ?>
 	<div class="alert alert-warning center">
 		<p class="bigger-110">
 			<?php echo lang_get( 'primary_document_head_download_warn' ) ?>
@@ -107,6 +129,7 @@ layout_page_begin();
 		</form>
 		<div class="space-10"></div>
 	</div>
+<?php } ?>
 
 	<!-- ── Section 2: Advanced git access information ──────────────────── -->
 	<div class="space-20"></div>
@@ -157,7 +180,7 @@ layout_page_begin();
 
 				<p class="small">
 					<strong>What you get:</strong> every <em>registered</em> document in this
-					project &mdash; one directory per document id (this document is
+					repository (this document is
 					<code><?php echo htmlspecialchars( $t_rel_path ) ?></code>) &mdash; with full
 					revision history.  Attachments are <em>not</em> included.
 					<br>

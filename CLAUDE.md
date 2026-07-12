@@ -207,6 +207,12 @@ Upstream MantisBT changes flow in via the `upstream_sync` branch, then merged in
 
 ## Testing
 
+**[doc/TESTING.md](doc/TESTING.md) indexes every test method** (PHPUnit, SOAP
+smoke test, git mechanics/mapping-layer integration tests, repository import,
+remote clone/push gateway test, curl-based live testing, clean-room reset)
+with what each covers and how to run it — check there before writing a new
+ad hoc test script.
+
 ```bash
 composer install
 ./vendor/bin/phpunit
@@ -565,8 +571,9 @@ After any upload or delete via SOAP (or the web UI), confirm the commit is
 attributed to the correct Doctis user:
 
 ```bash
-ssh hcr@vaio "git --git-dir=/var/git/doctis/example-1.git \
+ssh hcr@vaio "git --git-dir=/var/git/doctis/example-r<N>.git \
   log --format='%h %an <%ae> %s' -5"
+# (repo basename is <slug>-r<repository_id> — ls /var/git/doctis/ to find it)
 # Should show the Doctis user's realname and email, not "Doctis <doctis@vaio.local>"
 ```
 
@@ -684,13 +691,22 @@ See `core/commands/DwgAddCommand.php` for the canonical correct pattern.
 
 ## File Storage Backend Architecture
 
-The file storage system supports three methods, selected by `$g_file_upload_method`:
+**Primary registered documents are stored exclusively in git** — there is no
+configurable method for them (`file_dwg_get_storage_backend()` returns
+`GitFileStorageBackend` unconditionally; a working `git` binary is an install
+prerequisite).  `DISK`/`DATABASE` remain for **attachments only**:
 
-| Constant | Value | Backend class | Stores in |
-|----------|-------|--------------|-----------|
-| `DISK` | 1 | `DiskFileStorageBackend` | Server filesystem |
-| `DATABASE` | 2 | `DatabaseFileStorageBackend` | `{dwg_file}.content` BLOB |
-| `GIT` | 3 | `GitFileStorageBackend` | Per-project bare git repo |
+| Applies to | Governed by | Backends |
+|-----------|-------------|----------|
+| Primary registered document | (nothing — always GIT) | `GitFileStorageBackend` |
+| Document attachments (`{dwg_file}`) | `$g_dwg_upload_method` | `DISK` / `DATABASE` (`GIT` value maps to `DATABASE`) |
+| Bug/issue attachments (`{bug_file}`) | `$g_file_upload_method` | `DISK` / `DATABASE` (`case GIT:` falls through to `DATABASE` in `file_api.php`, `file_download.php`, `print_dwg_attachment_preview_text()`) |
+
+Rationale: the registered document is the only item a `git clone` user should
+see and the only revision-controlled record; attachments are Doctis
+"assisting metadata".  Full architecture:
+[doc/git/GIT_ARCHITECTURE.md](doc/git/GIT_ARCHITECTURE.md); design rationale:
+[doc/git/GIT_SOLUTION_SPACE.md](doc/git/GIT_SOLUTION_SPACE.md).
 
 **Interface:** [core/classes/FileStorageBackendInterface.class.php](core/classes/FileStorageBackendInterface.class.php)
 
@@ -700,60 +716,50 @@ retrieve(row, project_id) → [type, content] | false
 delete(diskfile, project_id, metadata[]) → void
 ```
 
-**Factories:**
-- `file_dwg_get_storage_backend()` in [core/file_dwg_api.php](core/file_dwg_api.php)
-  — used **only** for the primary registered document; returns the GIT backend
-  when configured.
-- `file_dwg_get_attachment_storage_backend()` in [core/file_dwg_api.php](core/file_dwg_api.php)
-  — used for **all** document attachments; honours `DISK`/`DATABASE` and maps
-  `GIT → DATABASE` (attachments are never stored in git).
+For the GIT backend, `metadata['git_path']` (repo-relative path) is required
+by `store()`/`delete()`, and `retrieve()` reads `row['git_path']`.
 
-**Scope:** GIT stores **only the primary registered document** — the single
-revision-controlled artefact. **All attachments are stored via DISK or DATABASE,
-never git** — this applies to both document (`dwg_file`) and bug/issue
-(`bug_file`) attachments. When the configured method is `GIT`:
-- document attachments fall back to DATABASE via `file_dwg_get_attachment_storage_backend()`;
-- bug/bugnote attachments fall back to DATABASE via `case GIT:` fall-through in
-  `file_api.php` (upload + content-retrieval switches);
-- `file_download.php` and `print_dwg_attachment_preview_text()` remap `GIT → DATABASE`
-  for attachment download/preview.
+### Repository entity and naming
 
-Rationale: the registered document is the only item a `git clone` user should
-see and the only revision-controlled record (its approved SHA is in
-`{dwg_primary_file}.git_sha`); attachments are Doctis "assisting metadata". See
-[doc/PROJECT_REPOS.md](doc/PROJECT_REPOS.md) §8.
+A git repository is a first-class entity — a `{repository}` row managed by
+[core/repository_api.php](core/repository_api.php).  Projects map to
+repositories via the `{project_repository}` link table: explicit link →
+that repo; no link → inherit from the nearest linked ancestor project; no
+ancestor either → created on demand at the **top-level project**.  A project
+tree therefore shares one repository by default (monorepo/sub-project model);
+a sub-project can be explicitly linked to its own.
 
-### GIT backend specifics
-
-**Repository layout per project** (basename `<slug>-<project_id>`, e.g. `example-1`):
 ```
-/var/git/doctis/<slug>-<id>.git        bare repo (authoritative store)
-/var/www/doctis/worktrees/<slug>-<id>  working tree (write staging area)
+/var/git/doctis/<slug>-r<id>.git        bare repo (authoritative store)
+/var/www/doctis/worktrees/<slug>-r<id>  working tree (write staging area)
 ```
 
-Naming is owned by `dwg_project_repo_basename()` / `dwg_project_bare_repo_path()` /
-`dwg_project_worktree_path()` in `core/file_dwg_api.php` — never derive a repo
-path from the project name directly. Lookup is by the immutable `-<id>` suffix.
-Renaming a project automatically relocates its repository to match
-(`dwg_project_repo_rename()`, called from `project_update()`): the bare repo is
-atomically renamed, the worktree deleted (lazily re-cloned on next upload), and
-stored `folder` values rewritten. Stale-slug clone URLs keep working — the
-gateway resolves by id.
+Basename `<slug>-r<repository_id>` (e.g. `example-r1`); the stored `slug`
+column is authoritative (nothing scans the disk); resolution is by the
+immutable `-r<id>` suffix.  Renaming a project relocates its owned repos
+(`repository_rename_for_owner_project()`, via the `dwg_project_repo_rename()`
+wrapper called from `project_update()`).  Document code resolves through the
+project-keyed wrappers in `core/file_dwg_api.php`
+(`dwg_project_bare_repo_path()` etc.) — never derive a repo path from a
+project name directly.
 
-**File path within repo:** `<dwg_id>/<filename>` (e.g. `4/report.pdf`)
+### Path-as-data
 
-**`{dwg_file}` columns used by GIT backend:**
+Each primary file's repo-relative path is stored in
+`{dwg_primary_file}.git_path` — never computed at read time.  New documents
+get a path from `$g_dwg_repo_path_template` (tokens `{dwg_id}`, `{filename}`,
+`{category}`; default `{dwg_id}/{filename}`; per-project overridable);
+imported documents keep native paths.  Replacements are directory-sticky
+(basename may change; old path soft-deleted when it changes).  Path
+uniqueness is enforced per repository across all projects sharing it.
+`file_dwg_primary_register()` is the single registration choke point — it
+verifies `<sha>:<git_path>` exists, checks collisions, writes the row, and
+pins the approved ref; uploads layer on it.
 
-| Column | GIT value |
-|--------|-----------|
-| `diskfile` | full commit SHA (40 hex chars) |
-| `folder` | absolute path to the bare repo |
-| `content` | empty string |
-
-**`{dwg_file}` schema note:** the table has NO `project_id` column. Project ID
-must always be derived via `dwg_get_field($dwg_id, 'project_id')`. The original
-MantisBT code had a latent bug here that was fixed when implementing the GIT
-backend.
+**`{dwg_primary_file}` columns:** `git_path`, `git_sha` (on-record SHA),
+`git_branch`, `filename` (= basename of git_path), `filesize`, `file_type`.
+No `folder`/`content` columns, and NO `project_id` column — project ID must
+always be derived via `dwg_get_field($dwg_id, 'project_id')`.
 
 **Push is mandatory:** `git commit` only writes to the working tree's local
 history. The bare repo receives nothing until `git push` is called.
@@ -778,31 +784,33 @@ the full commit history is retained in the bare repo.
 content re-uploaded), the backend treats it as a successful store and returns
 the existing HEAD SHA.
 
-### Files modified to support GIT method
+### Key files (git storage)
 
-Beyond the new backend classes, every existing file that switches on
-`file_upload_method` needed a `GIT` case:
+| File | Role |
+|------|------|
+| [core/repository_api.php](core/repository_api.php) | `{repository}` entity: CRUD, project resolution, disk lifecycle, `repository_adopt()`, rename relocation, storage lock |
+| [core/file_dwg_api.php](core/file_dwg_api.php) | `file_dwg_primary_register()`, path template/sanitizer/collision, project-keyed wrappers, worktree sync, approved-SHA pinning |
+| [core/classes/GitFileStorageBackend.class.php](core/classes/GitFileStorageBackend.class.php) | store/retrieve/delete via `git_path` |
+| [core/git_http_api.php](core/git_http_api.php) | Smart HTTP gateway — resolves `-r<id>`, authorises against the repository's owner project |
+| [core/constant_inc.php](core/constant_inc.php) | `define('GIT', 3)` (still used by attachment mapping) |
+| [config_defaults_inc.php](config_defaults_inc.php) | `$g_git_storage_root`, `$g_git_worktree_root`, `$g_dwg_repo_path_template` |
+| [core/file_api.php](core/file_api.php) / [core/print_dwg_api.php](core/print_dwg_api.php) / [file_download.php](file_download.php) | Attachment-side `GIT → DATABASE` fall-throughs |
+| [admin/import-git-repo.php](admin/import-git-repo.php) | Repository importer: adopt an existing git repo as a project (+ sub-projects) and register its files as documents by reference. `--dry-run`/`--update`; `.doctis` manifest or CLI flags; run as www-data (wrapper: `admin/tools/doctis-git-import.sh`). See [doc/git/GIT_IMPORTER.md](doc/git/GIT_IMPORTER.md) |
 
-| File | What was added |
-|------|----------------|
-| [core/constant_inc.php](core/constant_inc.php) | `define('GIT', 3)` |
-| [config_defaults_inc.php](config_defaults_inc.php) | `$g_git_storage_root`, `$g_git_worktree_root` defaults |
-| [core/file_dwg_api.php](core/file_dwg_api.php) | Two factories: `file_dwg_get_storage_backend()` (primary doc — may be GIT) and `file_dwg_get_attachment_storage_backend()` (attachments — GIT→DATABASE). `file_dwg_add()` / `file_dwg_get_content()` / `file_dwg_delete()` use the attachment factory |
-| [core/file_api.php](core/file_api.php) | `case GIT:` falls through to DATABASE in upload + content-retrieval switches — bug/issue attachments are never stored in git |
-| [core/print_dwg_api.php](core/print_dwg_api.php) | `print_dwg_attachment_preview_text()` reads attachment content from the DB row (`GIT` folded into the DATABASE branch) |
-| [file_download.php](file_download.php) | Primary-document download (`dwg_primary*` types) uses GIT; attachment download remaps `GIT → DATABASE` (no git case); `require_api('file_dwg_api.php')` added |
-
-### Integration test
+### Integration tests
 
 ```bash
+# Pure git mechanics (no core bootstrap) — 20 steps
 ssh hcr@vaio "sudo -u www-data php /var/www/html/doctis/admin/test-git-php.php"
+
+# Mapping layer (bootstraps core) — sanitizer, repository entity/resolution,
+# path templates, register-by-reference, collisions, dangling paths,
+# sync-to-HEAD, repository adoption, rename relocation
+ssh hcr@vaio "sudo -u www-data php /var/www/html/doctis/admin/test-git-doctis.php"
 ```
 
-Source: [admin/test-git-php.php](admin/test-git-php.php) — self-contained 20-step
-test (init, clone, add, commit, push, retrieve-by-SHA, HEAD retrieve, SHA256
-integrity, soft-delete, history retention, pre-receive hook enforcement:
-force-push / ref-delete / refs-doctis rejection). Creates and tears down its
-own temporary repos. Must pass before enabling `GIT` on any new server.
+Both create and tear down their own state and must pass before enabling git
+storage on any new server.
 
 ### Server infrastructure status (vaio) — current state
 
@@ -812,9 +820,8 @@ own temporary repos. Must pass before enabling `GIT` on any new server.
 | `/var/www/doctis/worktrees/` | Created; `www-data:www-data`, mode `2770` |
 | `/var/www/.gitconfig` | Written as root; `www-data` identity set (`doctis@vaio.local`, `init.defaultBranch=main`) |
 | `czproject/git-php v4.4.0` | Installed via Composer into `vendor/` |
-| `example` project bare repo | `/var/git/doctis/example-1.git` — live data, `main` branch, pre-receive hook installed, `http.receivepack=true` |
-| `example` project worktree | `/var/www/doctis/worktrees/example-1` — `main` branch, tracking `origin/main` |
-| `$g_file_upload_method` | Set to `GIT` in `config/config_inc.php` — active on vaio |
+| `example` project repository | `/var/git/doctis/example-r<N>.git` — created on demand at first upload; `main` branch, pre-receive hook installed, `http.receivepack=true` |
+| `$g_file_upload_method` / `$g_dwg_upload_method` | Set to `GIT` in `config/config_inc.php` — governs attachments only (maps to DATABASE); primaries are always git |
 
 ## AI Assistant Feature
 
@@ -849,6 +856,6 @@ table design notes.
 2. **`document_api.php`** — currently a thin wrapper; some category-style logic was copied from `category_api.php` and has a stale file header.
 3. **REST API** — no dwg/document/license REST endpoints exist yet; Commands are used internally only.
 4. **Bulk import** — no UI; must use `phpMyAdmin` or CLI directly.
-5. **Two upload-method config keys; GIT is primary-document-only** — bug/issue attachments use `$g_file_upload_method`; documents use `$g_dwg_upload_method` (they are *separate* keys). `GIT` is only meaningful for the **primary registered document**. All attachments (both `bug_file` and `dwg_file`) are stored via DISK/DATABASE; any `GIT` setting falls back to DATABASE for attachments. This is intentional — attachments are "assisting metadata", not revision-controlled. See `doc/PROJECT_REPOS.md` §8.
+5. **Two attachment config keys; primaries are git-only** — bug/issue attachments use `$g_file_upload_method`; document attachments use `$g_dwg_upload_method` (*separate* keys, attachments only). A `GIT` value in either falls back to DATABASE for attachments. The **primary registered document** ignores both — it is always stored in git (no configuration). This is intentional — attachments are "assisting metadata", not revision-controlled. See `doc/git/GIT_ARCHITECTURE.md`.
 6. **`file_api.php` switch statements** — MantisBT's original bug attachment code has multiple `switch($file_upload_method)` blocks. Each new storage method requires a case in all of them. Discovered locations: upload (around line 1009), MIME detection (line 1314), content output (`file_download.php` line 238). Search for `file_upload_method` when adding future methods.
-7. **GIT config written before infrastructure exists** — `install-target.sh`:`configure_target()` writes `$g_dwg_upload_method = GIT` (and the storage paths) into `config_inc.php` at config-generation time, before `install_git_storage()` has run. If `install_git_storage()` subsequently fails (e.g. git not installed, permission error creating `/var/git/doctis/`), the config will advertise GIT but the bare repos and worktrees will not exist. Document file uploads will then error at runtime. **Future hardening:** `install_git_storage()` should revert those three config keys to their DATABASE defaults if it exits non-zero.
+7. **Git infrastructure is an install prerequisite** — primary-document storage requires the git binary, `$g_git_storage_root`, and `$g_git_worktree_root` to be functional; there is no DATABASE fallback for primaries. `install-target.sh`:`configure_target()` writes the storage paths into `config_inc.php` before `install_git_storage()` has run — if `install_git_storage()` subsequently fails (git not installed, permission error creating `/var/git/doctis/`), primary-document uploads will error at runtime. **Future hardening:** `install_git_storage()` failure should abort the install, and `admin/check` should verify the git binary and storage-root permissions.

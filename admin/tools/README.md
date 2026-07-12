@@ -21,6 +21,7 @@ green = success/diagnostic, yellow = warning, red = failure).
 | `doctis-git-reset.sh` | Wipe the git document store to an empty state (for testing clean-room resets) | sudo |
 | `doctis-drop-and-create-new-database.sh` | Drop and recreate the MariaDB database, run the installer, reload example data | user (mysql via ~/.my.cnf) |
 | `doctis-soap-test.sh` | Exercise Doctis-specific SOAP endpoints end-to-end; prints pass/fail per test | user |
+| `doctis-git-import.sh` | Import an existing git repository as a Doctis project (wrapper for `admin/import-git-repo.php`; see `--help` and doc/git/GIT_IMPORTER.md) | sudo (runs as www-data) |
 
 ---
 

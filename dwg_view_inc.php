@@ -1098,9 +1098,11 @@ $t_head_diverged = $t_git_head_sha !== null && $t_git_head_sha !== ( $t_primary_
 						<a href="dwg_primary_head_warn.php?id=<?php echo $f_dwg_id ?>"><?php
 							echo htmlspecialchars( $t_git_head_filename )
 						?></a>
-<?php		if( $t_git_head_filename !== $t_primary_file['filename'] ): ?>
-						&nbsp;<span class="label label-info">renamed</span>
-<?php		endif; ?>
+<?php	elseif( $t_git_head_sha !== null ): ?>
+						<a href="dwg_primary_head_warn.php?id=<?php echo $f_dwg_id ?>"
+							title="The registered path <?php echo htmlspecialchars( $t_primary_file['git_path'] ) ?> was renamed or deleted by a push made outside Doctis">
+							<span class="label label-danger">missing at HEAD</span>
+						</a>
 <?php	else: ?>
 						<span class="small">—</span>
 <?php	endif; ?>

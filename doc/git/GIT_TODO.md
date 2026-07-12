@@ -107,17 +107,16 @@ Doctis, force-push rejection.
 upload. The `git_sha` column stores the approved/on-record SHA. Neither is yet
 fully integrated with the Doctis workflow event log.
 
-### 3a. Register an existing SHA without upload ☐
+### 3a. Register an existing SHA without upload ☑ DONE (2026-07-12, C1 WP4)
 
-A mechanism to set `diskfile` (and optionally `git_sha`) to an existing commit
-SHA by reference, without performing a file upload. This enables:
-- Pointing a Doctis record at a commit made by a developer directly in git.
-- Registering the SHA of a specific approved version after direct-push
-  development cycles.
-
-Implementation: a form field or SOAP/REST endpoint that accepts a SHA, calls
-`git cat-file -t <sha>` to verify it exists in the project repo, then writes it
-to the DB.
+`file_dwg_primary_register( dwg_id, user_id, git_path, sha = HEAD, … )` in
+`core/file_dwg_api.php` — verifies the blob exists at `<sha>:<git_path>`,
+enforces per-repository path uniqueness, writes the row, updates
+`documents.reference`, pins the approved ref.  It is the single choke point
+for all registrations; uploads are layered on it.  Covered by
+`admin/test-git-doctis.php` steps 7–8.  **Still outstanding:** a UI form and
+a SOAP endpoint (`mc_dwg_primary_register`) exposing it — currently core-API
+and importer callers only.
 
 ### 3b. "Use current HEAD" action ☐
 
@@ -200,25 +199,55 @@ optimisation if large-repo support becomes a requirement.
 
 ---
 
-## 6. Repository Import and the Mapping-Layer Refactor — ◐ decision pending
+## 6. Repository Import and the Mapping-Layer Refactor — ☑ C1 IMPLEMENTED (2026-07-12); ☐ importer (WP7) outstanding
 
 The repository-import requirement ([GIT_IMPORTER.md](GIT_IMPORTER.md)) forced
 a clean-sheet review of the git integration:
-[GIT_SOLUTION_SPACE.md](GIT_SOLUTION_SPACE.md). Its recommendation (**C1**):
+[GIT_SOLUTION_SPACE.md](GIT_SOLUTION_SPACE.md). Its recommendation (**C1**)
+was adopted and implemented — WP1–WP6 are done:
 
-- path-as-data with per-project creation templates (replaces the hardcoded
-  `<dwg_id>/<filename>` rule);
-- `{repository}` as a first-class entity, projects reference or inherit it
-  (replaces project-keyed lazy repos; enables monorepo sub-projects);
-- git-only storage for primary documents (retires `$g_dwg_upload_method`
-  switching; attachments unchanged);
-- infrastructure layer (worktree mechanics, hooks, pinning, gateway)
-  explicitly **kept as-is**.
+- ☑ WP1 — `{repository}` + `{project_repository}` tables;
+  `core/repository_api.php` (entity, resolution with hierarchy inheritance,
+  disk lifecycle, adoption, rename relocation); gateway and helpers re-keyed
+  to `<slug>-r<id>`.
+- ☑ WP2 — `git_path` universal in `{dwg_primary_file}` (`folder`/`content`
+  dropped); backend reads the stored path only; `$g_dwg_repo_path_template`
+  with sanitiser and per-repository collision enforcement; directory-sticky
+  replacement (this also fixed a latent defect where a same-filename
+  replacement deleted the just-stored file from HEAD).
+- ☑ WP3 — primaries are git-only (`file_dwg_get_storage_backend()`
+  unconditional); `$g_dwg_upload_method` now governs attachments only.
+- ☑ WP4 — `file_dwg_primary_register()` (see §3a).
+- ☑ WP5 — dangling-path detection: `file_dwg_git_head_info()` checks the
+  registered path at HEAD; "missing at HEAD" badge in the view panel;
+  explanatory state in `dwg_primary_head_warn.php`.
+- ☑ WP6 — `admin/test-git-doctis.php` (59 checks: sanitizer, entity,
+  resolution, templates, register, collisions, dangling paths, sync-to-HEAD,
+  adoption, relocation).  Verified alongside `test-git-php.php` (20/20),
+  `doctis-soap-test.sh` (13/13), gateway clone (canonical + stale-slug +
+  auth-reject), and the full curl web lifecycle.
+- ☑ **WP7 — the importer** (2026-07-12): `admin/import-git-repo.php`
+  (+ `admin/tools/doctis-git-import.sh` wrapper).  Phase A adoption via
+  `repository_create()`/`repository_adopt()`; Phase B registration via
+  `file_dwg_primary_register()` in a loop.  `.doctis` INI manifest (root +
+  per-subdirectory) with full CLI override; `--dry-run` and idempotent
+  `--update` (skip registered paths, report paths missing at HEAD, never
+  auto-delete); metadata gleaning per GIT_IMPORTER §6 — frontmatter
+  (doc_id→**number**, title, revision, status→workflow map with Draft ⇒
+  unpinned, classification, owner→handler when matched, effective_date/
+  review_period→release/due dates) > git history (first/last commit →
+  date_submitted/last_updated, author email→creator) > path/filename
+  conventions (D7 path-as-category; hardware `HCR-570C-…-Rev-D` parse).
+  Proven against both driving use cases: HCRQMS (33 docs, native paths,
+  branch `dev`) and HCR-Hardware-Designs (parent + 7 sub-projects sharing
+  one repo, 12 PDFs incl. paths with spaces).  Note: frontmatter `doc_id`
+  maps to `documents.number`, not `reference` — Doctis manages `reference`
+  as the on-record SHA.
 
-Work packages WP1–WP7 are defined in GIT_SOLUTION_SPACE.md §5. If C1 is
-adopted: sections of GIT_ARCHITECTURE.md (naming, lazy creation,
-storage-method table) need rewriting as the WPs land, and this file's §3a is
-absorbed into WP4.
+Follow-ups surfaced by the refactor:
+- ☐ UI action to re-point a dangling `git_path` (currently: re-upload, or
+  register the new location via core API).
+- ☐ `admin/check` install-check for the git binary (now a prerequisite).
 
 ---
 

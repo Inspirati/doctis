@@ -1,9 +1,12 @@
 # Doctis Git Storage — Architecture and Implementation
 
 This document describes how Doctis uses git as its document storage backend:
-the governing principles, repository layout, backend class structure, and the
-operations the PHP layer performs. It covers the implemented system only;
-outstanding and deferred work is in [GIT_TODO.md](GIT_TODO.md).
+the governing principles, the repository entity, backend class structure, and
+the operations the PHP layer performs. It covers the implemented system only;
+outstanding and deferred work is in [GIT_TODO.md](GIT_TODO.md). The design
+rationale for the current model (the "C1 refactor": repository as a
+first-class entity, path-as-data, git-only primaries) is in
+[GIT_SOLUTION_SPACE.md](GIT_SOLUTION_SPACE.md).
 
 ---
 
@@ -41,162 +44,146 @@ Doctis is the **lifecycle and index layer**. It owns:
 All meaningful state transitions are initiated from the Doctis interface. The
 direction of control is always **Doctis → git**, never git → Doctis. There are
 no `post-receive` hooks or webhooks pushing state from git into Doctis.
+(Repository *import* — a deliberate, operator-initiated batch read — is
+consistent with this; see [GIT_IMPORTER.md](GIT_IMPORTER.md).)
 
 ---
 
-## Scope: Primary Document Only
+## Scope: Primary Documents Are Git-Only; Attachments Never Are
 
-The GIT backend applies exclusively to the **primary registered document** of
-each `dwg` record — the single version-controlled artefact. Document
-attachments (`{dwg_file}` rows) and bug/issue attachments (`{bug_file}` rows)
-are always stored via `DISK` or `DATABASE`; the `GIT` setting is not used for
-them.
+The **primary registered document** of each `dwg` record — the single
+version-controlled artefact — is stored **exclusively in git**. There is no
+configurable storage method for it: `file_dwg_get_storage_backend()` returns
+the GIT backend unconditionally, and a working `git` binary is an install
+prerequisite alongside MariaDB.
 
-Rationale: the registered document is the only item a `git clone` user should
-see and the only revision-controlled record. Attachments are Doctis-specific
-"assisting metadata" — they have no business being versioned in the document
-store that external users clone.
+Document attachments (`{dwg_file}` rows) and bug/issue attachments
+(`{bug_file}` rows) are always stored via `DISK` or `DATABASE`; they are
+Doctis-specific "assisting metadata" with no business being versioned in the
+document store that external users clone.
 
-Config key separation:
+Config key roles:
 
-| Key | Applies to | GIT behaviour |
-|-----|-----------|---------------|
-| `$g_dwg_upload_method` | Primary registered document | uses `GitFileStorageBackend` |
+| Key | Applies to | Notes |
+|-----|-----------|-------|
+| (none — always GIT) | Primary registered document | `file_dwg_get_storage_backend()` |
+| `$g_dwg_upload_method` | Document attachments only | `GIT` value maps to `DATABASE` |
 | `$g_file_upload_method` | Bug/issue attachments | `GIT` falls through to `DATABASE` |
-| (attachment path in `file_dwg_api.php`) | Document attachments | `GIT` mapped to `DATABASE` via `file_dwg_get_attachment_storage_backend()` |
 
 ---
 
-## Repository Layout
+## The Repository Entity
 
-Each Doctis project maps to exactly one bare git repository, named
-`<slug>-<project_id>`:
+A git repository is a first-class Doctis entity — a `{repository}` row
+(managed by `core/repository_api.php`) with `name`, `slug`, `default_branch`,
+`owner_project_id`, `adopted_from`, `date_created`.
+
+### Project → repository mapping
+
+Projects map to repositories through the `{project_repository}` link table
+(kept Doctis-parallel so the MantisBT `{project}` table stays untouched):
+
+- A project with an **explicit link** uses that repository.
+- A project without one **inherits** by walking up the project hierarchy to
+  the nearest linked ancestor.
+- When no ancestor has a repository either, one is **created on demand at the
+  top-level project** (named after it, owned by it) the first time any
+  document in the tree stores a file.
+
+A project tree therefore shares one repository by default — the natural model
+for monorepos and sub-projects — while any sub-project can be given its own
+repository by an explicit link. Resolution lives in
+`repository_id_for_project()` / `repository_id_for_project_or_create()`.
+
+### On-disk layout
 
 ```
-/var/git/doctis/<slug>-<id>.git              bare repo (authoritative store)
-/var/www/doctis/worktrees/<slug>-<id>        Doctis's own working tree (write staging)
+/var/git/doctis/<slug>-r<id>.git              bare repo (authoritative store)
+/var/www/doctis/worktrees/<slug>-r<id>        Doctis's own working tree (write staging)
 ```
 
-Examples: `example-1.git`, `bridge-refit-2027-7.git`.  The immutable project
-id suffix guarantees uniqueness; the slug prefix is cosmetic and follows the
-project name (refreshed automatically on project rename — see below).  Naming
-is owned by the helpers in `core/file_dwg_api.php` — never derive a repo path
-from the project name anywhere else:
-
-| Helper | Purpose |
-|--------|---------|
-| `dwg_project_repo_basename()` | Canonical basename; returns the existing on-disk name when present, else computes `<slug>-<id>` from the current name |
-| `dwg_project_repo_basename_existing()` | On-disk lookup by the trailing `-<id>` |
-| `dwg_project_repo_slug()` | Cosmetic slug from the current project name |
-| `dwg_project_bare_repo_path()` | Absolute bare-repo path |
-| `dwg_project_worktree_path()` | Absolute worktree path |
-| `dwg_project_repo_rename()` | Relocates the repo when the project is renamed (called from `project_update()`) |
-| `dwg_git_storage_lock()` / `_unlock()` | Advisory lock serialising relocation against repo creation |
-
-The bare repo is created lazily on the first document file upload
-(`ensure_project_repo()` in `GitFileStorageBackend`), which also installs the
-pre-receive hook and sets `http.receivepack` (see Push below). Every project's
-repo is self-contained; there is no monolithic store.
-
-### Why the `-<id>` suffix — design rationale
-
-The repository basename has two parts with fundamentally different roles:
+Examples: `example-r1.git`, `hcrqms-r7.git`. The basename has two parts with
+different roles:
 
 | Part | Source | Role | Mutable? |
 |------|--------|------|----------|
-| slug (`example`) | Project *name*, slugified | Cosmetic — for humans browsing `/var/git/doctis/` | Follows the name: refreshed automatically when the project is renamed |
-| id suffix (`-1`) | `{project}.id` primary key | Identity — the part the system actually resolves by | Never changes for the life of the project |
+| slug (`example`) | `{repository}.slug`, from the owner project name | Cosmetic — for humans browsing `/var/git/doctis/` | Refreshed automatically when the owner project is renamed |
+| id suffix (`-r<id>`) | `{repository}.id` primary key | Identity — the part the system resolves by | Never changes for the life of the repository |
 
-An earlier implementation named repos from the project name alone
-(`example.git`).  That scheme had three latent defects, all stemming from the
-fact that a project name is **mutable and lossy** while the repo directory on
-disk is neither:
-
-1. **Rename split-brain.**  The slug was recomputed from the *current* name on
-   every operation.  Renaming "Example" to "Shipyard" meant the next upload
-   created a brand-new `shipyard.git` while existing files were still read
-   from `example.git` — the project silently fragmented across two repos with
-   no record linking them.
-2. **Slug collisions.**  The DB enforces uniqueness on the *exact* name, but
-   slugification is lossy: `Phase 2`, `Phase-2`, and `phase  2` are three
-   distinct valid project names that all slugify to `phase-2`.  Two projects
-   would have shared one bare repo, mixing unrelated documents and crossing
-   access boundaries.
-3. **Degenerate slugs.**  A name of only punctuation or non-ASCII characters
-   (e.g. `中文项目`, `***`) slugifies to nothing, producing a repo literally
-   named `.git`.
-
-The id suffix fixes all three at once, because a project id is **immutable and
-unique by construction** — it can never collide and never changes.
-(Alternatives considered: pure-id names like `1.git` are collision-free but
-unreadable for operators; a hardened slug-only scheme with a stored slug
-column, collision checks, and atomic rename handling is the most code and the
-most fragility.  `<slug>-<id>` keeps human readability at no correctness cost.)
-
-**Resolution is by id, never by slug.**  `dwg_project_repo_basename()` first
-scans `$g_git_storage_root` for an existing directory whose *full trailing
-digit run* is `-<id>.git`; only when none exists (first-ever upload for the
-project) does it compute a fresh slug from the current name.  The Smart HTTP
-gateway does the same: it parses the trailing `-<id>` from the requested URL
-and ignores the slug prefix entirely, always serving the canonical on-disk
-repo.
-
-Consequences of these rules:
-
-- **Renaming a project is always safe.**  Correctness never depends on the
-  slug: even if the on-disk name were stale, every lookup resolves by id.
-- **Clone URLs survive renames, in both directions.**  After a rename
-  "Example" → "Shipyard", both `…/git/example-1.git` (bookmarked before the
-  rename) and `…/git/shipyard-1.git` reach the same repository.
-- **A name that slugifies to nothing** falls back to the slug `project`
-  (e.g. `project-9.git`) rather than producing a degenerate path.
+The stored `slug` column is authoritative for the on-disk name — nothing
+scans the storage root. **Resolution is by id, never by slug**: the Smart
+HTTP gateway parses the trailing `-r<id>` from the requested URL and serves
+the canonical on-disk repo, so clone URLs bookmarked before a project rename
+keep working. (The historical rationale — rename split-brain, slug
+collisions, degenerate slugs under name-derived repo paths — is preserved in
+this file's git history and in GIT_SOLUTION_SPACE.md.)
 
 ### Repository relocation on project rename
 
-Because a stale slug would make `/var/git/doctis/` progressively unreadable
-for operators, `project_update()` calls `dwg_project_repo_rename()` whenever
-the project name changes, keeping the on-disk name aligned with the owning
-project.  This is a cosmetic maintenance action layered on top of the
-id-based lookup — it is *possible* precisely because nothing depends on the
-slug.
+`project_update()` calls `dwg_project_repo_rename()` (a thin wrapper over
+`repository_rename_for_owner_project()`) whenever a project name changes.
+For each repository owned by the project, under the advisory storage lock
+(`dwg_git_storage_lock()`, an `flock` on `<git_storage_root>/.doctis-lock`):
 
-Sequence, under the advisory storage lock (`dwg_git_storage_lock()`, an
-`flock` on `<git_storage_root>/.doctis-lock`, also taken by
-`ensure_project_repo()`):
+1. **`rename(2)` the bare repository** — the atomic pivot; resolvers see the
+   old name or the new one, never neither. If the target path unexpectedly
+   exists, the rename is skipped and logged.
+2. **Update the stored slug** — the authoritative name source.
+3. **Delete the server worktree** — a disposable write-staging cache whose
+   `origin` remote embeds the old bare path; `repository_ensure_on_disk()`
+   lazily re-clones it on the next store.
 
-1. **`rename(2)` the bare repository** — the atomic pivot.  Same parent
-   directory, same filesystem, one syscall: resolvers see the old name or the
-   new one, never neither, never both.  If the target path unexpectedly
-   exists, the rename is skipped and logged; the repo stays fully functional
-   under its old name.
-2. **Delete the server worktree** — it is a disposable write-staging cache
-   whose `origin` remote embeds the old bare path.  `ensure_project_repo()`
-   lazily re-clones it with the correct origin on the next upload.
-3. **Rewrite stored `{dwg_primary_file}.folder` values** — informational
-   only; `retrieve()` derives the bare path from the project id and uses the
-   stored value only as a legacy fallback.
+### Key functions (core/repository_api.php)
 
-Concurrency: in-flight git transfers survive the rename (open fds and cwd
-follow the inode on Linux); an operation that resolved the old path *before*
-the pivot fails cleanly with a `ServiceException` and succeeds on retry — no
-DB row is written for a failed store, so nothing recorded is ever lost.
-Permissions: renaming requires write on the parent directories, and both
-`$g_git_storage_root` and `$g_git_worktree_root` are owned by `www-data`
-(mode `2770`), the account Apache runs as.
+| Function | Purpose |
+|----------|---------|
+| `repository_create()` | Insert `{repository}` row + owner link (no disk I/O) |
+| `repository_link_project()` | Explicitly link a project to a repository |
+| `repository_id_for_project()` | Resolve: own link → nearest linked ancestor → 0 |
+| `repository_id_for_project_or_create()` | As above, creating at the top-level project on first need |
+| `repository_project_ids()` | All projects resolving to a repository (for per-repo uniqueness checks) |
+| `repository_basename()` / `repository_bare_path()` / `repository_worktree_path()` | Naming/paths from the stored slug + id |
+| `repository_ensure_on_disk()` | Init bare + configure (hook, receivepack) + clone worktree |
+| `repository_adopt()` | `git clone --bare` an existing repo into the store; strip remotes; record default branch |
+| `repository_configure_bare()` | Install/refresh pre-receive hook + `http.receivepack` |
+| `repository_rename_for_owner_project()` | Slug refresh + on-disk relocation |
+| `dwg_git_storage_lock()` / `_unlock()` | Advisory lock serialising relocation against creation/adoption |
 
-### File path within the repo
+`core/file_dwg_api.php` keeps thin project-keyed wrappers
+(`dwg_project_repository_id()`, `dwg_project_repo_basename()`,
+`dwg_project_bare_repo_path()`, `dwg_project_worktree_path()`,
+`dwg_project_repo_rename()`) so document-level code resolves through the
+project it already knows. Never derive a repo path from a project name
+anywhere else.
 
-Every document file is stored at:
+---
 
-```
-<dwg_id>/<filename>        e.g.  4/spec-rev-b.md
-```
+## Path-as-Data: File Paths Within the Repository
 
-The `<dwg_id>/` directory is the GIT backend's collision-avoidance mechanism:
-it lets different documents in the same project each have a `report.pdf`
-without conflict, and makes `git log <dwg_id>/` show that document's complete
-history in isolation. The GIT backend preserves original filenames (unlike
-DISK/DATABASE which mangle them), so the repo is human-readable on clone.
+Every primary document's repo-relative path is **stored data** —
+`{dwg_primary_file}.git_path` — not a computed convention. Nothing in the
+storage layer ever computes a path; it reads the column.
+
+- **New documents** get their path at creation time from the per-project
+  template `$g_dwg_repo_path_template` (tokens `{dwg_id}`, `{filename}`,
+  `{category}`). The default `{dwg_id}/{filename}` is collision-free by
+  construction; a template like `{category}/{filename}` produces
+  human-legible repositories at the cost of a creation-time collision check.
+- **Imported documents** (repository adoption) keep their native paths
+  verbatim — see GIT_IMPORTER.md.
+- **Replacements are directory-sticky**: uploading a replacement keeps the
+  registered directory and adopts only the new basename. When the path
+  changes, the old path is soft-deleted from HEAD in a follow-up commit; when
+  it is unchanged, the store commit replaces content in place.
+- **Uniqueness is per repository**, across every project sharing it, enforced
+  in `file_dwg_primary_register()` / `file_dwg_primary_add()`
+  (`file_dwg_primary_path_in_use()`); collisions are a validation error
+  naming the holding document.
+- Paths are sanitised by `file_dwg_git_path_sanitize()` (traversal, control
+  characters, empty segments rejected).
+
+`filename` remains the basename of `git_path`, kept for display and
+Content-Disposition.
 
 ---
 
@@ -219,101 +206,92 @@ delete(diskfile, project_id, metadata[])
 
 ### Implementations
 
-| Class | File | Method |
-|-------|------|--------|
-| `DiskFileStorageBackend` | `core/classes/DiskFileStorageBackend.class.php` | Filesystem |
-| `DatabaseFileStorageBackend` | `core/classes/DatabaseFileStorageBackend.class.php` | MariaDB BLOB |
-| `GitFileStorageBackend` | `core/classes/GitFileStorageBackend.class.php` | Per-project git repo |
+| Class | File | Used for |
+|-------|------|----------|
+| `GitFileStorageBackend` | `core/classes/GitFileStorageBackend.class.php` | Primary documents (always) |
+| `DiskFileStorageBackend` | `core/classes/DiskFileStorageBackend.class.php` | Attachments |
+| `DatabaseFileStorageBackend` | `core/classes/DatabaseFileStorageBackend.class.php` | Attachments |
 
 ### Factory functions (in `core/file_dwg_api.php`)
 
-Two separate factory functions enforce the primary-document/attachment split:
-
-| Factory | Used by | Returns GIT backend when? |
-|---------|---------|--------------------------|
-| `file_dwg_get_storage_backend()` | Primary document upload/download/delete | Always, when `$g_dwg_upload_method = GIT` |
-| `file_dwg_get_attachment_storage_backend()` | Document attachments | Never — maps `GIT → DATABASE` |
+| Factory | Used by | Returns |
+|---------|---------|---------|
+| `file_dwg_get_storage_backend()` | Primary document upload/download/delete | `GitFileStorageBackend`, unconditionally |
+| `file_dwg_get_attachment_storage_backend()` | Document attachments | `DISK` or `DATABASE` (`GIT → DATABASE`) |
 
 ---
 
 ## Database Record
 
-Every primary document file upload creates a row in `{dwg_primary_file}`.
-The GIT backend uses the standard columns as follows:
+Every primary document registration creates a row in `{dwg_primary_file}`:
 
-| Column | GIT value | Notes |
-|--------|-----------|-------|
-| `diskfile` | Full commit SHA (40 hex chars) | Key — uniquely identifies the stored version |
-| `folder` | Absolute path to the bare repo | Redundant (derivable from project context) but retained |
-| `content` | Empty string | Used by DATABASE backend only |
-| `git_sha` | Approved/on-record SHA | Pinned at lifecycle transitions; see On-Record/Draft below |
+| Column | Value | Notes |
+|--------|-------|-------|
+| `git_path` | Repo-relative file path | Path-as-data; unique per repository |
+| `git_sha` | Registered/on-record commit SHA | Pinned at registration/promotion; see On-Record/Draft |
+| `git_branch` | Branch at time of registration | |
+| `filename` | Basename of `git_path` | Display / Content-Disposition |
+| `filesize` / `file_type` | From the git object / caller | `filesize` read via `git cat-file -s` |
 
-The `dwg_primary_file` table has **no `project_id` column**. Project ID must
-always be derived via `dwg_get_field($dwg_id, 'project_id')`.
-
-The `folder` value is redundant because the bare repo path is always
-mechanically derivable:
-
-```
-dwg_id  →  project_id  →  dwg_project_bare_repo_path()  →  /var/git/doctis/<slug>-<id>.git
-```
-
-It is retained as informational scaffolding only: `retrieve()` derives the
-bare path from the project id and falls back to the stored value just for
-legacy rows whose derived path is absent.  `dwg_project_repo_rename()`
-rewrites it on relocation to keep it accurate.
+The table has **no `project_id` column**; project id is always derived via
+`dwg_get_field($dwg_id, 'project_id')`, and the repository via the project.
+(The former `folder` and `content` columns are gone — the bare path is
+derived from the repository entity, and content never lives in the DB.)
 
 ---
 
 ## Operations
 
+### Register (the primitive)
+
+`file_dwg_primary_register( dwg_id, user_id, git_path, sha = HEAD, … )` in
+`core/file_dwg_api.php` is the single choke point through which every
+primary-file registration flows — **it performs no git writes**:
+
+1. Sanitises the path; resolves the project's bare repository.
+2. Resolves `''` → current `HEAD`; verifies the blob exists at
+   `<sha>:<git_path>` (`git cat-file -e`).
+3. Enforces per-repository path uniqueness.
+4. Reads `filesize` from the object store; derives `file_type` from the
+   extension when not supplied.
+5. Inserts/replaces the `{dwg_primary_file}` row.
+6. With `$p_pin` (default): writes the SHA to `documents.reference` and pins
+   it via `file_dwg_git_pin_approved()`.
+
+This is how existing commits — made by developers directly in git, or present
+in an adopted repository — become registered documents. Uploads are layered
+on top of it.
+
 ### Store (file upload)
 
-`GitFileStorageBackend::store()`:
+`file_dwg_primary_add()` → `GitFileStorageBackend::store()`:
 
-1. Calls `ensure_git_home()` — sets `HOME` env var from `posix_getpwuid()` so
-   git can find `/var/www/.gitconfig` under Apache (which does not set `HOME`
-   for worker processes).
-2. Calls `ensure_project_repo()` — initialises bare repo and working tree if
-   they do not yet exist; installs/refreshes the pre-receive hook and sets
-   `http.receivepack=true` on the bare repo.
-3. Calls `dwg_git_worktree_sync()` — `fetch` + `reset --hard origin/<branch>`
-   so the commit builds on the latest pushed state (remote pushes advance the
-   bare repo independently of the server worktree).  Also discards any orphan
-   commit left by a previously failed push.
-4. Writes the uploaded file to `<worktree>/<dwg_id>/<filename>`.
-5. Sets `GIT_AUTHOR_NAME` and `GIT_AUTHOR_EMAIL` from the Doctis user record
-   so commits are attributed to the Doctis user, not `www-data`.
-6. `git add`, `git commit` (message: `dwg_id=<N> by <username>`).
-7. `git push origin <branch>` — **mandatory**; the bare repo receives nothing
-   until push.
-8. Returns the commit SHA as `diskfile`.
+1. Determines the path: registered directory (sticky) + new basename for
+   replacements; `$g_dwg_repo_path_template` for first upload. Collision
+   check **before** any git write.
+2. `store()`: `ensure_git_home()` (HOME fix for Apache), author env from the
+   Doctis user, `repository_ensure_on_disk()`, `dwg_git_worktree_sync()`
+   (fetch + reset so the commit builds on the latest pushed state), write the
+   file at `git_path`, `git add` + `git commit`
+   (message: `dwg_id=<N> by <username>`), **mandatory `git push`**.
+3. If the path changed, the old path is soft-deleted from HEAD.
+4. The new commit SHA is passed to `file_dwg_primary_register()`.
 
-The caller (`file_dwg_primary_add()`) then pins the recorded SHA as a
-permanent ref via `file_dwg_git_pin_approved()` — see On-Record vs Draft.
+Duplicate content (commit exits 1 — nothing to commit) is treated as a
+successful store returning the existing HEAD SHA.
 
 ### Retrieve (file download)
 
-`GitFileStorageBackend::retrieve()`:
-
-1. Reads `diskfile` (commit SHA) and `folder` (bare repo path) from the DB row.
-2. Calls `ensure_git_home()`.
-3. Runs `git show <sha>:<dwg_id>/<filename>` against the bare repo directly
-   (not the working tree, which may be in a transitional state during a
-   concurrent upload).
-4. Returns the raw file bytes.
+`GitFileStorageBackend::retrieve()` runs
+`git show <git_sha>:<git_path>` against the bare repository directly (never
+the worktree). Historical versions (`dwg_primary_at_sha`) and the current
+draft (`dwg_primary_head`) retrieve the same `git_path` at a different SHA.
 
 ### Delete (soft delete)
 
-`GitFileStorageBackend::delete()`:
-
-1. `dwg_git_worktree_sync()` — same pre-commit sync as store.
-2. `git rm <dwg_id>/<filename>` in the working tree.
-3. `git commit -m "dwg_id=<N> FILE_DELETED by <username>"`.
-4. `git push origin <branch>`.
-
-The file disappears from `HEAD` but its full commit history — every prior
-version — is permanently retained in the bare repo. History is never rewritten.
+`git rm <git_path>` + commit (`dwg_id=<N> FILE_DELETED by <username>`) +
+push. The file disappears from `HEAD` but the full commit history is retained
+in the bare repo. History is never rewritten.
 
 ---
 
@@ -323,27 +301,29 @@ Doctis distinguishes two versions of a document's primary file:
 
 | Concept | Storage | Access |
 |---------|---------|--------|
-| **On-Record (approved)** | `{dwg_primary_file}.git_sha` — a pinned SHA in the DB | `retrieve()` via `git show <git_sha>:path` |
+| **On-Record (approved)** | `{dwg_primary_file}.git_sha` — a pinned SHA in the DB | `retrieve()` via `git show <git_sha>:<git_path>` |
 | **Draft** | Whatever is at the repo's branch `HEAD` | `file_dwg_git_head_info()` reads it independently of the DB |
 
-`file_dwg_primary_sync_head()` (`core/file_dwg_api.php`) is the "approve
-current draft" primitive: it reads `HEAD` from the bare repo and writes it as
-the new `git_sha`. This is how a draft commit becomes the On-Record version.
+`file_dwg_primary_sync_head()` is the "approve current draft" primitive: it
+reads `HEAD` and writes it as the new `git_sha`. The registered `git_path` is
+the document's identity and is **never changed by promotion** — the path must
+exist at HEAD to promote.
 
-`dwg_primary_head_warn.php` renders a warning when `HEAD` has advanced past
-the on-record SHA, with options including "promote current HEAD to on-record".
+### Dangling paths
 
-When developers push commits directly to the bare repo (bypassing Doctis), they
-simply advance the Draft; the On-Record version remains pinned to its `git_sha`
-until explicitly promoted inside Doctis. This is what makes direct pushes
-safe — the DB is not desynchronised by a push, because draft commits are not
-meant to have DB rows.
+Because external pushes can rename or delete files (impossible under the old
+system-owned layout), `file_dwg_git_head_info()` checks whether the
+registered `git_path` still exists at HEAD (`filename: null` when absent).
+The document view panel shows a **"missing at HEAD"** badge and
+`dwg_primary_head_warn.php` explains the state. The pinned on-record version
+remains retrievable regardless — approved SHAs are immune to later branch
+history. Remedy: re-upload (re-establishes the path) or register the file's
+new location.
 
 ### Approved-SHA pinning
 
-Whenever a `git_sha` is recorded (upload via `file_dwg_primary_add()`, or
-promotion via `file_dwg_primary_sync_head()`), `file_dwg_git_pin_approved()`
-writes a permanent, server-managed git ref in the bare repo:
+Whenever a `git_sha` is recorded (registration, upload, promotion),
+`file_dwg_git_pin_approved()` writes a permanent, server-managed git ref:
 
 ```
 refs/doctis/approved/<dwg_id>/<sequence>  →  <sha>
@@ -351,41 +331,38 @@ refs/doctis/approved/<dwg_id>/<sequence>  →  <sha>
 
 This keeps every approved commit reachable regardless of later branch history
 (immune to GC), and forms an out-of-band approval record that does not depend
-on the Doctis DB.  The pre-receive hook rejects any client push touching
+on the Doctis DB. The pre-receive hook rejects any client push touching
 `refs/doctis/*`; only the server writes them (`git update-ref` bypasses hooks).
 
 ---
 
 ## Smart HTTP Gateway (Remote Clone)
 
-Advanced users can `git clone` a project's entire document repository from a
-remote workstation, authenticated with a Doctis API token — no Linux account
-required. Users at `$g_git_http_write_threshold` (default `MANAGER`) can also
-`git push` draft updates; pushes advance the Draft (HEAD) only, never the
-On-Record version (see On-Record vs Draft above).
+Advanced users can `git clone` a repository from a remote workstation,
+authenticated with a Doctis API token — no Linux account required. Users at
+`$g_git_http_write_threshold` (default `MANAGER`) can also `git push` draft
+updates; pushes advance the Draft (HEAD) only, never the On-Record version.
 
 ### Architecture
 
 ```
-git clone http://<user>:<API_TOKEN>@vaio/git/<slug>-<id>.git
+git clone http://<user>:<API_TOKEN>@vaio/git/<slug>-r<id>.git
                ↓
         Apache routes /git/* to git_http.php
                ↓
         core/git_http_api.php:
           - Extract HTTP Basic credentials from Authorization header
           - Validate API token via api_token_get_user()
-          - Resolve repo → project_id from the immutable trailing "-<id>"
+          - Resolve repo → {repository} row from the immutable trailing "-r<id>"
             (stale slugs in bookmarked URLs keep working after a rename;
             the canonical on-disk repo name is always served)
-          - Check project-level access
+          - Authorise against the repository's OWNER project
             (read: $g_git_http_read_threshold, default DEVELOPER;
              push: $g_git_http_write_threshold, default MANAGER)
           - Allowlist check (only smart-HTTP endpoints permitted)
           - Path-traversal guard
                ↓
         proc_open() → /usr/lib/git-core/git-http-backend
-          GIT_PROJECT_ROOT=/var/git/doctis
-          PATH_INFO=/<canonical-basename>.git/<service>
                ↓
         CGI response headers parsed; body streamed back to git client
                ↓ (push only)
@@ -395,13 +372,14 @@ git clone http://<user>:<API_TOKEN>@vaio/git/<slug>-<id>.git
           - client writes to refs/doctis/*
 ```
 
-### Key files
+### Access model
 
-| File | Purpose |
-|------|---------|
-| `git_http.php` | Entry point: bootstrap + `git_http_handle_request()` |
-| `core/git_http_api.php` | Auth, authz, slug→project map, CGI proxy |
-| `admin/tools/git-serve.conf` | Apache configuration (installed, enabled on vaio) |
+Git serves whole repositories. Per-document `view_dwg_threshold` and license
+gating **cannot** be enforced over git. Access is authorised against the
+repository's **owner project** — the clone/push boundary is the repository,
+which for a shared (project-tree) repository means the top-level project's
+access level. Sub-projects sharing a parent's repository have no clone URL of
+their own.
 
 ### Configuration
 
@@ -409,24 +387,12 @@ git clone http://<user>:<API_TOKEN>@vaio/git/<slug>-<id>.git
 |-----|---------|---------|
 | `$g_git_http_enabled` | `OFF` | Master switch; set `ON` in `config_inc.php` to activate |
 | `$g_git_http_backend` | `/usr/lib/git-core/git-http-backend` | Path to CGI binary |
-| `$g_git_http_read_threshold` | `DEVELOPER` | Minimum project access level for clone/fetch |
-| `$g_git_http_write_threshold` | `MANAGER` | Minimum project access level for push |
+| `$g_git_http_read_threshold` | `DEVELOPER` | Minimum owner-project access for clone/fetch |
+| `$g_git_http_write_threshold` | `MANAGER` | Minimum owner-project access for push |
 
-### Authentication
-
-Users authenticate with:
-- HTTP Basic **username**: Doctis username
-- HTTP Basic **password**: a personal API token from *My Account → API Tokens*
-
-The gateway reuses the existing `api_token_get_user()` infrastructure from
-`core/api_token_api.php` — nothing new to provision.
-
-### Access model
-
-Git serves whole repositories. Per-document `view_dwg_threshold` and license
-gating **cannot** be enforced over git. Access is project-level only: the caller
-needs at least `$g_git_http_read_threshold` on the project to clone, and at
-least `$g_git_http_write_threshold` to push.
+Users authenticate with their Doctis username and a personal API token from
+*My Account → API Tokens* (reuses `api_token_get_user()`; nothing new to
+provision).
 
 ---
 
@@ -436,14 +402,13 @@ Developers with shell access to the server can clone and push to bare repos
 directly:
 
 ```bash
-git clone hcr@vaio:/var/git/doctis/example-1.git
+git clone hcr@vaio:/var/git/doctis/example-r1.git
 ```
 
 This is entirely independent of Doctis. Developers push freely as part of
 normal iterative development — pushes advance the Draft only; Doctis remains
 unaware until a lifecycle transition explicitly records a SHA. The bare repos
-are at `/var/git/doctis/`, owned `www-data:www-data`, mode `2770`. Developers
-in the `www-data` group can read and push directly.
+are at `/var/git/doctis/`, owned `www-data:www-data`, mode `2770`.
 
 ---
 
@@ -451,16 +416,16 @@ in the `www-data` group can read and push directly.
 
 | Doctis concept | Git concept |
 |---------------|-------------|
-| Project (`project_id` / `name`) | Repository (one per project, `<slug>-<id>.git`) |
-| Document `dwg_id` | Subdirectory within the repo (`<dwg_id>/`) |
-| Document primary filename | File within `<dwg_id>/` subdirectory |
+| Repository entity (`{repository}`) | Bare repository `<slug>-r<id>.git` |
+| Project (tree) | Shares one repository via `{project_repository}` link / hierarchy inheritance |
+| Document primary file | `{dwg_primary_file}.git_path` within the repository |
 | Upload event | Git commit (author = Doctis user) |
+| Registration event | DB row + `refs/doctis/approved/*` pin — no commit |
 | Delete event | Soft-delete commit (`git rm` + commit + push) |
-| `{dwg_primary_file}.diskfile` | Commit SHA from the last upload |
-| `{dwg_primary_file}.git_sha` | Approved/on-record commit SHA |
-| `{dwg_primary_file}.folder` | Absolute path to the bare repo |
-| `{dwg_primary_file}.date_added` | Upload timestamp (DB) |
+| `{dwg_primary_file}.git_sha` | Registered/on-record commit SHA |
+| `{dwg_primary_file}.date_added` | Registration timestamp (DB) |
 | Uploader `user_id` | `GIT_AUTHOR_NAME` / `GIT_AUTHOR_EMAIL` on the commit |
+| Adopted origin | `{repository}.adopted_from` |
 
 ---
 
@@ -477,9 +442,10 @@ only legitimate git-facing operations are:
 
 - **Read** — retrieve file content at a stored SHA
 - **Write** — store a new file version (upload → new commit)
+- **Register** — record an existing SHA + path against a document record
 - **Pin** — record an approved SHA as a permanent `refs/doctis/approved/*` ref
-- **Register** — record an existing SHA against a document record *(todo)*
-- **Tag** — optionally mark an approved commit *(todo, nicety)*
+- **Adopt** — clone an existing repository into the store (importer)
+- **Tag** — optionally mark an approved commit
 - **Trigger** — invoke the pandoc pipeline at the incorporation step *(todo)*
 - **Serve** — proxy `git-http-backend` for authenticated remote clone and draft push
 
@@ -489,13 +455,14 @@ only legitimate git-facing operations are:
 
 | File | Purpose |
 |------|---------|
-| `core/classes/GitFileStorageBackend.class.php` | Core GIT backend: store, retrieve, delete, repo init, hook install |
+| `core/repository_api.php` | Repository entity: CRUD, project resolution, disk lifecycle, adoption, rename relocation, storage lock |
+| `core/classes/GitFileStorageBackend.class.php` | GIT backend: store, retrieve, delete (path-as-data) |
 | `core/classes/FileStorageBackendInterface.class.php` | Backend interface definition |
-| `core/file_dwg_api.php` | Backend factories; repo-naming helpers (`dwg_project_*`); worktree sync; approved-SHA pinning; `file_dwg_primary_*` call paths |
-| `core/git_http_api.php` | Smart HTTP gateway: auth, authz (read + push), CGI proxy |
+| `core/file_dwg_api.php` | Register primitive; path template/sanitizer/collision; project-keyed wrappers; worktree sync; approved-SHA pinning; `file_dwg_primary_*` call paths |
+| `core/git_http_api.php` | Smart HTTP gateway: auth, authz (owner project), CGI proxy |
 | `git_http.php` | Smart HTTP entry point |
-| `core/constant_inc.php` | `define('GIT', 3)` |
-| `config_defaults_inc.php` | `$g_git_storage_root`, `$g_git_worktree_root`, `$g_git_http_*` defaults |
+| `config_defaults_inc.php` | `$g_git_storage_root`, `$g_git_worktree_root`, `$g_dwg_repo_path_template`, `$g_git_http_*` defaults |
 | `admin/tools/git-hooks/pre-receive` | Pre-receive hook source of truth (installed into every bare repo) |
-| `admin/test-git-php.php` | 20-step integration test (store/retrieve/delete cycle + hook enforcement) |
+| `admin/test-git-php.php` | 20-step git-mechanics test (no core bootstrap) |
+| `admin/test-git-doctis.php` | Mapping-layer integration test: entity, resolution, templates, register, collisions, dangling paths, adoption, relocation |
 | `admin/tools/git-serve.conf` | Apache config for Smart HTTP routing |

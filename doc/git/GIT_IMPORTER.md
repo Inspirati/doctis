@@ -1,17 +1,28 @@
 # Doctis Git Repository Importer — Plan
 
-Status: **DRAFT / PLANNING** — nothing in this document is implemented yet.
+Status: **IMPLEMENTED** (2026-07-12) — `admin/import-git-repo.php`, wrapper
+`admin/tools/doctis-git-import.sh`; both driving use cases imported and
+verified on vaio (see [GIT_TODO.md §6](GIT_TODO.md) WP7 for the
+implementation record).  This document is retained as the requirements and
+design spec.  Implementation deviations from the plan: frontmatter `doc_id`
+maps to `documents.number` (Doctis manages `reference` as the on-record
+SHA); `status: Active` maps to accepted (180); the register primitive is
+`file_dwg_primary_register()` per the C1 model rather than §4's P-numbers.
 
-> **2026-07-12 — Superseded in part by the solution-space analysis.**
-> [GIT_SOLUTION_SPACE.md](GIT_SOLUTION_SPACE.md) examined whether this plan's
-> D1 (`git_path` as a nullable override) and D2 (per-project config
-> delegation) were tack-ons, and concluded they are: its recommendation (C1)
-> replaces them with *path-as-data universally* and a first-class
-> `{repository}` entity, and replaces §4's P1–P3 with work packages WP1–WP3.
-> The rest of this document — requirements, use cases, D3–D7, the `.doctis`
-> manifest, metadata gleaning (§6), pipeline shape (§5), idempotency (§9) —
-> stands unchanged under C1. Read the analysis before implementing anything
-> from §3–§4 here.
+> **2026-07-12 — C1 foundation implemented; this plan's §3–§4 are superseded.**
+> [GIT_SOLUTION_SPACE.md](GIT_SOLUTION_SPACE.md) replaced D1 (`git_path` as a
+> nullable override) and D2 (per-project config delegation) with
+> *path-as-data universally* and a first-class `{repository}` entity — and
+> that foundation is now **built and tested** (WP1–WP6; see
+> [GIT_TODO.md §6](GIT_TODO.md)).  What remains is **WP7 — the importer
+> itself**, whose two primitives already exist:
+> `repository_adopt()` (core/repository_api.php) performs the Phase A clone
+> (remote-strip, hook install, default-branch record), and
+> `file_dwg_primary_register()` (core/file_dwg_api.php) performs each Phase B
+> registration.  Sub-projects share the parent repository natively (hierarchy
+> inheritance — no delegation config needed).  The rest of this document —
+> requirements, use cases, D3–D7, the `.doctis` manifest, metadata gleaning
+> (§6), pipeline shape (§5), idempotency (§9) — stands and is the WP7 spec.
 
 This document plans a new capability: importing an **existing git repository**
 into Doctis, so that its history becomes the project's document store and its
@@ -329,14 +340,16 @@ aborts cleanly on error (nothing is half-adopted — see failure handling below)
 
 ### Phase A — Repository adoption
 
+*(Updated for the implemented C1 model — the heavy lifting is
+`repository_create()` + `repository_adopt()` in `core/repository_api.php`.)*
+
 | Step | Action | Detail |
 |------|--------|--------|
-| A1 | Pre-flight | Source is a git repo with ≥1 commit; working tree clean (warn if dirty — uncommitted changes will not be imported); `$g_dwg_upload_method == GIT`; `$g_git_storage_root` writable; identify default branch |
+| A1 | Pre-flight | Source is a git repo with ≥1 commit; working tree clean (warn if dirty — uncommitted changes will not be imported); `$g_git_storage_root` writable; identify default branch |
 | A2 | Read manifest | Root `.doctis` merged with CLI flags; resolve project name; **fail early** if a project of that name exists without `--update` |
-| A3 | Create project(s) | `project_create()` for the parent; for `subprojects = subdirs`: enumerate qualifying subdirectories, `project_create()` + `project_hierarchy_add()` each, and set `git_storage_project_id` delegation (P3) on each sub-project |
-| A4 | Clone into storage | Under `dwg_git_storage_lock()`: `git clone --bare <source> <git_storage_root>/<slug>-<id>.git` (basename from `dwg_project_repo_basename()` — the project must exist first, which fixes the phase order); strip inherited remotes (`git remote remove …`) per D3 |
-| A5 | Configure bare repo | Reuse `GitFileStorageBackend::configure_bare_repo()` path: install `admin/tools/git-hooks/pre-receive`, set `http.receivepack=true`; verify `HEAD` points at the expected default branch |
-| A6 | Create server worktree | Clone `<git_worktree_root>/<slug>-<id>` from the bare repo (same as `ensure_project_repo()` does lazily; doing it eagerly lets A-phase verification run `dwg_git_worktree_sync()` once) |
+| A3 | Create project(s) | `project_create()` for the parent; for `subprojects = subdirs`: enumerate qualifying subdirectories, `project_create()` + `project_hierarchy_add()` each. Sub-projects inherit the parent's repository natively via the hierarchy walk — no per-sub-project configuration needed |
+| A4 | Create repository entity | `repository_create( name, parent_project_id, adopted_from = source )` — inserts the `{repository}` row and owner link; basename is `<slug>-r<id>` |
+| A5 | Adopt | `repository_adopt( repo_id, source )` — under the storage lock: `git clone --bare` into the canonical path, strip inherited remotes (D3), install the pre-receive hook, set `http.receivepack`, record the default branch on the entity, clone the server worktree |
 
 ### Phase B — Document discovery and registration
 

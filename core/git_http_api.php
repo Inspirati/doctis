@@ -3,10 +3,11 @@
 #
 # Remote Git access — Smart HTTP gateway library.
 #
-# Provides authenticated, project-authorised access to per-project bare git
-# repositories (under $g_git_storage_root) by proxying to the git-http-backend
-# CGI.  Callers authenticate with a Doctis API token presented as the HTTP Basic
-# password; authorisation is by project-level access level.
+# Provides authenticated access to Doctis bare git repositories (under
+# $g_git_storage_root, one per {repository} entity — see repository_api.php)
+# by proxying to the git-http-backend CGI.  Callers authenticate with a Doctis
+# API token presented as the HTTP Basic password; authorisation is by access
+# level on the repository's owner project.
 #
 # Reads (git-upload-pack: clone/fetch) require $g_git_http_read_threshold on
 # the project; writes (git-receive-pack: push) require
@@ -23,29 +24,30 @@ require_api( 'authentication_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
 require_api( 'database_api.php' );
-require_api( 'file_dwg_api.php' );
 require_api( 'project_api.php' );
+require_api( 'repository_api.php' );
 require_api( 'user_api.php' );
 
 /**
- * Resolve a requested repository basename ("<slug>-<id>") to a project id.
+ * Resolve a requested repository basename ("<slug>-r<id>") to a repository id.
  *
- * The immutable trailing "-<id>" component is authoritative; the slug prefix
+ * The immutable trailing "-r<id>" component is authoritative; the slug prefix
  * is cosmetic, so a URL bookmarked before a project rename keeps working.
- * Returns false when no trailing id is present or the project does not exist.
+ * Returns false when no trailing id is present or the repository does not
+ * exist.
  *
- * @param string $p_basename  Repo name without ".git", e.g. "example-1".
+ * @param string $p_basename  Repo name without ".git", e.g. "example-r1".
  * @return int|false
  */
-function git_http_repo_to_project_id( $p_basename ) {
-	if( !preg_match( '/-(\d+)$/', $p_basename, $t_m ) ) {
+function git_http_repo_to_repository_id( $p_basename ) {
+	if( !preg_match( '/-r(\d+)$/', $p_basename, $t_m ) ) {
 		return false;
 	}
-	$t_project_id = (int)$t_m[1];
-	if( $t_project_id < 1 || !project_exists( $t_project_id ) ) {
+	$t_repository_id = (int)$t_m[1];
+	if( $t_repository_id < 1 || repository_get_row( $t_repository_id ) === false ) {
 		return false;
 	}
-	return $t_project_id;
+	return $t_repository_id;
 }
 
 /**
@@ -129,13 +131,13 @@ function git_http_handle_request() {
 	}
 
 	# Allowlist exactly the smart-HTTP endpoints; this also blocks path traversal
-	# and dumb-HTTP file access.  Repo segment: <slug>-<project_id>.git
+	# and dumb-HTTP file access.  Repo segment: <slug>-r<repository_id>.git
 	if( !preg_match(
 			'#^/([a-z0-9][a-z0-9\-]*\.git)/(info/refs|git-upload-pack|git-receive-pack)$#',
 			$t_path_info, $t_m ) ) {
 		git_http_fail( 403, 'Unsupported git request.' );
 	}
-	$t_repo    = $t_m[1];                       # e.g. "example-1.git"
+	$t_repo    = $t_m[1];                       # e.g. "example-r1.git"
 	$t_endpoint= $t_m[2];
 	$t_basename= substr( $t_repo, 0, -4 );      # strip ".git"
 
@@ -154,15 +156,23 @@ function git_http_handle_request() {
 		git_http_require_auth();
 	}
 
-	# --- Authorise: map repo name -> project, check project-level access ---
-	$t_project_id = git_http_repo_to_project_id( $t_basename );
-	if( $t_project_id === false ) {
+	# --- Authorise: map repo name -> repository -> owner project, check
+	# project-level access.  The clone/push boundary is the repository; access
+	# is authorised against the project that owns it. ---
+	$t_repository_id = git_http_repo_to_repository_id( $t_basename );
+	if( $t_repository_id === false ) {
 		git_http_fail( 404, 'Repository not found.' );
 	}
 
-	# Canonical on-disk repo name for the project id — tolerates a stale slug
-	# in a URL bookmarked before a project rename.
-	$t_canonical = dwg_project_repo_basename( $t_project_id );
+	$t_repository = repository_get_row( $t_repository_id );
+	$t_project_id = (int)$t_repository['owner_project_id'];
+	if( $t_project_id < 1 || !project_exists( $t_project_id ) ) {
+		git_http_fail( 404, 'Repository not found.' );
+	}
+
+	# Canonical on-disk repo name from the stored slug — tolerates a stale
+	# slug in a URL bookmarked before a project rename.
+	$t_canonical = repository_basename( $t_repository_id );
 	if( !is_dir( config_get_global( 'git_storage_root' ) . '/' . $t_canonical . '.git' ) ) {
 		git_http_fail( 404, 'Repository not found.' );
 	}
