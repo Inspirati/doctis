@@ -745,6 +745,343 @@ function file_dwg_get_attachment_storage_backend(): FileStorageBackendInterface 
 	}
 }
 
+# =============================================================================
+# Git repository naming — canonical helpers
+#
+# Repositories are named "<slug>-<project_id>.git" (e.g. "example-1.git").
+# The immutable project id suffix guarantees uniqueness and is what all
+# lookup resolves by; the slug prefix is cosmetic and follows the project
+# name (dwg_project_repo_rename() relocates the repo on project rename).
+# These helpers are the single source of truth for repo naming — never derive
+# a repo path from the project name anywhere else.
+# =============================================================================
+
+/**
+ * Basename of the existing on-disk repository for a project id, or false if
+ * no repository has been created yet.
+ *
+ * Matches "<anything>-<id>.git" under $g_git_storage_root where the full
+ * trailing digit run equals the project id, so a project rename never
+ * relocates an existing repository.
+ *
+ * @param int $p_project_id
+ * @return string|false  Basename without ".git", e.g. "example-1"
+ */
+function dwg_project_repo_basename_existing( int $p_project_id ) {
+	$t_root = config_get_global( 'git_storage_root' );
+	if( is_blank( $t_root ) ) {
+		return false;
+	}
+	$t_matches = glob( $t_root . '/*-' . $p_project_id . '.git' );
+	if( $t_matches === false ) {
+		return false;
+	}
+	foreach( $t_matches as $t_path ) {
+		$t_base = basename( $t_path, '.git' );
+		# glob's '*' can swallow leading digits ("*-2.git" also matches
+		# "foo-12.git"); require the exact id as the full trailing digit run.
+		if( preg_match( '/-(\d+)$/', $t_base, $t_m ) && (int)$t_m[1] === $p_project_id ) {
+			return $t_base;
+		}
+	}
+	return false;
+}
+
+/**
+ * Cosmetic slug for a project's repository name, computed from the current
+ * project name.  A name that slugifies to nothing (all punctuation /
+ * non-ASCII) falls back to the slug "project".
+ *
+ * @param int $p_project_id
+ * @return string  e.g. "example", "bridge-refit-2027"
+ */
+function dwg_project_repo_slug( int $p_project_id ): string {
+	$t_name = project_get_field( $p_project_id, 'name' );
+	$t_slug = trim( preg_replace( '/[^a-z0-9]+/', '-', strtolower( trim( (string)$t_name ) ) ), '-' );
+	if( $t_slug === '' ) {
+		$t_slug = 'project';
+	}
+	return $t_slug;
+}
+
+/**
+ * Canonical repository basename for a project: "<slug>-<id>" (no ".git").
+ *
+ * If a repository for this project id already exists on disk its basename is
+ * returned unchanged (rename-tolerant).  Otherwise the basename is computed
+ * from the current project name.
+ *
+ * @param int $p_project_id
+ * @return string  e.g. "example-1", "bridge-refit-2027-7"
+ */
+function dwg_project_repo_basename( int $p_project_id ): string {
+	$t_existing = dwg_project_repo_basename_existing( $p_project_id );
+	if( $t_existing !== false ) {
+		return $t_existing;
+	}
+	return dwg_project_repo_slug( $p_project_id ) . '-' . $p_project_id;
+}
+
+/**
+ * Absolute path to the bare repository for a project.
+ *
+ * @param int $p_project_id
+ * @return string  e.g. "/var/git/doctis/example-1.git"
+ */
+function dwg_project_bare_repo_path( int $p_project_id ): string {
+	return config_get_global( 'git_storage_root' ) . '/' . dwg_project_repo_basename( $p_project_id ) . '.git';
+}
+
+/**
+ * Absolute path to the server working tree for a project.
+ *
+ * @param int $p_project_id
+ * @return string  e.g. "/var/www/doctis/worktrees/example-1"
+ */
+function dwg_project_worktree_path( int $p_project_id ): string {
+	return config_get_global( 'git_worktree_root' ) . '/' . dwg_project_repo_basename( $p_project_id );
+}
+
+/**
+ * Take the advisory git-storage lock (blocking).
+ *
+ * Serialises repository relocation (dwg_project_repo_rename) against
+ * repository creation (ensure_project_repo) so neither can observe the other
+ * mid-operation.  Read paths deliberately do not take the lock: the bare-repo
+ * rename is a single atomic rename(2), so resolvers see the old name or the
+ * new one, never neither.
+ *
+ * @return resource|null  Lock handle for dwg_git_storage_unlock(), or null
+ *                        when the storage root is not configured/present
+ *                        (callers proceed unlocked — single-writer setups).
+ */
+function dwg_git_storage_lock() {
+	$t_root = config_get_global( 'git_storage_root' );
+	if( is_blank( $t_root ) || !is_dir( $t_root ) ) {
+		return null;
+	}
+	$t_fp = @fopen( $t_root . '/.doctis-lock', 'c' );
+	if( $t_fp === false ) {
+		return null;
+	}
+	flock( $t_fp, LOCK_EX );
+	return $t_fp;
+}
+
+/**
+ * Release the advisory git-storage lock.
+ *
+ * @param resource|null $p_lock  Handle from dwg_git_storage_lock().
+ * @return void
+ */
+function dwg_git_storage_unlock( $p_lock ): void {
+	if( is_resource( $p_lock ) ) {
+		flock( $p_lock, LOCK_UN );
+		fclose( $p_lock );
+	}
+}
+
+/**
+ * Relocate a project's git repository so its cosmetic slug prefix follows the
+ * current project name.  Called from project_update() after a rename.
+ *
+ * Correctness never depends on this: all lookup is by the immutable "-<id>"
+ * suffix, so a stale slug is harmless.  This exists purely so the on-disk
+ * repository name reflects the owning project for operators.
+ *
+ * Sequence (under the storage lock):
+ *   1. rename(2) the bare repository — the atomic pivot; resolvers see the
+ *      old name or the new one, never neither, never both;
+ *   2. delete the server worktree — it is a disposable write-staging cache
+ *      whose origin URL embeds the old bare path; ensure_project_repo()
+ *      re-clones it on the next store with the correct origin;
+ *   3. rewrite stored {dwg_primary_file}.folder values (informational only —
+ *      retrieve() derives the path from the project id).
+ *
+ * No-op when no repository exists yet or the slug is unchanged.  If the
+ * target path is unexpectedly occupied the rename is skipped and logged; the
+ * repository stays fully functional under its old name.
+ *
+ * @param int $p_project_id
+ * @return void
+ */
+function dwg_project_repo_rename( int $p_project_id ): void {
+	$t_root = config_get_global( 'git_storage_root' );
+	if( is_blank( $t_root ) || !is_dir( $t_root ) ) {
+		return;
+	}
+
+	$t_lock = dwg_git_storage_lock();
+
+	$t_old_base = dwg_project_repo_basename_existing( $p_project_id );
+	if( $t_old_base === false ) {
+		dwg_git_storage_unlock( $t_lock );
+		return;
+	}
+	$t_new_base = dwg_project_repo_slug( $p_project_id ) . '-' . $p_project_id;
+	if( $t_new_base === $t_old_base ) {
+		dwg_git_storage_unlock( $t_lock );
+		return;
+	}
+
+	$t_old_bare = $t_root . '/' . $t_old_base . '.git';
+	$t_new_bare = $t_root . '/' . $t_new_base . '.git';
+
+	if( file_exists( $t_new_bare ) ) {
+		# Unexpected leftover at the target — never clobber a directory that
+		# might be a repository.  Lookup by id keeps the old name working.
+		error_log( 'dwg_project_repo_rename: target ' . $t_new_bare . ' already exists; rename skipped' );
+		dwg_git_storage_unlock( $t_lock );
+		return;
+	}
+
+	if( !rename( $t_old_bare, $t_new_bare ) ) {
+		error_log( 'dwg_project_repo_rename: rename ' . $t_old_bare . ' -> ' . $t_new_bare . ' failed' );
+		dwg_git_storage_unlock( $t_lock );
+		return;
+	}
+
+	# Remove the now stale worktree (and any leftover at the new name, so the
+	# lazy re-clone starts clean).  In-flight operations against the deleted
+	# worktree fail cleanly and succeed on retry.
+	$t_wt_root = config_get_global( 'git_worktree_root' );
+	if( !is_blank( $t_wt_root ) && is_dir( $t_wt_root ) ) {
+		foreach( array( $t_old_base, $t_new_base ) as $t_base ) {
+			$t_worktree = $t_wt_root . '/' . $t_base;
+			if( is_dir( $t_worktree ) && !is_link( $t_worktree ) ) {
+				exec( 'rm -rf ' . escapeshellarg( $t_worktree ) );
+			}
+		}
+	}
+
+	dwg_git_storage_unlock( $t_lock );
+
+	# Keep the informational folder column in step with the new location.
+	db_param_push();
+	db_query(
+		'UPDATE {dwg_primary_file} SET folder=' . db_param() . ' WHERE folder=' . db_param(),
+		array( $t_new_bare, $t_old_bare )
+	);
+}
+
+/**
+ * Bring a project working tree up to date with its bare repository before a
+ * server-side commit.
+ *
+ * With remote push enabled, the bare repo advances independently of the
+ * server worktree; committing on a stale worktree would fail its push with a
+ * non-fast-forward rejection.  fetch + reset --hard origin/<branch> also
+ * discards any orphan commit left by a previously failed store (a store whose
+ * push failed never created a DB row, so nothing recorded is lost).
+ *
+ * A worktree with no commits yet (unborn branch, empty repo) is left
+ * untouched.  Failures are silent: the subsequent commit/push surfaces any
+ * real problem with full error context.
+ *
+ * @param string $p_worktree  Absolute path to the working tree.
+ * @return void
+ */
+function dwg_git_worktree_sync( string $p_worktree ): void {
+	$t_branch = trim( (string)shell_exec(
+		'git -C ' . escapeshellarg( $p_worktree ) . ' rev-parse --abbrev-ref HEAD 2>/dev/null'
+	) );
+	if( $t_branch === '' || $t_branch === 'HEAD' ) {
+		return;
+	}
+	exec( 'git -C ' . escapeshellarg( $p_worktree ) . ' fetch origin 2>&1', $t_out, $t_rc );
+	if( $t_rc !== 0 ) {
+		return;
+	}
+	$t_remote = 'origin/' . $t_branch;
+	exec(
+		'git -C ' . escapeshellarg( $p_worktree ) .
+		' rev-parse --verify --quiet ' . escapeshellarg( $t_remote ) . ' 2>&1',
+		$t_out, $t_rc
+	);
+	if( $t_rc !== 0 ) {
+		return;
+	}
+	exec(
+		'git -C ' . escapeshellarg( $p_worktree ) .
+		' reset --hard ' . escapeshellarg( $t_remote ) . ' 2>&1',
+		$t_out, $t_rc
+	);
+}
+
+/**
+ * Pin an approved commit as a permanent server-managed git ref:
+ *
+ *   refs/doctis/approved/<dwg_id>/<sequence>  →  <sha>
+ *
+ * This keeps the commit reachable regardless of later branch history and
+ * provides an out-of-band approval record that does not depend on the Doctis
+ * DB.  Refs under refs/doctis/ are rejected by the pre-receive hook, so
+ * clients cannot alter them; server-side update-ref bypasses hooks.
+ *
+ * Idempotent: no new ref is written when the latest pin for the document
+ * already points at the given SHA.  No-op when the GIT backend is inactive,
+ * the SHA is malformed, or the commit is not present in the repository.
+ *
+ * @param int    $p_dwg_id
+ * @param string $p_sha  Full 40-character commit SHA.
+ * @return void
+ */
+function file_dwg_git_pin_approved( int $p_dwg_id, string $p_sha ): void {
+	if( config_get( 'dwg_upload_method' ) != GIT ) {
+		return;
+	}
+	if( !preg_match( '/^[0-9a-f]{40}$/i', $p_sha ) ) {
+		return;
+	}
+	$t_project_id = dwg_get_field( $p_dwg_id, 'project_id' );
+	$t_bare       = dwg_project_bare_repo_path( $t_project_id );
+	if( !is_dir( $t_bare ) ) {
+		return;
+	}
+
+	exec(
+		'git --git-dir=' . escapeshellarg( $t_bare ) .
+		' cat-file -e ' . escapeshellarg( $p_sha . '^{commit}' ) . ' 2>/dev/null',
+		$t_out, $t_rc
+	);
+	if( $t_rc !== 0 ) {
+		return;
+	}
+
+	# Highest existing sequence and the SHA it points at.  for-each-ref sorts
+	# lexically ("10" < "2"), so the maximum is computed numerically here.
+	$t_prefix = 'refs/doctis/approved/' . $p_dwg_id . '/';
+	$t_list   = trim( (string)shell_exec(
+		'git --git-dir=' . escapeshellarg( $t_bare ) .
+		' for-each-ref --format="%(refname) %(objectname)" ' .
+		escapeshellarg( rtrim( $t_prefix, '/' ) ) . ' 2>/dev/null'
+	) );
+	$t_max        = 0;
+	$t_latest_sha = '';
+	if( $t_list !== '' ) {
+		foreach( explode( "\n", $t_list ) as $t_line ) {
+			$t_parts = explode( ' ', trim( $t_line ), 2 );
+			if( count( $t_parts ) !== 2 ) {
+				continue;
+			}
+			$t_seq = (int)substr( $t_parts[0], strlen( $t_prefix ) );
+			if( $t_seq > $t_max ) {
+				$t_max        = $t_seq;
+				$t_latest_sha = trim( $t_parts[1] );
+			}
+		}
+	}
+	if( strtolower( $t_latest_sha ) === strtolower( $p_sha ) ) {
+		return;
+	}
+
+	exec(
+		'git --git-dir=' . escapeshellarg( $t_bare ) .
+		' update-ref ' . escapeshellarg( $t_prefix . ( $t_max + 1 ) ) . ' ' . escapeshellarg( $p_sha ) . ' 2>&1',
+		$t_out, $t_rc
+	);
+}
+
 /**
  * Delete File.
  *
@@ -1612,6 +1949,7 @@ function file_dwg_primary_add( $p_dwg_id, $p_user_id, $p_tmp_file, $p_filename, 
 	# the reference hyperlink always reflect the actual approved file.
 	if( preg_match( '/^[0-9a-f]{40}$/i', $t_git_sha ) ) {
 		file_dwg_set_document_reference( $p_dwg_id, $t_git_sha );
+		file_dwg_git_pin_approved( $p_dwg_id, $t_git_sha );
 	}
 }
 
@@ -1756,8 +2094,13 @@ function file_dwg_primary_get_content_at_sha( int $p_dwg_id, string $p_sha ) {
 	$t_project_id = dwg_get_field( $p_dwg_id, 'project_id' );
 	$t_backend    = file_dwg_get_storage_backend();
 
-	# Resolve the filename at the historical commit via git ls-tree.
-	$t_bare    = $t_row['folder'];
+	# Resolve the filename at the historical commit via git ls-tree.  Derive
+	# the bare path from the project id (the stored folder column can go
+	# stale when a repository is relocated after a project rename).
+	$t_bare = dwg_project_bare_repo_path( $t_project_id );
+	if( !is_dir( $t_bare ) ) {
+		$t_bare = $t_row['folder'];
+	}
 	$t_prefix  = escapeshellarg( (string)$p_dwg_id . '/' );
 	$t_sha_arg = escapeshellarg( $p_sha );
 	$t_ls      = shell_exec(
@@ -1814,11 +2157,8 @@ function file_dwg_primary_sync_head( int $p_dwg_id, int $p_acting_user_id ): voi
 		trigger_error( ERROR_GENERIC, ERROR );
 	}
 
-	# Derive the bare repo path (mirrors project_slug / bare_repo_path in the backend).
 	$t_project_id = dwg_get_field( $p_dwg_id, 'project_id' );
-	$t_name       = project_get_field( $t_project_id, 'name' );
-	$t_slug       = preg_replace( '/[^a-z0-9\-]+/', '-', strtolower( trim( $t_name ) ) );
-	$t_bare       = config_get( 'git_storage_root' ) . '/' . $t_slug . '.git';
+	$t_bare       = dwg_project_bare_repo_path( $t_project_id );
 
 	# Determine the file size directly from the git object store.
 	$t_rel_path = $p_dwg_id . '/' . $t_head['filename'];
@@ -1846,6 +2186,10 @@ function file_dwg_primary_sync_head( int $p_dwg_id, int $p_acting_user_id ): voi
 
 	# Keep documents.reference in sync with the newly approved SHA.
 	file_dwg_set_document_reference( $p_dwg_id, $t_head['sha'] );
+
+	# Pin the newly approved SHA as a permanent git ref so it can never be
+	# orphaned by later branch history.
+	file_dwg_git_pin_approved( $p_dwg_id, $t_head['sha'] );
 }
 
 function file_dwg_git_head_info( int $p_dwg_id ): ?array {
@@ -1854,9 +2198,7 @@ function file_dwg_git_head_info( int $p_dwg_id ): ?array {
 	}
 
 	$t_project_id = dwg_get_field( $p_dwg_id, 'project_id' );
-	$t_name       = project_get_field( $t_project_id, 'name' );
-	$t_slug       = preg_replace( '/[^a-z0-9\-]+/', '-', strtolower( trim( $t_name ) ) );
-	$t_bare       = config_get( 'git_storage_root' ) . '/' . $t_slug . '.git';
+	$t_bare       = dwg_project_bare_repo_path( $t_project_id );
 
 	if( !is_dir( $t_bare ) ) {
 		return null;
@@ -1948,9 +2290,7 @@ function file_dwg_git_tag( int $p_dwg_id, string $p_tag_name ): string {
 	}
 
 	$t_project_id = dwg_get_field( $p_dwg_id, 'project_id' );
-	$t_name       = project_get_field( $t_project_id, 'name' );
-	$t_slug       = preg_replace( '/[^a-z0-9\-]+/', '-', strtolower( trim( $t_name ) ) );
-	$t_bare       = config_get( 'git_storage_root' ) . '/' . $t_slug . '.git';
+	$t_bare       = dwg_project_bare_repo_path( $t_project_id );
 	$t_sha        = $t_row['git_sha'];
 
 	# Check whether the tag already exists.
@@ -2001,9 +2341,9 @@ function file_dwg_git_touch( int $p_dwg_id, int $p_user_id ): void {
 	}
 
 	$t_project_id = dwg_get_field( $p_dwg_id, 'project_id' );
-	$t_name       = project_get_field( $t_project_id, 'name' );
-	$t_slug       = preg_replace( '/[^a-z0-9\-]+/', '-', strtolower( trim( $t_name ) ) );
-	$t_worktree   = config_get( 'git_worktree_root' ) . '/' . $t_slug;
+	$t_worktree   = dwg_project_worktree_path( $t_project_id );
+
+	dwg_git_worktree_sync( $t_worktree );
 
 	try {
 		$t_git        = new \CzProject\GitPhp\Git;

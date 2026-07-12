@@ -507,6 +507,16 @@ function project_update( $p_project_id, $p_name, $p_description, $p_status, $p_v
 
 	project_clear_cache( $p_project_id );
 
+	# Doctis: relocate the project's git document repository so its cosmetic
+	# slug prefix follows the new name.  Repository lookup is by the immutable
+	# project-id suffix, so this is not needed for correctness; it keeps the
+	# on-disk name recognisable for operators.  No-op when no repository
+	# exists or the slug is unchanged.  See dwg_project_repo_rename().
+	if( $t_new_name !== $t_old_name ) {
+		require_api( 'file_dwg_api.php' );
+		dwg_project_repo_rename( $p_project_id );
+	}
+
 	# User just locked themselves out of the project by making it private,
 	# so we add them to the project with their previous access level
 	if( $t_is_becoming_private && !access_has_project_level( $t_manage_project_threshold, $p_project_id ) ) {

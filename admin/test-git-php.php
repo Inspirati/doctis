@@ -17,11 +17,15 @@ use CzProject\GitPhp\GitException;
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
-define( 'TEST_SLUG',    'phptest-' . getmypid() );
+// Repo basename mimics the production naming scheme "<slug>-<id>"
+// (see dwg_project_repo_basename() in core/file_dwg_api.php); the pid stands
+// in for the project id and keeps concurrent test runs isolated.
+define( 'TEST_REPO',    'phptest-' . getmypid() );
 define( 'BARE_ROOT',    '/var/git/doctis' );
 define( 'WORKTREE_ROOT','/var/www/doctis/worktrees' );
-define( 'BARE_REPO',    BARE_ROOT    . '/' . TEST_SLUG . '.git' );
-define( 'WORKTREE',     WORKTREE_ROOT . '/' . TEST_SLUG );
+define( 'BARE_REPO',    BARE_ROOT    . '/' . TEST_REPO . '.git' );
+define( 'WORKTREE',     WORKTREE_ROOT . '/' . TEST_REPO );
+define( 'HOOK_SRC',     '/var/www/html/doctis/admin/tools/git-hooks/pre-receive' );
 define( 'DOC_REF',      'TEST-DOC-001' );
 define( 'REL_PATH',     DOC_REF . '/source.md' );
 define( 'ABS_DIR',      WORKTREE . '/' . DOC_REF );
@@ -62,7 +66,7 @@ function teardown() : void {
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 echo "=== czproject/git-php integration test ===\n";
-echo "    slug: " . TEST_SLUG . "\n\n";
+echo "    repo: " . TEST_REPO . "\n\n";
 
 try {
 
@@ -224,6 +228,67 @@ try {
         ok( '15. history retained' );
     } else {
         fail( '15. history retained', "log:\n$log" );
+    }
+
+    // ── STEP 16–20: pre-receive hook enforcement ───────────────────────────────
+
+    echo "\n── Pre-receive hook ─────────────────────────────────────────────────────\n";
+
+    echo "  16. install hook     ... ";
+    if ( is_file( HOOK_SRC )
+      && copy( HOOK_SRC, BARE_REPO . '/hooks/pre-receive' )
+      && chmod( BARE_REPO . '/hooks/pre-receive', 0755 ) ) {
+        ok( '16. install hook' );
+    } else {
+        fail( '16. install hook', 'copy from ' . HOOK_SRC . ' failed' );
+    }
+
+    $branch = trim( shell_exec( 'git -C ' . escapeshellarg( WORKTREE ) . ' rev-parse --abbrev-ref HEAD' ) );
+
+    echo "  17. ff push accepted ... ";
+    [ $rc, $out ] = exec_cmd(
+        'git -C ' . escapeshellarg( WORKTREE ) . ' commit --allow-empty -m "hook test ff commit"'
+    );
+    [ $rc2, $out2 ] = exec_cmd(
+        'git -C ' . escapeshellarg( WORKTREE ) . ' push origin ' . escapeshellarg( $branch )
+    );
+    if ( $rc === 0 && $rc2 === 0 ) {
+        ok( '17. ff push accepted' );
+    } else {
+        fail( '17. ff push accepted', $out . "\n" . $out2 );
+    }
+
+    echo "  18. force push rejected ... ";
+    exec_cmd( 'git -C ' . escapeshellarg( WORKTREE ) . ' commit --amend --allow-empty -m "rewritten"' );
+    [ $rc, $out ] = exec_cmd(
+        'git -C ' . escapeshellarg( WORKTREE ) . ' push --force origin ' . escapeshellarg( $branch )
+    );
+    if ( $rc !== 0 && strpos( $out, 'non-fast-forward' ) !== false ) {
+        ok( '18. force push rejected' );
+    } else {
+        fail( '18. force push rejected', "rc=$rc out:\n$out" );
+    }
+    // Restore the worktree to the pushed state for the remaining steps.
+    exec_cmd( 'git -C ' . escapeshellarg( WORKTREE ) . ' reset --hard ' . escapeshellarg( 'origin/' . $branch ) );
+
+    echo "  19. ref delete rejected ... ";
+    [ $rc, $out ] = exec_cmd(
+        'git -C ' . escapeshellarg( WORKTREE ) . ' push origin ' . escapeshellarg( ':' . $branch )
+    );
+    if ( $rc !== 0 && strpos( $out, 'not permitted' ) !== false ) {
+        ok( '19. ref delete rejected' );
+    } else {
+        fail( '19. ref delete rejected', "rc=$rc out:\n$out" );
+    }
+
+    echo "  20. refs/doctis push rejected ... ";
+    [ $rc, $out ] = exec_cmd(
+        'git -C ' . escapeshellarg( WORKTREE ) . ' push origin HEAD:refs/doctis/approved/999/1'
+    );
+    if ( $rc !== 0 && strpos( $out, 'server-managed' ) !== false ) {
+        ok( '20. refs/doctis push rejected' );
+    } else {
+        fail( '20. refs/doctis push rejected', "rc=$rc out:\n$out" );
     }
 
 } catch ( GitException $e ) {

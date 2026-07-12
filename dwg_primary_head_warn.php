@@ -53,8 +53,8 @@ if( true == gpc_get_bool( '_confirmed' ) ) {
 
 $t_project_id   = dwg_get_field( $f_dwg_id, 'project_id' );
 $t_project_name = project_get_field( $t_project_id, 'name' );
-$t_slug         = preg_replace( '/[^a-z0-9\-]+/', '-', strtolower( trim( $t_project_name ) ) );
-$t_bare         = config_get( 'git_storage_root' ) . '/' . $t_slug . '.git';
+$t_repo_base    = dwg_project_repo_basename( $t_project_id );
+$t_bare         = dwg_project_bare_repo_path( $t_project_id );
 $t_rel_path     = $f_dwg_id . '/' . $t_head['filename'];
 
 # Shell-safe versions for display in <code> blocks.
@@ -67,15 +67,21 @@ $t_head_sha_abbr = htmlspecialchars( substr( $t_head['sha'], 0, 8 ) );
 $t_cmd_show_head = 'git --git-dir=' . $t_bare_shell . ' show HEAD:' . $t_rel_shell;
 $t_cmd_log       = 'git --git-dir=' . $t_bare_shell . ' log --follow -- ' . $t_rel_shell;
 $t_cmd_show_sha  = 'git --git-dir=' . $t_bare_shell . ' show ' . $t_head_sha_abbr . ':' . $t_rel_shell;
-$t_cmd_clone     = 'git clone ' . $t_bare_shell . ' /tmp/' . htmlspecialchars( $t_slug );
+$t_cmd_clone     = 'git clone ' . $t_bare_shell . ' /tmp/' . htmlspecialchars( $t_repo_base );
 
 # Remote (workstation) clone over Smart HTTP — the recommended method.
 $t_git_http_on   = ( ON == config_get_global( 'git_http_enabled' ) );
 $t_scheme        = ( !empty( $_SERVER['HTTPS'] ) && $_SERVER['HTTPS'] !== 'off' ) ? 'https' : 'http';
 $t_host_raw      = $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? 'vaio';
 $t_current_user  = user_get_username( auth_get_current_user_id() );
-$t_clone_url     = $t_scheme . '://' . $t_host_raw . '/git/' . $t_slug . '.git';
-$t_cmd_clone_remote = 'git clone ' . $t_scheme . '://' . $t_current_user . '@' . $t_host_raw . '/git/' . $t_slug . '.git';
+$t_clone_url     = $t_scheme . '://' . $t_host_raw . '/git/' . $t_repo_base . '.git';
+$t_cmd_clone_remote = 'git clone ' . $t_scheme . '://' . $t_current_user . '@' . $t_host_raw . '/git/' . $t_repo_base . '.git';
+
+# Whether the current user's project access level permits git push.
+$t_can_push = access_has_project_level(
+	config_get( 'git_http_write_threshold', null, null, $t_project_id ),
+	$t_project_id
+);
 
 # ── Render the page ────────────────────────────────────────────────────────
 
@@ -156,11 +162,27 @@ layout_page_begin();
 					revision history.  Attachments are <em>not</em> included.
 					<br>
 					<strong>Access:</strong> requires <strong>Developer</strong> access (or higher)
-					to the project, and is currently <strong>read-only</strong> &mdash; pushing
-					changes back is not yet enabled.  The Approved version shown in Doctis is the
+					to the project.  The Approved version shown in Doctis is the
 					commit pinned by the SHA recorded in the database, which may differ from the
 					latest <code>HEAD</code> in your clone.
 				</p>
+<?php if( $t_can_push ) { ?>
+				<p class="small">
+					<strong>Pushing changes:</strong> your access level also permits
+					<code>git push</code> to this repository.  Pushed commits update the
+					<em>draft</em> (repository <code>HEAD</code>) only &mdash; the Approved
+					version remains pinned until a reviewer promotes the new HEAD inside
+					Doctis (<em>Sync to HEAD</em> in the Primary Document panel).
+					Force-pushes, history rewrites, and branch deletions are rejected by
+					the server.
+				</p>
+<?php } else { ?>
+				<p class="small">
+					<strong>Pushing changes:</strong> your current access level allows
+					read-only cloning.  Pushing draft updates requires
+					<strong>Manager</strong> access to the project.
+				</p>
+<?php } ?>
 <?php } else { ?>
 				<p class="alert alert-info">
 					Remote git access is not enabled on this server

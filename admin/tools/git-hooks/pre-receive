@@ -1,0 +1,41 @@
+#!/bin/sh
+# Doctis pre-receive hook — installed automatically into every bare repo by
+# GitFileStorageBackend::configure_bare_repo().  Source of truth:
+# admin/tools/git-hooks/pre-receive.  Do not edit the installed copy.
+#
+# Approved document versions are pinned by SHA (DB git_sha column and
+# refs/doctis/approved/* refs), so history must never be rewritten:
+#   - ref deletions are rejected
+#   - non-fast-forward (forced) updates are rejected
+#   - refs/doctis/* are server-managed and cannot be pushed by clients
+
+zero=0000000000000000000000000000000000000000
+status=0
+
+while read old new ref; do
+	case "$ref" in
+		refs/doctis/*)
+			echo "doctis: $ref is server-managed and cannot be pushed" >&2
+			status=1
+			continue
+			;;
+	esac
+
+	if [ "$new" = "$zero" ]; then
+		echo "doctis: deleting $ref is not permitted" >&2
+		status=1
+		continue
+	fi
+
+	# Creation of a new ref (branch or tag) is always fast-forward.
+	if [ "$old" = "$zero" ]; then
+		continue
+	fi
+
+	if ! git merge-base --is-ancestor "$old" "$new" 2>/dev/null; then
+		echo "doctis: non-fast-forward update of $ref rejected (force-push / history rewrite is not permitted)" >&2
+		status=1
+	fi
+done
+
+exit $status

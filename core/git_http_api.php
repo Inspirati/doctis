@@ -8,9 +8,12 @@
 # CGI.  Callers authenticate with a Doctis API token presented as the HTTP Basic
 # password; authorisation is by project-level access level.
 #
-# READ-ONLY in this phase: clone/fetch (git-upload-pack) is served; push
-# (git-receive-pack) is rejected.  See doc/PROJECT_REPOS.md Part 2 and
-# doc/PROJECT_REPOS_PLAN.md.
+# Reads (git-upload-pack: clone/fetch) require $g_git_http_read_threshold on
+# the project; writes (git-receive-pack: push) require
+# $g_git_http_write_threshold.  Pushes advance the draft (HEAD) only — the
+# On-Record version stays pinned to its recorded SHA until promoted inside
+# Doctis.  A pre-receive hook in each bare repo rejects force-pushes, ref
+# deletions, and client writes to refs/doctis/*.
 #
 # The entry point is git_http_handle_request(), called from git_http.php.
 
@@ -20,40 +23,29 @@ require_api( 'authentication_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
 require_api( 'database_api.php' );
+require_api( 'file_dwg_api.php' );
 require_api( 'project_api.php' );
 require_api( 'user_api.php' );
 
 /**
- * Derive the repository slug for a project (matches the scheme used by the GIT
- * storage backend: lowercased name, non [a-z0-9-] runs collapsed to '-').
+ * Resolve a requested repository basename ("<slug>-<id>") to a project id.
  *
- * @param int $p_project_id
- * @return string
- */
-function git_http_repo_slug( $p_project_id ) {
-	$t_name = project_get_field( $p_project_id, 'name' );
-	return preg_replace( '/[^a-z0-9\-]+/', '-', strtolower( trim( $t_name ) ) );
-}
-
-/**
- * Reverse-map a repository slug to a project id.
+ * The immutable trailing "-<id>" component is authoritative; the slug prefix
+ * is cosmetic, so a URL bookmarked before a project rename keeps working.
+ * Returns false when no trailing id is present or the project does not exist.
  *
- * Slugification is lossy, so this scans projects and returns the first whose
- * slug matches.  Returns false if none match.  (Phase 3 — stable <slug>-<id>
- * naming — will make this a direct lookup.)
- *
- * @param string $p_slug
+ * @param string $p_basename  Repo name without ".git", e.g. "example-1".
  * @return int|false
  */
-function git_http_slug_to_project_id( $p_slug ) {
-	$t_query = new DbQuery( 'SELECT id FROM {project}' );
-	$t_query->execute();
-	while( $t_row = $t_query->fetch() ) {
-		if( git_http_repo_slug( (int)$t_row['id'] ) === $p_slug ) {
-			return (int)$t_row['id'];
-		}
+function git_http_repo_to_project_id( $p_basename ) {
+	if( !preg_match( '/-(\d+)$/', $p_basename, $t_m ) ) {
+		return false;
 	}
-	return false;
+	$t_project_id = (int)$t_m[1];
+	if( $t_project_id < 1 || !project_exists( $t_project_id ) ) {
+		return false;
+	}
+	return $t_project_id;
 }
 
 /**
@@ -137,15 +129,15 @@ function git_http_handle_request() {
 	}
 
 	# Allowlist exactly the smart-HTTP endpoints; this also blocks path traversal
-	# and dumb-HTTP file access.  Repo segment: <slug>.git
+	# and dumb-HTTP file access.  Repo segment: <slug>-<project_id>.git
 	if( !preg_match(
 			'#^/([a-z0-9][a-z0-9\-]*\.git)/(info/refs|git-upload-pack|git-receive-pack)$#',
 			$t_path_info, $t_m ) ) {
 		git_http_fail( 403, 'Unsupported git request.' );
 	}
-	$t_repo    = $t_m[1];                       # e.g. "example.git"
+	$t_repo    = $t_m[1];                       # e.g. "example-1.git"
 	$t_endpoint= $t_m[2];
-	$t_slug    = substr( $t_repo, 0, -4 );      # strip ".git"
+	$t_basename= substr( $t_repo, 0, -4 );      # strip ".git"
 
 	# Determine the git service and whether it is a write operation.
 	if( $t_endpoint === 'info/refs' ) {
@@ -155,11 +147,6 @@ function git_http_handle_request() {
 	}
 	$t_is_write = ( $t_service === 'git-receive-pack' );
 
-	# READ-ONLY phase: refuse push outright.
-	if( $t_is_write ) {
-		git_http_fail( 403, 'Push over remote git is not enabled yet (read-only access).' );
-	}
-
 	# --- Authenticate via API token ---
 	$t_token = git_http_extract_token();
 	$t_user_id = ( $t_token === '' ) ? false : api_token_get_user( $t_token );
@@ -167,19 +154,29 @@ function git_http_handle_request() {
 		git_http_require_auth();
 	}
 
-	# --- Authorise: map slug -> project, check project-level access ---
-	$t_project_id = git_http_slug_to_project_id( $t_slug );
+	# --- Authorise: map repo name -> project, check project-level access ---
+	$t_project_id = git_http_repo_to_project_id( $t_basename );
 	if( $t_project_id === false ) {
 		git_http_fail( 404, 'Repository not found.' );
 	}
 
-	$t_read_threshold = config_get( 'git_http_read_threshold', null, $t_user_id, $t_project_id );
-	if( !access_has_project_level( $t_read_threshold, $t_project_id, $t_user_id ) ) {
-		git_http_fail( 403, 'You do not have access to this project repository.' );
+	# Canonical on-disk repo name for the project id — tolerates a stale slug
+	# in a URL bookmarked before a project rename.
+	$t_canonical = dwg_project_repo_basename( $t_project_id );
+	if( !is_dir( config_get_global( 'git_storage_root' ) . '/' . $t_canonical . '.git' ) ) {
+		git_http_fail( 404, 'Repository not found.' );
 	}
 
-	# --- Proxy to git-http-backend ---
-	git_http_proxy_backend( $t_path_info, user_get_username( $t_user_id ) );
+	$t_threshold_key = $t_is_write ? 'git_http_write_threshold' : 'git_http_read_threshold';
+	$t_threshold = config_get( $t_threshold_key, null, $t_user_id, $t_project_id );
+	if( !access_has_project_level( $t_threshold, $t_project_id, $t_user_id ) ) {
+		git_http_fail( 403, $t_is_write
+			? 'You do not have push access to this project repository.'
+			: 'You do not have access to this project repository.' );
+	}
+
+	# --- Proxy to git-http-backend (canonical repo name) ---
+	git_http_proxy_backend( '/' . $t_canonical . '.git/' . $t_endpoint, user_get_username( $t_user_id ) );
 }
 
 /**

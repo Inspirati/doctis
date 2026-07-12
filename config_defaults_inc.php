@@ -2430,7 +2430,8 @@ $g_absolute_path_default_upload_folder = '';
 /**
  * Git document storage: absolute path to the bare repository root.
  *
- * Each Doctis project gets its own bare repo: <git_storage_root>/<slug>.git
+ * Each Doctis project gets its own bare repo:
+ * <git_storage_root>/<slug>-<project_id>.git (see dwg_project_repo_basename()).
  * Only used when $g_dwg_upload_method = GIT.
  *
  * @global string $g_git_storage_root
@@ -2440,7 +2441,7 @@ $g_git_storage_root = '';
 /**
  * Git document storage: absolute path to the working tree root.
  *
- * Each project gets a working tree: <git_worktree_root>/<slug>
+ * Each project gets a working tree: <git_worktree_root>/<slug>-<project_id>
  * Only used when $g_dwg_upload_method = GIT.
  *
  * @global string $g_git_worktree_root
@@ -2481,9 +2482,10 @@ $g_git_http_read_threshold = DEVELOPER;
 
 /**
  * Minimum project access level required to push (write) to a project repository
- * over remote git.  Push is not served until Phase 2 (see
- * doc/PROJECT_REPOS_PLAN.md); this key reserves the entitlement and is a higher
- * bar than read by design.
+ * over remote git.  Pushes advance the draft (repository HEAD) only — the
+ * On-Record version stays pinned to its recorded SHA until promoted inside
+ * Doctis.  A pre-receive hook rejects force-pushes, ref deletions, and writes
+ * to refs/doctis/*.  A higher bar than read by design.
  *
  * @global int $g_git_http_write_threshold
  */

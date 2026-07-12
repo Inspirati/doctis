@@ -565,7 +565,7 @@ After any upload or delete via SOAP (or the web UI), confirm the commit is
 attributed to the correct Doctis user:
 
 ```bash
-ssh hcr@vaio "git --git-dir=/var/git/doctis/example.git \
+ssh hcr@vaio "git --git-dir=/var/git/doctis/example-1.git \
   log --format='%h %an <%ae> %s' -5"
 # Should show the Doctis user's realname and email, not "Doctis <doctis@vaio.local>"
 ```
@@ -725,11 +725,20 @@ see and the only revision-controlled record (its approved SHA is in
 
 ### GIT backend specifics
 
-**Repository layout per project:**
+**Repository layout per project** (basename `<slug>-<project_id>`, e.g. `example-1`):
 ```
-/var/git/doctis/<slug>.git        bare repo (authoritative store)
-/var/www/doctis/worktrees/<slug>  working tree (write staging area)
+/var/git/doctis/<slug>-<id>.git        bare repo (authoritative store)
+/var/www/doctis/worktrees/<slug>-<id>  working tree (write staging area)
 ```
+
+Naming is owned by `dwg_project_repo_basename()` / `dwg_project_bare_repo_path()` /
+`dwg_project_worktree_path()` in `core/file_dwg_api.php` — never derive a repo
+path from the project name directly. Lookup is by the immutable `-<id>` suffix.
+Renaming a project automatically relocates its repository to match
+(`dwg_project_repo_rename()`, called from `project_update()`): the bare repo is
+atomically renamed, the worktree deleted (lazily re-cloned on next upload), and
+stored `folder` values rewritten. Stale-slug clone URLs keep working — the
+gateway resolves by id.
 
 **File path within repo:** `<dwg_id>/<filename>` (e.g. `4/report.pdf`)
 
@@ -789,10 +798,11 @@ Beyond the new backend classes, every existing file that switches on
 ssh hcr@vaio "sudo -u www-data php /var/www/html/doctis/admin/test-git-php.php"
 ```
 
-Source: [admin/test-git-php.php](admin/test-git-php.php) — self-contained 15-step
+Source: [admin/test-git-php.php](admin/test-git-php.php) — self-contained 20-step
 test (init, clone, add, commit, push, retrieve-by-SHA, HEAD retrieve, SHA256
-integrity, soft-delete, history retention). Creates and tears down its own
-temporary repos. Must pass before enabling `GIT` on any new server.
+integrity, soft-delete, history retention, pre-receive hook enforcement:
+force-push / ref-delete / refs-doctis rejection). Creates and tears down its
+own temporary repos. Must pass before enabling `GIT` on any new server.
 
 ### Server infrastructure status (vaio) — current state
 
@@ -802,8 +812,8 @@ temporary repos. Must pass before enabling `GIT` on any new server.
 | `/var/www/doctis/worktrees/` | Created; `www-data:www-data`, mode `2770` |
 | `/var/www/.gitconfig` | Written as root; `www-data` identity set (`doctis@vaio.local`, `init.defaultBranch=main`) |
 | `czproject/git-php v4.4.0` | Installed via Composer into `vendor/` |
-| `example` project bare repo | `/var/git/doctis/example.git` — live data, `main` branch |
-| `example` project worktree | `/var/www/doctis/worktrees/example` — `main` branch, tracking `origin/main` |
+| `example` project bare repo | `/var/git/doctis/example-1.git` — live data, `main` branch, pre-receive hook installed, `http.receivepack=true` |
+| `example` project worktree | `/var/www/doctis/worktrees/example-1` — `main` branch, tracking `origin/main` |
 | `$g_file_upload_method` | Set to `GIT` in `config/config_inc.php` — active on vaio |
 
 ## AI Assistant Feature

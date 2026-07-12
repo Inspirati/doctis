@@ -294,7 +294,7 @@ Content."
             || { _gst_fail "apache2 reload failed"; return 1; }
         _gst_pass
 
-        _gst_ok "Smart HTTP gateway active: git clone http://<user>:<token>@<host>/git/<slug>.git"
+        _gst_ok "Smart HTTP gateway active: git clone http://<user>:<token>@<host>/git/<slug>-<project_id>.git"
     fi
 
     # ── Step 9 — Application self-update prerequisites ──────────────────────────

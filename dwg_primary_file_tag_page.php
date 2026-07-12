@@ -58,8 +58,7 @@ if( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
 
 $t_project_id   = dwg_get_field( $f_dwg_id, 'project_id' );
 $t_project_name = project_get_field( $t_project_id, 'name' );
-$t_slug         = preg_replace( '/[^a-z0-9\-]+/', '-', strtolower( trim( $t_project_name ) ) );
-$t_bare         = config_get( 'git_storage_root' ) . '/' . $t_slug . '.git';
+$t_bare         = dwg_project_bare_repo_path( $t_project_id );
 $t_dwg_title    = dwg_get_field( $f_dwg_id, 'summary' );
 
 $t_sha_full  = htmlspecialchars( $t_row['git_sha'] );

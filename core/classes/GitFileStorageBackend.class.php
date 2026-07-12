@@ -26,9 +26,9 @@ use Mantis\Exceptions\ServiceException;
  * repository.  {dwg_primary_file}.git_sha holds the commit SHA; {dwg_primary_file}.folder
  * holds the absolute path to the bare repository (redundant — derivable from project).
  *
- * Repository layout:
- *   <git_storage_root>/<project-slug>.git   — bare repo (authoritative store)
- *   <git_worktree_root>/<project-slug>      — working tree (write staging area)
+ * Repository layout (naming owned by dwg_project_* helpers in file_dwg_api.php):
+ *   <git_storage_root>/<slug>-<project_id>.git   — bare repo (authoritative store)
+ *   <git_worktree_root>/<slug>-<project_id>      — working tree (write staging area)
  *
  * File path within the repo:
  *   <dwg_id>/<filename>
@@ -106,73 +106,84 @@ class GitFileStorageBackend implements FileStorageBackendInterface {
 	}
 
 	/**
-	 * Derive a filesystem-safe slug from a project name.
-	 *
-	 * @param int $p_project_id
-	 * @return string  e.g. "my-project"
-	 */
-	private function project_slug( int $p_project_id ): string {
-		$t_name = project_get_field( $p_project_id, 'name' );
-		return preg_replace( '/[^a-z0-9\-]+/', '-', strtolower( trim( $t_name ) ) );
-	}
-
-	/**
-	 * Absolute path to the bare repository for a project slug.
-	 *
-	 * @param string $p_slug
-	 * @return string
-	 */
-	private function bare_repo_path( string $p_slug ): string {
-		return config_get( 'git_storage_root' ) . '/' . $p_slug . '.git';
-	}
-
-	/**
-	 * Absolute path to the working tree for a project slug.
-	 *
-	 * @param string $p_slug
-	 * @return string
-	 */
-	private function worktree_path( string $p_slug ): string {
-		return config_get( 'git_worktree_root' ) . '/' . $p_slug;
-	}
-
-	/**
 	 * Ensure the bare repo and working tree exist for the given project,
 	 * creating them on first use.
+	 *
+	 * Repository naming (bare repo and worktree) is owned by the
+	 * dwg_project_* helpers in file_dwg_api.php — "<slug>-<project_id>",
+	 * resolved by the immutable id suffix.  A project rename relocates the
+	 * repository via dwg_project_repo_rename(), serialised against this
+	 * method by the shared storage lock.
 	 *
 	 * @param int $p_project_id
 	 * @return array{bare: string, worktree: string}
 	 * @throws ServiceException
 	 */
 	private function ensure_project_repo( int $p_project_id ): array {
-		$t_slug     = $this->project_slug( $p_project_id );
-		$t_bare     = $this->bare_repo_path( $t_slug );
-		$t_worktree = $this->worktree_path( $t_slug );
+		# Serialise against dwg_project_repo_rename() so creation cannot race
+		# a concurrent relocation of the same project's repository.
+		$t_lock = dwg_git_storage_lock();
+		try {
+			$t_bare     = dwg_project_bare_repo_path( $p_project_id );
+			$t_worktree = dwg_project_worktree_path( $p_project_id );
 
-		if( !is_dir( $t_bare ) ) {
-			exec( 'git init --bare ' . escapeshellarg( $t_bare ) . ' 2>&1', $t_out, $t_rc );
-			if( $t_rc !== 0 ) {
-				throw new ServiceException(
-					'git init --bare failed for project ' . $p_project_id . ': ' . implode( ' ', $t_out ),
-					ERROR_GENERIC
-				);
+			if( !is_dir( $t_bare ) ) {
+				exec( 'git init --bare ' . escapeshellarg( $t_bare ) . ' 2>&1', $t_out, $t_rc );
+				if( $t_rc !== 0 ) {
+					throw new ServiceException(
+						'git init --bare failed for project ' . $p_project_id . ': ' . implode( ' ', $t_out ),
+						ERROR_GENERIC
+					);
+				}
 			}
-		}
 
-		if( !is_dir( $t_worktree ) ) {
-			exec(
-				'git clone ' . escapeshellarg( $t_bare ) . ' ' . escapeshellarg( $t_worktree ) . ' 2>&1',
-				$t_out, $t_rc
-			);
-			if( $t_rc !== 0 ) {
-				throw new ServiceException(
-					'git clone failed for project ' . $p_project_id . ': ' . implode( ' ', $t_out ),
-					ERROR_GENERIC
+			$this->configure_bare_repo( $t_bare );
+
+			if( !is_dir( $t_worktree ) ) {
+				exec(
+					'git clone ' . escapeshellarg( $t_bare ) . ' ' . escapeshellarg( $t_worktree ) . ' 2>&1',
+					$t_out, $t_rc
 				);
+				if( $t_rc !== 0 ) {
+					throw new ServiceException(
+						'git clone failed for project ' . $p_project_id . ': ' . implode( ' ', $t_out ),
+						ERROR_GENERIC
+					);
+				}
 			}
+		} finally {
+			dwg_git_storage_unlock( $t_lock );
 		}
 
 		return array( 'bare' => $t_bare, 'worktree' => $t_worktree );
+	}
+
+	/**
+	 * Install/refresh the Doctis server-side configuration on a bare repo:
+	 * the pre-receive hook (rejects force-pushes, ref deletions, and client
+	 * writes to refs/doctis/*) and http.receivepack (allows authenticated
+	 * push through the Smart HTTP gateway).
+	 *
+	 * Idempotent, and called on every ensure_project_repo() so existing
+	 * repositories pick up hook updates automatically.  The hook source of
+	 * truth is admin/tools/git-hooks/pre-receive.
+	 *
+	 * @param string $p_bare  Absolute path to the bare repository.
+	 */
+	private function configure_bare_repo( string $p_bare ): void {
+		$t_hook_src = config_get_global( 'absolute_path' ) . 'admin/tools/git-hooks/pre-receive';
+		$t_hook_dst = $p_bare . '/hooks/pre-receive';
+
+		if( is_file( $t_hook_src ) ) {
+			$t_content = file_get_contents( $t_hook_src );
+			if( $t_content !== false
+			 && ( !is_file( $t_hook_dst ) || file_get_contents( $t_hook_dst ) !== $t_content ) ) {
+				file_put_contents( $t_hook_dst, $t_content );
+				chmod( $t_hook_dst, 0755 );
+			}
+		}
+
+		exec( 'git --git-dir=' . escapeshellarg( $p_bare ) . ' config http.receivepack true 2>&1' );
 	}
 
 	/**
@@ -215,6 +226,10 @@ class GitFileStorageBackend implements FileStorageBackendInterface {
 		$t_paths    = $this->ensure_project_repo( $t_project_id );
 		$t_bare     = $t_paths['bare'];
 		$t_worktree = $t_paths['worktree'];
+
+		# Remote pushes advance the bare repo independently of this worktree;
+		# sync before staging so our commit fast-forwards from origin HEAD.
+		dwg_git_worktree_sync( $t_worktree );
 
 		# Create the per-document subdirectory if needed
 		$t_abs_dir = $t_worktree . '/' . $t_dwg_id;
@@ -292,7 +307,13 @@ class GitFileStorageBackend implements FileStorageBackendInterface {
 	 * stored commit SHA, without touching the working tree.
 	 */
 	public function retrieve( array $p_row, int $p_project_id ) {
-		$t_bare     = $p_row['folder'];
+		# Derive the bare repo location from the immutable project id; the
+		# stored folder column is informational only and can go stale when a
+		# repository is relocated after a project rename.
+		$t_bare = dwg_project_bare_repo_path( $p_project_id );
+		if( !is_dir( $t_bare ) ) {
+			$t_bare = $p_row['folder'];
+		}
 		# {dwg_primary_file} uses git_sha; {dwg_file} attachments retain the
 		# MantisBT-inherited diskfile column name.  Accept either.
 		$t_sha      = $p_row['git_sha'] ?? $p_row['diskfile'];
@@ -330,8 +351,9 @@ class GitFileStorageBackend implements FileStorageBackendInterface {
 
 		$this->set_git_author( $t_user_id );
 
-		$t_slug     = $this->project_slug( $p_project_id );
-		$t_worktree = $this->worktree_path( $t_slug );
+		$t_worktree = dwg_project_worktree_path( $p_project_id );
+
+		dwg_git_worktree_sync( $t_worktree );
 
 		$t_rel_path = $this->repo_rel_path( $t_dwg_id, $t_filename );
 
