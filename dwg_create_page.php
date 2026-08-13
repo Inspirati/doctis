@@ -925,7 +925,7 @@ $t_form_encoding = 'enctype="multipart/form-data"';
 		</th>
 		<td>
 			<?php print_dwg_relationship_list_box( config_get( 'default_dwg_relationship_clone' ), "rel_type", false, true ) ?>
-			<?php echo '<strong>' . lang_get( 'bug' ) . ' ' . bug_format_id( $f_master_bug_id ) . '</strong>' ?>
+			<?php echo '<strong>' . lang_get( 'dwg' ) . ' ' . bug_format_id( $f_master_bug_id ) . '</strong>' ?>
 		</td>
 	</tr>
 
@@ -1010,10 +1010,10 @@ $t_form_encoding = 'enctype="multipart/form-data"';
 			</div>
 		</div>
 	</div>
-<div class="widget-toolbox padding-8 clearfix">
-	<span class="required pull-right"> * <?php echo lang_get( 'required' ) ?></span>
-	<input <?php echo helper_get_tab_index() ?> type="submit" class="btn btn-primary btn-white btn-round" value="<?php echo lang_get( 'submit_dwg_button' ) ?>" />
-</div>
+	<div class="widget-toolbox padding-8 clearfix">
+		<span class="required pull-right"> * <?php echo lang_get( 'required' ) ?></span>
+		<input <?php echo helper_get_tab_index() ?> type="submit" class="btn btn-primary btn-white btn-round" value="<?php echo lang_get( 'submit_dwg_button' ) ?>" />
+	</div>
 </div>
 </form>
 </div>

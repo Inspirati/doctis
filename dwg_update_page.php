@@ -750,8 +750,8 @@ $t_bugnote_private = $t_default_bugnote_view_status == VS_PRIVATE;
 $t_bugnote_class = $t_bugnote_private ? 'form-control bugnote-private' : 'form-control';
 
 echo '<tr>';
-echo '<th class="category"><label for="bugnote_text">' . lang_get( 'add_dwgnote_title' ) . '</label></th>';
-echo '<td colspan="5"><textarea ', helper_get_tab_index(), ' id="bugnote_text" name="bugnote_text" class="', $t_bugnote_class, '" cols="80" rows="7"></textarea></td></tr>';
+echo '<th class="category"><label for="dwgnote_text">' . lang_get( 'add_dwgnote_title' ) . '</label></th>';
+echo '<td colspan="5"><textarea ', helper_get_tab_index(), ' id="dwgnote_text" name="dwgnote_text" class="', $t_bugnote_class, '" cols="80" rows="7"></textarea></td></tr>';
 
 # Bugnote Private Checkbox (if permitted)
 if( access_has_dwg_level( config_get( 'private_dwgnote_threshold' ), $t_bug_id ) ) {

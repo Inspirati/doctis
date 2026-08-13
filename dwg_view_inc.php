@@ -1154,7 +1154,8 @@ $t_head_diverged = $t_git_head_sha !== null && $t_git_head_sha !== ( $t_primary_
 							<?php echo form_security_field( 'dwg_primary_file_update' ) ?>
 							<input type="hidden" name="dwg_id" value="<?php echo $f_dwg_id ?>" />
 							<input type="file" name="primary_document_file" class="input-sm" />
-							<input type="text" name="primary_document_description" class="input-sm width-40"
+							<input type="text" name="primary_document_description" class="input-sm"
+								style="width:50% !important"
 								maxlength="255" placeholder="<?php echo lang_get( 'primary_document_description_hint' ) ?>" />
 							<input type="submit" class="btn btn-warning btn-sm btn-white btn-round"
 								value="<?php echo lang_get( 'primary_document_replace_button' ) ?>" />
@@ -1164,33 +1165,30 @@ $t_head_diverged = $t_git_head_sha !== null && $t_git_head_sha !== ( $t_primary_
 <?php	endif; ?>
 <?php else: ?>
 				<tr>
-					<td colspan="6" class="center">
+					<td colspan="6"<?php echo $t_can_upload_primary ? '' : ' class="center"' ?>>
 <?php	if( $t_can_upload_primary ): ?>
 						<form method="post" enctype="multipart/form-data" action="dwg_primary_file_update.php">
 							<?php echo form_security_field( 'dwg_primary_file_update' ) ?>
 							<input type="hidden" name="dwg_id" value="<?php echo $f_dwg_id ?>" />
-							<table class="table table-condensed no-border">
+							<table class="table table-condensed no-border width-100" style="table-layout:fixed">
 							<tr>
 								<th class="category width-15">
 									<label for="primary_document_file_view"><?php echo lang_get( 'primary_document_file' ) ?></label>
 								</th>
-								<td>
-									<input id="primary_document_file_view" type="file" name="primary_document_file" class="input-sm" />
+								<td class="width-85">
+									<input id="primary_document_file_view" type="file" name="primary_document_file" class="input-sm" style="width:100% !important" />
 								</td>
 							</tr>
 							<tr>
 								<th class="category width-15">
 									<label for="primary_document_description_view"><?php echo lang_get( 'description' ) ?></label>
 								</th>
-								<td>
+								<td class="width-85">
 									<input id="primary_document_description_view" type="text"
-										name="primary_document_description" class="input-sm width-60"
+										name="primary_document_description" class="input-sm"
+										style="width:50% !important"
 										maxlength="255"
 										placeholder="<?php echo lang_get( 'primary_document_description_hint' ) ?>" />
-								</td>
-							</tr>
-							<tr>
-								<td colspan="2">
 									<input type="submit" class="btn btn-primary btn-sm btn-white btn-round"
 										value="<?php echo lang_get( 'primary_document_upload_button' ) ?>" />
 								</td>

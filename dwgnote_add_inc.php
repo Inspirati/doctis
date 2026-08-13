@@ -119,7 +119,7 @@ require_api( 'file_dwg_api.php' );
 					<?php echo lang_get( 'bugnote' ) ?>
 				</th>
 				<td class="width-85">
-					<textarea name="bugnote_text" id="bugnote_text" class="<?php echo $t_bugnote_class ?>" rows="7"></textarea>
+					<textarea name="dwgnote_text" id="dwgnote_text" class="<?php echo $t_bugnote_class ?>" rows="7"></textarea>
 				</td>
 			</tr>
 

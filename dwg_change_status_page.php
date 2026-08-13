@@ -382,7 +382,7 @@ layout_page_begin(null, true);
 					<?php echo lang_get( 'add_dwgnote_title' ) ?>
 				</th>
 				<td>
-					<textarea name="bugnote_text" id="bugnote_text" class="<?php echo $t_bugnote_class ?>" cols="80" rows="7"></textarea>
+					<textarea name="dwgnote_text" id="dwgnote_text" class="<?php echo $t_bugnote_class ?>" cols="80" rows="7"></textarea>
 				</td>
 			</tr>
 <?php

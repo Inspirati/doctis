@@ -70,7 +70,7 @@ helper_begin_long_process();
 $f_action	= gpc_get_string( 'action' );
 $f_custom_field_id = gpc_get_int( 'custom_field_id', 0 );
 $f_bug_arr	= gpc_get_int_array( 'dwg_arr', array() );
-$f_bug_notetext = gpc_get_string( 'bugnote_text', '' );
+$f_bug_notetext = gpc_get_string( 'dwgnote_text', '' );
 $f_bug_noteprivate = gpc_get_bool( 'private' );
 $t_form_name = 'dwg_actiongroup_' . $f_action;
 form_security_validate( $t_form_name );
