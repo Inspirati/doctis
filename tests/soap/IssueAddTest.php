@@ -77,8 +77,7 @@ class IssueAddTest extends SoapBase {
 		$this->assertEquals( 'public', $t_issue->view_state->name );
 		$this->assertEquals( 30, $t_issue->priority->id );
 		$this->assertEquals( 'normal', $t_issue->priority->name );
-		$this->assertEquals( 50, $t_issue->severity->id );
-		$this->assertEquals( 'minor', $t_issue->severity->name );
+		$this->assertDefaultSeverity( $t_issue->severity );
 		$this->assertEquals( 10, $t_issue->status->id );
 		$this->assertEquals( 'new', $t_issue->status->name );
 		$this->assertEquals( $this->userName, $t_issue->reporter->name );
@@ -135,7 +134,12 @@ class IssueAddTest extends SoapBase {
 	 * @return void
 	 */
 	public function testCreateIssueWithLongText() {
-		$t_long_text = str_repeat( 'x', config_get_global( 'max_textarea_length' ) );
+		$t_max_length = (int)$this->client->mc_config_get_string(
+			$this->userName,
+			$this->password,
+			'max_textarea_length'
+		);
+		$t_long_text = str_repeat( 'x', $t_max_length );
 
 		$t_fields = [ 'description', 'steps_to_reproduce', 'additional_information' ];
 		foreach( $t_fields as $t_field ) {
