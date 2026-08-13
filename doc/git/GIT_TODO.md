@@ -251,7 +251,17 @@ Follow-ups surfaced by the refactor:
 
 ---
 
-## 7. Open Decisions
+## 7. Remote Content Detection — ☐ planned
+
+Detect files added to an owned repository by external `git push` and register
+them as documents (the importer's `--update` semantics, made persistent,
+surfaced in the UI, and optionally automated via a signal-only post-receive
+hook).  Plan, doctrine refinement, policy rules, and work packages S1–S7:
+[GIT_DETECT_CONTENT.md](GIT_DETECT_CONTENT.md).
+
+---
+
+## 8. Open Decisions
 
 | Topic | Status | Notes |
 |-------|--------|-------|
