@@ -36,6 +36,17 @@ configuration checksum (including salt/credentials), schema version and user
 count. No reboot, snapshot-restored clean installation, Docker comparison,
 SMTP delivery, or full REST/SOAP regression has yet been performed.
 
+Production application settings were transferred on 2026-09-27. New native
+configurations append `admin/tools/templates/native-app-settings.php`; existing
+configuration remains untouched on installer reruns. The current local instance
+was updated explicitly, preserving all pre-existing local settings. The shared
+settings cover forms, severity, padding, news, sender branding, reauthentication,
+example placeholder text, optional AI configuration, and application logging
+(using `/var/log/doctis`). No production secrets were copied. Comparison checks
+matched 17 application settings, and the login form rendered successfully.
+Sample data has also been loaded locally: example project, 21 licences, and
+14 sample users in addition to the original administrator.
+
 Use `DOCTIS_BRANCH=nginx` for the GitHub installer test cycle; ordinary installs
 continue to default to `dev`. Pass this selection through bootstrap, dispatcher,
 and application checkout. Validate clean installation after iterative local work

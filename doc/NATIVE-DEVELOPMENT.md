@@ -89,3 +89,17 @@ the Git setup helper grants only its existing scoped application-pull command.
 The working clone is `/home/robert/Documents/doctis`. Update the deployed
 checkout deliberately with `git -C /var/www/html/doctis pull --ff-only`; rerunning
 the installer intentionally does not pull or migrate an existing schema.
+
+## Application settings
+
+New configurations include `admin/tools/templates/native-app-settings.php`
+(contents appended at creation). This matches production severity choices,
+form fields, padding, news navigation, sender branding, reauthentication policy,
+and example-project placeholder text. AI and application logging retain optional
+environment-based configuration, with logs under `/var/log/doctis`. Supplying
+these environment variables to FPM/cron requires explicit service configuration;
+exporting them in an interactive shell is insufficient.
+
+Existing configurations are preserved on installer reruns. The current local
+instance received these settings explicitly on 2026-09-27, retaining its database
+credentials, salt, URL, operator account, and disabled email/wiki/QMS settings.

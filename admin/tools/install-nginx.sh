@@ -77,6 +77,9 @@ SQL
 // No external mail is sent until SMTP is deliberately configured.
 \$g_enable_email_notification = OFF;
 PHP
+    # Append common application behavior only when creating a new configuration.
+    # Existing configurations remain operator-managed on installer reruns.
+    tail -n +2 admin/tools/templates/native-app-settings.php >> config/config_inc.php
     unset dbpass salt
     umask 022
 fi
