@@ -47,6 +47,15 @@ matched 17 application settings, and the login form rendered successfully.
 Sample data has also been loaded locally: example project, 21 licences, and
 14 sample users in addition to the original administrator.
 
+The administrative Git Pull feature was validated end to end on the native
+installation. The web action fast-forwarded `/var/www/html/doctis` from
+`a108b09c7` to `d8f69bf86`, matching `origin/nginx`; a second invocation reported
+an unchanged deployment and identical before/after SHAs. The UI now distinguishes
+an update from a successful no-op and shows the tracked upstream. This does not
+make Git pull a suitable Docker release mechanism: the supplied Docker build
+excludes `.git`, and changes in a container writable layer do not update its
+image and may be lost on replacement.
+
 Use `DOCTIS_BRANCH=nginx` for the GitHub installer test cycle; ordinary installs
 continue to default to `dev`. Pass this selection through bootstrap, dispatcher,
 and application checkout. Validate clean installation after iterative local work

@@ -86,6 +86,28 @@ SMTP delivery, coordinated backup/restore, and the Docker reference comparison.
 Database backup/rebuild/config-edit admin pages need separate portability review;
 the Git setup helper grants only its existing scoped application-pull command.
 
+### Administrative Git pull
+
+The System Operations Git Pull feature was validated end to end on 2026-09-27.
+An administrator invoked the web action while the deployed checkout was one
+commit behind `origin/nginx`. The web process used the scoped sudoers rule to
+run Git as `robert`, fast-forwarding the deployed checkout from `a108b09c7` to
+`d8f69bf86`. The resulting commit exactly matched the remote branch. A second
+web invocation returned “already up to date” with identical before/after SHAs.
+
+The result page now distinguishes an actual update from a successful no-op,
+shows the full commit before and after the pull, and records both SHAs in the
+PHP error log. The confirmation page shows the tracked upstream branch.
+
+This validates the feature for the native installation, where the deployed
+application is a persistent Git checkout. It does not validate self-update as a
+Docker deployment method. The supplied `.dockerignore` excludes `.git`, so the
+image normally contains copied source rather than a checkout. Changes made in a
+container writable layer also do not update the image and can disappear when
+the container is replaced. Production Docker updates should therefore publish
+and deploy a new image, unless IT has deliberately mounted a persistent Git
+checkout and accepts the operational consequences.
+
 The working clone is `/home/robert/Documents/doctis`. Update the deployed
 checkout deliberately with `git -C /var/www/html/doctis pull --ff-only`; rerunning
 the installer intentionally does not pull or migrate an existing schema.
