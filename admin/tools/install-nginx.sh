@@ -102,12 +102,25 @@ php_admin_flag[log_errors] = on
 php_admin_value[opcache.revalidate_freq] = 0
 POOL
 sed "s/@HOST@/$host/" admin/tools/templates/nginx-doctis.conf | sudo tee /etc/nginx/sites-available/doctis >/dev/null
+# Retire only Debian's packaged default symlink, not operator-created sites.
+if [[ -L /etc/nginx/sites-enabled/default && $(readlink -f /etc/nginx/sites-enabled/default) == /etc/nginx/sites-available/default ]]; then
+    sudo unlink /etc/nginx/sites-enabled/default
+fi
 sudo ln -sf /etc/nginx/sites-available/doctis /etc/nginx/sites-enabled/doctis
 sudo nginx -t
 sudo "php-fpm$phpver" -t
 sudo systemctl enable --now nginx "php$phpver-fpm"
 sudo systemctl restart "php$phpver-fpm"
 sudo systemctl reload nginx
+ready=false
+for attempt in {1..30}; do
+    if [[ $(curl -fsS --max-time 2 -H "Host: $host" http://127.0.0.1/doctis-health 2>/dev/null) == doctis-nginx ]]; then
+        ready=true
+        break
+    fi
+    sleep 1
+done
+[[ $ready == true ]] || fail 'nginx did not activate the Doctis site within 30 seconds.'
 # Restrict initial install to an empty DB. Do not silently upgrade an existing schema.
 tables=$(sudo mariadb --batch --skip-column-names -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='doctis';")
 if [[ $tables == 0 ]]; then
