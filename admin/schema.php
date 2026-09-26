@@ -813,6 +813,8 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	  `company` varchar(128) NOT NULL DEFAULT '',
 	  `phone` varchar(32) NOT NULL DEFAULT '',
 	  `department` varchar(64) NOT NULL DEFAULT '',
+	  `reports_to` int(10) unsigned NOT NULL DEFAULT 0,
+	  `alternative` varchar(191) NOT NULL DEFAULT '',
 	  `meeting_invite` tinyint(4) NOT NULL DEFAULT 0,
 	  `email_secondary` varchar(191) NOT NULL DEFAULT '',
 	  PRIMARY KEY (`id`),
@@ -820,7 +822,8 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	  UNIQUE KEY `idx_user_username` (`username`),
 	  KEY `idx_enable` (`enabled`),
 	  KEY `idx_access` (`access_level`),
-	  KEY `idx_email` (`email`)
+	  KEY `idx_email` (`email`),
+	  KEY `idx_reports_to` (`reports_to`)
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
