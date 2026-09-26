@@ -39,24 +39,7 @@ class UserProfileUpdateCommand extends Command {
 		}
 
 		$t_reports_to = (int)( $t_profile['reports_to'] ?? 0 );
-		if( $t_reports_to === $this->user_id ) {
-			throw new ClientException( 'A user cannot report to themselves', ERROR_INVALID_FIELD_VALUE, array( 'reports_to' ) );
-		}
-		if( $t_reports_to !== 0 && ( !user_exists( $t_reports_to ) || !user_is_enabled( $t_reports_to ) ) ) {
-			throw new ClientException( 'Reports To user is invalid', ERROR_INVALID_FIELD_VALUE, array( 'reports_to' ) );
-		}
-
-		# Reject reporting cycles by walking the proposed manager chain.
-		$t_manager_id = $t_reports_to;
-		$t_seen = array();
-		while( $t_manager_id !== 0 && !isset( $t_seen[$t_manager_id] ) ) {
-			if( $t_manager_id === $this->user_id ) {
-				throw new ClientException( 'Reports To would create a cycle', ERROR_INVALID_FIELD_VALUE, array( 'reports_to' ) );
-			}
-			$t_seen[$t_manager_id] = true;
-			$t_manager = user_cache_row( $t_manager_id, false );
-			$t_manager_id = $t_manager === false ? 0 : (int)( $t_manager['reports_to'] ?? 0 );
-		}
+		user_ensure_valid_reports_to( $this->user_id, $t_reports_to );
 
 		$t_meeting_invite = (int)( $t_profile['meeting_invite'] ?? 0 );
 		if( !in_array( $t_meeting_invite, array( 0, 1, 2 ), true ) ) {

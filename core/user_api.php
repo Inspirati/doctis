@@ -881,6 +881,38 @@ function user_get_enabled_rows() {
 }
 
 /**
+ * Ensure that a user's proposed manager is valid and does not create a cycle.
+ *
+ * @param integer $p_user_id    User whose manager is being changed.
+ * @param integer $p_reports_to Proposed manager user id, or 0 for none.
+ * @return void
+ * @throws ClientException
+ */
+function user_ensure_valid_reports_to( $p_user_id, $p_reports_to ) {
+	$c_user_id = (int)$p_user_id;
+	$c_reports_to = (int)$p_reports_to;
+
+	if( $c_reports_to === $c_user_id ) {
+		throw new ClientException( 'A user cannot report to themselves', ERROR_INVALID_FIELD_VALUE, array( 'reports_to' ) );
+	}
+	if( $c_reports_to !== 0 && ( !user_exists( $c_reports_to ) || !user_is_enabled( $c_reports_to ) ) ) {
+		throw new ClientException( 'Reports To user is invalid', ERROR_INVALID_FIELD_VALUE, array( 'reports_to' ) );
+	}
+
+	# Reject reporting cycles by walking the proposed manager chain.
+	$t_manager_id = $c_reports_to;
+	$t_seen = array();
+	while( $t_manager_id !== 0 && !isset( $t_seen[$t_manager_id] ) ) {
+		if( $t_manager_id === $c_user_id ) {
+			throw new ClientException( 'Reports To would create a cycle', ERROR_INVALID_FIELD_VALUE, array( 'reports_to' ) );
+		}
+		$t_seen[$t_manager_id] = true;
+		$t_manager = user_cache_row( $t_manager_id, false );
+		$t_manager_id = $t_manager === false ? 0 : (int)( $t_manager['reports_to'] ?? 0 );
+	}
+}
+
+/**
  * Get a user id from a username.
  *
  * @param string $p_username The username to retrieve data for.
