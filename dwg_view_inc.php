@@ -1031,7 +1031,7 @@ $t_git_head_sha      = $t_git_head_info ? $t_git_head_info['sha']      : null;
 $t_git_head_date     = $t_git_head_info ? $t_git_head_info['date']     : null;
 $t_git_head_author   = $t_git_head_info ? $t_git_head_info['author']   : null;
 $t_git_head_filename = $t_git_head_info ? $t_git_head_info['filename'] : null;
-$t_collapse_block = is_collapsed( 'primary_document' );
+$t_collapse_block = is_collapsed( 'primary_document', true );
 $t_block_css = $t_collapse_block ? 'collapsed' : '';
 $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 ?>
@@ -1220,7 +1220,7 @@ if( $t_flags['relationships_show'] ) {
 # User list monitoring the dwg
 if( $t_flags['monitor_show'] ) {
 	// $t_collapse_block = is_collapsed( 'monitoring' );
-	$t_collapse_block = is_collapsed( 'monitors' );
+	$t_collapse_block = is_collapsed( 'monitors', true );
 	$t_block_css = $t_collapse_block ? 'collapsed' : '';
 	$t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 ?>
@@ -1301,7 +1301,7 @@ if( $t_flags['monitor_show'] ) {
 
 # Licenses applied to the dwg
 if( $t_flags['license_show'] ) {
-	$t_collapse_block = is_collapsed( 'licenses' );
+	$t_collapse_block = is_collapsed( 'licenses', true );
 	$t_block_css = $t_collapse_block ? 'collapsed' : '';
 	$t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 ?>
@@ -1540,7 +1540,7 @@ if( $t_flags['history_show'] && $f_history ) {
 	<div class="col-md-12 col-xs-12">
 		<div class="space-10"></div>
 <?php
-	$t_collapse_block = is_collapsed( 'history' );
+	$t_collapse_block = is_collapsed( 'history', true );
 	$t_block_css = $t_collapse_block ? 'collapsed' : '';
 	$t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 	$t_history = history_dwg_get_events_array( $f_dwg_id );
@@ -1768,7 +1768,7 @@ function dwg_view_relationship_view_box( $p_bug_id, $p_can_update ) {
 	<div class="col-md-12 col-xs-12">
 	<div class="space-10"></div>
 <?php
-	$t_collapse_block = is_collapsed( 'relationships' );
+	$t_collapse_block = is_collapsed( 'relationships', true );
 	$t_block_css = $t_collapse_block ? 'collapsed' : '';
 	$t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 ?>
@@ -2102,4 +2102,3 @@ function dwg_view_action_buttons( $p_bug_id, $p_flags ) {
 
 	echo '</div>';
 }
-
