@@ -60,12 +60,32 @@ scripts, uploads, hidden files and internal directories are not served directly.
 Downloads use the application's authorization checks. Existing Apache must be
 stopped explicitly before running the nginx system installation.
 
-## Validation status
+## Validation status — 2026-09-27
 
-The system phase completed on the local VM with PHP 8.4.26 and MariaDB 11.8.6.
-nginx, PHP-FPM, MariaDB, and cron are active; default nginx and FPM configuration
-checks pass. Shell syntax and whitespace checks cover the new scripts. Full application
-installation, nginx routing, fresh schema initialization, rerun preservation,
-and Git/API tests must pass before this profile is considered ready. Database
-backup/rebuild/config-edit admin pages still need separate portability review;
+Published branch: `nginx`. Runtime code tested: `86170d2fa`.
+Local URL: `http://10.0.0.94/doctis/`.
+
+- GitHub bootstrap fetched the selected branch and installed dependencies; PHP
+  platform requirements passed on PHP 8.4.26/MariaDB 11.8.6/nginx 1.26.3.
+- Initial schema installation succeeded after retrying an nginx reload race.
+  The installer now waits for its site health response before installation and
+  retires the packaged default nginx site to prevent alternate-host exposure.
+- A fresh GitHub bootstrap download completed the full rerun with exit status 0.
+  Configuration checksum, schema version and user count were unchanged.
+- Administrator login reached the authenticated dashboard without application
+  errors. SOAP WSDL returned 200. Config, Git metadata, admin scripts, uploads,
+  and REST internals returned 403; unauthenticated Git returned 401.
+- Git mechanics: 15 checks passed. Application/Git mapping integration:
+  59 passed, 0 failed; its synthetic fixtures were removed by the test.
+- nginx/FPM configuration checks passed; nginx, FPM, MariaDB and cron are active.
+  The scheduled email command completed as www-data; outbound mail is disabled.
+
+Still to validate: snapshot-restored clean installation, reboot recovery, LAN
+source installation, authenticated REST/SOAP workflows, Git HTTP push, captured
+SMTP delivery, coordinated backup/restore, and the Docker reference comparison.
+Database backup/rebuild/config-edit admin pages need separate portability review;
 the Git setup helper grants only its existing scoped application-pull command.
+
+The working clone is `/home/robert/Documents/doctis`. Update the deployed
+checkout deliberately with `git -C /var/www/html/doctis pull --ff-only`; rerunning
+the installer intentionally does not pull or migrate an existing schema.

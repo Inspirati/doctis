@@ -15,14 +15,26 @@ work on this local Debian 13.2 VM. The local and NFS development checkouts were
 synchronized at `8939aea32` on `dev`; implementation now uses branch `nginx`
 in this checkout. Preserve `/home/robert/html/doctis` on vaio unchanged.
 
-The `robert` account already has `NOPASSWD: ALL` sudo access. Codex sandbox
-approvals remain separate and are required for system changes and Git metadata.
-No sudoers changes are needed. The nginx system phase has installed server
-packages successfully; application installation and the GitHub test cycle are
-pending the commit identity needed to publish the new branch.
-Available package candidates are PHP 8.4, MariaDB 11.8, and nginx 1.26.3;
-these differ from the Docker PHP 8.2/MariaDB 10.11 baseline. The owner accepted these Debian package versions for local testing; retain
-Docker PHP 8.2/MariaDB 10.11 as a separate compatibility baseline.
+The `robert` account has `NOPASSWD: ALL` sudo access, and the owner has enabled
+full access for this Codex session. No sudoers privilege expansion was needed.
+The native nginx profile is committed and pushed to GitHub branch `nginx`.
+The GitHub bootstrap has installed Doctis at `/var/www/html/doctis`, serving
+`http://10.0.0.94/doctis/`, and a fresh bootstrap download completed a rerun.
+Application code tested: `86170d2fa`; later documentation commits may follow.
+
+Installed runtime: nginx 1.26.3, PHP 8.4.26, MariaDB 11.8.6. The owner accepted
+these Debian 13 versions; retain Docker PHP 8.2/MariaDB 10.11 as a separate
+compatibility baseline. DokuWiki, reference MantisBT and phpMyAdmin were omitted.
+Notifications are disabled until test SMTP is explicitly configured.
+
+Verified: nginx/FPM configuration, initial schema creation (after retrying an
+nginx reload race, now addressed by a readiness check), successful login,
+15 Git mechanics tests, 59 application/Git mapping tests, internal-path HTTP
+denials, SOAP WSDL availability, unauthenticated Git rejection, and the email
+queue command. Repeated GitHub bootstrap execution preserved the application
+configuration checksum (including salt/credentials), schema version and user
+count. No reboot, snapshot-restored clean installation, Docker comparison,
+SMTP delivery, or full REST/SOAP regression has yet been performed.
 
 Use `DOCTIS_BRANCH=nginx` for the GitHub installer test cycle; ordinary installs
 continue to default to `dev`. Pass this selection through bootstrap, dispatcher,
@@ -61,8 +73,9 @@ mounts, and image upgrades remain distinct and need checks in the reference VM.
 - Doctis is a PHP/MariaDB application derived from MantisBT, with document and
   issue workflows, Git-backed document storage, REST/SOAP APIs, and wiki integration.
 - The actual external bootstrap paths are `../../install.sh` and
-  `../../get-doctis.sh` (both found under `/home/robert/`). The former is
-  byte-for-byte identical to `admin/tools/install.sh`.
+  `../../get-doctis.sh` (both found under `/home/robert/`). The former matched
+  `admin/tools/install.sh` at the initial assessment; this branch now adds source
+  selection and error handling, so the external copy is no longer equivalent.
 - `../../get-doctis.sh` is an older LAN wrapper: it fetches `install-option.sh`,
   `install-system.sh`, and `install-target.sh` from the root of `10.0.0.10`, only
   when each local file is absent, then invokes the dispatcher. It does not set
@@ -171,13 +184,14 @@ Base image tags, package versions, and DokuWiki remain mutable build inputs.
 
 ### Compatibility issues requiring attention
 
-1. **Git setup assumes Apache.** The current `admin/tools/doctis-git-setup.sh`
+1. **Reference Git setup assumes Apache.** At the original assessment, `admin/tools/doctis-git-setup.sh`
    invokes `a2enmod`, `a2enconf`, `apache2ctl`, and `systemctl reload apache2`
    when its bundled `git-serve.conf` exists. It can therefore fail in this nginx
    image. The copied script matches this checkout, and the entrypoint invokes
    it with failure downgraded to a warning. This confirms the mismatch is not
    resolved by a separate supplied Git setup implementation. Separate shared
-   storage setup from server-specific routing in subsequent work.
+   storage setup from server-specific routing. The `nginx` branch now skips
+   Apache routing when `DOCTIS_WEB_SERVER=nginx`; Apache remains the default.
 2. **Routing and access rules need verification.** Inspect all repository
    `.htaccess` files and translate required behavior into nginx rules. Cover
    REST rewrites, restricted directories, PHP execution, and `/git/` gateway
