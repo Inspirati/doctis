@@ -66,6 +66,7 @@ print_my_view_menu( 'my_view_org_page.php' );
 .org-chart li::before { right:50%; }
 .org-chart li::after { border-left:1px solid #9eb6ce; left:50%; }
 .org-chart li:first-child::before, .org-chart li:last-child::after, .org-chart > ul > li::before, .org-chart > ul > li::after { border:0; }
+.org-chart li > ul > li:last-child::before { border-right:1px solid #9eb6ce; }
 .org-chart li:only-child { padding-top:0; }
 .org-chart li:only-child::before, .org-chart li:only-child::after { display:none; }
 .org-chart li > ul::before { border-left:1px solid #9eb6ce; content:""; height:24px; left:50%; position:absolute; top:0; }
