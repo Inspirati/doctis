@@ -57,9 +57,10 @@ layout_page_begin( 'my_view_page.php', true );
 print_my_view_menu( 'my_view_org_page.php' );
 ?>
 <style>
-.org-chart { overflow-x:auto; padding:15px; text-align:center; }
-.org-chart ul { display:flex; justify-content:center; gap:18px; list-style:none; margin:18px 0 0; padding:0; align-items:flex-start; }
-.org-chart li { min-width:180px; }
+.org-chart { max-width:100%; overflow-x:auto; padding:15px; text-align:center; }
+.org-chart ul { align-items:flex-start; display:inline-flex; gap:18px; justify-content:center; list-style:none; margin:18px 0 0; padding:0; width:max-content; }
+.org-chart > ul { min-width:100%; }
+.org-chart li { flex:0 0 auto; min-width:180px; }
 .org-card { background:#fff; border:1px solid #9eb6ce; border-radius:4px; box-shadow:0 1px 3px rgba(0,0,0,.12); display:inline-block; min-width:180px; padding:10px 14px; }
 .org-name { font-size:14px; font-weight:bold; }
 .org-meta { color:#777; font-size:11px; margin-top:3px; }
