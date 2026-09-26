@@ -1379,7 +1379,7 @@ function dwg_copy( $p_bug_id, $p_target_project_id = null, $p_copy_custom_fields
 }
 
 /**
- * Moves an issue from a project to another.
+ * Moves a document from one project to another.
  *
  * @todo Validate with sub-project / category inheritance scenarios.
  *
@@ -1391,10 +1391,10 @@ function dwg_copy( $p_bug_id, $p_target_project_id = null, $p_copy_custom_fields
  * @access public
  */
 function dwg_move( $p_bug_id, $p_target_project_id ) {
-	# Attempt to move disk based attachments to new project file directory.
-	file_move_bug_attachments( $p_bug_id, $p_target_project_id );
+	# Attempt to move disk based document attachments to the new project directory.
+	file_dwg_move_dwg_attachments( $p_bug_id, $p_target_project_id );
 
-	# Move the issue to the new project.
+	# Move the document to the new project.
 	dwg_set_field( $p_bug_id, 'project_id', $p_target_project_id );
 
 	# Update the category if needed

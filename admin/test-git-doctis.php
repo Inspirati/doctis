@@ -19,6 +19,7 @@ require_once( $t_mantis_dir . 'core.php' );
 require_api( 'authentication_api.php' );
 require_api( 'category_api.php' );
 require_api( 'config_api.php' );
+require_api( 'dwg_api.php' );
 require_api( 'file_dwg_api.php' );
 require_api( 'project_api.php' );
 require_api( 'project_hierarchy_api.php' );
@@ -153,6 +154,12 @@ $t_dwg1 = make_dwg( $t_parent, 1, 'GitTest doc 1' );
 $t_dwg2 = make_dwg( $t_child, 1, 'GitTest doc 2 (child project)' );
 $t_cleanup['dwg_ids'][] = $t_dwg1;
 $t_cleanup['dwg_ids'][] = $t_dwg2;
+
+# Regression: dwg_move() must use the document attachment API. Calling the
+# issue attachment API raises ERROR_BUG_NOT_FOUND when no issue shares the ID.
+dwg_move( $t_dwg2, $t_parent );
+check( (int)dwg_get_field( $t_dwg2, 'project_id' ) === $t_parent,
+	'document moves between projects without issue lookup' );
 
 $t_tmp = write_tmp( "content v1\n" );
 file_dwg_primary_add( $t_dwg1, 1, $t_tmp, 'spec.md', 11, 'text/markdown', 'initial' );
