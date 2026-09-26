@@ -25,6 +25,19 @@ green = success/diagnostic, yellow = warning, red = failure).
 
 ---
 
+## Testing an installation branch
+
+The bootstrap, dispatcher, and Doctis clone accept `DOCTIS_BRANCH` (default
+`dev`). For the nginx development branch, use `DOCTIS_BRANCH=nginx` when
+invoking the bootstrap downloaded from that branch. This selects source code;
+select `DOCTIS_WEB_SERVER=nginx` separately for the native nginx runtime.
+See [native development installation](../../doc/NATIVE-DEVELOPMENT.md).
+
+Use a fresh staging directory for each downloaded installation run: the legacy
+dispatcher reuses existing sub-scripts. For LAN installation, the served scripts
+must also come from the intended checkout; `DOCTIS_BRANCH` selects the cloned
+application branch but does not switch the LAN server's working tree.
+
 ## Installation scripts
 
 ### `install.sh`

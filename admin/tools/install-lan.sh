@@ -1,4 +1,8 @@
 #!/bin/bash
+set -euo pipefail
+
+# Shared source branch for bootstrap scripts and application checkout.
+export DOCTIS_BRANCH="${DOCTIS_BRANCH:-dev}"
 #
 # install-lan.sh
 #
@@ -51,9 +55,7 @@ echo "  domain  : ${domain}"
 wget --quiet -O install-option.sh "${LAN_SCRIPT_ROOT}/install-option.sh"
 chmod +x install-option.sh
 
-cmd="./install-option.sh install all \"${domain}\" \"${mysql_pass}\" \"${email_addr}\" \"${email_hash}\" \"doctis\""
-echo "Running: $cmd"
-eval "$cmd" | tee logfile.txt
+./install-option.sh install all "${domain}" "${mysql_pass}" "${email_addr}" "${email_hash}" "doctis" | tee logfile.txt
 
 # Example of the command line produced above:
 # ./install-option.sh install all "10.0.0.10" "password" "my.email@gmail.com" "GmailAppPassword" "doctis"
