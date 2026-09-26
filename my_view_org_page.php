@@ -58,10 +58,18 @@ print_my_view_menu( 'my_view_org_page.php' );
 ?>
 <style>
 .org-chart { max-width:100%; overflow-x:auto; padding:15px; text-align:center; }
-.org-chart ul { align-items:flex-start; display:inline-flex; gap:18px; justify-content:center; list-style:none; margin:18px 0 0; padding:0; width:max-content; }
-.org-chart > ul { min-width:100%; }
-.org-chart li { flex:0 0 auto; min-width:180px; }
-.org-card { background:#fff; border:1px solid #9eb6ce; border-radius:4px; box-shadow:0 1px 3px rgba(0,0,0,.12); display:inline-block; min-width:180px; padding:10px 14px; }
+.org-chart ul { align-items:flex-start; display:flex; justify-content:center; list-style:none; margin:0 auto; padding:24px 0 0; position:relative; width:max-content; }
+.org-chart > ul { min-width:100%; padding-top:0; }
+.org-chart li { align-items:center; display:flex; flex:0 0 auto; flex-direction:column; padding:24px 10px 0; position:relative; }
+.org-chart > ul > li { padding-top:0; }
+.org-chart li::before, .org-chart li::after { border-top:1px solid #9eb6ce; content:""; height:24px; position:absolute; top:0; width:50%; }
+.org-chart li::before { right:50%; }
+.org-chart li::after { border-left:1px solid #9eb6ce; left:50%; }
+.org-chart li:first-child::before, .org-chart li:last-child::after, .org-chart > ul > li::before, .org-chart > ul > li::after { border:0; }
+.org-chart li:only-child { padding-top:0; }
+.org-chart li:only-child::before, .org-chart li:only-child::after { display:none; }
+.org-chart li > ul::before { border-left:1px solid #9eb6ce; content:""; height:24px; left:50%; position:absolute; top:0; }
+.org-card { background:#fff; border:1px solid #9eb6ce; border-radius:4px; box-shadow:0 1px 3px rgba(0,0,0,.12); min-width:180px; padding:10px 14px; }
 .org-name { font-size:14px; font-weight:bold; }
 .org-meta { color:#777; font-size:11px; margin-top:3px; }
 .org-external { background:#f6f6f6; border-style:dashed; }
