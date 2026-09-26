@@ -35,7 +35,7 @@ function org_chart_render_user( $p_user_id, array $p_path = array() ) {
 	?>
 	<li>
 		<div class="org-card">
-			<div class="org-name"><?php echo string_html_specialchars( $t_name ) ?></div>
+			<div class="org-name"><a href="manage_user_edit_page.php?user_id=<?php echo (int)$p_user_id ?>"><?php echo string_html_specialchars( $t_name ) ?></a></div>
 			<?php if( !is_blank( $t_user['position_title'] ?? '' ) ): ?>
 			<div><?php echo string_html_specialchars( $t_user['position_title'] ) ?></div>
 			<?php endif; ?>
