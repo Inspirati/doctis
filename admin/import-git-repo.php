@@ -21,6 +21,7 @@
  *   --frontmatter <yes|no>  Parse YAML frontmatter from matched files (default: yes)
  *   --filename-parse <y|n>  Parse number/revision/title from filenames (default: no)
  *   --category-from <mode>  directory | none (default: directory — D7 path-as-category)
+ *   --project-visibility <private|public>  New project's visibility (default: private)
  *   --update                Re-import into an existing project set: register new files,
  *                           skip registered paths, report paths missing at HEAD
  *   --dry-run               Print the full would-be result without writing anything
@@ -42,7 +43,7 @@
 $t_options = getopt( '', array(
 	'source:', 'user:', 'name:', 'description:', 'directories:', 'patterns:',
 	'subprojects:', 'subdir-marker:', 'frontmatter:', 'filename-parse:',
-	'category-from:', 'update', 'dry-run', 'help',
+	'category-from:', 'project-visibility:', 'update', 'dry-run', 'help',
 ) );
 
 if( isset( $t_options['help'] ) || !isset( $t_options['source'] ) ) {
@@ -73,6 +74,12 @@ use Mantis\Exceptions\ClientException;
 
 $g_dry    = isset( $t_options['dry-run'] );
 $g_update = isset( $t_options['update'] );
+$t_project_visibility = strtolower( $t_options['project-visibility'] ?? 'private' );
+if( !in_array( $t_project_visibility, array( 'private', 'public' ), true ) ) {
+	fwrite( STDERR, "ERROR: --project-visibility must be private or public.\n" );
+	exit( 1 );
+}
+$g_import_project_view_state = $t_project_visibility === 'private' ? VS_PRIVATE : VS_PUBLIC;
 
 $t_source = rtrim( $t_options['source'], '/' );
 $t_login  = $t_options['user'] ?? 'administrator';
@@ -143,6 +150,7 @@ $g_cfg = array(
 say( '── Phase A: repository adoption ─────────────────────────────────────────' );
 say( 'Source   : ' . $t_source );
 say( 'Project  : ' . $g_cfg['name'] . ( $g_update ? ' (update mode)' : '' ) . ( $g_dry ? '  [DRY RUN]' : '' ) );
+say( 'Visibility: ' . $t_project_visibility );
 
 if( !is_dir( $t_source ) ) {
 	abort( 'Source does not exist: ' . $t_source );
@@ -177,7 +185,7 @@ say( 'Branch   : ' . $t_default_branch . '   HEAD: ' . substr( $t_head, 0, 8 ) )
 
 /** Create (or in update/dry mode, resolve) a project by name; returns id (0 in dry-run when absent). */
 function project_ensure( string $p_name, string $p_description, ?int $p_parent_id ): int {
-	global $g_dry, $g_update;
+	global $g_dry, $g_update, $g_import_project_view_state;
 	$t_existing = project_get_id_by_name( $p_name, /* default */ 0 );
 	if( $t_existing > 0 ) {
 		if( !$g_update ) {
@@ -189,7 +197,8 @@ function project_ensure( string $p_name, string $p_description, ?int $p_parent_i
 		say( "  [dry-run] would create project '$p_name'" . ( $p_parent_id !== null ? ' (sub-project)' : '' ) );
 		return 0;
 	}
-	$t_id = project_create( $p_name, $p_description, /* status: development */ 10 );
+	$t_id = project_create( $p_name, $p_description, /* status: development */ 10,
+		$g_import_project_view_state );
 	if( $p_parent_id !== null && $p_parent_id > 0 ) {
 		project_hierarchy_add( $t_id, $p_parent_id );
 	}
