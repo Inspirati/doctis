@@ -4,8 +4,8 @@ Status: **DRAFT / PLANNING** — nothing in this document is implemented yet.
 
 **Design amendment (2026-09-27):** This plan does not require one document
 per Git commit. The option of enforcing that rule in `pre-receive`, and why
-it does not make a commit SHA a document identity, is assessed in
-[DOCUMENT_IDENTITY_AND_LOCATION.md](../DOCUMENT_IDENTITY_AND_LOCATION.md).
+it does not by itself make a commit SHA a stable document identity, is
+assessed in [DOCUMENT_IDENTITY_AND_LOCATION.md](../DOCUMENT_IDENTITY_AND_LOCATION.md).
 Also, discovery must compare current HEAD paths against registered paths on
 each authoritative scan (or persist pending candidates). A diff only over
 `last_scanned_sha..HEAD` loses an unregistered candidate after a scan that

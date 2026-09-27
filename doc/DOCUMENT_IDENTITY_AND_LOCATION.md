@@ -1,8 +1,10 @@
 # Document identity, reference, location, and revision
 
-Assessment: 2026-09-27. This is a design recommendation, not an implemented
+Assessment: 2026-09-27. This is a design discussion, not an implemented
 schema or data migration. The disposable native VM still holds the 99-file
-HCRQMS repeat import for evaluation.
+HCRQMS repeat import for evaluation. **Interim decision:** keep the importer
+and its Git-SHA Reference behaviour unchanged while final field definitions
+are considered.
 
 ## The distinction to preserve
 
@@ -17,10 +19,12 @@ A Git commit SHA identifies a repository snapshot, not a particular document.
 The one-commit HCRQMS snapshot gives all 99 registered files the same SHA;
 `git_path` distinguishes the files at that commit. A later revision changes
 the SHA without changing the document's identity or its source reference.
-Therefore Git SHA should not be stored in `documents.reference` as the
-document's identifier. The September 2026 import did so deliberately for
-the trial; it exposed this model conflict and should not be copied into a
-production migration without a policy change.
+Nevertheless, the current Git-SHA Reference is a usable *version locator*:
+the Doctis hyperlink includes the document ID and downloads its registered
+file at the stored SHA/path. Its repetition across this one-commit import is
+visually unusual, but does not make those links ambiguous. The unresolved
+question is whether Reference is meant to be a version locator, a source
+identifier, a Doctis accession code, or something else across storage types.
 
 The database has ordinary, **non-unique** indexes on `documents.reference`
 and `documents.number`, and allows empty values. It already has
@@ -44,7 +48,7 @@ need a source-data decision; the missing values need either authoritative
 numbers or an explicit fallback. No identifier should be fabricated silently
 to look like a source-issued `doc_id`.
 
-## Recommended policy
+## Design considerations and interim decision
 
 Keep the **Doctis record ID** as the guaranteed unique selector. If users need
 a portable, human-readable Doctis citation, add a separately named immutable
@@ -55,15 +59,17 @@ edition while multiple physical copies share it; a correspondence number
 may recur between senders. Warn about likely duplicates within the relevant
 scheme/project, but do not impose a global unique constraint on these values.
 
-For HCRQMS, keep the literal `doc_id` in `documents.number`. A decision is
-needed on whether `documents.reference` should display that same value,
-display a Doctis accession code, or remain an optional source reference while
-the accession code appears alongside it. Do not use Git SHA there. The
-source-data duplicate and 34 missing numbers should be reported during import
-and resolved or explicitly accepted before production cutover.
+For HCRQMS, keep the literal `doc_id` in `documents.number`. For now,
+`documents.reference` remains the registered Git SHA. Future options include
+keeping that Git-specific version locator, displaying the source `doc_id`, or
+showing a separate Doctis accession code alongside either value. The
+source-data duplicate and 34 missing numbers should be reported and resolved
+or explicitly accepted before production cutover if `doc_id` gains an
+identity role. No source-issued identifier should be fabricated silently.
 
 Use `dwg_primary_file.git_sha` and `git_path` to locate an exact Git file; keep
-approval/promotion separate. Make `documents.link_url` the canonical URL for
+approval/promotion separate. An intranet publication URL fits the URL field
+better than Reference. `documents.link_url` is a candidate canonical URL for
 external electronic material, with explicit `http`/`https` validation and safe
 output; reconcile the existing `dwg.link_url` values and update the read path.
 For physical material, add a location/custodian field or a typed location
@@ -81,9 +87,10 @@ the Reference string.
 2. Audit existing records and import sources for missing/duplicate source
    identifiers and external links. Define namespace/scope and collision
    handling before adding any uniqueness constraint.
-3. Stop Git registration/upload/sync from overwriting the source Reference;
-   preserve SHA in the primary-file row and approval refs. Update the importer
-   to map `doc_id` under the chosen policy and report missing/duplicate IDs.
+3. Once Reference semantics are chosen, adjust Git registration/upload/sync
+   only if that policy requires it. Keep SHA in the primary-file row and
+   approval refs either way. Update the importer to map `doc_id` under the
+   chosen policy and report missing/duplicate IDs.
 4. Select one canonical URL field, expose it on create/view/edit, and make
    normal and API updates persist document metadata with validation/history.
    Add physical location support separately. Replace heuristic Reference links
@@ -96,8 +103,8 @@ the Reference string.
 ## Would one document per Git commit make the SHA a Reference?
 
 It could make *introducing commit IDs* distinct for newly added documents,
-but it does not make a commit ID a stable document identity. A later edit
-produces a new commit ID for the same document; another document's commit
+but it does not make a commit ID a stable document identity by itself. A later
+edit produces a new commit ID for the same document; another document's commit
 also advances repository HEAD. The current view compares each document's
 saved `git_sha` with repository HEAD, so **one later commit makes every other
 document appear "updated" even when its blob is unchanged**. Compare the

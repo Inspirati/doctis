@@ -10,7 +10,9 @@ The identity/reference/location conflict uncovered by that trial is assessed
 in [DOCUMENT_IDENTITY_AND_LOCATION.md](../DOCUMENT_IDENTITY_AND_LOCATION.md).
 The 2026-09-27 repeat import now gives every imported document its Git SHA in
 `documents.reference`, without creating an approved Git ref. Approval remains
-a separate Doctis action.
+a separate Doctis action. **Interim design decision:** retain this importer
+behaviour and the current test data while the long-term meanings of Reference,
+document number, URL, and Doctis identity are settled.
 
 Status: ☐ todo · ◐ in progress · ⊘ explicitly deferred · ☑ done
 

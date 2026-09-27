@@ -9,6 +9,11 @@ pins were deliberately deferred. The original GitHub repository and local
 source clone remain unchanged. This local import does not itself archive
 GitHub or constitute a production cutover.
 
+Interim design decision: leave this import and the importer unchanged while
+Doctis's long-term Reference, document number, URL, and identity semantics are
+resolved. The shared SHA is a version locator; each Reference hyperlink still
+opens the correct registered file through its Doctis document ID.
+
 ## Scope and repository ownership
 
 This is a one-way migration. Doctis takes ownership of a new repository and
