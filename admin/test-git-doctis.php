@@ -191,6 +191,12 @@ check( bare_git( $t_bare, 'ls-tree --name-only HEAD ' . escapeshellarg( $t_row['
 	'file still present at HEAD after same-name replace' );
 $t_content = file_dwg_primary_get_content( $t_dwg1 );
 check( $t_content !== false && $t_content['content'] === "content v2\n", 'retrieve returns new content' );
+db_param_push();
+$t_revision_count = (int)db_result( db_query(
+	'SELECT COUNT(*) FROM {dwg_history} WHERE dwg_id=' . db_param() . ' AND field_name=\'primary_document\'',
+	array( $t_dwg1 )
+) );
+check( $t_revision_count === 2, 'initial upload and same-name replacement appear in document history' );
 
 # ── Step 6: replace with NEW filename (sticky directory) ────────────────────
 echo "Step 6: replace with new filename\n";
@@ -202,6 +208,16 @@ check( bare_git( $t_bare, 'ls-tree --name-only HEAD ' . escapeshellarg( $t_dwg1 
 	'old path removed from HEAD' );
 check( bare_git( $t_bare, 'ls-tree --name-only HEAD ' . escapeshellarg( $t_row['git_path'] ) ) === $t_row['git_path'],
 	'new path present at HEAD' );
+check( $t_row['git_sha'] === bare_git( $t_bare, 'rev-parse HEAD' ),
+	'renamed replacement records final HEAD commit' );
+$t_content = file_dwg_primary_get_content( $t_dwg1 );
+check( $t_content !== false && $t_content['content'] === "content v3\n", 'renamed replacement serves new content' );
+db_param_push();
+$t_revision_count = (int)db_result( db_query(
+	'SELECT COUNT(*) FROM {dwg_history} WHERE dwg_id=' . db_param() . ' AND field_name=\'primary_document\'',
+	array( $t_dwg1 )
+) );
+check( $t_revision_count === 3, 'renamed replacement appears in document history' );
 
 # ── Step 7: register-by-reference ────────────────────────────────────────────
 echo "Step 7: register-by-reference (no upload)\n";

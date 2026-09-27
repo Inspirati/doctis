@@ -98,6 +98,7 @@ if( $f_type === 'dwg_primary' ) {
 	}
 
 	http_security_headers();
+	http_caching_headers( false );
 
 	$t_result = file_dwg_primary_get_content( $f_dwg_id );
 	if( $t_result === false ) {
@@ -151,6 +152,7 @@ if( $f_type === 'dwg_primary_head' ) {
 	}
 
 	http_security_headers();
+	http_caching_headers( false );
 
 	$t_result = file_dwg_primary_get_head_content( $f_dwg_id );
 	if( $t_result === false ) {
@@ -202,6 +204,7 @@ if( $f_type === 'dwg_primary_at_sha' ) {
 	}
 
 	http_security_headers();
+	http_caching_headers( false );
 
 	$t_result = file_dwg_primary_get_content_at_sha( $f_dwg_id, $f_sha );
 	if( $t_result === false ) {

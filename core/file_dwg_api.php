@@ -1695,6 +1695,16 @@ function file_dwg_get_max_file_size() {
 # =============================================================================
 
 /**
+ * Describe a registered primary file in the document history.
+ *
+ * @param array|null $p_row Primary file row, or null before first registration
+ * @return string
+ */
+function file_dwg_primary_history_value( $p_row ) {
+	return $p_row === null ? '' : $p_row['git_sha'] . ' ' . $p_row['filename'];
+}
+
+/**
  * Return true if a primary document file exists for the given dwg.
  *
  * @param int $p_dwg_id
@@ -1860,6 +1870,7 @@ function file_dwg_primary_path_in_use( int $p_dwg_id, int $p_project_id, string 
  */
 function file_dwg_primary_register( int $p_dwg_id, int $p_user_id, string $p_git_path, string $p_sha = '', string $p_description = '', bool $p_pin = true, string $p_file_type = '' ): array {
 	$t_project_id = (int)dwg_get_field( $p_dwg_id, 'project_id' );
+	$t_previous = file_dwg_primary_get( $p_dwg_id );
 
 	$t_git_path = file_dwg_git_path_sanitize( $p_git_path );
 	if( $t_git_path === false ) {
@@ -1956,6 +1967,13 @@ function file_dwg_primary_register( int $p_dwg_id, int $p_user_id, string $p_git
 		file_dwg_git_pin_approved( $p_dwg_id, $t_sha );
 	}
 
+	history_dwg_log_event_direct(
+		$p_dwg_id, 'primary_document',
+		file_dwg_primary_history_value( $t_previous ),
+		file_dwg_primary_history_value( array( 'git_sha' => $t_sha, 'filename' => $t_filename ) ),
+		$p_user_id
+	);
+
 	return array(
 		'git_sha'  => $t_sha,
 		'git_path' => $t_git_path,
@@ -1980,7 +1998,7 @@ function file_dwg_primary_register( int $p_dwg_id, int $p_user_id, string $p_git
  * @param int    $p_filesize      File size in bytes
  * @param string $p_file_type     MIME type
  * @param string $p_description   Optional revision note
- * @return void
+ * @return array{git_sha: string, git_path: string, filename: string, filesize: int}
  */
 function file_dwg_primary_add( $p_dwg_id, $p_user_id, $p_tmp_file, $p_filename, $p_filesize, $p_file_type, $p_description = '' ) {
 	$t_project_id = (int)dwg_get_field( $p_dwg_id, 'project_id' );
@@ -2039,9 +2057,12 @@ function file_dwg_primary_add( $p_dwg_id, $p_user_id, $p_tmp_file, $p_filename, 
 			'git_path'   => $t_existing['git_path'],
 			'user_id'    => $p_user_id,
 		) );
+		# The deletion creates a second commit. Register the final HEAD so the
+		# On Record and Draft rows refer to the same resulting tree.
+		$t_git_sha = '';
 	}
 
-	file_dwg_primary_register(
+	return file_dwg_primary_register(
 		(int)$p_dwg_id, (int)$p_user_id, $t_git_path, $t_git_sha, $p_description,
 		/* pin */ true, $p_file_type
 	);
@@ -2261,6 +2282,12 @@ function file_dwg_primary_sync_head( int $p_dwg_id, int $p_acting_user_id ): voi
 	# Pin the newly approved SHA as a permanent git ref so it can never be
 	# orphaned by later branch history.
 	file_dwg_git_pin_approved( $p_dwg_id, $t_head['sha'] );
+	history_dwg_log_event_direct(
+		$p_dwg_id, 'primary_document',
+		file_dwg_primary_history_value( $t_row ),
+		file_dwg_primary_history_value( array( 'git_sha' => $t_head['sha'], 'filename' => $t_row['filename'] ) ),
+		$p_acting_user_id
+	);
 }
 
 /**

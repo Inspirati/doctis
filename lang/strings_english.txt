@@ -2235,6 +2235,7 @@ $s_primary_document_description_hint   = 'e.g. Initial upload, Rev A, corrected 
 $s_primary_document_upload_button      = 'Upload Document';
 $s_primary_document_replace            = 'Upload New Revision';
 $s_primary_document_replace_button     = 'Replace Document';
+$s_primary_document_upload_complete     = 'Primary document uploaded: %1$s (revision %2$s).';
 $s_primary_document_none               = 'No document file uploaded.';
 $s_primary_document_approved           = 'On Record';
 $s_primary_document_draft              = 'Draft';

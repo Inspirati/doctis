@@ -624,6 +624,9 @@ function history_dwg_localize_field_name( $p_field_name ) {
 		case 'link_url':
 			$t_field_localized = lang_get( 'dwg_link_url' );
 			break;
+		case 'primary_document':
+			$t_field_localized = lang_get( 'primary_document_section' );
+			break;
 		default:
 			# assume it's a custom field name
 			$t_field_localized = lang_get_defaulted( $p_field_name );

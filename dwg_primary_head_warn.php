@@ -52,7 +52,8 @@ $t_path_dangling = ( $t_head['filename'] === null );
 
 # If the user has already confirmed, redirect straight to the download.
 if( !$t_path_dangling && true == gpc_get_bool( '_confirmed' ) ) {
-	print_header_redirect( 'file_download.php?type=dwg_primary_head&id=' . $f_dwg_id );
+	print_header_redirect( 'file_download.php?type=dwg_primary_head&id=' . $f_dwg_id
+		. '&sha=' . rawurlencode( $t_head['sha'] ) );
 }
 
 # ── Compute values for the git info section ────────────────────────────────

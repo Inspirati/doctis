@@ -193,13 +193,13 @@ Doctis.
 | Row label | Meaning |
 |-----------|---------|
 | **On Record** | The version currently registered in Doctis.  Click the filename to download.  The abbreviated SHA is shown for git-stored files. |
-| **Draft** | The most recent commit in the git repository.  Shown only when git storage is active and the HEAD differs from the On Record version.  Downloading this version shows a warning. |
+| **Draft** | The most recent commit in the git repository. Downloading this version shows a warning; its SHA can differ from On Record after another document in the same repository changes. |
 
 ### Actions
 
 | Action | Access required | Description |
 |--------|----------------|-------------|
-| **Replace Document** | UPDATER | Upload a new primary file, replacing the current On Record version.  The git SHA is updated automatically and written to the document's Reference field. |
+| **Replace Document** | UPDATER | Upload a new primary file, replacing the current On Record version. A confirmation shows the saved filename and SHA; the SHA is also written to the document's Reference field. |
 | **Sync to HEAD** | MANAGER | Update the On Record record to match the current git HEAD (for cases where a file has been committed to git outside Doctis). |
 | **Tag** | MANAGER | Apply a named git tag to the current On Record SHA (e.g. `approved-rev-A`). |
 | **Touch** | MANAGER | Re-commit the current file to git without content change, creating a new SHA.  Useful to force a new commit timestamp. |
@@ -209,6 +209,9 @@ Doctis.
 The full version history of the primary document is preserved in the git
 repository and remains accessible via git tooling regardless of how many times
 the file is replaced in Doctis.
+New uploads and Sync to HEAD operations also appear in the Document History
+panel with their registered commit SHA and filename. Earlier Git revisions
+remain in Git even if they predate this history logging.
 
 ---
 

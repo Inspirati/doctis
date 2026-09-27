@@ -1044,7 +1044,9 @@ $t_git_head_sha      = $t_git_head_info ? $t_git_head_info['sha']      : null;
 $t_git_head_date     = $t_git_head_info ? $t_git_head_info['date']     : null;
 $t_git_head_author   = $t_git_head_info ? $t_git_head_info['author']   : null;
 $t_git_head_filename = $t_git_head_info ? $t_git_head_info['filename'] : null;
-$t_collapse_block = is_collapsed( 'primary_document', true );
+$t_primary_uploaded = $t_primary_file &&
+	gpc_get_string( 'primary_uploaded', '' ) === $t_primary_file['git_sha'];
+$t_collapse_block = $t_primary_uploaded ? false : is_collapsed( 'primary_document', true );
 $t_block_css = $t_collapse_block ? 'collapsed' : '';
 $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 ?>
@@ -1066,6 +1068,13 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 
 	<div class="widget-body">
 		<div class="widget-main no-padding">
+<?php if( $t_primary_uploaded ): ?>
+			<div class="alert alert-success">
+				<?php echo sprintf( lang_get( 'primary_document_upload_complete' ),
+					string_display_line( $t_primary_file['filename'] ),
+					htmlspecialchars( substr( $t_primary_file['git_sha'], 0, 8 ) ) ) ?>
+			</div>
+<?php endif; ?>
 			<div class="table-responsive">
 				<table class="table table-bordered table-condensed table-striped">
 <?php
@@ -1085,7 +1094,7 @@ $t_head_diverged = $t_git_head_sha !== null && $t_git_head_sha !== ( $t_primary_
 						<span class="label label-success"><?php echo lang_get( 'primary_document_approved' ) ?></span>
 					</th>
 					<td>
-						<a href="file_download.php?type=dwg_primary&amp;id=<?php echo $f_dwg_id ?>"><?php
+						<a href="file_download.php?type=dwg_primary&amp;id=<?php echo $f_dwg_id ?>&amp;sha=<?php echo string_attribute( $t_primary_file['git_sha'] ) ?>"><?php
 							echo string_display_line( $t_primary_file['filename'] )
 						?></a>
 						&nbsp;<span class="small">(<?php echo number_format( $t_primary_file['filesize'] ) ?> <?php echo lang_get( 'bytes' ) ?>)</span>
