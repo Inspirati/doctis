@@ -6,6 +6,8 @@ for the implemented baseline.
 
 The current one-time GitHub-to-Doctis migration procedure and HCRQMS test
 results are in [HCRQMS_IMPORT_REHEARSAL.md](HCRQMS_IMPORT_REHEARSAL.md).
+The identity/reference/location conflict uncovered by that trial is assessed
+in [DOCUMENT_IDENTITY_AND_LOCATION.md](../DOCUMENT_IDENTITY_AND_LOCATION.md).
 The 2026-09-27 repeat import now gives every imported document its Git SHA in
 `documents.reference`, without creating an approved Git ref. Approval remains
 a separate Doctis action.
