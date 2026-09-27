@@ -4,8 +4,8 @@ This document tracks all deferred features, design decisions to be made, and
 development tasks for the git storage system. See [GIT_ARCHITECTURE.md](GIT_ARCHITECTURE.md)
 for the implemented baseline.
 
-The proposed HCRQMS staging, ownership choices, and import validation steps
-are in [HCRQMS_IMPORT_REHEARSAL.md](HCRQMS_IMPORT_REHEARSAL.md).
+The current one-time GitHub-to-Doctis migration procedure and HCRQMS test
+results are in [HCRQMS_IMPORT_REHEARSAL.md](HCRQMS_IMPORT_REHEARSAL.md).
 
 Status: ☐ todo · ◐ in progress · ⊘ explicitly deferred · ☑ done
 
@@ -202,7 +202,7 @@ optimisation if large-repo support becomes a requirement.
 
 ---
 
-## 6. Repository Import and the Mapping-Layer Refactor — ☑ C1 IMPLEMENTED (2026-07-12); ☐ importer (WP7) outstanding
+## 6. Repository Import and the Mapping-Layer Refactor — ☑ C1/WP7 IMPLEMENTED (2026-07-12); ◐ one-time migration validation
 
 The repository-import requirement ([GIT_IMPORTER.md](GIT_IMPORTER.md)) forced
 a clean-sheet review of the git integration:
@@ -247,6 +247,16 @@ was adopted and implemented — WP1–WP6 are done:
   maps to `documents.number`, not `reference` — Doctis manages `reference`
   as the on-record SHA.
 
+**Current acceptance scope (2026-09-27):** migrate selected GitHub-hosted
+repositories once into new Doctis-owned repositories at production deployment.
+HCRQMS is staged on the native nginx VM and its 99-file dry-run succeeded;
+real import, visibility policy, metadata warning resolution, and coordinated
+failure recovery remain to be validated. The implemented `--update` option is
+not needed for this migration and is not its retry path. See the runbook linked
+above. The disposable local VM can regenerate its database and Git store
+together without a VM snapshot; a populated production service cannot use a
+global reset to undo one failed project import.
+
 Follow-ups surfaced by the refactor:
 - ☐ UI action to re-point a dangling `git_path` (currently: re-upload, or
   register the new location via core API).
@@ -261,6 +271,8 @@ them as documents (the importer's `--update` semantics, made persistent,
 surfaced in the UI, and optionally automated via a signal-only post-receive
 hook).  Plan, doctrine refinement, policy rules, and work packages S1–S7:
 [GIT_DETECT_CONTENT.md](GIT_DETECT_CONTENT.md).
+This remains a separate future feature, not a prerequisite for one-time
+repository migration.
 
 ---
 

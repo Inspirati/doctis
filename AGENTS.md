@@ -61,6 +61,17 @@ continue to default to `dev`. Pass this selection through bootstrap, dispatcher,
 and application checkout. Validate clean installation after iterative local work
 using the snapshot or a fresh VM.
 
+The repository-import objective is now a **one-time migration** of selected
+GitHub-hosted repositories into newly Doctis-owned repositories at deployment.
+Do not make `--update`, GitHub synchronization, or two-way ownership a
+prerequisite for this migration. The owner does not require a VM clone or new
+snapshot for the local import test: its database and Git store can be wiped and
+regenerated together. A production service with other imported projects
+cannot use that global reset for one failed import. The HCRQMS source is staged
+privately at `/srv/doctis-import/HCRQMS`; its 99-file dry-run passed with 67
+metadata warnings, but no real import has run. See
+`doc/git/HCRQMS_IMPORT_REHEARSAL.md` for the current procedure and decisions.
+
 ## Owner's requirement
 
 The project owner develops Doctis and normally tests installation on a clean

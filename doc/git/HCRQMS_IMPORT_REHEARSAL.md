@@ -1,68 +1,73 @@
-# HCRQMS import rehearsal and Git ownership decision
+# One-time GitHub-to-Doctis migration: HCRQMS rehearsal
 
-Status: proposed procedure, 2026-09-27. No real HCRQMS import has been run on
-this VM. Resolve the ownership decision before anyone writes to both hosts.
+Status: 2026-09-27. A private source copy has been staged and a dry-run has
+completed on the native nginx VM. **No real HCRQMS import or reset has run.**
+The owner does not require a VM clone or snapshot for this development test:
+the Doctis database and Git store can be regenerated together if necessary.
 
-## What the current importer does
+## Migration contract
 
-`admin/tools/doctis-git-import.sh` runs `admin/import-git-repo.php` as
-`www-data`. The importer reads the source repository at its committed `HEAD`,
-creates a Doctis project and repository database row, and makes a **new bare
-clone** under `/var/git/doctis/<project-slug>-r<repository-id>.git`. It also
-creates a server worktree under `/var/www/doctis/worktrees/`. Matching files
-become Doctis documents whose primary-file rows refer to paths and commits in
-that new bare repository. Registration does not add commits to the source or
-change its GitHub `origin`. There is no option to select an arbitrary existing
-Doctis repository: `--name` selects the new project, and the importer assigns
-its repository ID and path. `--update` reuses that project's existing repository.
+An existing GitHub-hosted repository is a one-time input. At a recorded,
+frozen source commit, the importer creates a **new Doctis project and a new
+Doctis-owned bare repository** under
+`/var/git/doctis/<project-slug>-r<repository-id>.git`, plus a server worktree
+under `/var/www/doctis/worktrees/`. It registers selected committed files as
+Doctis documents pointing to their paths and Git SHAs. Doctis then becomes the
+only writable home for that project's document history and subsequent edits.
 
-The copied bare repository has its inherited remotes removed by
-`repository_adopt()`. Neither the source clone nor GitHub is updated by the
-importer. The database's `adopted_from` value records the **staging path**, so
-record the original GitHub location and source commit separately in the test
-report. The staged copy can be discarded after a one-time import has been
-verified, but the current `--update` command still requires a readable
-`--source` path for preflight even though it reads content from the adopted
-bare repository. The staging clone's `origin` points to the original local
-clone, while the original clone retains its GitHub `origin`.
+The importer neither changes the source clone nor deletes or archives its
+GitHub repository. The adopted bare repository has no inherited GitHub
+remote. After verifying the migration, the team must separately make GitHub
+read-only/archive it, switch contributors' clone URLs/remotes to Doctis, and
+stop GitHub writes. Until then, GitHub is a retained source and recovery copy,
+not a synchronized second host. There is no choice of an arbitrary existing
+Doctis repository: `--name` selects the new project, and Doctis assigns its
+repository ID. The existing `--update` option is **outside this migration's
+scope** and is not a recovery strategy; on failure, reset and repeat from the
+frozen source.
 
-Observed source: `/home/robert/Documents/HCRQMS` is a clean 4.1 MiB clone on
-`dev` at `8b2d172fc119c0369b65c4a7e1c57f59faf22cfc`, with a GitHub
-`origin`. There is no committed `.doctis` manifest. At this commit,
-`content/` and `system/` contain 99 tracked `*.md` files. These facts are
-the starting point for the rehearsal, not a promise that all 99 will pass
-document validation. Earlier documentation's 33-document result was for an
-older source state.
+The local test may reset the entire Doctis database and Git store without a
+VM snapshot. That is only appropriate while **all** data in both stores is
+disposable. The current Git reset script deletes *every* repository and
+worktree, and the database reset drops *every* project. If several repositories
+have already been migrated into a production deployment, a global reset would
+destroy successful migrations too. Either migrate into a still-empty
+deployment that can be rebuilt in full, or implement and test rollback scoped
+to the failed project/repository before using this process on a populated
+production service.
 
-## Choose one ongoing authority
+## HCRQMS source and staged copy
 
-| Mode | Writing and updates | Suitability |
-| --- | --- | --- |
-| One-time local rehearsal | GitHub and the original clone remain as they are. Doctis receives an independent test copy. No subsequent synchronization is expected. | Recommended first step; it does not settle production ownership. |
-| Doctis primary after cutover | Contributors clone/push to Doctis. Keep GitHub as an archive or publish selected branches/tags to it through a deliberate one-way mirror. Doctis UI file replacements also write to the Doctis repository. | Matches the importer's adoption model. Decide backup, access control, and the cutover point before production. |
-| GitHub primary | Contributors write to GitHub. A controlled, fast-forward-only process must update the Doctis bare repository before `--update` registers new files. Doctis file editing must be governed so the histories do not diverge. | Requires a synchronization design; the current importer does not fetch from its `--source` on update. |
-| Both writable | Changes can originate at GitHub and Doctis, with explicit reconciliation and conflict handling. | Defer until a two-way synchronization policy and tooling exist. Two independent writable repositories will diverge. |
+`/home/robert/Documents/HCRQMS` is a clean clone on `dev` at
+`8b2d172fc119c0369b65c4a7e1c57f59faf22cfc`. Its `origin` points to
+GitHub. It has no committed `.doctis` manifest. At this commit, `content/`
+and `system/` contain 99 tracked Markdown files. Only files selected at the
+committed `HEAD` are registered; uncommitted work is not. The only other
+tracked files under those roots are 51 `.gitkeep` placeholders, so the
+`*.md` selection covers the current document set. The source's history
+reachable from the staged refs is cloned, so inventory all required branches
+and tags before production cutover. Also check for LFS and submodules; the
+importer rejects an LFS filter and has no submodule migration procedure.
+This local clone currently has only the `dev` local branch, no tags, no
+submodule entries, and no tracked `.gitattributes` or `.gitmodules`; verify
+GitHub's remote refs separately at cutover.
+Five other Markdown files sit outside these roots: root `README.md`, `TODO.md`,
+`CLAUDE.md`, and two `engine/Task-Instruction-*.md` files. They are not selected
+by the current dry-run. Confirm whether any should be registered as Doctis
+documents; the rest of `engine/` is build tooling and templates.
 
-GitHub is a hosting remote, not the owner of the local clone's objects. Keeping
-both hosts is possible, but one must be the authority for the `dev` branch and
-document edits. A second remote in a developer clone does not synchronize the
-servers by itself. Do not mirror `refs/doctis/*` to GitHub without defining
-how Doctis's approved-document pins should be handled.
+The source cannot be read by `www-data` in place because `/home/robert` is
+mode `0700`. A separate copy now exists at `/srv/doctis-import/HCRQMS`.
+`www-data` can read its verified `HEAD`; its SHA matches the original. This
+staging copy is **input**, not the Doctis-owned repository and not a VM clone.
+The source clone and its GitHub `origin` remain unchanged. The staging clone's
+`origin` points to the original local clone; the Doctis bare repository will
+have no remote. The database's `adopted_from` records the staging path, so
+record the GitHub URL and source SHA separately in the migration report.
 
-## Stage a readable, private source copy
-
-`www-data` cannot traverse `/home/robert` (mode `0700`), despite the HCRQMS
-directory itself being readable. Keep the original clone in place. Put a
-separate copy outside the web root and outside `/var/git/doctis`, for example
-`/srv/doctis-import/HCRQMS`. That staging location is input; it is not the
-Doctis-owned repository. The existing `/var/git/doctis` and worktree roots
-already pass the `www-data` write check on this VM and should retain their
-installer-managed permissions.
-
-The following is a proposed one-time staging procedure. First confirm that
-`/srv/doctis-import` does not contain an earlier rehearsal and record the
-source SHA. `--no-hardlinks` prevents a later ownership change to staged Git
-objects from also changing objects in the original clone.
+For a fresh staging path, use the following procedure. `--no-hardlinks`
+prevents the ownership change from affecting the original clone's Git object
+files. Verify the destination does not already exist before repeating it.
 
 ```bash
 git -C /home/robert/Documents/HCRQMS status --short --branch
@@ -78,29 +83,19 @@ sudo chmod 0750 /srv/doctis-import
 sudo -n -u www-data git -C /srv/doctis-import/HCRQMS rev-parse --verify HEAD
 ```
 
-The two SHAs must match. The last command must work without a Git
-`safe.directory` exception; making the staged copy owned by `www-data`
-provides that. The staging tree is private to `www-data` and root. Do not
-relax `/home/robert` permissions merely to make the import work. An ACL on
-the original path is possible, but it exposes that path to the web-service
-identity and requires a Git ownership exception; it is less suitable for a
-reproducible rehearsal. This stages the `dev` branch and its reachable
-history; if other GitHub branches or tags matter, inspect and stage those
-refs explicitly before adoption.
+Keep the original `/home/robert` permissions intact. The staging path must
+remain available until the import has completed; afterward it can be removed
+once the source SHA and migration report have been retained.
 
-## Rehearsal sequence
+## Local test sequence
 
-1. Create a fresh VM snapshot or a coordinated backup of the database and
-   `/var/git/doctis` before a real run. Record the staged source SHA, the
-   Doctis application commit, project/repository/document counts, and the
-   chosen project name. Use a unique test name such as `HCRQMS Import
-   Rehearsal`.
-2. Review and address the importer gaps below. Until then, restrict real
-   runs to disposable VM state. Verify no existing project has the chosen
-   name; `--update` is not a substitute for a first import.
-3. Run the wrapper dry-run with explicit options; no `.doctis` manifest is
-   present. Review all 99 candidates, statuses, categories, warnings, and
-   whether the files selected are actually documents:
+1. Record the source SHA, source GitHub URL, source refs, Doctis application
+   commit, and existing project/repository counts. Confirm the intended new
+   project name is unused. Choose the document set, visibility, and treatment
+   of metadata warnings before a real run. HCRQMS uses role names in some
+   frontmatter `owner` fields; these are not Doctis account names.
+2. Run the current deployed importer dry-run. It uses the same PHP script as
+   this checkout. No `.doctis` manifest exists, so pass selection explicitly:
 
    ```bash
    bash /var/www/html/doctis/admin/tools/doctis-git-import.sh \
@@ -111,49 +106,61 @@ refs explicitly before adoption.
      --dry-run
    ```
 
-4. Confirm the dry-run changed no project, repository, document, or Git-store
-   state. Run the same command without `--dry-run` only after the snapshot and
-   failure-handling decision. Save the report and the new repository ID; do
-   not guess the `-r<ID>` suffix.
-5. Verify source and adopted `HEAD` match, the selected branch's history and
-   required tags are present, and the
-   adopted bare repo has no inherited remote. Compare successful registrations
-   with database document and primary-file rows, including native `git_path`,
-   status, metadata, category, and approved refs. Open representative
-   documents, download their primary files and compare bytes with `git show
-   HEAD:<path>`, then clone through the Doctis Git HTTP gateway. Confirm the
-   original clone still has its GitHub `origin` and unchanged `HEAD`.
-6. Exercise idempotency and a new file on the **adopted** repository. With
-   current code, a new commit made only in the staged or GitHub source will
-   not appear in `--update`. Push a synthetic new commit to the Doctis-hosted
-   repository, then run `--update`; expect one new registration and no
-   duplicates. Also test a removed path (reported, not deleted) and a
-   deliberately failed registration on disposable state.
-7. Restore the snapshot after the rehearsal if this VM must return to its
-   previous test state. Do not use a blanket Git-store reset against the
-   populated local installation. If a production cutover is later chosen,
-   repeat against a separately approved dataset and backup/restore plan.
+   Observed result: **99 candidates, 99 would import, 0 failed, 67 warnings**.
+   Of those warnings, 65 are unmatched `owner` values (16 distinct values,
+   mostly role names) and two are `Agenda` status values in templates that
+   currently fall back to pending. A database check confirmed the dry-run
+   created zero projects and zero repository rows for the rehearsal name. Decide
+   whether to map roles to real Doctis accounts, leave handlers unassigned,
+   and map the two statuses; do not silently present those warnings as a
+   complete metadata migration.
+3. Fix or explicitly accept the one-time importer gaps below, then run the
+   same command without `--dry-run` on the disposable local VM. Record its
+   complete report, assigned project/repository IDs, and exit status. A
+   nonzero exit or any unregistered candidate means the migration failed.
+4. Verify the new bare repository's `HEAD`, required branches/tags, history,
+   and absence of inherited remotes. Compare the 99 selected paths with the
+   registered document and primary-file rows, including SHA, category,
+   status, classification, and approved refs. Open representative documents,
+   compare downloaded bytes with `git show HEAD:<path>`, and clone through
+   Doctis Git HTTP. Confirm read/write access and visibility with accounts at
+   the intended access levels. Verify the source clone's SHA and GitHub remote
+   are unchanged.
+5. If the local import fails, reset the **database and Git store together**,
+   reinstall Doctis/sample data as needed, and repeat from the same frozen
+   source SHA. Do not run only `doctis-git-reset.sh`: it leaves database rows
+   referring to missing repositories. Before relying on the existing reset
+   pair, check their credentials, installer URL, exit-status handling, and
+   post-reset empty-store/schema checks on this native VM. The current
+   `doctis-drop-and-create-new-database.sh` does not reliably stop on every
+   failed command, so a success-looking message alone is insufficient.
 
-## Importer changes before relying on repeated real imports
+## Production cutover and outstanding work
 
-- Make Phase A failure cleanup real: project/repository rows and a partial
-  bare repo or worktree can currently remain if adoption fails. The design
-  document claims Phase A is all-or-nothing.
-- Make document creation and primary-file registration atomic or clean up a
-  newly created document when registration fails. The current per-file catch
-  reports a failure but can leave an unregistered document behind.
-- Define `--update` as either "read the Doctis bare repo after a push" or
-  "fetch from a checked source". Implement and test that contract. Its
-  `--dry-run` currently does not apply registered-path skipping, so it can
-  overstate would-be imports.
-- Verify that an existing project and repository really belong to the
-  intended import before accepting `--update`; check subproject parentage,
-  importer identity, branch, and source commit. Fail clearly on an invalid
-  `--user`, an unreadable source, or unsupported options.
-- Review visibility before importing real business content: the current
-  importer creates a public project and sets every imported document to
-  `VS_PUBLIC`, regardless of frontmatter classification.
-- Add an end-to-end test using small synthetic repositories for the flat and
-  subproject layouts, including rerun and failure recovery. Existing tests
-  cover the underlying Git primitives, while the earlier full importer
-  evidence came from vaio and an older HCRQMS commit.
+Plan production import before the new Doctis service accepts edits. For each
+selected GitHub project: freeze writes; record the exact commit and required
+refs; stage a private, readable source; preview and resolve warnings; import;
+verify content, metadata, access, and Git HTTP; then announce the Doctis clone
+URL and make the old GitHub repository read-only/archive it. Retain the old
+repository through the agreed verification window. If a migration fails while
+the new service is still disposable, rebuild the coordinated database and Git
+store and repeat all imports. A populated service needs a separately tested
+project-scoped rollback; deleting a project in the UI does not establish that
+its repository row, bare repo, and worktree were removed.
+
+Before calling the one-time path production-ready:
+
+- Make imported project/document visibility explicit. Current code creates a
+  public project and `VS_PUBLIC` documents regardless of frontmatter
+  classification. Prefer private by default, with an intentional override and
+  an access check in the rehearsal.
+- Fail clearly on an invalid import user or unsupported options. Preflight
+  source, target name, storage paths, refs, and document choices before
+  creating rows; clean up Phase A and partially created documents on failure,
+  or provide a tested project-scoped rollback. Current Phase A is not atomic,
+  and a primary-file registration error can leave an unregistered document.
+- Make the report identify the source SHA, repository ID, every failed path,
+  and the decision on the 67 HCRQMS metadata warnings. Add an end-to-end test
+  with a small synthetic repository that proves one-time import and failure
+  recovery. Updating from GitHub, two-way sync, and automatic discovery of
+  future pushed files are separate features, not migration requirements.

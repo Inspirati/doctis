@@ -9,6 +9,13 @@ maps to `documents.number` (Doctis manages `reference` as the on-record
 SHA); `status: Active` maps to accepted (180); the register primitive is
 `file_dwg_primary_register()` per the C1 model rather than §4's P-numbers.
 
+**Current deployment scope (2026-09-27):** one-time adoption from GitHub into
+a new Doctis-owned repository. The `--update` design in §9 is historical and
+is not required for this migration or its failure recovery. Use the
+[HCRQMS migration runbook](HCRQMS_IMPORT_REHEARSAL.md) for current staging,
+dry-run evidence, validation, and reset conditions. The dated note below
+predates WP7 implementation.
+
 > **2026-07-12 — C1 foundation implemented; this plan's §3–§4 are superseded.**
 > [GIT_SOLUTION_SPACE.md](GIT_SOLUTION_SPACE.md) replaced D1 (`git_path` as a
 > nullable override) and D2 (per-project config delegation) with
