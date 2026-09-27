@@ -93,6 +93,44 @@ the Reference string.
    before planning production data migration. The current import stays intact
    until the policy and migration are agreed.
 
+## Would one document per Git commit make the SHA a Reference?
+
+It could make *introducing commit IDs* distinct for newly added documents,
+but it does not make a commit ID a stable document identity. A later edit
+produces a new commit ID for the same document; another document's commit
+also advances repository HEAD. The current view compares each document's
+saved `git_sha` with repository HEAD, so **one later commit makes every other
+document appear "updated" even when its blob is unchanged**. Compare the
+file's blob at `<registered-sha>:<git_path>` with `HEAD:<git_path>` to detect
+real content changes. A commit can still be retained as version provenance.
+The Primary Document panel also labels every registered primary row
+"Approved" even when the import deliberately created no approved ref;
+approval display should read actual workflow/pin state.
+
+A server-side `pre-receive` hook can reject a push if any newly reachable
+commit changes more than one qualifying document path. The current hook
+checks only ref deletion, non-fast-forward updates, and protected refs. A
+validator would need a persisted definition of qualifying paths, to inspect
+**every commit introduced by the push**, and explicit rules for merges,
+renames, metadata/auxiliary files, new branches, and the initial import. It
+would also require all repository writes to use the receive path; direct
+server-side ref updates do not run this hook. The HCRQMS one-commit snapshot
+would fail such a rule unless migration were given a deliberate exception or
+rewritten as 99 commits. Rewriting history solely to manufacture unique
+Reference values is not recommended.
+
+The separate [Git content-detection plan](git/GIT_DETECT_CONTENT.md) already
+proposes discovering unregistered paths and registering them through an
+operator-facing scan, with optional asynchronous notification. It does not
+require one file per commit. That plan should compare the **current HEAD file
+set** with registered paths, so an unregistered file remains visible across
+repeated scans; a diff only from `last_scanned_sha` to HEAD can lose a pending
+candidate after the first scan.
+
+Git documentation: [server-side hooks](https://git-scm.com/docs/githooks),
+[receive-pack and pre-receive quarantine](https://git-scm.com/docs/git-receive-pack),
+and [per-commit tree diffs](https://git-scm.com/docs/git-diff-tree).
+
 Source pointers: `admin/schema.php` (documents/dwg columns),
 `core/dwg_api.php` (creation), `core/file_dwg_api.php` (SHA writes),
 `core/string_api.php` (Reference link heuristics), `dwg_create_page.php`,

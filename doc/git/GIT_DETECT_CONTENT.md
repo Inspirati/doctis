@@ -2,6 +2,16 @@
 
 Status: **DRAFT / PLANNING** — nothing in this document is implemented yet.
 
+**Design amendment (2026-09-27):** This plan does not require one document
+per Git commit. The option of enforcing that rule in `pre-receive`, and why
+it does not make a commit SHA a document identity, is assessed in
+[DOCUMENT_IDENTITY_AND_LOCATION.md](../DOCUMENT_IDENTITY_AND_LOCATION.md).
+Also, discovery must compare current HEAD paths against registered paths on
+each authoritative scan (or persist pending candidates). A diff only over
+`last_scanned_sha..HEAD` loses an unregistered candidate after a scan that
+does not register it. The incremental diff may help identify modifications,
+but cannot be the sole source of pending new paths.
+
 Goal: when a file is **added to a Doctis-owned repository from outside
 Doctis** (a `git push` through the Smart HTTP gateway or a direct server-side
 push), Doctis detects it and registers it as a document — the same
@@ -66,7 +76,7 @@ same reconciliation with (a) its policy persisted, (b) a UI surface, and
 
 | Option | Mechanism | Latency | Doctrine | Verdict |
 |--------|-----------|---------|----------|---------|
-| T1. Lazy scan at page view | Project/list page compares HEAD against last-scanned SHA; shows results | On next visit | Clean (existing precedent) | ✓ **Phase 1** — detection display |
+| T1. Lazy scan at page view | Project/list page compares current HEAD paths with registered paths; shows results | On next visit | Clean (existing precedent) | ✓ **Phase 1** — detection display |
 | T2. Manual scan/register action | "Scan repository" button (MANAGER) runs detect + register synchronously | Operator click | Clean (operator-initiated) | ✓ **Phase 1** — the registration trigger |
 | T3. CLI / cron | `import-git-repo.php --update` already does this; a thin `repo-sync` CLI + operator-configured cron | Minutes | Clean (operator configured the schedule) | ✓ **Phase 1** CLI exists in essence; cron is deployment guidance, not code |
 | T4. Post-receive **signal** + Doctis-side drain | Hook appends one line (`<epoch> <ref> <old> <new>`) to `<bare>/doctis-pending`; Doctis processes on next page view or cron tick | Seconds–minutes | Requires §2 amendment (signal-only) | ✓ **Phase 2** — makes T1 cheap and T3 prompt; enables true auto-register mode |
@@ -74,8 +84,8 @@ same reconciliation with (a) its policy persisted, (b) a UI surface, and
 
 **Decision:** Phase 1 ships T1+T2 (+T3 documentation); Phase 2 adds T4 with a
 per-repository `auto_register` policy. T4 without the hook also degrades
-gracefully: scanning `HEAD != last_scanned_sha` on page view catches
-everything the hook would have signalled, just later.
+gracefully: a HEAD-path scan on page view catches everything the hook would
+have signalled, just later.
 
 ---
 
@@ -91,9 +101,9 @@ Three stages, mirroring the importer's Phase B but persistent and repeatable:
                      └────────────────────────────────────────────┘
                                        │
                             DETECT (repository_sync_scan)
-                     HEAD != {repository}.last_scanned_sha ?
-                     git diff --name-status <last>..HEAD, filtered
-                     through the repository's persisted import policy;
+                     HEAD paths filtered by persisted import policy,
+                     minus registered paths;
+                     git diff <last>..HEAD is an optional hint;
                      route each path to its project via root mapping
                                        │
                     ┌──────────────────┴──────────────────┐
@@ -114,7 +124,7 @@ currently embedded in `admin/import-git-repo.php`. **Extract it into
 
 | Function | Role |
 |----------|------|
-| `repository_sync_scan( $p_repository_id )` | Returns `{ new: [path→candidate meta], modified: [dwg_id], missing: [dwg_id] }` by diffing `last_scanned_sha..HEAD` (full `ls-tree` walk when no last SHA) against registered `git_path`s and the import policy |
+| `repository_sync_scan( $p_repository_id )` | Returns `{ new: [path→candidate meta], modified: [dwg_id], missing: [dwg_id] }` by comparing current `ls-tree -r HEAD` paths with registered `git_path`s and the import policy. `last_scanned_sha..HEAD` is an optional incremental hint, not the authoritative candidate set. Compare blob IDs at registered path and HEAD to detect real modifications. |
 | `repository_sync_register( $p_repository_id, $p_paths, $p_user_id )` | Registers the given candidate paths: metadata gleaning → `DwgAddCommand` → `file_dwg_primary_register()`; returns per-path results |
 | `repository_sync_policy( $p_repository_id )` | Effective policy: committed `.doctis` manifest at HEAD wins, else stored policy row, else conservative default (§5) |
 
@@ -201,8 +211,9 @@ One new page + one badge; deliberately minimal:
   `repo_sync_token`).
 - **Badge**: a count chip ("3 unregistered changes") on the project's
   document list page linking to the panel — computed from the cached scan
-  result (`{repository}.last_scanned_sha` + stored candidate count), not a
-  fresh git walk per page view.
+  result (with a stored candidate count or equivalent cache), not solely from
+  `{repository}.last_scanned_sha`. The panel reruns the authoritative path
+  comparison so skipped candidates stay visible.
 - Per-document view: unchanged (existing badges already cover
   modified/missing).
 
@@ -212,7 +223,7 @@ One new page + one badge; deliberately minimal:
 
 | Table | Change |
 |-------|--------|
-| `{repository}` | Add `last_scanned_sha varchar(40) NOT NULL DEFAULT ''`, `last_scanned int unsigned NOT NULL DEFAULT 1`, `sync_policy text NOT NULL DEFAULT ''` (INI/JSON blob mirroring §5 fields; empty = §5 default #3) |
+| `{repository}` | Add `last_scanned_sha varchar(40) NOT NULL DEFAULT ''`, `last_scanned int unsigned NOT NULL DEFAULT 1`, `pending_candidate_count int unsigned NOT NULL DEFAULT 0`, `sync_policy text NOT NULL DEFAULT ''` (INI/JSON blob mirroring §5 fields; empty = §5 default #3). Refresh the count from the authoritative path comparison. |
 | `{project_repository}` | Add `root_path varchar(1024) NOT NULL DEFAULT ''` (§5 routing) |
 
 Standard flat-schema workflow: edit `admin/schema.php`, rebuild, reload
