@@ -13,8 +13,9 @@ SHA); `status: Active` maps to accepted (180); the register primitive is
 a new Doctis-owned repository. The `--update` design in §9 is historical and
 is not required for this migration or its failure recovery. Use the
 [HCRQMS migration runbook](HCRQMS_IMPORT_REHEARSAL.md) for current staging,
-dry-run evidence, validation, and reset conditions. The dated note below
-predates WP7 implementation.
+successful one-commit document import, validation, and reset conditions. The
+importer defaults new projects to private (`--project-visibility public` is
+available when intended). The dated note below predates WP7 implementation.
 
 > **2026-07-12 — C1 foundation implemented; this plan's §3–§4 are superseded.**
 > [GIT_SOLUTION_SPACE.md](GIT_SOLUTION_SPACE.md) replaced D1 (`git_path` as a

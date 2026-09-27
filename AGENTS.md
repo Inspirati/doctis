@@ -68,8 +68,13 @@ prerequisite for this migration. The owner does not require a VM clone or new
 snapshot for the local import test: its database and Git store can be wiped and
 regenerated together. A production service with other imported projects
 cannot use that global reset for one failed import. The HCRQMS source is staged
-privately at `/srv/doctis-import/HCRQMS`; its 99-file dry-run passed with 67
-metadata warnings, but no real import has run. See
+privately as a one-commit document snapshot at
+`/srv/doctis-import/HCRQMS-snapshot`. A real import created private project
+`HCRQMS` (ID 8), repository `/var/git/doctis/hcrqms-r8.git`, and 99 registered
+documents with zero failures and 67 metadata warnings. The original source
+history was intentionally not imported. The owner will assign document
+responsibility within Doctis, then address coordinated wipe-and-repeat support
+after evaluating this first import. See
 `doc/git/HCRQMS_IMPORT_REHEARSAL.md` for the current procedure and decisions.
 
 ## Owner's requirement

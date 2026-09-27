@@ -249,13 +249,17 @@ was adopted and implemented — WP1–WP6 are done:
 
 **Current acceptance scope (2026-09-27):** migrate selected GitHub-hosted
 repositories once into new Doctis-owned repositories at production deployment.
-HCRQMS is staged on the native nginx VM and its 99-file dry-run succeeded;
-real import, visibility policy, metadata warning resolution, and coordinated
-failure recovery remain to be validated. The implemented `--update` option is
-not needed for this migration and is not its retry path. See the runbook linked
-above. The disposable local VM can regenerate its database and Git store
-together without a VM snapshot; a populated production service cannot use a
-global reset to undo one failed project import.
+The native nginx VM has now imported a one-commit snapshot containing only
+HCRQMS `content/` and `system/`: 99 documents into private project ID 8 and
+repository ID 8, with zero failures. GitHub history was intentionally omitted;
+67 metadata warnings remain for owner/status review. Authenticated UI review,
+coordinated failure recovery, and production cutover remain. The importer now
+defaults new projects to private, with `--project-visibility` as an explicit
+override. The implemented `--update` option is not needed for this migration
+and is not its retry path. See the runbook linked above. The disposable local
+VM can regenerate its database and Git store together without a VM snapshot;
+a populated production service cannot use a global reset to undo one failed
+project import.
 
 Follow-ups surfaced by the refactor:
 - ☐ UI action to re-point a dangling `git_path` (currently: re-upload, or
