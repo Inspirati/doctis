@@ -59,8 +59,10 @@ bash "$app_root/admin/tools/doctis-load-sample-data.sh" <<< 'yes'
 	fail 'A Git repository/worktree remains after reset.'
 [[ $(mariadb --batch --skip-column-names doctis -e 'SELECT COUNT(*) FROM repository;') == 0 ]] ||
 	fail 'Repository rows remain after reset.'
-[[ $(mariadb --batch --skip-column-names doctis -e 'SELECT COUNT(*) FROM dwg;') == 0 ]] ||
-	fail 'Document rows remain after reset.'
+[[ $(mariadb --batch --skip-column-names doctis -e 'SELECT COUNT(*) FROM dwg WHERE project_id<>0;') == 0 ]] ||
+	fail 'Project document rows remain after reset.'
+[[ $(mariadb --batch --skip-column-names doctis -e 'SELECT COUNT(*) FROM dwg_primary_file;') == 0 ]] ||
+	fail 'Primary document registrations remain after reset.'
 [[ $(mariadb --batch --skip-column-names doctis -e "SELECT COUNT(*) FROM project WHERE name='example';") == 1 ]] ||
 	fail 'The example project was not restored.'
 [[ $(mariadb --batch --skip-column-names doctis -e 'SELECT COUNT(*) FROM user;') -ge 15 ]] ||
@@ -72,4 +74,4 @@ curl --fail --silent --show-error --max-time 10 \
 	http://127.0.0.1/doctis/login_page.php >/dev/null ||
 	fail 'The Doctis login page is unavailable after reset.'
 
-echo 'Reset complete: empty document/repository stores, installed schema, and sample data verified.'
+echo 'Reset complete: no project documents or repositories, installed schema, and sample data verified.'
