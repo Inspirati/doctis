@@ -1843,16 +1843,16 @@ function file_dwg_primary_path_in_use( int $p_dwg_id, int $p_project_id, string 
  *
  * Verifies that the blob exists at <sha>:<git_path> in the project's bare
  * repository, enforces per-repository path uniqueness, and inserts/replaces
- * the {dwg_primary_file} row.  With $p_pin (default), the SHA is recorded as
- * the on-record version: documents.reference is updated and the SHA is
- * pinned as a permanent refs/doctis/approved/* ref.
+ * the {dwg_primary_file} row.  Every registration records the SHA in
+ * documents.reference.  With $p_pin (default), the SHA is also pinned as a
+ * permanent refs/doctis/approved/* ref; importers can defer approval.
  *
  * @param int    $p_dwg_id
  * @param int    $p_user_id     Doctis user performing the registration.
  * @param string $p_git_path    Repo-relative path of the file.
  * @param string $p_sha         Full 40-char commit SHA; '' registers HEAD.
  * @param string $p_description Optional revision note.
- * @param bool   $p_pin         Record as on-record (reference + approved ref pin).
+ * @param bool   $p_pin         Pin an approved ref; independent of the reference.
  * @param string $p_file_type   MIME type; '' derives from the file extension.
  * @return array{git_sha: string, git_path: string, filename: string, filesize: int}
  * @throws ClientException when the SHA/path do not exist or the path collides.
@@ -1950,10 +1950,9 @@ function file_dwg_primary_register( int $p_dwg_id, int $p_user_id, string $p_git
 		)
 	);
 
+	# A document registered from Git has a reference regardless of approval.
+	file_dwg_set_document_reference( $p_dwg_id, $t_sha );
 	if( $p_pin ) {
-		# The SHA is the canonical reference to the on-record document: write
-		# it to documents.reference and pin it as a permanent approved ref.
-		file_dwg_set_document_reference( $p_dwg_id, $t_sha );
 		file_dwg_git_pin_approved( $p_dwg_id, $t_sha );
 	}
 

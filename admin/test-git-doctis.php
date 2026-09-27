@@ -207,7 +207,7 @@ exec( 'git -C ' . escapeshellarg( $t_worktree ) . ' add manual/adopted.md 2>&1' 
 exec( 'git -C ' . escapeshellarg( $t_worktree ) . ' -c user.name=tester -c user.email=t@t commit -q -m "manual" 2>&1' );
 exec( 'git -C ' . escapeshellarg( $t_worktree ) . ' push -q origin HEAD 2>&1' );
 
-$t_reg = file_dwg_primary_register( $t_dwg2, 1, 'manual/adopted.md' );
+$t_reg = file_dwg_primary_register( $t_dwg2, 1, 'manual/adopted.md', '', '', false );
 check( preg_match( '/^[0-9a-f]{40}$/', $t_reg['git_sha'] ) === 1, 'HEAD sha registered' );
 check( $t_reg['filename'] === 'adopted.md', 'filename derived from path' );
 $t_row2 = file_dwg_primary_get( $t_dwg2 );
@@ -215,6 +215,15 @@ check( $t_row2 !== null && $t_row2['git_path'] === 'manual/adopted.md', 'row reg
 check( (int)$t_row2['filesize'] === strlen( "manually committed\n" ), 'filesize from git object', (string)$t_row2['filesize'] );
 $t_content = file_dwg_primary_get_content( $t_dwg2 );
 check( $t_content !== false && $t_content['content'] === "manually committed\n", 'registered content retrievable' );
+db_param_push();
+$t_reference = db_result( db_query(
+	'SELECT d.reference FROM {documents} d INNER JOIN {dwg} w ON w.document_id=d.id'
+		. ' WHERE w.id=' . db_param(), array( $t_dwg2 )
+) );
+check( $t_reference === $t_reg['git_sha'], 'registration records SHA without approval' );
+check( bare_git( $t_bare, 'for-each-ref refs/doctis/approved/' . $t_dwg2 ) === '',
+	'unapproved registration has no approved ref' );
+file_dwg_primary_register( $t_dwg2, 1, 'manual/adopted.md' );
 check( bare_git( $t_bare, 'for-each-ref refs/doctis/approved/' . $t_dwg2 ) !== '', 'registration pinned approved ref' );
 
 try {

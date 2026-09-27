@@ -336,33 +336,33 @@ function frontmatter_parse( string $p_content ): array {
 }
 
 /**
- * Map a frontmatter/filename status word to [dwg status id, pin-on-record].
- * Draft documents are registered without an on-record pin (GIT_IMPORTER D6).
+ * Map a frontmatter/filename status word to a Doctis document status.
+ * Import never approves a document; approval is a separate Doctis action.
  */
-function status_map( string $p_status ): array {
+function status_map( string $p_status ): int {
 	$t_status = strtolower( trim( $p_status ) );
 	# Qualified draft statuses ("Draft — requires CEO signature…") are drafts.
 	if( strpos( $t_status, 'draft' ) === 0 ) {
-		return array( 110, false );
+		return 110;
 	}
 	switch( $t_status ) {
 		case '':
-			return array( 110, true );
+			return 110;
 		case 'in review':
 		case 'review':
-			return array( 160, true );
+			return 160;
 		case 'approved':
 		case 'effective':
 		case 'active':
-			return array( 180, true );
+			return 180;
 		case 'released':
-			return array( 190, true );
+			return 190;
 		case 'superseded':
 		case 'obsolete':
 		case 'withdrawn':
-			return array( 195, true );
+			return 195;
 		default:
-			return array( 110, true );   # unknown → pending; caller reports it
+			return 110;   # unknown → pending; caller reports it
 	}
 }
 
@@ -447,8 +447,9 @@ foreach( $t_candidates as $t_path => $t_root ) {
 					$t_meta['due_date'] = strtotime( '+' . $t_pm[1] . ' months', $t_ts );
 				}
 			}
-			if( $t_meta['status_word'] !== '' && status_map( $t_meta['status_word'] ) === array( 110, true )
-			 && strtolower( $t_meta['status_word'] ) !== 'pending' ) {
+			if( $t_meta['status_word'] !== '' && status_map( $t_meta['status_word'] ) === 110
+			 && strtolower( trim( $t_meta['status_word'] ) ) !== 'pending'
+			 && strpos( strtolower( trim( $t_meta['status_word'] ) ), 'draft' ) !== 0 ) {
 				$t_warnings[] = "$t_path: unmapped frontmatter status '" . $t_meta['status_word'] . "' → pending";
 			}
 		}
@@ -497,7 +498,7 @@ foreach( $t_candidates as $t_path => $t_root ) {
 			}
 		}
 
-		list( $t_status_id, $t_pin ) = status_map( $t_meta['status_word'] );
+		$t_status_id = status_map( $t_meta['status_word'] );
 		$t_title   = $t_meta['title'] !== '' ? $t_meta['title'] : pathinfo( $t_basename, PATHINFO_FILENAME );
 		$t_summary = substr( $t_title, 0, 255 );
 
@@ -506,7 +507,7 @@ foreach( $t_candidates as $t_path => $t_root ) {
 				'would import', $t_path,
 				( $t_meta['number'] !== '' ? $t_meta['number'] . ' ' : '' ) . $t_summary
 					. ( $t_meta['revision'] !== '' ? ' [rev ' . $t_meta['revision'] . ']' : '' ),
-				'status=' . $t_status_id . ( $t_pin ? ' pinned' : ' DRAFT' ) . ' cat=' . $t_category_name,
+				'status=' . $t_status_id . ' approval=deferred cat=' . $t_category_name,
 			);
 			$t_created++;
 			continue;
@@ -556,17 +557,17 @@ foreach( $t_candidates as $t_path => $t_root ) {
 			);
 		}
 
-		# B4 — register the file at HEAD by reference (no commit).
+		# B4 — register the file at HEAD by reference (no commit or approval).
 		file_dwg_primary_register(
 			$t_dwg_id, $g_import_user_id, $t_path, /* sha: HEAD */ '',
 			'Imported from ' . basename( $t_source ),
-			$t_pin
+			/* pin approved ref */ false
 		);
 
 		$t_report[] = array(
 			'imported (dwg ' . $t_dwg_id . ')', $t_path,
 			( $t_meta['number'] !== '' ? $t_meta['number'] . ' ' : '' ) . $t_summary,
-			'status=' . $t_status_id . ( $t_pin ? ' pinned' : ' DRAFT' ) . ' cat=' . $t_category_name,
+			'status=' . $t_status_id . ' approval=deferred cat=' . $t_category_name,
 		);
 		$t_created++;
 	} catch( Throwable $e ) {
