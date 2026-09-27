@@ -29,13 +29,15 @@ identifier, a Doctis accession code, or something else across storage types.
 The database has ordinary, **non-unique** indexes on `documents.reference`
 and `documents.number`, and allows empty values. It already has
 `documents.link_url` (2048 characters), but also a duplicate `dwg.link_url`.
-Creation writes the same value to both. The create/edit page's Link URL input
-is inside an HTML comment; the regular update path and SOAP/REST update do
-not persist changes to `documents` metadata. Reference rendering ignores
+Creation writes the same value to both. The document create and clone forms
+now expose Link URL. The normal update form and SOAP update persist URL changes
+to both copies, but other `documents` metadata is not updated through those
+paths. Reference rendering ignores
 `link_url` and guesses the destination from the Reference text (SHA, URL, or
-an old external-system pattern). These are incomplete features, not a usable
-location model yet. The manual's statement that external references can be
-edited later is not supported by the current normal update path.
+an old external-system pattern). The URL is displayed separately on the
+document detail page; this remains a limited location model. The manual's
+statement that external references can be edited later is not supported by
+the current normal update path.
 
 ## What the HCRQMS data shows
 
@@ -91,8 +93,9 @@ the Reference string.
    only if that policy requires it. Keep SHA in the primary-file row and
    approval refs either way. Update the importer to map `doc_id` under the
    chosen policy and report missing/duplicate IDs.
-4. Select one canonical URL field, expose it on create/view/edit, and make
-   normal and API updates persist document metadata with validation/history.
+4. Select one canonical URL field and reconcile the two stored copies. URL
+   entry, safe display, and normal/SOAP updates are available in the interim;
+   the broader document metadata correction workflow remains to be defined.
    Add physical location support separately. Replace heuristic Reference links
    with explicit Git/external/physical rendering.
 5. Rehearse a coordinated migration or reset/re-import on the disposable VM.

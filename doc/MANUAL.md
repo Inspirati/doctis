@@ -53,8 +53,14 @@ document in whichever system stores it:
 
 When a document's primary file is stored in the Doctis git backend, the
 reference field is **automatically updated** to the new git SHA each time a
-primary file is uploaded or synced.  For external references, the field is set
-manually at document creation time and can be edited later.
+primary file is uploaded or synced. For external references, the field is set
+manually at document creation time. The normal update form does not currently
+edit the Reference.
+
+Use the optional **Link URL** for an intranet or external published copy. It
+appears as a clickable link on the document details page and can be changed
+or cleared from the document update form. A Link URL does not change the
+Reference or the Doctis-managed primary file.
 
 The reference field is optional — a document can be registered as a placeholder
 before its reference is known.

@@ -290,6 +290,23 @@ file_dwg_primary_add( $t_dwg3, 1, $t_tmp, 'policy.md', 12, 'text/markdown', '' )
 $t_row3 = file_dwg_primary_get( $t_dwg3 );
 check( $t_row3 !== null && $t_row3['git_path'] === 'guidance/policy.md', 'template path applied', $t_row3['git_path'] ?? 'null' );
 
+# A URL is metadata on the document, not a replacement for its Git reference.
+check( dwg_link_url_is_valid( 'https://intranet.example/documents/3' ), 'HTTP document URL accepted' );
+check( !dwg_link_url_is_valid( 'javascript:alert(1)' ), 'unsafe document URL rejected' );
+$t_link_dwg = dwg_get( $t_dwg3, true );
+$t_link_dwg->link_url = 'https://intranet.example/documents/3';
+$t_link_dwg->update( false, true );
+$t_link_dwg = dwg_get( $t_dwg3 );
+db_param_push();
+$t_doc_link = db_result( db_query( 'SELECT link_url FROM {documents} WHERE id=' . db_param(), array( $t_link_dwg->document_id ) ) );
+check( $t_link_dwg->link_url === $t_doc_link && $t_doc_link === 'https://intranet.example/documents/3',
+	'document URL saved in both metadata rows' );
+$t_link_dwg->link_url = '';
+$t_link_dwg->update( false, true );
+db_param_push();
+$t_doc_link = db_result( db_query( 'SELECT link_url FROM {documents} WHERE id=' . db_param(), array( $t_link_dwg->document_id ) ) );
+check( dwg_get( $t_dwg3 )->link_url === '' && $t_doc_link === '', 'document URL can be cleared' );
+
 # Same template, same category, same filename → collision at upload time.
 $t_dwg4 = make_dwg( $t_parent, $t_category_id, 'GitTest doc 4' );
 $t_cleanup['dwg_ids'][] = $t_dwg4;
@@ -365,6 +382,8 @@ check( $t_content !== false && $t_content['content'] === "draft v4\n", 'retrieve
 # ── Teardown ─────────────────────────────────────────────────────────────────
 echo "── Teardown ─────────────────────────────────────────────────────────────\n";
 foreach( $t_cleanup['dwg_ids'] as $t_id ) {
+	db_param_push();
+	db_query( 'DELETE FROM {dwg_history} WHERE dwg_id=' . db_param(), array( $t_id ) );
 	db_param_push();
 	db_query( 'DELETE d, doc FROM {dwg} d LEFT JOIN {documents} doc ON doc.id=d.document_id WHERE d.id=' . db_param(), array( $t_id ) );
 	db_param_push();
