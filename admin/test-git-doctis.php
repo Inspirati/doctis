@@ -61,9 +61,16 @@ function make_dwg( int $p_project_id, int $p_category_id, string $p_summary ): i
 	$t_document_id = db_insert_id( db_get_table( 'documents' ) );
 	db_param_push();
 	db_query(
-		'INSERT INTO {dwg} ( project_id, creator_id, category_id, document_id, summary )
-		 VALUES ( ' . db_param() . ', 1, ' . db_param() . ', ' . db_param() . ', ' . db_param() . ' )',
-		array( $p_project_id, $p_category_id, $t_document_id, $p_summary )
+		'INSERT INTO {dwg_text} ( description, steps_to_reproduce, additional_information )'
+		. ' VALUES ( ' . db_param() . ', ' . db_param() . ', ' . db_param() . ' )',
+		array( '', '', '' )
+	);
+	$t_text_id = db_insert_id( db_get_table( 'dwg_text' ) );
+	db_param_push();
+	db_query(
+		'INSERT INTO {dwg} ( project_id, creator_id, category_id, document_id, dwg_text_id, summary )
+		 VALUES ( ' . db_param() . ', 1, ' . db_param() . ', ' . db_param() . ', ' . db_param() . ', ' . db_param() . ' )',
+		array( $p_project_id, $p_category_id, $t_document_id, $t_text_id, $p_summary )
 	);
 	return db_insert_id( db_get_table( 'dwg' ) );
 }
@@ -383,11 +390,17 @@ check( $t_content !== false && $t_content['content'] === "draft v4\n", 'retrieve
 echo "── Teardown ─────────────────────────────────────────────────────────────\n";
 foreach( $t_cleanup['dwg_ids'] as $t_id ) {
 	db_param_push();
+	$t_text_id = db_result( db_query( 'SELECT dwg_text_id FROM {dwg} WHERE id=' . db_param(), array( $t_id ) ) );
+	db_param_push();
 	db_query( 'DELETE FROM {dwg_history} WHERE dwg_id=' . db_param(), array( $t_id ) );
 	db_param_push();
 	db_query( 'DELETE d, doc FROM {dwg} d LEFT JOIN {documents} doc ON doc.id=d.document_id WHERE d.id=' . db_param(), array( $t_id ) );
 	db_param_push();
 	db_query( 'DELETE FROM {dwg_primary_file} WHERE dwg_id=' . db_param(), array( $t_id ) );
+	if( $t_text_id > 0 ) {
+		db_param_push();
+		db_query( 'DELETE FROM {dwg_text} WHERE id=' . db_param(), array( $t_text_id ) );
+	}
 }
 foreach( $t_cleanup['repo_ids'] as $t_id ) {
 	db_param_push();
