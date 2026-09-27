@@ -509,18 +509,18 @@ if( true
 	print_table_spacer( 6 );
 }
 
-echo '<tr>';
-echo '<th class="category">', lang_get( 'dwg_link_url' ), '</th>';
-echo '<td colspan="5" style="overflow-wrap:anywhere">';
-if( $t_dwg->link_url !== '' ) {
+if( !is_blank( $t_dwg->link_url ) ) {
+	echo '<tr>';
+	echo '<th class="category">', lang_get( 'dwg_link_url' ), '</th>';
+	echo '<td colspan="5" style="overflow-wrap:anywhere">';
 	if( dwg_link_url_is_valid( $t_dwg->link_url ) ) {
 		echo '<a href="', string_attribute( $t_dwg->link_url ), '">',
 			string_html_specialchars( $t_dwg->link_url ), '</a>';
 	} else {
 		echo string_html_specialchars( $t_dwg->link_url );
 	}
+	echo '</td></tr>';
 }
-echo '</td></tr>';
 
 if( $t_flags['id_show'] || $t_flags['project_show'] || $t_flags['category_show'] ||
 	$t_flags['view_state_show'] || $t_flags['created_at_show'] || $t_flags['updated_at_show']
