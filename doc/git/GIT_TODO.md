@@ -4,6 +4,9 @@ This document tracks all deferred features, design decisions to be made, and
 development tasks for the git storage system. See [GIT_ARCHITECTURE.md](GIT_ARCHITECTURE.md)
 for the implemented baseline.
 
+The proposed HCRQMS staging, ownership choices, and import validation steps
+are in [HCRQMS_IMPORT_REHEARSAL.md](HCRQMS_IMPORT_REHEARSAL.md).
+
 Status: ☐ todo · ◐ in progress · ⊘ explicitly deferred · ☑ done
 
 ---
