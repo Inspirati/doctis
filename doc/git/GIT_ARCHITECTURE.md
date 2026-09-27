@@ -275,7 +275,8 @@ on top of it.
    file at `git_path`, `git add` + `git commit`
    (message: `dwg_id=<N> by <username>`), **mandatory `git push`**.
 3. If the path changed, the old path is soft-deleted from HEAD.
-4. The new commit SHA is passed to `file_dwg_primary_register()`.
+4. A first upload is registered On Record. A replacement is stored in
+   `{dwg_primary_draft}` without changing the On Record row or Reference.
 
 Duplicate content (commit exits 1 — nothing to commit) is treated as a
 successful store returning the existing HEAD SHA.
@@ -285,7 +286,8 @@ successful store returning the existing HEAD SHA.
 `GitFileStorageBackend::retrieve()` runs
 `git show <git_sha>:<git_path>` against the bare repository directly (never
 the worktree). Historical versions (`dwg_primary_at_sha`) and the current
-draft (`dwg_primary_head`) retrieve the same `git_path` at a different SHA.
+draft (`dwg_primary_head`) uses the staged path when a replacement was
+uploaded with a new name. On Record always uses its own stored path and SHA.
 
 ### Delete (soft delete)
 
@@ -302,12 +304,12 @@ Doctis distinguishes two versions of a document's primary file:
 | Concept | Storage | Access |
 |---------|---------|--------|
 | **On-Record (approved)** | `{dwg_primary_file}.git_sha` — a pinned SHA in the DB | `retrieve()` via `git show <git_sha>:<git_path>` |
-| **Draft** | Whatever is at the repo's branch `HEAD` | `file_dwg_git_head_info()` reads it independently of the DB |
+| **Draft** | The file at repo `HEAD`; `{dwg_primary_draft}.git_path` records a renamed replacement | `file_dwg_git_head_info()` checks that path at HEAD |
 
 `file_dwg_primary_sync_head()` is the "approve current draft" primitive: it
-reads `HEAD` and writes it as the new `git_sha`. The registered `git_path` is
-the document's identity and is **never changed by promotion** — the path must
-exist at HEAD to promote.
+reads `HEAD` and writes it as the new `git_sha`. For a staged replacement it
+also adopts the Draft path and filename, then clears the staged row. Otherwise
+the existing registered path must exist at HEAD to promote an external update.
 
 ### Dangling paths
 

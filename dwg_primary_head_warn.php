@@ -62,7 +62,8 @@ $t_project_id   = dwg_get_field( $f_dwg_id, 'project_id' );
 $t_project_name = project_get_field( $t_project_id, 'name' );
 $t_repo_base    = dwg_project_repo_basename( $t_project_id );
 $t_bare         = dwg_project_bare_repo_path( $t_project_id );
-$t_rel_path     = $t_row['git_path'];
+$t_draft_row    = file_dwg_primary_draft_get( $f_dwg_id );
+$t_rel_path     = ( $t_draft_row ?: $t_row )['git_path'];
 
 # Shell-safe versions for display in <code> blocks.
 $t_bare_shell    = escapeshellarg( $t_bare );

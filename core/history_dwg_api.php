@@ -627,6 +627,9 @@ function history_dwg_localize_field_name( $p_field_name ) {
 		case 'primary_document':
 			$t_field_localized = lang_get( 'primary_document_section' );
 			break;
+		case 'primary_document_draft':
+			$t_field_localized = lang_get( 'primary_document_draft' );
+			break;
 		default:
 			# assume it's a custom field name
 			$t_field_localized = lang_get_defaulted( $p_field_name );

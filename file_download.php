@@ -133,7 +133,7 @@ if( $f_type === 'dwg_primary_head' ) {
 
 	access_ensure_dwg_level( config_get( 'dwg_primary_document_threshold' ), $f_dwg_id );
 
-	$t_row = file_dwg_primary_get( $f_dwg_id );
+	$t_row = file_dwg_primary_draft_get( $f_dwg_id ) ?: file_dwg_primary_get( $f_dwg_id );
 	if( $t_row === null ) {
 		error_parameters( $f_dwg_id );
 		trigger_error( ERROR_FILE_NOT_FOUND, ERROR );

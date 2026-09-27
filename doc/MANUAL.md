@@ -192,15 +192,15 @@ Doctis.
 
 | Row label | Meaning |
 |-----------|---------|
-| **On Record** | The version currently registered in Doctis.  Click the filename to download.  The abbreviated SHA is shown for git-stored files. |
-| **Draft** | The most recent commit in the git repository. Downloading this version shows a warning; its SHA can differ from On Record after another document in the same repository changes. |
+| **On Record** | The approved version, including its original filename and content, until a manager promotes a replacement. Click the filename to download it. |
+| **Draft** | The file at the current repository HEAD. A replacement upload may have a different filename and content; it remains Draft until promoted. |
 
 ### Actions
 
 | Action | Access required | Description |
 |--------|----------------|-------------|
-| **Replace Document** | UPDATER | Upload a new primary file, replacing the current On Record version. A confirmation shows the saved filename and SHA; the SHA is also written to the document's Reference field. |
-| **Sync to HEAD** | MANAGER | Update the On Record record to match the current git HEAD (for cases where a file has been committed to git outside Doctis). |
+| **Replace Document** | UPDATER | Upload a replacement as Draft. On Record and the document Reference remain unchanged. A second upload supersedes the current Draft. |
+| **Sync to HEAD** | MANAGER | Promote the Draft at git HEAD to On Record, including its filename, content, and Reference. Also supports an external Git update at the existing path. |
 | **Tag** | MANAGER | Apply a named git tag to the current On Record SHA (e.g. `approved-rev-A`). |
 | **Touch** | MANAGER | Re-commit the current file to git without content change, creating a new SHA.  Useful to force a new commit timestamp. |
 

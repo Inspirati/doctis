@@ -187,37 +187,48 @@ echo "Step 5: replace with same filename\n";
 $t_tmp = write_tmp( "content v2\n" );
 file_dwg_primary_add( $t_dwg1, 1, $t_tmp, 'spec.md', 11, 'text/markdown', 'revised' );
 $t_row = file_dwg_primary_get( $t_dwg1 );
+$t_draft = file_dwg_primary_draft_get( $t_dwg1 );
 check( bare_git( $t_bare, 'ls-tree --name-only HEAD ' . escapeshellarg( $t_row['git_path'] ) ) === $t_row['git_path'],
 	'file still present at HEAD after same-name replace' );
 $t_content = file_dwg_primary_get_content( $t_dwg1 );
-check( $t_content !== false && $t_content['content'] === "content v2\n", 'retrieve returns new content' );
+check( $t_content !== false && $t_content['content'] === "content v1\n", 'On Record content remains original' );
+$t_content = file_dwg_primary_get_head_content( $t_dwg1 );
+check( $t_content !== false && $t_content['content'] === "content v2\n", 'Draft serves new content' );
+check( $t_draft !== null && $t_draft['filename'] === 'spec.md' && $t_draft['git_sha'] !== $t_row['git_sha'],
+	'Draft metadata differs from On Record' );
 db_param_push();
 $t_revision_count = (int)db_result( db_query(
-	'SELECT COUNT(*) FROM {dwg_history} WHERE dwg_id=' . db_param() . ' AND field_name=\'primary_document\'',
+	'SELECT COUNT(*) FROM {dwg_history} WHERE dwg_id=' . db_param() . ' AND field_name=\'primary_document_draft\'',
 	array( $t_dwg1 )
 ) );
-check( $t_revision_count === 2, 'initial upload and same-name replacement appear in document history' );
+check( $t_revision_count === 1, 'same-name replacement appears as Draft in document history' );
 
 # ── Step 6: replace with NEW filename (sticky directory) ────────────────────
 echo "Step 6: replace with new filename\n";
 $t_tmp = write_tmp( "content v3\n" );
 file_dwg_primary_add( $t_dwg1, 1, $t_tmp, 'spec-rev-b.md', 11, 'text/markdown', 'renamed' );
 $t_row = file_dwg_primary_get( $t_dwg1 );
-check( $t_row['git_path'] === $t_dwg1 . '/spec-rev-b.md', 'directory sticky, basename adopted', $t_row['git_path'] );
+$t_draft = file_dwg_primary_draft_get( $t_dwg1 );
+check( $t_row['git_path'] === $t_dwg1 . '/spec.md' && $t_row['filename'] === 'spec.md',
+	'On Record keeps original path and filename' );
+check( $t_draft['git_path'] === $t_dwg1 . '/spec-rev-b.md', 'Draft adopts new basename', $t_draft['git_path'] );
 check( bare_git( $t_bare, 'ls-tree --name-only HEAD ' . escapeshellarg( $t_dwg1 . '/spec.md' ) ) === '',
 	'old path removed from HEAD' );
-check( bare_git( $t_bare, 'ls-tree --name-only HEAD ' . escapeshellarg( $t_row['git_path'] ) ) === $t_row['git_path'],
+check( bare_git( $t_bare, 'ls-tree --name-only HEAD ' . escapeshellarg( $t_draft['git_path'] ) ) === $t_draft['git_path'],
 	'new path present at HEAD' );
-check( $t_row['git_sha'] === bare_git( $t_bare, 'rev-parse HEAD' ),
+
+check( $t_draft['git_sha'] === bare_git( $t_bare, 'rev-parse HEAD' ),
 	'renamed replacement records final HEAD commit' );
 $t_content = file_dwg_primary_get_content( $t_dwg1 );
-check( $t_content !== false && $t_content['content'] === "content v3\n", 'renamed replacement serves new content' );
+check( $t_content !== false && $t_content['content'] === "content v1\n", 'On Record still serves original content' );
+$t_content = file_dwg_primary_get_head_content( $t_dwg1 );
+check( $t_content !== false && $t_content['content'] === "content v3\n", 'renamed Draft serves new content' );
 db_param_push();
 $t_revision_count = (int)db_result( db_query(
-	'SELECT COUNT(*) FROM {dwg_history} WHERE dwg_id=' . db_param() . ' AND field_name=\'primary_document\'',
+	'SELECT COUNT(*) FROM {dwg_history} WHERE dwg_id=' . db_param() . ' AND field_name=\'primary_document_draft\'',
 	array( $t_dwg1 )
 ) );
-check( $t_revision_count === 3, 'renamed replacement appears in document history' );
+check( $t_revision_count === 2, 'renamed replacement appears as Draft in document history' );
 
 # ── Step 7: register-by-reference ────────────────────────────────────────────
 echo "Step 7: register-by-reference (no upload)\n";
@@ -266,7 +277,7 @@ try {
 }
 # dwg1's row must be intact after the rejected registration attempt.
 $t_row = file_dwg_primary_get( $t_dwg1 );
-check( $t_row !== null && $t_row['git_path'] === $t_dwg1 . '/spec-rev-b.md', 'holder row untouched by rejected attempt' );
+check( $t_row !== null && $t_row['git_path'] === $t_dwg1 . '/spec.md', 'holder row untouched by rejected attempt' );
 
 # ── Step 9: head info and dangling-path detection ────────────────────────────
 echo "Step 9: HEAD info and dangling path\n";
@@ -297,7 +308,9 @@ $t_before = file_dwg_primary_get( $t_dwg1 );
 file_dwg_primary_sync_head( $t_dwg1, 1 );
 $t_after = file_dwg_primary_get( $t_dwg1 );
 check( $t_after['git_sha'] !== $t_before['git_sha'], 'git_sha advanced to HEAD' );
-check( $t_after['git_path'] === $t_before['git_path'], 'git_path unchanged by promotion' );
+check( $t_after['git_path'] === $t_dwg1 . '/spec-rev-b.md' && $t_after['filename'] === 'spec-rev-b.md',
+	'promotion adopts Draft path and filename' );
+check( file_dwg_primary_draft_get( $t_dwg1 ) === null, 'Draft cleared after promotion' );
 $t_content = file_dwg_primary_get_content( $t_dwg1 );
 check( $t_content !== false && $t_content['content'] === "draft v4\n", 'promoted content served' );
 
@@ -413,6 +426,8 @@ foreach( $t_cleanup['dwg_ids'] as $t_id ) {
 	db_query( 'DELETE d, doc FROM {dwg} d LEFT JOIN {documents} doc ON doc.id=d.document_id WHERE d.id=' . db_param(), array( $t_id ) );
 	db_param_push();
 	db_query( 'DELETE FROM {dwg_primary_file} WHERE dwg_id=' . db_param(), array( $t_id ) );
+	db_param_push();
+	db_query( 'DELETE FROM {dwg_primary_draft} WHERE dwg_id=' . db_param(), array( $t_id ) );
 	if( $t_text_id > 0 ) {
 		db_param_push();
 		db_query( 'DELETE FROM {dwg_text} WHERE id=' . db_param(), array( $t_text_id ) );

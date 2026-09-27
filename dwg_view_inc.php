@@ -1034,6 +1034,7 @@ if( $t_flags['sponsorships_show'] ) {
 # Panel is hidden from users below $g_dwg_primary_document_threshold (default REPORTER).
 if( access_has_dwg_level( config_get( 'dwg_primary_document_threshold' ), $f_dwg_id ) ):
 $t_primary_file = file_dwg_primary_get( $f_dwg_id );
+$t_primary_draft = file_dwg_primary_draft_get( $f_dwg_id );
 $t_can_upload_primary = !$t_force_readonly &&
 	access_has_dwg_level( config_get( 'update_dwg_threshold' ), $f_dwg_id );
 # Sync to HEAD is a privileged operation — restricted to manager level and above.
@@ -1044,8 +1045,9 @@ $t_git_head_sha      = $t_git_head_info ? $t_git_head_info['sha']      : null;
 $t_git_head_date     = $t_git_head_info ? $t_git_head_info['date']     : null;
 $t_git_head_author   = $t_git_head_info ? $t_git_head_info['author']   : null;
 $t_git_head_filename = $t_git_head_info ? $t_git_head_info['filename'] : null;
-$t_primary_uploaded = $t_primary_file &&
-	gpc_get_string( 'primary_uploaded', '' ) === $t_primary_file['git_sha'];
+$t_uploaded_file = $t_primary_draft ?: $t_primary_file;
+$t_primary_uploaded = $t_uploaded_file &&
+	gpc_get_string( 'primary_uploaded', '' ) === $t_uploaded_file['git_sha'];
 $t_collapse_block = $t_primary_uploaded ? false : is_collapsed( 'primary_document', true );
 $t_block_css = $t_collapse_block ? 'collapsed' : '';
 $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
@@ -1071,14 +1073,15 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 <?php if( $t_primary_uploaded ): ?>
 			<div class="alert alert-success">
 				<?php echo sprintf( lang_get( 'primary_document_upload_complete' ),
-					string_display_line( $t_primary_file['filename'] ),
-					htmlspecialchars( substr( $t_primary_file['git_sha'], 0, 8 ) ) ) ?>
+					string_display_line( $t_uploaded_file['filename'] ),
+					htmlspecialchars( substr( $t_uploaded_file['git_sha'], 0, 8 ) ) ) ?>
 			</div>
 <?php endif; ?>
 			<div class="table-responsive">
 				<table class="table table-bordered table-condensed table-striped">
 <?php
-$t_head_diverged = $t_git_head_sha !== null && $t_git_head_sha !== ( $t_primary_file['git_sha'] ?? null );
+$t_head_diverged = $t_primary_draft !== null ||
+	( $t_git_head_sha !== null && $t_git_head_sha !== ( $t_primary_file['git_sha'] ?? null ) );
 ?>
 <?php if( $t_primary_file ): ?>
 				<tr class="bug-header">
@@ -1122,7 +1125,7 @@ $t_head_diverged = $t_git_head_sha !== null && $t_git_head_sha !== ( $t_primary_
 						?></a>
 <?php	elseif( $t_git_head_sha !== null ): ?>
 						<a href="dwg_primary_head_warn.php?id=<?php echo $f_dwg_id ?>"
-							title="The registered path <?php echo htmlspecialchars( $t_primary_file['git_path'] ) ?> was renamed or deleted by a push made outside Doctis">
+							title="The draft path <?php echo htmlspecialchars( ( $t_primary_draft ?: $t_primary_file )['git_path'] ) ?> is absent from HEAD">
 							<span class="label label-danger">missing at HEAD</span>
 						</a>
 <?php	else: ?>

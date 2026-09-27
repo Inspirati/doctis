@@ -1731,6 +1731,14 @@ function file_dwg_primary_get( $p_dwg_id ) {
 	return $t_row ? $t_row : null;
 }
 
+/** Return a staged replacement, if one exists. */
+function file_dwg_primary_draft_get( $p_dwg_id ) {
+	db_param_push();
+	$t_result = db_query( 'SELECT * FROM {dwg_primary_draft} WHERE dwg_id=' . db_param(), array( (int)$p_dwg_id ) );
+	$t_row = db_fetch_array( $t_result );
+	return $t_row ?: null;
+}
+
 /**
  * Sanitise a repo-relative document path.
  *
@@ -1836,6 +1844,24 @@ function file_dwg_primary_path_in_use( int $p_dwg_id, int $p_project_id, string 
 	}
 	$t_result = db_query(
 		'SELECT f.dwg_id FROM {dwg_primary_file} f'
+		. ' INNER JOIN {dwg} d ON d.id = f.dwg_id'
+		. ' WHERE f.git_path=' . db_param() . ' AND f.dwg_id<>' . db_param()
+		. ' AND d.project_id IN (' . implode( ',', $t_in ) . ')',
+		$t_params, 1
+	);
+	$t_holder = db_result( $t_result );
+	if( $t_holder !== false ) {
+		return (int)$t_holder;
+	}
+	db_param_push();
+	$t_params = array( $p_git_path, $p_dwg_id );
+	$t_in = array();
+	foreach( $t_project_ids as $t_id ) {
+		$t_in[] = db_param();
+		$t_params[] = (int)$t_id;
+	}
+	$t_result = db_query(
+		'SELECT f.dwg_id FROM {dwg_primary_draft} f'
 		. ' INNER JOIN {dwg} d ON d.id = f.dwg_id'
 		. ' WHERE f.git_path=' . db_param() . ' AND f.dwg_id<>' . db_param()
 		. ' AND d.project_id IN (' . implode( ',', $t_in ) . ')',
@@ -1982,10 +2008,55 @@ function file_dwg_primary_register( int $p_dwg_id, int $p_user_id, string $p_git
 	);
 }
 
+/** Stage a replacement without changing the On Record file or reference. */
+function file_dwg_primary_draft_register( int $p_dwg_id, int $p_user_id, string $p_git_path, string $p_sha, string $p_description = '', string $p_file_type = '' ): array {
+	$t_previous = file_dwg_primary_draft_get( $p_dwg_id );
+	$t_project_id = (int)dwg_get_field( $p_dwg_id, 'project_id' );
+	$t_bare = dwg_project_bare_repo_path( $t_project_id );
+	$t_git_path = file_dwg_git_path_sanitize( $p_git_path );
+	$t_sha = strtolower( trim( $p_sha ) );
+	if( $t_sha === '' ) {
+		$t_sha = trim( (string)shell_exec( 'git --git-dir=' . escapeshellarg( $t_bare ) . ' rev-parse HEAD 2>/dev/null' ) );
+	}
+	if( $t_git_path === false || !preg_match( '/^[0-9a-f]{40}$/', $t_sha ) ) {
+		throw new ClientException( 'Invalid draft path or commit', ERROR_INVALID_FIELD_VALUE, array( 'git_path' ) );
+	}
+	$t_holder = file_dwg_primary_path_in_use( $p_dwg_id, $t_project_id, $t_git_path );
+	if( $t_holder !== 0 ) {
+		throw new ClientException( 'Draft path is registered to document ' . $t_holder, ERROR_INVALID_FIELD_VALUE, array( 'git_path' ) );
+	}
+	$t_size_str = trim( (string)shell_exec( 'git --git-dir=' . escapeshellarg( $t_bare )
+		. ' cat-file -s ' . escapeshellarg( $t_sha . ':' . $t_git_path ) . ' 2>/dev/null' ) );
+	if( !ctype_digit( $t_size_str ) ) {
+		throw new ClientException( 'Draft file is absent at commit', ERROR_INVALID_FIELD_VALUE, array( 'git_path' ) );
+	}
+	$t_branch = trim( (string)shell_exec( 'git --git-dir=' . escapeshellarg( $t_bare ) . ' symbolic-ref --short HEAD 2>/dev/null' ) );
+	$t_branch = $t_branch !== '' ? $t_branch : 'main';
+	$t_filename = basename( $t_git_path );
+	$t_file_type = $p_file_type !== '' ? $p_file_type : ( file_dwg_get_content_type_override( $t_filename ) ?: 'application/octet-stream' );
+	db_param_push();
+	db_query( 'DELETE FROM {dwg_primary_draft} WHERE dwg_id=' . db_param(), array( $p_dwg_id ) );
+	db_param_push();
+	db_query(
+		'INSERT INTO {dwg_primary_draft}
+		( dwg_id, user_id, filename, filesize, file_type, git_sha, git_path, date_added, description, git_branch )
+		VALUES
+		( ' . db_param() . ', ' . db_param() . ', ' . db_param() . ', ' . db_param() . ', ' . db_param() . ',
+		  ' . db_param() . ', ' . db_param() . ', ' . db_param() . ', ' . db_param() . ', ' . db_param() . ' )',
+		array( $p_dwg_id, $p_user_id, $t_filename, (int)$t_size_str, $t_file_type,
+			$t_sha, $t_git_path, db_now(), $p_description, $t_branch )
+	);
+	history_dwg_log_event_direct( $p_dwg_id, 'primary_document_draft',
+		file_dwg_primary_history_value( $t_previous ),
+		file_dwg_primary_history_value( array( 'git_sha' => $t_sha, 'filename' => $t_filename ) ), $p_user_id );
+	return array( 'git_sha' => $t_sha, 'git_path' => $t_git_path,
+		'filename' => $t_filename, 'filesize' => (int)$t_size_str );
+}
+
 /**
  * Store a primary document file for a dwg: commit it into the project
- * repository via the GIT backend, then register the resulting commit
- * (file_dwg_primary_register()).
+ * repository via the GIT backend. First uploads register On Record;
+ * replacements are staged as Draft until a manager promotes them.
  *
  * The document's location in the repository is sticky: a replacement keeps
  * the registered directory (only the basename may change); the path template
@@ -2004,7 +2075,8 @@ function file_dwg_primary_add( $p_dwg_id, $p_user_id, $p_tmp_file, $p_filename, 
 	$t_project_id = (int)dwg_get_field( $p_dwg_id, 'project_id' );
 	$t_backend    = file_dwg_get_storage_backend();
 
-	$t_existing = file_dwg_primary_get( $p_dwg_id );
+	$t_on_record = file_dwg_primary_get( $p_dwg_id );
+	$t_existing = file_dwg_primary_draft_get( $p_dwg_id ) ?: $t_on_record;
 
 	if( $t_existing && $t_existing['git_path'] !== '' ) {
 		# Replacement: keep the registered directory, adopt the new basename.
@@ -2057,11 +2129,15 @@ function file_dwg_primary_add( $p_dwg_id, $p_user_id, $p_tmp_file, $p_filename, 
 			'git_path'   => $t_existing['git_path'],
 			'user_id'    => $p_user_id,
 		) );
-		# The deletion creates a second commit. Register the final HEAD so the
-		# On Record and Draft rows refer to the same resulting tree.
+		# The deletion creates a second commit. Stage the final HEAD SHA.
 		$t_git_sha = '';
 	}
 
+	if( $t_on_record ) {
+		return file_dwg_primary_draft_register(
+			(int)$p_dwg_id, (int)$p_user_id, $t_git_path, $t_git_sha, $p_description, $p_file_type
+		);
+	}
 	return file_dwg_primary_register(
 		(int)$p_dwg_id, (int)$p_user_id, $t_git_path, $t_git_sha, $p_description,
 		/* pin */ true, $p_file_type
@@ -2095,22 +2171,28 @@ function file_dwg_set_document_reference( int $p_dwg_id, string $p_reference ): 
  */
 function file_dwg_primary_delete( $p_dwg_id ) {
 	$t_row = file_dwg_primary_get( $p_dwg_id );
+	$t_draft = file_dwg_primary_draft_get( $p_dwg_id );
 	if( !$t_row ) {
+		db_param_push();
+		db_query( 'DELETE FROM {dwg_primary_draft} WHERE dwg_id=' . db_param(), array( (int)$p_dwg_id ) );
 		return;
 	}
 
 	$t_project_id = dwg_get_field( $p_dwg_id, 'project_id' );
 	$t_backend    = file_dwg_get_storage_backend();
+	$t_delete_row = $t_draft ?: $t_row;
 	$t_metadata   = array(
 		'dwg_id'     => $p_dwg_id,
 		'project_id' => $t_project_id,
-		'filename'   => $t_row['filename'],
-		'git_path'   => $t_row['git_path'],
-		'user_id'    => $t_row['user_id'],
+		'filename'   => $t_delete_row['filename'],
+		'git_path'   => $t_delete_row['git_path'],
+		'user_id'    => $t_delete_row['user_id'],
 	);
 
-	$t_backend->delete( $t_row['git_sha'], $t_project_id, $t_metadata );
+	$t_backend->delete( $t_delete_row['git_sha'], $t_project_id, $t_metadata );
 
+	db_param_push();
+	db_query( 'DELETE FROM {dwg_primary_draft} WHERE dwg_id=' . db_param(), array( (int)$p_dwg_id ) );
 	db_param_push();
 	db_query( 'DELETE FROM {dwg_primary_file} WHERE dwg_id=' . db_param(), array( (int)$p_dwg_id ) );
 }
@@ -2164,7 +2246,7 @@ function file_dwg_primary_get_content( $p_dwg_id ) {
  * @return array{type: string, content: string}|false
  */
 function file_dwg_primary_get_head_content( int $p_dwg_id ) {
-	$t_row = file_dwg_primary_get( $p_dwg_id );
+	$t_row = file_dwg_primary_draft_get( $p_dwg_id ) ?: file_dwg_primary_get( $p_dwg_id );
 	if( !$t_row ) {
 		return false;
 	}
@@ -2250,6 +2332,14 @@ function file_dwg_primary_sync_head( int $p_dwg_id, int $p_acting_user_id ): voi
 	if( !$t_row ) {
 		trigger_error( ERROR_GENERIC, ERROR );
 	}
+	$t_draft = file_dwg_primary_draft_get( $p_dwg_id );
+	if( $t_draft ) {
+		file_dwg_primary_register( $p_dwg_id, $p_acting_user_id,
+			$t_draft['git_path'], $t_head['sha'], $t_draft['description'], true, $t_draft['file_type'] );
+		db_param_push();
+		db_query( 'DELETE FROM {dwg_primary_draft} WHERE dwg_id=' . db_param(), array( $p_dwg_id ) );
+		return;
+	}
 
 	$t_project_id = dwg_get_field( $p_dwg_id, 'project_id' );
 	$t_bare       = dwg_project_bare_repo_path( $t_project_id );
@@ -2327,7 +2417,7 @@ function file_dwg_git_head_info( int $p_dwg_id ): ?array {
 
 	# Does the registered path still exist at HEAD?
 	$t_filename = null;
-	$t_row = file_dwg_primary_get( $p_dwg_id );
+	$t_row = file_dwg_primary_draft_get( $p_dwg_id ) ?: file_dwg_primary_get( $p_dwg_id );
 	if( $t_row && $t_row['git_path'] !== '' ) {
 		exec(
 			'git --git-dir=' . escapeshellarg( $t_bare ) .
