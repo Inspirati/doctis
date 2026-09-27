@@ -261,6 +261,13 @@ VM can regenerate its database and Git store together without a VM snapshot;
 a populated production service cannot use a global reset to undo one failed
 project import.
 
+The HCRQMS review found 59 pending documents with blank `Reference` because
+their frontmatter begins with `Draft`: the current importer deliberately leaves
+drafts without an on-record pin, although their primary-file Git SHAs exist.
+The native paired-reset wrapper has passed `--preview`; its destructive
+`--execute` path and a repeat import remain untested pending the Reference
+policy decision. See the runbook for the exact counts and reset scope.
+
 Follow-ups surfaced by the refactor:
 - ☐ UI action to re-point a dangling `git_path` (currently: re-upload, or
   register the new location via core API).

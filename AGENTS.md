@@ -76,6 +76,11 @@ history was intentionally not imported. The owner will assign document
 responsibility within Doctis, then address coordinated wipe-and-repeat support
 after evaluating this first import. See
 `doc/git/HCRQMS_IMPORT_REHEARSAL.md` for the current procedure and decisions.
+The first import remains live. Its 59 frontmatter-Draft documents have blank
+`documents.reference` by the existing on-record pin policy, although all have
+primary-file Git SHAs. A native whole-instance reset wrapper has passed
+read-only preview; its execute path has not yet been used. Do not reset until
+the owner's Reference policy decision is incorporated.
 
 ## Owner's requirement
 

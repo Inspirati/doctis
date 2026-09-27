@@ -238,8 +238,9 @@ ssh hcr@vaio "echo 'yes' | sudo bash /var/www/html/doctis/admin/tools/doctis-git
 
 ### `doctis-drop-and-create-new-database.sh`
 
-Drops the `doctis` MariaDB database, recreates it, runs the Doctis schema
-installer, and reloads example data (project, licenses, test users).
+Drops the `doctis` MariaDB database, recreates it, and runs the Doctis schema
+installer. It does not reload example data; use `doctis-load-sample-data.sh`
+afterward when that fixture set is needed.
 
 **Must be run from its own directory.**  It uses the relative path
 `../../../doctis` to construct the correct installer URL.  Running from any
@@ -328,6 +329,20 @@ the PHPUnit test suite) handles this transparently.
 ---
 
 ## Full clean-room reset (database + git store)
+
+On the native nginx development VM, use the paired wrapper. Its default
+`--preview` lists the database counts and Git-store entries without changing
+them. `--execute` runs both existing reset scripts as root through local
+MariaDB socket authentication, reloads sample data, and verifies the empty
+document/repository stores and application login page. It resets the **whole
+Doctis instance** and must not be used as a project-scoped production rollback.
+
+```bash
+sudo bash /var/www/html/doctis/admin/tools/doctis-reset-native-test.sh --preview
+sudo bash /var/www/html/doctis/admin/tools/doctis-reset-native-test.sh --execute
+```
+
+The older vaio commands below remain for that environment.
 
 Run these two commands in order before any test session that must start from
 a known-empty state:

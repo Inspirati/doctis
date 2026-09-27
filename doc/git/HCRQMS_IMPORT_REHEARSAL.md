@@ -116,6 +116,19 @@ select the `HCRQMS` project to inspect the rest. The document title is in the
 is blank even though titles are populated; check whether any list or search
 view needs that field before production migration.
 
+### Reference field observation
+
+The imported `Reference` is the on-record Git SHA, not the human-readable
+frontmatter `doc_id` (which maps to document `number`). The importer treats a
+frontmatter status beginning with `Draft` as pending **without** an on-record
+pin. Thus 59 pending documents have an empty `documents.reference`; their
+`dwg_primary_file.git_sha` and Git path are populated and the primary-file
+panel shows the short SHA. Another 36 pending documents, including the
+`TODO.md` placeholders, were pinned because they had no Draft status; the
+four accepted documents were also pinned. All 40 nonempty references match
+their primary-file SHA. This follows the present approval model, but the
+visible blank Reference field is under review before any repeat import.
+
 ## Repeat testing and production cutover
 
 The first import is intentionally left in place for UI evaluation. **Do not
@@ -124,11 +137,11 @@ existing project. If the evaluation calls for another attempt, first build
 and test coordinated reset support. The current `doctis-git-reset.sh` deletes
 *all* bare repositories and worktrees; the database reset drops *all*
 projects. Running just one would leave database and Git storage inconsistent.
-The database reset script also lacks reliable failure propagation and needs
-checks for its credentials, installer URL, empty-store result, and restored
-sample data on this native VM. The owner has explicitly chosen to address
-this wipe-and-repeat support **after** evaluating the first import; no reset
-has been attempted here.
+`admin/tools/doctis-reset-native-test.sh` now coordinates these scripts,
+using root's local MariaDB socket, reloads sample data, and checks the empty
+document/repository stores and login page. Its read-only `--preview` has been
+validated against this VM; **`--execute` has not yet been run**. Use it only
+after the Reference policy is decided and this first import has been reviewed.
 
 For production, freeze each selected GitHub source at a recorded commit,
 create a private snapshot of its chosen document paths, dry-run, import into

@@ -278,15 +278,16 @@ full would-be result (projects, documents, metadata) without writing anything.
 
 Each registered document points at the import-time `HEAD` commit:
 
-- `{dwg_primary_file}.diskfile` = HEAD SHA, `git_branch` = current branch,
+- `{dwg_primary_file}.git_sha` = HEAD SHA, `git_branch` = current branch,
   `git_path` = repo-relative path, `filename` = basename,
   `filesize`/`file_type` from `git cat-file` / extension map,
-  `date_added` = the file's last-commit timestamp.
-- `git_sha` (On-Record) = HEAD SHA as well, **pinned** via
+  `date_added` = import time.
+- `{dwg_primary_file}.git_sha` always records the import-time HEAD SHA.
+  `documents.reference` is the separate on-record SHA, **pinned** via
   `file_dwg_git_pin_approved()` → `refs/doctis/approved/<dwg_id>/1`,
   *unless* the document's own frontmatter says it is a draft
-  (`status: Draft` → leave `git_sha` empty; the record starts as Draft-only
-  and is promoted later via the existing *Sync to HEAD* action).
+  (`status: Draft` → leave `documents.reference` and the approved ref empty;
+  promote later via the existing *Sync to HEAD* action).
 - `dwg.status`: default `110:pending`; refined from frontmatter where
   available (see mapping in §6).
 
@@ -388,7 +389,7 @@ carry `doc_id`, `title`, `revision`, `status`, `owner`, `approver`,
 | Frontmatter key | Doctis field | Notes |
 |-----------------|--------------|-------|
 | `title` | `documents.title` / `dwg.summary` | |
-| `doc_id` | `documents.reference` | e.g. `WI-IT-001`; also the §9 idempotency key |
+| `doc_id` | `documents.number` | e.g. `WI-IT-001`; `reference` stores the on-record SHA |
 | `revision` | `documents.revision` | |
 | `classification` | `dwg.classification` / `documents.classification` | e.g. `Internal` |
 | `status` | `dwg.status` | Map: `Draft`→110 pending (no On-Record pin, D6); `In Review`→160 review; `Approved`/`Effective`→180 accepted; `Released`→190 incorporated; `Superseded`/`Obsolete`→195 archived; unknown→110 + warning |
