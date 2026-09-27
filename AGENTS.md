@@ -22,6 +22,16 @@ The GitHub bootstrap has installed Doctis at `/var/www/html/doctis`, serving
 `http://10.0.0.94/doctis/`, and a fresh bootstrap download completed a rerun.
 Application code tested: `86170d2fa`; later documentation commits may follow.
 
+The one-time HCRQMS import was repeated on this disposable native VM after a
+coordinated database/Git reset. Current project ID is 2; repository ID is 1
+at `/var/git/doctis/hcrqms-r1.git`. All 99 imported Markdown documents have
+`documents.reference` equal to the snapshot commit SHA and matching
+`dwg_primary_file.git_sha`, including Draft/Pending documents. Import creates
+no approved Git refs; approval is separate. The reset script's final check was
+corrected to allow the schema installer's one projectless placeholder document.
+The full reset, dry-run, and real repeat import completed successfully. See
+`doc/git/HCRQMS_IMPORT_REHEARSAL.md` for commands and remaining UI review.
+
 Installed runtime: nginx 1.26.3, PHP 8.4.26, MariaDB 11.8.6. The owner accepted
 these Debian 13 versions; retain Docker PHP 8.2/MariaDB 10.11 as a separate
 compatibility baseline. DokuWiki, reference MantisBT and phpMyAdmin were omitted.

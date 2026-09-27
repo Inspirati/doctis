@@ -6,6 +6,9 @@ for the implemented baseline.
 
 The current one-time GitHub-to-Doctis migration procedure and HCRQMS test
 results are in [HCRQMS_IMPORT_REHEARSAL.md](HCRQMS_IMPORT_REHEARSAL.md).
+The 2026-09-27 repeat import now gives every imported document its Git SHA in
+`documents.reference`, without creating an approved Git ref. Approval remains
+a separate Doctis action.
 
 Status: ☐ todo · ◐ in progress · ⊘ explicitly deferred · ☑ done
 
@@ -67,7 +70,7 @@ prior to 2026-07-03.
 
 The Smart HTTP gateway now serves `git-receive-pack` (push) to users at
 `$g_git_http_write_threshold` (default `MANAGER`).  Pushes advance `HEAD` (the
-draft) only; the pinned `git_sha` (on-record version) changes only when
+draft) only; the registered `git_sha` and `documents.reference` change only when
 promoted inside Doctis.  See [GIT_ARCHITECTURE.md §On-Record vs Draft](GIT_ARCHITECTURE.md).
 
 **2a. Gateway receive-pack** ☑ — `core/git_http_api.php` authorises reads at
@@ -90,8 +93,8 @@ previously failed push (such a store never created a DB row).
 
 **2d. Approved SHAs pinned as managed refs** ☑ —
 `file_dwg_git_pin_approved()` writes `refs/doctis/approved/<dwg_id>/<seq>`
-whenever `git_sha` is recorded (initial/replacement upload in
-`file_dwg_primary_add()`, and promotion in `file_dwg_primary_sync_head()`).
+on upload in `file_dwg_primary_add()` and promotion in
+`file_dwg_primary_sync_head()`. Import registration deliberately omits the pin.
 Approved commits therefore stay reachable regardless of branch history, and
 the refs are an out-of-band approval record independent of the Doctis DB.
 The hook (2b) blocks clients from touching these refs.
@@ -106,16 +109,18 @@ Doctis, force-push rejection.
 
 ## 3. Lifecycle SHA Recording
 
-**Current state:** The `diskfile` column stores the SHA from the most recent
-upload. The `git_sha` column stores the approved/on-record SHA. Neither is yet
-fully integrated with the Doctis workflow event log.
+**Current state:** The primary-file `git_sha` and `documents.reference` store
+the registered Git SHA regardless of approval. An approved Git ref records
+pinning separately. SHA changes are not yet fully integrated with the Doctis
+workflow event log.
 
 ### 3a. Register an existing SHA without upload ☑ DONE (2026-07-12, C1 WP4)
 
 `file_dwg_primary_register( dwg_id, user_id, git_path, sha = HEAD, … )` in
 `core/file_dwg_api.php` — verifies the blob exists at `<sha>:<git_path>`,
 enforces per-repository path uniqueness, writes the row, updates
-`documents.reference`, pins the approved ref.  It is the single choke point
+`documents.reference`, and optionally pins the approved ref.  The importer
+disables pinning so approval is separate. It is the single choke point
 for all registrations; uploads are layered on it.  Covered by
 `admin/test-git-doctis.php` steps 7–8.  **Still outstanding:** a UI form and
 a SOAP endpoint (`mc_dwg_primary_register`) exposing it — currently core-API
@@ -224,7 +229,7 @@ was adopted and implemented — WP1–WP6 are done:
 - ☑ WP5 — dangling-path detection: `file_dwg_git_head_info()` checks the
   registered path at HEAD; "missing at HEAD" badge in the view panel;
   explanatory state in `dwg_primary_head_warn.php`.
-- ☑ WP6 — `admin/test-git-doctis.php` (59 checks: sanitizer, entity,
+- ☑ WP6 — `admin/test-git-doctis.php` (62 checks on the native VM: sanitizer, entity,
   resolution, templates, register, collisions, dangling paths, sync-to-HEAD,
   adoption, relocation).  Verified alongside `test-git-php.php` (20/20),
   `doctis-soap-test.sh` (13/13), gateway clone (canonical + stale-slug +
@@ -236,8 +241,8 @@ was adopted and implemented — WP1–WP6 are done:
   per-subdirectory) with full CLI override; `--dry-run` and idempotent
   `--update` (skip registered paths, report paths missing at HEAD, never
   auto-delete); metadata gleaning per GIT_IMPORTER §6 — frontmatter
-  (doc_id→**number**, title, revision, status→workflow map with Draft ⇒
-  unpinned, classification, owner→handler when matched, effective_date/
+  (doc_id→**number**, title, revision, status→workflow map,
+  classification, owner→handler when matched, effective_date/
   review_period→release/due dates) > git history (first/last commit →
   date_submitted/last_updated, author email→creator) > path/filename
   conventions (D7 path-as-category; hardware `HCR-570C-…-Rev-D` parse).
@@ -245,15 +250,15 @@ was adopted and implemented — WP1–WP6 are done:
   branch `dev`) and HCR-Hardware-Designs (parent + 7 sub-projects sharing
   one repo, 12 PDFs incl. paths with spaces).  Note: frontmatter `doc_id`
   maps to `documents.number`, not `reference` — Doctis manages `reference`
-  as the on-record SHA.
+  as the registered Git SHA.
 
 **Current acceptance scope (2026-09-27):** migrate selected GitHub-hosted
 repositories once into new Doctis-owned repositories at production deployment.
 The native nginx VM has now imported a one-commit snapshot containing only
-HCRQMS `content/` and `system/`: 99 documents into private project ID 8 and
-repository ID 8, with zero failures. GitHub history was intentionally omitted;
-67 metadata warnings remain for owner/status review. Authenticated UI review,
-coordinated failure recovery, and production cutover remain. The importer now
+HCRQMS `content/` and `system/`: 99 documents into private project ID 2 and
+repository ID 1, with zero failures. GitHub history was intentionally omitted;
+67 metadata warnings remain for owner/status review. Authenticated UI review
+and production cutover remain. The importer now
 defaults new projects to private, with `--project-visibility` as an explicit
 override. The implemented `--update` option is not needed for this migration
 and is not its retry path. See the runbook linked above. The disposable local
@@ -261,12 +266,11 @@ VM can regenerate its database and Git store together without a VM snapshot;
 a populated production service cannot use a global reset to undo one failed
 project import.
 
-The HCRQMS review found 59 pending documents with blank `Reference` because
-their frontmatter begins with `Draft`: the current importer deliberately leaves
-drafts without an on-record pin, although their primary-file Git SHAs exist.
-The native paired-reset wrapper has passed `--preview`; its destructive
-`--execute` path and a repeat import remain untested pending the Reference
-policy decision. See the runbook for the exact counts and reset scope.
+The initial HCRQMS import had 59 blank References. The native paired reset was
+then executed, and a repeat import confirmed all 99 `documents.reference`
+values match the registered import SHA, with no approved Git refs. The schema
+installer creates one projectless placeholder document, which the reset
+wrapper now accounts for. See the runbook for counts and reset scope.
 
 Follow-ups surfaced by the refactor:
 - ☐ UI action to re-point a dangling `git_path` (currently: re-upload, or

@@ -1,12 +1,13 @@
 # One-time HCRQMS document import into Doctis
 
-Status: 2026-09-27. The first real import **completed successfully** on the
-native nginx test VM. Project `HCRQMS` is private, project ID **8**; its new
-Doctis repository is `/var/git/doctis/hcrqms-r8.git`. All **99** selected
-Markdown documents were registered, with zero import failures. No VM clone,
-snapshot, database wipe, or Git-store reset was used. The original GitHub
-repository and local source clone remain unchanged. This local import does
-not itself archive GitHub or constitute a production cutover.
+Status: 2026-09-27. The initial import was reset and repeated after changing
+the Reference policy. The current native nginx test installation has private
+project `HCRQMS` (project ID **2**) and Doctis repository
+`/var/git/doctis/hcrqms-r1.git`. All **99** selected Markdown documents were
+registered with `documents.reference` equal to the import Git SHA. Approval
+pins were deliberately deferred. The original GitHub repository and local
+source clone remain unchanged. This local import does not itself archive
+GitHub or constitute a production cutover.
 
 ## Scope and repository ownership
 
@@ -96,21 +97,22 @@ These are metadata decisions for evaluation in Doctis, not missing files.
 
 - Project `HCRQMS` has view state `50` (private), and its repository row
   records branch `dev` and the staging source path. Doctis created 99
-  documents (IDs 14–112) with 99 title records and 99 distinct primary-file
+  documents (IDs 2–100) with 99 title records and 99 distinct primary-file
   paths. Every primary record points to the single import commit. The DB path
   set exactly matches the 99 source Markdown paths: no missing or extra path.
 - The adopted bare repository has exactly one commit, no inherited remote,
   matching `content/` and `system/` tree hashes, and passes `git fsck`. The
-  server worktree exists and is clean. There are 40 approved-document refs;
-  the remainder are unpinned draft registrations. Document states are 95
-  pending and four accepted. All 99 handlers are unassigned for later work.
+  server worktree exists and is clean. There are **no** approved-document
+  refs. Document states remain 95 pending and four accepted from source
+  frontmatter; these statuses did not create an approval pin. All 99 handlers
+  are unassigned for later work.
 - nginx, PHP-FPM, and MariaDB remain active. The login page responds HTTP
   200. An unauthenticated document URL redirects to login (302); an
   unauthenticated Git HTTP read receives 401. An authenticated UI session and
   document download still need human review.
 
 The administrator can start with
-`http://10.0.0.94/doctis/dwg_view_page.php?bug_id=14` after logging in, then
+`http://10.0.0.94/doctis/dwg_view_page.php?bug_id=2` after logging in, then
 select the `HCRQMS` project to inspect the rest. The document title is in the
 `documents` record. As in the existing document creation path, `dwg.summary`
 is blank even though titles are populated; check whether any list or search
@@ -118,30 +120,31 @@ view needs that field before production migration.
 
 ### Reference field observation
 
-The imported `Reference` is the on-record Git SHA, not the human-readable
-frontmatter `doc_id` (which maps to document `number`). The importer treats a
-frontmatter status beginning with `Draft` as pending **without** an on-record
-pin. Thus 59 pending documents have an empty `documents.reference`; their
-`dwg_primary_file.git_sha` and Git path are populated and the primary-file
-panel shows the short SHA. Another 36 pending documents, including the
-`TODO.md` placeholders, were pinned because they had no Draft status; the
-four accepted documents were also pinned. All 40 nonempty references match
-their primary-file SHA. This follows the present approval model, but the
-visible blank Reference field is under review before any repeat import.
+The imported `Reference` is the registered Git SHA, not the human-readable
+frontmatter `doc_id` (which maps to document `number`). All 99 references are
+nonempty and match the corresponding `dwg_primary_file.git_sha`, including
+Draft/Pending documents and `TODO.md` placeholders. Each SHA is the single
+snapshot commit `8f0fbb6384f98f706c03eb9d0d8761fca2a3fbc7`. No import
+registration created an approved Git ref. Approval remains a separate Doctis
+action. The four `accepted` document statuses were copied from source
+frontmatter and should be reviewed in the UI; status mapping was not changed
+as part of the Reference fix.
 
 ## Repeat testing and production cutover
 
-The first import is intentionally left in place for UI evaluation. **Do not
-re-run the importer against project `HCRQMS`**: this one-time path rejects an
-existing project. If the evaluation calls for another attempt, first build
-and test coordinated reset support. The current `doctis-git-reset.sh` deletes
-*all* bare repositories and worktrees; the database reset drops *all*
-projects. Running just one would leave database and Git storage inconsistent.
-`admin/tools/doctis-reset-native-test.sh` now coordinates these scripts,
-using root's local MariaDB socket, reloads sample data, and checks the empty
-document/repository stores and login page. Its read-only `--preview` has been
-validated against this VM; **`--execute` has not yet been run**. Use it only
-after the Reference policy is decided and this first import has been reviewed.
+The current repeat import is left in place for UI evaluation. **Do not re-run
+the importer against project `HCRQMS`**: this one-time path rejects an existing
+project. For another trial, `admin/tools/doctis-reset-native-test.sh` can
+reset the whole disposable native instance with `--preview` then `--execute`.
+It coordinates the existing Git and database reset scripts, reloads sample
+data, then checks that no project documents, primary registrations, or
+repositories remain and that the login page responds. The schema installer
+creates one projectless placeholder document; the reset correctly leaves it
+in place. The wrapper's first `--execute` exposed an incorrect zero-document
+assertion after the database and Git stores had already been reset; this was
+fixed, and a second `--execute` passed before the 99-file repeat import.
+Never run only one of the underlying reset scripts, and never use this global
+reset on an installation with data to retain.
 
 For production, freeze each selected GitHub source at a recorded commit,
 create a private snapshot of its chosen document paths, dry-run, import into
