@@ -112,8 +112,14 @@ By default scripts are fetched from GitHub.  Override with:
 
 ```bash
 export DOCTIS_SCRIPT_URL="http://10.0.0.10/doctis/admin/tools"  # LAN source
-export DOCTIS_GIT_REPO="http://10.0.0.10/git/doctis"            # LAN git repo
+export DOCTIS_GIT_REPO="ssh://robert@10.0.0.10/home/robert/html/doctis" # LAN source checkout
 ```
+
+The `/git/` HTTP route on vaio serves Doctis document repositories, not the
+Doctis application source. The target VM must be able to read the source
+checkout over SSH, or `DOCTIS_GIT_REPO` must name another Git transport that
+advertises the requested branch. The vaio web-served checkout must itself be
+on the `nginx` branch to supply the nginx dispatcher and installer script.
 
 ---
 

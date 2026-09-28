@@ -31,9 +31,12 @@ exec </dev/tty
 # ---------------------------------------------------------------------------
 # LAN server — the vaio development machine
 # ---------------------------------------------------------------------------
-LAN_SERVER="10.0.0.10"
-LAN_SCRIPT_ROOT="http://${LAN_SERVER}/doctis/admin/tools"
-LAN_GIT_REPO="http://${LAN_SERVER}/git/doctis"
+LAN_SERVER="${DOCTIS_LAN_SERVER:-10.0.0.10}"
+LAN_SCRIPT_ROOT="${DOCTIS_SCRIPT_URL:-http://${LAN_SERVER}/doctis/admin/tools}"
+# /git/ is the Doctis document gateway, not the application source repository.
+# The target VM needs SSH access to this checkout; override DOCTIS_GIT_REPO
+# if vaio serves the source repository through a different Git transport.
+LAN_GIT_REPO="${DOCTIS_GIT_REPO:-ssh://robert@${LAN_SERVER}/home/robert/html/doctis}"
 # ---------------------------------------------------------------------------
 
 # Advertise the overrides to child scripts (install-option.sh, install-target.sh)

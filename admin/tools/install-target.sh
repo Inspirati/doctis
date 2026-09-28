@@ -4,7 +4,7 @@
 export DOCTIS_BRANCH="${DOCTIS_BRANCH:-dev}"
 
 # DOCTIS_GIT_REPO overrides the default GitHub source, e.g. for LAN installs:
-#   export DOCTIS_GIT_REPO="http://10.0.0.10/git/doctis"
+#   export DOCTIS_GIT_REPO="ssh://robert@10.0.0.10/home/robert/html/doctis"
 git_repository="${DOCTIS_GIT_REPO:-https://github.com/Inspirati/doctis.git}"
 database="mariadb"
 #database="mysql"
@@ -555,4 +555,3 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 else
     echo -e "${DIAG}This script is being sourced from ${0}.${OFF}"
 fi
-

@@ -15,9 +15,16 @@ scripts into a fresh staging directory so cached scripts cannot select an older
 installation path. After this branch has been published:
 
 ```bash
+mkdir -p ~/doctis-nginx-install
+cd ~/doctis-nginx-install
 wget -O install.sh https://raw.githubusercontent.com/Inspirati/doctis/refs/heads/nginx/admin/tools/install.sh
 DOCTIS_BRANCH=nginx DOCTIS_WEB_SERVER=nginx bash install.sh
 ```
+
+Older VM templates may contain `/home/robert/install.sh` with a hardcoded
+`dev` dispatcher URL. Replace that file with the `nginx` branch bootstrap above,
+or download the bootstrap into a fresh staging directory and run it there.
+Setting `DOCTIS_BRANCH` alone does not change that older bootstrap's URL.
 
 From an existing checkout, select an explicit host/IP:
 
@@ -33,7 +40,30 @@ readable by its owner and `www-data`; existing config is retained.
 `DOCTIS_GIT_REPO` selects the application repository. `DOCTIS_SCRIPT_URL`
 selects downloaded scripts. LAN installations require the LAN server to serve
 the matching scripts and Git branch. An environment variable cannot switch the
-server's working tree for it.
+server's working tree for it. The older `/home/robert/get-doctis.sh` fetches
+cached root-level scripts and does not set these overrides; use the tracked
+`install-lan.sh` from the `nginx` branch instead. Its default application
+source is `ssh://robert@10.0.0.10/home/robert/html/doctis`, which requires SSH
+Git access from the test VM. `/git/doctis` on vaio is the Doctis document Git
+gateway and cannot serve as the application source repository. Check the LAN
+source before running the installer:
+
+```bash
+git ls-remote --exit-code --heads ssh://robert@10.0.0.10/home/robert/html/doctis nginx
+curl -fsS http://10.0.0.10/doctis/admin/tools/install-option.sh | grep -q 'DOCTIS_WEB_SERVER'
+```
+
+The vaio HTTP-served checkout must be on `nginx` for the second check to pass.
+Fetching `nginx` while leaving that checkout on `dev` is insufficient. Use a
+separate served worktree if the vaio development checkout must remain on `dev`.
+Once both checks pass, run the LAN bootstrap in a fresh staging directory:
+
+```bash
+mkdir -p ~/doctis-nginx-lan-install
+cd ~/doctis-nginx-lan-install
+wget -O install-lan.sh http://10.0.0.10/doctis/admin/tools/install-lan.sh
+DOCTIS_BRANCH=nginx DOCTIS_WEB_SERVER=nginx bash install-lan.sh
+```
 
 ## Layout and behavior
 
