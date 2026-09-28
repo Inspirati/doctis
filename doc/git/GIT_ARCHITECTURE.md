@@ -327,7 +327,7 @@ new location.
 
 ### Approved-SHA pinning
 
-Whenever a `git_sha` is recorded (registration, upload, promotion),
+When a first upload is registered or a Draft is promoted,
 `file_dwg_git_pin_approved()` writes a permanent, server-managed git ref:
 
 ```
@@ -338,6 +338,8 @@ This keeps every approved commit reachable regardless of later branch history
 (immune to GC), and forms an out-of-band approval record that does not depend
 on the Doctis DB. The pre-receive hook rejects any client push touching
 `refs/doctis/*`; only the server writes them (`git update-ref` bypasses hooks).
+The importer can register without approval, and replacement uploads are staged
+without an approved ref.
 
 ---
 
@@ -346,7 +348,8 @@ on the Doctis DB. The pre-receive hook rejects any client push touching
 Advanced users can `git clone` a repository from a remote workstation,
 authenticated with a Doctis API token — no Linux account required. Users at
 `$g_git_http_write_threshold` (default `MANAGER`) can also `git push` draft
-updates; pushes advance the Draft (HEAD) only, never the On-Record version.
+updates; pushes change a document's Draft only when its file changes, never
+the On Record version.
 
 ### Architecture
 

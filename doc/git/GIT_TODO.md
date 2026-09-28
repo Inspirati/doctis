@@ -97,8 +97,9 @@ previously failed push (such a store never created a DB row).
 
 **2d. Approved SHAs pinned as managed refs** ☑ —
 `file_dwg_git_pin_approved()` writes `refs/doctis/approved/<dwg_id>/<seq>`
-on upload in `file_dwg_primary_add()` and promotion in
+on first registration in `file_dwg_primary_add()` and on promotion in
 `file_dwg_primary_sync_head()`. Import registration deliberately omits the pin.
+Replacement uploads remain Draft and do not create approved refs.
 Approved commits therefore stay reachable regardless of branch history, and
 the refs are an out-of-band approval record independent of the Doctis DB.
 The hook (2b) blocks clients from touching these refs.
@@ -235,9 +236,10 @@ was adopted and implemented — WP1–WP6 are done:
   commits do not create a Draft or enable promotion. Staged uploads retain
   their recorded commit and path. A missing registered path has a separate
   "missing at HEAD" state in the view panel and `dwg_primary_head_warn.php`.
-- ☑ WP6 — `admin/test-git-doctis.php` (62 checks on the native VM: sanitizer, entity,
-  resolution, templates, register, collisions, dangling paths, sync-to-HEAD,
-  adoption, relocation).  Verified alongside `test-git-php.php` (20/20),
+- ☑ WP6 — `admin/test-git-doctis.php` (93 checks on the native VM as of
+  2026-09-28: sanitizer, entity, resolution, templates, register, collisions,
+  document-specific drafts and promotion, dangling paths, adoption, relocation).
+  Previously verified alongside `test-git-php.php` (20/20),
   `doctis-soap-test.sh` (13/13), gateway clone (canonical + stale-slug +
   auth-reject), and the full curl web lifecycle.
 - ☑ **WP7 — the importer** (2026-07-12): `admin/import-git-repo.php`

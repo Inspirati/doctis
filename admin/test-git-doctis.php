@@ -231,6 +231,8 @@ $t_content = file_dwg_primary_get_content( $t_dwg1 );
 check( $t_content !== false && $t_content['content'] === "content v1\n", 'On Record still serves original content' );
 $t_content = file_dwg_primary_get_head_content( $t_dwg1 );
 check( $t_content !== false && $t_content['content'] === "content v3\n", 'renamed Draft serves new content' );
+check( file_dwg_primary_get_head_content( $t_dwg1, str_repeat( '0', 40 ) ) === false,
+	'Draft download rejects an outdated requested SHA' );
 db_param_push();
 $t_revision_count = (int)db_result( db_query(
 	'SELECT COUNT(*) FROM {dwg_history} WHERE dwg_id=' . db_param() . ' AND field_name=\'primary_document_draft\'',
@@ -335,6 +337,12 @@ $t_staged = file_dwg_primary_draft_get( $t_dwg1 );
 $t_head = file_dwg_git_head_info( $t_dwg1 );
 check( $t_head !== null && $t_head['has_draft'] && !$t_head['stale']
 	&& $t_head['sha'] === $t_staged['git_sha'], 're-upload refreshes staged Draft' );
+try {
+	file_dwg_primary_sync_head( $t_dwg1, 1, str_repeat( '0', 40 ) );
+	fail( 'outdated approval SHA rejected' );
+} catch( ClientException $e ) {
+	ok( 'outdated approval SHA rejected' );
+}
 
 $t_before = file_dwg_primary_get( $t_dwg1 );
 file_dwg_primary_sync_head( $t_dwg1, 1, $t_staged['git_sha'] );

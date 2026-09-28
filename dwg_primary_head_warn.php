@@ -119,8 +119,8 @@ layout_page_begin();
 			renamed or deleted by a push made outside Doctis.
 		</p>
 		<p>
-			The approved (On-Record) version remains fully retrievable from its
-			pinned commit.  A manager must either re-upload the document (which
+			The On Record version remains retrievable from its recorded commit.
+			A manager must either re-upload the document (which
 			re-establishes the path) or register the file's new location before
 			the draft can be promoted.
 		</p>

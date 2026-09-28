@@ -2224,14 +2224,15 @@ function file_dwg_primary_get_content( $p_dwg_id ) {
  * @param int $p_dwg_id
  * @return array{type: string, content: string}|false
  */
-function file_dwg_primary_get_head_content( int $p_dwg_id ) {
+function file_dwg_primary_get_head_content( int $p_dwg_id, string $p_expected_sha = '' ) {
 	$t_row = file_dwg_primary_draft_get( $p_dwg_id ) ?: file_dwg_primary_get( $p_dwg_id );
 	if( !$t_row ) {
 		return false;
 	}
 
 	$t_head = file_dwg_git_head_info( $p_dwg_id );
-	if( !$t_head || !$t_head['has_draft'] || $t_head['filename'] === null ) {
+	if( !$t_head || !$t_head['has_draft'] || $t_head['filename'] === null
+		|| ( $p_expected_sha !== '' && !hash_equals( $p_expected_sha, $t_head['sha'] ) ) ) {
 		return false;
 	}
 

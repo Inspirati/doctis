@@ -158,7 +158,7 @@ if( $f_type === 'dwg_primary_head' ) {
 	http_security_headers();
 	http_caching_headers( false );
 
-	$t_result = file_dwg_primary_get_head_content( $f_dwg_id );
+	$t_result = file_dwg_primary_get_head_content( $f_dwg_id, $t_head['sha'] );
 	if( $t_result === false ) {
 		trigger_error( ERROR_FILE_NOT_FOUND, ERROR );
 	}
