@@ -304,18 +304,21 @@ Doctis distinguishes two versions of a document's primary file:
 | Concept | Storage | Access |
 |---------|---------|--------|
 | **On-Record (approved)** | `{dwg_primary_file}.git_sha` — a pinned SHA in the DB | `retrieve()` via `git show <git_sha>:<git_path>` |
-| **Draft** | The file at repo `HEAD`; `{dwg_primary_draft}.git_path` records a renamed replacement | `file_dwg_git_head_info()` checks that path at HEAD |
+| **Draft** | `{dwg_primary_draft}.git_sha` for an upload, or the last commit changing this file for a direct Git edit | `file_dwg_git_head_info()` compares the file's Git object at On Record with its object at repository `HEAD` |
 
-`file_dwg_primary_sync_head()` is the "approve current draft" primitive: it
-reads `HEAD` and writes it as the new `git_sha`. For a staged replacement it
-also adopts the Draft path and filename, then clears the staged row. Otherwise
-the existing registered path must exist at HEAD to promote an external update.
+`file_dwg_primary_sync_head()` promotes this document's Draft commit, rather
+than the repository-wide `HEAD`. For a staged replacement it adopts the Draft
+path and filename, then clears the staged row. If its file object changed at
+`HEAD` after upload, promotion is blocked until the user re-uploads. For a
+direct Git edit to the registered path, the last path-changing commit is the
+Draft revision. Unrelated repository commits neither create a Draft nor change
+the approved reference. An empty Touch commit has no document-level effect.
 
 ### Dangling paths
 
 Because external pushes can rename or delete files (impossible under the old
 system-owned layout), `file_dwg_git_head_info()` checks whether the
-registered `git_path` still exists at HEAD (`filename: null` when absent).
+registered `git_path` still exists at HEAD (`missing: true` when absent).
 The document view panel shows a **"missing at HEAD"** badge and
 `dwg_primary_head_warn.php` explains the state. The pinned on-record version
 remains retrievable regardless — approved SHAs are immune to later branch

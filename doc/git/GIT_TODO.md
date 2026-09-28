@@ -103,7 +103,7 @@ Approved commits therefore stay reachable regardless of branch history, and
 the refs are an out-of-band approval record independent of the Doctis DB.
 The hook (2b) blocks clients from touching these refs.
 
-**2e. "Approve draft" surfaced in UI** ☑ — the *Sync to HEAD* button in the
+**2e. "Approve draft" surfaced in UI** ☑ — the *Promote Draft* button in the
 Primary Document panel (`dwg_view_inc.php`, MANAGER-gated, with confirmation
 step) is the promotion action.  `dwg_primary_head_warn.php` now explains the
 push workflow: draft pushes for write-authorised users, promotion inside
@@ -230,9 +230,11 @@ was adopted and implemented — WP1–WP6 are done:
 - ☑ WP3 — primaries are git-only (`file_dwg_get_storage_backend()`
   unconditional); `$g_dwg_upload_method` now governs attachments only.
 - ☑ WP4 — `file_dwg_primary_register()` (see §3a).
-- ☑ WP5 — dangling-path detection: `file_dwg_git_head_info()` checks the
-  registered path at HEAD; "missing at HEAD" badge in the view panel;
-  explanatory state in `dwg_primary_head_warn.php`.
+- ☑ WP5 — document-specific Draft detection: `file_dwg_git_head_info()`
+  compares this file's Git object at On Record and repository HEAD; unrelated
+  commits do not create a Draft or enable promotion. Staged uploads retain
+  their recorded commit and path. A missing registered path has a separate
+  "missing at HEAD" state in the view panel and `dwg_primary_head_warn.php`.
 - ☑ WP6 — `admin/test-git-doctis.php` (62 checks on the native VM: sanitizer, entity,
   resolution, templates, register, collisions, dangling paths, sync-to-HEAD,
   adoption, relocation).  Verified alongside `test-git-php.php` (20/20),

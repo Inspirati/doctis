@@ -126,9 +126,8 @@ if( $f_type === 'dwg_primary' ) {
 }
 
 if( $f_type === 'dwg_primary_head' ) {
-	# Serve the file at the current git HEAD — may differ from the Doctis-
-	# approved version stored in the database.  The UI warns the user before
-	# following this link.
+	# Serve the document-specific Draft commit. The route name is retained for
+	# existing links; unrelated repository HEAD commits are not new drafts.
 	$f_dwg_id = gpc_get_int( 'id' );
 
 	access_ensure_dwg_level( config_get( 'dwg_primary_document_threshold' ), $f_dwg_id );
@@ -140,7 +139,12 @@ if( $f_type === 'dwg_primary_head' ) {
 	}
 
 	$t_head = file_dwg_git_head_info( $f_dwg_id );
-	if( $t_head === null || $t_head['filename'] === null ) {
+	if( $t_head === null || !$t_head['has_draft'] || $t_head['filename'] === null ) {
+		error_parameters( $f_dwg_id );
+		trigger_error( ERROR_FILE_NOT_FOUND, ERROR );
+	}
+	$t_requested_sha = gpc_get_string( 'sha', '' );
+	if( $t_requested_sha !== '' && !hash_equals( $t_head['sha'], $t_requested_sha ) ) {
 		error_parameters( $f_dwg_id );
 		trigger_error( ERROR_FILE_NOT_FOUND, ERROR );
 	}

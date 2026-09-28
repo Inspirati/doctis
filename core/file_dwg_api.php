@@ -2217,30 +2217,9 @@ function file_dwg_primary_get_content( $p_dwg_id ) {
 }
 
 /**
- * Return information about the current HEAD commit of the git repository for
- * the project that owns a given document.  Returns null if the GIT backend is
- * not active or if the bare repository does not yet exist.
- *
- * Two git processes are spawned: one for commit metadata, one for the
- * current filename in the working tree.  Author name fields use ASCII
- * unit-separator (0x1F) as delimiter to handle names containing spaces.
- *
- * @param int $p_dwg_id
- * @return array{sha: string, date: int, author: string, filename: string|null}|null
- *   sha      — 40-character commit SHA
- *   date     — commit author timestamp as a Unix epoch integer
- *   author   — author name (respecting .mailmap)
- *   filename — basename of the file currently under <dwg_id>/ in HEAD,
- *              or null if the directory is absent (document deleted from HEAD)
- */
-/**
- * Retrieve the content of the primary document file as it currently exists at
- * git HEAD, bypassing the SHA stored in the Doctis database.  Useful when the
- * git repository has been updated outside Doctis and the caller wants to serve
- * the actual current file rather than the last Doctis-recorded version.
- *
- * Returns false if there is no primary file record, no git HEAD info, or the
- * git backend is not active.
+ * Retrieve the document-specific Draft revision. The historical function name
+ * is retained for callers, but a staged upload is read at its recorded commit;
+ * a direct Git edit is read at the last commit affecting this file.
  *
  * @param int $p_dwg_id
  * @return array{type: string, content: string}|false
@@ -2252,16 +2231,15 @@ function file_dwg_primary_get_head_content( int $p_dwg_id ) {
 	}
 
 	$t_head = file_dwg_git_head_info( $p_dwg_id );
-	if( !$t_head || $t_head['filename'] === null ) {
+	if( !$t_head || !$t_head['has_draft'] || $t_head['filename'] === null ) {
 		return false;
 	}
 
 	$t_project_id = dwg_get_field( $p_dwg_id, 'project_id' );
 	$t_backend    = file_dwg_get_storage_backend();
 
-	# Build a synthetic row pointing at the HEAD commit so that retrieve()
-	# fetches the current file (at the registered git_path) rather than the
-	# stored SHA.
+	# A staged replacement remains an exact, downloadable revision even if a
+	# later direct Git edit makes it unsafe to promote without re-uploading.
 	$t_head_row            = $t_row;
 	$t_head_row['git_sha'] = $t_head['sha'];
 
@@ -2309,131 +2287,141 @@ function file_dwg_primary_get_content_at_sha( int $p_dwg_id, string $p_sha ) {
 }
 
 /**
- * Sync the Doctis {dwg_primary_file} record to the current git HEAD commit —
- * the "promote current draft to on-record" primitive.
- *
- * The registered git_path is the document's identity and is never changed
- * here: the path must exist at HEAD (an externally renamed/deleted path must
- * be re-pointed explicitly first).  Overwrites the stored git_sha, filesize,
- * and date_added with the HEAD values; user_id is set to the acting Doctis
- * user who initiated the sync.
- *
- * @param int $p_dwg_id
- * @param int $p_acting_user_id  Doctis user performing the sync operation
- * @return void
+ * Promote only a changed document file. A staged upload uses its recorded
+ * commit; an external edit uses the last commit affecting its registered path.
+ * Unrelated repository commits never advance this document's reference.
  */
-function file_dwg_primary_sync_head( int $p_dwg_id, int $p_acting_user_id ): void {
-	$t_head = file_dwg_git_head_info( $p_dwg_id );
-	if( !$t_head || $t_head['filename'] === null ) {
+function file_dwg_primary_sync_head( int $p_dwg_id, int $p_acting_user_id, string $p_expected_sha = '' ): void {
+	$t_revision = file_dwg_git_head_info( $p_dwg_id );
+	if( !$t_revision || !$t_revision['has_draft'] || $t_revision['stale'] ) {
+		throw new ClientException( 'No current document Draft is available to promote',
+			ERROR_INVALID_FIELD_VALUE, array( 'draft' ) );
+	}
+	if( $p_expected_sha !== '' && !hash_equals( $p_expected_sha, $t_revision['sha'] ) ) {
+		throw new ClientException( 'The Draft changed while approval was pending',
+			ERROR_INVALID_FIELD_VALUE, array( 'draft' ) );
+	}
+	$t_on_record = file_dwg_primary_get( $p_dwg_id );
+	if( !$t_on_record ) {
 		trigger_error( ERROR_GENERIC, ERROR );
 	}
-
-	$t_row = file_dwg_primary_get( $p_dwg_id );
-	if( !$t_row ) {
-		trigger_error( ERROR_GENERIC, ERROR );
-	}
-	$t_draft = file_dwg_primary_draft_get( $p_dwg_id );
-	if( $t_draft ) {
-		file_dwg_primary_register( $p_dwg_id, $p_acting_user_id,
-			$t_draft['git_path'], $t_head['sha'], $t_draft['description'], true, $t_draft['file_type'] );
+	$t_staged = file_dwg_primary_draft_get( $p_dwg_id );
+	$t_source = $t_staged ?: $t_on_record;
+	file_dwg_primary_register( $p_dwg_id, $p_acting_user_id,
+		$t_source['git_path'], $t_revision['sha'], $t_source['description'], true, $t_source['file_type'] );
+	if( $t_staged ) {
 		db_param_push();
 		db_query( 'DELETE FROM {dwg_primary_draft} WHERE dwg_id=' . db_param(), array( $p_dwg_id ) );
-		return;
 	}
+}
 
-	$t_project_id = dwg_get_field( $p_dwg_id, 'project_id' );
-	$t_bare       = dwg_project_bare_repo_path( $t_project_id );
-
-	# Determine the file size directly from the git object store.
-	$t_size_str = trim( (string)shell_exec(
-		'git --git-dir=' . escapeshellarg( $t_bare ) .
-		' cat-file -s ' . escapeshellarg( $t_head['sha'] . ':' . $t_row['git_path'] ) . ' 2>/dev/null'
+/** Return the Git object ID for one file at a commit, or null if absent. */
+function file_dwg_git_object_sha( string $p_bare, string $p_commit, string $p_path ): ?string {
+	$t_sha = trim( (string)shell_exec(
+		'git --git-dir=' . escapeshellarg( $p_bare ) . ' rev-parse --verify '
+		. escapeshellarg( $p_commit . ':' . $p_path ) . ' 2>/dev/null'
 	) );
-	$t_filesize = is_numeric( $t_size_str ) ? (int)$t_size_str : (int)$t_row['filesize'];
+	return preg_match( '/^[0-9a-f]{40}$/', $t_sha ) ? $t_sha : null;
+}
 
-	db_param_push();
-	db_query(
-		'UPDATE {dwg_primary_file}
-		 SET git_sha=' . db_param() .
-		', filesize=' . db_param() . ', date_added=' . db_param() . ', user_id=' . db_param() .
-		' WHERE dwg_id=' . db_param(),
-		array(
-			$t_head['sha'],
-			$t_filesize,
-			$t_head['date'],
-			(int)$p_acting_user_id,
-			(int)$p_dwg_id,
-		)
-	);
-
-	# Keep documents.reference in sync with the newly approved SHA.
-	file_dwg_set_document_reference( $p_dwg_id, $t_head['sha'] );
-
-	# Pin the newly approved SHA as a permanent git ref so it can never be
-	# orphaned by later branch history.
-	file_dwg_git_pin_approved( $p_dwg_id, $t_head['sha'] );
-	history_dwg_log_event_direct(
-		$p_dwg_id, 'primary_document',
-		file_dwg_primary_history_value( $t_row ),
-		file_dwg_primary_history_value( array( 'git_sha' => $t_head['sha'], 'filename' => $t_row['filename'] ) ),
-		$p_acting_user_id
-	);
+/** Return Git's commit date and author for a full commit SHA. */
+function file_dwg_git_commit_metadata( string $p_bare, string $p_sha ): ?array {
+	$t_output = trim( (string)shell_exec(
+		'git --git-dir=' . escapeshellarg( $p_bare )
+		. ' show -s --format="%H%x1f%at%x1f%aN" ' . escapeshellarg( $p_sha ) . ' 2>/dev/null'
+	) );
+	$t_parts = explode( "\x1f", $t_output, 3 );
+	if( count( $t_parts ) !== 3 || $t_parts[0] !== $p_sha ) {
+		return null;
+	}
+	return array( 'date' => (int)$t_parts[1], 'author' => $t_parts[2] );
 }
 
 /**
- * Return information about the current HEAD commit of the repository that
- * holds a document, and whether the document's registered git_path still
- * exists at HEAD.  Returns null when the project has no repository on disk.
+ * Describe the current document-specific Draft. A repository-wide HEAD move
+ * alone is not a revision: compare the file object at On Record with the one
+ * at HEAD. An explicit staged upload retains its recorded commit and path.
  *
- * @param int $p_dwg_id
- * @return array{sha: string, date: int, author: string, filename: string|null}|null
- *   sha      — 40-character HEAD commit SHA
- *   date     — commit author timestamp as a Unix epoch integer
- *   author   — author name (respecting .mailmap)
- *   filename — basename of the registered git_path when it exists at HEAD;
- *              null when the path is absent from HEAD (deleted or renamed
- *              externally — the "dangling path" state) or when the document
- *              has no registered primary file.
+ * sha is the revision to download/promote, while head_sha is the repository
+ * HEAD used to check whether the staged path has changed in the meantime.
+ * missing identifies an externally removed path; stale identifies a staged
+ * Draft whose file has since changed at HEAD.
  */
 function file_dwg_git_head_info( int $p_dwg_id ): ?array {
+	$t_on_record = file_dwg_primary_get( $p_dwg_id );
+	if( !$t_on_record ) {
+		return null;
+	}
 	$t_project_id = dwg_get_field( $p_dwg_id, 'project_id' );
-	$t_bare       = dwg_project_bare_repo_path( $t_project_id );
-
+	$t_bare = dwg_project_bare_repo_path( $t_project_id );
 	if( $t_bare === '' || !is_dir( $t_bare ) ) {
 		return null;
 	}
-
-	# %H = full SHA, %at = author date (Unix timestamp), %aN = author name (mailmap)
-	# Fields delimited by ASCII unit-separator (0x1F) so author names
-	# containing spaces are parsed unambiguously.
-	$t_output = trim( (string)shell_exec(
-		'git --git-dir=' . escapeshellarg( $t_bare ) . ' log -1 --format="%H%x1f%at%x1f%aN" HEAD 2>/dev/null'
+	$t_head_sha = trim( (string)shell_exec(
+		'git --git-dir=' . escapeshellarg( $t_bare ) . ' rev-parse HEAD 2>/dev/null'
 	) );
-
-	$t_parts = explode( "\x1f", $t_output, 3 );
-	if( count( $t_parts ) !== 3 || strlen( $t_parts[0] ) !== 40 ) {
+	if( !preg_match( '/^[0-9a-f]{40}$/', $t_head_sha ) ) {
 		return null;
 	}
 
-	# Does the registered path still exist at HEAD?
-	$t_filename = null;
-	$t_row = file_dwg_primary_draft_get( $p_dwg_id ) ?: file_dwg_primary_get( $p_dwg_id );
-	if( $t_row && $t_row['git_path'] !== '' ) {
-		exec(
-			'git --git-dir=' . escapeshellarg( $t_bare ) .
-			' cat-file -e ' . escapeshellarg( 'HEAD:' . $t_row['git_path'] ) . ' 2>/dev/null',
-			$t_out, $t_rc
+	$t_staged = file_dwg_primary_draft_get( $p_dwg_id );
+	$t_path = $t_staged ? $t_staged['git_path'] : $t_on_record['git_path'];
+	$t_current_object = file_dwg_git_object_sha( $t_bare, $t_head_sha, $t_path );
+	$t_missing = $t_current_object === null;
+	$t_stale = false;
+	$t_has_draft = false;
+	$t_filename = $t_missing ? null : basename( $t_path );
+
+	if( $t_staged ) {
+		$t_staged_object = file_dwg_git_object_sha( $t_bare, $t_staged['git_sha'], $t_path );
+		if( $t_staged_object === null ) {
+			return null;
+		}
+		$t_sha = $t_staged['git_sha'];
+		$t_has_draft = true;
+		$t_stale = $t_current_object !== $t_staged_object;
+		$t_filename = $t_staged['filename'];
+	} elseif( $t_missing ) {
+		# The old path was removed outside Doctis; its new path is unknown.
+		$t_sha = $t_head_sha;
+	} else {
+		$t_on_record_object = file_dwg_git_object_sha(
+			$t_bare, $t_on_record['git_sha'], $t_on_record['git_path']
 		);
-		if( $t_rc === 0 ) {
-			$t_filename = basename( $t_row['git_path'] );
+		if( $t_on_record_object === null ) {
+			return null;
+		}
+		if( $t_current_object === $t_on_record_object ) {
+			$t_sha = $t_on_record['git_sha'];
+		} else {
+			# Use the most recent commit for this path, not the repository HEAD
+			# after unrelated documents have been edited.
+			$t_sha = trim( (string)shell_exec(
+				'git --git-dir=' . escapeshellarg( $t_bare )
+				. ' log -1 --format=%H ' . escapeshellarg( $t_head_sha )
+				. ' -- ' . escapeshellarg( $t_path ) . ' 2>/dev/null'
+			) );
+			if( !preg_match( '/^[0-9a-f]{40}$/', $t_sha ) ) {
+				return null;
+			}
+			$t_has_draft = true;
 		}
 	}
 
+	$t_metadata = file_dwg_git_commit_metadata( $t_bare, $t_sha );
+	if( $t_metadata === null ) {
+		return null;
+	}
 	return array(
-		'sha'      => $t_parts[0],
-		'date'     => (int)$t_parts[1],
-		'author'   => $t_parts[2],
-		'filename' => $t_filename,
+		'sha'       => $t_sha,
+		'head_sha'  => $t_head_sha,
+		'date'      => $t_metadata['date'],
+		'author'    => $t_metadata['author'],
+		'filename'  => $t_filename,
+		'git_path'  => $t_path,
+		'has_draft' => $t_has_draft,
+		'missing'   => $t_missing,
+		'stale'     => $t_stale,
 	);
 }
 
@@ -2517,11 +2505,8 @@ function file_dwg_git_tag( int $p_dwg_id, string $p_tag_name ): string {
 }
 
 /**
- * Create an empty git commit on the project working tree, advancing the HEAD
- * SHA without modifying any file content.  Intended for development/testing:
- * it puts the repository into a state where the git HEAD SHA differs from the
- * SHA recorded in {dwg_primary_file}, making the "updated" badge and
- * "Sync to HEAD" button visible in the Primary Document panel.
+ * Create an empty git commit on the project working tree for diagnostics.
+ * It does not create a document-specific Draft or change an approval state.
  *
  * @param int $p_dwg_id
  * @param int $p_user_id  Doctis user attributed as git author of the commit.

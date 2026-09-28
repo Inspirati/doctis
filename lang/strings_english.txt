@@ -2239,10 +2239,11 @@ $s_primary_document_upload_complete     = 'Document uploaded: %1$s (commit %2$s)
 $s_primary_document_none               = 'No document file uploaded.';
 $s_primary_document_approved           = 'On Record';
 $s_primary_document_draft              = 'Draft';
-$s_primary_document_sync_head          = 'Sync to HEAD';
-$s_primary_document_sync_head_confirm  = 'This will promote the Draft file at git HEAD to On Record, including its filename and content. Continue?';
-$s_primary_document_sync_head_button   = 'Sync Doctis to git HEAD';
-$s_primary_document_head_download_warn = 'You are about to download the <strong>current git HEAD version</strong> of this document. This is the draft working copy and may differ from the officially approved version recorded in Doctis. The approved version is available via the Approved row above.';
+$s_primary_document_sync_head          = 'Promote Draft';
+$s_primary_document_sync_head_confirm  = 'This will promote this document\'s Draft revision to On Record, including its filename and content. Continue?';
+$s_primary_document_sync_head_button   = 'Promote Draft';
+$s_primary_document_head_download_warn = 'You are about to download the <strong>Draft version</strong> of this document. It may differ from the On Record version above.';
+$s_primary_document_draft_stale        = 'changed in Git since upload';
 $s_primary_document_head_download_button = 'Download Draft Version';
 $s_primary_document_tag                = 'Tag';
 $s_primary_document_tag_page_title     = 'Apply Git Tag';
@@ -2253,7 +2254,7 @@ $s_primary_document_tag_cancel         = 'Cancel';
 $s_primary_document_tag_invalid        = 'Invalid tag name. Use letters, digits, hyphens, underscores, dots and forward-slashes only. The name must not start with a dot or contain consecutive dots.';
 $s_primary_document_tag_exists         = 'A tag with that name already exists in this repository.';
 $s_primary_document_touch              = 'Touch';
-$s_primary_document_touch_confirm      = 'This will create an empty git commit on the project repository, advancing the HEAD SHA without modifying any file content. The Doctis Approved record will appear out-of-sync with git HEAD until synced. Intended for testing. Continue?';
+$s_primary_document_touch_confirm      = 'This will create an empty git commit on the project repository without modifying a document. Intended for development testing. Continue?';
 
 # My Profile — user-editable fields on my_view_cnf_page.php
 $s_my_profile_section              = 'My Profile';

@@ -1045,6 +1045,9 @@ $t_git_head_sha      = $t_git_head_info ? $t_git_head_info['sha']      : null;
 $t_git_head_date     = $t_git_head_info ? $t_git_head_info['date']     : null;
 $t_git_head_author   = $t_git_head_info ? $t_git_head_info['author']   : null;
 $t_git_head_filename = $t_git_head_info ? $t_git_head_info['filename'] : null;
+$t_has_draft         = $t_git_head_info && $t_git_head_info['has_draft'];
+$t_path_missing      = $t_git_head_info && $t_git_head_info['missing'];
+$t_draft_stale       = $t_git_head_info && $t_git_head_info['stale'];
 $t_uploaded_file = $t_primary_draft ?: $t_primary_file;
 $t_primary_uploaded = $t_uploaded_file &&
 	gpc_get_string( 'primary_uploaded', '' ) === $t_uploaded_file['git_sha'];
@@ -1079,10 +1082,6 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 <?php endif; ?>
 			<div class="table-responsive">
 				<table class="table table-bordered table-condensed table-striped">
-<?php
-$t_head_diverged = $t_primary_draft !== null ||
-	( $t_git_head_sha !== null && $t_git_head_sha !== ( $t_primary_file['git_sha'] ?? null ) );
-?>
 <?php if( $t_primary_file ): ?>
 				<tr class="bug-header">
 					<th class="category width-10"></th>
@@ -1114,6 +1113,7 @@ $t_head_diverged = $t_primary_draft !== null ||
 <?php	endif; ?>
 					</td>
 				</tr>
+<?php	if( $t_has_draft || $t_path_missing ): ?>
 				<tr>
 					<th class="category">
 						<span class="label label-default"><?php echo lang_get( 'primary_document_draft' ) ?></span>
@@ -1136,7 +1136,9 @@ $t_head_diverged = $t_primary_draft !== null ||
 					<td>
 <?php	if( $t_git_head_sha !== null ): ?>
 						<code title="<?php echo htmlspecialchars( $t_git_head_sha ) ?>"><?php echo htmlspecialchars( substr( $t_git_head_sha, 0, 8 ) ) ?></code>
-<?php		if( $t_head_diverged ): ?>
+<?php		if( $t_draft_stale ): ?>
+						&nbsp;<span class="label label-danger"><?php echo lang_get( 'primary_document_draft_stale' ) ?></span>
+<?php		elseif( $t_has_draft ): ?>
 						&nbsp;<span class="label label-warning">updated</span>
 <?php		endif; ?>
 <?php	else: ?>
@@ -1145,19 +1147,11 @@ $t_head_diverged = $t_primary_draft !== null ||
 					</td>
 					<td><?php echo $t_git_head_author !== null ? htmlspecialchars( $t_git_head_author ) : '<span class="small">—</span>' ?></td>
 					<td>
-<?php	if( $t_can_sync_to_head ): ?>
-						<form method="post" action="dwg_primary_file_touch.php" style="display:inline">
-							<?php echo form_security_field( 'dwg_primary_file_touch' ) ?>
-							<input type="hidden" name="dwg_id" value="<?php echo $f_dwg_id ?>" />
-							<input type="submit"
-								class="btn btn-default btn-xs btn-white btn-round"
-								value="<?php echo lang_get( 'primary_document_touch' ) ?>" />
-						</form>
-<?php	endif; ?>
-<?php	if( $t_can_sync_to_head && $t_head_diverged ): ?>
+<?php	if( $t_can_sync_to_head && $t_has_draft && !$t_draft_stale ): ?>
 						<form method="post" action="dwg_primary_file_sync_head.php" style="display:inline">
 							<?php echo form_security_field( 'dwg_primary_file_sync_head' ) ?>
 							<input type="hidden" name="dwg_id" value="<?php echo $f_dwg_id ?>" />
+							<input type="hidden" name="draft_sha" value="<?php echo string_attribute( $t_git_head_sha ) ?>" />
 							<input type="submit"
 								class="btn btn-warning btn-xs btn-white btn-round"
 								value="<?php echo lang_get( 'primary_document_sync_head' ) ?>" />
@@ -1165,6 +1159,7 @@ $t_head_diverged = $t_primary_draft !== null ||
 <?php	endif; ?>
 					</td>
 				</tr>
+<?php	endif; ?>
 <?php	if( !is_blank( $t_primary_file['description'] ) ): ?>
 				<tr>
 					<th class="category"><?php echo lang_get( 'description' ) ?></th>

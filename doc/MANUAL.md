@@ -193,23 +193,22 @@ Doctis.
 | Row label | Meaning |
 |-----------|---------|
 | **On Record** | The approved version, including its original filename and content, until a manager promotes a replacement. Click the filename to download it. |
-| **Draft** | The file at the current repository HEAD. A replacement upload may have a different filename and content; it remains Draft until promoted. |
+| **Draft** | Appears only when this document has a staged upload or its file was edited directly in Git. It shows that document's revision, which may have a different filename and content. A commit to another document does not create a Draft here. |
 
 ### Actions
 
 | Action | Access required | Description |
 |--------|----------------|-------------|
 | **Replace Document** | UPDATER | Upload a replacement as Draft. On Record and the document Reference remain unchanged. A second upload supersedes the current Draft. |
-| **Sync to HEAD** | MANAGER | Promote the Draft at git HEAD to On Record, including its filename, content, and Reference. Also supports an external Git update at the existing path. |
+| **Promote Draft** | MANAGER | Promote this document's Draft revision to On Record, including its filename, content, and Reference. If its file changed in Git after upload, re-upload before promotion. |
 | **Tag** | MANAGER | Apply a named git tag to the current On Record SHA (e.g. `approved-rev-A`). |
-| **Touch** | MANAGER | Re-commit the current file to git without content change, creating a new SHA.  Useful to force a new commit timestamp. |
 
 ### File history
 
 The full version history of the primary document is preserved in the git
 repository and remains accessible via git tooling regardless of how many times
 the file is replaced in Doctis.
-New uploads and Sync to HEAD operations also appear in the Document History
+New uploads and Draft promotions also appear in the Document History
 panel with their registered commit SHA and filename. Earlier Git revisions
 remain in Git even if they predate this history logging.
 
