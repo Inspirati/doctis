@@ -3670,11 +3670,12 @@ $g_private_dwg_threshold = DEVELOPER;
 
 /**
  * Access level needed to be able to be listed in the assign to field.
+ * Project access still applies, including membership for private projects.
  *
  * @global int $g_handle_bug_threshold
  */
-$g_handle_bug_threshold = DEVELOPER;
-$g_handle_dwg_threshold = DEVELOPER;
+$g_handle_bug_threshold = VIEWER;
+$g_handle_dwg_threshold = VIEWER;
 
 /**
  * Access level needed to assign issues.
@@ -3683,12 +3684,13 @@ $g_handle_dwg_threshold = DEVELOPER;
  * - "Assign To:" button on bug_view*_page
  * - "Assigned" list in bug_update*_page.
  *
- * Defaults to {@see $g_handle_bug_threshold}.
+ * Keep permission to make assignments separate from eligibility to receive
+ * them, so lowering the handler threshold does not let viewers assign work.
  *
  * @global int $g_update_bug_assign_threshold
  */
-$g_update_bug_assign_threshold = '%handle_bug_threshold%';
-$g_update_dwg_assign_threshold = '%handle_dwg_threshold%';
+$g_update_bug_assign_threshold = DEVELOPER;
+$g_update_dwg_assign_threshold = DEVELOPER;
 
 /**
  * Access level needed to view private bugnotes.
