@@ -11,7 +11,6 @@ fail() { echo "ERROR: $*" >&2; exit 1; }
 [[ $EUID -ne 0 ]] || fail 'Run as the development user; sudo is used where required.'
 [[ $mode == all || $mode == system || $mode == target ]] || fail 'Expected all, system, or target.'
 [[ $host =~ ^[A-Za-z0-9][A-Za-z0-9.-]*$ ]] || fail 'Supply a hostname or IPv4 address without scheme, port, or path.'
-git check-ref-format --branch "$DOCTIS_BRANCH" >/dev/null
 sudo -n true 2>/dev/null || sudo -v
 if [[ $mode != target ]]; then
     if systemctl is-active --quiet apache2; then
@@ -21,6 +20,7 @@ if [[ $mode != target ]]; then
     sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y nginx php-fpm php-cli php-mysql php-mbstring php-curl php-gd php-xml php-zip php-intl php-soap mariadb-server composer git graphviz curl unzip cron python3
     sudo systemctl enable --now mariadb cron
 fi
+git check-ref-format --branch "$DOCTIS_BRANCH" >/dev/null
 [[ $mode != system ]] || exit 0
 phpver="$(php -r 'echo PHP_MAJOR_VERSION,".",PHP_MINOR_VERSION;')"
 [[ -d /etc/php/$phpver/fpm/pool.d ]] || fail 'PHP-FPM is not installed for the CLI PHP version.'

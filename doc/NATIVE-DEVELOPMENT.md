@@ -10,7 +10,8 @@ still be checked separately.
 
 ## Installation
 
-Run as a normal account with sudo access. Snapshot the test VM first. Download
+Run as a normal account with sudo access. The bootstrap needs `wget`; the LAN
+preflight checks also need `git` and `curl`. Snapshot the test VM first. Download
 scripts into a fresh staging directory so cached scripts cannot select an older
 installation path. After this branch has been published:
 
