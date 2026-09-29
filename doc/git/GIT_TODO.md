@@ -6,6 +6,8 @@ for the implemented baseline.
 
 The current one-time GitHub-to-Doctis migration procedure and HCRQMS test
 results are in [HCRQMS_IMPORT_REHEARSAL.md](HCRQMS_IMPORT_REHEARSAL.md).
+The later administrator ZIP upload and clean-VM rehearsal are in
+[HCRQMS_ZIP_UI_IMPORT.md](HCRQMS_ZIP_UI_IMPORT.md).
 The identity/reference/location conflict uncovered by that trial is assessed
 in [DOCUMENT_IDENTITY_AND_LOCATION.md](../DOCUMENT_IDENTITY_AND_LOCATION.md).
 The 2026-09-27 repeat import now gives every imported document its Git SHA in
@@ -262,17 +264,19 @@ was adopted and implemented — WP1–WP6 are done:
 
 **Current acceptance scope (2026-09-27):** migrate selected GitHub-hosted
 repositories once into new Doctis-owned repositories at production deployment.
-The native nginx VM has now imported a one-commit snapshot containing only
+The 2026-09-27 CLI rehearsal imported a one-commit snapshot containing only
 HCRQMS `content/` and `system/`: 99 documents into private project ID 2 and
-repository ID 1, with zero failures. GitHub history was intentionally omitted;
-67 metadata warnings remain for owner/status review. Authenticated UI review
-and production cutover remain. The importer now
+repository ID 1, with zero failures. The 2026-09-30 clean-VM reset and new
+administrator ZIP UI imported the same 99 documents into private project ID 1.
+GitHub history was intentionally omitted; 67 metadata warnings remain for
+owner/status review. Production cutover remains. The importer now
 defaults new projects to private, with `--project-visibility` as an explicit
 override. The implemented `--update` option is not needed for this migration
 and is not its retry path. See the runbook linked above. The disposable local
 VM can regenerate its database and Git store together without a VM snapshot;
 a populated production service cannot use a global reset to undo one failed
-project import.
+project import. See the ZIP UI rehearsal linked above for the current test
+instance and its verification; the earlier runbook records historical CLI IDs.
 
 The initial HCRQMS import had 59 blank References. The native paired reset was
 then executed, and a repeat import confirmed all 99 `documents.reference`
