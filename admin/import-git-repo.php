@@ -10,6 +10,7 @@
  *
  * Options (CLI overrides a committed .doctis manifest at the source HEAD):
  *   --source <path>         Path of the git repository to import (required)
+ *   --source-label <text>   Durable source description (default: source path)
  *   --user <name>           Doctis account performing the import (default: administrator)
  *   --name <name>           Parent project name (default: manifest, else source basename)
  *   --description <text>    Parent project description
@@ -41,7 +42,7 @@
  */
 
 $t_options = getopt( '', array(
-	'source:', 'user:', 'name:', 'description:', 'directories:', 'patterns:',
+	'source:', 'source-label:', 'user:', 'name:', 'description:', 'directories:', 'patterns:',
 	'subprojects:', 'subdir-marker:', 'frontmatter:', 'filename-parse:',
 	'category-from:', 'project-visibility:', 'update', 'dry-run', 'help',
 ) );
@@ -82,6 +83,8 @@ if( !in_array( $t_project_visibility, array( 'private', 'public' ), true ) ) {
 $g_import_project_view_state = $t_project_visibility === 'private' ? VS_PRIVATE : VS_PUBLIC;
 
 $t_source = rtrim( $t_options['source'], '/' );
+$t_source_label = trim( $t_options['source-label'] ?? $t_source );
+$t_source_name = basename( $t_source_label );
 $t_login  = $t_options['user'] ?? 'administrator';
 
 auth_attempt_script_login( $t_login );
@@ -126,9 +129,9 @@ $t_manifest     = $t_manifest_raw !== '' ? manifest_parse( $t_manifest_raw ) : a
 
 $g_cfg = array(
 	'name'           => $t_options['name']
-		?? manifest_get( $t_manifest, 'project', 'name', basename( $t_source ) ),
+		?? manifest_get( $t_manifest, 'project', 'name', $t_source_name ),
 	'description'    => $t_options['description']
-		?? manifest_get( $t_manifest, 'project', 'description', 'Imported from git repository ' . basename( $t_source ) ),
+		?? manifest_get( $t_manifest, 'project', 'description', 'Imported from git repository ' . $t_source_name ),
 	'directories'    => csv_list( $t_options['directories']
 		?? manifest_get( $t_manifest, 'import', 'directories', '' ) ),
 	'patterns'       => csv_list( $t_options['patterns']
@@ -148,7 +151,7 @@ $g_cfg = array(
 # ── Phase A1: pre-flight ─────────────────────────────────────────────────────
 
 say( '── Phase A: repository adoption ─────────────────────────────────────────' );
-say( 'Source   : ' . $t_source );
+say( 'Source   : ' . $t_source_label );
 say( 'Project  : ' . $g_cfg['name'] . ( $g_update ? ' (update mode)' : '' ) . ( $g_dry ? '  [DRY RUN]' : '' ) );
 say( 'Visibility: ' . $t_project_visibility );
 
@@ -242,7 +245,7 @@ if( $g_cfg['subprojects'] === 'subdirs' ) {
 		}
 		$t_sub_name = manifest_get( $t_sub_manifest, 'project', 'name', $t_dir );
 		$t_sub_desc = manifest_get( $t_sub_manifest, 'project', 'description',
-			'Imported sub-project for ' . $t_dir . ' (repository ' . basename( $t_source ) . ')' );
+			'Imported sub-project for ' . $t_dir . ' (repository ' . $t_source_name . ')' );
 		$g_roots[$t_dir]      = project_ensure( $t_sub_name, $t_sub_desc, $t_parent_id );
 		$g_subdir_cfg[$t_dir] = $t_sub_manifest;
 	}
@@ -273,9 +276,9 @@ if( $g_dry ) {
 		}
 		say( '  Using existing repository r' . $t_repo_id . ' (' . repository_basename( $t_repo_id ) . ')' );
 	} else {
-		$t_repo_id = repository_create( $g_cfg['name'], $t_parent_id, $t_source, $t_default_branch );
+		$t_repo_id = repository_create( $g_cfg['name'], $t_parent_id, $t_source_label, $t_default_branch );
 		$t_paths   = repository_adopt( $t_repo_id, $t_source );
-		say( '  Adopted ' . $t_source . ' → ' . $t_paths['bare'] );
+		say( '  Adopted ' . $t_source_label . ' → ' . $t_paths['bare'] );
 	}
 	$t_repo_dir = repository_bare_path( $t_repo_id );
 }
@@ -519,7 +522,7 @@ foreach( $t_candidates as $t_path => $t_root ) {
 			'project'        => array( 'id' => $t_project_id ),
 			'category'       => array( 'name' => $t_category_name ),
 			'summary'        => $t_summary,
-			'description'    => 'Imported from git repository \'' . basename( $t_source )
+			'description'    => 'Imported from git repository \'' . $t_source_name
 				. '\' (path: ' . $t_path . ')',
 			'title'          => $t_title,
 			'author'         => $t_meta['owner'] !== '' ? $t_meta['owner'] : $t_git_author,
@@ -560,7 +563,7 @@ foreach( $t_candidates as $t_path => $t_root ) {
 		# B4 — register the file at HEAD by reference (no commit or approval).
 		file_dwg_primary_register(
 			$t_dwg_id, $g_import_user_id, $t_path, /* sha: HEAD */ '',
-			'Imported from ' . basename( $t_source ),
+			'Imported from ' . $t_source_name,
 			/* pin approved ref */ false
 		);
 

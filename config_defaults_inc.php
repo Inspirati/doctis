@@ -3841,7 +3841,7 @@ $g_manage_license_threshold = MANAGER;
  *
  * @global int $g_manage_import_threshold
  */
-$g_manage_import_threshold = MANAGER;
+$g_manage_import_threshold = ADMINISTRATOR;
 
 /**
  * Threshold needed to add/delete/modify news.
