@@ -1,7 +1,6 @@
 <?php
 # dwg_primary_file_sync_head.php
-# POST handler — synchronise the Doctis {dwg_primary_file} record to the
-# current git HEAD commit, discarding the previously stored SHA.
+# POST handler — promote this document's current Draft revision to On Record.
 # Called from the Primary Document panel on dwg_view_inc.php.
 
 require_once( 'core.php' );
@@ -20,8 +19,9 @@ auth_ensure_user_authenticated();
 form_security_validate( 'dwg_primary_file_sync_head' );
 
 $f_dwg_id = gpc_get_int( 'dwg_id' );
+$f_draft_sha = gpc_get_string( 'draft_sha', '' );
 
-# Sync to HEAD is a privileged operation — manager level or above required.
+# Draft promotion is a privileged operation — manager level or above required.
 access_ensure_dwg_level( MANAGER, $f_dwg_id );
 
 # Show a server-side confirmation page before performing the destructive sync.
@@ -33,7 +33,7 @@ helper_ensure_confirmed(
 	lang_get( 'primary_document_sync_head_button' )
 );
 
-file_dwg_primary_sync_head( $f_dwg_id, auth_get_current_user_id() );
+file_dwg_primary_sync_head( $f_dwg_id, auth_get_current_user_id(), $f_draft_sha );
 
 form_security_purge( 'dwg_primary_file_sync_head' );
 

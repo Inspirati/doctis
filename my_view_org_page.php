@@ -35,7 +35,7 @@ function org_chart_render_user( $p_user_id, array $p_path = array() ) {
 	?>
 	<li>
 		<div class="org-card">
-			<div class="org-name"><?php echo string_html_specialchars( $t_name ) ?></div>
+			<div class="org-name"><a href="manage_user_edit_page.php?user_id=<?php echo (int)$p_user_id ?>"><?php echo string_html_specialchars( $t_name ) ?></a></div>
 			<?php if( !is_blank( $t_user['position_title'] ?? '' ) ): ?>
 			<div><?php echo string_html_specialchars( $t_user['position_title'] ) ?></div>
 			<?php endif; ?>
@@ -57,10 +57,20 @@ layout_page_begin( 'my_view_page.php', true );
 print_my_view_menu( 'my_view_org_page.php' );
 ?>
 <style>
-.org-chart { overflow-x:auto; padding:15px; text-align:center; }
-.org-chart ul { display:flex; justify-content:center; gap:18px; list-style:none; margin:18px 0 0; padding:0; align-items:flex-start; }
-.org-chart li { min-width:180px; }
-.org-card { background:#fff; border:1px solid #9eb6ce; border-radius:4px; box-shadow:0 1px 3px rgba(0,0,0,.12); display:inline-block; min-width:180px; padding:10px 14px; }
+.org-chart { max-width:100%; overflow-x:auto; padding:15px; text-align:center; }
+.org-chart ul { align-items:flex-start; display:flex; justify-content:center; list-style:none; margin:0 auto; padding:24px 0 0; position:relative; width:max-content; }
+.org-chart > ul { min-width:100%; padding-top:0; }
+.org-chart li { align-items:center; display:flex; flex:0 0 auto; flex-direction:column; padding:24px 10px 0; position:relative; }
+.org-chart > ul > li { padding-top:0; }
+.org-chart li::before, .org-chart li::after { border-top:1px solid #9eb6ce; content:""; height:24px; position:absolute; top:0; width:50%; }
+.org-chart li::before { right:50%; }
+.org-chart li::after { border-left:1px solid #9eb6ce; left:50%; }
+.org-chart li:first-child::before, .org-chart li:last-child::after, .org-chart > ul > li::before, .org-chart > ul > li::after { border:0; }
+.org-chart li > ul > li:last-child::before { border-right:1px solid #9eb6ce; }
+.org-chart li:only-child { padding-top:0; }
+.org-chart li:only-child::before, .org-chart li:only-child::after { display:none; }
+.org-chart li > ul::before { border-left:1px solid #9eb6ce; content:""; height:24px; left:50%; position:absolute; top:0; }
+.org-card { background:#fff; border:1px solid #9eb6ce; border-radius:4px; box-shadow:0 1px 3px rgba(0,0,0,.12); min-width:180px; padding:10px 14px; }
 .org-name { font-size:14px; font-weight:bold; }
 .org-meta { color:#777; font-size:11px; margin-top:3px; }
 .org-external { background:#f6f6f6; border-style:dashed; }

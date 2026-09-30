@@ -25,6 +25,19 @@ green = success/diagnostic, yellow = warning, red = failure).
 
 ---
 
+## Testing an installation branch
+
+The bootstrap, dispatcher, and Doctis clone accept `DOCTIS_BRANCH` (default
+`dev`). For the nginx development branch, use `DOCTIS_BRANCH=nginx` when
+invoking the bootstrap downloaded from that branch. This selects source code;
+select `DOCTIS_WEB_SERVER=nginx` separately for the native nginx runtime.
+See [native development installation](../../doc/NATIVE-DEVELOPMENT.md).
+
+Use a fresh staging directory for each downloaded installation run: the legacy
+dispatcher reuses existing sub-scripts. For LAN installation, the served scripts
+must also come from the intended checkout; `DOCTIS_BRANCH` selects the cloned
+application branch but does not switch the LAN server's working tree.
+
 ## Installation scripts
 
 ### `install.sh`
@@ -99,8 +112,14 @@ By default scripts are fetched from GitHub.  Override with:
 
 ```bash
 export DOCTIS_SCRIPT_URL="http://10.0.0.10/doctis/admin/tools"  # LAN source
-export DOCTIS_GIT_REPO="http://10.0.0.10/git/doctis"            # LAN git repo
+export DOCTIS_GIT_REPO="ssh://robert@10.0.0.10/home/robert/html/doctis" # LAN source checkout
 ```
+
+The `/git/` HTTP route on vaio serves Doctis document repositories, not the
+Doctis application source. The target VM must be able to read the source
+checkout over SSH, or `DOCTIS_GIT_REPO` must name another Git transport that
+advertises the requested branch. The vaio web-served checkout must itself be
+on the `nginx` branch to supply the nginx dispatcher and installer script.
 
 ---
 
@@ -225,8 +244,9 @@ ssh hcr@vaio "echo 'yes' | sudo bash /var/www/html/doctis/admin/tools/doctis-git
 
 ### `doctis-drop-and-create-new-database.sh`
 
-Drops the `doctis` MariaDB database, recreates it, runs the Doctis schema
-installer, and reloads example data (project, licenses, test users).
+Drops the `doctis` MariaDB database, recreates it, and runs the Doctis schema
+installer. It does not reload example data; use `doctis-load-sample-data.sh`
+afterward when that fixture set is needed.
 
 **Must be run from its own directory.**  It uses the relative path
 `../../../doctis` to construct the correct installer URL.  Running from any
@@ -315,6 +335,20 @@ the PHPUnit test suite) handles this transparently.
 ---
 
 ## Full clean-room reset (database + git store)
+
+On the native nginx development VM, use the paired wrapper. Its default
+`--preview` lists the database counts and Git-store entries without changing
+them. `--execute` runs both existing reset scripts as root through local
+MariaDB socket authentication, reloads sample data, and verifies the empty
+document/repository stores and application login page. It resets the **whole
+Doctis instance** and must not be used as a project-scoped production rollback.
+
+```bash
+sudo bash /var/www/html/doctis/admin/tools/doctis-reset-native-test.sh --preview
+sudo bash /var/www/html/doctis/admin/tools/doctis-reset-native-test.sh --execute
+```
+
+The older vaio commands below remain for that environment.
 
 Run these two commands in order before any test session that must start from
 a known-empty state:

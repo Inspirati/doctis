@@ -621,6 +621,15 @@ function history_dwg_localize_field_name( $p_field_name ) {
 		case 'due_date':
 			$t_field_localized = lang_get( 'due_date' );
 			break;
+		case 'link_url':
+			$t_field_localized = lang_get( 'dwg_link_url' );
+			break;
+		case 'primary_document':
+			$t_field_localized = lang_get( 'primary_document_section' );
+			break;
+		case 'primary_document_draft':
+			$t_field_localized = lang_get( 'primary_document_draft' );
+			break;
 		default:
 			# assume it's a custom field name
 			$t_field_localized = lang_get_defaulted( $p_field_name );
@@ -1008,4 +1017,3 @@ function history_dwg_link_file_to_bugnote( $p_bug_id, $p_filename, $p_bugnote_id
 
 	db_query( $t_query, array( (int)$p_bugnote_id, (int)$p_bug_id, $p_filename, FILE_ADDED, FILE_DELETED ) );
 }
-

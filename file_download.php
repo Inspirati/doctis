@@ -98,6 +98,7 @@ if( $f_type === 'dwg_primary' ) {
 	}
 
 	http_security_headers();
+	http_caching_headers( false );
 
 	$t_result = file_dwg_primary_get_content( $f_dwg_id );
 	if( $t_result === false ) {
@@ -125,21 +126,25 @@ if( $f_type === 'dwg_primary' ) {
 }
 
 if( $f_type === 'dwg_primary_head' ) {
-	# Serve the file at the current git HEAD — may differ from the Doctis-
-	# approved version stored in the database.  The UI warns the user before
-	# following this link.
+	# Serve the document-specific Draft commit. The route name is retained for
+	# existing links; unrelated repository HEAD commits are not new drafts.
 	$f_dwg_id = gpc_get_int( 'id' );
 
 	access_ensure_dwg_level( config_get( 'dwg_primary_document_threshold' ), $f_dwg_id );
 
-	$t_row = file_dwg_primary_get( $f_dwg_id );
+	$t_row = file_dwg_primary_draft_get( $f_dwg_id ) ?: file_dwg_primary_get( $f_dwg_id );
 	if( $t_row === null ) {
 		error_parameters( $f_dwg_id );
 		trigger_error( ERROR_FILE_NOT_FOUND, ERROR );
 	}
 
 	$t_head = file_dwg_git_head_info( $f_dwg_id );
-	if( $t_head === null || $t_head['filename'] === null ) {
+	if( $t_head === null || !$t_head['has_draft'] || $t_head['filename'] === null ) {
+		error_parameters( $f_dwg_id );
+		trigger_error( ERROR_FILE_NOT_FOUND, ERROR );
+	}
+	$t_requested_sha = gpc_get_string( 'sha', '' );
+	if( $t_requested_sha !== '' && !hash_equals( $t_head['sha'], $t_requested_sha ) ) {
 		error_parameters( $f_dwg_id );
 		trigger_error( ERROR_FILE_NOT_FOUND, ERROR );
 	}
@@ -151,8 +156,9 @@ if( $f_type === 'dwg_primary_head' ) {
 	}
 
 	http_security_headers();
+	http_caching_headers( false );
 
-	$t_result = file_dwg_primary_get_head_content( $f_dwg_id );
+	$t_result = file_dwg_primary_get_head_content( $f_dwg_id, $t_head['sha'] );
 	if( $t_result === false ) {
 		trigger_error( ERROR_FILE_NOT_FOUND, ERROR );
 	}
@@ -202,6 +208,7 @@ if( $f_type === 'dwg_primary_at_sha' ) {
 	}
 
 	http_security_headers();
+	http_caching_headers( false );
 
 	$t_result = file_dwg_primary_get_content_at_sha( $f_dwg_id, $f_sha );
 	if( $t_result === false ) {

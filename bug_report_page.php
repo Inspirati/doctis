@@ -51,6 +51,7 @@
 
 require_once( 'core.php' );
 require_api( 'access_api.php' );
+require_api( 'access_dwg_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'bug_api.php' );
 require_api( 'collapse_api.php' );
@@ -59,6 +60,7 @@ require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
 require_api( 'custom_field_api.php' );
 require_api( 'date_api.php' );
+require_api( 'dwg_api.php' );
 require_api( 'error_api.php' );
 require_api( 'event_api.php' );
 require_api( 'file_api.php' );
@@ -135,7 +137,20 @@ if( $f_master_bug_id > 0 ) {
 } else {
 	# Get Project Id and set it as current
 	$t_current_project = helper_get_current_project();
-	$t_project_id = gpc_get_int( 'project_id', $t_current_project );
+	$f_source_dwg_id = gpc_get_int( 'dwg_id', 0 );
+	$t_source_dwg = null;
+	if( $f_source_dwg_id > 0 ) {
+		# A document link supplies only its DWG ID; derive the other form
+		# defaults from the actual record, after checking view access.
+		dwg_ensure_exists( $f_source_dwg_id );
+		$t_source_dwg = dwg_get( $f_source_dwg_id );
+		access_ensure_dwg_level(
+			config_get( 'view_dwg_threshold', null, null, $t_source_dwg->project_id ),
+			$f_source_dwg_id
+		);
+	}
+	$t_project_id = $t_source_dwg ? (int)$t_source_dwg->project_id
+		: gpc_get_int( 'project_id', $t_current_project );
 
 	# If all projects, use default project if set
 	$t_default_project = user_pref_get_pref( auth_get_current_user_id(), 'default_project' );
@@ -144,7 +159,11 @@ if( $f_master_bug_id > 0 ) {
 	}
 
 	# Check for bug report threshold
-	if( !access_has_project_level( config_get( 'report_bug_threshold' ) ) ) {
+	if( $t_source_dwg ) {
+		access_ensure_project_level(
+			config_get( 'report_bug_threshold', null, null, $t_project_id ), $t_project_id
+		);
+	} elseif( !access_has_project_level( config_get( 'report_bug_threshold' ) ) ) {
 		# If can't report on current project, show project selector if there is any other allowed project
 		access_ensure_any_project_level( 'report_bug_threshold' );
 		print_header_redirect( 'login_select_proj_page.php?ref=bug_report_page.php' );
@@ -177,8 +196,8 @@ if( $f_master_bug_id > 0 ) {
 	$f_profile_id			= gpc_get_int( 'profile_id', 0 );
 	$f_handler_id			= gpc_get_int( 'handler_id', 0 );
 
-	$f_category_id			= gpc_get_int( 'category_id', 0 );
-	$f_document_id			= gpc_get_int( 'document_id', 0 );
+	$f_category_id			= gpc_get_int( 'category_id', $t_source_dwg ? (int)$t_source_dwg->category_id : 0 );
+	$f_document_id			= gpc_get_int( 'document_id', $t_source_dwg ? (int)$t_source_dwg->id : 0 );
 	$f_reproducibility		= gpc_get_int( 'reproducibility', (int)config_get( 'default_bug_reproducibility' ) );
 	$f_eta					= gpc_get_int( 'eta', (int)config_get( 'default_bug_eta' ) );
 	$f_severity				= gpc_get_int( 'severity', (int)config_get( 'default_bug_severity' ) );

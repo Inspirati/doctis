@@ -102,7 +102,7 @@ $t_activities_count = count( $t_activities );
 <div class="space-10"></div>
 
 <?php
-$t_collapse_block = is_collapsed( 'dwgnotes' );
+$t_collapse_block = is_collapsed( 'dwgnotes', true );
 $t_block_css = $t_collapse_block ? 'collapsed' : '';
 $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 

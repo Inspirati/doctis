@@ -104,6 +104,7 @@ $t_delete = !( user_is_administrator( $t_user_id )
 );
 $t_impersonate = auth_can_impersonate( $t_user['id'] );
 $t_email_notification_enabled = ON == config_get( 'enable_email_notification' );
+$t_reports_to_users = user_get_enabled_rows();
 $t_reset_password_msg = lang_get(
 	( ON == config_get( 'send_reset_password' ) && $t_email_notification_enabled )
 	? 'reset_password_msg'
@@ -217,6 +218,28 @@ print_manage_menu( 'manage_user_page.php' );
 <?php
 	}
 ?>
+					</tr>
+
+					<!-- Reports To -->
+					<tr>
+						<td class="category">
+							<label for="edit-reports-to">
+								<?php echo lang_get( 'reports_to' ) ?>
+							</label>
+						</td>
+						<td>
+							<select id="edit-reports-to" name="reports_to" class="input-sm">
+								<option value="0"><?php echo lang_get( 'reports_to_none' ) ?></option>
+<?php foreach( $t_reports_to_users as $t_reports_to_user_id => $t_reports_to_user ): ?>
+<?php	if( $t_reports_to_user_id === $t_user_id ) { continue; } ?>
+								<option value="<?php echo $t_reports_to_user_id ?>"
+									<?php echo ( (int)( $t_user['reports_to'] ?? 0 ) === $t_reports_to_user_id ) ? 'selected="selected"' : '' ?>>
+									<?php echo string_html_specialchars( user_get_expanded_name_from_row( $t_reports_to_user ) ) ?>
+								</option>
+<?php endforeach; ?>
+							</select>
+							<p class="help-block"><?php echo lang_get( 'reports_to_hint' ) ?></p>
+						</td>
 					</tr>
 
 					<!-- Access Level -->
