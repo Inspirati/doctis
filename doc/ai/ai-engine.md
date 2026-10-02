@@ -346,8 +346,8 @@ dedicated meeting page. Phase 1 is built; Phases 2–4 are not.
 | `$g_meeting_assistant_threshold` | `$g_ai_assist_threshold` (whole page); `$g_ai_model`, `$g_ai_meeting_departments` added |
 | Two-mode session driver (Agenda Mode / Minutes Mode) | A short "infer, don't ask" prompt (2–4 turns) that drafts an agenda from one sentence; minutes flow underspecified |
 | — | Invitee matching against users who opted in (`{user}.meeting_invite`) and agenda email via the MantisBT queue |
-| File write + `git commit` to an HCRQMS worktree | Coded with `exec('git …')` against `$g_hcrqms_repo_path`; **incompatible** with the later git repository entity (HCRQMS is now Doctis repository `hcrqms-r1`) |
-| Phase 2 registration | Stub only |
+| File write + `git commit` to an HCRQMS worktree | June build used `exec('git …')` against `$g_hcrqms_repo_path`, incompatible with the later git repository entity. Replaced on branch `ai-meeting` by storage through the Doctis primary-file path in `$g_meeting_project_id` |
+| Phase 2 registration | Implemented on `ai-meeting`: agenda creates the document (On Record), minutes are a staged Draft revision; plus a `{meeting}` entity and a **My Meetings** view (not in the plan) |
 | Apache output-buffering notes | Development now runs on nginx + PHP-FPM; streaming would need `fastcgi_buffering off` / `X-Accel-Buffering: no` |
 
 ### Outstanding decisions (§8) — current position
