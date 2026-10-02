@@ -189,6 +189,9 @@ layout_page_begin( 'ai_assist_page.php' );
 	<li>
 		<a href="#tab-other"   data-toggle="tab"><?php echo lang_get( 'ai_assist_tab_other' ) ?></a>
 	</li>
+	<li>
+		<a href="<?php echo helper_mantis_url( 'ai_knowledge_page.php' ) ?>"><?php print_icon( 'fa-graduation-cap', 'ace-icon' ); ?> <?php echo lang_get( 'ai_knowledge_link' ) ?></a>
+	</li>
 </ul>
 
 <!-- ── Tab content ────────────────────────────────────────────────────────── -->

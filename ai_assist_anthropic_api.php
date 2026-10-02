@@ -14,13 +14,15 @@ require_api( 'config_api.php' );
 /**
  * Send a conversation to the Anthropic Messages API.
  *
- * @param string $p_system     System prompt.
+ * @param string|array $p_system System prompt: a string, or text blocks
+ *                               (['type' => 'text', 'text' => ..., optional
+ *                               'cache_control' => ['type' => 'ephemeral']]).
  * @param array  $p_messages   Each ['role' => 'user'|'assistant', 'content' => string].
  * @param int    $p_max_tokens
  * @return array{reply: string|null, usage: array|null, error: string|null}
  *               error is a user-facing message; details go to the error log.
  */
-function ai_assist_anthropic_request( string $p_system, array $p_messages, int $p_max_tokens ): array {
+function ai_assist_anthropic_request( string|array $p_system, array $p_messages, int $p_max_tokens ): array {
 	$t_api_key = config_get_global( 'anthropic_api_key' );
 	if( is_blank( $t_api_key ) ) {
 		return array( 'reply' => null, 'usage' => null, 'error' => 'AI Assistant is not configured on this server.' );
@@ -67,7 +69,13 @@ function ai_assist_anthropic_request( string $p_system, array $p_messages, int $
 		return array( 'reply' => null, 'usage' => null, 'error' => $t_err_msg );
 	}
 
-	$t_reply = $t_data['content'][0]['text'] ?? '';
+	# Join the text blocks (newer models may put other block types first).
+	$t_reply = '';
+	foreach( $t_data['content'] ?? array() as $t_block ) {
+		if( ( $t_block['type'] ?? '' ) === 'text' ) {
+			$t_reply .= $t_block['text'];
+		}
+	}
 	if( is_blank( $t_reply ) ) {
 		return array( 'reply' => null, 'usage' => null, 'error' => 'Empty response received from AI service.' );
 	}
@@ -76,6 +84,8 @@ function ai_assist_anthropic_request( string $p_system, array $p_messages, int $
 		'usage' => array(
 			'input_tokens'  => $t_data['usage']['input_tokens']  ?? null,
 			'output_tokens' => $t_data['usage']['output_tokens'] ?? null,
+			'cache_read_input_tokens'     => $t_data['usage']['cache_read_input_tokens'] ?? null,
+			'cache_creation_input_tokens' => $t_data['usage']['cache_creation_input_tokens'] ?? null,
 		),
 		'error' => null,
 	);

@@ -177,7 +177,26 @@
 						}, 1500);
 					}
 				});
-				bubble.appendChild(copyBtn);
+				/* "Correct this": start a correction, which the assistant can
+				   offer to save to the knowledge base */
+				var teachBtn = document.createElement('button');
+				teachBtn.className = 'ai-copy-btn';
+				teachBtn.title = 'Not right? Tell the assistant, and it can remember it for everyone';
+				teachBtn.innerHTML = '<i class="ace-icon fa fa-graduation-cap"></i> Correct this';
+				teachBtn.addEventListener('click', function() {
+					$input.value = 'That is not right. ';
+					$input.focus();
+					$input.setSelectionRange($input.value.length, $input.value.length);
+					updateCharCount();
+				});
+
+				var tools = document.createElement('div');
+				tools.className = 'ai-msg-tools';
+				copyBtn.style.display = teachBtn.style.display = 'inline-block';
+				teachBtn.style.marginLeft = '4px';
+				tools.appendChild(copyBtn);
+				tools.appendChild(teachBtn);
+				bubble.appendChild(tools);
 			} else {
 				bubble.textContent = content;
 			}
@@ -185,6 +204,28 @@
 			row.appendChild(avatar);
 			row.appendChild(bubble);
 			$messages.appendChild(row);
+			scrollToBottom();
+		}
+
+		/* ── Knowledge-entry notification card (help and meeting modes) ────── */
+		function appendKnowledgeCard(entry) {
+			var card = document.createElement('div');
+			card.style.cssText =
+				'margin:6px 0;padding:10px 14px;background:#f3f6fb;border:1px solid #b9c9e0;' +
+				'border-radius:6px;font-size:12px;color:#2a4a73;';
+			if( entry.error ) {
+				card.style.background = '#fff8f0';
+				card.style.borderColor = '#e8b88a';
+				card.style.color = '#7a4000';
+				card.innerHTML = '<i class="ace-icon fa fa-exclamation-triangle"></i> <strong>Not saved to the knowledge base</strong> &mdash; ' +
+					escapeHtml(entry.error);
+			} else {
+				var id = parseInt(entry.id, 10);
+				card.innerHTML = '<i class="ace-icon fa fa-graduation-cap"></i> <strong>Added to the knowledge base</strong> ' +
+					'as <a href="ai_knowledge_page.php#kb-' + id + '">KB-' + id + '</a> &mdash; ' + escapeHtml(entry.question || '') +
+					'<br><span style="color:#888;font-size:11px;">Visible to everyone now, marked unverified until a manager reviews it.</span>';
+			}
+			$messages.appendChild(card);
 			scrollToBottom();
 		}
 
@@ -366,6 +407,9 @@
 					if( cfg.onSavedDocument ) {
 						cfg.onSavedDocument(data.saved_document);
 					}
+				}
+				if( data.knowledge_entry ) {
+					appendKnowledgeCard(data.knowledge_entry);
 				}
 			};
 

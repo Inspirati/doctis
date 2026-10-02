@@ -26,6 +26,7 @@
 #   error          string|null    Error message on failure; null on success
 #   usage          object|null    {input_tokens, output_tokens} (chat action)
 #   saved_document object|null    Set when a meeting document was saved (meeting mode)
+#   knowledge_entry object|null   Set when the user's knowledge was saved (help/meeting)
 #
 # @package    Doctis
 # @copyright  Copyright 2025 Inspirati
@@ -39,6 +40,7 @@ require_api( 'user_api.php' );
 require_once( 'ai_assist_anthropic_api.php' );
 require_once( 'ai_assist_help_api.php' );
 require_once( 'ai_assist_meeting_api.php' );
+require_once( 'ai_assist_knowledge_api.php' );
 
 # ── Sanity checks ─────────────────────────────────────────────────────────────
 
@@ -160,6 +162,17 @@ if( $t_mode === 'meeting' ) {
 	}
 }
 
+# ── Help and Meeting modes: knowledge the user taught the assistant ───────────
+
+$t_knowledge_entry = null;
+if( in_array( $t_mode, [ 'help', 'meeting' ], true ) ) {
+	$t_knowledge_entry = ai_assist_process_knowledge_entry( $t_reply, $t_user_id );
+	if( $t_knowledge_entry !== null ) {
+		$t_reply = $t_knowledge_entry['stripped_reply'];
+		unset( $t_knowledge_entry['stripped_reply'] );
+	}
+}
+
 # ── Persist the updated history ───────────────────────────────────────────────
 # Append the assistant reply to form the full history to save.
 
@@ -195,8 +208,11 @@ echo json_encode( [
 	'usage'          => [
 		'input_tokens'  => $t_answer['usage']['input_tokens'] ?? null,
 		'output_tokens' => $t_answer['usage']['output_tokens'] ?? null,
+		'cache_read_input_tokens'     => $t_answer['usage']['cache_read_input_tokens'] ?? null,
+		'cache_creation_input_tokens' => $t_answer['usage']['cache_creation_input_tokens'] ?? null,
 	],
-	'saved_document' => $t_saved_document,
+	'saved_document'  => $t_saved_document,
+	'knowledge_entry' => $t_knowledge_entry,
 ] );
 exit;
 

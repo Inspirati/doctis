@@ -1062,8 +1062,37 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
+# ── Step 64: ai_knowledge ───────────────────────────────────────────────────
+# Knowledge base shared by the AI Assistant's Help and Meeting modes, built
+# from what users teach it. status: 10 unverified (visible to all, labelled),
+# 30 published (reviewed by a manager), 90 retired. project_id 0 = everyone;
+# otherwise only users with access to that project. supersedes: the entry
+# this one corrects (0 = none).
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'ai_knowledge' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `question` varchar(255) NOT NULL DEFAULT '',
+	  `answer` text NOT NULL,
+	  `keywords` varchar(255) NOT NULL DEFAULT '',
+	  `page` varchar(255) NOT NULL DEFAULT '',
+	  `project_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `status` smallint(6) NOT NULL DEFAULT 10,
+	  `source` varchar(16) NOT NULL DEFAULT '',
+	  `supersedes` int(10) unsigned NOT NULL DEFAULT 0,
+	  `created_by` int(10) unsigned NOT NULL DEFAULT 0,
+	  `date_created` int(10) unsigned NOT NULL DEFAULT 1,
+	  `updated_by` int(10) unsigned NOT NULL DEFAULT 0,
+	  `date_updated` int(10) unsigned NOT NULL DEFAULT 1,
+	  `reviewed_by` int(10) unsigned NOT NULL DEFAULT 0,
+	  `date_reviewed` int(10) unsigned NOT NULL DEFAULT 0,
+	  PRIMARY KEY (`id`),
+	  KEY `idx_ai_knowledge_status` (`status`),
+	  FULLTEXT KEY `idx_ai_knowledge_text` (`question`,`keywords`,`answer`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
 # ── End of schema definition ─────────────────────────────────────────────────
-# $t_idx = 64 → database_version = 63 on a fresh install (real index; see the
+# $t_idx = 65 → database_version = 64 on a fresh install (real index; see the
 # NOTE above step 60).
 #
 # To add a new table: append a new step here and run the schema upgrade.

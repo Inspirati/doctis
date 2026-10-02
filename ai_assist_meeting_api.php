@@ -23,6 +23,7 @@ require_api( 'config_api.php' );
 require_api( 'meeting_api.php' );
 require_api( 'string_api.php' );
 require_api( 'user_api.php' );
+require_once( __DIR__ . '/ai_assist_knowledge_api.php' );
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -264,6 +265,13 @@ is configured on this server, so no controlled document is created.';
 	$t_chair_name = meeting_user_display_name( $p_user_id );
 	$t_lead = (int)config_get_global( 'meeting_schedule_lead_days' );
 
+	# ── Shared knowledge base (also used by the Help tab) ────────────────────
+	$t_kb = ai_assist_knowledge_entries( $p_user_id );
+	$t_kb_entries = array_merge( $t_kb['global'], $t_kb['project'] );
+	$t_knowledge_section = ai_assist_knowledge_intro_text() . "\n\n"
+		. ( empty( $t_kb_entries ) ? '(No entries yet.)' : ai_assist_knowledge_entries_text( $t_kb_entries ) )
+		. "\n\n" . ai_assist_knowledge_teaching_text();
+
 	# ── Assemble prompt ───────────────────────────────────────────────────────
 	$t_prompt = <<<PROMPT
 You are the HC-Robotics Meeting Assistant embedded in Doctis. Your job is to
@@ -455,6 +463,10 @@ Scope: dept = departmental meetings only, all = all meetings.
 
 {$t_recent_text}
 {$t_focus_section}{$t_series_section}
+---
+
+{$t_knowledge_section}
+
 ---
 
 {$t_template_section}

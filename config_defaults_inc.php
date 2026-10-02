@@ -5004,6 +5004,32 @@ $g_ai_model = 'claude-sonnet-4-6';
 $g_ai_assist_threshold = REPORTER;
 
 /**
+ * AI Assistant knowledge base: global access level that reviews entries
+ * (publish, edit, retire, delete) on ai_knowledge_page.php. Users teach the
+ * assistant in the Help and Meeting tabs; their entries are visible to
+ * everyone at once, marked unverified until reviewed.
+ *
+ * @global int $g_ai_knowledge_review_threshold
+ */
+$g_ai_knowledge_review_threshold = MANAGER;
+
+/**
+ * Most knowledge entries one user may add per day through the assistant
+ * (guards against a runaway conversation filling the knowledge base).
+ *
+ * @global int $g_ai_knowledge_daily_limit
+ */
+$g_ai_knowledge_daily_limit = 20;
+
+/**
+ * User manual given to the AI Assistant as reference (path relative to the
+ * Doctis root; '' = none). Keep it current: the assistant answers from it.
+ *
+ * @global string $g_ai_knowledge_manual_path
+ */
+$g_ai_knowledge_manual_path = 'doc/MANUAL.md';
+
+/**
  * Doctis project that holds meeting records (e.g. the HCRQMS project).
  *
  * The Meeting Assistant stores each meeting's agenda as a new document in
