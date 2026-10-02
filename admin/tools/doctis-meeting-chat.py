@@ -2,13 +2,14 @@
 """Drive the Doctis AI Meeting Assistant over HTTP, as the browser does.
 
 Chat (Meeting tab):
-    doctis-meeting-chat.py USER PASSWORD [--clear] [--meeting-id N] MESSAGE [MESSAGE ...]
+    doctis-meeting-chat.py USER PASSWORD [--clear] [--meeting-id N | --series-of N] MESSAGE [MESSAGE ...]
 
     Logs in, loads (or with --clear, discards) the user's stored meeting
     conversation, then sends each MESSAGE as one turn and prints each reply,
     token usage, and any saved_document result. --meeting-id N opens the
     conversation for writing the minutes of meeting N, like the Write Minutes
-    button on My Meetings.
+    button on the meeting page; --series-of N plans the meeting that follows
+    meeting N, like the Plan Next Meeting button.
 
 Approve minutes (chair):
     doctis-meeting-chat.py USER PASSWORD --approve N
@@ -38,10 +39,12 @@ def login(user, password):
     return opener
 
 
-def chat(opener, user, messages, meeting_id, clear):
+def chat(opener, user, messages, meeting_id, clear, series_of=0):
     def api(body):
         if meeting_id:
             body['meeting_id'] = meeting_id
+        if series_of:
+            body['series_of'] = series_of
         req = urllib.request.Request(
             BASE + 'ai_assist_api.php', json.dumps(body).encode(),
             {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'})
@@ -102,10 +105,12 @@ def main():
     if len(sys.argv) < 4:
         sys.exit(__doc__)
     user, password, args = sys.argv[1], sys.argv[2], sys.argv[3:]
-    meeting_id, clear, approve_id = 0, False, 0
+    meeting_id, clear, approve_id, series_of = 0, False, 0, 0
     while args and args[0].startswith('--'):
         if args[0] == '--meeting-id':
             meeting_id, args = int(args[1]), args[2:]
+        elif args[0] == '--series-of':
+            series_of, args = int(args[1]), args[2:]
         elif args[0] == '--approve':
             approve_id, args = int(args[1]), args[2:]
         elif args[0] == '--clear':
@@ -115,7 +120,7 @@ def main():
     opener = login(user, password)
     if approve_id:
         return approve(opener, approve_id)
-    return chat(opener, user, args, meeting_id, clear)
+    return chat(opener, user, args, meeting_id, clear, series_of)
 
 
 sys.exit(main())

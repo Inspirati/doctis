@@ -1,7 +1,7 @@
 # Doctis AI Assistant — Status and To-Do
 
 **Branch:** `ai-meeting` (meeting work in progress; `dev` holds the June 2026 state)
-**Status as of:** 2026-10-02 — Help tab working; Meeting tab rebuilt on a meeting entity and Doctis document storage, **agenda → minutes → chair approval passed end to end on the VM**; My Meetings view added; SOP and Other tabs not started
+**Status as of:** 2026-10-02 — Help tab working; meeting lifecycle (plan → change/cancel → minutes with actions → chair approval → issues → next meeting in series) **passed end to end on the VM**; My Meetings and meeting pages; calendar invitations; SOP and Other tabs not started
 **Companion document:** [ai-engine.md](ai-engine.md) — the original concept plan and platform assessment (June 2026)
 
 This is a living document. It records what exists, how it works, what is
@@ -33,8 +33,10 @@ the open design questions.
 | Area | State |
 |------|-------|
 | **Help tab** | Working proof of concept: server-side system prompt, session persistence, token display, Markdown rendering, copy button. |
-| **Meeting tab** | Drafts agendas and minutes. On confirmation, it records a meeting (`{meeting}`, `{meeting_invitee}`) and stores the record as a Doctis document in the meeting project's repository: the agenda goes On Record and the minutes become a staged Draft. Then it emails invitees. **Verified 2026-10-02** end to end with the real API ([TESTING.md §7a](../TESTING.md)): meeting MIN-SYS-20261016 (document #129) was planned by the chair, minuted by frodo, and approved by the chair; every database, git and email check passed. |
-| **My Meetings** | My View tab (`my_view_meeting_page.php`) listing upcoming and past meetings, with the user's role, participants, attendance, status, a document link (only for users who can view it), and Write/Revise/Approve Minutes actions according to role. Verified with real meetings for the chair and the minute taker. |
+| **Meeting tab** | Plans agendas (optionally as the next meeting of a series) and writes minutes with a structured action list. Records the meeting, stores the record as a Doctis document in the meeting project (agenda On Record, minutes as a Draft for the chair), and emails participants with calendar invitations. |
+| **Meeting page** | `meeting_view_page.php`: details, participants and attendance, actions and their issues, the series, and role-based actions: Write/Revise/Approve Minutes, Change Meeting (reschedule, location, minute taker, invitees), Cancel Meeting, Plan Next Meeting, Calendar download. |
+| **My Meetings** | My View tab listing upcoming and past meetings (cancelled ones struck through), linking to the meeting pages, with a Minutes due indicator. |
+| **Verified** | 2026-10-02, real API ([TESTING.md §7a](../TESTING.md)): MIN-QA-20261020 (meeting 27, document #130) was planned, rescheduled, minuted by frodo with three actions, and approved; this created issues #1–#3, assigned and linked to the approved minutes. MIN-QA-20261027 (meeting 28, document #131) was planned in the series from "same time next week", then cancelled. 17 meeting PHPUnit tests and the full `mantis` suite (233) pass. |
 | **SOP tab** | "Coming soon" placeholder. |
 | **Other tab** | "Coming soon" placeholder. |
 
@@ -49,23 +51,27 @@ the open design questions.
 - **October 2026** (`ai-meeting`): introduced the meeting entity, storage
   through `file_dwg_primary_add()`, validated marker handling, a defined
   minutes flow, and the My Meetings view. `$g_hcrqms_repo_path` and the
-  direct git helpers were removed.
+  direct git helpers were removed. Then added chair approval, the email
+  lifecycle, the meeting page, change and cancel, calendar invitations,
+  series, actions as issues, and hand uploads counted as minutes.
 
 ### State of the native development VM (2026-10-02)
 
 - The running clone (`/var/www/html/doctis`) is on `ai-meeting`, updated by
   `git pull --ff-only /home/robert/Documents/doctis ai-meeting` (nothing
-  pushed to GitHub). Its schema upgrade created `{meeting}` and
-  `{meeting_invitee}`; `database_version` is 61.
+  pushed to GitHub). `{meeting}`, `{meeting_invitee}` and `{meeting_action}`
+  exist; `database_version` is 62. The meeting tables were recreated on
+  2026-10-02 when `{meeting}` gained columns. That removed the rows of the
+  first two test meetings, whose documents #128 and #129 remain as ordinary
+  documents.
 - The running `config_inc.php` has `$g_meeting_project_id = 1;` (HCRQMS),
   replacing the obsolete `$g_hcrqms_repo_path` line.
-- Test artefacts in HCRQMS: meeting 1 / document #128 (MIN-SYS-20261015,
-  created before the frontmatter fix, agenda only) and meeting 2 / document
-  #129 (MIN-SYS-20261016, approved minutes), with their commits.
+- Test artefacts in HCRQMS: documents #128–#131 and their commits; meetings
+  27 (approved, issues #1–#3) and 28 (cancelled).
 - **Time zone:** `$g_default_timezone` is unset and users have no timezone
   preference, so Doctis works in UTC while the server is Australia/Sydney.
-  Times are consistent inside Doctis, but "10am" means 10:00 UTC. Owner
-  decision pending.
+  Times are consistent inside Doctis, and calendar invitations are written
+  in UTC, so they are correct. Deferred by the owner.
 - HCRQMS is Doctis project 1, repository 1 (`hcrqms-r1`, branch `dev`). The
   template `system/templates/Meeting-Agenda-and-Minutes.md` and a hand-made
   record `system/meetings/MIN-SYS-20260917.md` are in that repository.
@@ -82,7 +88,8 @@ the open design questions.
   gandalf is not a member, but as a global manager he can read private
   projects (`private_project_threshold` = 70); merry and the others cannot.
 
-No AI or meeting function has automated tests.
+Meeting logic has PHPUnit coverage (`tests/Mantis/MeetingApiTest.php`, 17
+tests). The Help tab and the prompts themselves do not.
 
 ---
 
@@ -92,22 +99,32 @@ No AI or meeting function has automated tests.
 |------|---------|
 | [`ai_assist_page.php`](../../ai_assist_page.php) | Page shell: auth, shared CSS, tab navigation, SOP/Other placeholders, `<script src>` tags |
 | [`ai_assist_help_page.php`](../../ai_assist_help_page.php) | Help tab panel HTML |
-| [`ai_assist_meeting_page.php`](../../ai_assist_meeting_page.php) | Meeting tab panel HTML; reads `?meeting_id=` to open in minutes mode |
+| [`ai_assist_meeting_page.php`](../../ai_assist_meeting_page.php) | Meeting tab panel HTML; `?meeting_id=` opens minutes mode, `?series_of=` plans the next meeting |
 | [`ai_assist_api.php`](../../ai_assist_api.php) | AJAX endpoint: request validation, `load`/`clear`/`chat`, Anthropic call, `{ai_sessions}` CRUD |
 | [`ai_assist_help_api.php`](../../ai_assist_help_api.php) | `ai_assist_help_system_prompt()` |
-| [`ai_assist_meeting_api.php`](../../ai_assist_meeting_api.php) | Meeting prompt, focus meeting, marker processing (agenda/minutes), validation, agenda email |
-| [`core/meeting_api.php`](../../core/meeting_api.php) | Meeting entity: get/list/create/update, roles, attendance, status labels, template read, document storage (`meeting_store_record()`) |
-| [`my_view_meeting_page.php`](../../my_view_meeting_page.php) | My Meetings view (Write/Revise/Approve Minutes actions) |
+| [`ai_assist_meeting_api.php`](../../ai_assist_meeting_api.php) | Meeting prompt (focus meeting, series, open actions), marker processing (agenda/minutes/actions), validation |
+| [`core/meeting_api.php`](../../core/meeting_api.php) | Meeting entity: get/list/create/update, roles and permissions, attendance, series, record storage and rewriting, approval, change/cancel, hand-upload rules, email |
+| [`core/meeting_calendar_api.php`](../../core/meeting_calendar_api.php) | iCalendar (`meeting_ics()`): REQUEST / CANCEL / PUBLISH |
+| [`core/meeting_action_api.php`](../../core/meeting_action_api.php) | Actions: parse/validate, store, create issues on approval, open actions in a series |
+| [`meeting_view_page.php`](../../meeting_view_page.php) | Meeting page |
+| [`meeting_edit_page.php`](../../meeting_edit_page.php) / [`meeting_edit.php`](../../meeting_edit.php) | Change Meeting form and handler |
+| [`meeting_cancel.php`](../../meeting_cancel.php) | POST handler: cancel (with confirmation) |
+| [`meeting_ics.php`](../../meeting_ics.php) | Calendar download |
+| [`my_view_meeting_page.php`](../../my_view_meeting_page.php) | My Meetings view |
 | [`meeting_minutes_approve.php`](../../meeting_minutes_approve.php) | POST handler: chair approves minutes |
-| [`dwg_primary_file_sync_head.php`](../../dwg_primary_file_sync_head.php), [`dwg_view_inc.php`](../../dwg_view_inc.php) | Promote-Draft is chair-only for meeting documents and marks the meeting approved |
+| [`dwg_primary_file_sync_head.php`](../../dwg_primary_file_sync_head.php), [`dwg_view_inc.php`](../../dwg_view_inc.php) | Meeting documents: promote-Draft is chair-only and marks the meeting approved; upload form follows the hand-upload rule; notice linking to the meeting page |
+| [`dwg_primary_file_update.php`](../../dwg_primary_file_update.php), [`api/soap/mc_dwg_primary_api.php`](../../api/soap/mc_dwg_primary_api.php) | Upload paths: refuse or treat as draft minutes for meeting documents |
+| [`core/email_inc_api.php`](../../core/email_inc_api.php), [`core/classes/EmailMessage.class.php`](../../core/classes/EmailMessage.class.php), [`core/classes/EmailSenderPhpMailer.class.php`](../../core/classes/EmailSenderPhpMailer.class.php) | Doctis-marked MantisBT edits: queued email may carry string attachments (`metadata['attachments']`) |
 | [`js/ai_assist.js`](../../js/ai_assist.js) | Shared JS: `renderMarkdown()`, `createChatSession(cfg)` (with `cfg.extra` request fields), tab/hash handling |
-| [`js/ai_assist_help.js`](../../js/ai_assist_help.js) / [`js/ai_assist_meeting.js`](../../js/ai_assist_meeting.js) | Per-tab `createChatSession` instances; the meeting instance sends `meeting_id` |
+| [`js/ai_assist_help.js`](../../js/ai_assist_help.js) / [`js/ai_assist_meeting.js`](../../js/ai_assist_meeting.js) | Per-tab `createChatSession` instances; the meeting instance sends `meeting_id` / `series_of` |
+| [`admin/tools/doctis-meeting-chat.py`](../../admin/tools/doctis-meeting-chat.py) | Test driver: chat as a user, plan a follow-up, approve minutes |
+| [`tests/Mantis/MeetingApiTest.php`](../../tests/Mantis/MeetingApiTest.php) | Meeting PHPUnit tests |
 | [`core/html_api.php`](../../core/html_api.php) | `print_my_view_menu()`: My Meetings tab |
 | [`core/layout_api.php`](../../core/layout_api.php) | Sidebar "AI Assistant" entry (search for `ai_assist_threshold`) |
 | [`core/file_dwg_api.php`](../../core/file_dwg_api.php) | `file_dwg_primary_add()`, which takes an optional explicit `git_path` for a first registration |
 | [`lang/strings_english.txt`](../../lang/strings_english.txt) | `ai_assist_*`, `meeting_*`, `my_view_meeting_link` strings |
 | [`config_defaults_inc.php`](../../config_defaults_inc.php) | AI and meeting settings (§5) |
-| [`admin/schema.php`](../../admin/schema.php) | `{ai_sessions}` (index 1), `{meeting}` (60), `{meeting_invitee}` (61); `meeting_invite` on `{user}` |
+| [`admin/schema.php`](../../admin/schema.php) | `{ai_sessions}` (index 1), `{meeting}` (60), `{meeting_invitee}` (61), `{meeting_action}` (62); `meeting_invite` on `{user}` |
 | [`my_view_cnf_page.php`](../../my_view_cnf_page.php) and related | User profile "Meeting Invites" setting (0 never, 1 department, 2 all) |
 
 ---
@@ -118,7 +135,7 @@ No AI or meeting function has automated tests.
 
 ```
 Browser (js/ai_assist.js, createChatSession)
-  │  POST ai_assist_api.php  { action: 'chat', mode, history[], meeting_id? }
+  │  POST ai_assist_api.php  { action: 'chat', mode, history[], meeting_id?, series_of? }
   ▼
 ai_assist_api.php
   │  — POST + XHR header check, auth, ai_assist_threshold
@@ -149,7 +166,8 @@ Both are built server-side; the browser never sends one.
 
 ### 4.1 Data model
 
-`{meeting}`: `doc_ref` (unique, e.g. `MIN-SYS-20261015`), `title`,
+`{meeting}`: `series_id` (first meeting of the series, 0 = none), `sequence`
+(calendar revision), `doc_ref` (unique, e.g. `MIN-SYS-20261015`), `title`,
 `department`, `project_id`/`dwg_id`/`git_path` (the stored document, 0/'' if
 none), `chair_id`, `minute_taker_id`, `date_start` (Unix), `duration` (min),
 `location`, `status`, `created_by`, `date_created`, `date_updated`.
@@ -157,17 +175,50 @@ none), `chair_id`, `minute_taker_id`, `date_start` (Unix), `duration` (min),
 `{meeting_invitee}`: `meeting_id`, `user_id` (0 = guest without an account),
 `name`, `attendance` (0 invited, 10 attended, 20 apologies).
 
+`{meeting_action}`: `meeting_id`, `ref` (A1…), `description`, `owner_id`
+(0 = no account), `owner_name`, `due_date`, `bug_id` (0 until approval).
+
 Status: 10 agenda issued → 20 minutes awaiting approval → 30 minutes
-approved; 90 cancelled (**nothing sets 90 yet**, §7).
+approved; 90 cancelled (by the chair or organiser while at 10).
+
+**Managing (owner decision 2026-10-02):** while only the agenda is issued, the
+chair or organiser can reschedule, change the location, the minute taker
+(must be an invitee) and the invitees (only users who accept invitations, or
+named guests), or cancel. The agenda record is rewritten (frontmatter
+`date`/`time`/`location`/`minute_taker`, the body's matching `**Label:**`
+lines, and the Invitees table) and put On Record at once, like an issued
+agenda. The title is not editable.
+
+**Series:** **Plan Next Meeting** on the meeting page
+(`ai_assist_page.php?series_of=N`) gives the assistant the previous meeting
+and the series' open actions. The assistant can also link a "next week's
+review" to one of the user's recent meetings. `series_of` is accepted only for
+meetings the user leads.
+
+**Actions → issues:** minutes carry a `MEETING_ACTIONS` list. On approval
+each action becomes an issue in the meeting project: category `meetings`,
+summary `[REF A1] …`, linked to the meeting document (so the issue records
+the approved minutes' SHA). The handler is the owner when they may handle
+issues in the project and the approver may assign; otherwise the owner is
+named in the issue text. The due date is set only if
+`$g_due_date_update_threshold` allows it (NOBODY by default, so not set on the
+VM); it is always in the text. Actions are open until their issue reaches
+`bug_resolved_status_threshold`.
+
+**Hand uploads (owner decision):** a revision uploaded to a meeting document
+through the document page or SOAP counts as draft minutes. It is accepted only
+from the chair, minute taker or organiser, and only before approval; it moves
+the meeting to 20 and circulates the draft.
 
 **Approval (owner decision, 2026-10-02):** an issued agenda goes On Record
 immediately. The **chair** approves the minutes with `meeting_minutes_approve()`,
 which promotes the minutes Draft to On Record and sets status 30. The chair
-can do this from the **Approve Minutes** button on My Meetings
-(`meeting_minutes_approve.php`) or from the document page's promote-Draft
+can do this from the **Approve Minutes** button on My Meetings or the meeting
+page (`meeting_minutes_approve.php`) or from the document page's promote-Draft
 button. For meeting documents that button is shown to, and accepted from, the
-chair only, instead of managers. When someone other than the chair saves the
-minutes, the chair is emailed an approval request.
+chair only, instead of managers. Approval stamps the record
+(`status: Approved Minutes`, `effective_date`) before promoting it, creates
+the action issues, and emails the approved minutes.
 
 A user's role in a meeting is chair, minute taker, organiser (creator) or
 invitee. Chair, minute taker and organiser may write minutes.
@@ -188,8 +239,9 @@ invitee. Chair, minute taker and organiser may write minutes.
 
 ```
 <<<MEETING_DOCUMENT type="agenda" doc_id=… dept=… title=… date="YYYY-MM-DD" time="HH:MM"
-    duration=… location=… minute_taker_id=… invitee_ids="1,5" guests="Name; Name">>>
+    duration=… location=… minute_taker_id=… invitee_ids="1,5" guests="Name; Name" series_of=…>>>
 <<<MEETING_DOCUMENT type="minutes" meeting_id=… attended_ids=… apology_ids=…>>>
+<<<MEETING_ACTIONS>>> [{"ref","action","owner_id","owner","due"}] <<<END_MEETING_ACTIONS>>>
 ```
 
 Server-side handling (`ai_assist_meeting_api.php`):
@@ -198,7 +250,8 @@ Server-side handling (`ai_assist_meeting_api.php`):
 |--------|---------|
 | Department must be configured; date/time must parse (user timezone) | Meeting must exist; user must be chair/minute taker/organiser; status 10 or 20 |
 | Reference built as `MIN-{dept}-{Ymd}` (+`-2`… if taken); the model's `doc_id` is replaced in the content | Attendance IDs accepted only for the meeting's invitees |
-| Invitee and minute-taker IDs accepted only from the candidate list; `guests` become account-less invitees | — |
+| Invitee and minute-taker IDs accepted only from the candidate list; `guests` become account-less invitees | Action owners accepted only from the participants; invalid due dates dropped; up to 50 actions |
+| `series_of` accepted only for a meeting the user leads | A revision of the minutes replaces the stored actions |
 | Meeting row + invitees created | Status → 20 |
 | If a meeting project is configured: document created (category `Meetings`, number = reference) and file stored at `{dept path}/{ref}.md`, **On Record** | If the meeting has a document: same file replaced, **staged as Draft** for the chair's approval |
 | Agenda emailed to invitees | Draft emailed to all participants except the author, for corrections; the chair is asked to approve |
@@ -211,13 +264,21 @@ recorded and reports the error in the chat's saved-document card.
 Participants need not be members of the private meeting project; email is
 how they read the record. `core/meeting_api.php` sends every stage with the
 full record (YAML frontmatter stripped). A document link is added only for
-recipients who can view the document, and every message links to My Meetings.
+recipients who can view the document, and every message links to the meeting page.
 
-| Event | Recipients | Notes |
-|-------|-----------|-------|
-| Agenda issued | invitees with accounts | date, time, duration, location, chair |
-| Minutes drafted | chair, minute taker and invitees, except the author | corrections deadline 3 business days ahead (TMPL-SYS-001 step 7); the chair's copy asks for approval |
-| Minutes approved | the same, except the approver | approved record |
+| Event | Recipients | Calendar | Notes |
+|-------|-----------|----------|-------|
+| Agenda issued | invitees with accounts | `invite.ics` REQUEST | date, time, duration, location, chair |
+| Meeting changed | current invitees | REQUEST, SEQUENCE+1 | updated agenda |
+| Invitee removed | that invitee | `cancel.ics` CANCEL | |
+| Meeting cancelled | invitees | CANCEL | reason, if given |
+| Minutes drafted | chair, minute taker and invitees, except the author | — | corrections deadline 3 business days ahead (TMPL-SYS-001 step 7); the chair's copy asks for approval |
+| Minutes approved | the same, except the approver | — | approved record |
+
+Calendar times are UTC with a stable UID (`doctis-meeting-<id>@<host>`), so
+clients update or remove the event they already hold. Attachments travel
+through the MantisBT queue in `metadata['attachments']`; the sender adds
+them with PHPMailer.
 
 My Meetings shows **Minutes due** (2 business days after the meeting ends,
 TMPL-SYS-001 step 6) on meetings still at "agenda issued", in red when
@@ -234,27 +295,25 @@ an approved ref, as every first upload does.
 
 ### 4.5 Open design questions
 
-Decided 2026-10-02: agendas go On Record at once; the chair approves minutes
-(§4.1). Still open:
+Decided 2026-10-02 by the owner: agendas go On Record at once; the chair
+approves minutes; emailed content is enough for participants outside the
+meeting project; hand uploads count as minutes; departments stay in
+configuration, with FS, FIN, SAF and SAL added; build series, actions to
+issues, manage from the meeting page, and calendar invitations. Still open:
 
-1. **Stray drafts on meeting documents.** A Draft uploaded by hand through the
-   document page while the meeting is still at "agenda issued" can no longer
-   be promoted by anyone, because only the chair may promote, and only minutes
-   awaiting approval. Should hand uploads to meeting documents be blocked, or
-   count as minutes?
-2. *(Resolved: approved minutes are emailed to participants, §4.3a.)*
-3. **Departments.** HCRQMS is one project with `content/<department>`
-   directories; only `system/meetings` exists so far. HCRQMS also has
-   field-service, finance, safety and sales departments that are not
-   configured. Should departments come from configuration, sub-projects, or
-   the repository?
-4. **Recurring meetings and series** (e.g. the weekly QMS review): link
-   meetings and pre-fill "approval of last minutes"?
-5. **Action items → issues** (ai-engine.md Phase 3).
-6. **Editing outside the chat:** reschedule, cancel or change invitees from
-   My Meetings, or always through the assistant?
-7. **Visibility:** My Meetings shows only the user's own meetings. Should
-   managers see department meetings?
+1. **Visibility:** My Meetings shows only the user's own meetings. Should
+   managers see their department's meetings?
+2. **Action issues for non-members:** an owner who cannot handle issues in the
+   meeting project is not assigned (named in the text only). Should such
+   owners be added to the project, or should action issues go elsewhere?
+3. **Issue due dates:** `$g_due_date_update_threshold` is NOBODY, so action
+   issues carry their due date in the text only. Enable due dates?
+4. **Recurring schedules:** series are linked one meeting at a time
+   (Plan Next Meeting). Should a weekly series schedule itself?
+5. **Changing the title** of an issued meeting is not supported (it appears in
+   several places in the record).
+6. **Calendar replies:** invitations are sent with `RSVP=FALSE`; accept and
+   decline replies are not collected.
 
 ---
 
@@ -314,19 +373,24 @@ Set in `config/config_inc.php` (never committed).
 - [x] Meeting roles authorise writing minutes in a private meeting project
 - [x] End-to-end test passed; procedure and driver in [TESTING.md §7a](../TESTING.md) (`admin/tools/doctis-meeting-chat.py`)
 - [x] Email lifecycle (agenda, draft minutes for corrections, approved minutes), document link only for viewers; Minutes due indicator
-- [x] PHPUnit `tests/Mantis/MeetingApiTest.php` (10 tests): helpers, roles, listing, reference uniqueness, validation of model-supplied attributes
+- [x] Meeting page; change (reschedule, location, minute taker, invitees) and cancel by chair/organiser
+- [x] Calendar invitations (REQUEST/CANCEL attachments; download)
+- [x] Meeting series; Plan Next Meeting; open actions carried into the next agenda
+- [x] Actions → issues on approval, linked to the approved minutes
+- [x] Hand uploads to meeting documents count as draft minutes (web and SOAP)
+- [x] Departments FS, FIN, SAF, SAL added
+- [x] PHPUnit `tests/Mantis/MeetingApiTest.php` (17 tests); full lifecycle verified live (§1)
 
 ### Next
 
+- [ ] Owner decisions in §4.5 (visibility, non-member action owners, due dates, recurring schedules)
 - [ ] **Time zone** (§1): deferred by the owner.
-- [ ] Department configuration review (§4.5 question 3).
+- [ ] Merge `ai-meeting` into `dev` when the owner is satisfied.
 
 ### Later
 
-- [ ] Reschedule / cancel / edit invitees from My Meetings
-- [ ] Action items → Doctis issues linked to the meeting document
-- [ ] Agenda email as HTML or with the file attached; calendar invitation (`.ics`)
-- [ ] Automated tests: marker parsing, attribute validation, role checks, reference uniqueness
+- [ ] Agenda email as HTML, or the record attached as a file
+- [ ] Meeting title change (record rewrite in several places)
 - [ ] `max_tokens` per-mode configuration; review `$g_ai_model` default
 - [ ] Per-user rate limiting and a usage/audit log
 - [ ] Streaming responses (SSE)
@@ -375,3 +439,4 @@ PHP errors are logged under `/var/log/doctis` and `/var/log/nginx`.
 | 2026-06-18 | Phase 3 core — Meeting tab, server-side prompt, HCRQMS write, git commit, department config, JS factory |
 | 2026-10-02 | Rewritten against `dev`; documented that meeting storage was incompatible with the git repository entity |
 | 2026-10-02 | `ai-meeting`: meeting entity, document-backed records, minutes flow, validation, My Meetings view; open design questions (§4.5) |
+| 2026-10-02 | Chair approval, email lifecycle, meeting page, change/cancel, calendar invitations, series, actions → issues, hand uploads as minutes; owner decisions recorded (§4.5) |

@@ -292,37 +292,56 @@ cd /var/www/html/doctis   # needs tests/bootstrap.php (§2)
 vendor/bin/phpunit --testsuite mantis --filter MeetingApiTest --testdox
 ```
 
+Running the **whole** `mantis` suite also creates throwaway accounts in other
+tests, which queue "Account registration" emails to `.test` addresses. On an
+instance with live SMTP, delete them before the cron sender runs:
+`DELETE FROM email WHERE email LIKE '%.test' AND subject = '[Doctis] Account registration'`.
+
+**End to end** (frodo and sam are HCRQMS members; gandalf is a global manager):
+
 ```bash
 export DOCTIS_URL=http://10.0.0.94/doctis/
 T=admin/tools/doctis-meeting-chat.py
 
 # 1. Chair plans the meeting (two turns: draft, then confirm)
 $T administrator root --clear \
-  "Agenda for Frodo, Sam and Gandalf on 16 October 2026 at 10am to review progress, 45 minutes." \
+  "Agenda for Frodo, Sam and Gandalf on 20 October 2026 at 10am: weekly QMS progress review, 45 minutes." \
   "Yes, go ahead."
 #    → SAVED_DOCUMENT: meeting_id, dwg_id, file_path, stored=true, emails_sent ×3
 
-# 2. Minute taker (first invitee named) writes the minutes for that meeting
-$T frodo '' --meeting-id <meeting_id> \
-  "Frodo and Sam attended; Gandalf sent apologies. <notes per agenda item, actions>"
-$T frodo '' --meeting-id <meeting_id> "Yes, save the minutes."
-#    → stored=true, staged=true
+# 2. Chair reschedules: meeting page → Change Meeting (meeting_edit_page.php),
+#    e.g. time 11:00. (Scripted: POST meeting_edit.php with the form token.)
 
-# 3. Chair approves
+# 3. Minute taker (first invitee named) writes the minutes, with actions
+$T frodo '' --meeting-id <meeting_id> \
+  "All attended. <notes per agenda item>. Actions: Frodo to … by 27 October; Sam to … by 30 October."
+$T frodo '' --meeting-id <meeting_id> "Yes, save the minutes."
+#    → stored=true, staged=true, actions=N
+
+# 4. Chair approves → actions become issues
 $T administrator root --approve <meeting_id>
+
+# 5. Plan the next meeting in the series
+$T administrator root --clear --series-of <meeting_id> "Same time next week please." 
+$T administrator root --series-of <meeting_id> "Yes, go ahead."
+
+# 6. Cancel it: meeting page → Cancel Meeting (with a reason; confirmation step)
 ```
 
 **Check after each step** (database access: `doc/ai/ai-todo.md` §8):
 
 | After | Expect |
 |-------|--------|
-| 1 | `{meeting}` row status 10; invitees with user ids; document in category `meetings` with number `MIN-…`; `{dwg_primary_file}` at `system/meetings/MIN-….md`; commit by the chair in the bare repo; `refs/doctis/approved/<dwg>/1`; file starts with YAML frontmatter `status: Agenda`; 3 agenda emails queued |
-| 2 | commit by frodo; `{dwg_primary_draft}` row; On Record unchanged; file `revision: B`, `status: Draft Minutes`; attendance recorded; meeting status 20; "Minutes awaiting your approval" email to the chair; My Meetings shows Approve Minutes to the chair only |
-| 3 | stamping commit by the chair changing only `status`, `effective_date`, `**Status:**`; promoted On Record; second approved ref; draft row gone; meeting status 30 |
+| 1 | `{meeting}` status 10, sequence 0; invitees with user ids; document in category `meetings`, number `MIN-…`, file at `{dept path}/MIN-….md`, On Record, commit by the chair, `refs/doctis/approved/<dwg>/1`; YAML frontmatter `status: Agenda`; 3 agenda emails with `invite.ics` (METHOD:REQUEST) |
+| 2 | sequence 1; record diff only in the changed lines, On Record (no draft); 3 "Meeting Updated" emails, calendar SEQUENCE:1 |
+| 3 | commit by frodo; `{dwg_primary_draft}` row; file `revision: B`, `status: Draft Minutes`; attendance recorded; status 20; `{meeting_action}` rows with owner ids and due dates; draft emailed to participants except frodo (the chair's copy asks for approval); Approve Minutes shown to the chair only |
+| 4 | stamping commit by the chair (`status`, `effective_date`, `**Status:**` only), promoted On Record, second approved ref, status 30; one issue per action in the meeting project, handler = owner (when allowed), `document_id` = the meeting document, `document_sha` = the approved SHA; approved minutes emailed |
+| 5 | new meeting with `series_id` = the first meeting; agenda includes "Approval of previous minutes (MIN-…)" and the open actions; same invitees, time and minute taker |
+| 6 | status 90, sequence 1; record `status: Cancelled`; CANCEL emails with the reason; struck through on My Meetings |
 
-First run: 2026-10-02 on the native VM. All checks passed after three fixes
-found by the run (frontmatter missing from records, private meeting project
-refusing the minute taker, and the approval stamp).
+Runs: 2026-10-02 on the native VM. First run (steps 1, 3, 4) passed after three
+fixes (missing frontmatter, private meeting project refusing the minute taker,
+approval stamp). Second run (all six steps) passed without changes.
 
 ---
 

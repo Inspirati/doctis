@@ -826,12 +826,14 @@ storage on any new server.
 ## AI Assistant Feature
 
 The Doctis AI Assistant (`ai_assist_page.php`) embeds a Claude-powered chat interface
-using the Anthropic Messages API.  Help tab works.  The Meeting tab records meetings
-(`{meeting}`, `core/meeting_api.php`), stores agendas/minutes as Doctis documents in
-`$g_meeting_project_id`, and feeds the **My Meetings** My View tab
-(`my_view_meeting_page.php`) — built on branch `ai-meeting`, not yet tested end to
-end.  SOP and Other tabs are placeholders.  Before working on any AI-related code,
-read:
+using the Anthropic Messages API.  Help tab works.  The Meeting tab plans and minutes
+meetings (`{meeting}`, `{meeting_action}`; `core/meeting_api.php`,
+`core/meeting_calendar_api.php`, `core/meeting_action_api.php`), stores agendas and
+minutes as Doctis documents in `$g_meeting_project_id`, emails participants with
+calendar invitations, and turns approved actions into issues.  Meetings are listed on
+the **My Meetings** My View tab and managed on `meeting_view_page.php` — branch
+`ai-meeting`, verified end to end on the native VM.  SOP and Other tabs are
+placeholders.  Before working on any AI-related code, read:
 
 - **[doc/ai/ai-todo.md](doc/ai/ai-todo.md)** — living status and to-do: what is built,
   what is broken, how the pipeline works, configuration, and the prioritised to-do
