@@ -826,29 +826,35 @@ storage on any new server.
 ## AI Assistant Feature
 
 The Doctis AI Assistant (`ai_assist_page.php`) embeds a Claude-powered chat interface
-using the Anthropic Messages API.  Before working on any AI-related code, read:
+using the Anthropic Messages API.  Help tab works; the Meeting tab drafts agendas
+but its save/commit/registration path predates the git repository entity and does
+not work yet; SOP and Other tabs are placeholders.  Before working on any
+AI-related code, read:
 
-- **[doc/ai-todo.md](doc/ai-todo.md)** — living implementation log: what is built, how
-  the pipeline works, configuration reference, known constraints, and the phased to-do
-  list (Phases 2–5).  Update this document as work is completed or decisions change.
-- **[doc/ai-engine.md](doc/ai-engine.md)** — architecture concept plan and platform
-  assessment.  Read before making structural changes to the AI pipeline.
+- **[doc/ai/ai-todo.md](doc/ai/ai-todo.md)** — living status and to-do: what is built,
+  what is broken, how the pipeline works, configuration, and the prioritised to-do
+  list.  Update this document as work is completed or decisions change.
+- **[doc/ai/ai-engine.md](doc/ai/ai-engine.md)** — original concept plan and platform
+  assessment, with an as-built differences section.  Read before making structural
+  changes to the AI pipeline.
 
-Key files:
+Key files (one PHP and one JS module per tab):
 
 | File | Purpose |
 |------|---------|
-| `ai_assist_page.php` | Page shell: auth, tab layout, chat HTML, inline CSS, `<script src>` |
-| `ai_assist_api.php` | AJAX endpoint: validation, cURL to Anthropic, JSON response |
-| `js/ai_assist.js` | All client-side JS — **must** be external (CSP `script-src 'self'`) |
+| `ai_assist_page.php` | Page shell: auth, shared CSS, tab layout, `<script src>`; includes `ai_assist_help_page.php` / `ai_assist_meeting_page.php` |
+| `ai_assist_api.php` | AJAX endpoint: validation, `load`/`clear`/`chat`, cURL to Anthropic, `{ai_sessions}` |
+| `ai_assist_help_api.php` / `ai_assist_meeting_api.php` | Server-side system prompts; meeting document processing |
+| `js/ai_assist.js` (+ `_help.js`, `_meeting.js`) | Client-side JS — **must** be external (CSP `script-src 'self'`) |
 
 The API key (`$g_anthropic_api_key`) is set in `config/config_inc.php` (not committed).
 The sidebar button is suppressed entirely when the key is blank.
 
 **Adding new AI tables:** Follow the standard schema change workflow — edit
 `admin/schema.php` and rebuild the database.  See **Database Schema Changes** above
-for the full procedure and conventions.  See §5 of `doc/ai-todo.md` for AI-specific
-table design notes.
+for the full procedure and conventions.  See §3 and §6 of `doc/ai/ai-todo.md` for
+`{ai_sessions}` notes.  On the native VM a rebuild also wipes imported data — check
+DEV-SETUP.md first.
 
 ## Known Architectural Trade-offs
 

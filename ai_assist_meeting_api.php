@@ -563,6 +563,6 @@ function ai_assist_register_meeting_doctis(
 	string $p_rel_path,
 	int $p_user_id
 ): ?int {
-	# TODO (Phase 3 — Doctis registration): see doc/ai-todo.md
+	# TODO (Doctis registration): see doc/ai/ai-todo.md §4.4
 	return null;
 }

@@ -1,64 +1,66 @@
-# Doctis AI Engine — Implementation Log and To-Do
+# Doctis AI Assistant — Status and To-Do
 
-**Branch:** `ai-assist`  
-**Status:** Active development  
-**Companion document:** [doc/ai-engine.md](ai-engine.md) — architecture concept plan and platform assessment
+**Branch:** `dev` (the original `ai-assist` branch was merged; there is no separate AI branch)
+**Status as of:** 2026-10-02 — Help tab working; Meeting tab partly working (see §1); SOP and Other tabs not started
+**Companion document:** [ai-engine.md](ai-engine.md) — the original concept plan and platform assessment (June 2026)
 
-This is a living document.  It records what has been built, how it works, and
-what remains to do.  When working on AI features in this codebase, read this
-document first.  Update it as work is completed or decisions change.
+This is a living document. It records what exists, how it works, what is
+known to be broken, and what remains to do. Read it before working on any AI
+feature, and update it when work is completed or decisions change. Keep
+statements about verified behaviour separate from statements about code that
+has only been read.
 
 ---
 
 ## Contents
 
-1. [What is built](#1-what-is-built)
+1. [Current status](#1-current-status)
 2. [File map](#2-file-map)
 3. [How the pipeline works](#3-how-the-pipeline-works)
-4. [Configuration reference](#4-configuration-reference)
-5. [Known constraints and gotchas](#5-known-constraints-and-gotchas)
-6. [To-do list](#6-to-do-list)
+4. [Meeting tab in detail](#4-meeting-tab-in-detail)
+5. [Configuration reference](#5-configuration-reference)
+6. [Known constraints and gotchas](#6-known-constraints-and-gotchas)
+7. [To-do list](#7-to-do-list)
+8. [Inspecting AI state on the development VM](#8-inspecting-ai-state-on-the-development-vm)
 
 ---
 
-## 1. What is built
+## 1. Current status
 
-A working proof-of-concept AI chat page embedded in Doctis, using the Anthropic
-Messages API (`claude-sonnet-4-6`) via a server-side PHP proxy.
+| Tab | State |
+|-----|-------|
+| **Help** | Working proof of concept. Chat with server-side system prompt, session persistence, token display, Markdown rendering, copy button. |
+| **Meeting** | Chat works and drafts agendas. **Saving, committing and registering meeting records does not work** with the current Doctis git-storage design (§4.3). Doctis document registration is an empty stub. |
+| **SOP** | "Coming soon" placeholder. |
+| **Other** | "Coming soon" placeholder. |
 
-### What works today
+The AI code was written in June 2026 (commits `040a95679` … `e39d705ca`,
+2026-06-16 to 2026-06-19) and has not changed since. During that period Doctis
+gained the git repository entity (`{repository}`, `{project_repository}`,
+`core/repository_api.php`), path-as-data registration
+(`file_dwg_primary_register()`), and the HCRQMS ZIP import. The Meeting tab
+predates all of these and still assumes HCRQMS is a plain git working tree at
+`$g_hcrqms_repo_path`.
 
-- **Sidebar button** — "AI Assistant" (`fa-comments` icon) appears in the left
-  navigation on every page for any authenticated user at or above
-  `$g_ai_assist_threshold` (default: `REPORTER`), provided `$g_anthropic_api_key`
-  is non-blank.  Button is suppressed entirely when no key is configured.
+### State of the native development VM (checked 2026-10-02)
 
-- **`ai_assist_page.php`** — top-level page with four Bootstrap JS tabs:
-  **Help**, **Meeting**, **SOP**, **Other**.  Tabs switch client-side (no page
-  reload).  Active tab is reflected in the URL hash for bookmarkability.
+- `http://10.0.0.94/doctis/ai_assist_page.php` is served by the running clone
+  on `dev`. An Anthropic API key is configured, so the sidebar button and tabs
+  are active.
+- `$g_hcrqms_repo_path = '/var/git/doctis'` in both `config_defaults_inc.php`
+  and the running `config_inc.php`. That directory is the store for Doctis's
+  bare repositories, not an HCRQMS checkout (§4.3).
+- HCRQMS is imported as Doctis project 1 (`HCRQMS`), repository 1
+  (`/var/git/doctis/hcrqms-r1.git`, branch `dev`, worktree
+  `/var/www/doctis/worktrees/hcrqms-r1`). The meeting template
+  `system/templates/Meeting-Agenda-and-Minutes.md` and an existing record
+  `system/meetings/MIN-SYS-20260917.md` are in that repository.
+- `{ai_sessions}` is empty: no AI chat has been run on this VM.
+- One user (`administrator`), with `meeting_invite = 0`, so the Meeting tab's
+  candidate-invitee list is empty.
+- SMTP is not configured on this VM, so agenda emails would only be queued.
 
-- **Help tab** — fully functional conversational chat interface:
-  - Chat bubble UI (user messages right-aligned, assistant left-aligned)
-  - Animated typing indicator (three bouncing dots) while waiting for a response
-  - Lightweight Markdown rendering in assistant replies: fenced code blocks,
-    inline code, `**bold**`, newlines → `<br>`
-  - Welcome message that disappears on first send and is restored (compact) on
-    Clear
-  - Character count warning above 3 500 chars
-  - Send button / Ctrl+Enter / Shift+Enter to submit
-  - Stop button to abort an in-flight request
-  - Clear button to reset the conversation
-
-- **Meeting, SOP, Other tabs** — placeholder "coming soon" panels with icons.
-
-- **`ai_assist_api.php`** — authenticated AJAX endpoint:
-  - Validates: POST method, `X-Requested-With: XMLHttpRequest` header,
-    authentication, access level, API key configured
-  - Sanitises the conversation history (strips unknown keys, validates roles)
-  - Calls `https://api.anthropic.com/v1/messages` via PHP cURL
-  - Returns `{reply, error, usage}` JSON
-  - Maps Anthropic HTTP error codes 401 / 429 / 529 to user-friendly messages
-  - Logs errors to Apache error log (`error_log()`)
+None of the AI functions have automated tests.
 
 ---
 
@@ -66,13 +68,21 @@ Messages API (`claude-sonnet-4-6`) via a server-side PHP proxy.
 
 | File | Purpose |
 |------|---------|
-| `ai_assist_page.php` | Page shell: auth check, tab layout, chat HTML, CSS, `<script src>` tag |
-| `ai_assist_api.php` | AJAX endpoint: validation, cURL call to Anthropic, JSON response |
-| `js/ai_assist.js` | All client-side JS: chat state, XHR, DOM manipulation, event listeners |
-| `core/layout_api.php` | Sidebar entry added at line ~857 (before QMS button) |
-| `lang/strings_english.txt` | `ai_assist_link`, `ai_assist_title`, `ai_assist_tab_*` strings |
-| `config_defaults_inc.php` | `$g_anthropic_api_key`, `$g_ai_model`, `$g_ai_assist_threshold` defaults |
-| `doc/ai-engine.md` | Architecture concept plan (read before making structural changes) |
+| [`ai_assist_page.php`](../../ai_assist_page.php) | Page shell: auth, shared CSS, tab navigation, SOP/Other placeholders, `<script src>` tags |
+| [`ai_assist_help_page.php`](../../ai_assist_help_page.php) | Help tab panel HTML (included by the page) |
+| [`ai_assist_meeting_page.php`](../../ai_assist_meeting_page.php) | Meeting tab panel HTML (included by the page) |
+| [`ai_assist_api.php`](../../ai_assist_api.php) | AJAX endpoint: request validation, `load`/`clear`/`chat` actions, Anthropic call, `{ai_sessions}` CRUD |
+| [`ai_assist_help_api.php`](../../ai_assist_help_api.php) | `ai_assist_help_system_prompt()` |
+| [`ai_assist_meeting_api.php`](../../ai_assist_meeting_api.php) | Meeting system prompt, candidate invitees, document extraction, file write, agenda email, git commit, registration stub |
+| [`js/ai_assist.js`](../../js/ai_assist.js) | Shared JS: `renderMarkdown()`, `createChatSession(cfg)` factory, tab/hash handling; exports `window.AiAssist` |
+| [`js/ai_assist_help.js`](../../js/ai_assist_help.js) | Help tab `createChatSession` instance |
+| [`js/ai_assist_meeting.js`](../../js/ai_assist_meeting.js) | Meeting tab `createChatSession` instance |
+| [`core/layout_api.php`](../../core/layout_api.php) | Sidebar "AI Assistant" entry (search for `ai_assist_threshold`) |
+| [`lang/strings_english.txt`](../../lang/strings_english.txt) | `ai_assist_*` and `meeting_invite*` strings |
+| [`config_defaults_inc.php`](../../config_defaults_inc.php) | `$g_anthropic_api_key`, `$g_ai_model`, `$g_ai_assist_threshold`, `$g_hcrqms_repo_path`, `$g_ai_meeting_departments` |
+| [`admin/tools/templates/native-app-settings.php`](../../admin/tools/templates/native-app-settings.php) | AI settings appended to new native `config_inc.php` files |
+| [`admin/schema.php`](../../admin/schema.php) | `{ai_sessions}` table (step 1); `meeting_invite` column on `{user}` |
+| [`my_view_cnf_page.php`](../../my_view_cnf_page.php), [`my_view_cnf_update.php`](../../my_view_cnf_update.php), [`core/commands/UserProfileUpdateCommand.php`](../../core/commands/UserProfileUpdateCommand.php) | User profile "Meeting Invites" setting (0 = never, 1 = department, 2 = all) |
 
 ---
 
@@ -81,262 +91,282 @@ Messages API (`claude-sonnet-4-6`) via a server-side PHP proxy.
 ### Request flow (one user turn)
 
 ```
-Browser (js/ai_assist.js)
-  │
+Browser (js/ai_assist.js, createChatSession)
   │  POST ai_assist_api.php
-  │  Headers: Content-Type: application/json
-  │           X-Requested-With: XMLHttpRequest
-  │  Body:    { mode, system, history[] }
-  │
+  │  Headers: Content-Type: application/json, X-Requested-With: XMLHttpRequest
+  │  Body:    { action: 'chat', mode, history[] }
   ▼
 ai_assist_api.php
-  │  — auth + access level check
-  │  — sanitise history array
-  │  — build Anthropic payload
-  │
-  │  POST https://api.anthropic.com/v1/messages
-  │  Headers: x-api-key, anthropic-version: 2023-06-01
-  │
+  │  — POST + XHR header check, auth, ai_assist_threshold
+  │  — sanitise history (role/content only; last turn must be 'user')
+  │  — build system prompt server-side for the mode
+  │  — POST https://api.anthropic.com/v1/messages (non-streaming, 90 s timeout)
+  │  — meeting mode: ai_assist_process_meeting_document() on the reply
+  │  — upsert {ai_sessions} row for (user, mode)
   ▼
-Anthropic API  →  reply text
-  │
+{ reply, error, usage, saved_document }
   ▼
-ai_assist_api.php
-  │  — decode response
-  │  — return { reply, error, usage }
-  │
-  ▼
-js/ai_assist.js
-  │  — append assistant bubble to DOM
-  │  — push to chatHistory[]
+js/ai_assist.js — append bubble, update token count, show saved-document card
 ```
 
-### Conversation state
+The `load` action returns the stored history for (user, mode) when the page
+opens; `clear` deletes it.
 
-The full conversation history (`chatHistory` array in JS) is held **in browser
-memory only**.  It is sent with every request so the stateless Anthropic API
-receives full context on each turn.  History is **not** persisted to the
-database or server filesystem in the current implementation.
+### System prompts
 
-Consequence: refreshing the page loses the conversation.  This is acceptable
-for the Help tab but will need addressing for Meeting and SOP modes.
+Both prompts are built **server-side**; the browser never sends one (the
+`systemPrompt` field in the JS config is unused and left blank).
 
-### System prompt
+- **Help:** `ai_assist_help_system_prompt()` — describes Doctis and the
+  document workflow, and adds the current project name and document count.
+- **Meeting:** `ai_assist_meeting_system_prompt()` — see §4.1.
 
-The system prompt that primes Claude's behaviour for each tab is a JavaScript
-string constant defined at the top of `js/ai_assist.js` (`SYSTEM_PROMPT`,
-lines 12–30).  It is sent on every API call as the `system` field.
+### Session persistence
 
-**To change Help tab behaviour:** edit `SYSTEM_PROMPT` in `js/ai_assist.js`.
-Changes take effect immediately on next page load (hard-refresh the browser
-to bypass JS caching).
+`{ai_sessions}` holds one row per user per mode: `history` (JSON message
+array, LONGTEXT), `created`/`updated` (Unix timestamps), and, for meetings,
+`doc_id` (HCRQMS ID such as `MIN-SYS-20260917`) and `dwg_id` (always NULL
+until registration exists). The full history is re-sent to the API on every
+turn.
 
-When Meeting and SOP modes are implemented, each will have its own system
-prompt constant, sent with `mode: 'meeting'` or `mode: 'sop'` in the payload.
-The API endpoint already accepts and forwards the `mode` field; it does not
-currently use it server-side.
+### Token limits
 
-### CSP constraint
-
-MantisBT sets `Content-Security-Policy: script-src 'self'` (no `'unsafe-inline'`).
-**All JavaScript must be in external `.js` files under the Doctis web root.**
-Inline `<script>` blocks are silently blocked by the browser.  This is why
-`js/ai_assist.js` exists as a separate file rather than being embedded in the
-page PHP.
-
-Inline `<style>` blocks are permitted (`style-src 'self' 'unsafe-inline'` is
-set).
+`max_tokens` is set per mode in `ai_assist_api.php`: 2048 for Help, 4096 for
+Meeting. Neither is configurable.
 
 ---
 
-## 4. Configuration reference
+## 4. Meeting tab in detail
 
-All keys are set in `config/config_inc.php` (never committed to git).
+### 4.1 Conversation design (commit `3f3aa09a8`, "high-inference mode")
+
+The prompt aims for two to four exchanges:
+
+1. The user describes the meeting in one sentence. Claude infers the date,
+   time, duration (default 60 min), attendees, subject, department and
+   location (default Microsoft Teams). The chair is the current user and the
+   minute taker is the first invitee named. Claude replies with a
+   time-allocated draft agenda and asks one question.
+2. The user confirms or asks for changes.
+3. On confirmation Claude emits the document between markers:
+
+```
+<<<MEETING_DOCUMENT type="agenda|minutes" doc_id="MIN-{dept}-{YYYYMMDD}" dept="{dept}" title="…" invitee_ids="1,5,9">>>
+…Markdown following TMPL-SYS-001…
+<<<END_MEETING_DOCUMENT>>>
+```
+
+The prompt includes the department list from `$g_ai_meeting_departments`, the
+candidate invitees (enabled users with `meeting_invite != 0`), and the HCRQMS
+meeting template if it can be read from
+`$g_hcrqms_repo_path/system/templates/Meeting-Agenda-and-Minutes.md`;
+otherwise it falls back to a built-in outline.
+
+**Minutes mode is underspecified.** The welcome text invites the user to type
+"minutes", but the current prompt only defines the marker for minutes. It does
+not describe how to capture the discussion, and nothing loads the earlier
+agenda file into the conversation. The earlier two-mode flow from ENG-TASK-002
+§4.4 was replaced by the 06-19 rewrite.
+
+### 4.2 Document processing (as coded)
+
+`ai_assist_process_meeting_document()` strips the marker block from the reply
+and then:
+
+| Step | Agenda | Minutes |
+|------|--------|---------|
+| Write `{repo}/{dept path}/{doc_id}.md` | yes | yes |
+| Email each `invitee_ids` user via `email_store()` (uses `email_secondary` if set) | yes | no |
+| `git add` + `git commit` as the current user | no | yes |
+| `ai_assist_register_meeting_doctis()` when the department `project_id > 0` | no | yes (stub returns `null`) |
+
+With `$g_hcrqms_repo_path` blank, nothing is written; agenda emails are still
+sent.
+
+### 4.3 Why saving does not work with current Doctis storage
+
+- `$g_hcrqms_repo_path` points at `/var/git/doctis`, the parent of the bare
+  repositories. The template read fails, so the built-in outline is used. An
+  agenda would be written as `/var/git/doctis/system/meetings/…`, inside the
+  bare-repository store. `git add` there fails because it is not a working
+  tree, so minutes would never be committed. None of this has run on this VM
+  (no such directories exist).
+- Even if pointed at `/var/www/doctis/worktrees/hcrqms-r1`, the code would
+  bypass the repository API: no storage lock, no push to the bare repository
+  (Doctis pushes as the last step of every store), and uncommitted agenda
+  files would be left in a worktree that Doctis syncs to HEAD.
+- The department paths are hardcoded. Only `system/meetings` exists in the
+  HCRQMS repository; the `content/*/meetings` directories do not. HCRQMS also
+  has `field-service`, `finance`, `safety` and `sales` departments that are
+  not configured.
+- `doc_id`, `dept` and `invitee_ids` come from model output (which the user
+  can steer) and are used without validation: `doc_id` becomes a filename
+  (path traversal is possible), and `invitee_ids` can name any user, not only
+  opted-in candidates.
+
+The native install template copies the same `/var/git/doctis` value into every
+new `config_inc.php`, and AGENTS.md records that these settings were copied
+from production, so the production value should be checked.
+
+### 4.4 Intended direction
+
+Treat a meeting record as an ordinary Doctis primary document in the
+HCRQMS repository:
+
+1. Resolve the repository from the HCRQMS **project** (repository API /
+   `dwg_project_*` wrappers in `core/file_dwg_api.php`), not from a filesystem
+   path. `$g_hcrqms_repo_path` then becomes unnecessary (or is replaced by a
+   project ID setting).
+2. Read the template from the repository at its HEAD (or approved ref) rather
+   than from disk.
+3. Create the document record and store the file through the existing
+   upload path (`DwgAddCommand` + `GitFileStorageBackend::store()`, which
+   commits as the user and pushes), registered with
+   `file_dwg_primary_register()`. The minutes then replace the agenda file as
+   a new revision of the **same** document, rather than being a separate file.
+4. Validate `doc_id` with `file_dwg_git_path_sanitize()` and check the
+   department code and invitee IDs against the configured lists.
+
+Relevant existing functions: `dwg_project_repository_id()`,
+`dwg_project_worktree_path()`, `dwg_git_worktree_sync()`,
+`file_dwg_git_path_sanitize()` and `file_dwg_primary_register()` in
+`core/file_dwg_api.php`.
+
+This fulfils Phase 2 of [ai-engine.md](ai-engine.md) (document registration)
+and removes the separate git helpers in `ai_assist_meeting_api.php`.
+
+---
+
+## 5. Configuration reference
+
+Set in `config/config_inc.php` (never committed). On native installs, new
+configurations get the AI block from `admin/tools/templates/native-app-settings.php`.
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `$g_anthropic_api_key` | `''` | Anthropic API key (`sk-ant-...`).  Empty = AI Assistant disabled; sidebar button hidden. |
-| `$g_ai_model` | `'claude-sonnet-4-6'` | Claude model identifier sent to the API. |
-| `$g_ai_assist_threshold` | `REPORTER` | Minimum Doctis access level to see the sidebar button and use the page. |
+| `$g_anthropic_api_key` | `getenv('ANTHROPIC_API_KEY')` or `''` | Blank disables the feature and hides the sidebar button. |
+| `$g_ai_model` | `'claude-sonnet-4-6'` | Model ID sent to the API (the native template also honours `AI_MODEL`). |
+| `$g_ai_assist_threshold` | `REPORTER` | Minimum global access level for the page and API. |
+| `$g_hcrqms_repo_path` | `'/var/git/doctis'` | HCRQMS working-tree path for meeting records. The current default is wrong (§4.3); its docblock says the default is blank, which it is not. |
+| `$g_ai_meeting_departments` | 8 departments, all `project_id => 0` | Department code → name, output path, Doctis project ID. |
 
-The API key should be obtained from [console.anthropic.com](https://console.anthropic.com)
-→ API Keys → Create Key.  It is billed against the Anthropic account that owns
-the key.  Set a usage limit under Billing → Usage Limits.
-
----
-
-## 5. Known constraints and gotchas
-
-**Conversation history is browser-only.**  
-Each page load starts a fresh session.  The full history array grows with each
-turn and is re-sent to the API every time.  For long sessions this increases
-token cost, but a complete Help tab session (10–20 turns) is well within the
-200k token context window of Sonnet.
-
-**System prompt is client-visible.**  
-`SYSTEM_PROMPT` in `js/ai_assist.js` is a public static file.  Any user can
-read it.  Do not embed credentials, internal-only process detail, or
-confidential instructions in the system prompt.  For the Help tab this is not
-an issue.
-
-**`$g_ai_model` must match `config_defaults_inc.php` key name.**  
-The default key is `ai_model` (no `g_` prefix in the internal config_get call):
-`config_get_global( 'ai_model' )`.  If you rename the default, update both
-`config_defaults_inc.php` and `ai_assist_api.php` line 91.
-
-**Non-streaming responses.**  
-The current implementation waits for the complete API response before updating
-the UI (non-streaming).  Claude typically responds in 2–6 seconds for Help-tab
-queries.  The typing indicator covers this delay acceptably.  Streaming (SSE)
-would require Apache output-buffering configuration changes and is deferred to
-a later phase.
-
-**`max_tokens` is hardcoded at 2048** in `ai_assist_api.php` line 92.  
-This is generous for Help tab answers.  Meeting and SOP document-generation
-phases may need a higher value (e.g. 4096 for a full SOP draft).  Make this
-configurable when those modes are implemented.
-
-**New database tables must be added to `admin/schema.php`.**  
-Any table introduced for an AI feature must have a corresponding entry in
-`admin/schema.php` using ADOdb data dictionary syntax (`CreateTableSQL`,
-`CreateIndexSQL`).  This is the file that `admin/tools/doctis-drop-and-create-new-database.sh`
-uses to build a complete database from scratch.  The standalone migration
-scripts under `admin/` are for development use only and are not run by the
-installer.  Use `INT UNSIGNED` (not `DATETIME`) for timestamp columns —
-MantisBT stores all timestamps as Unix integers via `db_now()`.
+The API key is billed against the Anthropic account that owns it. Set a usage
+limit in the Anthropic Console.
 
 ---
 
-## 6. To-do list
+## 6. Known constraints and gotchas
 
-Items are grouped by priority.  Tick boxes are updated as work is completed.
+- **CSP:** MantisBT sends `script-src 'self'`. All JavaScript must be in
+  external files under `js/`; inline `<script>` is silently blocked. Inline
+  `<style>` is allowed.
+- **Non-streaming:** replies arrive whole after 2–8 s; the typing indicator
+  covers the wait. Streaming (SSE) would need output buffering disabled for
+  `ai_assist_api.php` in nginx/PHP-FPM (`fastcgi_buffering off`, or the
+  `X-Accel-Buffering: no` header) and in PHP.
+- **Config key names:** code calls `config_get_global( 'ai_model' )` etc.
+  Renaming a `$g_` default requires changing every caller.
+- **Schema:** `{ai_sessions}` is a `CREATE TABLE IF NOT EXISTS` block in
+  `admin/schema.php`. Follow the flat-schema rules in CLAUDE.md; the old
+  `admin/ai_sessions_migrate.php` was deleted. On the native VM, rebuilding the
+  database also wipes the imported HCRQMS data (see DEV-SETUP.md).
+- **History growth:** the whole conversation is re-sent every turn, so cost
+  grows with session length. One meeting session is well within the context
+  window.
+- **Email:** agenda bodies are raw Markdown, sent through the normal MantisBT
+  queue (`email_store()` and the cron sender). Nothing is delivered on the
+  native VM until SMTP is configured.
 
-### Phase 1 — Help tab (proof-of-concept) ✓ complete
+---
 
-- [x] Sidebar "AI Assistant" button (gated on API key + access level)
-- [x] `ai_assist_page.php` with four-tab layout (Help / Meeting / SOP / Other)
-- [x] Chat UI: bubbles, typing indicator, send/stop/clear, Markdown rendering
-- [x] `ai_assist_api.php`: authenticated proxy to Anthropic Messages API
-- [x] `js/ai_assist.js`: external file (CSP compliance)
-- [x] System prompt for Help mode in `js/ai_assist.js`
-- [x] Welcome message dismisses on first send; compact message restored on clear
-- [x] API key gate: page renders with configuration notice when key is absent
-- [x] Error handling: Anthropic 401 / 429 / 529 mapped to user messages
-- [x] Bug fix: `this.responseText` captured before nulling `currentXhr`
+## 7. To-do list
 
-### Phase 2 — Help tab improvements ✓ complete
+### Done (June 2026)
 
-- [x] **Persist conversation to database** between page loads.  `{ai_sessions}`
-  table (one row per user per mode; `history` LONGTEXT column holding JSON;
-  `created`/`updated` as INT UNSIGNED — Unix timestamps, MantisBT convention).
-  `ai_assist_api.php` gained `load`, `clear`, and upsert-on-`chat` actions.
-  JS calls `load` on page open and `clear` on Clear.  Session survives page
-  refresh.  Migration script: `admin/ai_sessions_migrate.php` (development use
-  only — `admin/schema.php` is the authoritative definition for fresh installs).
-- [x] **Token usage display** — cumulative input/output tokens shown in the
-  status bar after each reply (`#ai-token-count` span).  Resets to zero on Clear.
-- [x] **Richer Markdown rendering** — renderer now handles ordered and unordered
-  lists (converted to `<ol>`/`<ul>`), horizontal rules, and bold-italic (`***`).
-  Implemented directly in `js/ai_assist.js`; no external library needed.
-- [x] **Context injection** — `ai_assist_page.php` reads
-  `helper_get_current_project()` and the document count for that project via a
-  direct `COUNT(*)` query on `{dwg}`.  Values are embedded as `data-project`
-  and `data-doc-count` on `#ai-chat-messages`; JS appends a context sentence
-  to `SYSTEM_PROMPT` when a project is active.
-- [x] **Copy-to-clipboard button** on assistant bubbles — small button below
-  each assistant message; copies original Markdown text; shows tick icon for
-  1.5 s on success; fallback `execCommand` for non-HTTPS contexts.
+- [x] Sidebar button gated on API key and `ai_assist_threshold`
+- [x] Four-tab page; URL hash selects the tab
+- [x] Chat UI: bubbles, typing indicator, send/stop/clear, Markdown (code, bold/italic, lists, rules), copy button, token count
+- [x] Authenticated proxy to the Anthropic Messages API, with 401/429/529 mapped to user messages
+- [x] Session persistence in `{ai_sessions}` (`load`/`clear`/upsert)
+- [x] Server-side system prompts for both modes; per-mode PHP/JS modules (`f62d1563e`)
+- [x] Help: current-project context in prompt
+- [x] Meeting: high-inference agenda drafting, chair/minute-taker rules, Teams default
+- [x] Meeting: candidate invitees from `{user}.meeting_invite`; profile setting
+- [x] Meeting: agenda email to matched invitees
 
-- [ ] **Streaming responses (SSE)** — pipe the Anthropic streaming API through
-  PHP to the browser for word-by-word output.  Requires: `ob_end_clean()`,
-  `Content-Type: text/event-stream`, `set_time_limit(0)`, Apache
-  `php_flag output_buffering Off` for the API endpoint path.  Deferred.
+### Next — make the Meeting tab work on current Doctis storage
 
-### Phase 3 — Meeting Assistant tab ✓ complete (core)
+- [ ] **Fix the HCRQMS location.** Resolve the repository from the HCRQMS
+  project instead of `$g_hcrqms_repo_path`. Until then, at least correct the
+  default and the native template (blank = chat-only), and fix the docblock.
+- [ ] **Read the template from the repository** instead of from the filesystem.
+- [ ] **Store and register through Doctis** (§4.4): create the document, store via
+  `GitFileStorageBackend` (commit + push under the storage lock), and register
+  with `file_dwg_primary_register()`. Delete `ai_assist_git()` /
+  `ai_assist_git_commit_meeting()` once replaced. Fill `{ai_sessions}.dwg_id`.
+- [ ] **Validate model-supplied attributes:** sanitise `doc_id`, reject unknown
+  departments, and restrict `invitee_ids` to the candidate list.
+- [ ] **Department mapping:** derive departments from the HCRQMS project and
+  sub-project structure (or `content/*` directories), or update
+  `$g_ai_meeting_departments` to match the repository and give each one a
+  project ID.
+- [ ] **Define minutes mode:** load the agenda (from the session's
+  `doc_id`/`dwg_id`) into the conversation, specify the minutes capture flow,
+  and store the minutes as a revision of the agenda document.
+- [ ] **Test on the VM:** opt sample users in to meeting invites, run agenda and
+  minutes sessions, and confirm the commit attribution, the push, the document
+  record and the queued emails. Add the procedure to `doc/TESTING.md`.
 
-Implements ENG-TASK-002 (Meeting Assistant Tool) as the Meeting tab.
+### Later
 
-- [x] **System prompt for Meeting mode** — full two-phase session flow
-  (Agenda Mode / Minutes Mode) from ENG-TASK-002 §4.4 built server-side in
-  `ai_assist_api.php::ai_assist_meeting_system_prompt()`.  System prompt is
-  never sent to the browser (security); includes meeting template from HCRQMS
-  (when `$g_hcrqms_repo_path` is set) and departments list from config.
-  Claude outputs completed documents in `<<<MEETING_DOCUMENT...>>>` markers
-  which PHP detects and processes automatically.
-- [x] **Session persistence** — Meeting sessions use the existing `{ai_sessions}`
-  table with `mode='meeting'`.  `doc_id` and `dwg_id` columns added at schema
-  steps 252–253.  `load` and `clear` actions work identically to Help mode.
-- [x] **HCRQMS file write** — `ai_assist_process_meeting_document()` in
-  `ai_assist_api.php` detects `<<<MEETING_DOCUMENT>>>` markers in the AI reply,
-  extracts the Markdown, and writes to `$g_hcrqms_repo_path/{dept_path}/{doc_id}.md`.
-  Creates the output directory if needed.  Agendas are saved only (no commit);
-  minutes are saved then committed.  No-op when `$g_hcrqms_repo_path` is blank
-  (chat-only mode).
-- [x] **Git commit** — `ai_assist_git_commit_meeting()` runs `git add` +
-  `git commit` with `GIT_AUTHOR_NAME` / `GIT_COMMITTER_NAME` env vars set from
-  the logged-in user's `realname` and `email`.  `ensure_git_home()` pattern
-  from `GitFileStorageBackend` applied.  Returns commit SHA on success.
-- [x] **Department → project mapping** — `$g_ai_meeting_departments` config
-  array in `config_defaults_inc.php` maps department codes (SYS, ENG, MFG,
-  HR, IT, QA, SCM, EXEC) to HCRQMS output paths and Doctis project IDs.
-  Set `project_id` values in `config/config_inc.php` to enable Doctis
-  registration per department.
-- [x] **Add `$g_hcrqms_repo_path` config default** to `config_defaults_inc.php`.
-  Also added `$g_ai_meeting_departments` with full department table.
-- [x] **JS refactored to `createChatSession(cfg)` factory** — both Help and
-  Meeting tabs use the same factory; no code duplication.  Meeting tab has its
-  own DOM elements (`#ai-meeting-*`), independent chat state, and a
-  saved-document notification card shown when a document marker is detected.
+- [ ] Action items → Doctis issues linked to the meeting document ([ai-engine.md](ai-engine.md) Phase 3)
+- [ ] Agenda email: render Markdown to HTML or attach the file; include a link to the document
+- [ ] `max_tokens` per-mode configuration (`$g_ai_max_tokens_help`, `$g_ai_max_tokens_meeting`)
+- [ ] Review `$g_ai_model` default against current Claude models
+- [ ] Per-user rate limiting and a usage/audit log (user, mode, tokens, time)
+- [ ] Streaming responses (SSE) — see §6 for the nginx requirements
+- [ ] Automated tests for the prompt builders, marker parsing and attribute validation
 
-- [ ] **Doctis document registration** — `ai_assist_register_meeting_doctis()`
-  stub is in `ai_assist_api.php` (function exists with full TODO).  Triggered
-  only when `$g_ai_meeting_departments[$dept]['project_id'] > 0`.  Requires
-  completing the `DwgData` instantiation — see the TODO comment in the function.
-  `link_url` is the clean field to carry the HCRQMS file path (no file upload
-  required; confirmed via code review of `DwgData::create()`).  Deferred to a
-  follow-up commit once the DwgData field requirements are confirmed end-to-end.
+### SOP Interview tab (GUID-SYS-007 Part B) — not started
 
-### Phase 4 — SOP Interview tab
+- [ ] System prompt for the eight-phase interview, with department requirements
+  (`system/guidance/QMS Departmental Requirements.md`) injected server-side
+- [ ] OFI log update (`system/guidance/interview-ofi-log.md`)
+- [ ] Review routing. The original plan raised GitHub pull requests
+  (`$g_github_token`, `reviewers.yaml`). Now that HCRQMS is a Doctis
+  repository, reconsider using the Doctis review workflow instead.
 
-Implements GUID-SYS-007 Part B as the SOP tab.
+### Other tab — not started
 
-- [ ] **System prompt for SOP mode** — encode the eight-phase interview flow
-  from GUID-SYS-007 as a system prompt.  More complex than Meeting mode;
-  requires department-specific procedure coverage loaded dynamically.
-- [ ] **Department requirements lookup** — read
-  `$g_hcrqms_repo_path/system/guidance/QMS Departmental Requirements.md`
-  server-side (in PHP) and inject the relevant department section into the
-  system prompt at session start.
-- [ ] **OFI log update** — append to
-  `$g_hcrqms_repo_path/system/guidance/interview-ofi-log.md` after each
-  session.
-- [ ] **GitHub Pull Request creation** — use the GitHub REST API (HTTPS POST)
-  to raise a PR targeting the department reviewer.  Store a GitHub personal
-  access token in config (`$g_github_token`).  `gh` CLI cannot be used from
-  a web-server context.
-- [ ] **Reviewer lookup** — read `reviewers.yaml` (from GUID-SYS-007) to map
-  department slug → GitHub username for the PR `reviewers` field.
-
-### Phase 5 — Other tab / General mode
-
-- [ ] **Decide scope** — General mode could be a free-form Claude session with
-  a minimal system prompt, or it could host future tools not yet specified.
-  Defer until Phase 3 experience informs the design.
+- [ ] Decide scope (free-form assistant, or host for future tools) after the Meeting tab is complete.
 
 ### Deferred / under consideration
 
-- [ ] **Python FastAPI microservice** — if streaming UX becomes important or
-  the SOP interview tool proves complex to manage in PHP, extract the Claude
-  API calls to a small Python service running as a `systemd` unit on vaio.
-  PHP proxies to `localhost:PORT`.  See `doc/ai-engine.md` §5.3.
-- [ ] **`max_tokens` per-mode configuration** — add
-  `$g_ai_max_tokens_help`, `$g_ai_max_tokens_meeting`, etc. to
-  `config_defaults_inc.php` rather than hardcoding 2048.
-- [ ] **Rate limiting per user** — prevent a single user from exhausting the
-  API quota.  Track requests in the `{ai_sessions}` table and enforce a
-  per-user-per-hour limit in `ai_assist_api.php`.
-- [ ] **Audit log** — record each AI session (user, mode, token usage, timestamp)
-  to a dedicated table for billing reconciliation and usage monitoring.
+- [ ] Python microservice for Claude calls if streaming or SOP complexity
+  outgrows PHP ([ai-engine.md](ai-engine.md) §5.3); on the native VM this
+  would be a `systemd` unit proxied by PHP or nginx.
+
+---
+
+## 8. Inspecting AI state on the development VM
+
+The `doctis` database account in the running clone's `config/config_inc.php`
+can be used from the shell without copying the password anywhere:
+
+```bash
+export MYSQL_PWD=$(php -r 'require "/var/www/html/doctis/core/constant_inc.php";
+  include "/var/www/html/doctis/config/config_inc.php"; echo $g_db_password;')
+mysql -h 127.0.0.1 -u doctis doctis -e "
+  SELECT user_id, mode, doc_id, dwg_id, FROM_UNIXTIME(updated) FROM ai_sessions;
+  SELECT id, username, department, meeting_invite FROM user WHERE meeting_invite != 0;"
+```
+
+`constant_inc.php` must be loaded first because `config_inc.php` uses
+constants such as `OFF`. This account has full privileges on `doctis.*`, so
+use it read-only unless a change is intended.
+
+Application errors from `error_log()` go to the PHP-FPM/nginx logs under
+`/var/log/doctis` and `/var/log/nginx`.
 
 ---
 
@@ -344,7 +374,8 @@ Implements GUID-SYS-007 Part B as the SOP tab.
 
 | Date | Change |
 |------|--------|
-| 2026-06-17 | Initial version — documents Phase 1 implementation; drafts Phases 2–5 |
-| 2026-06-18 | Phase 2 complete — DB persistence, token display, Markdown lists/HR, context injection, copy-to-clipboard; streaming deferred |
-| 2026-06-18 | schema.php updated with ai_sessions (steps 250–251); step 249 (defunct RenameColumnSQL) set to null no-op to fix fresh-install loop break; schema.php requirement documented in CLAUDE.md and §5 |
-| 2026-06-18 | Phase 3 core complete — Meeting Assistant tab live; server-side system prompt (ENG-TASK-002 §4.4); HCRQMS file write; git commit with user attribution; department config; JS refactored to createChatSession factory; schema steps 252–253 (doc_id, dwg_id); Doctis registration stub deferred |
+| 2026-06-17 | Initial version — Phase 1 (Help tab) |
+| 2026-06-18 | Phase 2 — DB persistence, token display, Markdown, context injection, copy button |
+| 2026-06-18 | `{ai_sessions}` added to schema.php |
+| 2026-06-18 | Phase 3 core — Meeting tab, server-side prompt, HCRQMS write, git commit, department config, JS factory |
+| 2026-10-02 | Rewritten against the 2026-10-02 `dev` state: records the 06-19 module split, high-inference prompt, invitee matching and agenda email; documents that meeting storage is incompatible with the git repository entity and sets out the fix; adds VM inspection notes |
