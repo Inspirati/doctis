@@ -450,8 +450,11 @@ function meeting_record_content( array $p_meeting ): string {
  * @param string $p_content     Markdown content.
  * @param int    $p_user_id     Acting user (git author).
  * @param string $p_description Revision note.
- * @param bool   $p_check_access Require update access for a replacement
- *                               (false for the chair's approval stamp).
+ * @param bool   $p_check_access Require update access for a replacement.
+ *                               False when a meeting role authorises the
+ *                               write instead (minute taker writing minutes,
+ *                               chair stamping approval): meeting records live
+ *                               in a project the participants may not belong to.
  * @return array{dwg_id: int, git_path: string, git_sha: string, staged: bool}
  * @throws ClientException when no project is configured or access is denied.
  */
@@ -472,8 +475,11 @@ function meeting_store_record( array $p_meeting, string $p_content, int $p_user_
 		}
 		$t_dwg_id = meeting_document_create( $p_meeting, $t_project_id );
 	} else {
-		if( $p_check_access ) {
-			access_ensure_dwg_level( config_get( 'update_dwg_threshold' ), $t_dwg_id, $p_user_id );
+		# Throw rather than access_ensure_*(), which prints a page and exits.
+		if( $p_check_access && !access_has_dwg_level( config_get( 'update_dwg_threshold' ), $t_dwg_id, $p_user_id ) ) {
+			throw new ClientException(
+				'User ' . $p_user_id . ' may not update document ' . $t_dwg_id, ERROR_ACCESS_DENIED
+			);
 		}
 		$t_git_path = '';
 	}

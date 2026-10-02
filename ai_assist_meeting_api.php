@@ -544,7 +544,10 @@ function ai_assist_meeting_process_minutes( array $p_attrs, string $p_content, i
  * @return void
  */
 function ai_assist_meeting_store( array $p_meeting, string $p_content, int $p_user_id, string $p_description, array &$p_result ): void {
-	$t_stored = meeting_store_record( $p_meeting, $p_content, $p_user_id, $p_description );
+	# Callers have checked the meeting role (organiser for an agenda; chair,
+	# minute taker or organiser for minutes), which authorises the write.
+	# Creating the agenda document still needs create_dwg_threshold.
+	$t_stored = meeting_store_record( $p_meeting, $p_content, $p_user_id, $p_description, false );
 	$p_result['stored']     = true;
 	$p_result['staged']     = $t_stored['staged'];
 	$p_result['dwg_id']     = $t_stored['dwg_id'];
