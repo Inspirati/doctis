@@ -826,7 +826,10 @@ storage on any new server.
 ## AI Assistant Feature
 
 The Doctis AI Assistant (`ai_assist_page.php`) embeds a Claude-powered chat interface
-using the Anthropic Messages API.  Help tab works.  The Meeting tab plans and minutes
+using the Anthropic Messages API.  The Help tab answers from the user manual
+(`doc/MANUAL.md` — keep it current), a live map of the pages the user can open, and a
+knowledge base users teach and managers review (`{ai_knowledge}`, shared with the Meeting
+tab; see [doc/ai/ai-knowledge.md](doc/ai/ai-knowledge.md)).  The Meeting tab plans and minutes
 meetings (`{meeting}`, `{meeting_action}`; `core/meeting_api.php`,
 `core/meeting_calendar_api.php`, `core/meeting_action_api.php`), stores agendas and
 minutes as Doctis documents in `$g_meeting_project_id`, emails participants with

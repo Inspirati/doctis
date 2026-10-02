@@ -2,7 +2,7 @@
 """Drive the Doctis AI Meeting Assistant over HTTP, as the browser does.
 
 Chat (Meeting tab):
-    doctis-meeting-chat.py USER PASSWORD [--clear] [--meeting-id N | --series-of N] MESSAGE [MESSAGE ...]
+    doctis-meeting-chat.py USER PASSWORD [--mode help|meeting] [--clear] [--meeting-id N | --series-of N] MESSAGE [MESSAGE ...]
 
     Logs in, loads (or with --clear, discards) the user's stored meeting
     conversation, then sends each MESSAGE as one turn and prints each reply,
@@ -39,7 +39,7 @@ def login(user, password):
     return opener
 
 
-def chat(opener, user, messages, meeting_id, clear, series_of=0):
+def chat(opener, user, messages, meeting_id, clear, series_of=0, mode='meeting'):
     def api(body):
         if meeting_id:
             body['meeting_id'] = meeting_id
@@ -55,16 +55,16 @@ def chat(opener, user, messages, meeting_id, clear, series_of=0):
             sys.exit('non-JSON response:\n' + raw[:3000])
 
     if clear:
-        api({'action': 'clear', 'mode': 'meeting'})
+        api({'action': 'clear', 'mode': mode})
         history = []
     else:
-        history = api({'action': 'load', 'mode': 'meeting'}).get('history') or []
+        history = api({'action': 'load', 'mode': mode}).get('history') or []
         print('[loaded %d prior turns]' % len(history))
 
     for text in messages:
         history.append({'role': 'user', 'content': text})
         print('\n=== USER (%s) ===\n%s' % (user, text))
-        data = api({'action': 'chat', 'mode': 'meeting', 'history': history})
+        data = api({'action': 'chat', 'mode': mode, 'history': history})
         if data.get('error'):
             print('=== ERROR ===\n' + data['error'])
             return 1
@@ -73,6 +73,8 @@ def chat(opener, user, messages, meeting_id, clear, series_of=0):
         history.append({'role': 'assistant', 'content': data['reply']})
         if data.get('saved_document'):
             print('=== SAVED_DOCUMENT ===\n' + json.dumps(data['saved_document'], indent=2))
+        if data.get('knowledge_entry'):
+            print('=== KNOWLEDGE_ENTRY ===\n' + json.dumps(data['knowledge_entry'], indent=2))
     return 0
 
 
@@ -105,10 +107,12 @@ def main():
     if len(sys.argv) < 4:
         sys.exit(__doc__)
     user, password, args = sys.argv[1], sys.argv[2], sys.argv[3:]
-    meeting_id, clear, approve_id, series_of = 0, False, 0, 0
+    meeting_id, clear, approve_id, series_of, mode = 0, False, 0, 0, 'meeting'
     while args and args[0].startswith('--'):
         if args[0] == '--meeting-id':
             meeting_id, args = int(args[1]), args[2:]
+        elif args[0] == '--mode':
+            mode, args = args[1], args[2:]
         elif args[0] == '--series-of':
             series_of, args = int(args[1]), args[2:]
         elif args[0] == '--approve':
@@ -120,7 +124,7 @@ def main():
     opener = login(user, password)
     if approve_id:
         return approve(opener, approve_id)
-    return chat(opener, user, args, meeting_id, clear, series_of)
+    return chat(opener, user, args, meeting_id, clear, series_of, mode)
 
 
 sys.exit(main())

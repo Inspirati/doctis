@@ -1,7 +1,7 @@
 # Doctis AI Assistant — Status and To-Do
 
 **Branch:** `ai-meeting` (meeting work in progress; `dev` holds the June 2026 state)
-**Status as of:** 2026-10-02 — Help tab working; meeting lifecycle (plan → change/cancel → minutes with actions → chair approval → issues → next meeting in series → recurring meetings scheduled automatically) **passed end to end on the VM**; My Meetings (all meetings for managers) and meeting pages; calendar invitations; SOP and Other tabs not started. **Not to be merged into `dev` until a full suite of testing is completed** (owner).
+**Status as of:** 2026-10-03 — Help tab answers from the user manual, a live navigation map and a knowledge base users teach (see [ai-knowledge.md](ai-knowledge.md)); meeting lifecycle (plan → change/cancel → minutes with actions → chair approval → issues → next meeting in series → recurring meetings scheduled automatically) **passed end to end on the VM**; My Meetings (all meetings for managers) and meeting pages; calendar invitations; SOP and Other tabs not started. **Not to be merged into `dev` until a full suite of testing is completed** (owner).
 **Companion document:** [ai-engine.md](ai-engine.md) — the original concept plan and platform assessment (June 2026)
 
 This is a living document. It records what exists, how it works, what is
@@ -32,7 +32,8 @@ the open design questions.
 
 | Area | State |
 |------|-------|
-| **Help tab** | Working proof of concept: server-side system prompt, session persistence, token display, Markdown rendering, copy button. |
+| **Help tab** | Answers from the user manual, a live map of the pages the user can open, and the knowledge base; users teach it ("Correct this"), managers review entries on the Knowledge page. Cached prompt. Design and verification: [ai-knowledge.md](ai-knowledge.md). |
+| **Knowledge base** | `{ai_knowledge}`, shared by the Help and Meeting assistants; entries unverified until a manager publishes them; Knowledge tab (`ai_knowledge_page.php`). |
 | **Meeting tab** | Plans agendas (optionally as the next meeting of a series) and writes minutes with a structured action list. Records the meeting, stores the record as a Doctis document in the meeting project (agenda On Record, minutes as a Draft for the chair), and emails participants with calendar invitations. |
 | **Meeting page** | `meeting_view_page.php`: details, participants and attendance, actions and their issues, the series, and role-based actions: Write/Revise/Approve Minutes, Change Meeting (reschedule, location, minute taker, invitees), Cancel Meeting, Plan Next Meeting, Calendar download. |
 | **My Meetings** | My View tab listing upcoming and past meetings (cancelled ones struck through, repeating ones marked), linking to the meeting pages, with a Minutes due indicator. Managers (`$g_meeting_view_all_threshold`) can switch to All meetings. |
@@ -105,7 +106,10 @@ tests). The Help tab and the prompts themselves do not.
 | [`ai_assist_help_page.php`](../../ai_assist_help_page.php) | Help tab panel HTML |
 | [`ai_assist_meeting_page.php`](../../ai_assist_meeting_page.php) | Meeting tab panel HTML; `?meeting_id=` opens minutes mode, `?series_of=` plans the next meeting |
 | [`ai_assist_api.php`](../../ai_assist_api.php) | AJAX endpoint: request validation, `load`/`clear`/`chat`, Anthropic call, `{ai_sessions}` CRUD |
-| [`ai_assist_help_api.php`](../../ai_assist_help_api.php) | `ai_assist_help_system_prompt()` |
+| [`ai_assist_help_api.php`](../../ai_assist_help_api.php) | `ai_assist_help_system_prompt()`: two system blocks (cached shared part; per-user part) |
+| [`ai_assist_knowledge_api.php`](../../ai_assist_knowledge_api.php), [`core/ai_knowledge_api.php`](../../core/ai_knowledge_api.php) | Knowledge base: manual, navigation map, entries, teaching marker; entity and review |
+| [`ai_knowledge_page.php`](../../ai_knowledge_page.php) / [`ai_knowledge_update.php`](../../ai_knowledge_update.php) | Knowledge page and handler |
+| [`ai_assist_anthropic_api.php`](../../ai_assist_anthropic_api.php) | Messages API client (system blocks, text blocks joined, cache usage) |
 | [`ai_assist_meeting_api.php`](../../ai_assist_meeting_api.php) | Meeting prompt (focus meeting, series, open actions), marker processing (agenda/minutes/actions), validation |
 | [`core/meeting_api.php`](../../core/meeting_api.php) | Meeting entity: get/list/create/update, roles and permissions, attendance, series, record storage and rewriting, approval, change/cancel, hand-upload rules, email |
 | [`core/meeting_calendar_api.php`](../../core/meeting_calendar_api.php) | iCalendar (`meeting_ics()`): REQUEST / CANCEL / PUBLISH |
@@ -360,6 +364,9 @@ Set in `config/config_inc.php` (never committed).
 | `$g_anthropic_api_key` | `getenv('ANTHROPIC_API_KEY')` or `''` | Blank disables the AI Assistant and hides the sidebar button. My Meetings still works (no Plan/Write actions). |
 | `$g_ai_model` | `'claude-sonnet-4-6'` | Model ID sent to the API. |
 | `$g_ai_assist_threshold` | `REPORTER` | Minimum global access level for the AI page and API. |
+| `$g_ai_knowledge_review_threshold` | `MANAGER` | Reviews knowledge entries. |
+| `$g_ai_knowledge_daily_limit` | `20` | Taught entries per user per day. |
+| `$g_ai_knowledge_manual_path` | `'doc/MANUAL.md'` | Manual given to the assistant. |
 | `$g_meeting_project_id` | `0` | Project whose repository holds meeting records (HCRQMS). 0 = record meetings without documents. Installation-specific, so the native template does not set it. |
 | `$g_meeting_template_path` | `'system/templates/Meeting-Agenda-and-Minutes.md'` | Template, read from the meeting project's repository HEAD. |
 | `$g_meeting_category` | `'Meetings'` | Category for meeting documents; created on first use. |
@@ -425,6 +432,8 @@ Set in `config/config_inc.php` (never committed).
 
 - [ ] **Full suite of testing before merging into `dev`** (owner): define its scope (e.g. TESTING.md §9 regression sweep, §7a meeting run, browser checks of every meeting page, SOAP upload to a meeting document, a clean-install run of `admin/install.php` with the meeting tables).
 - [ ] Open questions in §4.5.
+- [ ] Cache the Meeting prompt (≈5.3k uncached input tokens per turn): split it into a shared cached block and a per-user block, as the Help prompt is.
+- [ ] Knowledge base layer 3 ([ai-knowledge.md](ai-knowledge.md)): gap log of unanswered questions; `search_knowledge` tool once the knowledge base outgrows the prompt; optional export as a controlled document.
 - [ ] **Time zone** (§1): deferred by the owner.
 
 ### Later
@@ -481,3 +490,4 @@ PHP errors are logged under `/var/log/doctis` and `/var/log/nginx`.
 | 2026-10-02 | `ai-meeting`: meeting entity, document-backed records, minutes flow, validation, My Meetings view; open design questions (§4.5) |
 | 2026-10-02 | Chair approval, email lifecycle, meeting page, change/cancel, calendar invitations, series, actions → issues, hand uploads as minutes; owner decisions recorded (§4.5) |
 | 2026-10-02 | Managers see all meetings; action owners join the meeting project; due dates enabled; recurring meetings scheduled automatically (`{meeting_series}`, `scripts/meeting_schedule.php`); merge deferred until full testing |
+| 2026-10-03 | Knowledge base: live navigation map, manual and user-taught entries for Help and Meeting; Knowledge page; manual brought up to date (see ai-knowledge.md) |

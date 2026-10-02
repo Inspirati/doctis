@@ -284,6 +284,26 @@ role accounts, which have `@gmail.com` addresses. To inspect messages without
 sending, queue them from PHP and read and delete the `{email}` rows in the
 same run, just after a cron minute boundary.
 
+**Knowledge base** (`tests/Mantis/AiKnowledgeTest.php`, no AI calls), with
+the meeting tests below:
+
+```bash
+vendor/bin/phpunit --testsuite mantis --filter AiKnowledgeTest --testdox
+```
+
+Live check, which makes AI calls (procedure and results in `doc/ai/ai-knowledge.md`
+§Verification):
+
+```bash
+T=admin/tools/doctis-meeting-chat.py; export DOCTIS_URL=http://10.0.0.94/doctis/
+$T sam '' --mode help --clear "Where do i find the corporate directory?"   # → My View → Organisational Chart
+$T sam '' --mode help --clear "<a question Doctis cannot know>"             # → says so, invites teaching
+$T sam '' --mode help "<the answer>"                                       # → draft entry, asks to save
+$T sam '' --mode help "Yes, add it."                                       # → KNOWLEDGE_ENTRY: id, unverified
+# another user asks a paraphrase → answer cites KB-n as unverified; publish it on
+# ai_knowledge_page.php → the warning goes; delete test entries afterwards
+```
+
 **Page check** (headless; needs `apt install node-jsdom`). Loads
 `ai_assist_page.php` with its real scripts and checks that the hash tab is
 shown, that no script fails, and that Send and Ctrl+Enter post the right chat
