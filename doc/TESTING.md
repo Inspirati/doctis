@@ -284,6 +284,20 @@ role accounts, which have `@gmail.com` addresses. To inspect messages without
 sending, queue them from PHP and read and delete the `{email}` rows in the
 same run, just after a cron minute boundary.
 
+**Page check** (headless; needs `apt install node-jsdom`). Loads
+`ai_assist_page.php` with its real scripts and checks that the hash tab is
+shown, that no script fails, and that Send and Ctrl+Enter post the right chat
+request. Requests are recorded, not sent: no AI call is made. It caught the
+2026-10-02 bug where opening the page with `#tab-meeting` broke both chats.
+
+```bash
+T=admin/tools/doctis-ai-page-check.js; U=http://10.0.0.94/doctis
+node $T $U administrator root '?meeting_id=<id>#tab-meeting' meeting   # Write Minutes
+node $T $U administrator root '?series_of=<id>#tab-meeting' meeting    # Plan Next Meeting
+node $T $U administrator root '#tab-meeting' meeting                   # Plan a Meeting
+node $T $U administrator root '' help
+```
+
 **Unit/integration tests** for the meeting logic (no API calls, no git, no
 email sent; throwaway users and meetings are removed afterwards):
 
