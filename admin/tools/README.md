@@ -25,12 +25,13 @@ green = success/diagnostic, yellow = warning, red = failure).
 
 ---
 
-## Testing an installation branch
+## Selecting an installation branch and web server
 
 The bootstrap, dispatcher, and Doctis clone accept `DOCTIS_BRANCH` (default
-`dev`). For the nginx development branch, use `DOCTIS_BRANCH=nginx` when
-invoking the bootstrap downloaded from that branch. This selects source code;
-select `DOCTIS_WEB_SERVER=nginx` separately for the native nginx runtime.
+`dev`). The native nginx profile is now on `dev`; its former `nginx` feature
+branch is deprecated. Use the bootstrap downloaded from `dev` and select
+`DOCTIS_WEB_SERVER=nginx` for the native nginx runtime. `DOCTIS_BRANCH`
+selects source code independently of the web server.
 See [native development installation](../../doc/NATIVE-DEVELOPMENT.md).
 
 Use a fresh staging directory for each downloaded installation run: the legacy
@@ -118,8 +119,8 @@ export DOCTIS_GIT_REPO="ssh://robert@10.0.0.10/home/robert/html/doctis" # LAN so
 The `/git/` HTTP route on vaio serves Doctis document repositories, not the
 Doctis application source. The target VM must be able to read the source
 checkout over SSH, or `DOCTIS_GIT_REPO` must name another Git transport that
-advertises the requested branch. The vaio web-served checkout must itself be
-on the `nginx` branch to supply the nginx dispatcher and installer script.
+advertises the requested branch. The vaio web-served checkout must contain
+the matching `dev` dispatcher and nginx installer scripts.
 
 ---
 

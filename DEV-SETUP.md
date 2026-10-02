@@ -8,14 +8,14 @@ in AGENTS.md describes earlier VM snapshots; use the current checks below.
 ## Checkouts and current branches
 
 - **Working clone:** `/home/robert/Documents/doctis` (this directory), owned by
-  `robert`. Develop and commit here. Its `dev` branch is the main development
-  branch and matches `origin/dev` at merge commit `49456edb5`. The former
-  `nginx` development branch was merged into `dev` with its full history.
+  `robert`. Develop and commit here on `dev`, the main development branch.
+  The former `nginx` feature branch was merged into `dev` with its full history
+  and is deprecated.
 - **Running application:** `/var/www/html/doctis`, a separate Git clone owned
-  by `robert`, served at `http://10.0.0.94/doctis/`. It is still clean on
-  `nginx` at `b0578d131` and tracks only `origin/nginx`. The merge commit on
-  `dev` has the same application tree, but future `dev` commits will not appear
-  here until this clone changes branches.
+  by `robert`, served at `http://10.0.0.94/doctis/`. On 2026-10-02 it was
+  switched to `dev`, tracking and fetching only `origin/dev`. The obsolete
+  local `nginx` refs were removed from this clone; the GitHub branch was left
+  intact as history.
 - **Other source:** `/home/robert/html/doctis` is the vaio NFS checkout. Do not
   alter it as part of this VM's ordinary development cycle.
 
@@ -29,26 +29,11 @@ new code or update an existing database schema.
 1. In the working clone, check `git status`, edit on `dev`, run relevant checks,
    commit, and push to `origin/dev`. Do not push test data, credentials, or
    customer documents.
-2. **One-time transition for this VM:** after confirming the running clone is
-   clean, add `dev` to its single-branch fetch configuration and switch it to
-   track `origin/dev`:
-
-   ```bash
-   git -C /var/www/html/doctis status --short --branch
-   git -C /var/www/html/doctis remote set-branches --add origin dev
-   git -C /var/www/html/doctis fetch origin
-   git -C /var/www/html/doctis switch --track origin/dev
-   ```
-
-   The running clone has **not** yet been switched as of this document's date.
-   Run Git there as `robert`, its owner; perform the transition deliberately
-   before expecting deployments from `dev`.
-3. For subsequent commits, update the running clone with
-   `git -C /var/www/html/doctis pull --ff-only` and confirm its HEAD matches
-   the intended `origin/dev` commit. The administrator **Git Pull (Update)**
-   button invokes a scoped pull of the running clone's tracked branch; until
-   the transition above, that branch is `nginx`.
-4. Exercise the change through the running site and inspect nginx/PHP logs as
+2. Run `git -C /var/www/html/doctis status --short --branch`, then update the
+   running clone as `robert` with `git -C /var/www/html/doctis pull --ff-only`.
+   Confirm its HEAD matches the intended `origin/dev` commit. The administrator
+   **Git Pull (Update)** button also pulls this clone's tracked `dev` branch.
+3. Exercise the change through the running site and inspect nginx/PHP logs as
    needed. Use `php -l` for changed PHP files and `bash -n` for changed shell
    scripts; choose deeper tests from `doc/TESTING.md`. Some Git and integration
    tests alter the development database or repositories, so inspect their scope
@@ -77,7 +62,6 @@ rehearsal. Never use a development reset as a production rollback.
 For a *new* VM installation, use the tracked `admin/tools/install.sh` from
 `dev` with `DOCTIS_BRANCH=dev DOCTIS_WEB_SERVER=nginx`; see
 [doc/NATIVE-DEVELOPMENT.md](doc/NATIVE-DEVELOPMENT.md) for the installation
-profile; its `nginx` branch examples predate the merge into `dev`. The older
-`/home/robert/install.sh` and `/home/robert/get-doctis.sh`
-bootstrap copies may be stale. The latter is not the tracked
-`admin/tools/install-lan.sh`.
+profile. The older `/home/robert/install.sh` and
+`/home/robert/get-doctis.sh` bootstrap copies may be stale. The latter is not
+the tracked `admin/tools/install-lan.sh`.

@@ -8,12 +8,31 @@ No installer, container build, database operation, or runtime test was executed
 for this assessment. The supplied files describe a deployment; they do not
 establish the company's actual running configuration.
 
-## Implementation status — 2026-09-27
+## Current operating status — 2026-10-02
+
+The native nginx profile and subsequent feature work were merged from the
+`nginx` feature branch into `dev`. **Use `dev` for all new development and
+installation work; `nginx` is deprecated.** The working clone is
+`/home/robert/Documents/doctis`. The running clone at
+`/var/www/html/doctis` was switched to `dev`, tracks and fetches only
+`origin/dev`, and served the login page successfully after the switch. Its
+old local `nginx` refs were removed; the GitHub branch remains as history.
+See [DEV-SETUP.md](DEV-SETUP.md) for the edit, push, pull, and test cycle.
+
+The native VM has persistent test data, not a fresh installation. On this
+date it had four projects, 126 project documents, two document repositories,
+and one user. Do not assume the earlier import IDs, sample-data counts, or
+reset status below are current. The dated assessment and implementation
+sections record earlier experiments, not instructions to redo them; the
+repository guidance at the end still applies.
+
+## Implementation status — 2026-09-27 (historical snapshot)
 
 The owner has created a VM snapshot and authorized proceeding with installation
 work on this local Debian 13.2 VM. The local and NFS development checkouts were
-synchronized at `8939aea32` on `dev`; implementation now uses branch `nginx`
-in this checkout. Preserve `/home/robert/html/doctis` on vaio unchanged.
+synchronized at `8939aea32` on `dev`; implementation initially used feature
+branch `nginx` in this checkout. Preserve `/home/robert/html/doctis` on vaio
+unchanged.
 
 The `robert` account has `NOPASSWD: ALL` sudo access, and the owner has enabled
 full access for this Codex session. No sudoers privilege expansion was needed.
@@ -66,10 +85,11 @@ make Git pull a suitable Docker release mechanism: the supplied Docker build
 excludes `.git`, and changes in a container writable layer do not update its
 image and may be lost on replacement.
 
-Use `DOCTIS_BRANCH=nginx` for the GitHub installer test cycle; ordinary installs
-continue to default to `dev`. Pass this selection through bootstrap, dispatcher,
-and application checkout. Validate clean installation after iterative local work
-using the snapshot or a fresh VM.
+The GitHub installer test cycle used `DOCTIS_BRANCH=nginx` before the merge.
+Current installations use `DOCTIS_BRANCH=dev` with
+`DOCTIS_WEB_SERVER=nginx`. Pass source and runtime selections through the
+bootstrap, dispatcher, and application checkout. Validate clean installation
+after iterative local work using the snapshot or a fresh VM.
 
 The repository-import objective is now a **one-time migration** of selected
 GitHub-hosted repositories into newly Doctis-owned repositories at deployment.
@@ -145,7 +165,7 @@ mounts, and image upgrades remain distinct and need checks in the reference VM.
   repository” means the authoritative GitHub repository, not branch `master`.
   Bootstrap/dispatcher downloads and `install_doctis()` agree with this intent.
   Keep `dev` as the normal branch and record exact commits for reproducibility;
-  use the explicit `nginx` override during this implementation cycle.
+  the `nginx` override was used during the completed feature-branch cycle.
 - `install-lan.sh` sets `DOCTIS_SCRIPT_URL` and `DOCTIS_GIT_REPO` to the LAN
   server at `10.0.0.10`. It changes the source of scripts/code, not the basic
   Apache installation architecture.
@@ -241,7 +261,7 @@ Base image tags, package versions, and DokuWiki remain mutable build inputs.
    image. The copied script matches this checkout, and the entrypoint invokes
    it with failure downgraded to a warning. This confirms the mismatch is not
    resolved by a separate supplied Git setup implementation. Separate shared
-   storage setup from server-specific routing. The `nginx` branch now skips
+   storage setup from server-specific routing. The native nginx profile skips
    Apache routing when `DOCTIS_WEB_SERVER=nginx`; Apache remains the default.
 2. **Routing and access rules need verification.** Inspect all repository
    `.htaccess` files and translate required behavior into nginx rules. Cover

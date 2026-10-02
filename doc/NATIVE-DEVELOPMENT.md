@@ -1,7 +1,8 @@
 # Native nginx development installation
 
-The `nginx` development branch adds a Doctis-only Debian profile. Apache remains
-the default legacy profile. This profile omits DokuWiki, reference MantisBT,
+The `dev` branch includes a Doctis-only native nginx profile, originally
+developed on the now-deprecated `nginx` feature branch. Apache remains the
+default legacy profile. This profile omits DokuWiki, reference MantisBT,
 phpMyAdmin, and GUI/editor installation. It uses the distribution's PHP-FPM and
 MariaDB packages. Debian 13 currently provides PHP 8.4 and MariaDB 11.8; the
 company Docker reference specifies PHP 8.2 and MariaDB 10.11. The owner accepted
@@ -13,24 +14,24 @@ still be checked separately.
 Run as a normal account with sudo access. The bootstrap needs `wget`; the LAN
 preflight checks also need `git` and `curl`. Snapshot the test VM first. Download
 scripts into a fresh staging directory so cached scripts cannot select an older
-installation path. After this branch has been published:
+installation path. Use the published `dev` branch:
 
 ```bash
-mkdir -p ~/doctis-nginx-install
-cd ~/doctis-nginx-install
-wget -O install.sh https://raw.githubusercontent.com/Inspirati/doctis/refs/heads/nginx/admin/tools/install.sh
-DOCTIS_BRANCH=nginx DOCTIS_WEB_SERVER=nginx bash install.sh
+mkdir -p ~/doctis-dev-install
+cd ~/doctis-dev-install
+wget -O install.sh https://raw.githubusercontent.com/Inspirati/doctis/refs/heads/dev/admin/tools/install.sh
+DOCTIS_BRANCH=dev DOCTIS_WEB_SERVER=nginx bash install.sh
 ```
 
 Older VM templates may contain `/home/robert/install.sh` with a hardcoded
-`dev` dispatcher URL. Replace that file with the `nginx` branch bootstrap above,
+`dev` dispatcher URL. Replace that file with the tracked `dev` bootstrap above,
 or download the bootstrap into a fresh staging directory and run it there.
 Setting `DOCTIS_BRANCH` alone does not change that older bootstrap's URL.
 
 From an existing checkout, select an explicit host/IP:
 
 ```bash
-DOCTIS_BRANCH=nginx DOCTIS_WEB_SERVER=nginx bash admin/tools/install-option.sh install all localhost
+DOCTIS_BRANCH=dev DOCTIS_WEB_SERVER=nginx bash admin/tools/install-option.sh install all localhost
 ```
 
 `install system` installs packages; `install target` configures the application
@@ -43,27 +44,27 @@ selects downloaded scripts. LAN installations require the LAN server to serve
 the matching scripts and Git branch. An environment variable cannot switch the
 server's working tree for it. The older `/home/robert/get-doctis.sh` fetches
 cached root-level scripts and does not set these overrides; use the tracked
-`install-lan.sh` from the `nginx` branch instead. Its default application
+`install-lan.sh` from the `dev` branch instead. Its default application
 source is `ssh://robert@10.0.0.10/home/robert/html/doctis`, which requires SSH
 Git access from the test VM. `/git/doctis` on vaio is the Doctis document Git
 gateway and cannot serve as the application source repository. Check the LAN
 source before running the installer:
 
 ```bash
-git ls-remote --exit-code --heads ssh://robert@10.0.0.10/home/robert/html/doctis nginx
+git ls-remote --exit-code --heads ssh://robert@10.0.0.10/home/robert/html/doctis dev
 curl -fsS http://10.0.0.10/doctis/admin/tools/install-option.sh | grep -q 'DOCTIS_WEB_SERVER'
 ```
 
-The vaio HTTP-served checkout must be on `nginx` for the second check to pass.
-Fetching `nginx` while leaving that checkout on `dev` is insufficient. Use a
-separate served worktree if the vaio development checkout must remain on `dev`.
+The vaio HTTP-served checkout must have the matching `dev` installer scripts.
+Fetching `dev` over SSH does not update files served by the HTTP checkout.
+Use a separate served worktree if that checkout must stay on another branch.
 Once both checks pass, run the LAN bootstrap in a fresh staging directory:
 
 ```bash
-mkdir -p ~/doctis-nginx-lan-install
-cd ~/doctis-nginx-lan-install
+mkdir -p ~/doctis-dev-lan-install
+cd ~/doctis-dev-lan-install
 wget -O install-lan.sh http://10.0.0.10/doctis/admin/tools/install-lan.sh
-DOCTIS_BRANCH=nginx DOCTIS_WEB_SERVER=nginx bash install-lan.sh
+DOCTIS_BRANCH=dev DOCTIS_WEB_SERVER=nginx bash install-lan.sh
 ```
 
 ## Layout and behavior
@@ -91,9 +92,12 @@ scripts, uploads, hidden files and internal directories are not served directly.
 Downloads use the application's authorization checks. Existing Apache must be
 stopped explicitly before running the nginx system installation.
 
-## Validation status — 2026-09-27
+## Historical validation — 2026-09-27
 
-Published branch: `nginx`. Runtime code tested: `86170d2fa`.
+The original validation used feature branch `nginx` at runtime commit
+`86170d2fa`. The feature branch was merged into `dev`; on 2026-10-02 the
+running native checkout switched to `dev` and its login page returned HTTP
+200. A new clean installation from `dev` has not been separately tested.
 Local URL: `http://10.0.0.94/doctis/`.
 
 - GitHub bootstrap fetched the selected branch and installed dependencies; PHP
