@@ -467,17 +467,46 @@
 
 
 	/* ═══════════════════════════════════════════════════════════════════════ *
+	 * Public API — consumed by ai_assist_help.js and ai_assist_meeting.js    *
+	 * Published before anything else runs, so that a later failure cannot    *
+	 * leave the chat sessions without their handlers.                          *
+	 * ═══════════════════════════════════════════════════════════════════════ */
+	window.AiAssist = {
+		createChatSession: createChatSession
+	};
+
+
+	/* ═══════════════════════════════════════════════════════════════════════ *
 	 * Tab management                                                           *
 	 * ═══════════════════════════════════════════════════════════════════════ */
 
-	/* Restore active tab from URL hash on load */
-	(function() {
+	/* Show the tab named by the URL hash (e.g. #tab-meeting from My Meetings).
+	   MantisBT loads Bootstrap's JS at the end of <body>, after this script, so
+	   this waits for DOMContentLoaded (all parser-inserted scripts have run by
+	   then) and falls back to switching the classes itself. */
+	function showTabFromHash() {
 		var hash = window.location.hash;
-		if( hash ) {
-			var link = document.querySelector('#ai-tab-nav a[href="' + hash + '"]');
-			if( link && window.jQuery ) { jQuery(link).tab('show'); }
-		}
-	})();
+		if( !hash || !/^#tab-[a-z]+$/.test(hash) ) return;
+		var link = document.querySelector('#ai-tab-nav a[href="' + hash + '"]');
+		var pane = document.querySelector(hash);
+		if( !link || !pane ) return;
+		try {
+			if( window.jQuery && jQuery.fn && typeof jQuery.fn.tab === 'function' ) {
+				jQuery(link).tab('show');
+				return;
+			}
+		} catch( e ) { /* fall through to the manual switch */ }
+		document.querySelectorAll('#ai-tab-nav li').forEach(function(li) { li.classList.remove('active'); });
+		document.querySelectorAll('.tab-content > .tab-pane').forEach(function(p) { p.classList.remove('active', 'in'); });
+		link.parentNode.classList.add('active');
+		pane.classList.add('active', 'in');
+	}
+
+	if( document.readyState === 'loading' ) {
+		document.addEventListener('DOMContentLoaded', showTabFromHash);
+	} else {
+		showTabFromHash();
+	}
 
 	/* Update URL hash when tab changes */
 	document.querySelectorAll('#ai-tab-nav a[data-toggle="tab"]').forEach(function(el) {
@@ -486,13 +515,5 @@
 			if( href ) history.replaceState(null, null, href);
 		});
 	});
-
-
-	/* ═══════════════════════════════════════════════════════════════════════ *
-	 * Public API — consumed by ai_assist_help.js and ai_assist_meeting.js    *
-	 * ═══════════════════════════════════════════════════════════════════════ */
-	window.AiAssist = {
-		createChatSession: createChatSession
-	};
 
 })();
