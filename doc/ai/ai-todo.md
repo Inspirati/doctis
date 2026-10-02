@@ -74,7 +74,13 @@ the open design questions.
   them accept invitations: frodo, gandalf and legolas (all meetings), and
   sam, pip, merry and gimli (department only). Passwords are blank except
   `admin`'s.
-- SMTP is not configured, so agenda emails are only queued.
+- **Outbound email is live** (Gmail SMTP, sent by cron every minute; see
+  DEV-SETUP.md). Meeting test emails so far went only to `.example`
+  addresses and `root@localhost`. Before a test, check who will be emailed;
+  to inspect messages without sending, see TESTING.md §7a.
+- frodo (Developer) and sam (Updater) are members of HCRQMS for tests.
+  gandalf is not a member, but as a global manager he can read private
+  projects (`private_project_threshold` = 70); merry and the others cannot.
 
 No AI or meeting function has automated tests.
 
@@ -194,11 +200,28 @@ Server-side handling (`ai_assist_meeting_api.php`):
 | Reference built as `MIN-{dept}-{Ymd}` (+`-2`… if taken); the model's `doc_id` is replaced in the content | Attendance IDs accepted only for the meeting's invitees |
 | Invitee and minute-taker IDs accepted only from the candidate list; `guests` become account-less invitees | — |
 | Meeting row + invitees created | Status → 20 |
-| If a meeting project is configured: document created (category `Meetings`, number = reference) and file stored at `{dept path}/{ref}.md`, **On Record** | If the meeting has a document: same file replaced, **staged as Draft** (needs a manager to promote) |
-| Agenda emailed to invitees with accounts (links to My Meetings and the document) | — |
+| If a meeting project is configured: document created (category `Meetings`, number = reference) and file stored at `{dept path}/{ref}.md`, **On Record** | If the meeting has a document: same file replaced, **staged as Draft** for the chair's approval |
+| Agenda emailed to invitees | Draft emailed to all participants except the author, for corrections; the chair is asked to approve |
 
 A storage failure after the meeting row is created leaves the meeting
 recorded and reports the error in the chat's saved-document card.
+
+### 4.3a Email (owner decision 2026-10-02: emailed content is enough)
+
+Participants need not be members of the private meeting project; email is
+how they read the record. `core/meeting_api.php` sends every stage with the
+full record (YAML frontmatter stripped). A document link is added only for
+recipients who can view the document, and every message links to My Meetings.
+
+| Event | Recipients | Notes |
+|-------|-----------|-------|
+| Agenda issued | invitees with accounts | date, time, duration, location, chair |
+| Minutes drafted | chair, minute taker and invitees, except the author | corrections deadline 3 business days ahead (TMPL-SYS-001 step 7); the chair's copy asks for approval |
+| Minutes approved | the same, except the approver | approved record |
+
+My Meetings shows **Minutes due** (2 business days after the meeting ends,
+TMPL-SYS-001 step 6) on meetings still at "agenda issued", in red when
+overdue. Neither deadline is enforced.
 
 ### 4.4 Storage path
 
@@ -219,7 +242,7 @@ Decided 2026-10-02: agendas go On Record at once; the chair approves minutes
    be promoted by anyone, because only the chair may promote, and only minutes
    awaiting approval. Should hand uploads to meeting documents be blocked, or
    count as minutes?
-2. **Approval notice to invitees** once minutes are approved?
+2. *(Resolved: approved minutes are emailed to participants, §4.3a.)*
 3. **Departments.** HCRQMS is one project with `content/<department>`
    directories; only `system/meetings` exists so far. HCRQMS also has
    field-service, finance, safety and sales departments that are not
@@ -290,14 +313,13 @@ Set in `config/config_inc.php` (never committed).
 - [x] Records carry the TMPL-SYS-001 YAML frontmatter
 - [x] Meeting roles authorise writing minutes in a private meeting project
 - [x] End-to-end test passed; procedure and driver in [TESTING.md §7a](../TESTING.md) (`admin/tools/doctis-meeting-chat.py`)
+- [x] Email lifecycle (agenda, draft minutes for corrections, approved minutes), document link only for viewers; Minutes due indicator
+- [x] PHPUnit `tests/Mantis/MeetingApiTest.php` (10 tests): helpers, roles, listing, reference uniqueness, validation of model-supplied attributes
 
 ### Next
 
-- [ ] **Time zone** (§1): set `$g_default_timezone`, or user timezone preferences.
+- [ ] **Time zone** (§1): deferred by the owner.
 - [ ] Department configuration review (§4.5 question 3).
-- [ ] Invitees outside the private meeting project see no document link, and
-  the agenda email's document link will refuse them. Decide whether to grant
-  view access, or rely on the emailed content.
 
 ### Later
 

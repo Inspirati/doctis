@@ -277,6 +277,21 @@ passwords are blank). Each chat turn is a billed API call, and each
 confirmation writes a document and commits to the meeting project's
 repository, so use a sandbox instance.
 
+**Email is sent for real** if SMTP is configured and the sender cron runs (as
+on the native VM, see DEV-SETUP.md): each run emails the participants. The
+LOTR sample users have undeliverable `.example` addresses; never invite the
+role accounts, which have `@gmail.com` addresses. To inspect messages without
+sending, queue them from PHP and read and delete the `{email}` rows in the
+same run, just after a cron minute boundary.
+
+**Unit/integration tests** for the meeting logic (no API calls, no git, no
+email sent; throwaway users and meetings are removed afterwards):
+
+```bash
+cd /var/www/html/doctis   # needs tests/bootstrap.php (§2)
+vendor/bin/phpunit --testsuite mantis --filter MeetingApiTest --testdox
+```
+
 ```bash
 export DOCTIS_URL=http://10.0.0.94/doctis/
 T=admin/tools/doctis-meeting-chat.py
