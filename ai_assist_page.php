@@ -246,9 +246,13 @@ layout_page_begin( 'ai_assist_page.php' );
 </div><!-- /.tab-content -->
 </div><!-- /.col-md-12 -->
 
-<script src="<?php echo helper_mantis_url( 'js/ai_assist.js' ) ?>"></script>
-<script src="<?php echo helper_mantis_url( 'js/ai_assist_help.js' ) ?>"></script>
-<script src="<?php echo helper_mantis_url( 'js/ai_assist_meeting.js' ) ?>"></script>
+<?php
+# Version each script by its modification time: nginx sends no cache headers,
+# so browsers would otherwise keep running a stale copy after an update.
+foreach( array( 'js/ai_assist.js', 'js/ai_assist_help.js', 'js/ai_assist_meeting.js' ) as $t_script ) {
+	echo '<script src="' . helper_mantis_url( $t_script ) . '?v=' . (int)@filemtime( __DIR__ . '/' . $t_script ) . '"></script>' . "\n";
+}
+?>
 
 <?php
 layout_page_end();
