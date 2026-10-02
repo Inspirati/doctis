@@ -5,6 +5,8 @@
 
 namespace Mantis\tests\Mantis;
 
+# Load the base (which boots MantisBT core) first: this file sorts before it.
+require_once __DIR__ . '/MantisCoreBase.php';
 require_api( 'ai_knowledge_api.php' );
 require_once dirname( __DIR__, 2 ) . '/ai_assist_knowledge_api.php';
 require_once dirname( __DIR__, 2 ) . '/ai_assist_help_api.php';
