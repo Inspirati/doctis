@@ -27,6 +27,7 @@ class MeetingApiTest extends MantisCoreBase {
 	protected function tearDown(): void {
 		foreach( $this->meeting_ids as $t_id ) {
 			db_query( 'DELETE FROM {meeting_action} WHERE meeting_id=' . db_param(), array( $t_id ) );
+			db_query( 'DELETE FROM {meeting_series} WHERE series_id=' . db_param(), array( $t_id ) );
 			db_query( 'DELETE FROM {meeting_invitee} WHERE meeting_id=' . db_param(), array( $t_id ) );
 			db_query( 'DELETE FROM {meeting} WHERE id=' . db_param(), array( $t_id ) );
 		}
@@ -228,6 +229,89 @@ class MeetingApiTest extends MantisCoreBase {
 		$this->assertCount( 1, $t_open );
 		$this->assertSame( $t_first['doc_ref'], $t_open[0]['doc_ref'] );
 		db_query( 'DELETE FROM {meeting_action} WHERE meeting_id=' . db_param(), array( (int)$t_first['id'] ) );
+	}
+
+	# ── Visibility, owner join, recurrence ───────────────────────────────────
+
+	public function testManagersSeeAllMeetings() {
+		$t_meeting = $this->makeMeeting( $this->makeUser( 0 ), 0, array() );
+		$t_manager = $this->makeUser( 0 );
+		user_set_field( $t_manager, 'access_level', MANAGER );
+		$t_reporter = $this->makeUser( 0 );
+		user_set_field( $t_reporter, 'access_level', REPORTER );
+
+		$this->assertTrue( meeting_user_can_view( $t_meeting, $t_manager ) );
+		$this->assertFalse( meeting_user_can_view( $t_meeting, $t_reporter ) );
+		$this->assertFalse( meeting_user_can_manage( $t_meeting, $t_manager ) );   # seeing is not managing
+		$t_all = array_column( meeting_get_all( $t_manager ), 'role', 'id' );
+		$this->assertSame( '', $t_all[$t_meeting['id']] ?? null );
+	}
+
+	public function testOwnerJoinsProjectAtOwnLevelOnce() {
+		$t_project = project_create( 'MeetingTestProject' . rand(), '', 10, VS_PRIVATE );
+		try {
+			$t_owner = $this->makeUser( 2 );
+			user_set_field( $t_owner, 'access_level', UPDATER );
+			$t_limited = $this->makeUser( 2 );
+			project_add_user( $t_project, $t_limited, VIEWER );   # deliberately limited
+
+			$this->assertFalse( access_has_project_level( UPDATER, $t_project, $t_owner ) );
+			$this->assertTrue( meeting_action_owner_join( $t_project, $t_owner ) );
+			$this->assertSame( UPDATER, (int)access_get_project_level( $t_project, $t_owner ) );   # no escalation
+			$this->assertFalse( meeting_action_owner_join( $t_project, $t_owner ) );                # already a member
+			$this->assertFalse( meeting_action_owner_join( $t_project, $t_limited ) );              # existing entry kept
+			$this->assertSame( VIEWER, (int)access_get_project_level( $t_project, $t_limited ) );
+
+			config_set_global( 'meeting_action_owner_join', OFF );
+			$t_other = $this->makeUser( 2 );
+			$this->assertFalse( meeting_action_owner_join( $t_project, $t_other ) );
+			config_set_global( 'meeting_action_owner_join', ON );
+		} finally {
+			project_delete( $t_project );
+		}
+	}
+
+	public function testRecurrenceRulesAndDueTime() {
+		$t_tue = strtotime( '2026-10-13 09:30' );   # second Tuesday
+		$this->assertSame( '2026-10-20 09:30', date( 'Y-m-d H:i', meeting_recurrence_next_start( $t_tue, 'weekly' ) ) );
+		$this->assertSame( '2026-10-27 09:30', date( 'Y-m-d H:i', meeting_recurrence_next_start( $t_tue, 'fortnightly' ) ) );
+		$this->assertSame( '2026-11-10 09:30', date( 'Y-m-d H:i', meeting_recurrence_next_start( $t_tue, 'monthly' ) ) );
+		$this->assertSame( '2026-11-26', date( 'Y-m-d', meeting_recurrence_next_start( strtotime( '2026-10-29 09:30' ), 'monthly' ) ) );  # 5th → last
+
+		$t_chair = $this->makeUser( 0 );
+		$t_meeting = $this->makeMeeting( $t_chair, 0, array() );
+		meeting_update( (int)$t_meeting['id'], array( 'date_start' => $t_tue ) );
+		$t_meeting = meeting_get( (int)$t_meeting['id'] );
+		try {
+			meeting_recurrence_set( $t_meeting, 'yearly', $t_chair );
+			$this->fail( 'accepted an unknown rule' );
+		} catch( \Mantis\Exceptions\ClientException $e ) {
+			$this->assertNull( meeting_recurrence_get( $t_meeting ) );
+		}
+		meeting_recurrence_set( $t_meeting, 'weekly', $t_chair );
+		$this->assertSame( 'weekly', meeting_recurrence_get( $t_meeting )['recurrence'] );
+
+		$t_lead = 86400 * (int)config_get_global( 'meeting_schedule_lead_days' );
+		$t_next = strtotime( '2026-10-20 09:30' );
+		$t_due_ids = function( $p_now ) {
+			return array_map( function( $d ) { return (int)$d['series']['series_id']; }, meeting_schedule_due( $p_now ) );
+		};
+		$this->assertNotContains( (int)$t_meeting['id'], $t_due_ids( $t_next - $t_lead - 60 ) );
+		$this->assertContains( (int)$t_meeting['id'], $t_due_ids( $t_next - $t_lead + 60 ) );
+
+		meeting_recurrence_set( $t_meeting, '', $t_chair );
+		$this->assertNull( meeting_recurrence_get( $t_meeting ) );
+	}
+
+	public function testOverridesWinOverModelAttributes() {
+		$t_reply = '<<<MEETING_DOCUMENT type="agenda" dept="ENG" date="2030-01-01" time="08:00" title="T" location="Moon">>>x<<<END_MEETING_DOCUMENT>>>';
+		$t_result = ai_assist_process_meeting_document( $t_reply, auth_get_current_user_id(),
+			array( 'dept' => 'SYS', 'date' => '2026-11-03', 'time' => '11:00', 'location' => 'Teams' ) );
+		$this->meeting_ids[] = (int)$t_result['meeting_id'];
+		$t_meeting = meeting_get( (int)$t_result['meeting_id'] );
+		$this->assertSame( 'SYS', $t_meeting['department'] );
+		$this->assertSame( '2026-11-03 11:00', date( 'Y-m-d H:i', (int)$t_meeting['date_start'] ) );
+		$this->assertSame( 'Teams', $t_meeting['location'] );
 	}
 
 	# ── Managing and hand uploads ────────────────────────────────────────────

@@ -224,6 +224,8 @@
 			if( doc.dwg_id )     detail += '<br><span style="font-size:11px;"><a href="dwg_view.php?id=' + parseInt(doc.dwg_id, 10) + '">Document #' + parseInt(doc.dwg_id, 10) + '</a></span>';
 			if( doc.meeting_id ) detail += ' <span style="font-size:11px;"><a href="meeting_view_page.php?id=' + parseInt(doc.meeting_id, 10) + '">Meeting page</a></span>';
 			if( doc.series_id )  detail += '<br><span style="color:#888;font-size:11px;">Continues an earlier meeting (series)</span>';
+			if( doc.recurrence ) detail += '<br><span style="color:#888;font-size:11px;">Repeats ' + escapeHtml(doc.recurrence) +
+				' &mdash; each next meeting is scheduled automatically</span>';
 			if( doc.actions !== null && doc.actions !== undefined ) {
 				detail += '<br><span style="color:#888;font-size:11px;">' + parseInt(doc.actions, 10) +
 					' action(s) recorded &mdash; they become issues when the chair approves the minutes</span>';

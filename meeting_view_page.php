@@ -46,6 +46,8 @@ $t_can_plan_next = $t_ai_enabled && $t_status !== MEETING_CANCELLED
 	&& meeting_user_can_write_minutes( $t_meeting, $t_user_id );
 $t_series = meeting_series_get( $t_meeting );
 $t_actions = meeting_actions_get( (int)$t_meeting['id'] );
+$t_recurrence = meeting_recurrence_get( $t_meeting );
+$t_can_repeat = meeting_user_can_set_recurrence( $t_meeting, $t_user_id );
 $t_return = 'meeting_view_page.php?id=' . (int)$t_meeting['id'];
 
 layout_page_header( $t_meeting['doc_ref'] . ' — ' . $t_meeting['title'] );
@@ -136,6 +138,36 @@ print_my_view_menu( 'my_view_meeting_page.php' );
 						<th class="category"><?php echo lang_get( 'meeting_role_minute_taker' ) ?></th>
 						<td><?php echo (int)$t_meeting['minute_taker_id'] > 0
 							? string_display_line( meeting_user_display_name( (int)$t_meeting['minute_taker_id'] ) ) : '—' ?></td>
+					</tr>
+					<tr>
+						<th class="category"><?php echo lang_get( 'meeting_repeats' ) ?></th>
+						<td>
+<?php if( $t_can_repeat ): ?>
+							<form method="post" action="meeting_recurrence.php" class="form-inline" style="display:inline">
+								<?php echo form_security_field( 'meeting_recurrence' ) ?>
+								<input type="hidden" name="meeting_id" value="<?php echo (int)$t_meeting['id'] ?>" />
+								<label for="meeting_recurrence" class="sr-only"><?php echo lang_get( 'meeting_repeats' ) ?></label>
+								<select id="meeting_recurrence" name="recurrence" class="input-sm">
+<?php	foreach( array_merge( array( '' ), MEETING_RECURRENCES ) as $t_rule ): ?>
+									<option value="<?php echo $t_rule ?>"<?php echo ( $t_recurrence['recurrence'] ?? '' ) === $t_rule ? ' selected="selected"' : '' ?>><?php
+										echo meeting_recurrence_label( $t_rule ) ?></option>
+<?php	endforeach; ?>
+								</select>
+								<button type="submit" class="btn btn-xs btn-default btn-white btn-round"><?php echo lang_get( 'meeting_repeats_save' ) ?></button>
+							</form>
+<?php else: ?>
+							<?php echo meeting_recurrence_label( $t_recurrence['recurrence'] ?? '' ) ?>
+<?php endif; ?>
+<?php if( $t_recurrence !== null ): ?>
+							<span class="text-muted small">&mdash; <?php echo sprintf( lang_get( 'meeting_repeats_hint' ),
+								(int)config_get_global( 'meeting_schedule_lead_days' ) ) ?></span>
+<?php	if( !is_blank( $t_recurrence['last_error'] ) ): ?>
+							<br><span class="red small"><?php echo lang_get( 'meeting_schedule_error' ) ?>
+								<?php echo string_display_line( $t_recurrence['last_error'] ) ?>
+								(<?php echo date( config_get( 'normal_date_format' ), (int)$t_recurrence['last_run'] ) ?>)</span>
+<?php	endif; ?>
+<?php endif; ?>
+						</td>
 					</tr>
 					<tr>
 						<th class="category"><?php echo lang_get( 'meeting_record' ) ?></th>

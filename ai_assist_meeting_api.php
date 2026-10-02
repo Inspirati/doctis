@@ -215,7 +215,9 @@ function ai_assist_meeting_system_prompt( int $p_user_id, ?array $p_focus = null
 			. 'meeting_id=' . $p_series['id'] . ' | ' . $p_series['doc_ref'] . ' | ' . $p_series['title'] . "\n"
 			. 'Held: ' . date( 'l j F Y, H:i', (int)$p_series['date_start'] ) . ', ' . $p_series['duration'] . ' min, '
 			. $p_series['location'] . ' | Department: ' . $p_series['department'] . ' | '
-			. meeting_status_label( (int)$p_series['status'] ) . "\n\n"
+			. meeting_status_label( (int)$p_series['status'] )
+			. ( meeting_recurrence_get( $p_series ) !== null
+				? ' | Repeats ' . meeting_recurrence_get( $p_series )['recurrence'] : '' ) . "\n\n"
 			. "Its invitees:\n" . ai_assist_meeting_invitee_lines( $p_series ) . "\n\n"
 			. "Open actions in this series:\n" . ai_assist_meeting_open_action_lines( $p_series ) . "\n\n"
 			. "Unless the user says otherwise, reuse the same invitees, department, duration, location,\n"
@@ -260,6 +262,7 @@ is configured on this server, so no controlled document is created.';
 
 	# ── Current user name for chair field ────────────────────────────────────
 	$t_chair_name = meeting_user_display_name( $p_user_id );
+	$t_lead = (int)config_get_global( 'meeting_schedule_lead_days' );
 
 	# ── Assemble prompt ───────────────────────────────────────────────────────
 	$t_prompt = <<<PROMPT
@@ -328,6 +331,13 @@ If a PLANNING THE NEXT MEETING section appears below, follow it. Otherwise, if t
 says this is the next of a meeting in RECENT MEETINGS YOU LEAD ("next week's QMS review"),
 treat it the same way: reuse that meeting's details and set series_of to its meeting_id.
 
+If the user says a new meeting repeats ("every Tuesday", "weekly", "every two weeks",
+"monthly"), set recurrence to weekly, fortnightly or monthly (monthly = the same weekday of
+the month, e.g. the second Tuesday). Doctis then schedules each next meeting itself,
+{$t_lead} days ahead, with the same people and the open actions carried forward; say so
+in your confirmation. Leave recurrence empty otherwise, and when planning the next meeting
+of an existing series (its repetition is already set).
+
 ---
 
 ## MINUTES SESSION FLOW
@@ -395,7 +405,7 @@ When generating a document, wrap it in these exact markers. Attribute values mus
 contain double quotes.
 
 For an agenda:
-<<<MEETING_DOCUMENT type="agenda" doc_id="MIN-{dept}-{YYYYMMDD}" dept="{dept}" title="{title}" date="{YYYY-MM-DD}" time="{HH:MM}" duration="{minutes}" location="{location}" minute_taker_id="{id or empty}" invitee_ids="{comma-separated matched ids}" guests="{semicolon-separated unmatched names}" series_of="{meeting_id it follows, or empty}">>>
+<<<MEETING_DOCUMENT type="agenda" doc_id="MIN-{dept}-{YYYYMMDD}" dept="{dept}" title="{title}" date="{YYYY-MM-DD}" time="{HH:MM}" duration="{minutes}" location="{location}" minute_taker_id="{id or empty}" invitee_ids="{comma-separated matched ids}" guests="{semicolon-separated unmatched names}" series_of="{meeting_id it follows, or empty}" recurrence="{weekly|fortnightly|monthly, or empty}">>>
 [complete Markdown document following TMPL-SYS-001]
 <<<END_MEETING_DOCUMENT>>>
 
@@ -463,18 +473,20 @@ PROMPT;
  * Returns the processing result (with a 'stripped_reply' key), or null when
  * the reply contains no document.
  *
- * @param string $p_reply   Raw AI reply text.
- * @param int    $p_user_id Current user.
+ * @param string $p_reply     Raw AI reply text.
+ * @param int    $p_user_id   Current user.
+ * @param array  $p_overrides Marker attributes forced by the caller (the
+ *                            scheduler fixes date, time, people and place).
  * @return array|null
  */
-function ai_assist_process_meeting_document( string $p_reply, int $p_user_id ): ?array {
+function ai_assist_process_meeting_document( string $p_reply, int $p_user_id, array $p_overrides = [] ): ?array {
 	$t_pattern = '/<<<MEETING_DOCUMENT\s+([^>]+)>>>([\s\S]*?)<<<END_MEETING_DOCUMENT>>>/';
 	if( !preg_match( $t_pattern, $p_reply, $t_matches ) ) {
 		return null;
 	}
 
 	preg_match_all( '/(\w+)="([^"]*)"/', $t_matches[1], $t_attr_pairs );
-	$t_attrs   = array_combine( $t_attr_pairs[1], $t_attr_pairs[2] );
+	$t_attrs   = array_merge( array_combine( $t_attr_pairs[1], $t_attr_pairs[2] ), $p_overrides );
 	$t_type    = ( $t_attrs['type'] ?? 'agenda' ) === 'minutes' ? 'minutes' : 'agenda';
 	$t_content = trim( $t_matches[2] );
 
@@ -497,6 +509,7 @@ function ai_assist_process_meeting_document( string $p_reply, int $p_user_id ): 
 		'emails_sent'    => [],
 		'actions'        => null,
 		'series_id'      => null,
+		'recurrence'     => null,
 		'error'          => null,
 	];
 
@@ -588,6 +601,13 @@ function ai_assist_meeting_process_agenda( array $p_attrs, string $p_content, in
 	$p_result['series_id']  = $t_series_id ?: null;
 	$p_result['saved']      = true;
 	$t_meeting = meeting_get( $t_meeting_id );
+
+	# Recurrence: the chair of a new meeting may make its series repeat.
+	$t_rule = strtolower( trim( $p_attrs['recurrence'] ?? '' ) );
+	if( in_array( $t_rule, MEETING_RECURRENCES, true ) ) {
+		meeting_recurrence_set( $t_meeting, $t_rule, $p_user_id );
+		$p_result['recurrence'] = $t_rule;
+	}
 
 	# Store as a controlled document when a meeting project is configured.
 	# A storage failure leaves the meeting recorded; the error is reported.

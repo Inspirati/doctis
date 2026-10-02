@@ -34,6 +34,7 @@ require_api( 'string_api.php' );
 require_api( 'user_api.php' );
 require_api( 'meeting_calendar_api.php' );
 require_api( 'meeting_action_api.php' );
+require_api( 'meeting_schedule_api.php' );
 
 use Mantis\Exceptions\ClientException;
 
@@ -138,6 +139,23 @@ function meeting_get_for_user( int $p_user_id ): array {
 		. ' ORDER BY m.date_start DESC',
 		array( $p_user_id, $p_user_id, $p_user_id, $p_user_id )
 	);
+	$t_rows = array();
+	while( ( $t_row = db_fetch_array( $t_result ) ) !== false ) {
+		$t_row['role'] = meeting_user_role( $t_row, $p_user_id );
+		$t_rows[] = $t_row;
+	}
+	return $t_rows;
+}
+
+/**
+ * Every meeting, newest first, each with the given user's 'role' ('' when
+ * not involved). For users who see all meetings.
+ *
+ * @param int $p_user_id
+ * @return array
+ */
+function meeting_get_all( int $p_user_id ): array {
+	$t_result = db_query( 'SELECT * FROM {meeting} ORDER BY date_start DESC' );
 	$t_rows = array();
 	while( ( $t_row = db_fetch_array( $t_result ) ) !== false ) {
 		$t_row['role'] = meeting_user_role( $t_row, $p_user_id );
@@ -283,15 +301,26 @@ function meeting_user_can_manage( array $p_meeting, int $p_user_id ): bool {
 }
 
 /**
- * Whether the user may see a meeting's details: any participant, or anyone
- * who can view its document.
+ * Whether the user sees every meeting ($g_meeting_view_all_threshold, a
+ * global access level; MANAGER by default).
+ *
+ * @param int $p_user_id
+ * @return bool
+ */
+function meeting_user_can_view_all( int $p_user_id ): bool {
+	return access_has_global_level( config_get_global( 'meeting_view_all_threshold' ), $p_user_id );
+}
+
+/**
+ * Whether the user may see a meeting's details: any participant, a user who
+ * sees all meetings, or anyone who can view its document.
  *
  * @param array $p_meeting
  * @param int   $p_user_id
  * @return bool
  */
 function meeting_user_can_view( array $p_meeting, int $p_user_id ): bool {
-	if( meeting_user_role( $p_meeting, $p_user_id ) !== '' ) {
+	if( meeting_user_role( $p_meeting, $p_user_id ) !== '' || meeting_user_can_view_all( $p_user_id ) ) {
 		return true;
 	}
 	$t_dwg_id = (int)$p_meeting['dwg_id'];

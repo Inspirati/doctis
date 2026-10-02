@@ -11,6 +11,7 @@ require_api( 'access_dwg_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'config_api.php' );
 require_api( 'form_api.php' );
+require_api( 'gpc_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'layout_api.php' );
@@ -24,11 +25,15 @@ $t_user_id = auth_get_current_user_id();
 $t_ai_enabled = !is_blank( config_get_global( 'anthropic_api_key' ) )
 	&& access_has_global_level( config_get_global( 'ai_assist_threshold' ) );
 
+# Users at $g_meeting_view_all_threshold may list every meeting.
+$t_can_view_all = meeting_user_can_view_all( $t_user_id );
+$t_show_all = $t_can_view_all && gpc_get_bool( 'all', false );
+
 # A meeting is upcoming until its scheduled end.
 $t_now = time();
 $t_upcoming = array();
 $t_past = array();
-foreach( meeting_get_for_user( $t_user_id ) as $t_meeting ) {
+foreach( $t_show_all ? meeting_get_all( $t_user_id ) : meeting_get_for_user( $t_user_id ) as $t_meeting ) {
 	if( (int)$t_meeting['date_start'] + 60 * (int)$t_meeting['duration'] >= $t_now ) {
 		array_unshift( $t_upcoming, $t_meeting );   # soonest first
 	} else {
@@ -114,8 +119,14 @@ function meeting_print_table( array $p_meetings, $p_ai_enabled ) {
 						<?php if( !is_blank( $t_meeting['location'] ) ) echo '&middot; ' . string_display_line( $t_meeting['location'] ) ?>
 					</span>
 				</td>
-				<td><?php echo string_display_line( $t_meeting['department'] ) ?></td>
-				<td><?php echo lang_get( 'meeting_role_' . $t_meeting['role'] ) ?></td>
+				<td><?php echo string_display_line( $t_meeting['department'] ) ?>
+<?php	$t_rule = meeting_recurrence_get( $t_meeting );
+		if( $t_rule !== null ): ?>
+					<br><span class="text-muted small" title="<?php echo string_attribute( meeting_recurrence_label( $t_rule['recurrence'] ) ) ?>">
+						<?php print_icon( 'fa-refresh', 'ace-icon' ); ?> <?php echo meeting_recurrence_label( $t_rule['recurrence'] ) ?></span>
+<?php	endif; ?>
+				</td>
+				<td><?php echo $t_meeting['role'] === '' ? '—' : lang_get( 'meeting_role_' . $t_meeting['role'] ) ?></td>
 				<td class="small"><?php echo meeting_print_participants( $t_meeting ) ?></td>
 				<td>
 					<?php echo meeting_status_label( $t_status ) ?>
@@ -169,13 +180,21 @@ print_my_view_menu( 'my_view_meeting_page.php' );
 	<div class="widget-box widget-color-blue2">
 		<div class="widget-header widget-header-small">
 			<h4 class="widget-title lighter"><?php print_icon( 'fa-calendar', 'ace-icon' ); ?> <?php echo lang_get( 'meeting_upcoming' ) ?></h4>
-<?php if( $t_ai_enabled ): ?>
 			<div class="widget-toolbar">
+<?php if( $t_can_view_all ): ?>
+				<div class="btn-group">
+					<a class="btn btn-minier btn-white btn-round<?php echo $t_show_all ? '' : ' active' ?>" href="my_view_meeting_page.php"><?php
+						echo lang_get( 'meeting_show_mine' ) ?></a>
+					<a class="btn btn-minier btn-white btn-round<?php echo $t_show_all ? ' active' : '' ?>" href="my_view_meeting_page.php?all=1"><?php
+						echo lang_get( 'meeting_show_all' ) ?></a>
+				</div>
+<?php endif; ?>
+<?php if( $t_ai_enabled ): ?>
 				<a class="btn btn-minier btn-primary btn-white btn-round" href="ai_assist_page.php#tab-meeting">
 					<?php print_icon( 'fa-plus', 'ace-icon' ); ?> <?php echo lang_get( 'meeting_plan_button' ) ?>
 				</a>
-			</div>
 <?php endif; ?>
+			</div>
 		</div>
 		<div class="widget-body">
 			<div class="widget-main">

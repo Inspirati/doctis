@@ -5035,6 +5035,36 @@ $g_meeting_template_path = 'system/templates/Meeting-Agenda-and-Minutes.md';
 $g_meeting_category = 'Meetings';
 
 /**
+ * Global access level at which a user sees every meeting (My Meetings "All
+ * meetings", and any meeting page), not only those they take part in.
+ * Seeing does not grant approving or managing.
+ *
+ * @global int $g_meeting_view_all_threshold
+ */
+$g_meeting_view_all_threshold = MANAGER;
+
+/**
+ * When the chair approves minutes, add an action owner who cannot be assigned
+ * issues in the meeting project to that project, so the action issue can be
+ * assigned to them. They are added at their own global access level (no
+ * escalation); users with an existing entry for the project are left as they
+ * are. OFF = such owners are named in the issue text only.
+ *
+ * @global int $g_meeting_action_owner_join
+ */
+$g_meeting_action_owner_join = ON;
+
+/**
+ * Recurring meetings: how many days before the next occurrence the scheduler
+ * (scripts/meeting_schedule.php, run from cron) creates it. A few days lets
+ * the previous minutes be approved first, so their actions are carried
+ * forward.
+ *
+ * @global int $g_meeting_schedule_lead_days
+ */
+$g_meeting_schedule_lead_days = 3;
+
+/**
  * Meeting Assistant department configuration.
  *
  * Maps department codes to a meeting-record directory and, optionally, a
@@ -5694,9 +5724,12 @@ $g_plugins_force_installed = array();
 /**
  * Threshold to update due date submitted.
  *
+ * Doctis: enabled (owner decision 2026-10-02) so meeting action issues carry
+ * their due dates.
+ *
  * @global int $g_due_date_update_threshold
  */
-$g_due_date_update_threshold = NOBODY;
+$g_due_date_update_threshold = DEVELOPER;
 
 /**
  * Threshold to see due date.
@@ -5704,7 +5737,7 @@ $g_due_date_update_threshold = NOBODY;
  * @global int $g_due_date_view_threshold
  */
 // $g_due_date_view_threshold = NOBODY;
-$g_due_date_view_threshold = DEVELOPER;
+$g_due_date_view_threshold = REPORTER;
 
 /**
  * Default due date value for newly submitted issues.

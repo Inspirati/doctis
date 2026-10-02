@@ -36,6 +36,7 @@ require_api( 'access_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'config_api.php' );
 require_api( 'user_api.php' );
+require_once( 'ai_assist_anthropic_api.php' );
 require_once( 'ai_assist_help_api.php' );
 require_once( 'ai_assist_meeting_api.php' );
 
@@ -123,7 +124,6 @@ if( empty( $t_messages ) ) {
 # ── Mode-specific configuration ───────────────────────────────────────────────
 # System prompts are always built server-side; the browser never sends one.
 
-$t_model      = config_get_global( 'ai_model' );
 $t_max_tokens = 2048;
 $t_system     = '';
 $t_focus      = null;
@@ -143,68 +143,11 @@ switch( $t_mode ) {
 
 # ── Call Anthropic Messages API ───────────────────────────────────────────────
 
-$t_payload = json_encode( [
-	'model'      => $t_model,
-	'max_tokens' => $t_max_tokens,
-	'system'     => $t_system,
-	'messages'   => $t_messages,
-] );
-
-$t_ch = curl_init( 'https://api.anthropic.com/v1/messages' );
-curl_setopt_array( $t_ch, [
-	CURLOPT_RETURNTRANSFER => true,
-	CURLOPT_POST           => true,
-	CURLOPT_POSTFIELDS     => $t_payload,
-	CURLOPT_HTTPHEADER     => [
-		'Content-Type: application/json',
-		'x-api-key: ' . $t_api_key,
-		'anthropic-version: 2023-06-01',
-		'User-Agent: Doctis/1.0',
-	],
-	CURLOPT_TIMEOUT        => 90,
-	CURLOPT_CONNECTTIMEOUT => 10,
-] );
-
-$t_response   = curl_exec( $t_ch );
-$t_http_code  = curl_getinfo( $t_ch, CURLINFO_HTTP_CODE );
-$t_curl_error = curl_error( $t_ch );
-curl_close( $t_ch );
-
-# ── Handle cURL / network error ───────────────────────────────────────────────
-
-if( $t_response === false ) {
-	error_log( 'ai_assist_api: cURL error: ' . $t_curl_error );
-	ai_assist_json_error( 'Could not reach the AI service. Please try again.' );
+$t_answer = ai_assist_anthropic_request( $t_system, $t_messages, $t_max_tokens );
+if( $t_answer['error'] !== null ) {
+	ai_assist_json_error( $t_answer['error'] );
 }
-
-# ── Parse Anthropic response ──────────────────────────────────────────────────
-
-$t_data = json_decode( $t_response, true );
-
-if( $t_http_code !== 200 ) {
-	$t_err_msg = $t_data['error']['message'] ?? 'API error (HTTP ' . $t_http_code . ').';
-	error_log( 'ai_assist_api: Anthropic error ' . $t_http_code . ': ' . $t_err_msg );
-
-	switch( $t_http_code ) {
-		case 401:
-			ai_assist_json_error( 'AI service authentication failed. Check the API key in config.' );
-			break;
-		case 429:
-			ai_assist_json_error( 'AI service rate limit reached. Please wait a moment and try again.' );
-			break;
-		case 529:
-			ai_assist_json_error( 'The AI service is currently overloaded. Please try again shortly.' );
-			break;
-		default:
-			ai_assist_json_error( $t_err_msg );
-	}
-}
-
-$t_reply = $t_data['content'][0]['text'] ?? '';
-
-if( is_blank( $t_reply ) ) {
-	ai_assist_json_error( 'Empty response received from AI service.' );
-}
+$t_reply = $t_answer['reply'];
 
 # ── Meeting mode: extract and process any embedded document ───────────────────
 
@@ -250,8 +193,8 @@ echo json_encode( [
 	'reply'          => $t_reply,
 	'error'          => null,
 	'usage'          => [
-		'input_tokens'  => $t_data['usage']['input_tokens']  ?? null,
-		'output_tokens' => $t_data['usage']['output_tokens'] ?? null,
+		'input_tokens'  => $t_answer['usage']['input_tokens'] ?? null,
+		'output_tokens' => $t_answer['usage']['output_tokens'] ?? null,
 	],
 	'saved_document' => $t_saved_document,
 ] );

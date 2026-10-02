@@ -8,11 +8,12 @@
 # approved minutes' SHA). Open actions of earlier meetings in a series are
 # offered to the next agenda's "open actions review".
 #
-# Owners are validated against the meeting's participants. An owner is set as
-# the issue's handler only when they may handle issues in the meeting project
-# and the approver may assign; otherwise the owner is named in the issue text.
-# Due dates follow $g_due_date_update_threshold and are always written in the
-# issue text.
+# Owners are validated against the meeting's participants. An owner who may
+# not handle issues in the meeting project is added to it at their own global
+# access level ($g_meeting_action_owner_join; owner decision 2026-10-02), then
+# set as the issue's handler (the approver must be able to assign). Otherwise
+# the owner is named in the issue text. Due dates follow
+# $g_due_date_update_threshold and are always written in the issue text.
 #
 # @package    Doctis
 # @copyright  Copyright 2025 Inspirati
@@ -24,6 +25,7 @@ require_api( 'category_api.php' );
 require_api( 'config_api.php' );
 require_api( 'database_api.php' );
 require_api( 'meeting_api.php' );
+require_api( 'project_api.php' );
 require_api( 'user_api.php' );
 
 /** Most actions accepted from one set of minutes. */
@@ -137,11 +139,19 @@ function meeting_actions_create_issues( array $p_meeting, int $p_user_id ): arra
 
 	$t_can_assign = access_has_project_level( config_get( 'update_bug_assign_threshold', null, null, $t_project_id ),
 		$t_project_id, $p_user_id );
+	$t_handle = config_get( 'handle_bug_threshold', null, null, $t_project_id );
 	$t_results = array();
 	foreach( $t_actions as $t_action ) {
 		$t_owner = (int)$t_action['owner_id'];
+		$t_joined = false;
+		if( $t_owner > 0 && $t_can_assign && !access_has_project_level( $t_handle, $t_project_id, $t_owner ) ) {
+			$t_joined = meeting_action_owner_join( $t_project_id, $t_owner );
+			if( $t_joined ) {
+				$t_action['joined'] = project_get_name( $t_project_id );
+			}
+		}
 		$t_assign = $t_owner > 0 && $t_can_assign
-			&& access_has_project_level( config_get( 'handle_bug_threshold', null, null, $t_project_id ), $t_project_id, $t_owner );
+			&& access_has_project_level( $t_handle, $t_project_id, $t_owner );
 		$t_due = (int)$t_action['due_date'];
 		$t_issue = array(
 			'project'       => array( 'id' => $t_project_id ),
@@ -166,13 +176,48 @@ function meeting_actions_create_issues( array $p_meeting, int $p_user_id ): arra
 			db_param_push();
 			db_query( 'UPDATE {meeting_action} SET bug_id=' . db_param() . ' WHERE id=' . db_param(),
 				array( $t_bug_id, (int)$t_action['id'] ) );
-			$t_results[] = array( 'ref' => $t_action['ref'], 'bug_id' => $t_bug_id, 'assigned' => $t_assign, 'error' => null );
+			$t_results[] = array( 'ref' => $t_action['ref'], 'bug_id' => $t_bug_id, 'assigned' => $t_assign,
+				'joined' => $t_joined, 'error' => null );
 		} catch( Throwable $e ) {
 			error_log( 'meeting_action_api: issue for ' . $p_meeting['doc_ref'] . ' ' . $t_action['ref'] . ' failed: ' . $e->getMessage() );
-			$t_results[] = array( 'ref' => $t_action['ref'], 'bug_id' => 0, 'assigned' => false, 'error' => $e->getMessage() );
+			$t_results[] = array( 'ref' => $t_action['ref'], 'bug_id' => 0, 'assigned' => false,
+				'joined' => $t_joined, 'error' => $e->getMessage() );
 		}
 	}
 	return $t_results;
+}
+
+/**
+ * Add an action owner to the meeting project so their action issue can be
+ * assigned to them ($g_meeting_action_owner_join). The owner joins at their
+ * own global access level, so no one gains more than they already hold;
+ * users with an existing entry for the project (e.g. deliberately limited)
+ * are left unchanged. Authorised by the chair's approval of the minutes.
+ *
+ * @param int $p_project_id
+ * @param int $p_user_id
+ * @return bool True when the user was added.
+ */
+function meeting_action_owner_join( int $p_project_id, int $p_user_id ): bool {
+	global $g_cache_access_matrix;
+
+	if( OFF == config_get_global( 'meeting_action_owner_join' )
+		|| !user_exists( $p_user_id ) || !user_is_enabled( $p_user_id ) ) {
+		return false;
+	}
+	db_param_push();
+	$t_result = db_query( 'SELECT 1 FROM {project_user_list} WHERE project_id=' . db_param() . ' AND user_id=' . db_param(),
+		array( $p_project_id, $p_user_id ), 1 );
+	if( db_result( $t_result ) !== false ) {
+		return false;
+	}
+	$t_level = (int)user_get_field( $p_user_id, 'access_level' );
+	project_add_user( $p_project_id, $p_user_id, $t_level );
+	# project_add_user() does not refresh this request's access cache.
+	$g_cache_access_matrix[$p_user_id][$p_project_id] = $t_level;
+	error_log( 'meeting_action_api: added user ' . $p_user_id . ' to project ' . $p_project_id
+		. ' at access level ' . $t_level . ' as a meeting action owner' );
+	return true;
 }
 
 /**
@@ -187,7 +232,11 @@ function meeting_action_issue_text( array $p_meeting, array $p_action ): string 
 		. ' (' . $p_meeting['doc_ref'] . '), ' . date( 'j F Y', (int)$p_meeting['date_start'] ) . ".\n\n"
 		. $p_action['description'] . "\n\n"
 		. 'Owner: ' . ( is_blank( $p_action['owner_name'] ) ? 'not named' : $p_action['owner_name'] ) . "\n"
-		. 'Due: ' . ( (int)$p_action['due_date'] > 0 ? date( 'j F Y', (int)$p_action['due_date'] ) : 'not set' );
+		. 'Due: ' . ( (int)$p_action['due_date'] > 0 ? date( 'j F Y', (int)$p_action['due_date'] ) : 'not set' )
+		. ( isset( $p_action['joined'] )
+			? "\n\n" . $p_action['owner_name'] . ' was added to project ' . $p_action['joined']
+				. ' to own this action (approval of the minutes).'
+			: '' );
 }
 
 /**

@@ -1045,8 +1045,25 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
+# ── Step 63: meeting_series ─────────────────────────────────────────────────
+# Recurrence of a meeting series, keyed by the series root (the first
+# meeting's id). scripts/meeting_schedule.php creates each next occurrence.
+# recurrence: weekly, fortnightly, monthly (same weekday of the month).
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'meeting_series' ) . " (
+	  `series_id` int(10) unsigned NOT NULL,
+	  `recurrence` varchar(16) NOT NULL DEFAULT '',
+	  `active` tinyint(4) NOT NULL DEFAULT 1,
+	  `updated_by` int(10) unsigned NOT NULL DEFAULT 0,
+	  `date_updated` int(10) unsigned NOT NULL DEFAULT 1,
+	  `last_run` int(10) unsigned NOT NULL DEFAULT 0,
+	  `last_error` varchar(255) NOT NULL DEFAULT '',
+	  PRIMARY KEY (`series_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
 # ── End of schema definition ─────────────────────────────────────────────────
-# $t_idx = 63 → database_version = 62 on a fresh install (real index; see the
+# $t_idx = 64 → database_version = 63 on a fresh install (real index; see the
 # NOTE above step 60).
 #
 # To add a new table: append a new step here and run the schema upgrade.
