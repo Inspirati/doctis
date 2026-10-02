@@ -79,6 +79,7 @@ require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
+require_api( 'meeting_api.php' );
 require_api( 'prepare_api.php' );
 require_api( 'print_dwg_api.php' );
 require_api( 'project_api.php' );
@@ -1040,6 +1041,12 @@ $t_can_upload_primary = !$t_force_readonly &&
 # Sync to HEAD is a privileged operation — restricted to manager level and above.
 $t_can_sync_to_head = !$t_force_readonly &&
 	access_has_dwg_level( MANAGER, $f_dwg_id );
+# Draft promotion follows the same rule, except that a meeting record's draft
+# minutes are approved by the meeting chair only (meeting_minutes_approve()).
+$t_dwg_meeting = meeting_get_by_dwg( $f_dwg_id );
+$t_can_promote_draft = $t_dwg_meeting === null
+	? $t_can_sync_to_head
+	: !$t_force_readonly && meeting_user_can_approve_minutes( $t_dwg_meeting, auth_get_current_user_id() );
 $t_git_head_info     = file_dwg_git_head_info( $f_dwg_id );
 $t_git_head_sha      = $t_git_head_info ? $t_git_head_info['sha']      : null;
 $t_git_head_date     = $t_git_head_info ? $t_git_head_info['date']     : null;
@@ -1147,7 +1154,7 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 					</td>
 					<td><?php echo $t_git_head_author !== null ? htmlspecialchars( $t_git_head_author ) : '<span class="small">—</span>' ?></td>
 					<td>
-<?php	if( $t_can_sync_to_head && $t_has_draft && !$t_draft_stale ): ?>
+<?php	if( $t_can_promote_draft && $t_has_draft && !$t_draft_stale ): ?>
 						<form method="post" action="dwg_primary_file_sync_head.php" style="display:inline">
 							<?php echo form_security_field( 'dwg_primary_file_sync_head' ) ?>
 							<input type="hidden" name="dwg_id" value="<?php echo $f_dwg_id ?>" />

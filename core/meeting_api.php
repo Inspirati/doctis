@@ -5,8 +5,10 @@
 # My Meetings page. Its agenda and minutes are two revisions of one Doctis
 # document stored in the meeting project's git repository:
 #
-#   agenda  → new document, primary file registered On Record
-#   minutes → replacement of the same file, staged as Draft for approval
+#   agenda  → new document, primary file registered On Record (issued at once)
+#   minutes → replacement of the same file, staged as Draft until the chair
+#             approves it (meeting_minutes_approve()), which promotes it to
+#             On Record and marks the meeting approved
 #
 # With no meeting project configured ($g_meeting_project_id = 0) the meeting
 # row and its invitees are still recorded, but no document is created.
@@ -73,6 +75,19 @@ function meeting_get( int $p_meeting_id ): ?array {
 function meeting_get_by_ref( string $p_doc_ref ): ?array {
 	db_param_push();
 	$t_result = db_query( 'SELECT * FROM {meeting} WHERE doc_ref=' . db_param(), array( $p_doc_ref ) );
+	$t_row = db_fetch_array( $t_result );
+	return $t_row === false ? null : $t_row;
+}
+
+/**
+ * Get the meeting whose record is stored in a document, if any.
+ *
+ * @param int $p_dwg_id
+ * @return array|null
+ */
+function meeting_get_by_dwg( int $p_dwg_id ): ?array {
+	db_param_push();
+	$t_result = db_query( 'SELECT * FROM {meeting} WHERE dwg_id=' . db_param(), array( $p_dwg_id ), 1 );
 	$t_row = db_fetch_array( $t_result );
 	return $t_row === false ? null : $t_row;
 }
@@ -183,6 +198,18 @@ function meeting_user_role( array $p_meeting, int $p_user_id ): string {
  */
 function meeting_user_can_write_minutes( array $p_meeting, int $p_user_id ): bool {
 	return in_array( meeting_user_role( $p_meeting, $p_user_id ), array( 'chair', 'minute_taker', 'organiser' ), true );
+}
+
+/**
+ * Whether the user may approve the minutes: only the chair, and only while
+ * the minutes are in draft.
+ *
+ * @param array $p_meeting Meeting row.
+ * @param int   $p_user_id
+ * @return bool
+ */
+function meeting_user_can_approve_minutes( array $p_meeting, int $p_user_id ): bool {
+	return (int)$p_meeting['status'] === MEETING_MINUTES && (int)$p_meeting['chair_id'] === $p_user_id;
 }
 
 /**
@@ -462,6 +489,30 @@ function meeting_store_record( array $p_meeting, string $p_content, int $p_user_
 		'git_sha'  => $t_stored['git_sha'],
 		'staged'   => $t_staged,
 	);
+}
+
+/**
+ * Chair approval of the minutes: promote the minutes Draft to On Record
+ * (when the meeting has a document) and mark the meeting approved.
+ *
+ * @param array  $p_meeting      Meeting row.
+ * @param int    $p_user_id      Acting user; must be the chair.
+ * @param string $p_expected_sha Draft revision the chair reviewed ('' = current).
+ * @return void
+ * @throws ClientException when the user is not the chair or nothing awaits approval.
+ */
+function meeting_minutes_approve( array $p_meeting, int $p_user_id, string $p_expected_sha = '' ): void {
+	if( !meeting_user_can_approve_minutes( $p_meeting, $p_user_id ) ) {
+		throw new ClientException(
+			'Only the chair can approve draft minutes for ' . $p_meeting['doc_ref'],
+			ERROR_ACCESS_DENIED
+		);
+	}
+	$t_dwg_id = (int)$p_meeting['dwg_id'];
+	if( $t_dwg_id > 0 && file_dwg_primary_draft_get( $t_dwg_id ) ) {
+		file_dwg_primary_sync_head( $t_dwg_id, $p_user_id, $p_expected_sha );
+	}
+	meeting_update( (int)$p_meeting['id'], array( 'status' => MEETING_APPROVED ) );
 }
 
 /**

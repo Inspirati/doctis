@@ -307,7 +307,8 @@ For minutes:
 
 Doctis may adjust the doc_id to keep it unique; use the one you were given for minutes.
 After the closing marker add a brief confirmation. For agendas: state which attendees
-will receive an email (by name). For minutes: state the minutes have been submitted for approval.
+will receive an email (by name). For minutes: state that they await approval by the chair
+(by name), who approves them under My Meetings.
 
 ---
 
@@ -512,6 +513,11 @@ function ai_assist_meeting_process_minutes( array $p_attrs, string $p_content, i
 	}
 	meeting_update( (int)$t_meeting['id'], [ 'status' => MEETING_MINUTES ] );
 	$p_result['saved'] = true;
+
+	# The chair approves the minutes; tell them when someone else wrote them.
+	if( (int)$t_meeting['chair_id'] !== $p_user_id ) {
+		ai_assist_send_minutes_approval_request( meeting_get( (int)$t_meeting['id'] ), $p_user_id );
+	}
 }
 
 /**
@@ -547,6 +553,38 @@ function ai_assist_meeting_id_list( string $p_list ): array {
 # ═══════════════════════════════════════════════════════════════════════════════
 # Email distribution
 # ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Ask the chair to approve draft minutes written by someone else.
+ *
+ * @param array $p_meeting Meeting row.
+ * @param int   $p_author_id User who wrote the minutes.
+ * @return void
+ */
+function ai_assist_send_minutes_approval_request( array $p_meeting, int $p_author_id ): void {
+	require_api( 'email_api.php' );
+
+	$t_chair_id = (int)$p_meeting['chair_id'];
+	if( $t_chair_id <= 0 || !user_exists( $t_chair_id ) ) {
+		return;
+	}
+	$t_email = user_get_field( $t_chair_id, 'email_secondary' );
+	if( is_blank( $t_email ) ) {
+		$t_email = user_get_email( $t_chair_id );
+	}
+	if( is_blank( $t_email ) ) {
+		return;
+	}
+
+	$t_body = meeting_user_display_name( $p_author_id ) . ' has written the minutes of '
+		. $p_meeting['doc_ref'] . ' — ' . $p_meeting['title'] . ".\n"
+		. "As chair, please review and approve them under My Meetings:\n"
+		. config_get_global( 'path' ) . 'my_view_meeting_page.php' . "\n";
+	if( (int)$p_meeting['dwg_id'] > 0 ) {
+		$t_body .= "\nDraft minutes: " . string_get_dwg_view_url_with_fqdn( (int)$p_meeting['dwg_id'] ) . "\n";
+	}
+	email_store( $t_email, '[Doctis] Minutes awaiting your approval: ' . $p_meeting['doc_ref'], $t_body );
+}
 
 /**
  * Email a meeting agenda to the meeting's invitees with Doctis accounts.

@@ -10,6 +10,7 @@ require_api( 'access_api.php' );
 require_api( 'access_dwg_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'config_api.php' );
+require_api( 'form_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'layout_api.php' );
@@ -129,6 +130,15 @@ function meeting_print_table( array $p_meetings, $p_ai_enabled ) {
 						<?php print_icon( 'fa-pencil', 'ace-icon' ); ?>
 						<?php echo lang_get( $t_status === MEETING_MINUTES ? 'meeting_revise_minutes' : 'meeting_write_minutes' ) ?>
 					</a>
+<?php	endif; ?>
+<?php	if( meeting_user_can_approve_minutes( $t_meeting, $t_user_id ) ): ?>
+					<form method="post" action="meeting_minutes_approve.php" style="display:inline">
+						<?php echo form_security_field( 'meeting_minutes_approve' ) ?>
+						<input type="hidden" name="meeting_id" value="<?php echo (int)$t_meeting['id'] ?>" />
+						<button type="submit" class="btn btn-minier btn-success btn-white btn-round" style="margin-top:4px">
+							<?php print_icon( 'fa-check', 'ace-icon' ); ?> <?php echo lang_get( 'meeting_approve_minutes' ) ?>
+						</button>
+					</form>
 <?php	endif; ?>
 				</td>
 			</tr>

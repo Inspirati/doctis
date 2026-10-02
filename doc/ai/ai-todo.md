@@ -56,15 +56,18 @@ the open design questions.
 - The running clone (`/var/www/html/doctis`) was switched to `ai-meeting` at
   `2c4c794e3` for testing (fetched from the working clone; nothing pushed).
   Its schema upgrade created `{meeting}` and `{meeting_invitee}`.
-- **Pending (owner action):** pull `03702a5fe`, set the recorded
+- **Pending (owner action):** pull the latest `ai-meeting`, set the recorded
   `database_version` from 63 to 61 (see §6, schema numbering), and add
   `$g_meeting_project_id = 1;` to the running `config_inc.php`. Until then,
   meetings are recorded without documents.
 - HCRQMS is Doctis project 1, repository 1 (`hcrqms-r1`, branch `dev`). The
   template `system/templates/Meeting-Agenda-and-Minutes.md` and a hand-made
   record `system/meetings/MIN-SYS-20260917.md` are in that repository.
-- There is one user (`administrator`, `meeting_invite = 0`), so the candidate
-  list is empty. Testing invitations needs sample users who have opted in.
+- Sample users were loaded on 2026-10-02 (`load_testing_user` only; the
+  script's example project would collide with HCRQMS as project 1). Seven of
+  them accept invitations: frodo, gandalf and legolas (all meetings), and
+  sam, pip, merry and gimli (department only). Passwords are blank except
+  `admin`'s.
 - SMTP is not configured, so agenda emails are only queued.
 
 No AI or meeting function has automated tests.
@@ -82,7 +85,9 @@ No AI or meeting function has automated tests.
 | [`ai_assist_help_api.php`](../../ai_assist_help_api.php) | `ai_assist_help_system_prompt()` |
 | [`ai_assist_meeting_api.php`](../../ai_assist_meeting_api.php) | Meeting prompt, focus meeting, marker processing (agenda/minutes), validation, agenda email |
 | [`core/meeting_api.php`](../../core/meeting_api.php) | Meeting entity: get/list/create/update, roles, attendance, status labels, template read, document storage (`meeting_store_record()`) |
-| [`my_view_meeting_page.php`](../../my_view_meeting_page.php) | My Meetings view |
+| [`my_view_meeting_page.php`](../../my_view_meeting_page.php) | My Meetings view (Write/Revise/Approve Minutes actions) |
+| [`meeting_minutes_approve.php`](../../meeting_minutes_approve.php) | POST handler: chair approves minutes |
+| [`dwg_primary_file_sync_head.php`](../../dwg_primary_file_sync_head.php), [`dwg_view_inc.php`](../../dwg_view_inc.php) | Promote-Draft is chair-only for meeting documents and marks the meeting approved |
 | [`js/ai_assist.js`](../../js/ai_assist.js) | Shared JS: `renderMarkdown()`, `createChatSession(cfg)` (with `cfg.extra` request fields), tab/hash handling |
 | [`js/ai_assist_help.js`](../../js/ai_assist_help.js) / [`js/ai_assist_meeting.js`](../../js/ai_assist_meeting.js) | Per-tab `createChatSession` instances; the meeting instance sends `meeting_id` |
 | [`core/html_api.php`](../../core/html_api.php) | `print_my_view_menu()`: My Meetings tab |
@@ -140,8 +145,17 @@ none), `chair_id`, `minute_taker_id`, `date_start` (Unix), `duration` (min),
 `{meeting_invitee}`: `meeting_id`, `user_id` (0 = guest without an account),
 `name`, `attendance` (0 invited, 10 attended, 20 apologies).
 
-Status: 10 agenda issued → 20 minutes in draft → 30 minutes approved; 90
-cancelled. **Nothing sets 30 or 90 yet** (§7).
+Status: 10 agenda issued → 20 minutes awaiting approval → 30 minutes
+approved; 90 cancelled (**nothing sets 90 yet**, §7).
+
+**Approval (owner decision, 2026-10-02):** an issued agenda goes On Record
+immediately. The **chair** approves the minutes with `meeting_minutes_approve()`,
+which promotes the minutes Draft to On Record and sets status 30. The chair
+can do this from the **Approve Minutes** button on My Meetings
+(`meeting_minutes_approve.php`) or from the document page's promote-Draft
+button. For meeting documents that button is shown to, and accepted from, the
+chair only, instead of managers. When someone other than the chair saves the
+minutes, the chair is emailed an approval request.
 
 A user's role in a meeting is chair, minute taker, organiser (creator) or
 invitee. Chair, minute taker and organiser may write minutes.
@@ -191,13 +205,15 @@ an approved ref, as every first upload does.
 
 ### 4.5 Open design questions
 
-1. **Agenda status in Doctis.** The agenda becomes On Record immediately, with
-   a pinned approved ref. Is an issued agenda "approved", or should agendas
-   also go through review?
-2. **Minutes approval.** Minutes are staged as a Draft; promotion uses the
-   existing manager action on the document. Should approval also set the
-   meeting to status 30 (event hook), and who approves: the chair, or the
-   document's manager?
+Decided 2026-10-02: agendas go On Record at once; the chair approves minutes
+(§4.1). Still open:
+
+1. **Stray drafts on meeting documents.** A Draft uploaded by hand through the
+   document page while the meeting is still at "agenda issued" can no longer
+   be promoted by anyone, because only the chair may promote, and only minutes
+   awaiting approval. Should hand uploads to meeting documents be blocked, or
+   count as minutes?
+2. **Approval notice to invitees** once minutes are approved?
 3. **Departments.** HCRQMS is one project with `content/<department>`
    directories; only `system/meetings` exists so far. HCRQMS also has
    field-service, finance, safety and sales departments that are not
@@ -273,7 +289,7 @@ Set in `config/config_inc.php` (never committed).
   meeting rows, the document (`Meetings` category, path, On Record), the
   minutes Draft, commit authorship, the push to the bare repository, and the
   queued emails. Then record the procedure in `doc/TESTING.md`.
-- [ ] Decide §4.5 questions 1–2, then hook draft promotion to set status 30.
+- [x] Chair approval of minutes (promote Draft, status 30); approval request email to the chair
 - [ ] Department configuration review (§4.5 question 3).
 
 ### Later

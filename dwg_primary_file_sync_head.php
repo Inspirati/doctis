@@ -13,6 +13,7 @@ require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
+require_api( 'meeting_api.php' );
 require_api( 'print_api.php' );
 
 auth_ensure_user_authenticated();
@@ -21,8 +22,16 @@ form_security_validate( 'dwg_primary_file_sync_head' );
 $f_dwg_id = gpc_get_int( 'dwg_id' );
 $f_draft_sha = gpc_get_string( 'draft_sha', '' );
 
-# Draft promotion is a privileged operation — manager level or above required.
-access_ensure_dwg_level( MANAGER, $f_dwg_id );
+# Draft promotion is a privileged operation — manager level or above required,
+# except for a meeting record, whose draft minutes only the chair approves.
+$t_meeting = meeting_get_by_dwg( $f_dwg_id );
+if( $t_meeting !== null ) {
+	if( !meeting_user_can_approve_minutes( $t_meeting, auth_get_current_user_id() ) ) {
+		access_denied();
+	}
+} else {
+	access_ensure_dwg_level( MANAGER, $f_dwg_id );
+}
 
 # Show a server-side confirmation page before performing the destructive sync.
 # helper_ensure_confirmed() re-posts all current params plus _confirmed=1 on
@@ -33,7 +42,11 @@ helper_ensure_confirmed(
 	lang_get( 'primary_document_sync_head_button' )
 );
 
-file_dwg_primary_sync_head( $f_dwg_id, auth_get_current_user_id(), $f_draft_sha );
+if( $t_meeting !== null ) {
+	meeting_minutes_approve( $t_meeting, auth_get_current_user_id(), $f_draft_sha );
+} else {
+	file_dwg_primary_sync_head( $f_dwg_id, auth_get_current_user_id(), $f_draft_sha );
+}
 
 form_security_purge( 'dwg_primary_file_sync_head' );
 
