@@ -2069,9 +2069,12 @@ function file_dwg_primary_draft_register( int $p_dwg_id, int $p_user_id, string 
  * @param int    $p_filesize      File size in bytes
  * @param string $p_file_type     MIME type
  * @param string $p_description   Optional revision note
+ * @param string $p_git_path      Optional repo-relative path for a document
+ *                                with no registered path yet (overrides the
+ *                                path template; ignored for replacements)
  * @return array{git_sha: string, git_path: string, filename: string, filesize: int}
  */
-function file_dwg_primary_add( $p_dwg_id, $p_user_id, $p_tmp_file, $p_filename, $p_filesize, $p_file_type, $p_description = '' ) {
+function file_dwg_primary_add( $p_dwg_id, $p_user_id, $p_tmp_file, $p_filename, $p_filesize, $p_file_type, $p_description = '', $p_git_path = '' ) {
 	$t_project_id = (int)dwg_get_field( $p_dwg_id, 'project_id' );
 	$t_backend    = file_dwg_get_storage_backend();
 
@@ -2087,6 +2090,14 @@ function file_dwg_primary_add( $p_dwg_id, $p_user_id, $p_tmp_file, $p_filename, 
 			throw new ClientException(
 				'Invalid document filename: ' . $p_filename,
 				ERROR_INVALID_FIELD_VALUE, array( 'filename' )
+			);
+		}
+	} else if( $p_git_path !== '' ) {
+		$t_git_path = file_dwg_git_path_sanitize( $p_git_path );
+		if( $t_git_path === false ) {
+			throw new ClientException(
+				'Invalid document path: ' . $p_git_path,
+				ERROR_INVALID_FIELD_VALUE, array( 'git_path' )
 			);
 		}
 	} else {

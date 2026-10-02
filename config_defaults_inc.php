@@ -5004,36 +5004,46 @@ $g_ai_model = 'claude-sonnet-4-6';
 $g_ai_assist_threshold = REPORTER;
 
 /**
- * Path to the HCRQMS repository on this server.
+ * Doctis project that holds meeting records (e.g. the HCRQMS project).
  *
- * Used by the Meeting Assistant (Meeting tab) to save generated meeting
- * records (agendas and minutes) to the HCRQMS document repository, and to
- * commit minutes to git.
+ * The Meeting Assistant stores each meeting's agenda as a new document in
+ * this project's git repository, and its minutes as a staged Draft revision
+ * of the same document. The meeting template is read from the same
+ * repository.
  *
- * Leave empty (the default) to operate in chat-only mode — the Meeting tab
- * still works as a conversational assistant but does not write any files.
+ * 0 (the default) = meetings are recorded and listed under My Meetings, and
+ * agendas are emailed, but no document is created.
  *
- * The web-server user (www-data) must have read+write access to this path.
- *
- * Example: '/var/www/hcrqms'
- *
- * @global string $g_hcrqms_repo_path
+ * @global int $g_meeting_project_id
  */
-$g_hcrqms_repo_path = '/var/git/doctis';
+$g_meeting_project_id = 0;
+
+/**
+ * Repository-relative path of the meeting template (TMPL-SYS-001) in the
+ * meeting project's repository.
+ *
+ * @global string $g_meeting_template_path
+ */
+$g_meeting_template_path = 'system/templates/Meeting-Agenda-and-Minutes.md';
+
+/**
+ * Category assigned to meeting record documents; created in the meeting
+ * project on first use.
+ *
+ * @global string $g_meeting_category
+ */
+$g_meeting_category = 'Meetings';
 
 /**
  * Meeting Assistant department configuration.
  *
- * Maps HCRQMS department codes to output subdirectories (relative to
- * $g_hcrqms_repo_path) and Doctis project IDs.
+ * Maps department codes to a meeting-record directory and, optionally, a
+ * project of their own.
  *
- * 'path'       — subdirectory within the HCRQMS repo where meeting records
- *                for this department are stored.
- * 'project_id' — Doctis project ID to register the meeting document under
- *                (0 = no Doctis registration for this department).
- *
- * Override in config/config_inc.php to set project_id values matching your
- * Doctis installation.
+ * 'path'       — directory, relative to the repository root, where meeting
+ *                records for this department are stored (created on first use).
+ * 'project_id' — Doctis project for this department's meeting records
+ *                (0 = use $g_meeting_project_id).
  *
  * @global array $g_ai_meeting_departments
  */

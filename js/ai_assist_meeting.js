@@ -11,8 +11,12 @@
 	var $meetingMessages = document.getElementById('ai-meeting-messages');
 	if( !$meetingMessages ) return;
 
+	/* Set when the page was opened to write minutes (?meeting_id=N) */
+	var meetingId = parseInt($meetingMessages.getAttribute('data-meeting-id'), 10) || 0;
+
 	window.AiAssist.createChatSession({
 		mode          : 'meeting',
+		extra         : meetingId > 0 ? { meeting_id: meetingId } : {},
 		systemPrompt  : '',   // server builds the meeting system prompt (ai_assist_meeting_api.php)
 		messages      : $meetingMessages,
 		input         : document.getElementById('ai-meeting-input'),

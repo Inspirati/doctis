@@ -2,13 +2,16 @@
 # Doctis — AI Assistant Meeting mode functions
 #
 # Contains all server-side logic specific to Meeting mode:
-#   ai_assist_get_meeting_candidates() — query user table for potential invitees
-#   ai_assist_meeting_system_prompt()  — build the meeting session system prompt
-#   ai_assist_process_meeting_document() — extract, save, email <<<MEETING_DOCUMENT>>> blocks
-#   ai_assist_send_agenda_emails()     — email agenda to matched invitees
-#   ai_assist_git()                    — run a git command in the HCRQMS repo
-#   ai_assist_git_commit_meeting()     — stage and commit a meeting record file
-#   ai_assist_register_meeting_doctis() — register committed record in Doctis
+#   ai_assist_get_meeting_candidates()   — users who accept meeting invitations
+#   ai_assist_meeting_focus()            — the meeting whose minutes are being written
+#   ai_assist_meeting_system_prompt()    — build the meeting session system prompt
+#   ai_assist_process_meeting_document() — act on a <<<MEETING_DOCUMENT>>> block
+#   ai_assist_send_agenda_emails()       — email the agenda to invitees
+#
+# Meetings, invitees and document storage are handled by core/meeting_api.php.
+# Everything the model supplies in a document marker is validated here: the
+# meeting reference is built server-side, and user IDs are accepted only from
+# the candidate list (agenda) or the meeting's invitees (minutes).
 #
 # Required by ai_assist_api.php via require_once.
 #
@@ -17,18 +20,19 @@
 # @license    GPL-2.0-or-later
 
 require_api( 'config_api.php' );
+require_api( 'meeting_api.php' );
 require_api( 'string_api.php' );
 require_api( 'user_api.php' );
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# Candidate invitees
+# Candidates and focus meeting
 # ═══════════════════════════════════════════════════════════════════════════════
 
 /**
  * Query the user table for potential meeting invitees (meeting_invite != 0).
- * Returns an array of rows: id, username, realname, position_title,
- * company, department, email, email_secondary, meeting_invite.
+ * Returns an array of rows keyed by user id: id, username, realname,
+ * position_title, company, department, email, email_secondary, meeting_invite.
  *
  * @return array
  */
@@ -43,9 +47,25 @@ function ai_assist_get_meeting_candidates(): array {
 
 	$t_candidates = [];
 	while( $t_row = db_fetch_array( $t_result ) ) {
-		$t_candidates[] = $t_row;
+		$t_candidates[(int)$t_row['id']] = $t_row;
 	}
 	return $t_candidates;
+}
+
+/**
+ * Resolve the meeting this conversation is minuting (the page's meeting_id
+ * parameter). Only meetings the user may write minutes for are returned.
+ *
+ * @param int $p_user_id
+ * @param int $p_meeting_id Requested meeting (0 = none).
+ * @return array|null Meeting row.
+ */
+function ai_assist_meeting_focus( int $p_user_id, int $p_meeting_id ): ?array {
+	$t_meeting = $p_meeting_id > 0 ? meeting_get( $p_meeting_id ) : null;
+	if( $t_meeting === null || !meeting_user_can_write_minutes( $t_meeting, $p_user_id ) ) {
+		return null;
+	}
+	return $t_meeting;
 }
 
 
@@ -60,14 +80,17 @@ function ai_assist_get_meeting_candidates(): array {
  * single natural-language opening message, then confirm and generate in
  * one or two more turns.  Total interaction: 2-4 exchanges.
  *
- * @param int $p_user_id  Current user ID.
+ * @param int        $p_user_id Current user ID.
+ * @param array|null $p_focus   Meeting being minuted, if any.
  * @return string
  */
-function ai_assist_meeting_system_prompt( int $p_user_id ): string {
+function ai_assist_meeting_system_prompt( int $p_user_id, ?array $p_focus = null ): string {
 	$t_departments = config_get_global( 'ai_meeting_departments' );
-	$t_repo_path   = config_get_global( 'hcrqms_repo_path' );
-	$t_repo_set    = !is_blank( $t_repo_path );
 	$t_candidates  = ai_assist_get_meeting_candidates();
+	$t_stored      = meeting_project_id() > 0;
+
+	# ── Today, in the user's timezone ────────────────────────────────────────
+	$t_today = date( 'l j F Y, H:i' ) . ' (' . date_default_timezone_get() . ')';
 
 	# ── Department list ──────────────────────────────────────────────────────
 	$t_dept_lines = [];
@@ -82,44 +105,56 @@ function ai_assist_meeting_system_prompt( int $p_user_id ): string {
 	} else {
 		$t_cand_lines = [];
 		foreach( $t_candidates as $t_c ) {
-			$t_notify_email = !is_blank( $t_c['email_secondary'] )
-				? $t_c['email_secondary']
-				: $t_c['email'];
 			$t_scope = $t_c['meeting_invite'] == 1 ? 'dept' : 'all';
 			$t_cand_lines[] = sprintf(
-				'id=%-3s | %-14s | %-28s | %-28s | %-18s | %-18s | %s (%s)',
+				'id=%-3s | %-14s | %-28s | %-28s | %-18s | %-18s | %s',
 				$t_c['id'],
 				$t_c['username'],
 				is_blank( $t_c['realname'] ) ? '—' : $t_c['realname'],
 				is_blank( $t_c['position_title'] ) ? '—' : $t_c['position_title'],
 				is_blank( $t_c['department'] ) ? '—' : $t_c['department'],
 				is_blank( $t_c['company'] ) ? '—' : $t_c['company'],
-				$t_notify_email,
 				$t_scope
 			);
 		}
 		$t_candidates_text = implode( "\n", $t_cand_lines );
 	}
 
-	# ── HCRQMS file-save instruction ─────────────────────────────────────────
-	$t_file_save_instruction = $t_repo_set
-		? 'When you generate the document wrap it in the MEETING_DOCUMENT markers
-below. Doctis will save the file and email it to matched invitees automatically.'
-		: 'HCRQMS repository is not configured on this server. You can still
-produce the document in the markers; the content will be shown to the user
-but will not be saved to a file automatically.';
+	# ── Meetings awaiting minutes ─────────────────────────────────────────────
+	$t_awaiting_lines = [];
+	foreach( meeting_get_awaiting_minutes( $p_user_id ) as $t_m ) {
+		$t_awaiting_lines[] = sprintf( 'meeting_id=%d | %s | %s | %s',
+			$t_m['id'], $t_m['doc_ref'], date( 'Y-m-d H:i', (int)$t_m['date_start'] ), $t_m['title'] );
+	}
+	$t_awaiting_text = empty( $t_awaiting_lines ) ? '(none)' : implode( "\n", $t_awaiting_lines );
 
-	# ── Meeting template ──────────────────────────────────────────────────────
-	$t_template_text = '';
-	if( $t_repo_set ) {
-		$t_tmpl_path = $t_repo_path . '/system/templates/Meeting-Agenda-and-Minutes.md';
-		if( is_readable( $t_tmpl_path ) ) {
-			$t_raw = file_get_contents( $t_tmpl_path );
-			$t_cut = strpos( $t_raw, '<!-- markdownlint-disable MD025 -->' );
-			$t_template_text = $t_cut !== false ? trim( substr( $t_raw, $t_cut ) ) : $t_raw;
+	# ── Focus meeting (minutes) ───────────────────────────────────────────────
+	$t_focus_section = '';
+	if( $p_focus !== null ) {
+		$t_inv_lines = [];
+		foreach( meeting_invitees_get( (int)$p_focus['id'] ) as $t_inv ) {
+			$t_inv_lines[] = ( (int)$t_inv['user_id'] > 0 ? 'id=' . $t_inv['user_id'] . ' | ' : 'guest | ' ) . $t_inv['name'];
 		}
+		$t_record = meeting_record_content( $p_focus );
+		$t_focus_section = "\n---\n\n## MEETING BEING MINUTED\n\n"
+			. 'meeting_id=' . $p_focus['id'] . ' | ' . $p_focus['doc_ref'] . ' | ' . $p_focus['title'] . "\n"
+			. 'Scheduled: ' . date( 'Y-m-d H:i', (int)$p_focus['date_start'] ) . ', ' . $p_focus['duration'] . " min\n"
+			. 'Chair: ' . meeting_user_display_name( (int)$p_focus['chair_id'] )
+			. ( (int)$p_focus['minute_taker_id'] > 0 ? ' | Minute taker: ' . meeting_user_display_name( (int)$p_focus['minute_taker_id'] ) : '' ) . "\n\n"
+			. "Invitees:\n" . ( empty( $t_inv_lines ) ? '(none recorded)' : implode( "\n", $t_inv_lines ) ) . "\n\n"
+			. ( is_blank( $t_record )
+				? "(The agenda document is not available; work from the details above.)\n"
+				: "Current record (the issued agenda):\n\n" . $t_record . "\n" )
+			. "\nThe user has opened this conversation to write the minutes for this meeting.\n"
+			. "Start by asking for attendance and apologies, then work through the agenda items.\n";
 	}
 
+	# ── Meeting template ──────────────────────────────────────────────────────
+	$t_template_text = meeting_template_get();
+	$t_cut = strpos( $t_template_text, '<!-- markdownlint-disable MD025 -->' );
+	if( $t_cut !== false ) {
+		$t_template_text = trim( substr( $t_template_text, $t_cut ) );
+	}
 	$t_template_section = !is_blank( $t_template_text )
 		? "## MEETING TEMPLATE (TMPL-SYS-001)\n\n" . $t_template_text
 		: "## MEETING TEMPLATE\n\n" .
@@ -127,18 +162,24 @@ but will not be saved to a file automatically.';
 		  "then sections: Invitees, Pre-Reading, Agenda, Attendees, Minutes, Decisions, " .
 		  "Actions, Next Meeting, Distribution, Approval.)";
 
+	# ── Storage instruction ───────────────────────────────────────────────────
+	$t_storage = $t_stored
+		? 'When you generate a document, Doctis records the meeting, stores the agenda as a controlled
+document, emails it to the matched invitees, and stages minutes as a draft revision for approval.'
+		: 'Doctis records the meeting and emails the agenda to matched invitees, but no meeting project
+is configured on this server, so no controlled document is created.';
+
 	# ── Current user name for chair field ────────────────────────────────────
-	$t_chair_name = user_get_field( $p_user_id, 'realname' );
-	if( is_blank( $t_chair_name ) ) {
-		$t_chair_name = user_get_field( $p_user_id, 'username' );
-	}
+	$t_chair_name = meeting_user_display_name( $p_user_id );
 
 	# ── Assemble prompt ───────────────────────────────────────────────────────
 	$t_prompt = <<<PROMPT
 You are the HC-Robotics Meeting Assistant embedded in Doctis. Your job is to
 produce QMS-compliant meeting agendas and minutes records with minimal friction.
 
-{$t_file_save_instruction}
+Today is {$t_today}. Resolve relative dates ("next Tuesday", "tomorrow") from this.
+
+{$t_storage}
 
 ---
 
@@ -151,7 +192,7 @@ Reserve questions only for information that is entirely absent AND genuinely req
 
 ---
 
-## SESSION FLOW
+## AGENDA SESSION FLOW
 
 ### Turn 1 — Extract, Infer, Draft (your first response)
 
@@ -193,6 +234,22 @@ If the user requests changes:
 
 ---
 
+## MINUTES SESSION FLOW
+
+Minutes are written for a meeting that already has an agenda. If a MEETING BEING
+MINUTED section appears below, use that meeting. Otherwise, if the user asks for
+minutes, pick the matching entry from MEETINGS AWAITING MINUTES (ask which one only
+if it is ambiguous); if none matches, say so.
+
+1. Ask who attended and who sent apologies (one question).
+2. For each agenda item, capture discussion, decisions and actions (owner and due date)
+   from what the user tells you. Accept rough notes and tidy them; do not interrogate.
+3. Present a concise summary of the minutes and ask: "Ready to save the minutes? Or let me know what to change."
+4. On confirmation, generate the minutes document: the full record following the template,
+   with `status: Minutes` in the frontmatter and the revision advanced by one letter.
+
+---
+
 ## NAME MATCHING
 
 Match names the user mentions to the CANDIDATE INVITEES list. Rules:
@@ -200,8 +257,8 @@ Match names the user mentions to the CANDIDATE INVITEES list. Rules:
 - Surname match: "Wright" matches realname containing "Wright"
 - Username match: "sanjay" matches username "sanjay"
 - Partial / fuzzy match is acceptable — accuracy is the user's responsibility to correct
-- If a name has no match in the list, include them as a plain-text attendee (no user_id)
-- Collect matched IDs for the invitee_ids attribute; these drive email distribution
+- If a name has no match in the list, include them as a guest (plain-text name, no id)
+- Matched ids drive email distribution; guests receive no email
 
 ---
 
@@ -235,20 +292,22 @@ Adjust proportionally for other durations.
 
 ## DOCUMENT GENERATION
 
-When generating the document, wrap it in these exact markers:
+When generating a document, wrap it in these exact markers. Attribute values must not
+contain double quotes.
 
 For an agenda:
-<<<MEETING_DOCUMENT type="agenda" doc_id="MIN-{dept}-{YYYYMMDD}" dept="{dept}" title="{title}" invitee_ids="{comma-separated matched user IDs}">>>
+<<<MEETING_DOCUMENT type="agenda" doc_id="MIN-{dept}-{YYYYMMDD}" dept="{dept}" title="{title}" date="{YYYY-MM-DD}" time="{HH:MM}" duration="{minutes}" location="{location}" minute_taker_id="{id or empty}" invitee_ids="{comma-separated matched ids}" guests="{semicolon-separated unmatched names}">>>
 [complete Markdown document following TMPL-SYS-001]
 <<<END_MEETING_DOCUMENT>>>
 
-For completed minutes:
-<<<MEETING_DOCUMENT type="minutes" doc_id="MIN-{dept}-{YYYYMMDD}" dept="{dept}" title="{title}" invitee_ids="{comma-separated matched user IDs}">>>
+For minutes:
+<<<MEETING_DOCUMENT type="minutes" meeting_id="{meeting_id}" attended_ids="{comma-separated ids}" apology_ids="{comma-separated ids}">>>
 [complete Markdown document following TMPL-SYS-001]
 <<<END_MEETING_DOCUMENT>>>
 
+Doctis may adjust the doc_id to keep it unique; use the one you were given for minutes.
 After the closing marker add a brief confirmation. For agendas: state which attendees
-will receive an email (by name). For minutes: state the record has been saved and committed.
+will receive an email (by name). For minutes: state the minutes have been submitted for approval.
 
 ---
 
@@ -261,11 +320,16 @@ will receive an email (by name). For minutes: state the record has been saved an
 ## CANDIDATE INVITEES (from Doctis user database, meeting_invite ≠ 0)
 
 Match names from the user's message against this list. Use the id values in invitee_ids.
-The email column shows the address that will be used (email_secondary if set, otherwise email).
 Scope: dept = departmental meetings only, all = all meetings.
 
 {$t_candidates_text}
 
+---
+
+## MEETINGS AWAITING MINUTES (for this user)
+
+{$t_awaiting_text}
+{$t_focus_section}
 ---
 
 {$t_template_section}
@@ -280,13 +344,12 @@ PROMPT;
 # ═══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Scan the AI reply for <<<MEETING_DOCUMENT ...>>> markers.
- * If found: extract the Markdown, save to HCRQMS, email invitees for agendas,
- * git-commit for minutes.
- * Returns an array with save results (and 'stripped_reply' key), or null.
+ * Scan the AI reply for a <<<MEETING_DOCUMENT ...>>> block and act on it.
+ * Returns the processing result (with a 'stripped_reply' key), or null when
+ * the reply contains no document.
  *
- * @param string $p_reply    Raw AI reply text.
- * @param int    $p_user_id  Current user (for git commit attribution).
+ * @param string $p_reply   Raw AI reply text.
+ * @param int    $p_user_id Current user.
  * @return array|null
  */
 function ai_assist_process_meeting_document( string $p_reply, int $p_user_id ): ?array {
@@ -295,117 +358,189 @@ function ai_assist_process_meeting_document( string $p_reply, int $p_user_id ): 
 		return null;
 	}
 
-	# Parse attributes from the opening tag
-	$t_attr_str = $t_matches[1];
-	preg_match_all( '/(\w+)="([^"]*)"/', $t_attr_str, $t_attr_pairs );
-	$t_attrs = array_combine( $t_attr_pairs[1], $t_attr_pairs[2] );
-
-	$t_type          = $t_attrs['type']         ?? 'agenda';
-	$t_doc_id        = $t_attrs['doc_id']        ?? '';
-	$t_dept          = $t_attrs['dept']          ?? '';
-	$t_title         = $t_attrs['title']         ?? $t_doc_id;
-	$t_invitee_ids   = $t_attrs['invitee_ids']   ?? '';
-
-	$t_content  = trim( $t_matches[2] );
-	$t_stripped = trim( preg_replace( $t_pattern, '', $p_reply ) );
+	preg_match_all( '/(\w+)="([^"]*)"/', $t_matches[1], $t_attr_pairs );
+	$t_attrs   = array_combine( $t_attr_pairs[1], $t_attr_pairs[2] );
+	$t_type    = ( $t_attrs['type'] ?? 'agenda' ) === 'minutes' ? 'minutes' : 'agenda';
+	$t_content = trim( $t_matches[2] );
 
 	$t_result = [
 		'type'           => $t_type,
-		'doc_id'         => $t_doc_id,
-		'stripped_reply' => $t_stripped,
+		'stripped_reply' => trim( preg_replace( $t_pattern, '', $p_reply ) ),
+		'meeting_id'     => null,
+		'doc_id'         => null,
 		'saved'          => false,
-		'file_path'      => null,
-		'committed'      => false,
-		'commit_sha'     => null,
+		'stored'         => false,
+		'staged'         => false,
 		'dwg_id'         => null,
+		'file_path'      => null,
+		'commit_sha'     => null,
 		'emails_sent'    => [],
 		'error'          => null,
 	];
 
-	$t_repo_path = config_get_global( 'hcrqms_repo_path' );
-	if( is_blank( $t_repo_path ) ) {
-		# No repo configured — still email if invitees given
-		if( $t_type === 'agenda' && !is_blank( $t_invitee_ids ) ) {
-			$t_result['emails_sent'] = ai_assist_send_agenda_emails(
-				$t_invitee_ids, $t_doc_id, $t_title, $t_content
-			);
+	try {
+		if( $t_type === 'agenda' ) {
+			ai_assist_meeting_process_agenda( $t_attrs, $t_content, $p_user_id, $t_result );
+		} else {
+			ai_assist_meeting_process_minutes( $t_attrs, $t_content, $p_user_id, $t_result );
 		}
-		return $t_result;
-	}
-
-	# Determine output subdirectory from department config
-	$t_departments = config_get_global( 'ai_meeting_departments' );
-	$t_dept_config = $t_departments[ $t_dept ] ?? null;
-	if( $t_dept_config === null ) {
-		$t_result['error'] = 'Unknown department code: ' . $t_dept;
-		error_log( 'ai_assist_meeting_api: unknown dept "' . $t_dept . '" in meeting document' );
-		return $t_result;
-	}
-
-	$t_rel_dir  = rtrim( $t_dept_config['path'], '/' );
-	$t_filename = $t_doc_id . '.md';
-	$t_rel_path = $t_rel_dir . '/' . $t_filename;
-	$t_abs_dir  = rtrim( $t_repo_path, '/' ) . '/' . $t_rel_dir;
-	$t_abs_path = $t_abs_dir . '/' . $t_filename;
-
-	if( !is_dir( $t_abs_dir ) ) {
-		if( !mkdir( $t_abs_dir, 0775, true ) ) {
-			$t_result['error'] = 'Could not create output directory.';
-			error_log( 'ai_assist_meeting_api: mkdir failed for ' . $t_abs_dir );
-			return $t_result;
-		}
-	}
-
-	if( file_put_contents( $t_abs_path, $t_content ) === false ) {
-		$t_result['error'] = 'Could not write meeting record file.';
-		error_log( 'ai_assist_meeting_api: file_put_contents failed for ' . $t_abs_path );
-		return $t_result;
-	}
-
-	$t_result['saved']     = true;
-	$t_result['file_path'] = $t_rel_path;
-
-	# ── Agenda: email invitees; no git commit (draft) ─────────────────────
-	if( $t_type === 'agenda' ) {
-		if( !is_blank( $t_invitee_ids ) ) {
-			$t_result['emails_sent'] = ai_assist_send_agenda_emails(
-				$t_invitee_ids, $t_doc_id, $t_title, $t_content
-			);
-		}
-		return $t_result;
-	}
-
-	# ── Minutes: git add + commit ─────────────────────────────────────────
-	$t_user_name  = user_get_field( $p_user_id, 'realname' );
-	$t_user_email = user_get_field( $p_user_id, 'email' );
-	if( is_blank( $t_user_name ) ) {
-		$t_user_name = user_get_field( $p_user_id, 'username' );
-	}
-
-	$t_commit_msg = 'Add ' . $t_doc_id . ': ' . $t_title . ' — Draft Minutes';
-	$t_sha        = ai_assist_git_commit_meeting(
-		$t_repo_path, $t_rel_path, $t_commit_msg, $t_user_name, $t_user_email
-	);
-
-	if( $t_sha !== false ) {
-		$t_result['committed']  = true;
-		$t_result['commit_sha'] = $t_sha;
-	} else {
-		$t_result['error'] = 'File saved but git commit failed — check Apache error log.';
-	}
-
-	# Doctis document registration (department must have project_id)
-	$t_project_id = (int)( $t_dept_config['project_id'] ?? 0 );
-	if( $t_project_id > 0 && $t_result['committed'] ) {
-		$t_dwg_id = ai_assist_register_meeting_doctis(
-			$t_project_id, $t_doc_id, $t_title, $t_rel_path, $p_user_id
-		);
-		if( $t_dwg_id !== null ) {
-			$t_result['dwg_id'] = $t_dwg_id;
-		}
+	} catch( Throwable $e ) {
+		$t_result['error'] = $e->getMessage();
+		error_log( 'ai_assist_meeting_api: ' . get_class( $e ) . ': ' . $e->getMessage() );
 	}
 
 	return $t_result;
+}
+
+/**
+ * Agenda: record the meeting, store the document, email invitees.
+ *
+ * @param array  $p_attrs   Marker attributes.
+ * @param string $p_content Markdown document.
+ * @param int    $p_user_id
+ * @param array  $p_result  Result array, updated in place.
+ * @return void
+ */
+function ai_assist_meeting_process_agenda( array $p_attrs, string $p_content, int $p_user_id, array &$p_result ): void {
+	$t_departments = config_get_global( 'ai_meeting_departments' );
+	$t_dept = strtoupper( trim( $p_attrs['dept'] ?? '' ) );
+	if( !isset( $t_departments[$t_dept] ) ) {
+		throw new Exception( 'Unknown department code "' . $t_dept . '" — meeting not recorded.' );
+	}
+
+	$t_start = DateTime::createFromFormat( '!Y-m-d H:i',
+		trim( $p_attrs['date'] ?? '' ) . ' ' . trim( $p_attrs['time'] ?? '' ) );
+	if( $t_start === false ) {
+		throw new Exception( 'Meeting date/time missing or invalid — meeting not recorded.' );
+	}
+	$t_duration = (int)( $p_attrs['duration'] ?? 60 );
+	$t_duration = ( $t_duration >= 5 && $t_duration <= 600 ) ? $t_duration : 60;
+
+	# Only candidates may be invited or named minute taker.
+	$t_candidates = ai_assist_get_meeting_candidates();
+	$t_invitees = [];
+	foreach( ai_assist_meeting_id_list( $p_attrs['invitee_ids'] ?? '' ) as $t_id ) {
+		if( isset( $t_candidates[$t_id] ) ) {
+			$t_invitees[$t_id] = [ 'user_id' => $t_id, 'name' => meeting_user_display_name( $t_id ) ];
+		}
+	}
+	foreach( explode( ';', $p_attrs['guests'] ?? '' ) as $t_guest ) {
+		if( !is_blank( $t_guest ) ) {
+			$t_invitees[] = [ 'user_id' => 0, 'name' => trim( $t_guest ) ];
+		}
+	}
+	$t_minute_taker = (int)( $p_attrs['minute_taker_id'] ?? 0 );
+	if( !isset( $t_candidates[$t_minute_taker] ) ) {
+		$t_minute_taker = 0;
+	}
+
+	# The reference is built here, never taken from the model.
+	$t_ref = meeting_unique_ref( 'MIN-' . $t_dept . '-' . $t_start->format( 'Ymd' ) );
+	$t_model_ref = $p_attrs['doc_id'] ?? '';
+	if( $t_model_ref !== $t_ref && preg_match( '/^MIN-[A-Z]+-\d{8}(-\d+)?$/', $t_model_ref ) ) {
+		$p_content = str_replace( $t_model_ref, $t_ref, $p_content );
+	}
+
+	$t_meeting_id = meeting_create( [
+		'doc_ref'         => $t_ref,
+		'title'           => trim( $p_attrs['title'] ?? '' ) ?: $t_ref,
+		'department'      => $t_dept,
+		'chair_id'        => $p_user_id,
+		'minute_taker_id' => $t_minute_taker,
+		'date_start'      => $t_start->getTimestamp(),
+		'duration'        => $t_duration,
+		'location'        => trim( $p_attrs['location'] ?? '' ) ?: 'Microsoft Teams',
+		'created_by'      => $p_user_id,
+	], array_values( $t_invitees ) );
+
+	$p_result['meeting_id'] = $t_meeting_id;
+	$p_result['doc_id']     = $t_ref;
+	$p_result['saved']      = true;
+	$t_meeting = meeting_get( $t_meeting_id );
+
+	# Store as a controlled document when a meeting project is configured.
+	# A storage failure leaves the meeting recorded; the error is reported.
+	if( meeting_project_id( $t_dept ) > 0 ) {
+		try {
+			ai_assist_meeting_store( $t_meeting, $p_content, $p_user_id, 'Agenda', $p_result );
+			$t_meeting = meeting_get( $t_meeting_id );
+		} catch( Throwable $e ) {
+			$p_result['error'] = 'Meeting recorded, but the agenda document was not stored: ' . $e->getMessage();
+			error_log( 'ai_assist_meeting_api: agenda store failed: ' . $e->getMessage() );
+		}
+	}
+
+	$p_result['emails_sent'] = ai_assist_send_agenda_emails( $t_meeting, $p_content );
+}
+
+/**
+ * Minutes: store as a draft revision of the meeting document and record attendance.
+ *
+ * @param array  $p_attrs   Marker attributes.
+ * @param string $p_content Markdown document.
+ * @param int    $p_user_id
+ * @param array  $p_result  Result array, updated in place.
+ * @return void
+ */
+function ai_assist_meeting_process_minutes( array $p_attrs, string $p_content, int $p_user_id, array &$p_result ): void {
+	$t_meeting = meeting_get( (int)( $p_attrs['meeting_id'] ?? 0 ) );
+	if( $t_meeting === null ) {
+		throw new Exception( 'The minutes do not identify a recorded meeting — not saved.' );
+	}
+	if( !meeting_user_can_write_minutes( $t_meeting, $p_user_id ) ) {
+		throw new Exception( 'Only the chair, minute taker or organiser can record minutes for ' . $t_meeting['doc_ref'] . '.' );
+	}
+	if( !in_array( (int)$t_meeting['status'], [ MEETING_AGENDA, MEETING_MINUTES ], true ) ) {
+		throw new Exception( 'Minutes for ' . $t_meeting['doc_ref'] . ' are already approved or the meeting was cancelled.' );
+	}
+
+	$p_result['meeting_id'] = (int)$t_meeting['id'];
+	$p_result['doc_id']     = $t_meeting['doc_ref'];
+
+	# Attendance may name only the meeting's own invitees.
+	$t_invitee_ids = [];
+	foreach( meeting_invitees_get( (int)$t_meeting['id'] ) as $t_inv ) {
+		$t_invitee_ids[] = (int)$t_inv['user_id'];
+	}
+	meeting_set_attendance( (int)$t_meeting['id'],
+		array_intersect( ai_assist_meeting_id_list( $p_attrs['attended_ids'] ?? '' ), $t_invitee_ids ),
+		array_intersect( ai_assist_meeting_id_list( $p_attrs['apology_ids'] ?? '' ), $t_invitee_ids )
+	);
+
+	if( (int)$t_meeting['dwg_id'] > 0 || meeting_project_id( $t_meeting['department'] ) > 0 ) {
+		ai_assist_meeting_store( $t_meeting, $p_content, $p_user_id, 'Minutes', $p_result );
+	}
+	meeting_update( (int)$t_meeting['id'], [ 'status' => MEETING_MINUTES ] );
+	$p_result['saved'] = true;
+}
+
+/**
+ * Store the record and copy the outcome into the result.
+ *
+ * @param array  $p_meeting
+ * @param string $p_content
+ * @param int    $p_user_id
+ * @param string $p_description Revision note.
+ * @param array  $p_result      Result array, updated in place.
+ * @return void
+ */
+function ai_assist_meeting_store( array $p_meeting, string $p_content, int $p_user_id, string $p_description, array &$p_result ): void {
+	$t_stored = meeting_store_record( $p_meeting, $p_content, $p_user_id, $p_description );
+	$p_result['stored']     = true;
+	$p_result['staged']     = $t_stored['staged'];
+	$p_result['dwg_id']     = $t_stored['dwg_id'];
+	$p_result['file_path']  = $t_stored['git_path'];
+	$p_result['commit_sha'] = $t_stored['git_sha'];
+}
+
+/**
+ * Parse a comma-separated list of positive integer ids.
+ *
+ * @param string $p_list
+ * @return int[]
+ */
+function ai_assist_meeting_id_list( string $p_list ): array {
+	return array_values( array_unique( array_filter( array_map( 'intval', explode( ',', $p_list ) ) ) ) );
 }
 
 
@@ -414,155 +549,39 @@ function ai_assist_process_meeting_document( string $p_reply, int $p_user_id ): 
 # ═══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Email a meeting agenda to a list of Doctis user IDs.
+ * Email a meeting agenda to the meeting's invitees with Doctis accounts.
  *
  * Uses email_secondary if set (user's preferred notification address),
  * otherwise falls back to the primary email.
- * The agenda content is sent as the message body.
  *
- * @param string $p_invitee_ids_str  Comma-separated Doctis user IDs.
- * @param string $p_doc_id           HCRQMS document ID (e.g. MIN-ENG-20260620).
- * @param string $p_title            Meeting title.
- * @param string $p_content          Full Markdown agenda content.
+ * @param array  $p_meeting Meeting row.
+ * @param string $p_content Full Markdown agenda content.
  * @return array  Each element: ['name' => '...', 'email' => '...']
  */
-function ai_assist_send_agenda_emails(
-	string $p_invitee_ids_str,
-	string $p_doc_id,
-	string $p_title,
-	string $p_content
-): array {
+function ai_assist_send_agenda_emails( array $p_meeting, string $p_content ): array {
 	require_api( 'email_api.php' );
 
-	$t_subject = '[Doctis] Meeting Agenda: ' . $p_doc_id .
-		( !is_blank( $p_title ) ? ' — ' . $p_title : '' );
+	$t_subject = '[Doctis] Meeting Agenda: ' . $p_meeting['doc_ref'] . ' — ' . $p_meeting['title'];
+	$t_links = 'My Meetings: ' . config_get_global( 'path' ) . 'my_view_meeting_page.php' . "\n";
+	if( (int)$p_meeting['dwg_id'] > 0 ) {
+		$t_links .= 'Document: ' . string_get_dwg_view_url_with_fqdn( (int)$p_meeting['dwg_id'] ) . "\n";
+	}
+	$t_body = $t_links . "\n" . $p_content;
 
 	$t_sent = [];
-	$t_ids  = array_filter( array_map( 'intval', explode( ',', $p_invitee_ids_str ) ) );
+	foreach( meeting_invitees_get( (int)$p_meeting['id'] ) as $t_inv ) {
+		$t_uid = (int)$t_inv['user_id'];
+		if( $t_uid <= 0 || !user_exists( $t_uid ) ) continue;
 
-	foreach( $t_ids as $t_uid ) {
-		if( $t_uid <= 0 ) continue;
-		if( !user_exists( $t_uid ) ) continue;
-
-		# Use email_secondary if the user has set one
 		$t_email = user_get_field( $t_uid, 'email_secondary' );
 		if( is_blank( $t_email ) ) {
 			$t_email = user_get_email( $t_uid );
 		}
 		if( is_blank( $t_email ) ) continue;
 
-		$t_name = user_get_field( $t_uid, 'realname' );
-		if( is_blank( $t_name ) ) {
-			$t_name = user_get_field( $t_uid, 'username' );
-		}
-
-		email_store( $t_email, $t_subject, $p_content );
-		$t_sent[] = [ 'name' => $t_name, 'email' => $t_email ];
+		email_store( $t_email, $t_subject, $t_body );
+		$t_sent[] = [ 'name' => $t_inv['name'], 'email' => $t_email ];
 	}
 
 	return $t_sent;
-}
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# Git helpers
-# ═══════════════════════════════════════════════════════════════════════════════
-
-/**
- * Run a git command inside the HCRQMS repository, returning [exit_code, output].
- *
- * @param string $p_repo   Absolute path to the git repository.
- * @param string $p_cmd    Git subcommand and arguments (shell-unescaped).
- * @param string $p_env    Optional env-var prefix (e.g. 'GIT_AUTHOR_NAME=...').
- * @return array{int, string}
- */
-function ai_assist_git( string $p_repo, string $p_cmd, string $p_env = '' ): array {
-	$t_output = [];
-	$t_code   = 0;
-	$t_full   = 'cd ' . escapeshellarg( $p_repo ) . ' && ';
-	if( !is_blank( $p_env ) ) {
-		$t_full .= $p_env . ' ';
-	}
-	$t_full .= 'git ' . $p_cmd . ' 2>&1';
-	exec( $t_full, $t_output, $t_code );
-	return [ $t_code, implode( "\n", $t_output ) ];
-}
-
-/**
- * Git-add and commit a meeting record in the HCRQMS repository.
- *
- * @param string $p_repo         Absolute repository path.
- * @param string $p_rel_path     File path relative to repo root.
- * @param string $p_message      Commit message.
- * @param string $p_author_name  Committer's real name.
- * @param string $p_author_email Committer's email.
- * @return string|false  Commit SHA on success, false on failure.
- */
-function ai_assist_git_commit_meeting(
-	string $p_repo,
-	string $p_rel_path,
-	string $p_message,
-	string $p_author_name,
-	string $p_author_email
-): string|false {
-	# Ensure git can find HOME (same fix as GitFileStorageBackend::ensure_git_home)
-	if( function_exists( 'posix_getpwuid' ) && function_exists( 'posix_getuid' ) ) {
-		$t_pw = posix_getpwuid( posix_getuid() );
-		if( $t_pw && isset( $t_pw['dir'] ) ) {
-			putenv( 'HOME=' . $t_pw['dir'] );
-		}
-	}
-
-	$t_env = 'GIT_AUTHOR_NAME='     . escapeshellarg( $p_author_name ) .
-	         ' GIT_AUTHOR_EMAIL='   . escapeshellarg( $p_author_email ) .
-	         ' GIT_COMMITTER_NAME=' . escapeshellarg( $p_author_name ) .
-	         ' GIT_COMMITTER_EMAIL=' . escapeshellarg( $p_author_email );
-
-	[ $t_code, $t_out ] = ai_assist_git( $p_repo, 'add ' . escapeshellarg( $p_rel_path ) );
-	if( $t_code !== 0 ) {
-		error_log( 'ai_assist_meeting_api: git add failed: ' . $t_out );
-		return false;
-	}
-
-	[ $t_code, $t_out ] = ai_assist_git(
-		$p_repo, 'commit -m ' . escapeshellarg( $p_message ), $t_env
-	);
-	if( $t_code !== 0 && strpos( $t_out, 'nothing to commit' ) === false ) {
-		error_log( 'ai_assist_meeting_api: git commit failed: ' . $t_out );
-		return false;
-	}
-
-	[ $t_code, $t_out ] = ai_assist_git( $p_repo, 'rev-parse HEAD' );
-	if( $t_code !== 0 ) {
-		error_log( 'ai_assist_meeting_api: git rev-parse failed: ' . $t_out );
-		return false;
-	}
-
-	return trim( $t_out );
-}
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# Doctis registration
-# ═══════════════════════════════════════════════════════════════════════════════
-
-/**
- * Register a committed meeting record as a Doctis document.
- *
- * @param int    $p_project_id  Doctis project ID for the department.
- * @param string $p_doc_id      HCRQMS document ID (e.g. MIN-ENG-20260618).
- * @param string $p_title       Meeting title.
- * @param string $p_rel_path    File path relative to HCRQMS repo root.
- * @param int    $p_user_id     User performing the registration.
- * @return int|null  Created dwg_id, or null on failure.
- */
-function ai_assist_register_meeting_doctis(
-	int $p_project_id,
-	string $p_doc_id,
-	string $p_title,
-	string $p_rel_path,
-	int $p_user_id
-): ?int {
-	# TODO (Doctis registration): see doc/ai/ai-todo.md §4.4
-	return null;
 }

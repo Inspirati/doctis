@@ -83,6 +83,7 @@
 		var systemPrompt   = cfg.systemPrompt   || '';
 		var welcomeId      = cfg.welcomeId      || '';
 		var compactWelcome = cfg.compactWelcome || '';
+		var extra          = cfg.extra          || {};   // merged into chat/load requests
 
 		var chatHistory    = [];
 		var currentXhr     = null;
@@ -105,6 +106,18 @@
 			var len = $input.value.length;
 			$charCount.textContent = len > 3500 ? len + ' / 4000' : '';
 			$charCount.style.color = len > 3800 ? '#c00' : '#aaa';
+		}
+
+		function requestBody(fields) {
+			for( var key in extra ) {
+				if( Object.prototype.hasOwnProperty.call(extra, key) ) fields[key] = extra[key];
+			}
+			return JSON.stringify(fields);
+		}
+
+		function escapeHtml(text) {
+			return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+				.replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 		}
 
 		function updateTokenDisplay() {
@@ -185,15 +198,18 @@
 			var isError = !!doc.error;
 			var icon = isError
 				? '<i class="ace-icon fa fa-exclamation-triangle" style="color:#c66;margin-right:5px;"></i>'
-				: ( doc.committed
+				: ( doc.stored
 					? '<i class="ace-icon fa fa-check-circle" style="color:#2d9948;margin-right:5px;"></i>'
 					: '<i class="ace-icon fa fa-floppy-o" style="color:#5b9bd5;margin-right:5px;"></i>' );
 
-			var title = isError
-				? 'Partial save — ' + doc.error
-				: ( doc.type === 'minutes'
-					? ( doc.committed ? 'Minutes committed to HCRQMS' : 'Minutes saved to HCRQMS' )
-					: 'Agenda saved to HCRQMS' );
+			var title;
+			if( isError ) {
+				title = ( doc.saved ? 'Partly saved — ' : 'Not saved — ' ) + escapeHtml(doc.error);
+			} else if( doc.type === 'minutes' ) {
+				title = doc.stored ? 'Minutes submitted as a draft revision for approval' : 'Minutes recorded';
+			} else {
+				title = doc.stored ? 'Meeting recorded and agenda stored as a document' : 'Meeting recorded';
+			}
 
 			if( isError ) {
 				card.style.background   = '#fff8f0';
@@ -202,12 +218,13 @@
 			}
 
 			var detail = '';
-			if( doc.doc_id )     detail += '<strong>' + doc.doc_id + '</strong>';
-			if( doc.file_path )  detail += ' &mdash; <code style="font-size:11px">' + doc.file_path + '</code>';
-			if( doc.commit_sha ) detail += '<br><span style="color:#888;font-size:11px;">Commit: ' + doc.commit_sha.substring(0,8) + '</span>';
-			if( doc.dwg_id )     detail += '<br><span style="color:#888;font-size:11px;">Registered in Doctis as document #' + doc.dwg_id + '</span>';
+			if( doc.doc_id )     detail += '<strong>' + escapeHtml(doc.doc_id) + '</strong>';
+			if( doc.file_path )  detail += ' &mdash; <code style="font-size:11px">' + escapeHtml(doc.file_path) + '</code>';
+			if( doc.commit_sha ) detail += '<br><span style="color:#888;font-size:11px;">Commit: ' + escapeHtml(doc.commit_sha.substring(0,8)) + '</span>';
+			if( doc.dwg_id )     detail += '<br><span style="font-size:11px;"><a href="dwg_view.php?id=' + parseInt(doc.dwg_id, 10) + '">Document #' + parseInt(doc.dwg_id, 10) + '</a></span>';
+			if( doc.meeting_id ) detail += ' <span style="font-size:11px;"><a href="my_view_meeting_page.php">My Meetings</a></span>';
 			if( doc.emails_sent && doc.emails_sent.length > 0 ) {
-				var names = doc.emails_sent.map(function(r) { return r.name || r.email; }).join(', ');
+				var names = doc.emails_sent.map(function(r) { return escapeHtml(r.name || r.email); }).join(', ');
 				detail += '<br><span style="color:#2d6a4f;font-size:11px;">' +
 					'<i class="ace-icon fa fa-envelope-o"></i> Agenda emailed to: ' + names + '</span>';
 			}
@@ -293,7 +310,7 @@
 			setBusy(true);
 			setStatus('Thinking\u2026');
 
-			var payload = JSON.stringify({
+			var payload = requestBody({
 				action : 'chat',
 				mode   : mode,
 				history: chatHistory
@@ -415,7 +432,7 @@
 				}
 			};
 
-			xhr.send(JSON.stringify({ action: 'load', mode: mode }));
+			xhr.send(requestBody({ action: 'load', mode: mode }));
 		}
 
 		/* ── Event listeners ──────────────────────────────────────────────── */

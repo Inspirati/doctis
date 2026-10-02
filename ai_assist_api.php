@@ -17,6 +17,7 @@
 #   action  string   'chat' | 'load' | 'clear'
 #   mode    string   'help' | 'meeting' | 'sop' | 'other'
 #   history array    Full message history (chat action only)
+#   meeting_id int   Meeting whose minutes are being written (meeting mode, optional)
 #
 # Response body (JSON):
 #   reply          string|null    Assistant reply (chat action on success)
@@ -74,7 +75,7 @@ $t_user_id = auth_get_current_user_id();
 # ── Dispatch ──────────────────────────────────────────────────────────────────
 
 if( $t_action === 'load' ) {
-	ai_assist_action_load( $t_user_id, $t_mode );
+	ai_assist_action_load( $t_user_id, $t_mode, (int)( $t_input['meeting_id'] ?? 0 ) );
 }
 
 if( $t_action === 'clear' ) {
@@ -124,14 +125,16 @@ if( empty( $t_messages ) ) {
 $t_model      = config_get_global( 'ai_model' );
 $t_max_tokens = 2048;
 $t_system     = '';
+$t_focus      = null;
 
 switch( $t_mode ) {
 	case 'help':
 		$t_system = ai_assist_help_system_prompt( $t_user_id );
 		break;
 	case 'meeting':
-		$t_system     = ai_assist_meeting_system_prompt( $t_user_id );
-		$t_max_tokens = 4096;   # Meeting documents can be long
+		$t_focus = ai_assist_meeting_focus( $t_user_id, (int)( $t_input['meeting_id'] ?? 0 ) );
+		$t_system     = ai_assist_meeting_system_prompt( $t_user_id, $t_focus );
+		$t_max_tokens = 8192;   # Full minutes records can be long
 		break;
 }
 
@@ -217,13 +220,21 @@ if( $t_mode === 'meeting' ) {
 $t_messages[] = [ 'role' => 'assistant', 'content' => $t_reply ];
 ai_assist_session_save( $t_user_id, $t_mode, $t_messages );
 
-# If a meeting document was saved, also update the doc_id in the session row.
+# Remember which meeting this conversation concerns; 'load' uses it to start
+# afresh when the page is opened for a different meeting.
 if( $t_saved_document !== null && isset( $t_saved_document['doc_id'] ) ) {
 	ai_assist_session_update_doc_id(
 		$t_user_id,
 		$t_mode,
 		$t_saved_document['doc_id'],
 		$t_saved_document['dwg_id'] ?? null
+	);
+} else if( $t_focus !== null ) {
+	ai_assist_session_update_doc_id(
+		$t_user_id,
+		$t_mode,
+		$t_focus['doc_ref'],
+		(int)$t_focus['dwg_id'] ?: null
 	);
 }
 
@@ -248,10 +259,11 @@ exit;
 
 /**
  * Load and return the stored conversation history for user+mode.
- * Returns {history: [...]} on success; {history: null} if no session exists.
+ * Returns {history: [...]} on success; {history: null} if no session exists,
+ * or if the page was opened for a meeting other than the stored session's.
  * Exits.
  */
-function ai_assist_action_load( int $p_user_id, string $p_mode ): never {
+function ai_assist_action_load( int $p_user_id, string $p_mode, int $p_meeting_id = 0 ): never {
 	$t_table  = db_get_table( 'ai_sessions' );
 	$t_result = db_query(
 		'SELECT history, doc_id, dwg_id FROM ' . $t_table .
@@ -271,6 +283,13 @@ function ai_assist_action_load( int $p_user_id, string $p_mode ): never {
 		}
 		$t_doc_id = $t_row['doc_id'] ?? null;
 		$t_dwg_id = isset( $t_row['dwg_id'] ) ? (int)$t_row['dwg_id'] : null;
+	}
+
+	if( $p_meeting_id > 0 ) {
+		$t_focus = ai_assist_meeting_focus( $p_user_id, $p_meeting_id );
+		if( $t_focus !== null && $t_focus['doc_ref'] !== $t_doc_id ) {
+			$t_history = null;
+		}
 	}
 
 	header( 'Content-Type: application/json; charset=utf-8' );

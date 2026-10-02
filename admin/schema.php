@@ -970,8 +970,59 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
+# The native test database records version 59 although no definition beyond
+# step 57 was ever committed. Reserve those numbers (as for 55–56 above) so the
+# meeting tables below are applied by an upgrade rather than skipped.
+$g_upgrade[$t_idx++] = null; # 58
+$g_upgrade[$t_idx++] = null; # 59
+
+# ── Step 60: meeting ────────────────────────────────────────────────────────
+# One row per meeting planned through the Meeting Assistant. The agenda and
+# minutes are revisions of one Doctis document (dwg_id) when a meeting project
+# is configured; otherwise dwg_id stays 0 and only this record exists.
+# status: 10 agenda issued, 20 minutes drafted, 30 minutes approved, 90 cancelled.
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'meeting' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `doc_ref` varchar(80) NOT NULL DEFAULT '',
+	  `title` varchar(255) NOT NULL DEFAULT '',
+	  `department` varchar(16) NOT NULL DEFAULT '',
+	  `project_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `dwg_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `git_path` varchar(1024) NOT NULL DEFAULT '',
+	  `chair_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `minute_taker_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `date_start` int(10) unsigned NOT NULL DEFAULT 1,
+	  `duration` smallint(5) unsigned NOT NULL DEFAULT 60,
+	  `location` varchar(128) NOT NULL DEFAULT '',
+	  `status` smallint(6) NOT NULL DEFAULT 10,
+	  `created_by` int(10) unsigned NOT NULL DEFAULT 0,
+	  `date_created` int(10) unsigned NOT NULL DEFAULT 1,
+	  `date_updated` int(10) unsigned NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`id`),
+	  UNIQUE KEY `idx_meeting_doc_ref` (`doc_ref`),
+	  KEY `idx_meeting_date_start` (`date_start`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 61: meeting_invitee ────────────────────────────────────────────────
+# user_id 0 = named attendee with no Doctis account.
+# attendance: 0 invited, 10 attended, 20 apologies.
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'meeting_invitee' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `meeting_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `name` varchar(128) NOT NULL DEFAULT '',
+	  `attendance` smallint(6) NOT NULL DEFAULT 0,
+	  PRIMARY KEY (`id`),
+	  KEY `idx_meeting_invitee_meeting` (`meeting_id`),
+	  KEY `idx_meeting_invitee_user` (`user_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
 # ── End of schema definition ─────────────────────────────────────────────────
-# $t_idx = 58 → database_version = 57 on a fresh install.
+# $t_idx = 62 → database_version = 61 on a fresh install.
 #
 # To add a new table: append a new step here and run the schema upgrade.
 # Do NOT insert steps between existing entries — always append.
