@@ -450,7 +450,7 @@
 		if( $clearBtn ) $clearBtn.addEventListener('click', clearConversation);
 
 		$input.addEventListener('keydown', function(e) {
-			if( e.keyCode === 13 && (e.ctrlKey || e.shiftKey) ) {
+			if( (e.key === 'Enter' || e.keyCode === 13) && (e.ctrlKey || e.shiftKey) ) {
 				e.preventDefault();
 				sendMessage();
 			}
