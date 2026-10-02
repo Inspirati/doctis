@@ -970,11 +970,9 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
-# The native test database records version 59 although no definition beyond
-# step 57 was ever committed. Reserve those numbers (as for 55–56 above) so the
-# meeting tables below are applied by an upgrade rather than skipped.
-$g_upgrade[$t_idx++] = null; # 58
-$g_upgrade[$t_idx++] = null; # 59
+# NOTE: the "Step N" labels above run two behind the real $g_upgrade index
+# (dwg_primary_draft, labelled 57, is index 59 = database_version 59). The
+# labels below use the real index.
 
 # ── Step 60: meeting ────────────────────────────────────────────────────────
 # One row per meeting planned through the Meeting Assistant. The agenda and
@@ -1022,7 +1020,8 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 );
 
 # ── End of schema definition ─────────────────────────────────────────────────
-# $t_idx = 62 → database_version = 61 on a fresh install.
+# $t_idx = 62 → database_version = 61 on a fresh install (real index; see the
+# NOTE above step 60).
 #
 # To add a new table: append a new step here and run the schema upgrade.
 # Do NOT insert steps between existing entries — always append.
