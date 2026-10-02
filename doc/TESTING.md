@@ -343,6 +343,32 @@ Runs: 2026-10-02 on the native VM. First run (steps 1, 3, 4) passed after three
 fixes (missing frontmatter, private meeting project refusing the minute taker,
 approval stamp). Second run (all six steps) passed without changes.
 
+**Recurring meetings** (the scheduler makes one API call per occurrence and
+emails the invitees):
+
+```bash
+# 7. Make a series repeat: meeting page → Repeats → Weekly (meeting_recurrence.php)
+# 8. Evaluate and run the scheduler as the web server user, simulating a date
+#    within $g_meeting_schedule_lead_days of the next occurrence
+cd /var/www/html/doctis
+sudo -u www-data php scripts/meeting_schedule.php --dry-run --now="YYYY-MM-DD HH:MM"
+sudo -u www-data php scripts/meeting_schedule.php --series=<root id> --now="YYYY-MM-DD HH:MM"
+sudo -u www-data php scripts/meeting_schedule.php --now="YYYY-MM-DD HH:MM"   # again: nothing due
+# 9. Stop the series (Repeats → Does not repeat) so cron does not keep scheduling it
+```
+
+| After | Expect |
+|-------|--------|
+| 7 | `{meeting_series}` row (`recurrence`, `active=1`); meeting page shows the rule |
+| 8 | dry run lists the series only once the lead window is reached; the real run creates the next meeting in the series (same invitees, minute taker, department, duration, location; next weekday occurrence), its document, agenda emails with `invite.ics`, a "Next meeting scheduled" email to the chair; the agenda approves the previous minutes and lists the open actions; `last_run` set, `last_error` empty; a second run creates nothing |
+| 9 | no active `{meeting_series}` rows |
+
+Also check visibility: a global manager who is not a participant sees nothing
+under My meetings, everything under All meetings, and only Calendar on a
+meeting page. A reporter who is not a participant is refused the meeting page.
+
+Run 2026-10-02: series 27 scheduled MIN-QA-20261103 as of 31 Oct; all checks passed.
+
 ---
 
 ## 8. Clean-room database and git-store reset

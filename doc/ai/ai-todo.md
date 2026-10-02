@@ -1,7 +1,7 @@
 # Doctis AI Assistant — Status and To-Do
 
 **Branch:** `ai-meeting` (meeting work in progress; `dev` holds the June 2026 state)
-**Status as of:** 2026-10-02 — Help tab working; meeting lifecycle (plan → change/cancel → minutes with actions → chair approval → issues → next meeting in series) **passed end to end on the VM**; My Meetings and meeting pages; calendar invitations; SOP and Other tabs not started
+**Status as of:** 2026-10-02 — Help tab working; meeting lifecycle (plan → change/cancel → minutes with actions → chair approval → issues → next meeting in series → recurring meetings scheduled automatically) **passed end to end on the VM**; My Meetings (all meetings for managers) and meeting pages; calendar invitations; SOP and Other tabs not started. **Not to be merged into `dev` until a full suite of testing is completed** (owner).
 **Companion document:** [ai-engine.md](ai-engine.md) — the original concept plan and platform assessment (June 2026)
 
 This is a living document. It records what exists, how it works, what is
@@ -35,8 +35,9 @@ the open design questions.
 | **Help tab** | Working proof of concept: server-side system prompt, session persistence, token display, Markdown rendering, copy button. |
 | **Meeting tab** | Plans agendas (optionally as the next meeting of a series) and writes minutes with a structured action list. Records the meeting, stores the record as a Doctis document in the meeting project (agenda On Record, minutes as a Draft for the chair), and emails participants with calendar invitations. |
 | **Meeting page** | `meeting_view_page.php`: details, participants and attendance, actions and their issues, the series, and role-based actions: Write/Revise/Approve Minutes, Change Meeting (reschedule, location, minute taker, invitees), Cancel Meeting, Plan Next Meeting, Calendar download. |
-| **My Meetings** | My View tab listing upcoming and past meetings (cancelled ones struck through), linking to the meeting pages, with a Minutes due indicator. |
-| **Verified** | 2026-10-02, real API ([TESTING.md §7a](../TESTING.md)): MIN-QA-20261020 (meeting 27, document #130) was planned, rescheduled, minuted by frodo with three actions, and approved; this created issues #1–#3, assigned and linked to the approved minutes. MIN-QA-20261027 (meeting 28, document #131) was planned in the series from "same time next week", then cancelled. 17 meeting PHPUnit tests and the full `mantis` suite (233) pass. |
+| **My Meetings** | My View tab listing upcoming and past meetings (cancelled ones struck through, repeating ones marked), linking to the meeting pages, with a Minutes due indicator. Managers (`$g_meeting_view_all_threshold`) can switch to All meetings. |
+| **Recurring meetings** | A series repeats weekly, fortnightly or monthly (same weekday), set in the agenda conversation or on the meeting page. `scripts/meeting_schedule.php` (hourly cron) creates each next meeting 3 days ahead through the assistant. |
+| **Verified** | 2026-10-02, real API ([TESTING.md §7a](../TESTING.md)): MIN-QA-20261020 (meeting 27, document #130) was planned, rescheduled, minuted by frodo with three actions, and approved; this created issues #1–#3, assigned and linked to the approved minutes. MIN-QA-20261027 (meeting 28, document #131) was planned in the series from "same time next week", then cancelled. Series 27 was then set weekly and the scheduler, run as of 31 Oct, created MIN-QA-20261103 (meeting 45, document #132) with the same people and the open actions carried forward; a re-run created nothing. The manager/reporter visibility split was checked. 21 meeting PHPUnit tests and the full `mantis` suite (237) pass. |
 | **SOP tab** | "Coming soon" placeholder. |
 | **Other tab** | "Coming soon" placeholder. |
 
@@ -59,15 +60,18 @@ the open design questions.
 
 - The running clone (`/var/www/html/doctis`) is on `ai-meeting`, updated by
   `git pull --ff-only /home/robert/Documents/doctis ai-meeting` (nothing
-  pushed to GitHub). `{meeting}`, `{meeting_invitee}` and `{meeting_action}`
-  exist; `database_version` is 62. The meeting tables were recreated on
-  2026-10-02 when `{meeting}` gained columns. That removed the rows of the
-  first two test meetings, whose documents #128 and #129 remain as ordinary
-  documents.
+  pushed to GitHub). `{meeting}`, `{meeting_invitee}`, `{meeting_action}` and
+  `{meeting_series}` exist; `database_version` is 63. The meeting tables were
+  recreated on 2026-10-02 when `{meeting}` gained columns. That removed the
+  rows of the first two test meetings, whose documents #128 and #129 remain as
+  ordinary documents.
 - The running `config_inc.php` has `$g_meeting_project_id = 1;` (HCRQMS),
   replacing the obsolete `$g_hcrqms_repo_path` line.
-- Test artefacts in HCRQMS: documents #128–#131 and their commits; meetings
-  27 (approved, issues #1–#3) and 28 (cancelled).
+- `/etc/cron.d/doctis` runs `scripts/meeting_schedule.php` hourly (minute 17).
+  No series is set to repeat; the test series was stopped after its test.
+- Test artefacts in HCRQMS: documents #128–#132 and their commits; meetings
+  27 (approved; issues #1–#3, due dates backfilled after due dates were
+  enabled), 28 (cancelled) and 45 (scheduled automatically).
 - **Time zone:** `$g_default_timezone` is unset and users have no timezone
   preference, so Doctis works in UTC while the server is Australia/Sydney.
   Times are consistent inside Doctis, and calendar invitations are written
@@ -195,14 +199,44 @@ and the series' open actions. The assistant can also link a "next week's
 review" to one of the user's recent meetings. `series_of` is accepted only for
 meetings the user leads.
 
+**Visibility (owner decision):** users at `$g_meeting_view_all_threshold`
+(MANAGER) see every meeting: All meetings on My Meetings, and any meeting
+page. Seeing grants no approving, managing or minuting.
+
+**Recurring meetings (owner decision: schedule themselves):** `{meeting_series}`
+(keyed by the series root) holds `weekly`, `fortnightly` or `monthly` (same
+weekday of the month; a 5th weekday becomes the last). It is set by the
+agenda marker's `recurrence` attribute ("every Tuesday") or the meeting page's
+Repeats control (chair or organiser), and stopped there. The scheduler
+(`scripts/meeting_schedule.php`, hourly cron, single-run lock) creates the
+next occurrence `$g_meeting_schedule_lead_days` (3) days ahead. The next
+start is computed from the series' latest meeting, cancelled ones included;
+the model for the new meeting is the latest meeting not cancelled. The
+scheduler logs in as that meeting's chair and asks the assistant for the
+agenda, then fixes date, time, department, duration, location, minute taker
+and invitees from the previous meeting (`ai_assist_process_meeting_document()`
+overrides). The usual storage, emails and calendar invitations follow, and
+the chair gets a "Next meeting scheduled" email. Failures are recorded on the
+series (`last_error`) and shown on the meeting page. A lapsed series resumes
+with the next occurrence still to come.
+
+**Action owners outside the project (owner decision):** on approval, an
+owner who cannot handle issues in the meeting project is added to it at
+their own global access level (`$g_meeting_action_owner_join`). Users with an
+existing project entry are left unchanged, and the issue text records the
+addition. **Known consequence:** approving minutes lets the chair bring
+invitees into the private meeting project, without manage-project rights.
+
 **Actions → issues:** minutes carry a `MEETING_ACTIONS` list. On approval
 each action becomes an issue in the meeting project: category `meetings`,
 summary `[REF A1] …`, linked to the meeting document (so the issue records
-the approved minutes' SHA). The handler is the owner when they may handle
-issues in the project and the approver may assign; otherwise the owner is
-named in the issue text. The due date is set only if
-`$g_due_date_update_threshold` allows it (NOBODY by default, so not set on the
-VM); it is always in the text. Actions are open until their issue reaches
+the approved minutes' SHA). The handler is the owner (joined to the project if
+needed, above) when the approver may assign; otherwise the owner is named in
+the issue text. The due date is set as the issue's due date. Due dates were
+enabled by the owner: `$g_due_date_update_threshold` DEVELOPER, view REPORTER,
+in `config_defaults_inc.php`; this also applies to document due dates. A chair
+below DEVELOPER in the project still gets the due date in the text only. It is
+always in the text. Actions are open until their issue reaches
 `bug_resolved_status_threshold`.
 
 **Hand uploads (owner decision):** a revision uploaded to a meeting document
@@ -299,21 +333,21 @@ Decided 2026-10-02 by the owner: agendas go On Record at once; the chair
 approves minutes; emailed content is enough for participants outside the
 meeting project; hand uploads count as minutes; departments stay in
 configuration, with FS, FIN, SAF and SAL added; build series, actions to
-issues, manage from the meeting page, and calendar invitations. Still open:
+issues, manage from the meeting page, and calendar invitations. Then: managers
+see all meetings; action owners outside the project are added to it (the owner
+expects this may raise a permission problem; see §4.1); due dates enabled;
+repeating series schedule themselves; no merge into `dev` until a full suite
+of testing is completed. Still open:
 
-1. **Visibility:** My Meetings shows only the user's own meetings. Should
-   managers see their department's meetings?
-2. **Action issues for non-members:** an owner who cannot handle issues in the
-   meeting project is not assigned (named in the text only). Should such
-   owners be added to the project, or should action issues go elsewhere?
-3. **Issue due dates:** `$g_due_date_update_threshold` is NOBODY, so action
-   issues carry their due date in the text only. Enable due dates?
-4. **Recurring schedules:** series are linked one meeting at a time
-   (Plan Next Meeting). Should a weekly series schedule itself?
-5. **Changing the title** of an issued meeting is not supported (it appears in
+1. **Owner-join permissions:** should adding action owners to the private
+   meeting project require the approving chair to hold manage-project rights,
+   or a separate threshold, rather than the chair's approval alone?
+2. **Changing the title** of an issued meeting is not supported (it appears in
    several places in the record).
-6. **Calendar replies:** invitations are sent with `RSVP=FALSE`; accept and
+3. **Calendar replies:** invitations are sent with `RSVP=FALSE`; accept and
    decline replies are not collected.
+4. **Recurrence end:** a series repeats until stopped; there is no end date
+   or occurrence count.
 
 ---
 
@@ -329,6 +363,10 @@ Set in `config/config_inc.php` (never committed).
 | `$g_meeting_project_id` | `0` | Project whose repository holds meeting records (HCRQMS). 0 = record meetings without documents. Installation-specific, so the native template does not set it. |
 | `$g_meeting_template_path` | `'system/templates/Meeting-Agenda-and-Minutes.md'` | Template, read from the meeting project's repository HEAD. |
 | `$g_meeting_category` | `'Meetings'` | Category for meeting documents; created on first use. |
+| `$g_meeting_view_all_threshold` | `MANAGER` | Global level that sees every meeting. |
+| `$g_meeting_action_owner_join` | `ON` | Add action owners who cannot be assigned to the meeting project, at their own global level. |
+| `$g_meeting_schedule_lead_days` | `3` | Days before a recurring meeting that the scheduler creates it. |
+| `$g_due_date_update_threshold` / `$g_due_date_view_threshold` | `DEVELOPER` / `REPORTER` | Enabled for action due dates (MantisBT default NOBODY). |
 | `$g_ai_meeting_departments` | 8 departments | Code → name, record directory, optional own `project_id`. |
 
 `$g_hcrqms_repo_path` is no longer read. A leftover line in an existing
@@ -379,13 +417,15 @@ Set in `config/config_inc.php` (never committed).
 - [x] Actions → issues on approval, linked to the approved minutes
 - [x] Hand uploads to meeting documents count as draft minutes (web and SOAP)
 - [x] Departments FS, FIN, SAF, SAL added
-- [x] PHPUnit `tests/Mantis/MeetingApiTest.php` (17 tests); full lifecycle verified live (§1)
+- [x] Managers see all meetings; action owners join the project; due dates enabled (and backfilled on issues #1–#3)
+- [x] Recurring meetings: series rule, scheduler script and cron, meeting-page control, chair notice
+- [x] PHPUnit `tests/Mantis/MeetingApiTest.php` (21 tests); full lifecycle and scheduler verified live (§1)
 
 ### Next
 
-- [ ] Owner decisions in §4.5 (visibility, non-member action owners, due dates, recurring schedules)
+- [ ] **Full suite of testing before merging into `dev`** (owner): define its scope (e.g. TESTING.md §9 regression sweep, §7a meeting run, browser checks of every meeting page, SOAP upload to a meeting document, a clean-install run of `admin/install.php` with the meeting tables).
+- [ ] Open questions in §4.5.
 - [ ] **Time zone** (§1): deferred by the owner.
-- [ ] Merge `ai-meeting` into `dev` when the owner is satisfied.
 
 ### Later
 
@@ -440,3 +480,4 @@ PHP errors are logged under `/var/log/doctis` and `/var/log/nginx`.
 | 2026-10-02 | Rewritten against `dev`; documented that meeting storage was incompatible with the git repository entity |
 | 2026-10-02 | `ai-meeting`: meeting entity, document-backed records, minutes flow, validation, My Meetings view; open design questions (§4.5) |
 | 2026-10-02 | Chair approval, email lifecycle, meeting page, change/cancel, calendar invitations, series, actions → issues, hand uploads as minutes; owner decisions recorded (§4.5) |
+| 2026-10-02 | Managers see all meetings; action owners join the meeting project; due dates enabled; recurring meetings scheduled automatically (`{meeting_series}`, `scripts/meeting_schedule.php`); merge deferred until full testing |
