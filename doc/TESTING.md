@@ -21,6 +21,7 @@ says otherwise (the git-import client script explicitly does not).
 | Repository import (`admin/import-git-repo.php`) | §5 Import dry-run/real-run against a scratch repo |
 | Smart HTTP gateway (clone/push, auth, hook enforcement) | §6 remote clone/push script, or §4's hook-enforcement steps |
 | A page, form, or workflow with no good headless test | §7 curl-based live testing |
+| AI Meeting Assistant, meetings, My Meetings, minutes approval | §7a meeting end-to-end |
 | Anything touching schema | Rebuild first — §8 — then re-run the relevant suite above |
 | You aren't sure what else broke | §9 full regression sweep |
 
@@ -261,6 +262,52 @@ curl -s -c /tmp/doctis_cookies.txt -b /tmp/doctis_cookies.txt \
 Full pattern library (CSRF token extraction, document creation, primary-file
 upload/replace, download, diagnosing 0-byte/302/500 responses): CLAUDE.md
 §"Curl-Based Live Testing".
+
+### 7a. AI Meeting Assistant end to end — `doctis-meeting-chat.py`
+
+**What it covers:** the full meeting lifecycle through the real endpoints:
+agenda conversation → meeting record + document On Record + agenda emails;
+minutes conversation by the minute taker → Draft revision + approval
+request; chair approval → record stamped `Approved Minutes`, Draft promoted,
+meeting status 30.
+
+**Prerequisites:** `$g_anthropic_api_key` and `$g_meeting_project_id` set;
+sample users loaded (frodo, sam and gandalf opt in to invitations; their
+passwords are blank). Each chat turn is a billed API call, and each
+confirmation writes a document and commits to the meeting project's
+repository, so use a sandbox instance.
+
+```bash
+export DOCTIS_URL=http://10.0.0.94/doctis/
+T=admin/tools/doctis-meeting-chat.py
+
+# 1. Chair plans the meeting (two turns: draft, then confirm)
+$T administrator root --clear \
+  "Agenda for Frodo, Sam and Gandalf on 16 October 2026 at 10am to review progress, 45 minutes." \
+  "Yes, go ahead."
+#    → SAVED_DOCUMENT: meeting_id, dwg_id, file_path, stored=true, emails_sent ×3
+
+# 2. Minute taker (first invitee named) writes the minutes for that meeting
+$T frodo '' --meeting-id <meeting_id> \
+  "Frodo and Sam attended; Gandalf sent apologies. <notes per agenda item, actions>"
+$T frodo '' --meeting-id <meeting_id> "Yes, save the minutes."
+#    → stored=true, staged=true
+
+# 3. Chair approves
+$T administrator root --approve <meeting_id>
+```
+
+**Check after each step** (database access: `doc/ai/ai-todo.md` §8):
+
+| After | Expect |
+|-------|--------|
+| 1 | `{meeting}` row status 10; invitees with user ids; document in category `meetings` with number `MIN-…`; `{dwg_primary_file}` at `system/meetings/MIN-….md`; commit by the chair in the bare repo; `refs/doctis/approved/<dwg>/1`; file starts with YAML frontmatter `status: Agenda`; 3 agenda emails queued |
+| 2 | commit by frodo; `{dwg_primary_draft}` row; On Record unchanged; file `revision: B`, `status: Draft Minutes`; attendance recorded; meeting status 20; "Minutes awaiting your approval" email to the chair; My Meetings shows Approve Minutes to the chair only |
+| 3 | stamping commit by the chair changing only `status`, `effective_date`, `**Status:**`; promoted On Record; second approved ref; draft row gone; meeting status 30 |
+
+First run: 2026-10-02 on the native VM. All checks passed after three fixes
+found by the run (frontmatter missing from records, private meeting project
+refusing the minute taker, and the approval stamp).
 
 ---
 

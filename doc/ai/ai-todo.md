@@ -1,7 +1,7 @@
 # Doctis AI Assistant — Status and To-Do
 
 **Branch:** `ai-meeting` (meeting work in progress; `dev` holds the June 2026 state)
-**Status as of:** 2026-10-02 — Help tab working; Meeting tab rebuilt on a meeting entity and Doctis document storage, **not yet tested end to end**; My Meetings view added; SOP and Other tabs not started
+**Status as of:** 2026-10-02 — Help tab working; Meeting tab rebuilt on a meeting entity and Doctis document storage, **agenda → minutes → chair approval passed end to end on the VM**; My Meetings view added; SOP and Other tabs not started
 **Companion document:** [ai-engine.md](ai-engine.md) — the original concept plan and platform assessment (June 2026)
 
 This is a living document. It records what exists, how it works, what is
@@ -33,8 +33,8 @@ the open design questions.
 | Area | State |
 |------|-------|
 | **Help tab** | Working proof of concept: server-side system prompt, session persistence, token display, Markdown rendering, copy button. |
-| **Meeting tab** | Drafts agendas and minutes. On confirmation, it records a meeting (`{meeting}`, `{meeting_invitee}`) and stores the record as a Doctis document in the meeting project's repository: the agenda goes On Record and the minutes become a staged Draft. Then it emails invitees. **Verified so far:** the pages render, the schema upgrade applied, and PHP lint passes. **Not yet run:** an agenda/minutes conversation, document storage, email. |
-| **My Meetings** | New My View tab (`my_view_meeting_page.php`) listing upcoming and past meetings, with the user's role, participants, status, a document link and a Write/Revise Minutes action. Verified to render (with no meetings yet). |
+| **Meeting tab** | Drafts agendas and minutes. On confirmation, it records a meeting (`{meeting}`, `{meeting_invitee}`) and stores the record as a Doctis document in the meeting project's repository: the agenda goes On Record and the minutes become a staged Draft. Then it emails invitees. **Verified 2026-10-02** end to end with the real API ([TESTING.md §7a](../TESTING.md)): meeting MIN-SYS-20261016 (document #129) was planned by the chair, minuted by frodo, and approved by the chair; every database, git and email check passed. |
+| **My Meetings** | My View tab (`my_view_meeting_page.php`) listing upcoming and past meetings, with the user's role, participants, attendance, status, a document link (only for users who can view it), and Write/Revise/Approve Minutes actions according to role. Verified with real meetings for the chair and the minute taker. |
 | **SOP tab** | "Coming soon" placeholder. |
 | **Other tab** | "Coming soon" placeholder. |
 
@@ -53,13 +53,19 @@ the open design questions.
 
 ### State of the native development VM (2026-10-02)
 
-- The running clone (`/var/www/html/doctis`) was switched to `ai-meeting` at
-  `2c4c794e3` for testing (fetched from the working clone; nothing pushed).
-  Its schema upgrade created `{meeting}` and `{meeting_invitee}`.
-- **Pending (owner action):** pull the latest `ai-meeting`, set the recorded
-  `database_version` from 63 to 61 (see §6, schema numbering), and add
-  `$g_meeting_project_id = 1;` to the running `config_inc.php`. Until then,
-  meetings are recorded without documents.
+- The running clone (`/var/www/html/doctis`) is on `ai-meeting`, updated by
+  `git pull --ff-only /home/robert/Documents/doctis ai-meeting` (nothing
+  pushed to GitHub). Its schema upgrade created `{meeting}` and
+  `{meeting_invitee}`; `database_version` is 61.
+- The running `config_inc.php` has `$g_meeting_project_id = 1;` (HCRQMS),
+  replacing the obsolete `$g_hcrqms_repo_path` line.
+- Test artefacts in HCRQMS: meeting 1 / document #128 (MIN-SYS-20261015,
+  created before the frontmatter fix, agenda only) and meeting 2 / document
+  #129 (MIN-SYS-20261016, approved minutes), with their commits.
+- **Time zone:** `$g_default_timezone` is unset and users have no timezone
+  preference, so Doctis works in UTC while the server is Australia/Sydney.
+  Times are consistent inside Doctis, but "10am" means 10:00 UTC. Owner
+  decision pending.
 - HCRQMS is Doctis project 1, repository 1 (`hcrqms-r1`, branch `dev`). The
   template `system/templates/Meeting-Agenda-and-Minutes.md` and a hand-made
   record `system/meetings/MIN-SYS-20260917.md` are in that repository.
@@ -280,17 +286,18 @@ Set in `config/config_inc.php` (never committed).
 - [x] Validation of model-supplied attributes; reference built server-side; saved-document card escapes output
 - [x] Minutes flow defined; meeting focus via `?meeting_id=`; attendance recorded
 - [x] My Meetings view in the My View tabs
+- [x] Chair approval of minutes (stamp `Approved Minutes` + `effective_date`, promote Draft, status 30); approval request email to the chair
+- [x] Records carry the TMPL-SYS-001 YAML frontmatter
+- [x] Meeting roles authorise writing minutes in a private meeting project
+- [x] End-to-end test passed; procedure and driver in [TESTING.md §7a](../TESTING.md) (`admin/tools/doctis-meeting-chat.py`)
 
-### Next — prove it works
+### Next
 
-- [ ] **Owner actions on the VM** (§1): pull, reset version to 61, set `$g_meeting_project_id`.
-- [ ] **End-to-end test:** load sample users or opt users in to invites; run an
-  agenda conversation, then a minutes conversation from My Meetings. Check the
-  meeting rows, the document (`Meetings` category, path, On Record), the
-  minutes Draft, commit authorship, the push to the bare repository, and the
-  queued emails. Then record the procedure in `doc/TESTING.md`.
-- [x] Chair approval of minutes (promote Draft, status 30); approval request email to the chair
+- [ ] **Time zone** (§1): set `$g_default_timezone`, or user timezone preferences.
 - [ ] Department configuration review (§4.5 question 3).
+- [ ] Invitees outside the private meeting project see no document link, and
+  the agenda email's document link will refuse them. Decide whether to grant
+  view access, or rely on the emailed content.
 
 ### Later
 
