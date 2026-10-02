@@ -117,7 +117,17 @@ function meeting_print_table( array $p_meetings, $p_ai_enabled ) {
 				<td><?php echo string_display_line( $t_meeting['department'] ) ?></td>
 				<td><?php echo lang_get( 'meeting_role_' . $t_meeting['role'] ) ?></td>
 				<td class="small"><?php echo meeting_print_participants( $t_meeting ) ?></td>
-				<td><?php echo meeting_status_label( $t_status ) ?></td>
+				<td>
+					<?php echo meeting_status_label( $t_status ) ?>
+<?php	# TMPL-SYS-001: draft minutes are due within 2 business days of the meeting.
+		$t_end = (int)$t_meeting['date_start'] + 60 * (int)$t_meeting['duration'];
+		if( $t_status === MEETING_AGENDA && $t_end < time() ):
+			$t_due = meeting_business_days_after( $t_end, 2 ); ?>
+					<br><span class="small <?php echo $t_due < time() ? 'red' : 'text-muted' ?>">
+						<?php echo sprintf( lang_get( 'meeting_minutes_due' ), date( config_get( 'short_date_format' ), $t_due ) ) ?>
+					</span>
+<?php	endif; ?>
+				</td>
 				<td class="nowrap">
 <?php	if( $t_dwg_id > 0 && dwg_exists( $t_dwg_id ) && access_has_dwg_level( config_get( 'view_dwg_threshold' ), $t_dwg_id ) ): ?>
 					<a href="<?php echo string_get_dwg_view_url( $t_dwg_id ) ?>"><?php echo lang_get( 'document' ) ?> #<?php echo $t_dwg_id ?></a>

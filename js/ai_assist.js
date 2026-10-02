@@ -226,7 +226,9 @@
 			if( doc.emails_sent && doc.emails_sent.length > 0 ) {
 				var names = doc.emails_sent.map(function(r) { return escapeHtml(r.name || r.email); }).join(', ');
 				detail += '<br><span style="color:#2d6a4f;font-size:11px;">' +
-					'<i class="ace-icon fa fa-envelope-o"></i> Agenda emailed to: ' + names + '</span>';
+					'<i class="ace-icon fa fa-envelope-o"></i> ' +
+					( doc.type === 'minutes' ? 'Draft minutes sent for corrections to: ' : 'Agenda emailed to: ' ) +
+					names + '</span>';
 			}
 
 			card.innerHTML = icon + '<strong>' + title + '</strong>' + ( detail ? '<br>' + detail : '' );

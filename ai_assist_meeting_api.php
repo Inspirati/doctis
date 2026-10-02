@@ -6,9 +6,9 @@
 #   ai_assist_meeting_focus()            — the meeting whose minutes are being written
 #   ai_assist_meeting_system_prompt()    — build the meeting session system prompt
 #   ai_assist_process_meeting_document() — act on a <<<MEETING_DOCUMENT>>> block
-#   ai_assist_send_agenda_emails()       — email the agenda to invitees
 #
-# Meetings, invitees and document storage are handled by core/meeting_api.php.
+# Meetings, invitees, document storage and email are handled by
+# core/meeting_api.php.
 # Everything the model supplies in a document marker is validated here: the
 # meeting reference is built server-side, and user IDs are accepted only from
 # the candidate list (agenda) or the meeting's invitees (minutes).
@@ -320,8 +320,9 @@ For minutes:
 
 Doctis may adjust the doc_id to keep it unique; use the one you were given for minutes.
 After the closing marker add a brief confirmation. For agendas: state which attendees
-will receive an email (by name). For minutes: state that they await approval by the chair
-(by name), who approves them under My Meetings.
+will receive an email (by name). For minutes: state that the draft has been emailed to the
+participants for corrections (3 business days) and awaits approval by the chair (by name),
+who approves them under My Meetings.
 
 ---
 
@@ -484,7 +485,7 @@ function ai_assist_meeting_process_agenda( array $p_attrs, string $p_content, in
 		}
 	}
 
-	$p_result['emails_sent'] = ai_assist_send_agenda_emails( $t_meeting, $p_content );
+	$p_result['emails_sent'] = meeting_email_agenda( $t_meeting, $p_content );
 }
 
 /**
@@ -527,10 +528,8 @@ function ai_assist_meeting_process_minutes( array $p_attrs, string $p_content, i
 	meeting_update( (int)$t_meeting['id'], [ 'status' => MEETING_MINUTES ] );
 	$p_result['saved'] = true;
 
-	# The chair approves the minutes; tell them when someone else wrote them.
-	if( (int)$t_meeting['chair_id'] !== $p_user_id ) {
-		ai_assist_send_minutes_approval_request( meeting_get( (int)$t_meeting['id'] ), $p_user_id );
-	}
+	# Circulate for corrections; the chair is also asked to approve.
+	$p_result['emails_sent'] = meeting_email_draft_minutes( meeting_get( (int)$t_meeting['id'] ), $p_content, $p_user_id );
 }
 
 /**
@@ -562,80 +561,8 @@ function ai_assist_meeting_store( array $p_meeting, string $p_content, int $p_us
  * @return int[]
  */
 function ai_assist_meeting_id_list( string $p_list ): array {
-	return array_values( array_unique( array_filter( array_map( 'intval', explode( ',', $p_list ) ) ) ) );
-}
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# Email distribution
-# ═══════════════════════════════════════════════════════════════════════════════
-
-/**
- * Ask the chair to approve draft minutes written by someone else.
- *
- * @param array $p_meeting Meeting row.
- * @param int   $p_author_id User who wrote the minutes.
- * @return void
- */
-function ai_assist_send_minutes_approval_request( array $p_meeting, int $p_author_id ): void {
-	require_api( 'email_api.php' );
-
-	$t_chair_id = (int)$p_meeting['chair_id'];
-	if( $t_chair_id <= 0 || !user_exists( $t_chair_id ) ) {
-		return;
-	}
-	$t_email = user_get_field( $t_chair_id, 'email_secondary' );
-	if( is_blank( $t_email ) ) {
-		$t_email = user_get_email( $t_chair_id );
-	}
-	if( is_blank( $t_email ) ) {
-		return;
-	}
-
-	$t_body = meeting_user_display_name( $p_author_id ) . ' has written the minutes of '
-		. $p_meeting['doc_ref'] . ' — ' . $p_meeting['title'] . ".\n"
-		. "As chair, please review and approve them under My Meetings:\n"
-		. config_get_global( 'path' ) . 'my_view_meeting_page.php' . "\n";
-	if( (int)$p_meeting['dwg_id'] > 0 ) {
-		$t_body .= "\nDraft minutes: " . string_get_dwg_view_url_with_fqdn( (int)$p_meeting['dwg_id'] ) . "\n";
-	}
-	email_store( $t_email, '[Doctis] Minutes awaiting your approval: ' . $p_meeting['doc_ref'], $t_body );
-}
-
-/**
- * Email a meeting agenda to the meeting's invitees with Doctis accounts.
- *
- * Uses email_secondary if set (user's preferred notification address),
- * otherwise falls back to the primary email.
- *
- * @param array  $p_meeting Meeting row.
- * @param string $p_content Full Markdown agenda content.
- * @return array  Each element: ['name' => '...', 'email' => '...']
- */
-function ai_assist_send_agenda_emails( array $p_meeting, string $p_content ): array {
-	require_api( 'email_api.php' );
-
-	$t_subject = '[Doctis] Meeting Agenda: ' . $p_meeting['doc_ref'] . ' — ' . $p_meeting['title'];
-	$t_links = 'My Meetings: ' . config_get_global( 'path' ) . 'my_view_meeting_page.php' . "\n";
-	if( (int)$p_meeting['dwg_id'] > 0 ) {
-		$t_links .= 'Document: ' . string_get_dwg_view_url_with_fqdn( (int)$p_meeting['dwg_id'] ) . "\n";
-	}
-	$t_body = $t_links . "\n" . $p_content;
-
-	$t_sent = [];
-	foreach( meeting_invitees_get( (int)$p_meeting['id'] ) as $t_inv ) {
-		$t_uid = (int)$t_inv['user_id'];
-		if( $t_uid <= 0 || !user_exists( $t_uid ) ) continue;
-
-		$t_email = user_get_field( $t_uid, 'email_secondary' );
-		if( is_blank( $t_email ) ) {
-			$t_email = user_get_email( $t_uid );
-		}
-		if( is_blank( $t_email ) ) continue;
-
-		email_store( $t_email, $t_subject, $t_body );
-		$t_sent[] = [ 'name' => $t_inv['name'], 'email' => $t_email ];
-	}
-
-	return $t_sent;
+	$t_ids = array_filter( array_map( 'intval', explode( ',', $p_list ) ), function( $p_id ) {
+		return $p_id > 0;
+	} );
+	return array_values( array_unique( $t_ids ) );
 }

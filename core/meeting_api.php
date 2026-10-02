@@ -542,6 +542,7 @@ function meeting_minutes_approve( array $p_meeting, int $p_user_id, string $p_ex
 		file_dwg_primary_sync_head( $t_dwg_id, $p_user_id );
 	}
 	meeting_update( (int)$p_meeting['id'], array( 'status' => MEETING_APPROVED ) );
+	meeting_email_approved_minutes( meeting_get( (int)$p_meeting['id'] ), meeting_record_content( $p_meeting ), $p_user_id );
 }
 
 /**
@@ -592,4 +593,172 @@ function meeting_document_create( array $p_meeting, int $p_project_id ): int {
 	) ) ) );
 	$t_result = $t_command->execute();
 	return (int)$t_result['issue_id'];
+}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Email
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Email is how participants read meeting records: they need not be members of
+# the (typically private) meeting project. Every message carries the full
+# record; a document link is added only for recipients who can open it.
+#
+#   agenda issued     → invitees
+#   minutes drafted   → all participants except the author, for corrections
+#                       (TMPL-SYS-001: 3 business days); the chair is also
+#                       asked to approve
+#   minutes approved  → all participants except the approver
+
+/**
+ * The record without its YAML frontmatter (for email bodies).
+ *
+ * @param string $p_content
+ * @return string
+ */
+function meeting_record_body( string $p_content ): string {
+	return ltrim( preg_replace( '/\A---\n[\s\S]*?\n---\n/', '', $p_content, 1 ) );
+}
+
+/**
+ * Timestamp $p_days business days (Mon–Fri) after $p_from.
+ *
+ * @param int $p_from Unix timestamp.
+ * @param int $p_days
+ * @return int
+ */
+function meeting_business_days_after( int $p_from, int $p_days ): int {
+	$t_ts = $p_from;
+	while( $p_days > 0 ) {
+		$t_ts = strtotime( '+1 day', $t_ts );
+		if( (int)date( 'N', $t_ts ) <= 5 ) {
+			$p_days--;
+		}
+	}
+	return $t_ts;
+}
+
+/**
+ * Enabled users taking part in a meeting: chair, minute taker, and invitees
+ * with accounts (in that order, without duplicates).
+ *
+ * @param array $p_meeting Meeting row.
+ * @return int[]
+ */
+function meeting_participant_ids( array $p_meeting ): array {
+	$t_ids = array( (int)$p_meeting['chair_id'], (int)$p_meeting['minute_taker_id'] );
+	foreach( meeting_invitees_get( (int)$p_meeting['id'] ) as $t_invitee ) {
+		$t_ids[] = (int)$t_invitee['user_id'];
+	}
+	$t_result = array();
+	foreach( array_unique( $t_ids ) as $t_id ) {
+		if( $t_id > 0 && user_exists( $t_id ) && user_is_enabled( $t_id ) ) {
+			$t_result[] = $t_id;
+		}
+	}
+	return $t_result;
+}
+
+/**
+ * Send one meeting email to each user.
+ *
+ * @param array  $p_meeting  Meeting row.
+ * @param int[]  $p_user_ids Recipients.
+ * @param string $p_subject  Subject (prefixed "[Doctis] ").
+ * @param string $p_intro    Opening paragraph; may contain "%s" for the
+ *                           recipient-specific line from $p_extra.
+ * @param string $p_content  Record (frontmatter is stripped).
+ * @param array  $p_extra    user_id => extra line for that recipient.
+ * @return array Each ['name' => ..., 'email' => ...].
+ */
+function meeting_email_send( array $p_meeting, array $p_user_ids, string $p_subject, string $p_intro, string $p_content, array $p_extra = array() ): array {
+	require_api( 'email_api.php' );
+
+	$t_dwg_id = (int)$p_meeting['dwg_id'];
+	$t_body = meeting_record_body( $p_content );
+	$t_sent = array();
+	foreach( $p_user_ids as $t_uid ) {
+		$t_email = user_get_field( $t_uid, 'email_secondary' );
+		if( is_blank( $t_email ) ) {
+			$t_email = user_get_email( $t_uid );
+		}
+		if( is_blank( $t_email ) ) {
+			continue;
+		}
+
+		$t_text = trim( sprintf( $p_intro, $p_extra[$t_uid] ?? '' ) ) . "\n\n"
+			. 'My Meetings: ' . config_get_global( 'path' ) . 'my_view_meeting_page.php' . "\n";
+		if( $t_dwg_id > 0 && dwg_exists( $t_dwg_id )
+			&& access_has_dwg_level( config_get( 'view_dwg_threshold' ), $t_dwg_id, $t_uid ) ) {
+			$t_text .= 'Document: ' . string_get_dwg_view_url_with_fqdn( $t_dwg_id ) . "\n";
+		}
+		if( $t_body !== '' ) {
+			$t_text .= "\n" . $t_body;
+		}
+
+		email_store( $t_email, '[Doctis] ' . $p_subject, $t_text );
+		$t_sent[] = array( 'name' => meeting_user_display_name( $t_uid ), 'email' => $t_email );
+	}
+	return $t_sent;
+}
+
+/**
+ * Email the issued agenda to the meeting's invitees with accounts.
+ *
+ * @param array  $p_meeting
+ * @param string $p_content Agenda record.
+ * @return array Recipients.
+ */
+function meeting_email_agenda( array $p_meeting, string $p_content ): array {
+	$t_ids = array();
+	foreach( meeting_invitees_get( (int)$p_meeting['id'] ) as $t_invitee ) {
+		$t_uid = (int)$t_invitee['user_id'];
+		if( $t_uid > 0 && user_exists( $t_uid ) && user_is_enabled( $t_uid ) ) {
+			$t_ids[] = $t_uid;
+		}
+	}
+	return meeting_email_send( $p_meeting, $t_ids,
+		'Meeting Agenda: ' . $p_meeting['doc_ref'] . ' — ' . $p_meeting['title'],
+		'You are invited to ' . $p_meeting['title'] . ', '
+			. date( 'l j F Y, H:i', (int)$p_meeting['date_start'] ) . ' (' . $p_meeting['duration'] . ' min), '
+			. $p_meeting['location'] . '. Chair: ' . meeting_user_display_name( (int)$p_meeting['chair_id'] ) . '.',
+		$p_content );
+}
+
+/**
+ * Circulate draft minutes for corrections; ask the chair to approve.
+ *
+ * @param array  $p_meeting
+ * @param string $p_content   Draft minutes record.
+ * @param int    $p_author_id User who wrote the minutes (not emailed).
+ * @return array Recipients.
+ */
+function meeting_email_draft_minutes( array $p_meeting, string $p_content, int $p_author_id ): array {
+	$t_ids = array_values( array_diff( meeting_participant_ids( $p_meeting ), array( $p_author_id ) ) );
+	$t_deadline = date( 'l j F Y', meeting_business_days_after( time(), 3 ) );
+	$t_chair_id = (int)$p_meeting['chair_id'];
+	return meeting_email_send( $p_meeting, $t_ids,
+		'Draft Minutes: ' . $p_meeting['doc_ref'] . ' — ' . $p_meeting['title'],
+		'Draft minutes of ' . $p_meeting['title'] . ' have been written by '
+			. meeting_user_display_name( $p_author_id ) . '. Please send any corrections to them by '
+			. $t_deadline . '. %s',
+		$p_content,
+		array( $t_chair_id => 'As chair, approve the minutes under My Meetings once corrections are in.' ) );
+}
+
+/**
+ * Circulate the approved minutes.
+ *
+ * @param array  $p_meeting
+ * @param string $p_content     Approved minutes record ('' = notice only).
+ * @param int    $p_approver_id Chair who approved (not emailed).
+ * @return array Recipients.
+ */
+function meeting_email_approved_minutes( array $p_meeting, string $p_content, int $p_approver_id ): array {
+	$t_ids = array_values( array_diff( meeting_participant_ids( $p_meeting ), array( $p_approver_id ) ) );
+	return meeting_email_send( $p_meeting, $t_ids,
+		'Approved Minutes: ' . $p_meeting['doc_ref'] . ' — ' . $p_meeting['title'],
+		'The minutes of ' . $p_meeting['title'] . ' have been approved by '
+			. meeting_user_display_name( $p_approver_id ) . ' and are now the controlled record.',
+		$p_content );
 }
