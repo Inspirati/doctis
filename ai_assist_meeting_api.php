@@ -150,13 +150,26 @@ function ai_assist_meeting_system_prompt( int $p_user_id, ?array $p_focus = null
 	}
 
 	# ── Meeting template ──────────────────────────────────────────────────────
-	$t_template_text = meeting_template_get();
-	$t_cut = strpos( $t_template_text, '<!-- markdownlint-disable MD025 -->' );
+	# The template's preamble (instructions) precedes the marker; it holds the
+	# YAML frontmatter that every completed record must start with.
+	$t_template_raw  = meeting_template_get();
+	$t_template_text = $t_template_raw;
+	$t_frontmatter   = '';
+	$t_cut = strpos( $t_template_raw, '<!-- markdownlint-disable MD025 -->' );
 	if( $t_cut !== false ) {
-		$t_template_text = trim( substr( $t_template_text, $t_cut ) );
+		$t_template_text = trim( substr( $t_template_raw, $t_cut ) );
+		if( preg_match( '/```yaml\s*\n(---\n[\s\S]*?\n---)\s*\n```/', substr( $t_template_raw, 0, $t_cut ), $t_m ) ) {
+			$t_frontmatter = $t_m[1];
+		}
 	}
+	$t_frontmatter_text = !is_blank( $t_frontmatter )
+		? "Every record MUST begin with this YAML frontmatter, filled in for the meeting\n"
+		  . "(remove the # comments). status is Agenda for an agenda and Draft Minutes for minutes;\n"
+		  . "owner and approver are the chair; leave effective_date blank — Doctis sets it on approval.\n\n"
+		  . $t_frontmatter . "\n\nThen the body:\n\n"
+		: '';
 	$t_template_section = !is_blank( $t_template_text )
-		? "## MEETING TEMPLATE (TMPL-SYS-001)\n\n" . $t_template_text
+		? "## MEETING TEMPLATE (TMPL-SYS-001)\n\n" . $t_frontmatter_text . $t_template_text
 		: "## MEETING TEMPLATE\n\n" .
 		  "(Template not available. Follow standard HC-Robotics format: YAML frontmatter, " .
 		  "then sections: Invitees, Pre-Reading, Agenda, Attendees, Minutes, Decisions, " .
@@ -246,7 +259,7 @@ if it is ambiguous); if none matches, say so.
    from what the user tells you. Accept rough notes and tidy them; do not interrogate.
 3. Present a concise summary of the minutes and ask: "Ready to save the minutes? Or let me know what to change."
 4. On confirmation, generate the minutes document: the full record following the template,
-   with `status: Minutes` in the frontmatter and the revision advanced by one letter.
+   with `status: Draft Minutes` in the frontmatter and the revision advanced by one letter.
 
 ---
 

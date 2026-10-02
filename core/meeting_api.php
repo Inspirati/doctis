@@ -389,11 +389,24 @@ function meeting_repo_file_get( int $p_project_id, string $p_git_path ): ?string
 	if( $t_bare === '' || !is_dir( $t_bare ) ) {
 		return null;
 	}
-	exec(
-		'git --git-dir=' . escapeshellarg( $t_bare ) . ' show ' . escapeshellarg( 'HEAD:' . $t_path ) . ' 2>/dev/null',
-		$t_out, $t_rc
-	);
-	return $t_rc === 0 ? implode( "\n", $t_out ) : null;
+	return meeting_git_blob( $t_bare, 'HEAD:' . $t_path );
+}
+
+/**
+ * Byte-exact content of a blob ("<rev>:<path>") in a bare repository.
+ * (exec() would strip trailing whitespace from each line.)
+ *
+ * @param string $p_bare Bare repository path.
+ * @param string $p_spec Object spec, e.g. "<sha>:<path>".
+ * @return string|null
+ */
+function meeting_git_blob( string $p_bare, string $p_spec ): ?string {
+	$t_git = 'git --git-dir=' . escapeshellarg( $p_bare );
+	exec( $t_git . ' cat-file -e ' . escapeshellarg( $p_spec ) . ' 2>/dev/null', $t_out, $t_rc );
+	if( $t_rc !== 0 ) {
+		return null;
+	}
+	return (string)shell_exec( $t_git . ' cat-file blob ' . escapeshellarg( $p_spec ) . ' 2>/dev/null' );
 }
 
 /**
@@ -423,12 +436,7 @@ function meeting_record_content( array $p_meeting ): string {
 		return '';
 	}
 	$t_bare = dwg_project_bare_repo_path( (int)dwg_get_field( $t_dwg_id, 'project_id' ) );
-	exec(
-		'git --git-dir=' . escapeshellarg( $t_bare ) . ' show '
-		. escapeshellarg( $t_row['git_sha'] . ':' . $t_row['git_path'] ) . ' 2>/dev/null',
-		$t_out, $t_rc
-	);
-	return $t_rc === 0 ? implode( "\n", $t_out ) : '';
+	return meeting_git_blob( $t_bare, $t_row['git_sha'] . ':' . $t_row['git_path'] ) ?? '';
 }
 
 /**
@@ -442,10 +450,12 @@ function meeting_record_content( array $p_meeting ): string {
  * @param string $p_content     Markdown content.
  * @param int    $p_user_id     Acting user (git author).
  * @param string $p_description Revision note.
+ * @param bool   $p_check_access Require update access for a replacement
+ *                               (false for the chair's approval stamp).
  * @return array{dwg_id: int, git_path: string, git_sha: string, staged: bool}
  * @throws ClientException when no project is configured or access is denied.
  */
-function meeting_store_record( array $p_meeting, string $p_content, int $p_user_id, string $p_description ): array {
+function meeting_store_record( array $p_meeting, string $p_content, int $p_user_id, string $p_description, bool $p_check_access = true ): array {
 	$t_dwg_id = (int)$p_meeting['dwg_id'];
 	$t_staged = $t_dwg_id > 0;
 
@@ -462,7 +472,9 @@ function meeting_store_record( array $p_meeting, string $p_content, int $p_user_
 		}
 		$t_dwg_id = meeting_document_create( $p_meeting, $t_project_id );
 	} else {
-		access_ensure_dwg_level( config_get( 'update_dwg_threshold' ), $t_dwg_id, $p_user_id );
+		if( $p_check_access ) {
+			access_ensure_dwg_level( config_get( 'update_dwg_threshold' ), $t_dwg_id, $p_user_id );
+		}
 		$t_git_path = '';
 	}
 
@@ -510,9 +522,39 @@ function meeting_minutes_approve( array $p_meeting, int $p_user_id, string $p_ex
 	}
 	$t_dwg_id = (int)$p_meeting['dwg_id'];
 	if( $t_dwg_id > 0 && file_dwg_primary_draft_get( $t_dwg_id ) ) {
-		file_dwg_primary_sync_head( $t_dwg_id, $p_user_id, $p_expected_sha );
+		$t_head = file_dwg_git_head_info( $t_dwg_id );
+		if( $p_expected_sha !== '' && ( !$t_head || !hash_equals( $p_expected_sha, $t_head['sha'] ) ) ) {
+			throw new ClientException( 'The draft minutes changed while approval was pending',
+				ERROR_INVALID_FIELD_VALUE, array( 'draft' ) );
+		}
+		# Stamp the record itself (TMPL-SYS-001 lifecycle), then promote it.
+		$t_draft = meeting_record_content( $p_meeting );
+		$t_approved = meeting_record_mark_approved( $t_draft, date( 'Y-m-d' ) );
+		if( $t_draft !== '' && $t_approved !== $t_draft ) {
+			meeting_store_record( $p_meeting, $t_approved, $p_user_id, 'Minutes approved', false );
+		}
+		file_dwg_primary_sync_head( $t_dwg_id, $p_user_id );
 	}
 	meeting_update( (int)$p_meeting['id'], array( 'status' => MEETING_APPROVED ) );
+}
+
+/**
+ * Mark a minutes record approved: frontmatter status → Approved Minutes,
+ * effective_date → the approval date, and the body's **Status:** line.
+ *
+ * @param string $p_content Markdown record.
+ * @param string $p_date    YYYY-MM-DD.
+ * @return string
+ */
+function meeting_record_mark_approved( string $p_content, string $p_date ): string {
+	if( !preg_match( '/\A---\n([\s\S]*?)\n---\n/', $p_content, $t_m ) ) {
+		return $p_content;
+	}
+	$t_front = preg_replace( '/^status:.*$/m', 'status:         Approved Minutes', $t_m[1] );
+	$t_front = preg_replace( '/^effective_date:.*$/m', 'effective_date: ' . $p_date, $t_front );
+	$t_body = substr( $p_content, strlen( $t_m[0] ) );
+	$t_body = preg_replace( '/^\*\*Status:\*\*.*$/m', '**Status:** Approved Minutes', $t_body, 1 );
+	return "---\n" . $t_front . "\n---\n" . $t_body;
 }
 
 /**
