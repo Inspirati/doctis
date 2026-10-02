@@ -6,14 +6,18 @@
 #   $t_api_configured  bool    True when $g_anthropic_api_key is set
 #   $t_user_name       string  Display name of the current user (may be blank)
 #
-# Opened as ai_assist_page.php?meeting_id=N#tab-meeting (from My Meetings) to
-# write the minutes of meeting N.
+# Opened as ai_assist_page.php?meeting_id=N#tab-meeting (Write Minutes) to
+# write the minutes of meeting N, or ?series_of=N (Plan Next Meeting) to plan
+# the meeting that follows N.
 
 require_once( 'ai_assist_meeting_api.php' );
 
 $t_meeting_focus = ai_assist_meeting_focus(
 	auth_get_current_user_id(), gpc_get_int( 'meeting_id', 0 )
 );
+$t_meeting_series = $t_meeting_focus === null
+	? ai_assist_meeting_series_base( auth_get_current_user_id(), gpc_get_int( 'series_of', 0 ) )
+	: null;
 ?>
 
 	<!-- ═══ MEETING TAB ══════════════════════════════════════════════════════ -->
@@ -61,6 +65,7 @@ $t_meeting_focus = ai_assist_meeting_focus(
 			<!-- Message thread -->
 			<div id="ai-meeting-messages" role="log" aria-live="polite" aria-label="Meeting assistant conversation"
 				data-meeting-id="<?php echo $t_meeting_focus === null ? 0 : (int)$t_meeting_focus['id'] ?>"
+				data-series-of="<?php echo $t_meeting_series === null ? 0 : (int)$t_meeting_series['id'] ?>"
 				style="height:440px;overflow-y:auto;padding:14px 10px;background:#f8f9fb;border:1px solid #dde3ea;border-radius:4px;display:flex;flex-direction:column;gap:10px;">
 				<!-- Welcome message -->
 				<div class="ai-msg-row assistant" id="ai-meeting-welcome-msg">
@@ -75,6 +80,13 @@ $t_meeting_focus = ai_assist_meeting_focus(
 						&mdash; <?php echo string_display_line( $t_meeting_focus['title'] ) ?>.
 						<br><br>
 						Start with who attended and who sent apologies, then give me your notes on each agenda item &mdash; rough notes are fine.
+<?php elseif( $t_meeting_series !== null ): ?>
+						Let&rsquo;s plan the meeting after
+						<strong><?php echo string_display_line( $t_meeting_series['doc_ref'] ) ?></strong>
+						&mdash; <?php echo string_display_line( $t_meeting_series['title'] ) ?>.
+						<br><br>
+						I&rsquo;ll keep the same people, place and format and carry forward the open actions.
+						Tell me the date and time (or say <em>same time next week</em>) and anything that changes.
 <?php else: ?>
 						I&rsquo;m the Doctis Meeting Assistant. Tell me about the meeting in one sentence and I&rsquo;ll draft the agenda.
 						<br><br>

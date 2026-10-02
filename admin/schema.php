@@ -979,9 +979,14 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 # minutes are revisions of one Doctis document (dwg_id) when a meeting project
 # is configured; otherwise dwg_id stays 0 and only this record exists.
 # status: 10 agenda issued, 20 minutes drafted, 30 minutes approved, 90 cancelled.
+# series_id: id of the first meeting of a series (0 = not in a series).
+# sequence: calendar invitation revision (iCalendar SEQUENCE), bumped on
+# reschedule and cancellation.
 $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'meeting' ) . " (
 	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `series_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `sequence` smallint(5) unsigned NOT NULL DEFAULT 0,
 	  `doc_ref` varchar(80) NOT NULL DEFAULT '',
 	  `title` varchar(255) NOT NULL DEFAULT '',
 	  `department` varchar(16) NOT NULL DEFAULT '',
@@ -999,7 +1004,8 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	  `date_updated` int(10) unsigned NOT NULL DEFAULT 1,
 	  PRIMARY KEY (`id`),
 	  UNIQUE KEY `idx_meeting_doc_ref` (`doc_ref`),
-	  KEY `idx_meeting_date_start` (`date_start`)
+	  KEY `idx_meeting_date_start` (`date_start`),
+	  KEY `idx_meeting_series` (`series_id`)
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
@@ -1019,8 +1025,28 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
+# ── Step 62: meeting_action ─────────────────────────────────────────────────
+# Actions captured in a meeting's minutes. When the chair approves the
+# minutes, each becomes a Doctis issue (bug_id) in the meeting project.
+# owner_id 0 = owner without a Doctis account (owner_name only).
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'meeting_action' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `meeting_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `ref` varchar(16) NOT NULL DEFAULT '',
+	  `description` varchar(1024) NOT NULL DEFAULT '',
+	  `owner_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `owner_name` varchar(128) NOT NULL DEFAULT '',
+	  `due_date` int(10) unsigned NOT NULL DEFAULT 0,
+	  `bug_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  PRIMARY KEY (`id`),
+	  KEY `idx_meeting_action_meeting` (`meeting_id`),
+	  KEY `idx_meeting_action_bug` (`bug_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
 # ── End of schema definition ─────────────────────────────────────────────────
-# $t_idx = 62 → database_version = 61 on a fresh install (real index; see the
+# $t_idx = 63 → database_version = 62 on a fresh install (real index; see the
 # NOTE above step 60).
 #
 # To add a new table: append a new step here and run the schema upgrade.

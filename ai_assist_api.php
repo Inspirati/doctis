@@ -18,6 +18,7 @@
 #   mode    string   'help' | 'meeting' | 'sop' | 'other'
 #   history array    Full message history (chat action only)
 #   meeting_id int   Meeting whose minutes are being written (meeting mode, optional)
+#   series_of  int   Meeting whose follow-up is being planned (meeting mode, optional)
 #
 # Response body (JSON):
 #   reply          string|null    Assistant reply (chat action on success)
@@ -75,7 +76,7 @@ $t_user_id = auth_get_current_user_id();
 # ── Dispatch ──────────────────────────────────────────────────────────────────
 
 if( $t_action === 'load' ) {
-	ai_assist_action_load( $t_user_id, $t_mode, (int)( $t_input['meeting_id'] ?? 0 ) );
+	ai_assist_action_load( $t_user_id, $t_mode, (int)( $t_input['meeting_id'] ?? 0 ), (int)( $t_input['series_of'] ?? 0 ) );
 }
 
 if( $t_action === 'clear' ) {
@@ -126,14 +127,16 @@ $t_model      = config_get_global( 'ai_model' );
 $t_max_tokens = 2048;
 $t_system     = '';
 $t_focus      = null;
+$t_series     = null;
 
 switch( $t_mode ) {
 	case 'help':
 		$t_system = ai_assist_help_system_prompt( $t_user_id );
 		break;
 	case 'meeting':
-		$t_focus = ai_assist_meeting_focus( $t_user_id, (int)( $t_input['meeting_id'] ?? 0 ) );
-		$t_system     = ai_assist_meeting_system_prompt( $t_user_id, $t_focus );
+		$t_focus  = ai_assist_meeting_focus( $t_user_id, (int)( $t_input['meeting_id'] ?? 0 ) );
+		$t_series = ai_assist_meeting_series_base( $t_user_id, (int)( $t_input['series_of'] ?? 0 ) );
+		$t_system     = ai_assist_meeting_system_prompt( $t_user_id, $t_focus, $t_series );
 		$t_max_tokens = 8192;   # Full minutes records can be long
 		break;
 }
@@ -236,6 +239,8 @@ if( $t_saved_document !== null && isset( $t_saved_document['doc_id'] ) ) {
 		$t_focus['doc_ref'],
 		(int)$t_focus['dwg_id'] ?: null
 	);
+} else if( $t_series !== null ) {
+	ai_assist_session_update_doc_id( $t_user_id, $t_mode, 'series:' . $t_series['id'], null );
 }
 
 # ── Return success response ───────────────────────────────────────────────────
@@ -260,10 +265,10 @@ exit;
 /**
  * Load and return the stored conversation history for user+mode.
  * Returns {history: [...]} on success; {history: null} if no session exists,
- * or if the page was opened for a meeting other than the stored session's.
- * Exits.
+ * or if the page was opened for a meeting (minutes) or a follow-up (series)
+ * other than the stored session's. Exits.
  */
-function ai_assist_action_load( int $p_user_id, string $p_mode, int $p_meeting_id = 0 ): never {
+function ai_assist_action_load( int $p_user_id, string $p_mode, int $p_meeting_id = 0, int $p_series_of = 0 ): never {
 	$t_table  = db_get_table( 'ai_sessions' );
 	$t_result = db_query(
 		'SELECT history, doc_id, dwg_id FROM ' . $t_table .
@@ -290,6 +295,8 @@ function ai_assist_action_load( int $p_user_id, string $p_mode, int $p_meeting_i
 		if( $t_focus !== null && $t_focus['doc_ref'] !== $t_doc_id ) {
 			$t_history = null;
 		}
+	} else if( $p_series_of > 0 && $t_doc_id !== 'series:' . $p_series_of ) {
+		$t_history = null;
 	}
 
 	header( 'Content-Type: application/json; charset=utf-8' );

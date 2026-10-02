@@ -68,6 +68,55 @@ function ai_assist_meeting_focus( int $p_user_id, int $p_meeting_id ): ?array {
 	return $t_meeting;
 }
 
+/**
+ * Resolve a meeting the user may plan a follow-up to (the page's series_of
+ * parameter, or a marker's series_of attribute): chair, minute taker or
+ * organiser of a meeting that was not cancelled.
+ *
+ * @param int $p_user_id
+ * @param int $p_meeting_id
+ * @return array|null Meeting row.
+ */
+function ai_assist_meeting_series_base( int $p_user_id, int $p_meeting_id ): ?array {
+	$t_meeting = $p_meeting_id > 0 ? meeting_get( $p_meeting_id ) : null;
+	if( $t_meeting === null || (int)$t_meeting['status'] === MEETING_CANCELLED
+		|| !meeting_user_can_write_minutes( $t_meeting, $p_user_id ) ) {
+		return null;
+	}
+	return $t_meeting;
+}
+
+/**
+ * Prompt lines listing a meeting's invitees with their ids.
+ *
+ * @param array $p_meeting
+ * @return string
+ */
+function ai_assist_meeting_invitee_lines( array $p_meeting ): string {
+	$t_lines = [];
+	foreach( meeting_invitees_get( (int)$p_meeting['id'] ) as $t_inv ) {
+		$t_lines[] = ( (int)$t_inv['user_id'] > 0 ? 'id=' . $t_inv['user_id'] . ' | ' : 'guest | ' ) . $t_inv['name'];
+	}
+	return empty( $t_lines ) ? '(none recorded)' : implode( "\n", $t_lines );
+}
+
+/**
+ * Prompt lines listing the open actions of a meeting's series.
+ *
+ * @param array $p_meeting
+ * @return string
+ */
+function ai_assist_meeting_open_action_lines( array $p_meeting ): string {
+	$t_lines = [];
+	foreach( meeting_actions_open_in_series( $p_meeting ) as $t_a ) {
+		$t_lines[] = $t_a['doc_ref'] . ' ' . $t_a['ref'] . ' | ' . $t_a['description']
+			. ' | owner: ' . ( is_blank( $t_a['owner_name'] ) ? '—' : $t_a['owner_name'] )
+			. ' | due: ' . ( (int)$t_a['due_date'] > 0 ? date( 'Y-m-d', (int)$t_a['due_date'] ) : '—' )
+			. ( (int)$t_a['bug_id'] > 0 ? ' | issue #' . $t_a['bug_id'] : '' );
+	}
+	return empty( $t_lines ) ? '(none)' : implode( "\n", $t_lines );
+}
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # System prompt
@@ -82,9 +131,10 @@ function ai_assist_meeting_focus( int $p_user_id, int $p_meeting_id ): ?array {
  *
  * @param int        $p_user_id Current user ID.
  * @param array|null $p_focus   Meeting being minuted, if any.
+ * @param array|null $p_series  Meeting whose follow-up is being planned, if any.
  * @return string
  */
-function ai_assist_meeting_system_prompt( int $p_user_id, ?array $p_focus = null ): string {
+function ai_assist_meeting_system_prompt( int $p_user_id, ?array $p_focus = null, ?array $p_series = null ): string {
 	$t_departments = config_get_global( 'ai_meeting_departments' );
 	$t_candidates  = ai_assist_get_meeting_candidates();
 	$t_stored      = meeting_project_id() > 0;
@@ -128,25 +178,51 @@ function ai_assist_meeting_system_prompt( int $p_user_id, ?array $p_focus = null
 	}
 	$t_awaiting_text = empty( $t_awaiting_lines ) ? '(none)' : implode( "\n", $t_awaiting_lines );
 
+	# ── Recent meetings the user leads (to continue a series) ─────────────────
+	$t_recent_lines = [];
+	foreach( meeting_get_recent_led( $p_user_id ) as $t_m ) {
+		$t_recent_lines[] = sprintf( 'meeting_id=%d | %s | %s | %s | %s',
+			$t_m['id'], $t_m['doc_ref'], date( 'Y-m-d H:i', (int)$t_m['date_start'] ), $t_m['title'],
+			meeting_status_label( (int)$t_m['status'] ) );
+	}
+	$t_recent_text = empty( $t_recent_lines ) ? '(none)' : implode( "\n", $t_recent_lines );
+
 	# ── Focus meeting (minutes) ───────────────────────────────────────────────
 	$t_focus_section = '';
 	if( $p_focus !== null ) {
-		$t_inv_lines = [];
-		foreach( meeting_invitees_get( (int)$p_focus['id'] ) as $t_inv ) {
-			$t_inv_lines[] = ( (int)$t_inv['user_id'] > 0 ? 'id=' . $t_inv['user_id'] . ' | ' : 'guest | ' ) . $t_inv['name'];
-		}
 		$t_record = meeting_record_content( $p_focus );
 		$t_focus_section = "\n---\n\n## MEETING BEING MINUTED\n\n"
 			. 'meeting_id=' . $p_focus['id'] . ' | ' . $p_focus['doc_ref'] . ' | ' . $p_focus['title'] . "\n"
 			. 'Scheduled: ' . date( 'Y-m-d H:i', (int)$p_focus['date_start'] ) . ', ' . $p_focus['duration'] . " min\n"
-			. 'Chair: ' . meeting_user_display_name( (int)$p_focus['chair_id'] )
-			. ( (int)$p_focus['minute_taker_id'] > 0 ? ' | Minute taker: ' . meeting_user_display_name( (int)$p_focus['minute_taker_id'] ) : '' ) . "\n\n"
-			. "Invitees:\n" . ( empty( $t_inv_lines ) ? '(none recorded)' : implode( "\n", $t_inv_lines ) ) . "\n\n"
+			. 'Chair: id=' . $p_focus['chair_id'] . ' ' . meeting_user_display_name( (int)$p_focus['chair_id'] )
+			. ( (int)$p_focus['minute_taker_id'] > 0 ? ' | Minute taker: id=' . $p_focus['minute_taker_id'] . ' '
+				. meeting_user_display_name( (int)$p_focus['minute_taker_id'] ) : '' ) . "\n\n"
+			. "Invitees:\n" . ai_assist_meeting_invitee_lines( $p_focus ) . "\n\n"
+			. "Open actions from earlier meetings in this series (review them under open actions):\n"
+			. ai_assist_meeting_open_action_lines( $p_focus ) . "\n\n"
 			. ( is_blank( $t_record )
 				? "(The agenda document is not available; work from the details above.)\n"
 				: "Current record (the issued agenda):\n\n" . $t_record . "\n" )
 			. "\nThe user has opened this conversation to write the minutes for this meeting.\n"
 			. "Start by asking for attendance and apologies, then work through the agenda items.\n";
+	}
+
+	# ── Series (planning the next meeting) ────────────────────────────────────
+	$t_series_section = '';
+	if( $p_series !== null ) {
+		$t_series_section = "\n---\n\n## PLANNING THE NEXT MEETING IN A SERIES\n\n"
+			. 'The user has opened this conversation to plan the meeting that follows:' . "\n"
+			. 'meeting_id=' . $p_series['id'] . ' | ' . $p_series['doc_ref'] . ' | ' . $p_series['title'] . "\n"
+			. 'Held: ' . date( 'l j F Y, H:i', (int)$p_series['date_start'] ) . ', ' . $p_series['duration'] . ' min, '
+			. $p_series['location'] . ' | Department: ' . $p_series['department'] . ' | '
+			. meeting_status_label( (int)$p_series['status'] ) . "\n\n"
+			. "Its invitees:\n" . ai_assist_meeting_invitee_lines( $p_series ) . "\n\n"
+			. "Open actions in this series:\n" . ai_assist_meeting_open_action_lines( $p_series ) . "\n\n"
+			. "Unless the user says otherwise, reuse the same invitees, department, duration, location,\n"
+			. "minute taker and meeting type, and a title of the same form with the new date. If the\n"
+			. "user gives no date, propose the same weekday and time one week later. Include\n"
+			. "\"Approval of previous minutes ({$p_series['doc_ref']})\" and an \"Open action items review\"\n"
+			. "item listing every open action above. Set series_of=\"{$p_series['id']}\" in the marker.\n";
 	}
 
 	# ── Meeting template ──────────────────────────────────────────────────────
@@ -245,6 +321,13 @@ If the user requests changes:
 
 **Never ask more than one question per turn. Never prompt for confirmation of individual details.**
 
+### Series
+
+A meeting can follow on from an earlier one (a weekly review, the next design review).
+If a PLANNING THE NEXT MEETING section appears below, follow it. Otherwise, if the user
+says this is the next of a meeting in RECENT MEETINGS YOU LEAD ("next week's QMS review"),
+treat it the same way: reuse that meeting's details and set series_of to its meeting_id.
+
 ---
 
 ## MINUTES SESSION FLOW
@@ -257,9 +340,12 @@ if it is ambiguous); if none matches, say so.
 1. Ask who attended and who sent apologies (one question).
 2. For each agenda item, capture discussion, decisions and actions (owner and due date)
    from what the user tells you. Accept rough notes and tidy them; do not interrogate.
+   Review the open actions from earlier meetings: note which were completed.
 3. Present a concise summary of the minutes and ask: "Ready to save the minutes? Or let me know what to change."
 4. On confirmation, generate the minutes document: the full record following the template,
    with `status: Draft Minutes` in the frontmatter and the revision advanced by one letter.
+   Immediately after it, give the new actions as a MEETING_ACTIONS list (below); each
+   becomes a tracked Doctis issue when the chair approves the minutes.
 
 ---
 
@@ -309,7 +395,7 @@ When generating a document, wrap it in these exact markers. Attribute values mus
 contain double quotes.
 
 For an agenda:
-<<<MEETING_DOCUMENT type="agenda" doc_id="MIN-{dept}-{YYYYMMDD}" dept="{dept}" title="{title}" date="{YYYY-MM-DD}" time="{HH:MM}" duration="{minutes}" location="{location}" minute_taker_id="{id or empty}" invitee_ids="{comma-separated matched ids}" guests="{semicolon-separated unmatched names}">>>
+<<<MEETING_DOCUMENT type="agenda" doc_id="MIN-{dept}-{YYYYMMDD}" dept="{dept}" title="{title}" date="{YYYY-MM-DD}" time="{HH:MM}" duration="{minutes}" location="{location}" minute_taker_id="{id or empty}" invitee_ids="{comma-separated matched ids}" guests="{semicolon-separated unmatched names}" series_of="{meeting_id it follows, or empty}">>>
 [complete Markdown document following TMPL-SYS-001]
 <<<END_MEETING_DOCUMENT>>>
 
@@ -317,12 +403,20 @@ For minutes:
 <<<MEETING_DOCUMENT type="minutes" meeting_id="{meeting_id}" attended_ids="{comma-separated ids}" apology_ids="{comma-separated ids}">>>
 [complete Markdown document following TMPL-SYS-001]
 <<<END_MEETING_DOCUMENT>>>
+<<<MEETING_ACTIONS>>>
+[{"ref": "A1", "action": "what is to be done", "owner_id": 9, "owner": "Frodo Baggins", "due": "YYYY-MM-DD"}]
+<<<END_MEETING_ACTIONS>>>
+
+MEETING_ACTIONS is a JSON array of the actions agreed at this meeting (not ones carried
+over), with the same refs as the document's actions table. owner_id is the owner's id from
+the meeting's invitees or chair (0 if the owner has no id); due is empty if none was given.
+Give [] when there are no actions.
 
 Doctis may adjust the doc_id to keep it unique; use the one you were given for minutes.
 After the closing marker add a brief confirmation. For agendas: state which attendees
-will receive an email (by name). For minutes: state that the draft has been emailed to the
-participants for corrections (3 business days) and awaits approval by the chair (by name),
-who approves them under My Meetings.
+will receive an email and calendar invitation (by name). For minutes: state that the draft
+has been emailed to the participants for corrections (3 business days) and awaits approval
+by the chair (by name), and that the actions become tracked issues on approval.
 
 ---
 
@@ -344,7 +438,13 @@ Scope: dept = departmental meetings only, all = all meetings.
 ## MEETINGS AWAITING MINUTES (for this user)
 
 {$t_awaiting_text}
-{$t_focus_section}
+
+---
+
+## RECENT MEETINGS YOU LEAD (candidates for series_of)
+
+{$t_recent_text}
+{$t_focus_section}{$t_series_section}
 ---
 
 {$t_template_section}
@@ -378,9 +478,14 @@ function ai_assist_process_meeting_document( string $p_reply, int $p_user_id ): 
 	$t_type    = ( $t_attrs['type'] ?? 'agenda' ) === 'minutes' ? 'minutes' : 'agenda';
 	$t_content = trim( $t_matches[2] );
 
+	# Actions agreed in the minutes, as a JSON list beside the document.
+	$t_actions_pattern = '/<<<MEETING_ACTIONS>>>([\s\S]*?)<<<END_MEETING_ACTIONS>>>/';
+	$t_actions_json = preg_match( $t_actions_pattern, $p_reply, $t_am ) ? $t_am[1] : null;
+	$t_stripped = preg_replace( array( $t_pattern, $t_actions_pattern ), '', $p_reply );
+
 	$t_result = [
 		'type'           => $t_type,
-		'stripped_reply' => trim( preg_replace( $t_pattern, '', $p_reply ) ),
+		'stripped_reply' => trim( $t_stripped ),
 		'meeting_id'     => null,
 		'doc_id'         => null,
 		'saved'          => false,
@@ -390,6 +495,8 @@ function ai_assist_process_meeting_document( string $p_reply, int $p_user_id ): 
 		'file_path'      => null,
 		'commit_sha'     => null,
 		'emails_sent'    => [],
+		'actions'        => null,
+		'series_id'      => null,
 		'error'          => null,
 	];
 
@@ -397,7 +504,7 @@ function ai_assist_process_meeting_document( string $p_reply, int $p_user_id ): 
 		if( $t_type === 'agenda' ) {
 			ai_assist_meeting_process_agenda( $t_attrs, $t_content, $p_user_id, $t_result );
 		} else {
-			ai_assist_meeting_process_minutes( $t_attrs, $t_content, $p_user_id, $t_result );
+			ai_assist_meeting_process_minutes( $t_attrs, $t_content, $p_user_id, $t_result, $t_actions_json );
 		}
 	} catch( Throwable $e ) {
 		$t_result['error'] = $e->getMessage();
@@ -449,6 +556,13 @@ function ai_assist_meeting_process_agenda( array $p_attrs, string $p_content, in
 		$t_minute_taker = 0;
 	}
 
+	# Series: only a meeting the user leads can be continued.
+	$t_series_id = 0;
+	$t_previous = ai_assist_meeting_series_base( $p_user_id, (int)( $p_attrs['series_of'] ?? 0 ) );
+	if( $t_previous !== null ) {
+		$t_series_id = meeting_series_root( $t_previous );
+	}
+
 	# The reference is built here, never taken from the model.
 	$t_ref = meeting_unique_ref( 'MIN-' . $t_dept . '-' . $t_start->format( 'Ymd' ) );
 	$t_model_ref = $p_attrs['doc_id'] ?? '';
@@ -457,6 +571,7 @@ function ai_assist_meeting_process_agenda( array $p_attrs, string $p_content, in
 	}
 
 	$t_meeting_id = meeting_create( [
+		'series_id'       => $t_series_id,
 		'doc_ref'         => $t_ref,
 		'title'           => trim( $p_attrs['title'] ?? '' ) ?: $t_ref,
 		'department'      => $t_dept,
@@ -470,6 +585,7 @@ function ai_assist_meeting_process_agenda( array $p_attrs, string $p_content, in
 
 	$p_result['meeting_id'] = $t_meeting_id;
 	$p_result['doc_id']     = $t_ref;
+	$p_result['series_id']  = $t_series_id ?: null;
 	$p_result['saved']      = true;
 	$t_meeting = meeting_get( $t_meeting_id );
 
@@ -495,9 +611,10 @@ function ai_assist_meeting_process_agenda( array $p_attrs, string $p_content, in
  * @param string $p_content Markdown document.
  * @param int    $p_user_id
  * @param array  $p_result  Result array, updated in place.
+ * @param string|null $p_actions_json MEETING_ACTIONS list, if the reply had one.
  * @return void
  */
-function ai_assist_meeting_process_minutes( array $p_attrs, string $p_content, int $p_user_id, array &$p_result ): void {
+function ai_assist_meeting_process_minutes( array $p_attrs, string $p_content, int $p_user_id, array &$p_result, ?string $p_actions_json = null ): void {
 	$t_meeting = meeting_get( (int)( $p_attrs['meeting_id'] ?? 0 ) );
 	if( $t_meeting === null ) {
 		throw new Exception( 'The minutes do not identify a recorded meeting — not saved.' );
@@ -527,6 +644,14 @@ function ai_assist_meeting_process_minutes( array $p_attrs, string $p_content, i
 	}
 	meeting_update( (int)$t_meeting['id'], [ 'status' => MEETING_MINUTES ] );
 	$p_result['saved'] = true;
+
+	# Actions (owners validated against the participants); a revision of the
+	# minutes replaces them. Without a list, earlier actions are kept.
+	if( $p_actions_json !== null ) {
+		$t_actions = meeting_actions_parse( $p_actions_json, $t_meeting );
+		meeting_actions_replace( (int)$t_meeting['id'], $t_actions );
+		$p_result['actions'] = count( $t_actions );
+	}
 
 	# Circulate for corrections; the chair is also asked to approve.
 	$p_result['emails_sent'] = meeting_email_draft_minutes( meeting_get( (int)$t_meeting['id'] ), $p_content, $p_user_id );

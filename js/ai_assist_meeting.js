@@ -11,12 +11,17 @@
 	var $meetingMessages = document.getElementById('ai-meeting-messages');
 	if( !$meetingMessages ) return;
 
-	/* Set when the page was opened to write minutes (?meeting_id=N) */
+	/* Set when the page was opened to write minutes (?meeting_id=N) or to
+	   plan the next meeting of a series (?series_of=N) */
 	var meetingId = parseInt($meetingMessages.getAttribute('data-meeting-id'), 10) || 0;
+	var seriesOf  = parseInt($meetingMessages.getAttribute('data-series-of'), 10) || 0;
+	var extra = {};
+	if( meetingId > 0 ) extra.meeting_id = meetingId;
+	if( seriesOf > 0 )  extra.series_of  = seriesOf;
 
 	window.AiAssist.createChatSession({
 		mode          : 'meeting',
-		extra         : meetingId > 0 ? { meeting_id: meetingId } : {},
+		extra         : extra,
 		systemPrompt  : '',   // server builds the meeting system prompt (ai_assist_meeting_api.php)
 		messages      : $meetingMessages,
 		input         : document.getElementById('ai-meeting-input'),

@@ -155,6 +155,12 @@ class EmailSenderPhpMailer extends EmailSender {
 		$t_mail->Subject = $p_message->subject;
 		$t_mail->Body = $p_message->text;
 
+		# Doctis: string attachments (e.g. meeting invite.ics); cleared by reset()
+		foreach( $p_message->attachments as $t_attachment ) {
+			$t_mail->addStringAttachment( $t_attachment['content'], $t_attachment['filename'],
+				PHPMailer::ENCODING_BASE64, $t_attachment['type'] );
+		}
+
 		foreach( $p_message->headers as $t_key => $t_value ) {
 			switch( strtolower( $t_key ) ) {
 				case 'message-id':

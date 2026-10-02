@@ -102,13 +102,13 @@ function meeting_print_table( array $p_meetings, $p_ai_enabled ) {
 			&& in_array( $t_status, array( MEETING_AGENDA, MEETING_MINUTES ), true )
 			&& meeting_user_can_write_minutes( $t_meeting, $t_user_id );
 ?>
-			<tr>
+			<tr<?php echo $t_status === MEETING_CANCELLED ? ' class="text-muted" style="text-decoration:line-through"' : '' ?>>
 				<td class="nowrap">
 					<?php echo date( config_get( 'normal_date_format' ), (int)$t_meeting['date_start'] ) ?>
 					<br><span class="text-muted small"><?php echo (int)$t_meeting['duration'] ?> min</span>
 				</td>
 				<td>
-					<strong><?php echo string_display_line( $t_meeting['title'] ) ?></strong>
+					<strong><a href="meeting_view_page.php?id=<?php echo (int)$t_meeting['id'] ?>"><?php echo string_display_line( $t_meeting['title'] ) ?></a></strong>
 					<br><span class="text-muted small">
 						<?php echo string_display_line( $t_meeting['doc_ref'] ) ?>
 						<?php if( !is_blank( $t_meeting['location'] ) ) echo '&middot; ' . string_display_line( $t_meeting['location'] ) ?>

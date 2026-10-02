@@ -121,6 +121,13 @@ function mc_dwg_primary_upload( $p_username, $p_password, $p_dwg_id, $p_name, $p
 		return mci_fault_access_denied( $t_user_id );
 	}
 
+	# A meeting record: an upload is the draft minutes (meeting roles only).
+	require_api( 'meeting_api.php' );
+	$t_refusal = meeting_primary_upload_refusal( (int)$p_dwg_id, (int)$t_user_id );
+	if( $t_refusal !== null ) {
+		return mci_fault_access_denied( $t_user_id, $t_refusal );
+	}
+
 	$t_decoded = base64_decode( $p_content, true );
 	if( $t_decoded === false ) {
 		return ApiObjectFactory::faultBadRequest( 'Content is not valid base64.' );
@@ -151,6 +158,7 @@ function mc_dwg_primary_upload( $p_username, $p_password, $p_dwg_id, $p_name, $p
 			$p_file_type,
 			$p_description
 		);
+		meeting_primary_uploaded( (int)$p_dwg_id, (int)$t_user_id );
 		log_event( LOG_WEBSERVICE, 'uploaded primary file \'' . $p_name . '\' for document \'' . $p_dwg_id . '\'' );
 		return true;
 	} catch( ClientException $e ) {

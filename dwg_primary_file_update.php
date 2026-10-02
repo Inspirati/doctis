@@ -13,6 +13,7 @@ require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
+require_api( 'meeting_api.php' );
 require_api( 'print_api.php' );
 
 auth_ensure_user_authenticated();
@@ -26,6 +27,11 @@ $t_project_id = $t_dwg->project_id;
 
 # Access check — same threshold as updating the dwg record
 access_ensure_dwg_level( config_get( 'update_dwg_threshold' ), $f_dwg_id );
+
+# A meeting record: a hand upload is the draft minutes (meeting roles only).
+if( meeting_primary_upload_refusal( $f_dwg_id, auth_get_current_user_id() ) !== null ) {
+	access_denied();
+}
 
 # Validate file upload
 if( !isset( $_FILES['primary_document_file'] ) || $_FILES['primary_document_file']['error'] === UPLOAD_ERR_NO_FILE ) {
@@ -53,6 +59,7 @@ $t_registered = file_dwg_primary_add(
 	$t_file['type'],
 	$f_description
 );
+meeting_primary_uploaded( $f_dwg_id, auth_get_current_user_id() );
 
 form_security_purge( 'dwg_primary_file_update' );
 

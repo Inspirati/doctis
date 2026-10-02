@@ -222,7 +222,12 @@
 			if( doc.file_path )  detail += ' &mdash; <code style="font-size:11px">' + escapeHtml(doc.file_path) + '</code>';
 			if( doc.commit_sha ) detail += '<br><span style="color:#888;font-size:11px;">Commit: ' + escapeHtml(doc.commit_sha.substring(0,8)) + '</span>';
 			if( doc.dwg_id )     detail += '<br><span style="font-size:11px;"><a href="dwg_view.php?id=' + parseInt(doc.dwg_id, 10) + '">Document #' + parseInt(doc.dwg_id, 10) + '</a></span>';
-			if( doc.meeting_id ) detail += ' <span style="font-size:11px;"><a href="my_view_meeting_page.php">My Meetings</a></span>';
+			if( doc.meeting_id ) detail += ' <span style="font-size:11px;"><a href="meeting_view_page.php?id=' + parseInt(doc.meeting_id, 10) + '">Meeting page</a></span>';
+			if( doc.series_id )  detail += '<br><span style="color:#888;font-size:11px;">Continues an earlier meeting (series)</span>';
+			if( doc.actions !== null && doc.actions !== undefined ) {
+				detail += '<br><span style="color:#888;font-size:11px;">' + parseInt(doc.actions, 10) +
+					' action(s) recorded &mdash; they become issues when the chair approves the minutes</span>';
+			}
 			if( doc.emails_sent && doc.emails_sent.length > 0 ) {
 				var names = doc.emails_sent.map(function(r) { return escapeHtml(r.name || r.email); }).join(', ');
 				detail += '<br><span style="color:#2d6a4f;font-size:11px;">' +

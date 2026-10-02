@@ -678,6 +678,9 @@ function email_send( EmailData $p_email_data ) : bool {
 
 	$t_msg->charset = $p_email_data->metadata['charset'];
 
+	# Doctis: attachments queued by meeting emails (calendar invitations)
+	$t_msg->attachments = $p_email_data->metadata['attachments'] ?? [];
+
 	# Expected Headers
 	# - Auto-Submitted
 	# - X-Auto-Response-Suppress

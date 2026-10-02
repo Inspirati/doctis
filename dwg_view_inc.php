@@ -1044,6 +1044,10 @@ $t_can_sync_to_head = !$t_force_readonly &&
 # Draft promotion follows the same rule, except that a meeting record's draft
 # minutes are approved by the meeting chair only (meeting_minutes_approve()).
 $t_dwg_meeting = meeting_get_by_dwg( $f_dwg_id );
+# A hand upload to a meeting record counts as draft minutes (chair, minute
+# taker or organiser only, before approval).
+$t_can_upload_primary = $t_can_upload_primary
+	&& meeting_primary_upload_refusal( $f_dwg_id, auth_get_current_user_id() ) === null;
 $t_can_promote_draft = $t_dwg_meeting === null
 	? $t_can_sync_to_head
 	: !$t_force_readonly && meeting_user_can_approve_minutes( $t_dwg_meeting, auth_get_current_user_id() );
@@ -1085,6 +1089,15 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 				<?php echo sprintf( lang_get( 'primary_document_upload_complete' ),
 					string_display_line( $t_uploaded_file['filename'] ),
 					htmlspecialchars( substr( $t_uploaded_file['git_sha'], 0, 8 ) ) ) ?>
+			</div>
+<?php endif; ?>
+<?php if( $t_dwg_meeting !== null && meeting_user_can_view( $t_dwg_meeting, auth_get_current_user_id() ) ): ?>
+			<div class="alert alert-info" style="margin:8px;">
+				<?php print_icon( 'fa-calendar', 'ace-icon' ); ?>
+				<?php echo sprintf( lang_get( 'meeting_document_notice' ),
+					'<a href="meeting_view_page.php?id=' . (int)$t_dwg_meeting['id'] . '">'
+						. string_display_line( $t_dwg_meeting['doc_ref'] ) . '</a>',
+					meeting_status_label( (int)$t_dwg_meeting['status'] ) ) ?>
 			</div>
 <?php endif; ?>
 			<div class="table-responsive">

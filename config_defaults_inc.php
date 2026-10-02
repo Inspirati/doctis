@@ -5056,6 +5056,10 @@ $g_ai_meeting_departments = [
 	'QA'   => [ 'name' => 'Quality Assurance',                'path' => 'content/quality/meetings',       'project_id' => 0 ],
 	'SCM'  => [ 'name' => 'Supply Chain Management',         'path' => 'content/supply-chain/meetings',  'project_id' => 0 ],
 	'EXEC' => [ 'name' => 'Executive',                        'path' => 'content/executive/meetings',     'project_id' => 0 ],
+	'FS'   => [ 'name' => 'Field Service',                    'path' => 'content/field-service/meetings', 'project_id' => 0 ],
+	'FIN'  => [ 'name' => 'Finance',                          'path' => 'content/finance/meetings',       'project_id' => 0 ],
+	'SAF'  => [ 'name' => 'Safety',                           'path' => 'content/safety/meetings',        'project_id' => 0 ],
+	'SAL'  => [ 'name' => 'Sales',                            'path' => 'content/sales/meetings',         'project_id' => 0 ],
 ];
 
 #########
