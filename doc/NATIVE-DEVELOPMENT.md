@@ -161,6 +161,35 @@ every non-executable file show as a permission change. That blocked the remote
 deployment at `e021cbe1a` in October 2026. Its `.dockerignore` excluded only the
 top-level `.git`, so the image did contain the application's checkout.
 
+### Switching the deployed branch
+
+System Operations → **Git Branches** (`manage_git_branch_page.php`) lists the
+local branches and those on `origin`, as last fetched. **Fetch from origin**
+refreshes that list. For each branch the page shows:
+- its tip;
+- how it compares with `origin`, and how far it is ahead of or behind the
+  running code;
+- the schema version it expects;
+- whether Doctis could switch back from it.
+
+Each switch goes through a review step listing commits gained and lost, the
+file change summary and any schema mismatch. The switch itself never discards
+local changes. It uses the local branch if one exists; otherwise it creates one
+tracking `origin`, so Git Pull follows the new branch from then on.
+
+Safety rules:
+- A branch that carries the branch switcher can be switched to freely.
+- A branch that only has Git Pull is a one-way switch and needs an explicit
+  acknowledgement.
+- Anything else is refused, because a server without console access could
+  not recover.
+
+Fetch and switch run git as the System Operations account, like Git Pull, so
+file ownership stays consistent. If sudo refuses, they retry as the web server
+account. A native install's setup only grants the scoped `git pull` rule, and
+its checkout is not writable by `www-data`, so switching there needs a wider
+sudoers rule. The Docker image allows `/usr/bin/git` with any arguments.
+
 The working clone is `/home/robert/Documents/doctis`. Update the deployed
 checkout deliberately with `git -C /var/www/html/doctis pull --ff-only`; rerunning
 the installer intentionally does not pull or migrate an existing schema.
