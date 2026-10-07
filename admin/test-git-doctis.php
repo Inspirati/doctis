@@ -19,6 +19,7 @@ require_once( $t_mantis_dir . 'core.php' );
 require_api( 'authentication_api.php' );
 require_api( 'category_api.php' );
 require_api( 'config_api.php' );
+require_api( 'dwg_api.php' );
 require_api( 'file_dwg_api.php' );
 require_api( 'project_api.php' );
 require_api( 'project_hierarchy_api.php' );
@@ -60,9 +61,16 @@ function make_dwg( int $p_project_id, int $p_category_id, string $p_summary ): i
 	$t_document_id = db_insert_id( db_get_table( 'documents' ) );
 	db_param_push();
 	db_query(
-		'INSERT INTO {dwg} ( project_id, creator_id, category_id, document_id, summary )
-		 VALUES ( ' . db_param() . ', 1, ' . db_param() . ', ' . db_param() . ', ' . db_param() . ' )',
-		array( $p_project_id, $p_category_id, $t_document_id, $p_summary )
+		'INSERT INTO {dwg_text} ( description, steps_to_reproduce, additional_information )'
+		. ' VALUES ( ' . db_param() . ', ' . db_param() . ', ' . db_param() . ' )',
+		array( '', '', '' )
+	);
+	$t_text_id = db_insert_id( db_get_table( 'dwg_text' ) );
+	db_param_push();
+	db_query(
+		'INSERT INTO {dwg} ( project_id, creator_id, category_id, document_id, dwg_text_id, summary )
+		 VALUES ( ' . db_param() . ', 1, ' . db_param() . ', ' . db_param() . ', ' . db_param() . ', ' . db_param() . ' )',
+		array( $p_project_id, $p_category_id, $t_document_id, $t_text_id, $p_summary )
 	);
 	return db_insert_id( db_get_table( 'dwg' ) );
 }
@@ -154,6 +162,12 @@ $t_dwg2 = make_dwg( $t_child, 1, 'GitTest doc 2 (child project)' );
 $t_cleanup['dwg_ids'][] = $t_dwg1;
 $t_cleanup['dwg_ids'][] = $t_dwg2;
 
+# Regression: dwg_move() must use the document attachment API. Calling the
+# issue attachment API raises ERROR_BUG_NOT_FOUND when no issue shares the ID.
+dwg_move( $t_dwg2, $t_parent );
+check( (int)dwg_get_field( $t_dwg2, 'project_id' ) === $t_parent,
+	'document moves between projects without issue lookup' );
+
 $t_tmp = write_tmp( "content v1\n" );
 file_dwg_primary_add( $t_dwg1, 1, $t_tmp, 'spec.md', 11, 'text/markdown', 'initial' );
 $t_row = file_dwg_primary_get( $t_dwg1 );
@@ -167,27 +181,64 @@ check( bare_git( $t_bare, 'for-each-ref refs/doctis/approved/' . $t_dwg1 ) !== '
 
 $t_content = file_dwg_primary_get_content( $t_dwg1 );
 check( $t_content !== false && $t_content['content'] === "content v1\n", 'retrieve round-trip' );
+$t_head = file_dwg_git_head_info( $t_dwg1 );
+check( $t_head !== null && !$t_head['has_draft'], 'initial registration has no Draft' );
 
 # ── Step 5: replace with SAME filename (regression: file must stay at HEAD) ─
 echo "Step 5: replace with same filename\n";
 $t_tmp = write_tmp( "content v2\n" );
 file_dwg_primary_add( $t_dwg1, 1, $t_tmp, 'spec.md', 11, 'text/markdown', 'revised' );
 $t_row = file_dwg_primary_get( $t_dwg1 );
+$t_draft = file_dwg_primary_draft_get( $t_dwg1 );
 check( bare_git( $t_bare, 'ls-tree --name-only HEAD ' . escapeshellarg( $t_row['git_path'] ) ) === $t_row['git_path'],
 	'file still present at HEAD after same-name replace' );
 $t_content = file_dwg_primary_get_content( $t_dwg1 );
-check( $t_content !== false && $t_content['content'] === "content v2\n", 'retrieve returns new content' );
+check( $t_content !== false && $t_content['content'] === "content v1\n", 'On Record content remains original' );
+$t_content = file_dwg_primary_get_head_content( $t_dwg1 );
+check( $t_content !== false && $t_content['content'] === "content v2\n", 'Draft serves new content' );
+check( $t_draft !== null && $t_draft['filename'] === 'spec.md' && $t_draft['git_sha'] !== $t_row['git_sha'],
+	'Draft metadata differs from On Record' );
+$t_head = file_dwg_git_head_info( $t_dwg1 );
+check( $t_head !== null && $t_head['has_draft'] && $t_head['sha'] === $t_draft['git_sha'],
+	'panel revision is staged commit, not repository HEAD' );
+db_param_push();
+$t_revision_count = (int)db_result( db_query(
+	'SELECT COUNT(*) FROM {dwg_history} WHERE dwg_id=' . db_param() . ' AND field_name=\'primary_document_draft\'',
+	array( $t_dwg1 )
+) );
+check( $t_revision_count === 1, 'same-name replacement appears as Draft in document history' );
 
 # ── Step 6: replace with NEW filename (sticky directory) ────────────────────
 echo "Step 6: replace with new filename\n";
 $t_tmp = write_tmp( "content v3\n" );
 file_dwg_primary_add( $t_dwg1, 1, $t_tmp, 'spec-rev-b.md', 11, 'text/markdown', 'renamed' );
 $t_row = file_dwg_primary_get( $t_dwg1 );
-check( $t_row['git_path'] === $t_dwg1 . '/spec-rev-b.md', 'directory sticky, basename adopted', $t_row['git_path'] );
+$t_draft = file_dwg_primary_draft_get( $t_dwg1 );
+check( $t_row['git_path'] === $t_dwg1 . '/spec.md' && $t_row['filename'] === 'spec.md',
+	'On Record keeps original path and filename' );
+check( $t_draft['git_path'] === $t_dwg1 . '/spec-rev-b.md', 'Draft adopts new basename', $t_draft['git_path'] );
 check( bare_git( $t_bare, 'ls-tree --name-only HEAD ' . escapeshellarg( $t_dwg1 . '/spec.md' ) ) === '',
 	'old path removed from HEAD' );
-check( bare_git( $t_bare, 'ls-tree --name-only HEAD ' . escapeshellarg( $t_row['git_path'] ) ) === $t_row['git_path'],
+check( bare_git( $t_bare, 'ls-tree --name-only HEAD ' . escapeshellarg( $t_draft['git_path'] ) ) === $t_draft['git_path'],
 	'new path present at HEAD' );
+
+check( $t_draft['git_sha'] === bare_git( $t_bare, 'rev-parse HEAD' ),
+	'renamed replacement records final HEAD commit' );
+$t_head = file_dwg_git_head_info( $t_dwg1 );
+check( $t_head !== null && $t_head['has_draft'] && !$t_head['stale'] && $t_head['filename'] === 'spec-rev-b.md',
+	'renamed Draft is document-specific and current' );
+$t_content = file_dwg_primary_get_content( $t_dwg1 );
+check( $t_content !== false && $t_content['content'] === "content v1\n", 'On Record still serves original content' );
+$t_content = file_dwg_primary_get_head_content( $t_dwg1 );
+check( $t_content !== false && $t_content['content'] === "content v3\n", 'renamed Draft serves new content' );
+check( file_dwg_primary_get_head_content( $t_dwg1, str_repeat( '0', 40 ) ) === false,
+	'Draft download rejects an outdated requested SHA' );
+db_param_push();
+$t_revision_count = (int)db_result( db_query(
+	'SELECT COUNT(*) FROM {dwg_history} WHERE dwg_id=' . db_param() . ' AND field_name=\'primary_document_draft\'',
+	array( $t_dwg1 )
+) );
+check( $t_revision_count === 2, 'renamed replacement appears as Draft in document history' );
 
 # ── Step 7: register-by-reference ────────────────────────────────────────────
 echo "Step 7: register-by-reference (no upload)\n";
@@ -200,14 +251,26 @@ exec( 'git -C ' . escapeshellarg( $t_worktree ) . ' add manual/adopted.md 2>&1' 
 exec( 'git -C ' . escapeshellarg( $t_worktree ) . ' -c user.name=tester -c user.email=t@t commit -q -m "manual" 2>&1' );
 exec( 'git -C ' . escapeshellarg( $t_worktree ) . ' push -q origin HEAD 2>&1' );
 
-$t_reg = file_dwg_primary_register( $t_dwg2, 1, 'manual/adopted.md' );
+$t_reg = file_dwg_primary_register( $t_dwg2, 1, 'manual/adopted.md', '', '', false );
 check( preg_match( '/^[0-9a-f]{40}$/', $t_reg['git_sha'] ) === 1, 'HEAD sha registered' );
 check( $t_reg['filename'] === 'adopted.md', 'filename derived from path' );
 $t_row2 = file_dwg_primary_get( $t_dwg2 );
 check( $t_row2 !== null && $t_row2['git_path'] === 'manual/adopted.md', 'row registered with native path' );
+$t_head = file_dwg_git_head_info( $t_dwg1 );
+check( $t_head !== null && $t_head['sha'] === $t_draft['git_sha'] && !$t_head['stale'],
+	'unrelated Git commit does not change staged Draft' );
 check( (int)$t_row2['filesize'] === strlen( "manually committed\n" ), 'filesize from git object', (string)$t_row2['filesize'] );
 $t_content = file_dwg_primary_get_content( $t_dwg2 );
 check( $t_content !== false && $t_content['content'] === "manually committed\n", 'registered content retrievable' );
+db_param_push();
+$t_reference = db_result( db_query(
+	'SELECT d.reference FROM {documents} d INNER JOIN {dwg} w ON w.document_id=d.id'
+		. ' WHERE w.id=' . db_param(), array( $t_dwg2 )
+) );
+check( $t_reference === $t_reg['git_sha'], 'registration records SHA without approval' );
+check( bare_git( $t_bare, 'for-each-ref refs/doctis/approved/' . $t_dwg2 ) === '',
+	'unapproved registration has no approved ref' );
+file_dwg_primary_register( $t_dwg2, 1, 'manual/adopted.md' );
 check( bare_git( $t_bare, 'for-each-ref refs/doctis/approved/' . $t_dwg2 ) !== '', 'registration pinned approved ref' );
 
 try {
@@ -227,7 +290,7 @@ try {
 }
 # dwg1's row must be intact after the rejected registration attempt.
 $t_row = file_dwg_primary_get( $t_dwg1 );
-check( $t_row !== null && $t_row['git_path'] === $t_dwg1 . '/spec-rev-b.md', 'holder row untouched by rejected attempt' );
+check( $t_row !== null && $t_row['git_path'] === $t_dwg1 . '/spec.md', 'holder row untouched by rejected attempt' );
 
 # ── Step 9: head info and dangling-path detection ────────────────────────────
 echo "Step 9: HEAD info and dangling path\n";
@@ -240,27 +303,71 @@ exec( 'git -C ' . escapeshellarg( $t_worktree ) . ' -c user.name=tester -c user.
 exec( 'git -C ' . escapeshellarg( $t_worktree ) . ' push -q origin HEAD 2>&1' );
 $t_head = file_dwg_git_head_info( $t_dwg2 );
 check( $t_head !== null && $t_head['filename'] === null, 'dangling path detected (filename null)' );
+check( $t_head !== null && $t_head['missing'] && !$t_head['has_draft'],
+	'deleted path is not a promotable Draft' );
 # The pinned on-record version must remain retrievable.
 $t_content = file_dwg_primary_get_content( $t_dwg2 );
 check( $t_content !== false && $t_content['content'] === "manually committed\n",
 	'on-record version still retrievable after external delete' );
 
-# ── Step 10: sync-to-HEAD promotion ──────────────────────────────────────────
-echo "Step 10: sync to HEAD\n";
-# Advance HEAD with new content for dwg1's path, then promote.
+# ── Step 10: staged and external Draft promotion ────────────────────────────
+echo "Step 10: document-specific Draft promotion\n";
+# An external edit after an upload makes that staged Draft stale.
 exec( 'git -C ' . escapeshellarg( $t_worktree ) . ' pull -q origin 2>&1' );
 file_put_contents( $t_worktree . '/' . $t_dwg1 . '/spec-rev-b.md', "draft v4\n" );
 exec( 'git -C ' . escapeshellarg( $t_worktree ) . ' add ' . escapeshellarg( $t_dwg1 . '/spec-rev-b.md' ) . ' 2>&1' );
 exec( 'git -C ' . escapeshellarg( $t_worktree ) . ' -c user.name=tester -c user.email=t@t commit -q -m "draft" 2>&1' );
 exec( 'git -C ' . escapeshellarg( $t_worktree ) . ' push -q origin HEAD 2>&1' );
 
+$t_head = file_dwg_git_head_info( $t_dwg1 );
+check( $t_head !== null && $t_head['has_draft'] && $t_head['stale']
+	&& $t_head['sha'] === $t_draft['git_sha'], 'later Git edit does not silently replace staged Draft' );
+try {
+	file_dwg_primary_sync_head( $t_dwg1, 1 );
+	fail( 'stale Draft promotion rejected' );
+} catch( ClientException $e ) {
+	ok( 'stale Draft promotion rejected' );
+}
+$t_content = file_dwg_primary_get_head_content( $t_dwg1 );
+check( $t_content !== false && $t_content['content'] === "content v3\n", 'staged Draft still downloads exact uploaded content' );
+
+$t_tmp = write_tmp( "draft v5\n" );
+file_dwg_primary_add( $t_dwg1, 1, $t_tmp, 'spec-rev-b.md', 9, 'text/markdown', 'restaged' );
+$t_staged = file_dwg_primary_draft_get( $t_dwg1 );
+$t_head = file_dwg_git_head_info( $t_dwg1 );
+check( $t_head !== null && $t_head['has_draft'] && !$t_head['stale']
+	&& $t_head['sha'] === $t_staged['git_sha'], 're-upload refreshes staged Draft' );
+try {
+	file_dwg_primary_sync_head( $t_dwg1, 1, str_repeat( '0', 40 ) );
+	fail( 'outdated approval SHA rejected' );
+} catch( ClientException $e ) {
+	ok( 'outdated approval SHA rejected' );
+}
+
 $t_before = file_dwg_primary_get( $t_dwg1 );
-file_dwg_primary_sync_head( $t_dwg1, 1 );
+file_dwg_primary_sync_head( $t_dwg1, 1, $t_staged['git_sha'] );
 $t_after = file_dwg_primary_get( $t_dwg1 );
-check( $t_after['git_sha'] !== $t_before['git_sha'], 'git_sha advanced to HEAD' );
-check( $t_after['git_path'] === $t_before['git_path'], 'git_path unchanged by promotion' );
+check( $t_after['git_sha'] === $t_staged['git_sha'] && $t_after['git_sha'] !== $t_before['git_sha'],
+	'promotion records exact staged SHA' );
+check( $t_after['git_path'] === $t_dwg1 . '/spec-rev-b.md' && $t_after['filename'] === 'spec-rev-b.md',
+	'promotion adopts Draft path and filename' );
+check( file_dwg_primary_draft_get( $t_dwg1 ) === null, 'Draft cleared after promotion' );
 $t_content = file_dwg_primary_get_content( $t_dwg1 );
-check( $t_content !== false && $t_content['content'] === "draft v4\n", 'promoted content served' );
+check( $t_content !== false && $t_content['content'] === "draft v5\n", 'promoted staged content served' );
+
+# A direct Git edit at the registered path also creates a Draft for this
+# document; promote the last commit affecting that path.
+exec( 'git -C ' . escapeshellarg( $t_worktree ) . ' pull -q origin 2>&1' );
+file_put_contents( $t_worktree . '/' . $t_dwg1 . '/spec-rev-b.md', "external v6\n" );
+exec( 'git -C ' . escapeshellarg( $t_worktree ) . ' add ' . escapeshellarg( $t_dwg1 . '/spec-rev-b.md' ) . ' 2>&1' );
+exec( 'git -C ' . escapeshellarg( $t_worktree ) . ' -c user.name=tester -c user.email=t@t commit -q -m "external edit" 2>&1' );
+exec( 'git -C ' . escapeshellarg( $t_worktree ) . ' push -q origin HEAD 2>&1' );
+$t_head = file_dwg_git_head_info( $t_dwg1 );
+check( $t_head !== null && $t_head['has_draft'] && !$t_head['stale']
+	&& $t_head['sha'] === bare_git( $t_bare, 'rev-parse HEAD' ), 'direct Git edit detected for this path' );
+file_dwg_primary_sync_head( $t_dwg1, 1, $t_head['sha'] );
+$t_content = file_dwg_primary_get_content( $t_dwg1 );
+check( $t_content !== false && $t_content['content'] === "external v6\n", 'promoted direct Git edit served' );
 
 # ── Step 11: category path template ──────────────────────────────────────────
 echo "Step 11: {category}/{filename} template\n";
@@ -273,6 +380,32 @@ $t_tmp = write_tmp( "categorised\n" );
 file_dwg_primary_add( $t_dwg3, 1, $t_tmp, 'policy.md', 12, 'text/markdown', '' );
 $t_row3 = file_dwg_primary_get( $t_dwg3 );
 check( $t_row3 !== null && $t_row3['git_path'] === 'guidance/policy.md', 'template path applied', $t_row3['git_path'] ?? 'null' );
+$t_head = file_dwg_git_head_info( $t_dwg1 );
+check( $t_head !== null && !$t_head['has_draft'] && $t_head['sha'] === file_dwg_primary_get( $t_dwg1 )['git_sha'],
+	'unrelated document commit does not create Draft' );
+try {
+	file_dwg_primary_sync_head( $t_dwg1, 1 );
+	fail( 'unchanged document promotion rejected' );
+} catch( ClientException $e ) {
+	ok( 'unchanged document promotion rejected' );
+}
+
+# A URL is metadata on the document, not a replacement for its Git reference.
+check( dwg_link_url_is_valid( 'https://intranet.example/documents/3' ), 'HTTP document URL accepted' );
+check( !dwg_link_url_is_valid( 'javascript:alert(1)' ), 'unsafe document URL rejected' );
+$t_link_dwg = dwg_get( $t_dwg3, true );
+$t_link_dwg->link_url = 'https://intranet.example/documents/3';
+$t_link_dwg->update( false, true );
+$t_link_dwg = dwg_get( $t_dwg3 );
+db_param_push();
+$t_doc_link = db_result( db_query( 'SELECT link_url FROM {documents} WHERE id=' . db_param(), array( $t_link_dwg->document_id ) ) );
+check( $t_link_dwg->link_url === $t_doc_link && $t_doc_link === 'https://intranet.example/documents/3',
+	'document URL saved in both metadata rows' );
+$t_link_dwg->link_url = '';
+$t_link_dwg->update( false, true );
+db_param_push();
+$t_doc_link = db_result( db_query( 'SELECT link_url FROM {documents} WHERE id=' . db_param(), array( $t_link_dwg->document_id ) ) );
+check( dwg_get( $t_dwg3 )->link_url === '' && $t_doc_link === '', 'document URL can be cleared' );
 
 # Same template, same category, same filename → collision at upload time.
 $t_dwg4 = make_dwg( $t_parent, $t_category_id, 'GitTest doc 4' );
@@ -323,6 +456,23 @@ $t_reg5 = file_dwg_primary_register( $t_dwg5, 1, 'docs/spec.md' );
 $t_content = file_dwg_primary_get_content( $t_dwg5 );
 check( $t_content !== false && $t_content['content'] === "adopted spec v2\n", 'adopted content registered and retrievable' );
 
+# Import-like case: two documents share one registration commit. Editing one
+# file must not create a Draft for the other.
+$t_dwg6 = make_dwg( $t_adopt_project, 1, 'GitTest adopted README' );
+$t_cleanup['dwg_ids'][] = $t_dwg6;
+$t_reg6 = file_dwg_primary_register( $t_dwg6, 1, 'README.md', $t_reg5['git_sha'], '', false );
+check( $t_reg5['git_sha'] === $t_reg6['git_sha'], 'two documents share import commit' );
+$t_adopt_worktree = $t_adopt_paths['worktree'];
+file_put_contents( $t_adopt_worktree . '/docs/spec.md', "adopted spec v3\n" );
+exec( 'git -C ' . escapeshellarg( $t_adopt_worktree ) . ' add docs/spec.md 2>&1' );
+exec( 'git -C ' . escapeshellarg( $t_adopt_worktree ) . ' -c user.name=src -c user.email=s@s commit -q -m "edit one imported document" 2>&1' );
+exec( 'git -C ' . escapeshellarg( $t_adopt_worktree ) . ' push -q origin HEAD 2>&1' );
+$t_changed = file_dwg_git_head_info( $t_dwg5 );
+$t_unchanged = file_dwg_git_head_info( $t_dwg6 );
+check( $t_changed !== null && $t_changed['has_draft'], 'edited imported document has Draft' );
+check( $t_unchanged !== null && !$t_unchanged['has_draft']
+	&& $t_unchanged['sha'] === $t_reg6['git_sha'], 'untouched document with same import SHA has no Draft' );
+
 # ── Step 13: rename relocation ───────────────────────────────────────────────
 echo "Step 13: rename relocation\n";
 $t_old_bare = repository_bare_path( $t_repo_id );
@@ -339,7 +489,7 @@ check( is_dir( $t_new_bare ) && !is_dir( $t_old_bare ), 'bare repo relocated on 
 check( strpos( basename( $t_new_bare ), 'gittest-renamed-' ) === 0, 'slug follows new name', basename( $t_new_bare ) );
 # Content still retrievable through the relocated repo (worktree is lazily re-cloned).
 $t_content = file_dwg_primary_get_content( $t_dwg1 );
-check( $t_content !== false && $t_content['content'] === "draft v4\n", 'retrieve works after relocation' );
+check( $t_content !== false && $t_content['content'] === "external v6\n", 'retrieve works after relocation' );
 
 } catch( Throwable $e ) {
 	fail( 'unexpected exception', get_class( $e ) . ': ' . $e->getMessage()
@@ -350,9 +500,19 @@ check( $t_content !== false && $t_content['content'] === "draft v4\n", 'retrieve
 echo "── Teardown ─────────────────────────────────────────────────────────────\n";
 foreach( $t_cleanup['dwg_ids'] as $t_id ) {
 	db_param_push();
+	$t_text_id = db_result( db_query( 'SELECT dwg_text_id FROM {dwg} WHERE id=' . db_param(), array( $t_id ) ) );
+	db_param_push();
+	db_query( 'DELETE FROM {dwg_history} WHERE dwg_id=' . db_param(), array( $t_id ) );
+	db_param_push();
 	db_query( 'DELETE d, doc FROM {dwg} d LEFT JOIN {documents} doc ON doc.id=d.document_id WHERE d.id=' . db_param(), array( $t_id ) );
 	db_param_push();
 	db_query( 'DELETE FROM {dwg_primary_file} WHERE dwg_id=' . db_param(), array( $t_id ) );
+	db_param_push();
+	db_query( 'DELETE FROM {dwg_primary_draft} WHERE dwg_id=' . db_param(), array( $t_id ) );
+	if( $t_text_id > 0 ) {
+		db_param_push();
+		db_query( 'DELETE FROM {dwg_text} WHERE id=' . db_param(), array( $t_text_id ) );
+	}
 }
 foreach( $t_cleanup['repo_ids'] as $t_id ) {
 	db_param_push();

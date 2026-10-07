@@ -2,9 +2,9 @@
 # Doctis — flat schema definition
 #
 # Every table is defined once in its current final form using a raw MySQL
-# CREATE TABLE IF NOT EXISTS statement.  There are no incremental ALTER TABLE
-# steps.  When the schema needs to change, edit the relevant CREATE TABLE here
-# and rebuild the database with:
+# CREATE TABLE IF NOT EXISTS statement. There are no incremental ALTER TABLE
+# steps. New tables can be appended as upgrades; changes to existing table
+# definitions still require a separate migration or a development rebuild with:
 #
 #   bash admin/tools/doctis-drop-and-create-new-database.sh
 #
@@ -813,6 +813,8 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	  `company` varchar(128) NOT NULL DEFAULT '',
 	  `phone` varchar(32) NOT NULL DEFAULT '',
 	  `department` varchar(64) NOT NULL DEFAULT '',
+	  `reports_to` int(10) unsigned NOT NULL DEFAULT 0,
+	  `alternative` varchar(191) NOT NULL DEFAULT '',
 	  `meeting_invite` tinyint(4) NOT NULL DEFAULT 0,
 	  `email_secondary` varchar(191) NOT NULL DEFAULT '',
 	  PRIMARY KEY (`id`),
@@ -820,7 +822,8 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	  UNIQUE KEY `idx_user_username` (`username`),
 	  KEY `idx_enable` (`enabled`),
 	  KEY `idx_access` (`access_level`),
-	  KEY `idx_email` (`email`)
+	  KEY `idx_email` (`email`),
+	  KEY `idx_reports_to` (`reports_to`)
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
@@ -940,10 +943,37 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	 VALUES (1, 195)"
 );
 
+# The native test database carries version 56 from an earlier schema cycle,
+# although the current flat definition ends at 54. Reserve those numbers so
+# an upgrade can safely add the new table at step 57 without a version rollback.
+$g_upgrade[$t_idx++] = null; # 55
+$g_upgrade[$t_idx++] = null; # 56
+
+# ── Step 57: staged primary document draft ─────────────────────────────────
+# Replacements live here until a manager promotes the draft. The existing
+# dwg_primary_file row remains the On Record version, including its old path.
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'dwg_primary_draft' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `dwg_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `filename` varchar(250) NOT NULL DEFAULT '',
+	  `filesize` int(11) NOT NULL DEFAULT 0,
+	  `file_type` varchar(250) NOT NULL DEFAULT '',
+	  `git_sha` varchar(250) NOT NULL DEFAULT '',
+	  `git_path` varchar(1024) NOT NULL DEFAULT '',
+	  `date_added` int(10) unsigned NOT NULL DEFAULT 1,
+	  `description` varchar(255) NOT NULL DEFAULT '',
+	  `git_branch` varchar(64) NOT NULL DEFAULT 'main',
+	  PRIMARY KEY (`id`),
+	  UNIQUE KEY `idx_dwg_primary_draft_dwg_id` (`dwg_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
 # ── End of schema definition ─────────────────────────────────────────────────
-# $t_idx = 55 → database_version = 54 on a fresh install.
+# $t_idx = 58 → database_version = 57 on a fresh install.
 #
-# To add a new table: append a new step here and rebuild the database.
+# To add a new table: append a new step here and run the schema upgrade.
 # Do NOT insert steps between existing entries — always append.
 # Do NOT add incremental ALTER TABLE steps — modify the base CREATE TABLE.
 

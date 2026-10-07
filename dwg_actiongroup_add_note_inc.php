@@ -75,7 +75,7 @@ function dwg_action_add_note_print_fields() {
 			<?php echo lang_get( 'add_dwgnote_title' ); ?>
 		</th>
 		<td>
-			<textarea class="form-control" name="bugnote_text" id="bugnote_text" cols="80" rows="10"></textarea>
+			<textarea class="form-control" name="dwgnote_text" id="dwgnote_text" cols="80" rows="10"></textarea>
 		</td>
 	</tr>
 

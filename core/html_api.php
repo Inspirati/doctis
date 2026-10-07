@@ -789,7 +789,7 @@ function print_manage_menu( $p_page = '' ) {
 	if( ON == config_get( 'licenses_enabled', OFF ) && access_has_project_level( config_get( 'manage_license_threshold' ) ) ) {
 		$t_pages['manage_license_page.php'] = array( 'url'   => 'manage_license_page.php', 'label' => 'manage_licenses_link' );
 	}
-	if( access_has_project_level( config_get( 'manage_import_threshold' ) ) ) {
+	if( access_has_global_level( ADMINISTRATOR ) ) {
 		$t_pages['manage_import_data_page.php'] = array( 'url'   => 'manage_import_data_page.php', 'label' => 'manage_import_link' );
 	}
 	if( access_has_global_level( config_get( 'tag_edit_threshold' ) ) ) {
@@ -825,6 +825,9 @@ function print_my_view_menu( $p_page = '' ) {
 	}
 	if( access_has_global_level( config_get( 'timeline_view_threshold' ) ) ) {
 		$t_pages['my_view_cnf_page.php'] = array( 'url'   => 'my_view_cnf_page.php', 'label' => 'my_view_cnf_link' );
+	}
+	if( access_has_global_level( config_get( 'timeline_view_threshold' ) ) ) {
+		$t_pages['my_view_org_page.php'] = array( 'url' => 'my_view_org_page.php', 'label' => 'org_chart_link' );
 	}
 	print_menu( $t_pages, $p_page, 'EVENT_MENU_MY_VIEW' );
 	?>
@@ -1428,4 +1431,3 @@ class TableFieldsItem {
 		$this->header_attr_id = $p_header_id;
 	}
 }
-

@@ -5,9 +5,21 @@ Status: **IMPLEMENTED** (2026-07-12) — `admin/import-git-repo.php`, wrapper
 verified on vaio (see [GIT_TODO.md §6](GIT_TODO.md) WP7 for the
 implementation record).  This document is retained as the requirements and
 design spec.  Implementation deviations from the plan: frontmatter `doc_id`
-maps to `documents.number` (Doctis manages `reference` as the on-record
-SHA); `status: Active` maps to accepted (180); the register primitive is
+maps to `documents.number` (Doctis manages `reference` as the registered
+Git SHA); `status: Active` maps to accepted (180); the register primitive is
 `file_dwg_primary_register()` per the C1 model rather than §4's P-numbers.
+
+**Current deployment scope (2026-09-27):** one-time adoption from GitHub into
+a new Doctis-owned repository. The `--update` design in §9 is historical and
+is not required for this migration or its failure recovery. Use the
+[HCRQMS migration runbook](HCRQMS_IMPORT_REHEARSAL.md) for current staging,
+successful one-commit document import, validation, and reset conditions. Every
+imported document receives the import commit SHA in `documents.reference`;
+import does not create an approved ref. Frontmatter status is retained as
+document metadata, independently of that reference and the Doctis approval
+action. The
+importer defaults new projects to private (`--project-visibility public` is
+available when intended). The dated note below predates WP7 implementation.
 
 > **2026-07-12 — C1 foundation implemented; this plan's §3–§4 are superseded.**
 > [GIT_SOLUTION_SPACE.md](GIT_SOLUTION_SPACE.md) replaced D1 (`git_path` as a
@@ -270,21 +282,20 @@ full would-be result (projects, documents, metadata) without writing anything.
 
 Each registered document points at the import-time `HEAD` commit:
 
-- `{dwg_primary_file}.diskfile` = HEAD SHA, `git_branch` = current branch,
+- `{dwg_primary_file}.git_sha` = HEAD SHA, `git_branch` = current branch,
   `git_path` = repo-relative path, `filename` = basename,
   `filesize`/`file_type` from `git cat-file` / extension map,
-  `date_added` = the file's last-commit timestamp.
-- `git_sha` (On-Record) = HEAD SHA as well, **pinned** via
-  `file_dwg_git_pin_approved()` → `refs/doctis/approved/<dwg_id>/1`,
-  *unless* the document's own frontmatter says it is a draft
-  (`status: Draft` → leave `git_sha` empty; the record starts as Draft-only
-  and is promoted later via the existing *Sync to HEAD* action).
+  `date_added` = import time.
+- `documents.reference` also records that same import-time HEAD SHA for **every**
+  imported document, including Draft/Pending. Registration does not approve
+  the document or create `refs/doctis/approved/*`; that is a separate Doctis
+  action. Frontmatter status maps to `dwg.status` but does not control whether
+  the Git SHA is recorded or pinned.
 - `dwg.status`: default `110:pending`; refined from frontmatter where
   available (see mapping in §6).
 
-Rationale: imported files are, in the common case, the current official
-versions of real documents — importing them as unrecorded drafts would make
-every document immediately show the "HEAD has advanced" warning state.
+Rationale: every file in the adopted repository has a precise Git reference
+immediately. Approval can follow independently in Doctis.
 
 ### D7 — Representing multi-depth directories (Doctis has no folders)
 
@@ -326,7 +337,7 @@ Consequences of the chosen option:
 | P1 | `git_path` column | `admin/schema.php` (`dwg_primary_file` base definition) + DB rebuild | See D1 |
 | P2 | Honour `git_path` in the backend | `core/classes/GitFileStorageBackend.class.php` (`repo_rel_path()` + its 3 call sites), `core/file_dwg_api.php` (pass/persist `git_path` through `file_dwg_primary_add()` metadata and the row array) | Empty ⇒ legacy behaviour |
 | P3 | Storage delegation helper | `core/file_dwg_api.php`: `dwg_project_storage_project_id()`; resolve through it in the backend path helpers and `ensure_project_repo()` | See D2; per-project config key `git_storage_project_id` |
-| P4 | Register-without-upload primitive | `core/file_dwg_api.php`: `file_dwg_primary_register( $p_dwg_id, $p_user_id, $p_git_path, $p_sha, $p_branch, $p_description )` — verifies the blob exists (`git cat-file -e <sha>:<path>` against the bare repo), inserts/updates the `{dwg_primary_file}` row, pins the approved ref | This is GIT_TODO §3a; the importer is its first consumer. SOAP wrapper deferred (D4 Phase 2) |
+| P4 | Register-without-upload primitive | `core/file_dwg_api.php`: `file_dwg_primary_register()` verifies the blob exists, writes the primary-file row and `documents.reference`; approved-ref pinning is optional and disabled for import | This is GIT_TODO §3a; the importer is its first consumer. SOAP wrapper deferred (D4 Phase 2) |
 
 P1–P4 are independently testable and individually small; land them first as
 their own commits, extend `admin/test-git-php.php` for each (see §10).
@@ -358,7 +369,7 @@ aborts cleanly on error (nothing is half-adopted — see failure handling below)
 | B1 | Discover | Walk the allowlisted directories (use case 1) or each qualifying subdirectory (use case 2) at `HEAD`, matching `patterns`; use `git ls-tree -r HEAD` rather than the filesystem so only *committed* content is registered |
 | B2 | Extract metadata | Per file: frontmatter → git history → path/filename → (optional) PDF info; see §6 |
 | B3 | Create dwg record | Via `DwgAddCommand` (parity with UI/SOAP validation): project (or sub-project) id, title, summary, category, classification, discipline, status |
-| B4 | Register primary file | `file_dwg_primary_register()` (P4) with `git_path`, HEAD SHA, branch; pin approved ref per D6 |
+| B4 | Register primary file | `file_dwg_primary_register()` (P4) with `git_path` and HEAD SHA; record Reference and defer approved-ref pinning per D6 |
 | B5 | Report | Table of created projects / documents / skipped files (with reasons) / metadata sources used; exit non-zero if any file failed |
 
 **Failure handling:** Phase A is all-or-nothing — on any A-step failure,
@@ -380,10 +391,10 @@ carry `doc_id`, `title`, `revision`, `status`, `owner`, `approver`,
 | Frontmatter key | Doctis field | Notes |
 |-----------------|--------------|-------|
 | `title` | `documents.title` / `dwg.summary` | |
-| `doc_id` | `documents.reference` | e.g. `WI-IT-001`; also the §9 idempotency key |
+| `doc_id` | `documents.number` | e.g. `WI-IT-001`; `reference` stores the registered Git SHA |
 | `revision` | `documents.revision` | |
 | `classification` | `dwg.classification` / `documents.classification` | e.g. `Internal` |
-| `status` | `dwg.status` | Map: `Draft`→110 pending (no On-Record pin, D6); `In Review`→160 review; `Approved`/`Effective`→180 accepted; `Released`→190 incorporated; `Superseded`/`Obsolete`→195 archived; unknown→110 + warning |
+| `status` | `dwg.status` | Map: `Draft`→110 pending; `In Review`→160 review; `Approved`/`Effective`→180 accepted; `Released`→190 incorporated; `Superseded`/`Obsolete`→195 archived; unknown→110 + warning. Status mapping does not create an approval pin. |
 | `owner` / `approver` | `dwg.handler_id` | Resolved only if it matches a Doctis username/realname; else noted in the import report |
 | `effective_date` | `documents.release_date` | Parse to Unix int (`INT UNSIGNED` convention) |
 | `review_period` | `dwg.due_date` | `effective_date + period` when both parse |
@@ -430,13 +441,13 @@ ssh hcr@vaio "sudo -u www-data php /var/www/html/doctis/admin/import-git-repo.ph
    `/var/git/doctis/hcrqms-7.git`, hook installed, remotes stripped.
 3. `git ls-tree -r HEAD` filtered to `content/**/*.md`, `system/**/*.md`
    → 33 documents (current count).
-4. Each: frontmatter parsed (`doc_id` → reference, `revision`, `status`
+4. Each: frontmatter parsed (`doc_id` → number, `revision`, `status`
    mapped, `classification`), categories auto-created from the relative
    directory path per D7 (`engineering/guidance`, `it`, `policies`, …),
    dwg + primary-file rows written with
-   `git_path = content/it/Task-Instruction-….md` etc., On-Record pinned
-   unless `status: Draft`.
-5. Report: 33 registered (N on-record, M draft), any unresolved
+   `git_path = content/it/Task-Instruction-….md` etc., Reference set to the
+   import SHA for every document without an approval pin.
+5. Report: 33 registered, any unresolved
    `owner:` names listed.
 
 Repo remains a working QMS/publishing tree; contributors re-point origin to
@@ -468,7 +479,7 @@ Drafts, promotion happens in Doctis.
 that has grown since the first import (still operator-initiated — see §2):
 
 - **Match key**, per file, in order: existing `{dwg_primary_file}.git_path`
-  in the target (sub-)project → frontmatter `doc_id` vs `documents.reference`
+  in the target (sub-)project → frontmatter `doc_id` vs `documents.number`
   → no match ⇒ *new* document.
 - **New file** → register as in Phase B.
 - **Known file, HEAD advanced** → no DB change (that is the normal Draft

@@ -509,6 +509,19 @@ if( true
 	print_table_spacer( 6 );
 }
 
+if( !is_blank( $t_dwg->link_url ) ) {
+	echo '<tr>';
+	echo '<th class="category">', lang_get( 'dwg_link_url' ), '</th>';
+	echo '<td colspan="5" style="overflow-wrap:anywhere">';
+	if( dwg_link_url_is_valid( $t_dwg->link_url ) ) {
+		echo '<a href="', string_attribute( $t_dwg->link_url ), '">',
+			string_html_specialchars( $t_dwg->link_url ), '</a>';
+	} else {
+		echo string_html_specialchars( $t_dwg->link_url );
+	}
+	echo '</td></tr>';
+}
+
 if( $t_flags['id_show'] || $t_flags['project_show'] || $t_flags['category_show'] ||
 	$t_flags['view_state_show'] || $t_flags['created_at_show'] || $t_flags['updated_at_show']
 ) {
@@ -1021,6 +1034,7 @@ if( $t_flags['sponsorships_show'] ) {
 # Panel is hidden from users below $g_dwg_primary_document_threshold (default REPORTER).
 if( access_has_dwg_level( config_get( 'dwg_primary_document_threshold' ), $f_dwg_id ) ):
 $t_primary_file = file_dwg_primary_get( $f_dwg_id );
+$t_primary_draft = file_dwg_primary_draft_get( $f_dwg_id );
 $t_can_upload_primary = !$t_force_readonly &&
 	access_has_dwg_level( config_get( 'update_dwg_threshold' ), $f_dwg_id );
 # Sync to HEAD is a privileged operation — restricted to manager level and above.
@@ -1031,7 +1045,13 @@ $t_git_head_sha      = $t_git_head_info ? $t_git_head_info['sha']      : null;
 $t_git_head_date     = $t_git_head_info ? $t_git_head_info['date']     : null;
 $t_git_head_author   = $t_git_head_info ? $t_git_head_info['author']   : null;
 $t_git_head_filename = $t_git_head_info ? $t_git_head_info['filename'] : null;
-$t_collapse_block = is_collapsed( 'primary_document' );
+$t_has_draft         = $t_git_head_info && $t_git_head_info['has_draft'];
+$t_path_missing      = $t_git_head_info && $t_git_head_info['missing'];
+$t_draft_stale       = $t_git_head_info && $t_git_head_info['stale'];
+$t_uploaded_file = $t_primary_draft ?: $t_primary_file;
+$t_primary_uploaded = $t_uploaded_file &&
+	gpc_get_string( 'primary_uploaded', '' ) === $t_uploaded_file['git_sha'];
+$t_collapse_block = $t_primary_uploaded ? false : is_collapsed( 'primary_document', true );
 $t_block_css = $t_collapse_block ? 'collapsed' : '';
 $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 ?>
@@ -1053,11 +1073,15 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 
 	<div class="widget-body">
 		<div class="widget-main no-padding">
+<?php if( $t_primary_uploaded ): ?>
+			<div class="alert alert-success">
+				<?php echo sprintf( lang_get( 'primary_document_upload_complete' ),
+					string_display_line( $t_uploaded_file['filename'] ),
+					htmlspecialchars( substr( $t_uploaded_file['git_sha'], 0, 8 ) ) ) ?>
+			</div>
+<?php endif; ?>
 			<div class="table-responsive">
 				<table class="table table-bordered table-condensed table-striped">
-<?php
-$t_head_diverged = $t_git_head_sha !== null && $t_git_head_sha !== ( $t_primary_file['git_sha'] ?? null );
-?>
 <?php if( $t_primary_file ): ?>
 				<tr class="bug-header">
 					<th class="category width-10"></th>
@@ -1072,7 +1096,7 @@ $t_head_diverged = $t_git_head_sha !== null && $t_git_head_sha !== ( $t_primary_
 						<span class="label label-success"><?php echo lang_get( 'primary_document_approved' ) ?></span>
 					</th>
 					<td>
-						<a href="file_download.php?type=dwg_primary&amp;id=<?php echo $f_dwg_id ?>"><?php
+						<a href="file_download.php?type=dwg_primary&amp;id=<?php echo $f_dwg_id ?>&amp;sha=<?php echo string_attribute( $t_primary_file['git_sha'] ) ?>"><?php
 							echo string_display_line( $t_primary_file['filename'] )
 						?></a>
 						&nbsp;<span class="small">(<?php echo number_format( $t_primary_file['filesize'] ) ?> <?php echo lang_get( 'bytes' ) ?>)</span>
@@ -1089,6 +1113,7 @@ $t_head_diverged = $t_git_head_sha !== null && $t_git_head_sha !== ( $t_primary_
 <?php	endif; ?>
 					</td>
 				</tr>
+<?php	if( $t_has_draft || $t_path_missing ): ?>
 				<tr>
 					<th class="category">
 						<span class="label label-default"><?php echo lang_get( 'primary_document_draft' ) ?></span>
@@ -1100,7 +1125,7 @@ $t_head_diverged = $t_git_head_sha !== null && $t_git_head_sha !== ( $t_primary_
 						?></a>
 <?php	elseif( $t_git_head_sha !== null ): ?>
 						<a href="dwg_primary_head_warn.php?id=<?php echo $f_dwg_id ?>"
-							title="The registered path <?php echo htmlspecialchars( $t_primary_file['git_path'] ) ?> was renamed or deleted by a push made outside Doctis">
+							title="The draft path <?php echo htmlspecialchars( ( $t_primary_draft ?: $t_primary_file )['git_path'] ) ?> is absent from HEAD">
 							<span class="label label-danger">missing at HEAD</span>
 						</a>
 <?php	else: ?>
@@ -1111,7 +1136,9 @@ $t_head_diverged = $t_git_head_sha !== null && $t_git_head_sha !== ( $t_primary_
 					<td>
 <?php	if( $t_git_head_sha !== null ): ?>
 						<code title="<?php echo htmlspecialchars( $t_git_head_sha ) ?>"><?php echo htmlspecialchars( substr( $t_git_head_sha, 0, 8 ) ) ?></code>
-<?php		if( $t_head_diverged ): ?>
+<?php		if( $t_draft_stale ): ?>
+						&nbsp;<span class="label label-danger"><?php echo lang_get( 'primary_document_draft_stale' ) ?></span>
+<?php		elseif( $t_has_draft ): ?>
 						&nbsp;<span class="label label-warning">updated</span>
 <?php		endif; ?>
 <?php	else: ?>
@@ -1120,19 +1147,11 @@ $t_head_diverged = $t_git_head_sha !== null && $t_git_head_sha !== ( $t_primary_
 					</td>
 					<td><?php echo $t_git_head_author !== null ? htmlspecialchars( $t_git_head_author ) : '<span class="small">—</span>' ?></td>
 					<td>
-<?php	if( $t_can_sync_to_head ): ?>
-						<form method="post" action="dwg_primary_file_touch.php" style="display:inline">
-							<?php echo form_security_field( 'dwg_primary_file_touch' ) ?>
-							<input type="hidden" name="dwg_id" value="<?php echo $f_dwg_id ?>" />
-							<input type="submit"
-								class="btn btn-default btn-xs btn-white btn-round"
-								value="<?php echo lang_get( 'primary_document_touch' ) ?>" />
-						</form>
-<?php	endif; ?>
-<?php	if( $t_can_sync_to_head && $t_head_diverged ): ?>
+<?php	if( $t_can_sync_to_head && $t_has_draft && !$t_draft_stale ): ?>
 						<form method="post" action="dwg_primary_file_sync_head.php" style="display:inline">
 							<?php echo form_security_field( 'dwg_primary_file_sync_head' ) ?>
 							<input type="hidden" name="dwg_id" value="<?php echo $f_dwg_id ?>" />
+							<input type="hidden" name="draft_sha" value="<?php echo string_attribute( $t_git_head_sha ) ?>" />
 							<input type="submit"
 								class="btn btn-warning btn-xs btn-white btn-round"
 								value="<?php echo lang_get( 'primary_document_sync_head' ) ?>" />
@@ -1140,6 +1159,7 @@ $t_head_diverged = $t_git_head_sha !== null && $t_git_head_sha !== ( $t_primary_
 <?php	endif; ?>
 					</td>
 				</tr>
+<?php	endif; ?>
 <?php	if( !is_blank( $t_primary_file['description'] ) ): ?>
 				<tr>
 					<th class="category"><?php echo lang_get( 'description' ) ?></th>
@@ -1154,7 +1174,8 @@ $t_head_diverged = $t_git_head_sha !== null && $t_git_head_sha !== ( $t_primary_
 							<?php echo form_security_field( 'dwg_primary_file_update' ) ?>
 							<input type="hidden" name="dwg_id" value="<?php echo $f_dwg_id ?>" />
 							<input type="file" name="primary_document_file" class="input-sm" />
-							<input type="text" name="primary_document_description" class="input-sm width-40"
+							<input type="text" name="primary_document_description" class="input-sm"
+								style="width:50% !important"
 								maxlength="255" placeholder="<?php echo lang_get( 'primary_document_description_hint' ) ?>" />
 							<input type="submit" class="btn btn-warning btn-sm btn-white btn-round"
 								value="<?php echo lang_get( 'primary_document_replace_button' ) ?>" />
@@ -1164,33 +1185,30 @@ $t_head_diverged = $t_git_head_sha !== null && $t_git_head_sha !== ( $t_primary_
 <?php	endif; ?>
 <?php else: ?>
 				<tr>
-					<td colspan="6" class="center">
+					<td colspan="6"<?php echo $t_can_upload_primary ? '' : ' class="center"' ?>>
 <?php	if( $t_can_upload_primary ): ?>
 						<form method="post" enctype="multipart/form-data" action="dwg_primary_file_update.php">
 							<?php echo form_security_field( 'dwg_primary_file_update' ) ?>
 							<input type="hidden" name="dwg_id" value="<?php echo $f_dwg_id ?>" />
-							<table class="table table-condensed no-border">
+							<table class="table table-condensed no-border width-100" style="table-layout:fixed">
 							<tr>
 								<th class="category width-15">
 									<label for="primary_document_file_view"><?php echo lang_get( 'primary_document_file' ) ?></label>
 								</th>
-								<td>
-									<input id="primary_document_file_view" type="file" name="primary_document_file" class="input-sm" />
+								<td class="width-85">
+									<input id="primary_document_file_view" type="file" name="primary_document_file" class="input-sm" style="width:100% !important" />
 								</td>
 							</tr>
 							<tr>
 								<th class="category width-15">
 									<label for="primary_document_description_view"><?php echo lang_get( 'description' ) ?></label>
 								</th>
-								<td>
+								<td class="width-85">
 									<input id="primary_document_description_view" type="text"
-										name="primary_document_description" class="input-sm width-60"
+										name="primary_document_description" class="input-sm"
+										style="width:50% !important"
 										maxlength="255"
 										placeholder="<?php echo lang_get( 'primary_document_description_hint' ) ?>" />
-								</td>
-							</tr>
-							<tr>
-								<td colspan="2">
 									<input type="submit" class="btn btn-primary btn-sm btn-white btn-round"
 										value="<?php echo lang_get( 'primary_document_upload_button' ) ?>" />
 								</td>
@@ -1222,7 +1240,7 @@ if( $t_flags['relationships_show'] ) {
 # User list monitoring the dwg
 if( $t_flags['monitor_show'] ) {
 	// $t_collapse_block = is_collapsed( 'monitoring' );
-	$t_collapse_block = is_collapsed( 'monitors' );
+	$t_collapse_block = is_collapsed( 'monitors', true );
 	$t_block_css = $t_collapse_block ? 'collapsed' : '';
 	$t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 ?>
@@ -1303,7 +1321,7 @@ if( $t_flags['monitor_show'] ) {
 
 # Licenses applied to the dwg
 if( $t_flags['license_show'] ) {
-	$t_collapse_block = is_collapsed( 'licenses' );
+	$t_collapse_block = is_collapsed( 'licenses', true );
 	$t_block_css = $t_collapse_block ? 'collapsed' : '';
 	$t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 ?>
@@ -1542,7 +1560,7 @@ if( $t_flags['history_show'] && $f_history ) {
 	<div class="col-md-12 col-xs-12">
 		<div class="space-10"></div>
 <?php
-	$t_collapse_block = is_collapsed( 'history' );
+	$t_collapse_block = is_collapsed( 'history', true );
 	$t_block_css = $t_collapse_block ? 'collapsed' : '';
 	$t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 	$t_history = history_dwg_get_events_array( $f_dwg_id );
@@ -1770,7 +1788,7 @@ function dwg_view_relationship_view_box( $p_bug_id, $p_can_update ) {
 	<div class="col-md-12 col-xs-12">
 	<div class="space-10"></div>
 <?php
-	$t_collapse_block = is_collapsed( 'relationships' );
+	$t_collapse_block = is_collapsed( 'relationships', true );
 	$t_block_css = $t_collapse_block ? 'collapsed' : '';
 	$t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 ?>
@@ -2104,4 +2122,3 @@ function dwg_view_action_buttons( $p_bug_id, $p_flags ) {
 
 	echo '</div>';
 }
-

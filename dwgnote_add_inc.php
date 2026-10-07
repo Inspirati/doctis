@@ -62,7 +62,7 @@ require_api( 'file_dwg_api.php' );
 <div class="space-10"></div>
 
 <?php
-	$t_collapse_block = is_collapsed( 'dwgnote_add' );
+	$t_collapse_block = is_collapsed( 'dwgnote_add', true );
 	$t_block_css = $t_collapse_block ? 'collapsed' : '';
 	$t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 	$t_allow_file_upload = file_dwg_allow_dwg_upload( $f_bug_id );
@@ -119,7 +119,7 @@ require_api( 'file_dwg_api.php' );
 					<?php echo lang_get( 'bugnote' ) ?>
 				</th>
 				<td class="width-85">
-					<textarea name="bugnote_text" id="bugnote_text" class="<?php echo $t_bugnote_class ?>" rows="7"></textarea>
+					<textarea name="dwgnote_text" id="dwgnote_text" class="<?php echo $t_bugnote_class ?>" rows="7"></textarea>
 				</td>
 			</tr>
 

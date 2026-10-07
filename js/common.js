@@ -550,9 +550,9 @@ $(document).ready( function() {
 
 	$('input[name=private].ace').bind("click", function() {
 		if ($(this).is(":checked")){
-			$('textarea[name=bugnote_text]').addClass("bugnote-private");
+			$('textarea[name=bugnote_text], textarea[name=dwgnote_text]').addClass("bugnote-private");
 		} else {
-			$('textarea[name=bugnote_text]').removeClass("bugnote-private");
+			$('textarea[name=bugnote_text], textarea[name=dwgnote_text]').removeClass("bugnote-private");
 		}
 	});
 

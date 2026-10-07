@@ -74,8 +74,7 @@ class IssueUpdateTest extends SoapBase {
 		$this->assertEquals( 'public', $t_issue->view_state->name );
 		$this->assertEquals( 30, $t_issue->priority->id );
 		$this->assertEquals( 'normal', $t_issue->priority->name );
-		$this->assertEquals( 50, $t_issue->severity->id );
-		$this->assertEquals( 'minor', $t_issue->severity->name );
+		$this->assertDefaultSeverity( $t_issue->severity );
 		$this->assertEquals( 10, $t_issue->status->id );
 		$this->assertEquals( 'new', $t_issue->status->name );
 		$this->assertEquals( $this->userName, $t_issue->reporter->name );
@@ -137,8 +136,7 @@ class IssueUpdateTest extends SoapBase {
 		$this->assertEquals( 'public', $t_issue->view_state->name );
 		$this->assertEquals( 30, $t_issue->priority->id );
 		$this->assertEquals( 'normal', $t_issue->priority->name );
-		$this->assertEquals( 50, $t_issue->severity->id );
-		$this->assertEquals( 'minor', $t_issue->severity->name );
+		$this->assertDefaultSeverity( $t_issue->severity );
 		$this->assertEquals( 10, $t_issue->status->id );
 		$this->assertEquals( 'new', $t_issue->status->name );
 		$this->assertEquals( $this->userName, $t_issue->reporter->name );

@@ -165,14 +165,15 @@ function collapse_end( $p_name, $p_section = '' ) {
 
 /**
  * Determine if a block should be collapsed by default.
- * @param string $p_block Collapse block.
+ * @param string  $p_block   Collapse block.
+ * @param boolean $p_default State to use when the user has no saved preference.
  * @return boolean
  */
-function is_collapsed( $p_block ) {
+function is_collapsed( $p_block, $p_default = false ) {
 	global $g_collapse_cache_token;
 
 	if( !isset( $g_collapse_cache_token[$p_block] ) ) {
-		return false;
+		return $p_default;
 	}
 
 	return( true == $g_collapse_cache_token[$p_block] );

@@ -92,6 +92,7 @@ print_my_view_menu( 'my_view_cnf_page.php' );
 # ── My Profile — load current user values ────────────────────────────────────
 $t_profile_row = user_get_row( $t_current_user_id );
 $t_profile_updated = gpc_get_bool( 'updated', false );
+$t_profile_users = user_get_enabled_rows();
 
 
 ?>
@@ -408,6 +409,38 @@ $t_meeting_invite_options = [
 					maxlength="<?php echo DB_FIELD_SIZE_PHONE ?>"
 					value="<?php echo string_attribute( $t_profile_row['phone'] ?? '' ) ?>"
 				/>
+			</td>
+		</tr>
+		<tr>
+			<td class="category" style="vertical-align:middle; white-space:nowrap;"><?php echo lang_get( 'reports_to' ) ?></td>
+			<td>
+				<select class="form-control" name="reports_to" id="reports_to">
+					<option value="0"><?php echo lang_get( 'reports_to_none' ) ?></option>
+<?php foreach( $t_profile_users as $t_profile_user_id => $t_profile_user ): ?>
+<?php	if( $t_profile_user_id === $t_current_user_id ) { continue; } ?>
+					<option value="<?php echo $t_profile_user_id ?>"
+						<?php echo ( (int)( $t_profile_row['reports_to'] ?? 0 ) === $t_profile_user_id ) ? 'selected="selected"' : '' ?>>
+						<?php echo string_html_specialchars( user_get_expanded_name_from_row( $t_profile_user ) ) ?>
+					</option>
+<?php endforeach; ?>
+				</select>
+				<p class="help-block" style="font-size:11px; color:#999; margin:3px 0 0;">
+					<?php echo lang_get( 'reports_to_hint' ) ?>
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<td class="category" style="vertical-align:middle; white-space:nowrap;"><?php echo lang_get( 'alternative' ) ?></td>
+			<td>
+				<input class="form-control" type="text"
+					name="alternative"
+					id="alternative"
+					maxlength="<?php echo DB_FIELD_SIZE_ALTERNATIVE ?>"
+					value="<?php echo string_attribute( $t_profile_row['alternative'] ?? '' ) ?>"
+				/>
+				<p class="help-block" style="font-size:11px; color:#999; margin:3px 0 0;">
+					<?php echo lang_get( 'alternative_hint' ) ?>
+				</p>
 			</td>
 		</tr>
 		<tr>
