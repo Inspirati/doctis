@@ -44,4 +44,8 @@ class EmailMessage {
 
 	# Charset
 	public string $charset = 'UTF-8';
+
+	# Doctis: attachments, each ['content' => string, 'filename' => string, 'type' => MIME type]
+	# (used for meeting calendar invitations)
+	public $attachments = [];
 }

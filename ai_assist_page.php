@@ -25,6 +25,7 @@ require_once( 'core.php' );
 require_api( 'access_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'config_api.php' );
+require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
@@ -188,6 +189,9 @@ layout_page_begin( 'ai_assist_page.php' );
 	<li>
 		<a href="#tab-other"   data-toggle="tab"><?php echo lang_get( 'ai_assist_tab_other' ) ?></a>
 	</li>
+	<li>
+		<a href="<?php echo helper_mantis_url( 'ai_knowledge_page.php' ) ?>"><?php print_icon( 'fa-graduation-cap', 'ace-icon' ); ?> <?php echo lang_get( 'ai_knowledge_link' ) ?></a>
+	</li>
 </ul>
 
 <!-- ── Tab content ────────────────────────────────────────────────────────── -->
@@ -245,9 +249,13 @@ layout_page_begin( 'ai_assist_page.php' );
 </div><!-- /.tab-content -->
 </div><!-- /.col-md-12 -->
 
-<script src="<?php echo helper_mantis_url( 'js/ai_assist.js' ) ?>"></script>
-<script src="<?php echo helper_mantis_url( 'js/ai_assist_help.js' ) ?>"></script>
-<script src="<?php echo helper_mantis_url( 'js/ai_assist_meeting.js' ) ?>"></script>
+<?php
+# Version each script by its modification time: nginx sends no cache headers,
+# so browsers would otherwise keep running a stale copy after an update.
+foreach( array( 'js/ai_assist.js', 'js/ai_assist_help.js', 'js/ai_assist_meeting.js' ) as $t_script ) {
+	echo '<script src="' . helper_mantis_url( $t_script ) . '?v=' . (int)@filemtime( __DIR__ . '/' . $t_script ) . '"></script>' . "\n";
+}
+?>
 
 <?php
 layout_page_end();

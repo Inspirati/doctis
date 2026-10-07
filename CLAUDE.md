@@ -826,29 +826,45 @@ storage on any new server.
 ## AI Assistant Feature
 
 The Doctis AI Assistant (`ai_assist_page.php`) embeds a Claude-powered chat interface
-using the Anthropic Messages API.  Before working on any AI-related code, read:
+using the Anthropic Messages API.  The Help tab answers from the user manual
+(`doc/MANUAL.md` — keep it current), a live map of the pages the user can open, and a
+knowledge base users teach and managers review (`{ai_knowledge}`, shared with the Meeting
+tab; see [doc/ai/ai-knowledge.md](doc/ai/ai-knowledge.md)).  The Meeting tab plans and minutes
+meetings (`{meeting}`, `{meeting_action}`; `core/meeting_api.php`,
+`core/meeting_calendar_api.php`, `core/meeting_action_api.php`), stores agendas and
+minutes as Doctis documents in `$g_meeting_project_id`, emails participants with
+calendar invitations, and turns approved actions into issues.  Repeating series are
+scheduled by `scripts/meeting_schedule.php` (cron; makes API calls and sends email
+unattended).  Meetings are listed on the **My Meetings** My View tab and managed on
+`meeting_view_page.php`.  Built on branch `ai-meeting`, verified end to end on the
+native VM, and merged into `dev` on 2026-10-08 after the PHPUnit `mantis` suite
+passed; the owner's wider test sweep is still open (`doc/ai/ai-todo.md` §7).  SOP
+and Other tabs are placeholders.  Before working on any AI-related code, read:
 
-- **[doc/ai-todo.md](doc/ai-todo.md)** — living implementation log: what is built, how
-  the pipeline works, configuration reference, known constraints, and the phased to-do
-  list (Phases 2–5).  Update this document as work is completed or decisions change.
-- **[doc/ai-engine.md](doc/ai-engine.md)** — architecture concept plan and platform
-  assessment.  Read before making structural changes to the AI pipeline.
+- **[doc/ai/ai-todo.md](doc/ai/ai-todo.md)** — living status and to-do: what is built,
+  what is broken, how the pipeline works, configuration, and the prioritised to-do
+  list.  Update this document as work is completed or decisions change.
+- **[doc/ai/ai-engine.md](doc/ai/ai-engine.md)** — original concept plan and platform
+  assessment, with an as-built differences section.  Read before making structural
+  changes to the AI pipeline.
 
-Key files:
+Key files (one PHP and one JS module per tab):
 
 | File | Purpose |
 |------|---------|
-| `ai_assist_page.php` | Page shell: auth, tab layout, chat HTML, inline CSS, `<script src>` |
-| `ai_assist_api.php` | AJAX endpoint: validation, cURL to Anthropic, JSON response |
-| `js/ai_assist.js` | All client-side JS — **must** be external (CSP `script-src 'self'`) |
+| `ai_assist_page.php` | Page shell: auth, shared CSS, tab layout, `<script src>`; includes `ai_assist_help_page.php` / `ai_assist_meeting_page.php` |
+| `ai_assist_api.php` | AJAX endpoint: validation, `load`/`clear`/`chat`, cURL to Anthropic, `{ai_sessions}` |
+| `ai_assist_help_api.php` / `ai_assist_meeting_api.php` | Server-side system prompts; meeting document processing |
+| `js/ai_assist.js` (+ `_help.js`, `_meeting.js`) | Client-side JS — **must** be external (CSP `script-src 'self'`) |
 
 The API key (`$g_anthropic_api_key`) is set in `config/config_inc.php` (not committed).
 The sidebar button is suppressed entirely when the key is blank.
 
 **Adding new AI tables:** Follow the standard schema change workflow — edit
 `admin/schema.php` and rebuild the database.  See **Database Schema Changes** above
-for the full procedure and conventions.  See §5 of `doc/ai-todo.md` for AI-specific
-table design notes.
+for the full procedure and conventions.  See §3 and §6 of `doc/ai/ai-todo.md` for
+`{ai_sessions}` notes.  On the native VM a rebuild also wipes imported data — check
+DEV-SETUP.md first.
 
 ## Known Architectural Trade-offs
 

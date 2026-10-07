@@ -5,6 +5,19 @@
 # Expects these variables from the including scope:
 #   $t_api_configured  bool    True when $g_anthropic_api_key is set
 #   $t_user_name       string  Display name of the current user (may be blank)
+#
+# Opened as ai_assist_page.php?meeting_id=N#tab-meeting (Write Minutes) to
+# write the minutes of meeting N, or ?series_of=N (Plan Next Meeting) to plan
+# the meeting that follows N.
+
+require_once( 'ai_assist_meeting_api.php' );
+
+$t_meeting_focus = ai_assist_meeting_focus(
+	auth_get_current_user_id(), gpc_get_int( 'meeting_id', 0 )
+);
+$t_meeting_series = $t_meeting_focus === null
+	? ai_assist_meeting_series_base( auth_get_current_user_id(), gpc_get_int( 'series_of', 0 ) )
+	: null;
 ?>
 
 	<!-- ═══ MEETING TAB ══════════════════════════════════════════════════════ -->
@@ -38,11 +51,12 @@
 				<?php print_icon( 'fa-info-circle', 'ace-icon' ); ?>
 				<strong>Meeting Assistant.</strong>
 				Guided agenda and minutes capture following the HC-Robotics meeting template (TMPL-SYS-001).
-				<?php if( is_blank( config_get_global( 'hcrqms_repo_path' ) ) ): ?>
+				Your meetings are listed under <a href="my_view_meeting_page.php"><?php echo lang_get( 'my_view_meeting_link' ) ?></a>.
+				<?php if( meeting_project_id() === 0 ): ?>
 				<span style="color:#888;">
 					<?php print_icon( 'fa-exclamation-circle', 'ace-icon' ); ?>
-					HCRQMS repository not configured — documents will not be saved automatically.
-					Set <code>$g_hcrqms_repo_path</code> in <code>config/config_inc.php</code> to enable file save.
+					No meeting project configured — meetings are recorded but no document is stored.
+					Set <code>$g_meeting_project_id</code> in <code>config/config_inc.php</code> to enable document storage.
 				</span>
 				<?php endif; ?>
 			</div>
@@ -50,6 +64,8 @@
 
 			<!-- Message thread -->
 			<div id="ai-meeting-messages" role="log" aria-live="polite" aria-label="Meeting assistant conversation"
+				data-meeting-id="<?php echo $t_meeting_focus === null ? 0 : (int)$t_meeting_focus['id'] ?>"
+				data-series-of="<?php echo $t_meeting_series === null ? 0 : (int)$t_meeting_series['id'] ?>"
 				style="height:440px;overflow-y:auto;padding:14px 10px;background:#f8f9fb;border:1px solid #dde3ea;border-radius:4px;display:flex;flex-direction:column;gap:10px;">
 				<!-- Welcome message -->
 				<div class="ai-msg-row assistant" id="ai-meeting-welcome-msg">
@@ -58,13 +74,29 @@
 					</div>
 					<div class="ai-msg-bubble">
 						Hello<?php if( !is_blank( $t_user_name ) ) echo ', ' . string_display_line( $t_user_name ); ?>!
+<?php if( $t_meeting_focus !== null ): ?>
+						Let&rsquo;s write the minutes for
+						<strong><?php echo string_display_line( $t_meeting_focus['doc_ref'] ) ?></strong>
+						&mdash; <?php echo string_display_line( $t_meeting_focus['title'] ) ?>.
+						<br><br>
+						Start with who attended and who sent apologies, then give me your notes on each agenda item &mdash; rough notes are fine.
+<?php elseif( $t_meeting_series !== null ): ?>
+						Let&rsquo;s plan the meeting after
+						<strong><?php echo string_display_line( $t_meeting_series['doc_ref'] ) ?></strong>
+						&mdash; <?php echo string_display_line( $t_meeting_series['title'] ) ?>.
+						<br><br>
+						I&rsquo;ll keep the same people, place and format and carry forward the open actions.
+						Tell me the date and time (or say <em>same time next week</em>) and anything that changes.
+<?php else: ?>
 						I&rsquo;m the Doctis Meeting Assistant. Tell me about the meeting in one sentence and I&rsquo;ll draft the agenda.
 						<br><br>
 						<span style="color:#666;font-size:12px;">
 							<strong>Example:</strong> <em>&ldquo;Agenda for Phil, Sanjay and Sudheer on 20 June at 11am to discuss Doctis development progress, less than one hour.&rdquo;</em>
 						</span>
 						<br><br>
-						Or type <em>minutes</em> to complete the record after a meeting.
+						Or type <em>minutes</em> to complete the record after a meeting, or choose <em>Write minutes</em> under
+						<a href="my_view_meeting_page.php"><?php echo lang_get( 'my_view_meeting_link' ) ?></a>.
+<?php endif; ?>
 					</div>
 				</div>
 			</div><!-- /#ai-meeting-messages -->

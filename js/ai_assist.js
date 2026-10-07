@@ -83,6 +83,7 @@
 		var systemPrompt   = cfg.systemPrompt   || '';
 		var welcomeId      = cfg.welcomeId      || '';
 		var compactWelcome = cfg.compactWelcome || '';
+		var extra          = cfg.extra          || {};   // merged into chat/load requests
 
 		var chatHistory    = [];
 		var currentXhr     = null;
@@ -105,6 +106,18 @@
 			var len = $input.value.length;
 			$charCount.textContent = len > 3500 ? len + ' / 4000' : '';
 			$charCount.style.color = len > 3800 ? '#c00' : '#aaa';
+		}
+
+		function requestBody(fields) {
+			for( var key in extra ) {
+				if( Object.prototype.hasOwnProperty.call(extra, key) ) fields[key] = extra[key];
+			}
+			return JSON.stringify(fields);
+		}
+
+		function escapeHtml(text) {
+			return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+				.replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 		}
 
 		function updateTokenDisplay() {
@@ -164,7 +177,26 @@
 						}, 1500);
 					}
 				});
-				bubble.appendChild(copyBtn);
+				/* "Correct this": start a correction, which the assistant can
+				   offer to save to the knowledge base */
+				var teachBtn = document.createElement('button');
+				teachBtn.className = 'ai-copy-btn';
+				teachBtn.title = 'Not right? Tell the assistant, and it can remember it for everyone';
+				teachBtn.innerHTML = '<i class="ace-icon fa fa-graduation-cap"></i> Correct this';
+				teachBtn.addEventListener('click', function() {
+					$input.value = 'That is not right. ';
+					$input.focus();
+					$input.setSelectionRange($input.value.length, $input.value.length);
+					updateCharCount();
+				});
+
+				var tools = document.createElement('div');
+				tools.className = 'ai-msg-tools';
+				copyBtn.style.display = teachBtn.style.display = 'inline-block';
+				teachBtn.style.marginLeft = '4px';
+				tools.appendChild(copyBtn);
+				tools.appendChild(teachBtn);
+				bubble.appendChild(tools);
 			} else {
 				bubble.textContent = content;
 			}
@@ -172,6 +204,28 @@
 			row.appendChild(avatar);
 			row.appendChild(bubble);
 			$messages.appendChild(row);
+			scrollToBottom();
+		}
+
+		/* ── Knowledge-entry notification card (help and meeting modes) ────── */
+		function appendKnowledgeCard(entry) {
+			var card = document.createElement('div');
+			card.style.cssText =
+				'margin:6px 0;padding:10px 14px;background:#f3f6fb;border:1px solid #b9c9e0;' +
+				'border-radius:6px;font-size:12px;color:#2a4a73;';
+			if( entry.error ) {
+				card.style.background = '#fff8f0';
+				card.style.borderColor = '#e8b88a';
+				card.style.color = '#7a4000';
+				card.innerHTML = '<i class="ace-icon fa fa-exclamation-triangle"></i> <strong>Not saved to the knowledge base</strong> &mdash; ' +
+					escapeHtml(entry.error);
+			} else {
+				var id = parseInt(entry.id, 10);
+				card.innerHTML = '<i class="ace-icon fa fa-graduation-cap"></i> <strong>Added to the knowledge base</strong> ' +
+					'as <a href="ai_knowledge_page.php#kb-' + id + '">KB-' + id + '</a> &mdash; ' + escapeHtml(entry.question || '') +
+					'<br><span style="color:#888;font-size:11px;">Visible to everyone now, marked unverified until a manager reviews it.</span>';
+			}
+			$messages.appendChild(card);
 			scrollToBottom();
 		}
 
@@ -185,15 +239,18 @@
 			var isError = !!doc.error;
 			var icon = isError
 				? '<i class="ace-icon fa fa-exclamation-triangle" style="color:#c66;margin-right:5px;"></i>'
-				: ( doc.committed
+				: ( doc.stored
 					? '<i class="ace-icon fa fa-check-circle" style="color:#2d9948;margin-right:5px;"></i>'
 					: '<i class="ace-icon fa fa-floppy-o" style="color:#5b9bd5;margin-right:5px;"></i>' );
 
-			var title = isError
-				? 'Partial save — ' + doc.error
-				: ( doc.type === 'minutes'
-					? ( doc.committed ? 'Minutes committed to HCRQMS' : 'Minutes saved to HCRQMS' )
-					: 'Agenda saved to HCRQMS' );
+			var title;
+			if( isError ) {
+				title = ( doc.saved ? 'Partly saved — ' : 'Not saved — ' ) + escapeHtml(doc.error);
+			} else if( doc.type === 'minutes' ) {
+				title = doc.stored ? 'Minutes submitted as a draft revision for approval' : 'Minutes recorded';
+			} else {
+				title = doc.stored ? 'Meeting recorded and agenda stored as a document' : 'Meeting recorded';
+			}
 
 			if( isError ) {
 				card.style.background   = '#fff8f0';
@@ -202,14 +259,24 @@
 			}
 
 			var detail = '';
-			if( doc.doc_id )     detail += '<strong>' + doc.doc_id + '</strong>';
-			if( doc.file_path )  detail += ' &mdash; <code style="font-size:11px">' + doc.file_path + '</code>';
-			if( doc.commit_sha ) detail += '<br><span style="color:#888;font-size:11px;">Commit: ' + doc.commit_sha.substring(0,8) + '</span>';
-			if( doc.dwg_id )     detail += '<br><span style="color:#888;font-size:11px;">Registered in Doctis as document #' + doc.dwg_id + '</span>';
+			if( doc.doc_id )     detail += '<strong>' + escapeHtml(doc.doc_id) + '</strong>';
+			if( doc.file_path )  detail += ' &mdash; <code style="font-size:11px">' + escapeHtml(doc.file_path) + '</code>';
+			if( doc.commit_sha ) detail += '<br><span style="color:#888;font-size:11px;">Commit: ' + escapeHtml(doc.commit_sha.substring(0,8)) + '</span>';
+			if( doc.dwg_id )     detail += '<br><span style="font-size:11px;"><a href="dwg_view.php?id=' + parseInt(doc.dwg_id, 10) + '">Document #' + parseInt(doc.dwg_id, 10) + '</a></span>';
+			if( doc.meeting_id ) detail += ' <span style="font-size:11px;"><a href="meeting_view_page.php?id=' + parseInt(doc.meeting_id, 10) + '">Meeting page</a></span>';
+			if( doc.series_id )  detail += '<br><span style="color:#888;font-size:11px;">Continues an earlier meeting (series)</span>';
+			if( doc.recurrence ) detail += '<br><span style="color:#888;font-size:11px;">Repeats ' + escapeHtml(doc.recurrence) +
+				' &mdash; each next meeting is scheduled automatically</span>';
+			if( doc.actions !== null && doc.actions !== undefined ) {
+				detail += '<br><span style="color:#888;font-size:11px;">' + parseInt(doc.actions, 10) +
+					' action(s) recorded &mdash; they become issues when the chair approves the minutes</span>';
+			}
 			if( doc.emails_sent && doc.emails_sent.length > 0 ) {
-				var names = doc.emails_sent.map(function(r) { return r.name || r.email; }).join(', ');
+				var names = doc.emails_sent.map(function(r) { return escapeHtml(r.name || r.email); }).join(', ');
 				detail += '<br><span style="color:#2d6a4f;font-size:11px;">' +
-					'<i class="ace-icon fa fa-envelope-o"></i> Agenda emailed to: ' + names + '</span>';
+					'<i class="ace-icon fa fa-envelope-o"></i> ' +
+					( doc.type === 'minutes' ? 'Draft minutes sent for corrections to: ' : 'Agenda emailed to: ' ) +
+					names + '</span>';
 			}
 
 			card.innerHTML = icon + '<strong>' + title + '</strong>' + ( detail ? '<br>' + detail : '' );
@@ -293,7 +360,7 @@
 			setBusy(true);
 			setStatus('Thinking\u2026');
 
-			var payload = JSON.stringify({
+			var payload = requestBody({
 				action : 'chat',
 				mode   : mode,
 				history: chatHistory
@@ -340,6 +407,9 @@
 					if( cfg.onSavedDocument ) {
 						cfg.onSavedDocument(data.saved_document);
 					}
+				}
+				if( data.knowledge_entry ) {
+					appendKnowledgeCard(data.knowledge_entry);
 				}
 			};
 
@@ -415,7 +485,7 @@
 				}
 			};
 
-			xhr.send(JSON.stringify({ action: 'load', mode: mode }));
+			xhr.send(requestBody({ action: 'load', mode: mode }));
 		}
 
 		/* ── Event listeners ──────────────────────────────────────────────── */
@@ -424,7 +494,7 @@
 		if( $clearBtn ) $clearBtn.addEventListener('click', clearConversation);
 
 		$input.addEventListener('keydown', function(e) {
-			if( e.keyCode === 13 && (e.ctrlKey || e.shiftKey) ) {
+			if( (e.key === 'Enter' || e.keyCode === 13) && (e.ctrlKey || e.shiftKey) ) {
 				e.preventDefault();
 				sendMessage();
 			}
@@ -441,17 +511,46 @@
 
 
 	/* ═══════════════════════════════════════════════════════════════════════ *
+	 * Public API — consumed by ai_assist_help.js and ai_assist_meeting.js    *
+	 * Published before anything else runs, so that a later failure cannot    *
+	 * leave the chat sessions without their handlers.                          *
+	 * ═══════════════════════════════════════════════════════════════════════ */
+	window.AiAssist = {
+		createChatSession: createChatSession
+	};
+
+
+	/* ═══════════════════════════════════════════════════════════════════════ *
 	 * Tab management                                                           *
 	 * ═══════════════════════════════════════════════════════════════════════ */
 
-	/* Restore active tab from URL hash on load */
-	(function() {
+	/* Show the tab named by the URL hash (e.g. #tab-meeting from My Meetings).
+	   MantisBT loads Bootstrap's JS at the end of <body>, after this script, so
+	   this waits for DOMContentLoaded (all parser-inserted scripts have run by
+	   then) and falls back to switching the classes itself. */
+	function showTabFromHash() {
 		var hash = window.location.hash;
-		if( hash ) {
-			var link = document.querySelector('#ai-tab-nav a[href="' + hash + '"]');
-			if( link && window.jQuery ) { jQuery(link).tab('show'); }
-		}
-	})();
+		if( !hash || !/^#tab-[a-z]+$/.test(hash) ) return;
+		var link = document.querySelector('#ai-tab-nav a[href="' + hash + '"]');
+		var pane = document.querySelector(hash);
+		if( !link || !pane ) return;
+		try {
+			if( window.jQuery && jQuery.fn && typeof jQuery.fn.tab === 'function' ) {
+				jQuery(link).tab('show');
+				return;
+			}
+		} catch( e ) { /* fall through to the manual switch */ }
+		document.querySelectorAll('#ai-tab-nav li').forEach(function(li) { li.classList.remove('active'); });
+		document.querySelectorAll('.tab-content > .tab-pane').forEach(function(p) { p.classList.remove('active', 'in'); });
+		link.parentNode.classList.add('active');
+		pane.classList.add('active', 'in');
+	}
+
+	if( document.readyState === 'loading' ) {
+		document.addEventListener('DOMContentLoaded', showTabFromHash);
+	} else {
+		showTabFromHash();
+	}
 
 	/* Update URL hash when tab changes */
 	document.querySelectorAll('#ai-tab-nav a[data-toggle="tab"]').forEach(function(el) {
@@ -460,13 +559,5 @@
 			if( href ) history.replaceState(null, null, href);
 		});
 	});
-
-
-	/* ═══════════════════════════════════════════════════════════════════════ *
-	 * Public API — consumed by ai_assist_help.js and ai_assist_meeting.js    *
-	 * ═══════════════════════════════════════════════════════════════════════ */
-	window.AiAssist = {
-		createChatSession: createChatSession
-	};
 
 })();

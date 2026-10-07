@@ -79,6 +79,7 @@ require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
+require_api( 'meeting_api.php' );
 require_api( 'prepare_api.php' );
 require_api( 'print_dwg_api.php' );
 require_api( 'project_api.php' );
@@ -1040,6 +1041,16 @@ $t_can_upload_primary = !$t_force_readonly &&
 # Sync to HEAD is a privileged operation — restricted to manager level and above.
 $t_can_sync_to_head = !$t_force_readonly &&
 	access_has_dwg_level( MANAGER, $f_dwg_id );
+# Draft promotion follows the same rule, except that a meeting record's draft
+# minutes are approved by the meeting chair only (meeting_minutes_approve()).
+$t_dwg_meeting = meeting_get_by_dwg( $f_dwg_id );
+# A hand upload to a meeting record counts as draft minutes (chair, minute
+# taker or organiser only, before approval).
+$t_can_upload_primary = $t_can_upload_primary
+	&& meeting_primary_upload_refusal( $f_dwg_id, auth_get_current_user_id() ) === null;
+$t_can_promote_draft = $t_dwg_meeting === null
+	? $t_can_sync_to_head
+	: !$t_force_readonly && meeting_user_can_approve_minutes( $t_dwg_meeting, auth_get_current_user_id() );
 $t_git_head_info     = file_dwg_git_head_info( $f_dwg_id );
 $t_git_head_sha      = $t_git_head_info ? $t_git_head_info['sha']      : null;
 $t_git_head_date     = $t_git_head_info ? $t_git_head_info['date']     : null;
@@ -1078,6 +1089,15 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 				<?php echo sprintf( lang_get( 'primary_document_upload_complete' ),
 					string_display_line( $t_uploaded_file['filename'] ),
 					htmlspecialchars( substr( $t_uploaded_file['git_sha'], 0, 8 ) ) ) ?>
+			</div>
+<?php endif; ?>
+<?php if( $t_dwg_meeting !== null && meeting_user_can_view( $t_dwg_meeting, auth_get_current_user_id() ) ): ?>
+			<div class="alert alert-info" style="margin:8px;">
+				<?php print_icon( 'fa-calendar', 'ace-icon' ); ?>
+				<?php echo sprintf( lang_get( 'meeting_document_notice' ),
+					'<a href="meeting_view_page.php?id=' . (int)$t_dwg_meeting['id'] . '">'
+						. string_display_line( $t_dwg_meeting['doc_ref'] ) . '</a>',
+					meeting_status_label( (int)$t_dwg_meeting['status'] ) ) ?>
 			</div>
 <?php endif; ?>
 			<div class="table-responsive">
@@ -1147,7 +1167,7 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 					</td>
 					<td><?php echo $t_git_head_author !== null ? htmlspecialchars( $t_git_head_author ) : '<span class="small">—</span>' ?></td>
 					<td>
-<?php	if( $t_can_sync_to_head && $t_has_draft && !$t_draft_stale ): ?>
+<?php	if( $t_can_promote_draft && $t_has_draft && !$t_draft_stale ): ?>
 						<form method="post" action="dwg_primary_file_sync_head.php" style="display:inline">
 							<?php echo form_security_field( 'dwg_primary_file_sync_head' ) ?>
 							<input type="hidden" name="dwg_id" value="<?php echo $f_dwg_id ?>" />

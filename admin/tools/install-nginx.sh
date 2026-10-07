@@ -140,6 +140,7 @@ sudo tee /etc/cron.d/doctis >/dev/null <<'CRON'
 SHELL=/bin/sh
 PATH=/usr/local/bin:/usr/bin:/bin
 * * * * * www-data cd /var/www/html/doctis && /usr/bin/php scripts/send_emails.php >> /var/log/doctis/cron.log 2>&1
+17 * * * * www-data cd /var/www/html/doctis && /usr/bin/php scripts/meeting_schedule.php >> /var/log/doctis/cron.log 2>&1
 CRON
 sudo chmod 644 /etc/cron.d/doctis
 curl --fail --silent --show-error --max-time 30 -H "Host: $host" http://127.0.0.1/doctis/login_page.php > /dev/null

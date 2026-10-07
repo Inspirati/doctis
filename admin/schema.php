@@ -973,8 +973,125 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
+# ── Step 60: meeting ────────────────────────────────────────────────────────
+# One row per meeting planned through the Meeting Assistant. The agenda and
+# minutes are revisions of one Doctis document (dwg_id) when a meeting project
+# is configured; otherwise dwg_id stays 0 and only this record exists.
+# status: 10 agenda issued, 20 minutes drafted, 30 minutes approved, 90 cancelled.
+# series_id: id of the first meeting of a series (0 = not in a series).
+# sequence: calendar invitation revision (iCalendar SEQUENCE), bumped on
+# reschedule and cancellation.
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'meeting' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `series_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `sequence` smallint(5) unsigned NOT NULL DEFAULT 0,
+	  `doc_ref` varchar(80) NOT NULL DEFAULT '',
+	  `title` varchar(255) NOT NULL DEFAULT '',
+	  `department` varchar(16) NOT NULL DEFAULT '',
+	  `project_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `dwg_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `git_path` varchar(1024) NOT NULL DEFAULT '',
+	  `chair_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `minute_taker_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `date_start` int(10) unsigned NOT NULL DEFAULT 1,
+	  `duration` smallint(5) unsigned NOT NULL DEFAULT 60,
+	  `location` varchar(128) NOT NULL DEFAULT '',
+	  `status` smallint(6) NOT NULL DEFAULT 10,
+	  `created_by` int(10) unsigned NOT NULL DEFAULT 0,
+	  `date_created` int(10) unsigned NOT NULL DEFAULT 1,
+	  `date_updated` int(10) unsigned NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`id`),
+	  UNIQUE KEY `idx_meeting_doc_ref` (`doc_ref`),
+	  KEY `idx_meeting_date_start` (`date_start`),
+	  KEY `idx_meeting_series` (`series_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 61: meeting_invitee ────────────────────────────────────────────────
+# user_id 0 = named attendee with no Doctis account.
+# attendance: 0 invited, 10 attended, 20 apologies.
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'meeting_invitee' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `meeting_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `name` varchar(128) NOT NULL DEFAULT '',
+	  `attendance` smallint(6) NOT NULL DEFAULT 0,
+	  PRIMARY KEY (`id`),
+	  KEY `idx_meeting_invitee_meeting` (`meeting_id`),
+	  KEY `idx_meeting_invitee_user` (`user_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 62: meeting_action ─────────────────────────────────────────────────
+# Actions captured in a meeting's minutes. When the chair approves the
+# minutes, each becomes a Doctis issue (bug_id) in the meeting project.
+# owner_id 0 = owner without a Doctis account (owner_name only).
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'meeting_action' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `meeting_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `ref` varchar(16) NOT NULL DEFAULT '',
+	  `description` varchar(1024) NOT NULL DEFAULT '',
+	  `owner_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `owner_name` varchar(128) NOT NULL DEFAULT '',
+	  `due_date` int(10) unsigned NOT NULL DEFAULT 0,
+	  `bug_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  PRIMARY KEY (`id`),
+	  KEY `idx_meeting_action_meeting` (`meeting_id`),
+	  KEY `idx_meeting_action_bug` (`bug_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 63: meeting_series ─────────────────────────────────────────────────
+# Recurrence of a meeting series, keyed by the series root (the first
+# meeting's id). scripts/meeting_schedule.php creates each next occurrence.
+# recurrence: weekly, fortnightly, monthly (same weekday of the month).
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'meeting_series' ) . " (
+	  `series_id` int(10) unsigned NOT NULL,
+	  `recurrence` varchar(16) NOT NULL DEFAULT '',
+	  `active` tinyint(4) NOT NULL DEFAULT 1,
+	  `updated_by` int(10) unsigned NOT NULL DEFAULT 0,
+	  `date_updated` int(10) unsigned NOT NULL DEFAULT 1,
+	  `last_run` int(10) unsigned NOT NULL DEFAULT 0,
+	  `last_error` varchar(255) NOT NULL DEFAULT '',
+	  PRIMARY KEY (`series_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 64: ai_knowledge ───────────────────────────────────────────────────
+# Knowledge base shared by the AI Assistant's Help and Meeting modes, built
+# from what users teach it. status: 10 unverified (visible to all, labelled),
+# 30 published (reviewed by a manager), 90 retired. project_id 0 = everyone;
+# otherwise only users with access to that project. supersedes: the entry
+# this one corrects (0 = none).
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'ai_knowledge' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `question` varchar(255) NOT NULL DEFAULT '',
+	  `answer` text NOT NULL,
+	  `keywords` varchar(255) NOT NULL DEFAULT '',
+	  `page` varchar(255) NOT NULL DEFAULT '',
+	  `project_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `status` smallint(6) NOT NULL DEFAULT 10,
+	  `source` varchar(16) NOT NULL DEFAULT '',
+	  `supersedes` int(10) unsigned NOT NULL DEFAULT 0,
+	  `created_by` int(10) unsigned NOT NULL DEFAULT 0,
+	  `date_created` int(10) unsigned NOT NULL DEFAULT 1,
+	  `updated_by` int(10) unsigned NOT NULL DEFAULT 0,
+	  `date_updated` int(10) unsigned NOT NULL DEFAULT 1,
+	  `reviewed_by` int(10) unsigned NOT NULL DEFAULT 0,
+	  `date_reviewed` int(10) unsigned NOT NULL DEFAULT 0,
+	  PRIMARY KEY (`id`),
+	  KEY `idx_ai_knowledge_status` (`status`),
+	  FULLTEXT KEY `idx_ai_knowledge_text` (`question`,`keywords`,`answer`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
 # ── End of schema definition ─────────────────────────────────────────────────
-# $t_idx = 60 → database_version = 59 on a fresh install.
+# $t_idx = 65 → database_version = 64 on a fresh install.
 #
 # To add a new table: append a new step here and run the schema upgrade.
 # Label it "Step N" with its real index, which is the database_version the

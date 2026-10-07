@@ -23,7 +23,8 @@ $g_git_http_backend = '/usr/lib/git-core/git-http-backend';
 $g_anthropic_api_key = getenv( 'ANTHROPIC_API_KEY' ) ?: '';
 $g_ai_model = getenv( 'AI_MODEL' ) ?: 'claude-sonnet-4-6';
 $g_ai_assist_threshold = REPORTER;
-$g_hcrqms_repo_path = '/var/git/doctis';
+// Meeting records: set $g_meeting_project_id in config_inc.php to the HCRQMS
+// project id once that repository has been imported (0 = no documents).
 
 $_log_level = getenv( 'LOG_LEVEL' ) ?: 'none';
 switch ( $_log_level ) {

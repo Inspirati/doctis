@@ -21,6 +21,7 @@ says otherwise (the git-import client script explicitly does not).
 | Repository import (`admin/import-git-repo.php`) | §5 Import dry-run/real-run against a scratch repo |
 | Smart HTTP gateway (clone/push, auth, hook enforcement) | §6 remote clone/push script, or §4's hook-enforcement steps |
 | A page, form, or workflow with no good headless test | §7 curl-based live testing |
+| AI Meeting Assistant, meetings, My Meetings, minutes approval | §7a meeting end-to-end |
 | Anything touching schema | Rebuild first — §8 — then re-run the relevant suite above |
 | You aren't sure what else broke | §9 full regression sweep |
 
@@ -261,6 +262,146 @@ curl -s -c /tmp/doctis_cookies.txt -b /tmp/doctis_cookies.txt \
 Full pattern library (CSRF token extraction, document creation, primary-file
 upload/replace, download, diagnosing 0-byte/302/500 responses): CLAUDE.md
 §"Curl-Based Live Testing".
+
+### 7a. AI Meeting Assistant end to end — `doctis-meeting-chat.py`
+
+**What it covers:** the full meeting lifecycle through the real endpoints:
+agenda conversation → meeting record + document On Record + agenda emails;
+minutes conversation by the minute taker → Draft revision + approval
+request; chair approval → record stamped `Approved Minutes`, Draft promoted,
+meeting status 30.
+
+**Prerequisites:** `$g_anthropic_api_key` and `$g_meeting_project_id` set;
+sample users loaded (frodo, sam and gandalf opt in to invitations; their
+passwords are blank). Each chat turn is a billed API call, and each
+confirmation writes a document and commits to the meeting project's
+repository, so use a sandbox instance.
+
+**Email is sent for real** if SMTP is configured and the sender cron runs (as
+on the native VM, see DEV-SETUP.md): each run emails the participants. The
+LOTR sample users have undeliverable `.example` addresses; never invite the
+role accounts, which have `@gmail.com` addresses. To inspect messages without
+sending, queue them from PHP and read and delete the `{email}` rows in the
+same run, just after a cron minute boundary.
+
+**Knowledge base** (`tests/Mantis/AiKnowledgeTest.php`, no AI calls), with
+the meeting tests below:
+
+```bash
+vendor/bin/phpunit --testsuite mantis --filter AiKnowledgeTest --testdox
+```
+
+Live check, which makes AI calls (procedure and results in `doc/ai/ai-knowledge.md`
+§Verification):
+
+```bash
+T=admin/tools/doctis-meeting-chat.py; export DOCTIS_URL=http://10.0.0.94/doctis/
+$T sam '' --mode help --clear "Where do i find the corporate directory?"   # → My View → Organisational Chart
+$T sam '' --mode help --clear "<a question Doctis cannot know>"             # → says so, invites teaching
+$T sam '' --mode help "<the answer>"                                       # → draft entry, asks to save
+$T sam '' --mode help "Yes, add it."                                       # → KNOWLEDGE_ENTRY: id, unverified
+# another user asks a paraphrase → answer cites KB-n as unverified; publish it on
+# ai_knowledge_page.php → the warning goes; delete test entries afterwards
+```
+
+**Page check** (headless; needs `apt install node-jsdom`). Loads
+`ai_assist_page.php` with its real scripts and checks that the hash tab is
+shown, that no script fails, and that Send and Ctrl+Enter post the right chat
+request. Requests are recorded, not sent: no AI call is made. It caught the
+2026-10-02 bug where opening the page with `#tab-meeting` broke both chats.
+
+```bash
+T=admin/tools/doctis-ai-page-check.js; U=http://10.0.0.94/doctis
+node $T $U administrator root '?meeting_id=<id>#tab-meeting' meeting   # Write Minutes
+node $T $U administrator root '?series_of=<id>#tab-meeting' meeting    # Plan Next Meeting
+node $T $U administrator root '#tab-meeting' meeting                   # Plan a Meeting
+node $T $U administrator root '' help
+```
+
+**Unit/integration tests** for the meeting logic (no API calls, no git, no
+email sent; throwaway users and meetings are removed afterwards):
+
+```bash
+cd /var/www/html/doctis   # needs tests/bootstrap.php (§2)
+vendor/bin/phpunit --testsuite mantis --filter MeetingApiTest --testdox
+```
+
+Running the **whole** `mantis` suite also creates throwaway accounts in other
+tests, which queue "Account registration" emails to `.test` addresses. On an
+instance with live SMTP, delete them before the cron sender runs:
+`DELETE FROM email WHERE email LIKE '%.test' AND subject = '[Doctis] Account registration'`.
+
+**End to end** (frodo and sam are HCRQMS members; gandalf is a global manager):
+
+```bash
+export DOCTIS_URL=http://10.0.0.94/doctis/
+T=admin/tools/doctis-meeting-chat.py
+
+# 1. Chair plans the meeting (two turns: draft, then confirm)
+$T administrator root --clear \
+  "Agenda for Frodo, Sam and Gandalf on 20 October 2026 at 10am: weekly QMS progress review, 45 minutes." \
+  "Yes, go ahead."
+#    → SAVED_DOCUMENT: meeting_id, dwg_id, file_path, stored=true, emails_sent ×3
+
+# 2. Chair reschedules: meeting page → Change Meeting (meeting_edit_page.php),
+#    e.g. time 11:00. (Scripted: POST meeting_edit.php with the form token.)
+
+# 3. Minute taker (first invitee named) writes the minutes, with actions
+$T frodo '' --meeting-id <meeting_id> \
+  "All attended. <notes per agenda item>. Actions: Frodo to … by 27 October; Sam to … by 30 October."
+$T frodo '' --meeting-id <meeting_id> "Yes, save the minutes."
+#    → stored=true, staged=true, actions=N
+
+# 4. Chair approves → actions become issues
+$T administrator root --approve <meeting_id>
+
+# 5. Plan the next meeting in the series
+$T administrator root --clear --series-of <meeting_id> "Same time next week please." 
+$T administrator root --series-of <meeting_id> "Yes, go ahead."
+
+# 6. Cancel it: meeting page → Cancel Meeting (with a reason; confirmation step)
+```
+
+**Check after each step** (database access: `doc/ai/ai-todo.md` §8):
+
+| After | Expect |
+|-------|--------|
+| 1 | `{meeting}` status 10, sequence 0; invitees with user ids; document in category `meetings`, number `MIN-…`, file at `{dept path}/MIN-….md`, On Record, commit by the chair, `refs/doctis/approved/<dwg>/1`; YAML frontmatter `status: Agenda`; 3 agenda emails with `invite.ics` (METHOD:REQUEST) |
+| 2 | sequence 1; record diff only in the changed lines, On Record (no draft); 3 "Meeting Updated" emails, calendar SEQUENCE:1 |
+| 3 | commit by frodo; `{dwg_primary_draft}` row; file `revision: B`, `status: Draft Minutes`; attendance recorded; status 20; `{meeting_action}` rows with owner ids and due dates; draft emailed to participants except frodo (the chair's copy asks for approval); Approve Minutes shown to the chair only |
+| 4 | stamping commit by the chair (`status`, `effective_date`, `**Status:**` only), promoted On Record, second approved ref, status 30; one issue per action in the meeting project, handler = owner (when allowed), `document_id` = the meeting document, `document_sha` = the approved SHA; approved minutes emailed |
+| 5 | new meeting with `series_id` = the first meeting; agenda includes "Approval of previous minutes (MIN-…)" and the open actions; same invitees, time and minute taker |
+| 6 | status 90, sequence 1; record `status: Cancelled`; CANCEL emails with the reason; struck through on My Meetings |
+
+Runs: 2026-10-02 on the native VM. First run (steps 1, 3, 4) passed after three
+fixes (missing frontmatter, private meeting project refusing the minute taker,
+approval stamp). Second run (all six steps) passed without changes.
+
+**Recurring meetings** (the scheduler makes one API call per occurrence and
+emails the invitees):
+
+```bash
+# 7. Make a series repeat: meeting page → Repeats → Weekly (meeting_recurrence.php)
+# 8. Evaluate and run the scheduler as the web server user, simulating a date
+#    within $g_meeting_schedule_lead_days of the next occurrence
+cd /var/www/html/doctis
+sudo -u www-data php scripts/meeting_schedule.php --dry-run --now="YYYY-MM-DD HH:MM"
+sudo -u www-data php scripts/meeting_schedule.php --series=<root id> --now="YYYY-MM-DD HH:MM"
+sudo -u www-data php scripts/meeting_schedule.php --now="YYYY-MM-DD HH:MM"   # again: nothing due
+# 9. Stop the series (Repeats → Does not repeat) so cron does not keep scheduling it
+```
+
+| After | Expect |
+|-------|--------|
+| 7 | `{meeting_series}` row (`recurrence`, `active=1`); meeting page shows the rule |
+| 8 | dry run lists the series only once the lead window is reached; the real run creates the next meeting in the series (same invitees, minute taker, department, duration, location; next weekday occurrence), its document, agenda emails with `invite.ics`, a "Next meeting scheduled" email to the chair; the agenda approves the previous minutes and lists the open actions; `last_run` set, `last_error` empty; a second run creates nothing |
+| 9 | no active `{meeting_series}` rows |
+
+Also check visibility: a global manager who is not a participant sees nothing
+under My meetings, everything under All meetings, and only Calendar on a
+meeting page. A reporter who is not a participant is refused the meeting page.
+
+Run 2026-10-02: series 27 scheduled MIN-QA-20261103 as of 31 Oct; all checks passed.
 
 ---
 

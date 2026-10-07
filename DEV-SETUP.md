@@ -47,9 +47,25 @@ site is `/etc/nginx/sites-available/doctis`, and the FPM socket is
 `/run/php/doctis.sock`. Doctis uses the local `doctis` database, disk issue
 uploads, bare document repositories under `/var/git/doctis`, worktrees under
 `/var/www/doctis/worktrees`, and sessions under `/var/lib/doctis/sessions`.
-Logs are under `/var/log/doctis` and `/var/log/nginx`. Test SMTP delivery is
-not configured. The Docker reference uses PHP 8.2/MariaDB 10.11; verify
-deployment-specific behavior separately.
+Logs are under `/var/log/doctis` and `/var/log/nginx`. The Docker reference
+uses PHP 8.2/MariaDB 10.11; verify deployment-specific behavior separately.
+
+**Outbound email is live.** The running `config_inc.php` sends through Gmail
+SMTP (`smtp.gmail.com`, from `doctis.web@gmail.com`), and
+`/etc/cron.d/doctis` runs `scripts/send_emails.php` every minute, so anything
+queued is delivered within a minute (checked 2026-10-02). The sample LOTR
+users have reserved `.example` addresses (undeliverable; bounces return to
+the sender), but the sample role accounts (`user`, `manager`, …) have
+`@gmail.com` addresses. Before tests that queue email, confirm the
+recipients, or set `$g_enable_email_notification = OFF`.
+
+**Recurring meetings run unattended** (`ai-meeting` branch). The same cron
+file runs `scripts/meeting_schedule.php` hourly (minute 17). For each
+repeating meeting series it creates the next meeting a few days ahead, which
+makes an Anthropic API call (billed to the configured key) and emails the
+invitees. Check `SELECT * FROM meeting_series WHERE active=1` before leaving a
+test series repeating; stop one from its meeting page (Repeats → Does not
+repeat).
 
 This VM's data is **not empty**: on 2026-10-02 it had four projects, 126
 project documents, two document repositories, and one user. A whole-instance

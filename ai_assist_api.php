@@ -17,6 +17,8 @@
 #   action  string   'chat' | 'load' | 'clear'
 #   mode    string   'help' | 'meeting' | 'sop' | 'other'
 #   history array    Full message history (chat action only)
+#   meeting_id int   Meeting whose minutes are being written (meeting mode, optional)
+#   series_of  int   Meeting whose follow-up is being planned (meeting mode, optional)
 #
 # Response body (JSON):
 #   reply          string|null    Assistant reply (chat action on success)
@@ -24,6 +26,7 @@
 #   error          string|null    Error message on failure; null on success
 #   usage          object|null    {input_tokens, output_tokens} (chat action)
 #   saved_document object|null    Set when a meeting document was saved (meeting mode)
+#   knowledge_entry object|null   Set when the user's knowledge was saved (help/meeting)
 #
 # @package    Doctis
 # @copyright  Copyright 2025 Inspirati
@@ -34,8 +37,10 @@ require_api( 'access_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'config_api.php' );
 require_api( 'user_api.php' );
+require_once( 'ai_assist_anthropic_api.php' );
 require_once( 'ai_assist_help_api.php' );
 require_once( 'ai_assist_meeting_api.php' );
+require_once( 'ai_assist_knowledge_api.php' );
 
 # ── Sanity checks ─────────────────────────────────────────────────────────────
 
@@ -74,7 +79,7 @@ $t_user_id = auth_get_current_user_id();
 # ── Dispatch ──────────────────────────────────────────────────────────────────
 
 if( $t_action === 'load' ) {
-	ai_assist_action_load( $t_user_id, $t_mode );
+	ai_assist_action_load( $t_user_id, $t_mode, (int)( $t_input['meeting_id'] ?? 0 ), (int)( $t_input['series_of'] ?? 0 ) );
 }
 
 if( $t_action === 'clear' ) {
@@ -121,84 +126,30 @@ if( empty( $t_messages ) ) {
 # ── Mode-specific configuration ───────────────────────────────────────────────
 # System prompts are always built server-side; the browser never sends one.
 
-$t_model      = config_get_global( 'ai_model' );
 $t_max_tokens = 2048;
 $t_system     = '';
+$t_focus      = null;
+$t_series     = null;
 
 switch( $t_mode ) {
 	case 'help':
 		$t_system = ai_assist_help_system_prompt( $t_user_id );
 		break;
 	case 'meeting':
-		$t_system     = ai_assist_meeting_system_prompt( $t_user_id );
-		$t_max_tokens = 4096;   # Meeting documents can be long
+		$t_focus  = ai_assist_meeting_focus( $t_user_id, (int)( $t_input['meeting_id'] ?? 0 ) );
+		$t_series = ai_assist_meeting_series_base( $t_user_id, (int)( $t_input['series_of'] ?? 0 ) );
+		$t_system     = ai_assist_meeting_system_prompt( $t_user_id, $t_focus, $t_series );
+		$t_max_tokens = 8192;   # Full minutes records can be long
 		break;
 }
 
 # ── Call Anthropic Messages API ───────────────────────────────────────────────
 
-$t_payload = json_encode( [
-	'model'      => $t_model,
-	'max_tokens' => $t_max_tokens,
-	'system'     => $t_system,
-	'messages'   => $t_messages,
-] );
-
-$t_ch = curl_init( 'https://api.anthropic.com/v1/messages' );
-curl_setopt_array( $t_ch, [
-	CURLOPT_RETURNTRANSFER => true,
-	CURLOPT_POST           => true,
-	CURLOPT_POSTFIELDS     => $t_payload,
-	CURLOPT_HTTPHEADER     => [
-		'Content-Type: application/json',
-		'x-api-key: ' . $t_api_key,
-		'anthropic-version: 2023-06-01',
-		'User-Agent: Doctis/1.0',
-	],
-	CURLOPT_TIMEOUT        => 90,
-	CURLOPT_CONNECTTIMEOUT => 10,
-] );
-
-$t_response   = curl_exec( $t_ch );
-$t_http_code  = curl_getinfo( $t_ch, CURLINFO_HTTP_CODE );
-$t_curl_error = curl_error( $t_ch );
-curl_close( $t_ch );
-
-# ── Handle cURL / network error ───────────────────────────────────────────────
-
-if( $t_response === false ) {
-	error_log( 'ai_assist_api: cURL error: ' . $t_curl_error );
-	ai_assist_json_error( 'Could not reach the AI service. Please try again.' );
+$t_answer = ai_assist_anthropic_request( $t_system, $t_messages, $t_max_tokens );
+if( $t_answer['error'] !== null ) {
+	ai_assist_json_error( $t_answer['error'] );
 }
-
-# ── Parse Anthropic response ──────────────────────────────────────────────────
-
-$t_data = json_decode( $t_response, true );
-
-if( $t_http_code !== 200 ) {
-	$t_err_msg = $t_data['error']['message'] ?? 'API error (HTTP ' . $t_http_code . ').';
-	error_log( 'ai_assist_api: Anthropic error ' . $t_http_code . ': ' . $t_err_msg );
-
-	switch( $t_http_code ) {
-		case 401:
-			ai_assist_json_error( 'AI service authentication failed. Check the API key in config.' );
-			break;
-		case 429:
-			ai_assist_json_error( 'AI service rate limit reached. Please wait a moment and try again.' );
-			break;
-		case 529:
-			ai_assist_json_error( 'The AI service is currently overloaded. Please try again shortly.' );
-			break;
-		default:
-			ai_assist_json_error( $t_err_msg );
-	}
-}
-
-$t_reply = $t_data['content'][0]['text'] ?? '';
-
-if( is_blank( $t_reply ) ) {
-	ai_assist_json_error( 'Empty response received from AI service.' );
-}
+$t_reply = $t_answer['reply'];
 
 # ── Meeting mode: extract and process any embedded document ───────────────────
 
@@ -211,13 +162,25 @@ if( $t_mode === 'meeting' ) {
 	}
 }
 
+# ── Help and Meeting modes: knowledge the user taught the assistant ───────────
+
+$t_knowledge_entry = null;
+if( in_array( $t_mode, [ 'help', 'meeting' ], true ) ) {
+	$t_knowledge_entry = ai_assist_process_knowledge_entry( $t_reply, $t_user_id );
+	if( $t_knowledge_entry !== null ) {
+		$t_reply = $t_knowledge_entry['stripped_reply'];
+		unset( $t_knowledge_entry['stripped_reply'] );
+	}
+}
+
 # ── Persist the updated history ───────────────────────────────────────────────
 # Append the assistant reply to form the full history to save.
 
 $t_messages[] = [ 'role' => 'assistant', 'content' => $t_reply ];
 ai_assist_session_save( $t_user_id, $t_mode, $t_messages );
 
-# If a meeting document was saved, also update the doc_id in the session row.
+# Remember which meeting this conversation concerns; 'load' uses it to start
+# afresh when the page is opened for a different meeting.
 if( $t_saved_document !== null && isset( $t_saved_document['doc_id'] ) ) {
 	ai_assist_session_update_doc_id(
 		$t_user_id,
@@ -225,6 +188,15 @@ if( $t_saved_document !== null && isset( $t_saved_document['doc_id'] ) ) {
 		$t_saved_document['doc_id'],
 		$t_saved_document['dwg_id'] ?? null
 	);
+} else if( $t_focus !== null ) {
+	ai_assist_session_update_doc_id(
+		$t_user_id,
+		$t_mode,
+		$t_focus['doc_ref'],
+		(int)$t_focus['dwg_id'] ?: null
+	);
+} else if( $t_series !== null ) {
+	ai_assist_session_update_doc_id( $t_user_id, $t_mode, 'series:' . $t_series['id'], null );
 }
 
 # ── Return success response ───────────────────────────────────────────────────
@@ -234,10 +206,13 @@ echo json_encode( [
 	'reply'          => $t_reply,
 	'error'          => null,
 	'usage'          => [
-		'input_tokens'  => $t_data['usage']['input_tokens']  ?? null,
-		'output_tokens' => $t_data['usage']['output_tokens'] ?? null,
+		'input_tokens'  => $t_answer['usage']['input_tokens'] ?? null,
+		'output_tokens' => $t_answer['usage']['output_tokens'] ?? null,
+		'cache_read_input_tokens'     => $t_answer['usage']['cache_read_input_tokens'] ?? null,
+		'cache_creation_input_tokens' => $t_answer['usage']['cache_creation_input_tokens'] ?? null,
 	],
-	'saved_document' => $t_saved_document,
+	'saved_document'  => $t_saved_document,
+	'knowledge_entry' => $t_knowledge_entry,
 ] );
 exit;
 
@@ -248,10 +223,11 @@ exit;
 
 /**
  * Load and return the stored conversation history for user+mode.
- * Returns {history: [...]} on success; {history: null} if no session exists.
- * Exits.
+ * Returns {history: [...]} on success; {history: null} if no session exists,
+ * or if the page was opened for a meeting (minutes) or a follow-up (series)
+ * other than the stored session's. Exits.
  */
-function ai_assist_action_load( int $p_user_id, string $p_mode ): never {
+function ai_assist_action_load( int $p_user_id, string $p_mode, int $p_meeting_id = 0, int $p_series_of = 0 ): never {
 	$t_table  = db_get_table( 'ai_sessions' );
 	$t_result = db_query(
 		'SELECT history, doc_id, dwg_id FROM ' . $t_table .
@@ -271,6 +247,15 @@ function ai_assist_action_load( int $p_user_id, string $p_mode ): never {
 		}
 		$t_doc_id = $t_row['doc_id'] ?? null;
 		$t_dwg_id = isset( $t_row['dwg_id'] ) ? (int)$t_row['dwg_id'] : null;
+	}
+
+	if( $p_meeting_id > 0 ) {
+		$t_focus = ai_assist_meeting_focus( $p_user_id, $p_meeting_id );
+		if( $t_focus !== null && $t_focus['doc_ref'] !== $t_doc_id ) {
+			$t_history = null;
+		}
+	} else if( $p_series_of > 0 && $t_doc_id !== 'series:' . $p_series_of ) {
+		$t_history = null;
 	}
 
 	header( 'Content-Type: application/json; charset=utf-8' );

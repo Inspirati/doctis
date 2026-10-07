@@ -22,7 +22,10 @@ in the [MantisBT documentation](https://mantisbt.org/documentation.php).
 6. [Document status workflow](#6-document-status-workflow)
 7. [Raising an issue against a document](#7-raising-an-issue-against-a-document)
 8. [Licenses](#8-licenses)
-9. [Administration notes](#9-administration-notes)
+9. [My View and your profile](#9-my-view-and-your-profile)
+10. [Meetings](#10-meetings)
+11. [AI Assistant and knowledge base](#11-ai-assistant-and-knowledge-base)
+12. [Administration notes](#12-administration-notes)
 
 ---
 
@@ -311,7 +314,156 @@ require it.
 
 ---
 
-## 9. Administration notes
+## 9. My View and your profile
+
+**My View** (sidebar) opens a set of tabs:
+
+| Tab | Page | What it shows |
+|-----|------|---------------|
+| My Issues View | `my_view_bug_page.php` | Issues assigned to you, reported by you, recently changed, etc. |
+| My Documents View | `my_view_dwg_page.php` | Documents assigned to you or created by you |
+| My Meetings | `my_view_meeting_page.php` | Your meetings (see §10) |
+| My Configuration View | `my_view_cnf_page.php` | Your profile, licences and system information |
+| Organisational Chart | `my_view_org_page.php` | Who's who in the organisation |
+
+### Your profile (My Configuration View)
+
+Keep your profile current: other pages and the AI Assistant use it.
+
+| Field | Used for |
+|-------|----------|
+| Real name, Position title, Company, Department, Phone | Shown on the Organisational Chart and in meeting records |
+| Reports To | Your manager, if registered in Doctis; places you on the Organisational Chart |
+| Alternative | Your manager's name when they are not registered in Doctis |
+| Meeting Invites | Whether the Meeting Assistant may invite you: never, departmental meetings only, or all meetings |
+| Notification Email | An alternative address for Doctis notifications (used instead of your account email) |
+
+### Organisational Chart (corporate directory)
+
+**My View → Organisational Chart** (`my_view_org_page.php`) is Doctis's staff
+directory: every registered user with their position, department and company,
+arranged by reporting line from each user's **Reports To** setting. Managers who
+are not registered appear as dashed "external" boxes. Use it to find a
+colleague's role, department or manager. Administrators can click a name to
+open that user's account.
+
+---
+
+## 10. Meetings
+
+Meetings are planned and minuted with the AI Assistant's **Meeting** tab and
+tracked under **My View → My Meetings**. Each meeting record (agenda, then
+minutes) is a controlled Doctis document in the meeting project's repository,
+following the HCRQMS meeting template (TMPL-SYS-001), with a reference such as
+`MIN-QA-20261020`.
+
+### Planning a meeting
+
+1. Open **AI Assistant → Meeting** (or **My Meetings → Plan a Meeting**).
+2. Describe the meeting in one sentence, e.g. *"Agenda for Frodo, Sam and
+   Gandalf on 20 October at 10am: weekly QMS progress review, 45 minutes."*
+   You are the chair; the first person named is the minute taker. Only people
+   whose **Meeting Invites** setting allows it can be invited; others become
+   named guests.
+3. Review the draft agenda; ask for changes or confirm.
+
+On confirmation the agenda is stored and goes On Record at once, and the
+invitees are emailed it with a calendar invitation. Say "every Tuesday",
+"every two weeks" or "monthly" to make the meeting repeat (see below).
+
+### My Meetings and the meeting page
+
+My Meetings lists your upcoming and past meetings with your role (chair, minute
+taker, organiser or invitee), the participants and the status (agenda issued,
+minutes awaiting approval, minutes approved, cancelled). Draft minutes are due
+two business days after a meeting; overdue ones are shown in red. Managers can
+switch to **All meetings**.
+
+Click a meeting's title for its page: details, attendance, actions and their
+issues, the series it belongs to, and the actions open to you:
+
+| Button | Who | Does |
+|--------|-----|------|
+| Write / Revise Minutes | Chair, minute taker, organiser | Opens the Meeting tab for this meeting's minutes |
+| Approve Minutes | Chair | Approves the draft minutes (see below) |
+| Change Meeting | Chair, organiser (agenda stage) | Reschedule, change location, minute taker or invitees; invitees get the update |
+| Cancel Meeting | Chair, organiser (agenda stage) | Cancels; invitees get a calendar cancellation |
+| Plan Next Meeting | Chair, minute taker, organiser | Plans the following meeting of the series |
+| Repeats | Chair, organiser | Makes the series repeat weekly, every two weeks or monthly, or stops it |
+| Calendar (.ics) | Anyone who can see the meeting | Downloads the meeting for your calendar |
+
+### Minutes and approval
+
+Write the minutes from the meeting page: give attendance, then notes on each
+agenda item (rough notes are fine), including actions with an owner and a due
+date. The saved minutes are a **draft revision** of the meeting document, and
+are emailed to the participants for corrections within three business days.
+
+The **chair** approves them (Approve Minutes): the record is stamped *Approved
+Minutes*, becomes On Record, and is emailed to the participants. Each action
+becomes a Doctis issue linked to the meeting document, assigned to its owner
+with its due date. An owner who is not a member of the meeting project is added
+to it so the issue can be assigned. A revision uploaded by hand on the meeting
+document's page also counts as draft minutes.
+
+### Series and repeating meetings
+
+**Plan Next Meeting** starts the next meeting of a series: the assistant keeps
+the same people, place and format, and carries forward approval of the
+previous minutes and every open action. When a series **repeats**, Doctis
+creates each next meeting itself a few days ahead and emails the invitees;
+stop it with **Repeats → Does not repeat**.
+
+---
+
+## 11. AI Assistant and knowledge base
+
+The **AI Assistant** (sidebar) has these tabs:
+
+| Tab | Use |
+|-----|-----|
+| Help | Ask how to do something in Doctis, where to find a page, or about document control |
+| Meeting | Plan meetings and write minutes (§10) |
+| SOP, Other | Not yet available |
+| Knowledge | The knowledge base the assistant answers from |
+
+Conversations are kept between visits; **Clear** starts afresh.
+
+### Teaching the assistant
+
+The assistant knows the pages you can open, this manual, and its knowledge
+base. When it gets something wrong or doesn't know, click **Correct this** under
+its answer (or just tell it), and give the right answer. It offers to save what
+you said as a knowledge base entry; once you agree, the entry is used for
+everyone at once, marked **unverified**.
+
+### The knowledge base
+
+**AI Assistant → Knowledge** (`ai_knowledge_page.php`) lists every entry with
+its question, answer, keywords, related page and status. Anyone can add an entry
+there. Managers review entries: **Publish** the correct ones, **Edit** unclear
+ones, **Retire** or **Delete** wrong ones. Publishing a correction retires the
+entry it corrects. An entry can be limited to one project; only users with
+access to that project see it.
+
+---
+
+## 12. Administration notes
+
+### AI Assistant and meeting settings
+
+In `config/config_inc.php`:
+
+| Setting | Purpose |
+|---------|---------|
+| `$g_anthropic_api_key` | Enables the AI Assistant (blank = hidden) |
+| `$g_meeting_project_id` | Project whose repository holds meeting records (0 = no documents) |
+| `$g_meeting_view_all_threshold` | Who sees all meetings (default MANAGER) |
+| `$g_ai_knowledge_review_threshold` | Who reviews the knowledge base (default MANAGER) |
+| `$g_ai_knowledge_manual_path` | The manual the assistant reads (this file) |
+
+Repeating meetings need the scheduler in cron (installed by the nginx
+installer): `scripts/meeting_schedule.php`, hourly.
 
 ### Disabling the document notes feature
 

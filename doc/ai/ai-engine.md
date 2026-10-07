@@ -1,8 +1,12 @@
 # Concept Plan — AI Engine Integration: Meeting Assistant as a Doctis Page
 
-**Status:** Concept draft — for discussion  
-**Date:** 2026-06-16  
+**Status:** Concept plan, adopted June 2026 and partly implemented. Retained as the design record; its file names, table names and Apache notes predate the build.  
+**Date:** 2026-06-16 (status notes added 2026-10-02)  
 **Context:** Considers implementing ENG-TASK-002 (Meeting Assistant Tool) as a native Doctis page rather than as a standalone `~/qms-meeting/` Claude Code session.  Companion to GUID-SYS-007 (QMS Programme Expansion Roadmap).
+
+> **Current state:** see [ai-todo.md](ai-todo.md) for what was built, what is
+> broken, and the to-do list. [§10](#10-as-built-differences-2026-10-02) below
+> lists where the implementation differs from this plan.
 
 ---
 
@@ -330,8 +334,42 @@ The investment in Phase 1 is therefore not just a meeting assistant — it is th
 
 ---
 
+## 10. As-built differences (2026-10-02)
+
+The plan was implemented as one multi-tab **AI Assistant** page rather than a
+dedicated meeting page. Phase 1 is built; Phases 2–4 are not.
+
+| Plan | As built |
+|------|----------|
+| `meeting_page.php`, `meeting_api.php`, `core/meeting_dwg_api.php` | `ai_assist_page.php` (Help / Meeting / SOP / Other tabs), `ai_assist_api.php` (shared endpoint), `ai_assist_help_api.php`, `ai_assist_meeting_api.php`; per-tab page includes and JS modules |
+| `{meeting_sessions}` table with mode/phase/metadata columns | `{ai_sessions}`: one row per user per mode; `history` JSON plus `doc_id`/`dwg_id` |
+| `$g_meeting_assistant_threshold` | `$g_ai_assist_threshold` (whole page); `$g_ai_model`, `$g_ai_meeting_departments` added |
+| Two-mode session driver (Agenda Mode / Minutes Mode) | A short "infer, don't ask" prompt (2–4 turns) that drafts an agenda from one sentence; minutes flow underspecified |
+| — | Invitee matching against users who opted in (`{user}.meeting_invite`) and agenda email via the MantisBT queue |
+| File write + `git commit` to an HCRQMS worktree | June build used `exec('git …')` against `$g_hcrqms_repo_path`, incompatible with the later git repository entity. Replaced on branch `ai-meeting` by storage through the Doctis primary-file path in `$g_meeting_project_id` |
+| Phase 2 registration | Implemented on `ai-meeting`: agenda creates the document (On Record), minutes are a staged Draft revision; plus a `{meeting}` entity and a **My Meetings** view (not in the plan) |
+| Apache output-buffering notes | Development now runs on nginx + PHP-FPM; streaming would need `fastcgi_buffering off` / `X-Accel-Buffering: no` |
+
+### Outstanding decisions (§8) — current position
+
+1. **HCRQMS location** — resolved by events: HCRQMS is imported into Doctis
+   as its own git repository, so meeting records should be written through
+   the Doctis repository API rather than to a separate clone.
+2. **API key** — held in `config/config_inc.php` (native template reads
+   `ANTHROPIC_API_KEY` from the environment). Organisational ownership not
+   recorded.
+3. **Streaming** — non-streaming was adopted; streaming remains deferred.
+4. **Registration scope** — still open. The code registers minutes
+   automatically when a department has a `project_id`.
+5. **Department mapping** — still open. HCRQMS is one Doctis project with
+   `content/<department>` directories; the configured department paths
+   (`content/*/meetings`) do not exist yet.
+
+---
+
 ## Revision History
 
 | Revision | Date | Description | Author |
 |----------|------|-------------|--------|
 | — | 2026-06-16 | Initial concept draft | QMS Lead / Claude |
+| — | 2026-10-02 | Status header and §10 as-built differences added; body unchanged | Claude |

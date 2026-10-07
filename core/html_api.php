@@ -824,6 +824,9 @@ function print_my_view_menu( $p_page = '' ) {
 		$t_pages['my_view_dwg_page.php'] = array( 'url'   => 'my_view_dwg_page.php', 'label' => 'my_view_dwg_link' );
 	}
 	if( access_has_global_level( config_get( 'timeline_view_threshold' ) ) ) {
+		$t_pages['my_view_meeting_page.php'] = array( 'url'   => 'my_view_meeting_page.php', 'label' => 'my_view_meeting_link' );
+	}
+	if( access_has_global_level( config_get( 'timeline_view_threshold' ) ) ) {
 		$t_pages['my_view_cnf_page.php'] = array( 'url'   => 'my_view_cnf_page.php', 'label' => 'my_view_cnf_link' );
 	}
 	if( access_has_global_level( config_get( 'timeline_view_threshold' ) ) ) {
