@@ -66,6 +66,10 @@ print_manage_menu( 'manage_overview_page.php' );
 			<?php print_icon( 'fa-refresh', 'ace-icon' ); ?> Load Sample Data
 		</a>
 		&nbsp;
+		<a href="manage_git_reset_page.php" class="btn btn-sm btn-danger">
+			<?php print_icon( 'fa-trash', 'ace-icon' ); ?> Reset Git Store
+		</a>
+		&nbsp;
 		<a href="manage_overview_page.php" class="btn btn-sm btn-default">
 			<?php print_icon( 'fa-arrow-left', 'ace-icon' ); ?> Back to System Operations
 		</a>

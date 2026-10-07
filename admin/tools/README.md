@@ -230,6 +230,11 @@ What it does:
 - Removes all per-project working trees under `/var/www/doctis/worktrees/`
 - Leaves the root directories themselves intact
 
+The web equivalent is System Operations → **Reset Git Store**
+(`manage_git_reset_page.php`). It runs as the web server account, which owns
+both roots, and is refused while the database still has repository records,
+so run Rebuild Database first.
+
 Must be run as root.  Prompts for confirmation when invoked directly;
 runs without prompting when sourced:
 

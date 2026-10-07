@@ -38,7 +38,8 @@ print_manage_menu( 'manage_overview_page.php' );
 			and rebuild it from <code>admin/schema.php</code>.
 			Sample data will <strong>NOT</strong> be reloaded.
 			This action cannot be undone.
-			The git document store is unaffected.
+			The git document store is unaffected; use Reset Git Store afterwards
+			for a clean slate.
 		</div>
 
 		<p>Type <strong>REBUILD</strong> in the box below to confirm:</p>

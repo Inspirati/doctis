@@ -575,3 +575,64 @@ function repository_rename_for_owner_project( int $p_project_id ): void {
 		dwg_git_storage_unlock( $t_lock );
 	}
 }
+
+/**
+ * Number of {repository} rows.
+ *
+ * @return int
+ */
+function repository_count(): int {
+	return (int)db_result( db_query( 'SELECT COUNT(*) FROM {repository}' ) );
+}
+
+/**
+ * Entries under the git storage and worktree roots, excluding the storage
+ * lock file: everything repository_reset_storage() removes.
+ *
+ * @return array Absolute paths.
+ */
+function repository_storage_entries(): array {
+	$t_entries = array();
+	foreach( array( 'git_storage_root', 'git_worktree_root' ) as $t_option ) {
+		$t_root = rtrim( (string)config_get_global( $t_option ), '/' );
+		if( is_blank( $t_root ) || !is_dir( $t_root ) || realpath( $t_root ) === '/' ) {
+			continue;
+		}
+		foreach( scandir( $t_root ) ?: array() as $t_name ) {
+			if( $t_name !== '.' && $t_name !== '..' && $t_name !== '.doctis-lock' ) {
+				$t_entries[] = $t_root . '/' . $t_name;
+			}
+		}
+	}
+	return $t_entries;
+}
+
+/**
+ * Empty the git document store: remove every bare repository and server
+ * worktree, keeping both root directories (with their ownership and mode)
+ * and the storage lock file.  The web equivalent of doctis-git-reset.sh.
+ *
+ * Callers must first ensure no {repository} rows remain; otherwise the
+ * database references repositories that no longer exist.
+ *
+ * @return array{removed: array, failed: array} Absolute paths; failures map path to error output.
+ */
+function repository_reset_storage(): array {
+	$t_result = array( 'removed' => array(), 'failed' => array() );
+	$t_lock = dwg_git_storage_lock();
+	try {
+		foreach( repository_storage_entries() as $t_path ) {
+			$t_out = array();
+			exec( 'rm -rf -- ' . escapeshellarg( $t_path ) . ' 2>&1', $t_out, $t_rc );
+			clearstatcache( true, $t_path );
+			if( file_exists( $t_path ) || is_link( $t_path ) ) {
+				$t_result['failed'][$t_path] = implode( "\n", $t_out );
+			} else {
+				$t_result['removed'][] = $t_path;
+			}
+		}
+	} finally {
+		dwg_git_storage_unlock( $t_lock );
+	}
+	return $t_result;
+}

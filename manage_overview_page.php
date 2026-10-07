@@ -221,6 +221,10 @@ function doctis_get_git_version_info() {
 		<a href="manage_db_rebuild_page.php" class="btn btn-sm btn-danger">
 			<?php print_icon( 'fa-trash', 'ace-icon' ); ?> Rebuild Database
 		</a>
+		&nbsp;
+		<a href="manage_git_reset_page.php" class="btn btn-sm btn-danger">
+			<?php print_icon( 'fa-trash', 'ace-icon' ); ?> Reset Git Store
+		</a>
 	</div>
 	</div>
 	</div>
