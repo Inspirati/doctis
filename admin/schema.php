@@ -456,7 +456,7 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
-# ── Step 23a: repository ────────────────────────────────────────────────────
+# ── Step 24: repository ─────────────────────────────────────────────────────
 # First-class git repository entity (see core/repository_api.php).
 # On-disk basename is "<slug>-r<id>"; the immutable "-r<id>" suffix is what
 # all lookup resolves by, the slug is cosmetic and follows the owner project
@@ -476,7 +476,7 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
-# ── Step 23b: project_repository ────────────────────────────────────────────
+# ── Step 25: project_repository ─────────────────────────────────────────────
 # Explicit project → repository link.  A project with no row inherits its
 # repository by walking up the project hierarchy; a repository is created at
 # the top-level project on first need.  Kept as a Doctis-parallel link table
@@ -490,7 +490,7 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
-# ── Step 24: dwg_relationship ───────────────────────────────────────────────
+# ── Step 26: dwg_relationship ───────────────────────────────────────────────
 $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'dwg_relationship' ) . " (
 	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -503,7 +503,7 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
-# ── Step 25: dwg_revision ───────────────────────────────────────────────────
+# ── Step 27: dwg_revision ───────────────────────────────────────────────────
 $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'dwg_revision' ) . " (
 	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -519,7 +519,7 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
-# ── Step 26: dwg_tag ────────────────────────────────────────────────────────
+# ── Step 28: dwg_tag ────────────────────────────────────────────────────────
 $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'dwg_tag' ) . " (
 	  `dwg_id` int(10) unsigned NOT NULL DEFAULT 0,
@@ -531,7 +531,7 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
-# ── Step 27: dwg_text ───────────────────────────────────────────────────────
+# ── Step 29: dwg_text ───────────────────────────────────────────────────────
 $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'dwg_text' ) . " (
 	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -542,7 +542,7 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
-# ── Step 28: dwgnote ────────────────────────────────────────────────────────
+# ── Step 30: dwgnote ────────────────────────────────────────────────────────
 $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'dwgnote' ) . " (
 	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -561,7 +561,7 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
-# ── Step 29: dwgnote_text ───────────────────────────────────────────────────
+# ── Step 31: dwgnote_text ───────────────────────────────────────────────────
 $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'dwgnote_text' ) . " (
 	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -570,7 +570,7 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
-# ── Step 30: email ──────────────────────────────────────────────────────────
+# ── Step 32: email ──────────────────────────────────────────────────────────
 $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'email' ) . " (
 	  `email_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -583,7 +583,7 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
-# ── Step 31: filters ────────────────────────────────────────────────────────
+# ── Step 33: filters ────────────────────────────────────────────────────────
 $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'filters' ) . " (
 	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -596,7 +596,7 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
-# ── Step 32: license ────────────────────────────────────────────────────────
+# ── Step 34: license ────────────────────────────────────────────────────────
 # Doctis-specific: a skill, clearance, or qualification held by a user.
 # Controls document access. Unrelated to software licensing.
 $g_upgrade[$t_idx++] = array( 'UpdateSQL',
@@ -615,7 +615,7 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
-# ── Step 33: license_dwg_list ───────────────────────────────────────────────
+# ── Step 35: license_dwg_list ───────────────────────────────────────────────
 $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'license_dwg_list' ) . " (
 	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -627,7 +627,7 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
-# ── Step 34: license_user_list ──────────────────────────────────────────────
+# ── Step 36: license_user_list ──────────────────────────────────────────────
 $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'license_user_list' ) . " (
 	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -639,7 +639,7 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
-# ── Step 35: news ───────────────────────────────────────────────────────────
+# ── Step 37: news ───────────────────────────────────────────────────────────
 $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'news' ) . " (
 	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -655,7 +655,7 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
-# ── Step 36: plugin ─────────────────────────────────────────────────────────
+# ── Step 38: plugin ─────────────────────────────────────────────────────────
 $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'plugin' ) . " (
 	  `basename` varchar(40) NOT NULL,
@@ -666,7 +666,7 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
-# ── Step 37: project ────────────────────────────────────────────────────────
+# ── Step 39: project ────────────────────────────────────────────────────────
 $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'project' ) . " (
 	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -689,7 +689,7 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
-# ── Step 38: project_file ───────────────────────────────────────────────────
+# ── Step 40: project_file ───────────────────────────────────────────────────
 $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'project_file' ) . " (
 	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -708,7 +708,7 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
-# ── Step 39: project_hierarchy ──────────────────────────────────────────────
+# ── Step 41: project_hierarchy ──────────────────────────────────────────────
 $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'project_hierarchy' ) . " (
 	  `child_id` int(10) unsigned NOT NULL,
@@ -720,7 +720,7 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
-# ── Step 40: project_user_list ──────────────────────────────────────────────
+# ── Step 42: project_user_list ──────────────────────────────────────────────
 $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'project_user_list' ) . " (
 	  `project_id` int(10) unsigned NOT NULL DEFAULT 0,
@@ -731,7 +731,7 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
-# ── Step 41: project_version ────────────────────────────────────────────────
+# ── Step 43: project_version ────────────────────────────────────────────────
 $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'project_version' ) . " (
 	  `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -746,7 +746,7 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
-# ── Step 42: sponsorship ────────────────────────────────────────────────────
+# ── Step 44: sponsorship ────────────────────────────────────────────────────
 $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'sponsorship' ) . " (
 	  `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -764,7 +764,7 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
-# ── Step 43: tag ────────────────────────────────────────────────────────────
+# ── Step 45: tag ────────────────────────────────────────────────────────────
 $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'tag' ) . " (
 	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -778,7 +778,7 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
-# ── Step 44: tokens ─────────────────────────────────────────────────────────
+# ── Step 46: tokens ─────────────────────────────────────────────────────────
 $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'tokens' ) . " (
 	  `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -792,7 +792,7 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
-# ── Step 45: user ───────────────────────────────────────────────────────────
+# ── Step 47: user ───────────────────────────────────────────────────────────
 $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'user' ) . " (
 	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -827,7 +827,7 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
-# ── Step 46: user_pref ──────────────────────────────────────────────────────
+# ── Step 48: user_pref ──────────────────────────────────────────────────────
 $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'user_pref' ) . " (
 	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -865,7 +865,7 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
-# ── Step 47: user_print_pref ────────────────────────────────────────────────
+# ── Step 49: user_print_pref ────────────────────────────────────────────────
 $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'user_print_pref' ) . " (
 	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
@@ -874,7 +874,7 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
-# ── Step 48: user_profile ───────────────────────────────────────────────────
+# ── Step 50: user_profile ───────────────────────────────────────────────────
 $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'user_profile' ) . " (
 	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -887,7 +887,7 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
-# ── Step 49: seed — default Global category ─────────────────────────────────
+# ── Step 51: seed — default Global category ─────────────────────────────────
 # id=1, project_id=0 = global (available to all projects).
 # project.category_id defaults to 1, so this row must exist on a fresh install.
 $g_upgrade[$t_idx++] = array( 'UpdateSQL',
@@ -896,15 +896,15 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	 VALUES (0, 0, 'General', 1)"
 );
 
-# ── Step 50: seed — MantisCoreFormatting plugin ─────────────────────────────
+# ── Step 52: seed — MantisCoreFormatting plugin ─────────────────────────────
 $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	"INSERT INTO " . db_get_table( 'plugin' ) . "
 	 (basename, enabled)
 	 VALUES ('MantisCoreFormatting', 1)"
 );
 
-# ── Step 51: seed — default administrator user ──────────────────────────────
-# Password is 'administrator' (MD5).  The cookie_string is randomised at
+# ── Step 53: seed — default administrator user ──────────────────────────────
+# Password is 'root' (MD5).  The cookie_string is randomised at
 # install time so it is unique per installation.
 $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	"INSERT INTO " . db_get_table( 'user' ) . "
@@ -918,8 +918,8 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	         UNIX_TIMESTAMP(), UNIX_TIMESTAMP())"
 );
 
-# ── Step 52: seed — dwg_text anchor row (id=1) ──────────────────────────────
-# The placeholder dwg row (step 54) references dwg_text_id=1.
+# ── Step 54: seed — dwg_text anchor row (id=1) ──────────────────────────────
+# The placeholder dwg row (step 56) references dwg_text_id=1.
 # longtext columns have no DEFAULT so all three must be specified.
 $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	"INSERT INTO " . db_get_table( 'dwg_text' ) . "
@@ -927,15 +927,15 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	 VALUES ('Empty', 'Empty', 'Empty')"
 );
 
-# ── Step 53: seed — documents anchor row (id=1) ─────────────────────────────
-# The placeholder dwg row (step 54) has document_id DEFAULT 1.
+# ── Step 55: seed — documents anchor row (id=1) ─────────────────────────────
+# The placeholder dwg row (step 56) has document_id DEFAULT 1.
 $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	"INSERT INTO " . db_get_table( 'documents' ) . "
 	 (title)
 	 VALUES ('Empty')"
 );
 
-# ── Step 54: seed — placeholder dwg row (id=1, status=archived) ─────────────
+# ── Step 56: seed — placeholder dwg row (id=1, status=archived) ─────────────
 # Issues whose target document has been deleted are reassigned to this dwg.
 $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	"INSERT INTO " . db_get_table( 'dwg' ) . "
@@ -943,13 +943,16 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	 VALUES (1, 195)"
 );
 
-# The native test database carries version 56 from an earlier schema cycle,
-# although the current flat definition ends at 54. Reserve those numbers so
-# an upgrade can safely add the new table at step 57 without a version rollback.
-$g_upgrade[$t_idx++] = null; # 55
-$g_upgrade[$t_idx++] = null; # 56
+# ── Steps 57 and 58: permanent no-ops ───────────────────────────────────────
+# These were added on the belief that the definition above ended at step 54.
+# Steps 24 and 25 had been inserted mid-file, so it already ended at 56. The
+# two no-ops pushed the next step to 59, and every database installed since
+# records version 59. They must stay: removing them would make the installer
+# skip the next two appended steps on those databases.
+$g_upgrade[$t_idx++] = null; # 57
+$g_upgrade[$t_idx++] = null; # 58
 
-# ── Step 57: staged primary document draft ─────────────────────────────────
+# ── Step 59: staged primary document draft ─────────────────────────────────
 # Replacements live here until a manager promotes the draft. The existing
 # dwg_primary_file row remains the On Record version, including its old path.
 $g_upgrade[$t_idx++] = array( 'UpdateSQL',
@@ -971,10 +974,15 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 );
 
 # ── End of schema definition ─────────────────────────────────────────────────
-# $t_idx = 58 → database_version = 57 on a fresh install.
+# $t_idx = 60 → database_version = 59 on a fresh install.
 #
 # To add a new table: append a new step here and run the schema upgrade.
-# Do NOT insert steps between existing entries — always append.
+# Label it "Step N" with its real index, which is the database_version the
+#   installer records after running it.
+# Do NOT insert steps between existing entries — always append. An inserted
+#   step is never run by databases already past it, and shifts the version
+#   numbers of everything after it.
+# Never remove or renumber a step: replace an obsolete one with null.
 # Do NOT add incremental ALTER TABLE steps — modify the base CREATE TABLE.
 
 unset( $t_idx );
