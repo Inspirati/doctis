@@ -143,6 +143,24 @@ the container is replaced. Production Docker updates should therefore publish
 and deploy a new image, unless IT has deliberately mounted a persistent Git
 checkout and accepts the operational consequences.
 
+### When Git pull is blocked by local changes
+
+Git pull refuses an update that touches any tracked file differing from its
+commit, and its error lists only the files that update touches. System
+Operations → **Git Checkout Status** (`manage_git_checkout_page.php`) shows
+every difference: permission-only changes, content changes, deleted and
+untracked files, stashes, and unpushed commits. It can download a full report
+and a `.tar.gz` of the application files without `.git`. It offers two repairs:
+
+- **Ignore permission changes** sets `core.fileMode=false` and changes no files.
+- **Restore files** saves content changes as `config/git_local_changes_*.patch`,
+  then checks the committed versions out again.
+
+A Docker image built with `chmod -R 775` on the application directory makes
+every non-executable file show as a permission change. That blocked the remote
+deployment at `e021cbe1a` in October 2026. Its `.dockerignore` excluded only the
+top-level `.git`, so the image did contain the application's checkout.
+
 The working clone is `/home/robert/Documents/doctis`. Update the deployed
 checkout deliberately with `git -C /var/www/html/doctis pull --ff-only`; rerunning
 the installer intentionally does not pull or migrate an existing schema.
