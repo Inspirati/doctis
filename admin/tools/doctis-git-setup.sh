@@ -276,6 +276,9 @@ Content."
         _gst_info "nginx routing is managed by install-nginx.sh; skipping Apache setup"
     elif [ ! -f "$conf_src" ]; then
         _gst_warn "$conf_src not found — skipping Smart HTTP Apache setup"
+    elif ! command -v apache2ctl >/dev/null 2>&1; then
+        # e.g. the Docker image, whose nginx.conf routes /git/ itself
+        _gst_info "Apache not installed; Smart HTTP routing is left to the web server configuration"
     else
         _gst_chk "a2enmod alias setenvif"
         a2enmod alias setenvif &>/dev/null \
