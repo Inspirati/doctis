@@ -836,7 +836,7 @@ function print_custom_fields( $f_issue_id, $t_issue ) {
 
 # User list monitoring the bug
 function bug_view_monitoring_view_box( $f_issue_id, $t_flags ) {
-	$t_collapse_block = is_collapsed( 'monitors', true );
+	$t_collapse_block = is_collapsed( 'monitors' );
 	$t_block_css = $t_collapse_block ? 'collapsed' : '';
 	$t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 ?>
@@ -959,7 +959,7 @@ function bug_view_history_view_box( $f_issue_id, $t_flags ) {
 	<div class="col-md-12 col-xs-12">
 	<div class="space-10"></div>
 <?php
-	$t_collapse_block = is_collapsed( 'history', true );
+	$t_collapse_block = is_collapsed( 'history' );
 	$t_block_css = $t_collapse_block ? 'collapsed' : '';
 	$t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 	$t_history = history_get_events_array( $f_issue_id );
@@ -1184,7 +1184,7 @@ function bug_view_relationship_view_box( $p_bug_id, $p_can_update ) {
 	<div class="col-md-12 col-xs-12">
 	<div class="space-10"></div>
 <?php
-	$t_collapse_block = is_collapsed( 'relationships', true );
+	$t_collapse_block = is_collapsed( 'relationships' );
 	$t_block_css = $t_collapse_block ? 'collapsed' : '';
 	$t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 ?>
@@ -1518,3 +1518,4 @@ function bug_view_action_buttons( $p_bug_id, $p_flags ) {
 
 	echo '</div>';
 }
+

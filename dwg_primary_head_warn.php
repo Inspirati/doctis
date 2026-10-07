@@ -1,9 +1,9 @@
 <?php
 # dwg_primary_head_warn.php
-# Intermediate page for downloading a document-specific Draft revision.
-# Two sections are rendered:
+# Intermediate page for downloading the current git HEAD version of a primary
+# document.  Two sections are rendered:
 #
-#   1. Warning — the Draft may differ from the On Record version.
+#   1. Warning — the HEAD file may differ from the officially approved version.
 #      Confirm button re-POSTs with _confirmed=1, which redirects to the
 #      actual file download.
 #
@@ -31,7 +31,7 @@ $f_dwg_id = gpc_get_int( 'id' );
 
 access_ensure_dwg_level( config_get( 'view_dwg_threshold' ), $f_dwg_id );
 
-# Validate that a primary file and repository exist.
+# Validate that a primary file and HEAD both exist.
 $t_row = file_dwg_primary_get( $f_dwg_id );
 if( $t_row === null ) {
 	error_parameters( $f_dwg_id );
@@ -44,25 +44,15 @@ if( $t_head === null ) {
 	trigger_error( ERROR_FILE_NOT_FOUND, ERROR );
 }
 
-if( !$t_head['has_draft'] && !$t_head['missing'] ) {
-	error_parameters( $f_dwg_id );
-	trigger_error( ERROR_FILE_NOT_FOUND, ERROR );
-}
-
 # filename === null with a valid HEAD means the registered git_path no longer
 # exists at HEAD (renamed or deleted by an external push) — the "dangling
 # path" state.  The page still renders (the git-access information remains
 # useful); the download confirmation is replaced by a warning.
-$t_path_dangling = $t_head['missing'] && !$t_head['has_draft'];
+$t_path_dangling = ( $t_head['filename'] === null );
 
 # If the user has already confirmed, redirect straight to the download.
 if( !$t_path_dangling && true == gpc_get_bool( '_confirmed' ) ) {
-	if( !hash_equals( $t_head['sha'], gpc_get_string( 'draft_sha', '' ) ) ) {
-		error_parameters( $f_dwg_id );
-		trigger_error( ERROR_FILE_NOT_FOUND, ERROR );
-	}
-	print_header_redirect( 'file_download.php?type=dwg_primary_head&id=' . $f_dwg_id
-		. '&sha=' . rawurlencode( $t_head['sha'] ) );
+	print_header_redirect( 'file_download.php?type=dwg_primary_head&id=' . $f_dwg_id );
 }
 
 # ── Compute values for the git info section ────────────────────────────────
@@ -71,20 +61,18 @@ $t_project_id   = dwg_get_field( $f_dwg_id, 'project_id' );
 $t_project_name = project_get_field( $t_project_id, 'name' );
 $t_repo_base    = dwg_project_repo_basename( $t_project_id );
 $t_bare         = dwg_project_bare_repo_path( $t_project_id );
-$t_draft_row    = file_dwg_primary_draft_get( $f_dwg_id );
-$t_rel_path     = ( $t_draft_row ?: $t_row )['git_path'];
+$t_rel_path     = $t_row['git_path'];
 
 # Shell-safe versions for display in <code> blocks.
 $t_bare_shell    = escapeshellarg( $t_bare );
 $t_rel_shell     = escapeshellarg( $t_rel_path );
-$t_head_sha_full = htmlspecialchars( $t_head['head_sha'] );
-$t_head_sha_abbr = htmlspecialchars( substr( $t_head['head_sha'], 0, 8 ) );
-$t_draft_sha_abbr = htmlspecialchars( substr( $t_head['sha'], 0, 8 ) );
+$t_head_sha_full = htmlspecialchars( $t_head['sha'] );
+$t_head_sha_abbr = htmlspecialchars( substr( $t_head['sha'], 0, 8 ) );
 
 # Pre-compose the server-side command strings (already shell-safe).
 $t_cmd_show_head = 'git --git-dir=' . $t_bare_shell . ' show HEAD:' . $t_rel_shell;
 $t_cmd_log       = 'git --git-dir=' . $t_bare_shell . ' log --follow -- ' . $t_rel_shell;
-$t_cmd_show_sha  = 'git --git-dir=' . $t_bare_shell . ' show ' . $t_draft_sha_abbr . ':' . $t_rel_shell;
+$t_cmd_show_sha  = 'git --git-dir=' . $t_bare_shell . ' show ' . $t_head_sha_abbr . ':' . $t_rel_shell;
 $t_cmd_clone     = 'git clone ' . $t_bare_shell . ' /tmp/' . htmlspecialchars( $t_repo_base );
 
 # Remote (workstation) clone over Smart HTTP — the recommended method.
@@ -119,19 +107,13 @@ layout_page_begin();
 			renamed or deleted by a push made outside Doctis.
 		</p>
 		<p>
-			The On Record version remains retrievable from its recorded commit.
-			A manager must either re-upload the document (which
+			The approved (On-Record) version remains fully retrievable from its
+			pinned commit.  A manager must either re-upload the document (which
 			re-establishes the path) or register the file's new location before
 			the draft can be promoted.
 		</p>
 	</div>
 <?php } else { ?>
-	<?php if( $t_head['stale'] ) { ?>
-	<div class="alert alert-danger center">
-		The repository file changed after this Draft was uploaded. You can still
-		download the staged revision, but it cannot be promoted until it is re-uploaded.
-	</div>
-	<?php } ?>
 	<div class="alert alert-warning center">
 		<p class="bigger-110">
 			<?php echo lang_get( 'primary_document_head_download_warn' ) ?>
@@ -140,7 +122,6 @@ layout_page_begin();
 		<form method="post" class="center" action="">
 			<?php print_hidden_inputs( $_GET ); ?>
 			<?php print_hidden_inputs( $_POST ); ?>
-			<input type="hidden" name="draft_sha" value="<?php echo string_attribute( $t_head['sha'] ) ?>" />
 			<input type="hidden" name="_confirmed" value="1" />
 			<input type="submit"
 				class="btn btn-primary btn-white btn-round"
@@ -212,8 +193,9 @@ layout_page_begin();
 				<p class="small">
 					<strong>Pushing changes:</strong> your access level also permits
 					<code>git push</code> to this repository.  Pushed commits update the
-					the changed document's <em>Draft</em> only &mdash; the On Record
-					version remains pinned until a reviewer uses <em>Promote Draft</em>.
+					<em>draft</em> (repository <code>HEAD</code>) only &mdash; the Approved
+					version remains pinned until a reviewer promotes the new HEAD inside
+					Doctis (<em>Sync to HEAD</em> in the Primary Document panel).
 					Force-pushes, history rewrites, and branch deletions are rejected by
 					the server.
 				</p>
@@ -243,12 +225,6 @@ layout_page_begin();
 						<th class="category">Document path in repo</th>
 						<td><code><?php echo htmlspecialchars( $t_rel_path ) ?></code></td>
 					</tr>
-					<?php if( $t_head['has_draft'] ) { ?>
-					<tr>
-						<th class="category">Document Draft SHA</th>
-						<td><code><?php echo htmlspecialchars( $t_head['sha'] ) ?></code></td>
-					</tr>
-					<?php } ?>
 					<tr>
 						<th class="category">Current HEAD SHA</th>
 						<td>
@@ -281,7 +257,7 @@ layout_page_begin();
 						<th class="category">Read a specific commit</th>
 						<td>
 							<code><?php echo htmlspecialchars( $t_cmd_show_sha ) ?></code>
-							<span class="small">&nbsp;(replace <em><?php echo $t_draft_sha_abbr ?></em> with any valid SHA)</span>
+							<span class="small">&nbsp;(replace <em><?php echo $t_head_sha_abbr ?></em> with any valid SHA)</span>
 						</td>
 					</tr>
 					<tr>

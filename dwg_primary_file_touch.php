@@ -1,8 +1,9 @@
 <?php
 # dwg_primary_file_touch.php
 # POST handler — create an empty git commit on the project repository, advancing
-# the HEAD SHA without modifying any file content. It no longer makes any
-# document appear to have a Draft revision.
+# the HEAD SHA without modifying any file content.  This forces a divergence
+# between the git HEAD and the SHA recorded in Doctis, making the "updated"
+# badge and "Sync to HEAD" button appear on the document view page.
 #
 # Intended for development and testing.  Restricted to MANAGER and above.
 

@@ -216,13 +216,6 @@ class UserUpdateCommand extends Command {
 			$this->enabled = (bool)$t_new_enabled;
 		}
 
-		# Reports To
-		$t_old_reports_to = (int)user_get_field( $this->user_id, 'reports_to' );
-		$t_new_reports_to = array_key_exists( 'reports_to', $t_user ) ? (int)$t_user['reports_to'] : null;
-		if( !is_null( $t_new_reports_to ) ) {
-			user_ensure_valid_reports_to( $this->user_id, $t_new_reports_to );
-		}
-
 		# Notify User
 		$this->notify_user = $this->payload( 'notify_user', false );
 
@@ -276,8 +269,7 @@ class UserUpdateCommand extends Command {
 			'email' => $t_old_email,
 			'access_level' => $t_old_access_level,
 			'enabled' => $t_old_enabled,
-			'protected' => $t_old_protected,
-			'reports_to' => $t_old_reports_to
+			'protected' => $t_old_protected
 		);
 
 		$this->new_user = array(
@@ -287,8 +279,7 @@ class UserUpdateCommand extends Command {
 			'email' => $t_new_email ?: $t_old_email,
 			'access_level' => $t_new_access_level ?: $t_old_access_level,
 			'enabled' => !is_null( $t_new_enabled ) ? $t_new_enabled : $t_old_enabled,
-			'protected' => !is_null( $t_new_protected ) ? $t_new_protected : $t_old_protected,
-			'reports_to' => !is_null( $t_new_reports_to ) ? $t_new_reports_to : $t_old_reports_to
+			'protected' => !is_null( $t_new_protected ) ? $t_new_protected : $t_old_protected
 		);
 	}
 
@@ -381,3 +372,4 @@ class UserUpdateCommand extends Command {
 		$t_query->execute();
 	}
 }
+

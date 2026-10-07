@@ -59,7 +59,7 @@ require_api( 'lang_api.php' );
 <div class="space-10"></div>
 
 <?php
-	$t_collapse_block = is_collapsed( 'bugnote_add', true );
+	$t_collapse_block = is_collapsed( 'bugnote_add' );
 	$t_block_css = $t_collapse_block ? 'collapsed' : '';
 	$t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 	$t_allow_file_upload = file_allow_bug_upload( $f_bug_id );

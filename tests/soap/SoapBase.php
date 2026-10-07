@@ -110,32 +110,6 @@ class SoapBase extends MantisTestCase {
 	private $defaultSoapClientOptions;
 
 	/**
-	 * Assert that an issue severity matches the server's configured default.
-	 *
-	 * @param object $p_severity SOAP severity object reference.
-	 * @return void
-	 */
-	protected function assertDefaultSeverity( $p_severity ) {
-		$t_default_id = (int)$this->client->mc_config_get_string(
-			$this->userName,
-			$this->password,
-			'default_bug_severity'
-		);
-		$t_severities = $this->client->mc_enum_severities( $this->userName, $this->password );
-		$t_default_name = null;
-		foreach( $t_severities as $t_severity ) {
-			if( (int)$t_severity->id === $t_default_id ) {
-				$t_default_name = $t_severity->name;
-				break;
-			}
-		}
-
-		$this->assertNotNull( $t_default_name, 'Configured default severity must exist in the severity enum' );
-		$this->assertEquals( $t_default_id, $p_severity->id );
-		$this->assertEquals( $t_default_name, $p_severity->name );
-	}
-
-	/**
 	 * setUp
 	 * @return void
 	 */

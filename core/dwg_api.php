@@ -82,23 +82,6 @@ require_api( 'utility_api.php' );
 use Mantis\Exceptions\ClientException;
 
 /**
- * A document link is optional, but a populated link must be a web URL.
- *
- * @param string $p_url Document link
- * @return bool
- */
-function dwg_link_url_is_valid( $p_url ) {
-	if( $p_url === '' ) {
-		return true;
-	}
-
-	$t_scheme = parse_url( $p_url, PHP_URL_SCHEME );
-	return strlen( $p_url ) <= 2048
-		&& filter_var( $p_url, FILTER_VALIDATE_URL ) !== false
-		&& in_array( strtolower( (string)$t_scheme ), array( 'http', 'https' ), true );
-}
-
-/**
  * Bug Data Structure Definition
  *
  * @property int $id
@@ -392,11 +375,6 @@ class DwgData {
 	 * @param bool $p_update_extended Whether to validate extended fields.
 	 */
 	public function validate( $p_update_extended = true ) {
-		if( !dwg_link_url_is_valid( $this->link_url ) ) {
-			error_parameters( lang_get( 'dwg_link_url' ) );
-			trigger_error( ERROR_INVALID_FIELD_VALUE, ERROR );
-		}
-
 		# Summary cannot be blank
 		if( is_blank( $this->summary ) ) {  // @TODO RobD:
 			// error_parameters( lang_get( 'document_summary' ) );
@@ -641,8 +619,7 @@ $this->edition = isset($this->edition) ? $this->edition : '';
 			priority=' . db_param() . ',
 			category_id=' . db_param() . ',
 			due_date=' . db_param() . ',
-			version=' . db_param() . ',
-			link_url=' . db_param() . '
+			version=' . db_param() . '
 			';
 		$t_query .= 'WHERE id=' . db_param();
 
@@ -656,17 +633,11 @@ $this->edition = isset($this->edition) ? $this->edition : '';
 			$this->category_id,
 			$this->due_date,
 			$this->version,
-			$this->link_url,
 			$this->id);
 
 		// error_log("t_query: " . $t_query);
 
 		db_query( $t_query, $t_fields );
-		if( $t_old_data->link_url !== $this->link_url ) {
-			db_param_push();
-			$t_query = 'UPDATE {documents} SET link_url=' . db_param() . ' WHERE id=' . db_param();
-			db_query( $t_query, array( $this->link_url, $this->document_id ) );
-		}
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -688,7 +659,6 @@ $this->edition = isset($this->edition) ? $this->edition : '';
 		history_dwg_log_event_direct( $c_bug_id, 'os_build', $t_old_data->os_build, $this->os_build );
 		history_dwg_log_event_direct( $c_bug_id, 'platform', $t_old_data->platform, $this->platform );
 		history_dwg_log_event_direct( $c_bug_id, 'version', $t_old_data->version, $this->version );
-		history_dwg_log_event_direct( $c_bug_id, 'link_url', $t_old_data->link_url, $this->link_url );
 		history_dwg_log_event_direct( $c_bug_id, 'build', $t_old_data->build, $this->build );
 		history_dwg_log_event_direct( $c_bug_id, 'fixed_in_version', $t_old_data->fixed_in_version, $this->fixed_in_version );
 		// if( $t_roadmap_updated ) {
@@ -1409,7 +1379,7 @@ function dwg_copy( $p_bug_id, $p_target_project_id = null, $p_copy_custom_fields
 }
 
 /**
- * Moves a document from one project to another.
+ * Moves an issue from a project to another.
  *
  * @todo Validate with sub-project / category inheritance scenarios.
  *
@@ -1421,10 +1391,10 @@ function dwg_copy( $p_bug_id, $p_target_project_id = null, $p_copy_custom_fields
  * @access public
  */
 function dwg_move( $p_bug_id, $p_target_project_id ) {
-	# Attempt to move disk based document attachments to the new project directory.
-	file_dwg_move_dwg_attachments( $p_bug_id, $p_target_project_id );
+	# Attempt to move disk based attachments to new project file directory.
+	file_move_bug_attachments( $p_bug_id, $p_target_project_id );
 
-	# Move the document to the new project.
+	# Move the issue to the new project.
 	dwg_set_field( $p_bug_id, 'project_id', $p_target_project_id );
 
 	# Update the category if needed

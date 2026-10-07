@@ -44,7 +44,7 @@ if( $t_file['size'] > $t_max_file_size ) {
 	trigger_error( ERROR_FILE_TOO_BIG, ERROR );
 }
 
-$t_registered = file_dwg_primary_add(
+file_dwg_primary_add(
 	$f_dwg_id,
 	auth_get_current_user_id(),
 	$t_file['tmp_name'],
@@ -56,6 +56,4 @@ $t_registered = file_dwg_primary_add(
 
 form_security_purge( 'dwg_primary_file_update' );
 
-print_header_redirect( 'dwg_view.php?id=' . $f_dwg_id
-	. '&primary_uploaded=' . rawurlencode( $t_registered['git_sha'] )
-	. '#primary_document' );
+print_header_redirect( 'dwg_view.php?id=' . $f_dwg_id );

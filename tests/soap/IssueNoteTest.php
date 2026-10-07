@@ -216,14 +216,9 @@ class IssueNoteTest extends SoapBase {
 			$t_issue_to_add
 		);
 		$this->deleteAfterRun( $t_issue_id );
-		$t_max_length = (int)$this->client->mc_config_get_string(
-			$this->userName,
-			$this->password,
-			'max_textarea_length'
-		);
 
 		$t_note_data = array(
-			'text' => str_repeat( 'x', $t_max_length ),
+			'text' => str_repeat( 'x', config_get_global( 'max_textarea_length' ) ),
 			'note_type' => BUGNOTE
 		);
 

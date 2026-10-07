@@ -563,12 +563,6 @@ function layout_navbar_button_bar() {
 
 	if( $t_show_report_bug_button )  {
 		$t_bug_url = string_get_bug_report_url();
-		if( is_page_name( 'dwg_view.php' ) ) {
-			$t_dwg_id = gpc_get_int( 'id', 0 );
-			if( $t_dwg_id > 0 ) {
-				$t_bug_url .= '?dwg_id=' . $t_dwg_id;
-			}
-		}
 		echo '<a class="btn btn-primary btn-sm" href="' . $t_bug_url . '">';
 		print_icon( 'fa-edit');
 		echo ' ' . lang_get( 'report_bug_link' );

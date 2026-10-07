@@ -108,7 +108,6 @@ $t_updated_bug->duplicate_id = gpc_get_int( 'duplicate_id', 0 );
 $t_updated_bug->eta = gpc_get_int( 'eta', $t_existing_bug->eta );
 $t_updated_bug->handler_id = gpc_get_int( 'handler_id', $t_existing_bug->handler_id );
 $t_updated_bug->last_updated = gpc_get_string( 'last_updated' );
-$t_updated_bug->link_url = gpc_get_string( 'dwg_link_url', $t_existing_bug->link_url );
 $t_updated_bug->os = gpc_get_string( 'os', $t_existing_bug->os );
 $t_updated_bug->os_build = gpc_get_string( 'os_build', $t_existing_bug->os_build );
 $t_updated_bug->platform = gpc_get_string( 'platform', $t_existing_bug->platform );

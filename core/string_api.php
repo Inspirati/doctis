@@ -833,45 +833,12 @@ function string_get_dwg_view_reference_url( $p_urlbase ) {
 	return $p_urlbase . '/document/versions/latest';
 }
 
-/**
- * Parse a document reference expressed as a raw or Markdown HTTP(S) link.
- *
- * @param string $p_reference Document reference.
- * @return array|null Link text and URL, or null when this is not a supported link.
- */
-function string_parse_dwg_reference_link( $p_reference ) {
-	$t_reference = trim( $p_reference );
-	$t_matches = array();
-	if( preg_match( '/^\[([^\]\r\n]+)\]\((https?:\/\/[^\s\)]+)\)$/i', $t_reference, $t_matches ) ) {
-		return array(
-			'label' => $t_matches[1],
-			'url' => $t_matches[2],
-		);
-	}
-
-	if( preg_match( '/^https?:\/\/\S+$/i', $t_reference ) ) {
-		return array(
-			'label' => $t_reference,
-			'url' => $t_reference,
-		);
-	}
-
-	return null;
-}
-
 function string_get_dwg_view_reference_link( $p_bug_id, $p_dwg_reference, $p_detail_info = true, $p_fqdn = false ) {
 	if( is_blank( $p_dwg_reference ) ) {
 		return '';
 	}
 
 	if( dwg_exists( $p_bug_id ) ) {
-		# Explicit external links take precedence over reference-type heuristics.
-		$t_external_link = string_parse_dwg_reference_link( $p_dwg_reference );
-		if( $t_external_link !== null ) {
-			return '<a href="' . string_attribute( $t_external_link['url'] ) . '">'
-				. string_html_specialchars( $t_external_link['label'] ) . '</a>';
-		}
-
 		# Check for a 40-character git SHA recorded in the primary file table.
 		# No git lookups — confirmed purely from the database.
 		if( preg_match( '/^[0-9a-f]{40}$/i', $p_dwg_reference ) ) {

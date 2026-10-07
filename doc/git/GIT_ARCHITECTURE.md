@@ -275,8 +275,7 @@ on top of it.
    file at `git_path`, `git add` + `git commit`
    (message: `dwg_id=<N> by <username>`), **mandatory `git push`**.
 3. If the path changed, the old path is soft-deleted from HEAD.
-4. A first upload is registered On Record. A replacement is stored in
-   `{dwg_primary_draft}` without changing the On Record row or Reference.
+4. The new commit SHA is passed to `file_dwg_primary_register()`.
 
 Duplicate content (commit exits 1 — nothing to commit) is treated as a
 successful store returning the existing HEAD SHA.
@@ -286,8 +285,7 @@ successful store returning the existing HEAD SHA.
 `GitFileStorageBackend::retrieve()` runs
 `git show <git_sha>:<git_path>` against the bare repository directly (never
 the worktree). Historical versions (`dwg_primary_at_sha`) and the current
-draft (`dwg_primary_head`) uses the staged path when a replacement was
-uploaded with a new name. On Record always uses its own stored path and SHA.
+draft (`dwg_primary_head`) retrieve the same `git_path` at a different SHA.
 
 ### Delete (soft delete)
 
@@ -304,21 +302,18 @@ Doctis distinguishes two versions of a document's primary file:
 | Concept | Storage | Access |
 |---------|---------|--------|
 | **On-Record (approved)** | `{dwg_primary_file}.git_sha` — a pinned SHA in the DB | `retrieve()` via `git show <git_sha>:<git_path>` |
-| **Draft** | `{dwg_primary_draft}.git_sha` for an upload, or the last commit changing this file for a direct Git edit | `file_dwg_git_head_info()` compares the file's Git object at On Record with its object at repository `HEAD` |
+| **Draft** | Whatever is at the repo's branch `HEAD` | `file_dwg_git_head_info()` reads it independently of the DB |
 
-`file_dwg_primary_sync_head()` promotes this document's Draft commit, rather
-than the repository-wide `HEAD`. For a staged replacement it adopts the Draft
-path and filename, then clears the staged row. If its file object changed at
-`HEAD` after upload, promotion is blocked until the user re-uploads. For a
-direct Git edit to the registered path, the last path-changing commit is the
-Draft revision. Unrelated repository commits neither create a Draft nor change
-the approved reference. An empty Touch commit has no document-level effect.
+`file_dwg_primary_sync_head()` is the "approve current draft" primitive: it
+reads `HEAD` and writes it as the new `git_sha`. The registered `git_path` is
+the document's identity and is **never changed by promotion** — the path must
+exist at HEAD to promote.
 
 ### Dangling paths
 
 Because external pushes can rename or delete files (impossible under the old
 system-owned layout), `file_dwg_git_head_info()` checks whether the
-registered `git_path` still exists at HEAD (`missing: true` when absent).
+registered `git_path` still exists at HEAD (`filename: null` when absent).
 The document view panel shows a **"missing at HEAD"** badge and
 `dwg_primary_head_warn.php` explains the state. The pinned on-record version
 remains retrievable regardless — approved SHAs are immune to later branch
@@ -327,7 +322,7 @@ new location.
 
 ### Approved-SHA pinning
 
-When a first upload is registered or a Draft is promoted,
+Whenever a `git_sha` is recorded (registration, upload, promotion),
 `file_dwg_git_pin_approved()` writes a permanent, server-managed git ref:
 
 ```
@@ -338,8 +333,6 @@ This keeps every approved commit reachable regardless of later branch history
 (immune to GC), and forms an out-of-band approval record that does not depend
 on the Doctis DB. The pre-receive hook rejects any client push touching
 `refs/doctis/*`; only the server writes them (`git update-ref` bypasses hooks).
-The importer can register without approval, and replacement uploads are staged
-without an approved ref.
 
 ---
 
@@ -348,8 +341,7 @@ without an approved ref.
 Advanced users can `git clone` a repository from a remote workstation,
 authenticated with a Doctis API token — no Linux account required. Users at
 `$g_git_http_write_threshold` (default `MANAGER`) can also `git push` draft
-updates; pushes change a document's Draft only when its file changes, never
-the On Record version.
+updates; pushes advance the Draft (HEAD) only, never the On-Record version.
 
 ### Architecture
 

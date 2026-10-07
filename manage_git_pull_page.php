@@ -15,7 +15,6 @@ access_ensure_global_level( ADMINISTRATOR );
 $t_branch  = trim( @shell_exec( 'git -C /var/www/html/doctis rev-parse --abbrev-ref HEAD 2>/dev/null' ) );
 $t_commit  = trim( @shell_exec( 'git -C /var/www/html/doctis rev-parse --short=10 HEAD 2>/dev/null' ) );
 $t_origin  = trim( @shell_exec( 'git -C /var/www/html/doctis config --get remote.origin.url 2>/dev/null' ) );
-$t_upstream = trim( @shell_exec( 'git -C /var/www/html/doctis rev-parse --abbrev-ref --symbolic-full-name @{upstream} 2>/dev/null' ) );
 
 layout_page_header( 'Git Pull — System Operations' );
 layout_page_begin( __FILE__ );
@@ -48,10 +47,6 @@ print_manage_menu( 'manage_overview_page.php' );
 			<tr>
 				<th class="category">Current commit</th>
 				<td><?php echo htmlspecialchars( $t_commit ?: 'unknown' ); ?></td>
-			</tr>
-			<tr>
-				<th class="category">Tracked upstream</th>
-				<td><?php echo htmlspecialchars( $t_upstream ?: 'not configured' ); ?></td>
 			</tr>
 		</table>
 

@@ -210,10 +210,6 @@ function doctis_get_git_version_info() {
 			<?php print_icon( 'fa-download', 'ace-icon' ); ?> Git Pull (Update)
 		</a>
 		&nbsp;
-		<a href="manage_git_checkout_page.php" class="btn btn-sm btn-default">
-			<?php print_icon( 'fa-code-fork', 'ace-icon' ); ?> Git Checkout Status
-		</a>
-		&nbsp;
 		<a href="manage_db_load_sample_page.php" class="btn btn-sm btn-warning">
 			<?php print_icon( 'fa-refresh', 'ace-icon' ); ?> Load Sample Data
 		</a>

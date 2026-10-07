@@ -59,7 +59,7 @@ form_security_validate( 'dwg_reminder' );
 
 $f_bug_id		= gpc_get_int( 'dwg_id' );
 $f_to			= gpc_get_int_array( 'to' );
-$f_body			= gpc_get_string( 'dwgnote_text' );
+$f_body			= gpc_get_string( 'bugnote_text' );
 $f_view_state	= gpc_get_bool( 'private' ) ? VS_PRIVATE : VS_PUBLIC;
 
 $t_bug = dwg_get( $f_bug_id, true );

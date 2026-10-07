@@ -77,7 +77,7 @@ $t_bugnote_stats_to_y = gpc_get_string( FILTER_PROPERTY_DATE_SUBMITTED_END_YEAR,
 
 $f_get_bugnote_stats_button = gpc_get_string( 'get_bugnote_stats_button', '' );
 
-$t_collapse_block = is_collapsed( 'bugnotestats', true );
+$t_collapse_block = is_collapsed( 'bugnotestats' );
 $t_block_css = $t_collapse_block ? 'collapsed' : '';
 $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 
@@ -185,3 +185,4 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 ?>
 	</div>
 </div>
+

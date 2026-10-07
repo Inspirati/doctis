@@ -147,14 +147,13 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     echo ""
     read -rp "Type 'yes' to proceed: " answer
     if [ "$answer" = "yes" ]; then
-        main "$@" || exit 1
+        main "$@"
     else
         echo "Aborted."
-        exit 1
     fi
     echo -e "${DIAG}Done: <ctrl-c> to close${OFF}"
 else
     # Script sourced from another script — run without prompting
     echo -e "${DIAG}doctis-git-reset.sh sourced from ${0}${OFF}"
-    main "$@" || return 1
+    main "$@"
 fi

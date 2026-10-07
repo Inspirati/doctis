@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Shared source branch for bootstrap scripts and application checkout.
-export DOCTIS_BRANCH="${DOCTIS_BRANCH:-dev}"
-
 TARGET="doctis"
 GITHUB_USR="Inspirati"
 
@@ -10,25 +7,10 @@ GITHUB_USR="Inspirati"
 # https://raw.githubusercontent.com/Inspirati/doctis/refs/heads/dev/admin/tools/install-target.sh
 
 GITHUB_URL="https://raw.githubusercontent.com/${GITHUB_USR}"
-SCRIPT_LOC="${TARGET}/refs/heads/${DOCTIS_BRANCH}/admin/tools"
+SCRIPT_LOC="${TARGET}/refs/heads/dev/admin/tools"
 # DOCTIS_SCRIPT_URL overrides the default GitHub source, e.g. for LAN installs:
 #   export DOCTIS_SCRIPT_URL="http://10.0.0.10/doctis/admin/tools"
 SCRIPT_URL="${DOCTIS_SCRIPT_URL:-${GITHUB_URL}/${SCRIPT_LOC}}"
-
-# The nginx profile runs separately from the legacy Apache installer.
-case "${DOCTIS_WEB_SERVER:-apache}" in
-    nginx)
-        [[ "${1:-}" == install ]] || { echo 'nginx profile expects install' >&2; exit 64; }
-        [[ "${7:-doctis}" == doctis ]] || { echo 'nginx profile installs Doctis only' >&2; exit 64; }
-        nginx_script="$(dirname "${BASH_SOURCE[0]}")/install-nginx.sh"
-        if [[ ! -f "$nginx_script" ]]; then
-            wget --quiet -O "$nginx_script" "${SCRIPT_URL}/install-nginx.sh" || exit 1
-        fi
-        exec bash "$nginx_script" "${2:-all}" "${3:-localhost}"
-        ;;
-    apache) ;;
-    *) echo 'DOCTIS_WEB_SERVER must be apache or nginx' >&2; exit 64 ;;
-esac
 
 INSTALL_SYSTEM_SCRIPT="install-system.sh"
 INSTALL_TARGET_SCRIPT="install-target.sh"

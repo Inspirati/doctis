@@ -772,15 +772,15 @@ $t_form_encoding = 'enctype="multipart/form-data"';
 			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_discipline" name="dwg_discipline" size="105" maxlength="128" value="<?php echo string_attribute( $f_dwg_discipline ) ?>" />
 		</td>
 	</tr>
--->
 	<tr>
 		<th class="category">
 			<label for="dwg_link_url"><?php print_dwg_documentation_link( 'dwg_link_url' ) ?></label>
 		</th>
 		<td>
-			<input <?php echo helper_get_tab_index() ?> type="url" id="dwg_link_url" name="dwg_link_url" size="105" maxlength="2048" value="<?php echo string_attribute( $f_dwg_link_url ) ?>" />
+			<input <?php echo helper_get_tab_index() ?> type="text" id="dwg_link_url" name="dwg_link_url" size="105" maxlength="2048" value="<?php echo string_attribute( $f_dwg_link_url ) ?>" />
 		</td>
 	</tr>
+-->
 	<?php
 		// $t_date_to_display = date( config_get( 'normal_date_format' ), $f_due_date );
 		$t_date_to_display = '';
@@ -925,7 +925,7 @@ $t_form_encoding = 'enctype="multipart/form-data"';
 		</th>
 		<td>
 			<?php print_dwg_relationship_list_box( config_get( 'default_dwg_relationship_clone' ), "rel_type", false, true ) ?>
-			<?php echo '<strong>' . lang_get( 'dwg' ) . ' ' . bug_format_id( $f_master_bug_id ) . '</strong>' ?>
+			<?php echo '<strong>' . lang_get( 'bug' ) . ' ' . bug_format_id( $f_master_bug_id ) . '</strong>' ?>
 		</td>
 	</tr>
 
@@ -1010,10 +1010,10 @@ $t_form_encoding = 'enctype="multipart/form-data"';
 			</div>
 		</div>
 	</div>
-	<div class="widget-toolbox padding-8 clearfix">
-		<span class="required pull-right"> * <?php echo lang_get( 'required' ) ?></span>
-		<input <?php echo helper_get_tab_index() ?> type="submit" class="btn btn-primary btn-white btn-round" value="<?php echo lang_get( 'submit_dwg_button' ) ?>" />
-	</div>
+<div class="widget-toolbox padding-8 clearfix">
+	<span class="required pull-right"> * <?php echo lang_get( 'required' ) ?></span>
+	<input <?php echo helper_get_tab_index() ?> type="submit" class="btn btn-primary btn-white btn-round" value="<?php echo lang_get( 'submit_dwg_button' ) ?>" />
+</div>
 </div>
 </form>
 </div>

@@ -47,7 +47,6 @@ VALUES (1, 'example', 10, 1, 10, 10, '', '', 1, 1, '');
 SQL
 )
 EOF
-    [ $? -eq 0 ] || return 1
     ${db_cmd} <<EOF
 USE ${mysqldatabase};
 $(cat <<'SQL'
@@ -76,7 +75,6 @@ INSERT INTO `license` (`project_id`, `enabled`, `name`, `match_str`, `type`, `st
 SQL
 )
 EOF
-    [ $? -eq 0 ] || return 1
     echo -e "${INFO}Example project/licence data loaded.${OFF}" >&2
 }
 
@@ -120,15 +118,14 @@ INSERT INTO `user` (
 SQL
 )
 EOF
-    [ $? -eq 0 ] || return 1
     echo -e "${INFO}Test user accounts loaded.${OFF}" >&2
 }
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 main() {
-    load_example_data "${targetproject}" || return 1
-    load_testing_user "${targetproject}" || return 1
+    load_example_data "${targetproject}"
+    load_testing_user "${targetproject}"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
@@ -136,10 +133,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     echo -e "${INFO}INSERT statements are not idempotent — do not run against a populated database.${OFF}"
     read -rp "Type 'yes' to proceed: " answer
     if [ "$answer" = "yes" ]; then
-        main || exit 1
-    else
-        echo "Aborted." >&2
-        exit 1
+        main
     fi
 else
     # Being sourced — caller decides whether to invoke main

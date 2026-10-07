@@ -48,7 +48,6 @@ $f_username		= gpc_get_string( 'username', '' );
 $f_realname		= gpc_get_string( 'realname', '' );
 $f_access_level	= gpc_get_int( 'access_level' );
 $f_user_id		= gpc_get_int( 'user_id' );
-$f_reports_to	= gpc_get_int( 'reports_to', 0 );
 $f_send_email_notification = gpc_get_bool( 'send_email_notification' );
 
 $t_data = array(
@@ -62,8 +61,7 @@ $t_data = array(
 			'email' => $f_email,
 			'access_level' => array( 'id' => $f_access_level ),
 			'enabled' => $f_enabled,
-			'protected' => $f_protected,
-			'reports_to' => $f_reports_to
+			'protected' => $f_protected
 		),
 		'notify_user' => $f_send_email_notification
 	)

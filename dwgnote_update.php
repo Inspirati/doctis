@@ -55,7 +55,7 @@ require_api( 'helper_api.php' );
 form_security_validate( 'dwgnote_update' );
 
 $f_bugnote_id	 = gpc_get_int( 'bugnote_id' );
-$f_bugnote_text	 = gpc_get_string( 'dwgnote_text', '' );
+$f_bugnote_text	 = gpc_get_string( 'bugnote_text', '' );
 $f_time_tracking = gpc_get_string( 'time_tracking', '0:00' );
 
 # Check if the current user is allowed to edit the bugnote

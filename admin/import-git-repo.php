@@ -10,7 +10,6 @@
  *
  * Options (CLI overrides a committed .doctis manifest at the source HEAD):
  *   --source <path>         Path of the git repository to import (required)
- *   --source-label <text>   Durable source description (default: source path)
  *   --user <name>           Doctis account performing the import (default: administrator)
  *   --name <name>           Parent project name (default: manifest, else source basename)
  *   --description <text>    Parent project description
@@ -22,7 +21,6 @@
  *   --frontmatter <yes|no>  Parse YAML frontmatter from matched files (default: yes)
  *   --filename-parse <y|n>  Parse number/revision/title from filenames (default: no)
  *   --category-from <mode>  directory | none (default: directory — D7 path-as-category)
- *   --project-visibility <private|public>  New project's visibility (default: private)
  *   --update                Re-import into an existing project set: register new files,
  *                           skip registered paths, report paths missing at HEAD
  *   --dry-run               Print the full would-be result without writing anything
@@ -42,9 +40,9 @@
  */
 
 $t_options = getopt( '', array(
-	'source:', 'source-label:', 'user:', 'name:', 'description:', 'directories:', 'patterns:',
+	'source:', 'user:', 'name:', 'description:', 'directories:', 'patterns:',
 	'subprojects:', 'subdir-marker:', 'frontmatter:', 'filename-parse:',
-	'category-from:', 'project-visibility:', 'update', 'dry-run', 'help',
+	'category-from:', 'update', 'dry-run', 'help',
 ) );
 
 if( isset( $t_options['help'] ) || !isset( $t_options['source'] ) ) {
@@ -75,16 +73,8 @@ use Mantis\Exceptions\ClientException;
 
 $g_dry    = isset( $t_options['dry-run'] );
 $g_update = isset( $t_options['update'] );
-$t_project_visibility = strtolower( $t_options['project-visibility'] ?? 'private' );
-if( !in_array( $t_project_visibility, array( 'private', 'public' ), true ) ) {
-	fwrite( STDERR, "ERROR: --project-visibility must be private or public.\n" );
-	exit( 1 );
-}
-$g_import_project_view_state = $t_project_visibility === 'private' ? VS_PRIVATE : VS_PUBLIC;
 
 $t_source = rtrim( $t_options['source'], '/' );
-$t_source_label = trim( $t_options['source-label'] ?? $t_source );
-$t_source_name = basename( $t_source_label );
 $t_login  = $t_options['user'] ?? 'administrator';
 
 auth_attempt_script_login( $t_login );
@@ -129,9 +119,9 @@ $t_manifest     = $t_manifest_raw !== '' ? manifest_parse( $t_manifest_raw ) : a
 
 $g_cfg = array(
 	'name'           => $t_options['name']
-		?? manifest_get( $t_manifest, 'project', 'name', $t_source_name ),
+		?? manifest_get( $t_manifest, 'project', 'name', basename( $t_source ) ),
 	'description'    => $t_options['description']
-		?? manifest_get( $t_manifest, 'project', 'description', 'Imported from git repository ' . $t_source_name ),
+		?? manifest_get( $t_manifest, 'project', 'description', 'Imported from git repository ' . basename( $t_source ) ),
 	'directories'    => csv_list( $t_options['directories']
 		?? manifest_get( $t_manifest, 'import', 'directories', '' ) ),
 	'patterns'       => csv_list( $t_options['patterns']
@@ -151,9 +141,8 @@ $g_cfg = array(
 # ── Phase A1: pre-flight ─────────────────────────────────────────────────────
 
 say( '── Phase A: repository adoption ─────────────────────────────────────────' );
-say( 'Source   : ' . $t_source_label );
+say( 'Source   : ' . $t_source );
 say( 'Project  : ' . $g_cfg['name'] . ( $g_update ? ' (update mode)' : '' ) . ( $g_dry ? '  [DRY RUN]' : '' ) );
-say( 'Visibility: ' . $t_project_visibility );
 
 if( !is_dir( $t_source ) ) {
 	abort( 'Source does not exist: ' . $t_source );
@@ -188,7 +177,7 @@ say( 'Branch   : ' . $t_default_branch . '   HEAD: ' . substr( $t_head, 0, 8 ) )
 
 /** Create (or in update/dry mode, resolve) a project by name; returns id (0 in dry-run when absent). */
 function project_ensure( string $p_name, string $p_description, ?int $p_parent_id ): int {
-	global $g_dry, $g_update, $g_import_project_view_state;
+	global $g_dry, $g_update;
 	$t_existing = project_get_id_by_name( $p_name, /* default */ 0 );
 	if( $t_existing > 0 ) {
 		if( !$g_update ) {
@@ -200,8 +189,7 @@ function project_ensure( string $p_name, string $p_description, ?int $p_parent_i
 		say( "  [dry-run] would create project '$p_name'" . ( $p_parent_id !== null ? ' (sub-project)' : '' ) );
 		return 0;
 	}
-	$t_id = project_create( $p_name, $p_description, /* status: development */ 10,
-		$g_import_project_view_state );
+	$t_id = project_create( $p_name, $p_description, /* status: development */ 10 );
 	if( $p_parent_id !== null && $p_parent_id > 0 ) {
 		project_hierarchy_add( $t_id, $p_parent_id );
 	}
@@ -245,7 +233,7 @@ if( $g_cfg['subprojects'] === 'subdirs' ) {
 		}
 		$t_sub_name = manifest_get( $t_sub_manifest, 'project', 'name', $t_dir );
 		$t_sub_desc = manifest_get( $t_sub_manifest, 'project', 'description',
-			'Imported sub-project for ' . $t_dir . ' (repository ' . $t_source_name . ')' );
+			'Imported sub-project for ' . $t_dir . ' (repository ' . basename( $t_source ) . ')' );
 		$g_roots[$t_dir]      = project_ensure( $t_sub_name, $t_sub_desc, $t_parent_id );
 		$g_subdir_cfg[$t_dir] = $t_sub_manifest;
 	}
@@ -276,9 +264,9 @@ if( $g_dry ) {
 		}
 		say( '  Using existing repository r' . $t_repo_id . ' (' . repository_basename( $t_repo_id ) . ')' );
 	} else {
-		$t_repo_id = repository_create( $g_cfg['name'], $t_parent_id, $t_source_label, $t_default_branch );
+		$t_repo_id = repository_create( $g_cfg['name'], $t_parent_id, $t_source, $t_default_branch );
 		$t_paths   = repository_adopt( $t_repo_id, $t_source );
-		say( '  Adopted ' . $t_source_label . ' → ' . $t_paths['bare'] );
+		say( '  Adopted ' . $t_source . ' → ' . $t_paths['bare'] );
 	}
 	$t_repo_dir = repository_bare_path( $t_repo_id );
 }
@@ -339,33 +327,33 @@ function frontmatter_parse( string $p_content ): array {
 }
 
 /**
- * Map a frontmatter/filename status word to a Doctis document status.
- * Import never approves a document; approval is a separate Doctis action.
+ * Map a frontmatter/filename status word to [dwg status id, pin-on-record].
+ * Draft documents are registered without an on-record pin (GIT_IMPORTER D6).
  */
-function status_map( string $p_status ): int {
+function status_map( string $p_status ): array {
 	$t_status = strtolower( trim( $p_status ) );
 	# Qualified draft statuses ("Draft — requires CEO signature…") are drafts.
 	if( strpos( $t_status, 'draft' ) === 0 ) {
-		return 110;
+		return array( 110, false );
 	}
 	switch( $t_status ) {
 		case '':
-			return 110;
+			return array( 110, true );
 		case 'in review':
 		case 'review':
-			return 160;
+			return array( 160, true );
 		case 'approved':
 		case 'effective':
 		case 'active':
-			return 180;
+			return array( 180, true );
 		case 'released':
-			return 190;
+			return array( 190, true );
 		case 'superseded':
 		case 'obsolete':
 		case 'withdrawn':
-			return 195;
+			return array( 195, true );
 		default:
-			return 110;   # unknown → pending; caller reports it
+			return array( 110, true );   # unknown → pending; caller reports it
 	}
 }
 
@@ -450,9 +438,8 @@ foreach( $t_candidates as $t_path => $t_root ) {
 					$t_meta['due_date'] = strtotime( '+' . $t_pm[1] . ' months', $t_ts );
 				}
 			}
-			if( $t_meta['status_word'] !== '' && status_map( $t_meta['status_word'] ) === 110
-			 && strtolower( trim( $t_meta['status_word'] ) ) !== 'pending'
-			 && strpos( strtolower( trim( $t_meta['status_word'] ) ), 'draft' ) !== 0 ) {
+			if( $t_meta['status_word'] !== '' && status_map( $t_meta['status_word'] ) === array( 110, true )
+			 && strtolower( $t_meta['status_word'] ) !== 'pending' ) {
 				$t_warnings[] = "$t_path: unmapped frontmatter status '" . $t_meta['status_word'] . "' → pending";
 			}
 		}
@@ -501,7 +488,7 @@ foreach( $t_candidates as $t_path => $t_root ) {
 			}
 		}
 
-		$t_status_id = status_map( $t_meta['status_word'] );
+		list( $t_status_id, $t_pin ) = status_map( $t_meta['status_word'] );
 		$t_title   = $t_meta['title'] !== '' ? $t_meta['title'] : pathinfo( $t_basename, PATHINFO_FILENAME );
 		$t_summary = substr( $t_title, 0, 255 );
 
@@ -510,7 +497,7 @@ foreach( $t_candidates as $t_path => $t_root ) {
 				'would import', $t_path,
 				( $t_meta['number'] !== '' ? $t_meta['number'] . ' ' : '' ) . $t_summary
 					. ( $t_meta['revision'] !== '' ? ' [rev ' . $t_meta['revision'] . ']' : '' ),
-				'status=' . $t_status_id . ' approval=deferred cat=' . $t_category_name,
+				'status=' . $t_status_id . ( $t_pin ? ' pinned' : ' DRAFT' ) . ' cat=' . $t_category_name,
 			);
 			$t_created++;
 			continue;
@@ -522,7 +509,7 @@ foreach( $t_candidates as $t_path => $t_root ) {
 			'project'        => array( 'id' => $t_project_id ),
 			'category'       => array( 'name' => $t_category_name ),
 			'summary'        => $t_summary,
-			'description'    => 'Imported from git repository \'' . $t_source_name
+			'description'    => 'Imported from git repository \'' . basename( $t_source )
 				. '\' (path: ' . $t_path . ')',
 			'title'          => $t_title,
 			'author'         => $t_meta['owner'] !== '' ? $t_meta['owner'] : $t_git_author,
@@ -560,17 +547,17 @@ foreach( $t_candidates as $t_path => $t_root ) {
 			);
 		}
 
-		# B4 — register the file at HEAD by reference (no commit or approval).
+		# B4 — register the file at HEAD by reference (no commit).
 		file_dwg_primary_register(
 			$t_dwg_id, $g_import_user_id, $t_path, /* sha: HEAD */ '',
-			'Imported from ' . $t_source_name,
-			/* pin approved ref */ false
+			'Imported from ' . basename( $t_source ),
+			$t_pin
 		);
 
 		$t_report[] = array(
 			'imported (dwg ' . $t_dwg_id . ')', $t_path,
 			( $t_meta['number'] !== '' ? $t_meta['number'] . ' ' : '' ) . $t_summary,
-			'status=' . $t_status_id . ' approval=deferred cat=' . $t_category_name,
+			'status=' . $t_status_id . ( $t_pin ? ' pinned' : ' DRAFT' ) . ' cat=' . $t_category_name,
 		);
 		$t_created++;
 	} catch( Throwable $e ) {

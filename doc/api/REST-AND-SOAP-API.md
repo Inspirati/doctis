@@ -97,7 +97,7 @@ All three inserts happen in a single request. The API call creates a **complete 
 
 `GET /documents/{id}` (REST) and `mc_dwg_get()` (SOAP) join all three tables via `dwg_get()` / `dwg_get_extended_row()` and return a unified document object including bibliographic fields, workflow state, and description text.
 
-### UPDATE — workflow fields, text, and Link URL
+### UPDATE — `dwg` and `dwg_text` only; `documents` table NOT updated
 
 `PATCH /documents/{id}` (REST) and `mc_dwg_update()` (SOAP) can update:
 
@@ -105,7 +105,6 @@ All three inserts happen in a single request. The API call creates a **complete 
 |-------------------|-------|
 | status, priority, handler, view_state, category | `dwg` |
 | version, due_date | `dwg` |
-| link_url (REST or SOAP, when supplied) | `dwg` and `documents` |
 | description, steps_to_reproduce, additional_information | `dwg_text` |
 | Notes (dwgnotes) | `dwgnote` / `dwgnote_text` |
 
@@ -115,11 +114,9 @@ All three inserts happen in a single request. The API call creates a **complete 
 |-------|-------|------------|
 | title, author, publisher | `documents` | None — requires direct DB edit |
 | reference, number, edition, revision | `documents` | None — requires direct DB edit |
-| classification (doc registration value) | `documents` | None |
+| link_url, classification (doc registration value) | `documents` | None |
 
-The normal document update form and SOAP update can change `link_url`; both
-stored copies are updated. Other bibliographic registration fields remain
-immutable through these paths and need a separate correction workflow.
+The `documents` table has no `UPDATE` statement anywhere in the PHP layer. The bibliographic registration is treated as immutable after creation. If these fields need to be corrected, update `doctis.documents` directly in the database.
 
 ### DELETE — `dwg` and `dwg_text` removed; `documents` row NOT deleted
 

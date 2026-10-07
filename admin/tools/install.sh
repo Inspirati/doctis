@@ -1,8 +1,4 @@
 #!/bin/bash
-set -euo pipefail
-
-# Shared source branch for bootstrap scripts and application checkout.
-export DOCTIS_BRANCH="${DOCTIS_BRANCH:-dev}"
 
 # Customise the email and database credentials for the project to use
 email_addr="my.email@gmail.com"
@@ -28,6 +24,6 @@ echo "$domain"
 ##./install-doctis.sh install project ${domain} ${mysql_pass} ${email_addr} ${email_hash} | tee logfile.txt
 #./install-doctis.sh install all ${domain} ${mysql_pass} ${email_addr} ${email_hash} "doctis" | tee logfile.txt
 
-wget --quiet -O install-option.sh "https://raw.githubusercontent.com/Inspirati/doctis/refs/heads/${DOCTIS_BRANCH}/admin/tools/install-option.sh"
+wget --quiet https://raw.githubusercontent.com/Inspirati/doctis/refs/heads/dev/admin/tools/install-option.sh
 chmod +x install-option.sh
-./install-option.sh install all "${domain}" "${mysql_pass}" "${email_addr}" "${email_hash}" "doctis" | tee logfile.txt
+./install-option.sh install all ${domain} ${mysql_pass} ${email_addr} ${email_hash} "doctis" | tee logfile.txt

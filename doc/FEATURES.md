@@ -364,9 +364,6 @@ where the filename is recovered from the commit tree via
 
 ### Features to Implement
 
-- ☐ Publish the organisational chart as generated, registered Doctis document
-  content so it can flow through the document-generation and publication
-  pipeline. The initial interactive chart is available from My View.
 - ☐ Auto-tag git SHA on status transition — see Plan above
 - ☐ Status-aware "Approved" / "On Record" label — see Plan above
 - ☐ Snapshot document SHA at issue creation — see Plan above

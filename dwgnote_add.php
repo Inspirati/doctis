@@ -38,7 +38,7 @@ require_api( 'print_dwg_api.php' );
 form_security_validate( 'dwgnote_add' );
 
 $f_bug_id = gpc_get_int( 'bug_id' );
-$f_text = gpc_get_string( 'dwgnote_text', '' );
+$f_text = gpc_get_string( 'bugnote_text', '' );
 $f_duration = gpc_get_string( 'time_tracking', '0:00' );
 $f_files = gpc_get_file( 'ufile', array() );
 

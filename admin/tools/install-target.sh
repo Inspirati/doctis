@@ -1,10 +1,7 @@
 #!/bin/bash
 
-# Shared source branch for bootstrap scripts and application checkout.
-export DOCTIS_BRANCH="${DOCTIS_BRANCH:-dev}"
-
 # DOCTIS_GIT_REPO overrides the default GitHub source, e.g. for LAN installs:
-#   export DOCTIS_GIT_REPO="ssh://robert@10.0.0.10/home/robert/html/doctis"
+#   export DOCTIS_GIT_REPO="http://10.0.0.10/git/doctis"
 git_repository="${DOCTIS_GIT_REPO:-https://github.com/Inspirati/doctis.git}"
 database="mariadb"
 #database="mysql"
@@ -513,7 +510,7 @@ install_git_storage() {
 install_doctis() {
     echo -e "${DIAG}Started installing doctis..${OFF}"
     local target="doctis"
-    local branch="${DOCTIS_BRANCH}"
+    local branch="dev"
     fetch_target ${target} ${branch}
     version_info ${target}
     setup_target ${target} "nodbprepostfix"
@@ -555,3 +552,4 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 else
     echo -e "${DIAG}This script is being sourced from ${0}.${OFF}"
 fi
+

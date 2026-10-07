@@ -851,65 +851,12 @@ function user_delete( $p_user_id ) {
 	# Revoke all API tokens
 	api_token_revoke_all( $p_user_id );
 
-	# Preserve organisational-chart integrity for direct reports.
-	db_param_push();
-	$t_query = 'UPDATE {user} SET reports_to=0 WHERE reports_to=' . db_param();
-	db_query( $t_query, array( $c_user_id ) );
-
 	# Remove account
 	db_param_push();
 	$t_query = 'DELETE FROM {user} WHERE id=' . db_param();
 	db_query( $t_query, array( $c_user_id ) );
 
 	return true;
-}
-
-/**
- * Get all enabled user rows for organisation-wide selectors and charts.
- *
- * @return array User rows keyed by user id.
- */
-function user_get_enabled_rows() {
-	$t_query = 'SELECT * FROM {user} WHERE enabled=1 ORDER BY realname, username';
-	$t_result = db_query( $t_query );
-	$t_users = array();
-	while( $t_row = db_fetch_array( $t_result ) ) {
-		$t_users[(int)$t_row['id']] = $t_row;
-	}
-
-	return $t_users;
-}
-
-/**
- * Ensure that a user's proposed manager is valid and does not create a cycle.
- *
- * @param integer $p_user_id    User whose manager is being changed.
- * @param integer $p_reports_to Proposed manager user id, or 0 for none.
- * @return void
- * @throws ClientException
- */
-function user_ensure_valid_reports_to( $p_user_id, $p_reports_to ) {
-	$c_user_id = (int)$p_user_id;
-	$c_reports_to = (int)$p_reports_to;
-
-	if( $c_reports_to === $c_user_id ) {
-		throw new ClientException( 'A user cannot report to themselves', ERROR_INVALID_FIELD_VALUE, array( 'reports_to' ) );
-	}
-	if( $c_reports_to !== 0 && ( !user_exists( $c_reports_to ) || !user_is_enabled( $c_reports_to ) ) ) {
-		throw new ClientException( 'Reports To user is invalid', ERROR_INVALID_FIELD_VALUE, array( 'reports_to' ) );
-	}
-
-	# Reject reporting cycles by walking the proposed manager chain.
-	$t_manager_id = $c_reports_to;
-	$t_seen = array();
-	while( $t_manager_id !== 0 && !isset( $t_seen[$t_manager_id] ) ) {
-		if( $t_manager_id === $c_user_id ) {
-			throw new ClientException( 'Reports To would create a cycle', ERROR_INVALID_FIELD_VALUE, array( 'reports_to' ) );
-		}
-		$t_seen[$t_manager_id] = true;
-		$t_manager = user_cache_row( $t_manager_id, false );
-		$t_manager_id = $t_manager === false ? 0 : (int)( $t_manager['reports_to'] ?? 0 );
-	}
 }
 
 /**

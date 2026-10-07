@@ -53,14 +53,8 @@ document in whichever system stores it:
 
 When a document's primary file is stored in the Doctis git backend, the
 reference field is **automatically updated** to the new git SHA each time a
-primary file is uploaded or synced. For external references, the field is set
-manually at document creation time. The normal update form does not currently
-edit the Reference.
-
-Use the optional **Link URL** for an intranet or external published copy. It
-appears as a clickable link on the document details page and can be changed
-or cleared from the document update form. A Link URL does not change the
-Reference or the Doctis-managed primary file.
+primary file is uploaded or synced.  For external references, the field is set
+manually at document creation time and can be edited later.
 
 The reference field is optional — a document can be registered as a placeholder
 before its reference is known.
@@ -192,25 +186,23 @@ Doctis.
 
 | Row label | Meaning |
 |-----------|---------|
-| **On Record** | The approved version, including its original filename and content, until a manager promotes a replacement. Click the filename to download it. |
-| **Draft** | Appears only when this document has a staged upload or its file was edited directly in Git. It shows that document's revision, which may have a different filename and content. A commit to another document does not create a Draft here. |
+| **On Record** | The version currently registered in Doctis.  Click the filename to download.  The abbreviated SHA is shown for git-stored files. |
+| **Draft** | The most recent commit in the git repository.  Shown only when git storage is active and the HEAD differs from the On Record version.  Downloading this version shows a warning. |
 
 ### Actions
 
 | Action | Access required | Description |
 |--------|----------------|-------------|
-| **Replace Document** | UPDATER | Upload a replacement as Draft. On Record and the document Reference remain unchanged. A second upload supersedes the current Draft. |
-| **Promote Draft** | MANAGER | Promote this document's Draft revision to On Record, including its filename, content, and Reference. If its file changed in Git after upload, re-upload before promotion. |
+| **Replace Document** | UPDATER | Upload a new primary file, replacing the current On Record version.  The git SHA is updated automatically and written to the document's Reference field. |
+| **Sync to HEAD** | MANAGER | Update the On Record record to match the current git HEAD (for cases where a file has been committed to git outside Doctis). |
 | **Tag** | MANAGER | Apply a named git tag to the current On Record SHA (e.g. `approved-rev-A`). |
+| **Touch** | MANAGER | Re-commit the current file to git without content change, creating a new SHA.  Useful to force a new commit timestamp. |
 
 ### File history
 
 The full version history of the primary document is preserved in the git
 repository and remains accessible via git tooling regardless of how many times
 the file is replaced in Doctis.
-New uploads and Draft promotions also appear in the Document History
-panel with their registered commit SHA and filename. Earlier Git revisions
-remain in Git even if they predate this history logging.
 
 ---
 

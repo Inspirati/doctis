@@ -272,9 +272,7 @@ Content."
     local conf_src="${_webroot}/admin/tools/git-serve.conf"
     local conf_dst="/etc/apache2/conf-available/git-serve.conf"
 
-    if [ "${DOCTIS_WEB_SERVER:-apache}" = nginx ]; then
-        _gst_info "nginx routing is managed by install-nginx.sh; skipping Apache setup"
-    elif [ ! -f "$conf_src" ]; then
+    if [ ! -f "$conf_src" ]; then
         _gst_warn "$conf_src not found — skipping Smart HTTP Apache setup"
     else
         _gst_chk "a2enmod alias setenvif"

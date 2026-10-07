@@ -742,7 +742,6 @@ define( 'DB_FIELD_SIZE_POSITION_TITLE', 128 );
 define( 'DB_FIELD_SIZE_COMPANY', 128 );
 define( 'DB_FIELD_SIZE_PHONE', 32 );
 define( 'DB_FIELD_SIZE_DEPARTMENT', 64 );
-define( 'DB_FIELD_SIZE_ALTERNATIVE', 191 );
 
 # Maximum size for the user's password when storing it as a hash
 define( 'PASSWORD_MAX_SIZE_BEFORE_HASH', 1024 );

@@ -1070,9 +1070,6 @@ function mc_dwg_update( $p_username, $p_password, $p_issue_id, stdClass $p_issue
 	$t_bug_data->category_id = $t_category_id;
 	$t_bug_data->summary = $t_summary;
 	$t_bug_data->description = $t_description;
-	if( isset( $p_issue['link_url'] ) ) {
-		$t_bug_data->link_url = $p_issue['link_url'];
-	}
 
 	# fields which might not be set
 	if( isset( $p_issue['steps_to_reproduce'] ) ) {
