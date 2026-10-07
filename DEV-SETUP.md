@@ -1,6 +1,6 @@
 # Local development handover
 
-Status: 2026-10-02. This is the native Debian 13 development VM, not the
+Status: 2026-10-08. This is the native Debian 13 development VM, not the
 company's Docker deployment. Read [AGENTS.md](AGENTS.md) for project guidance
 and [doc/TESTING.md](doc/TESTING.md) for test procedures. Some dated status
 in AGENTS.md describes earlier VM snapshots; use the current checks below.
@@ -14,8 +14,9 @@ in AGENTS.md describes earlier VM snapshots; use the current checks below.
 - **Running application:** `/var/www/html/doctis`, a separate Git clone owned
   by `robert`, served at `http://10.0.0.94/doctis/`. On 2026-10-02 it was
   switched to `dev`, tracking and fetching only `origin/dev`. The obsolete
-  local `nginx` refs were removed from this clone; the GitHub branch was left
-  intact as history.
+  local `nginx` refs were removed from this clone. On 2026-10-08 it was
+  fast-forwarded after the `ai-meeting` merge; that merged local feature branch
+  was also removed. Both feature histories remain in `dev`.
 - **Other source:** `/home/robert/html/doctis` is the vaio NFS checkout. Do not
   alter it as part of this VM's ordinary development cycle.
 
@@ -59,7 +60,7 @@ the sender), but the sample role accounts (`user`, `manager`, …) have
 `@gmail.com` addresses. Before tests that queue email, confirm the
 recipients, or set `$g_enable_email_notification = OFF`.
 
-**Recurring meetings run unattended** (`ai-meeting` branch). The same cron
+**Recurring meetings run unattended** (now merged into `dev`). The same cron
 file runs `scripts/meeting_schedule.php` hourly (minute 17). For each
 repeating meeting series it creates the next meeting a few days ahead, which
 makes an Anthropic API call (billed to the configured key) and emails the
@@ -67,9 +68,10 @@ invitees. Check `SELECT * FROM meeting_series WHERE active=1` before leaving a
 test series repeating; stop one from its meeting page (Repeats → Does not
 repeat).
 
-This VM's data is **not empty**: on 2026-10-02 it had four projects, 126
-project documents, two document repositories, and one user. A whole-instance
-reset deletes both database and Git data. The wrapper
+This VM's data is **not empty**: on 2026-10-08 it had four projects, 131
+project documents, two document repositories, three meetings, and 15 users.
+The schema was at version 64. A whole-instance reset deletes both database
+and Git data. The wrapper
 `admin/tools/doctis-reset-native-test.sh --execute` also reloads sample data;
 it is not the no-sample reset used for the HCRQMS ZIP rehearsal. See
 [doc/git/HCRQMS_ZIP_UI_IMPORT.md](doc/git/HCRQMS_ZIP_UI_IMPORT.md) for that

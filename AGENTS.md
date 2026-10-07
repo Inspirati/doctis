@@ -8,7 +8,7 @@ No installer, container build, database operation, or runtime test was executed
 for this assessment. The supplied files describe a deployment; they do not
 establish the company's actual running configuration.
 
-## Current operating status — 2026-10-02
+## Current operating status — 2026-10-08
 
 The native nginx profile and subsequent feature work were merged from the
 `nginx` feature branch into `dev`. **Use `dev` for all new development and
@@ -17,11 +17,16 @@ installation work; `nginx` is deprecated.** The working clone is
 `/var/www/html/doctis` was switched to `dev`, tracks and fetches only
 `origin/dev`, and served the login page successfully after the switch. Its
 old local `nginx` refs were removed; the GitHub branch remains as history.
-See [DEV-SETUP.md](DEV-SETUP.md) for the edit, push, pull, and test cycle.
+The `ai-meeting` feature branch is also fully merged into `dev` and deprecated.
+The running clone was fast-forwarded to `dev` on 2026-10-08; its local
+`ai-meeting` branch was removed. See [DEV-SETUP.md](DEV-SETUP.md) for the
+edit, push, pull, and test cycle.
 
 The native VM has persistent test data, not a fresh installation. On this
-date it had four projects, 126 project documents, two document repositories,
-and one user. Do not assume the earlier import IDs, sample-data counts, or
+date it had four projects, 131 project documents, two document repositories,
+three meetings, and 15 users; its database schema version was 64. SMTP and
+cron email delivery are live, so inspect recipients before tests that queue
+mail. Do not assume the earlier import IDs, sample-data counts, or
 reset status below are current. The dated assessment and implementation
 sections record earlier experiments, not instructions to redo them; the
 repository guidance at the end still applies.
