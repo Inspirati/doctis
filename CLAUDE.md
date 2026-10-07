@@ -792,6 +792,7 @@ the existing HEAD SHA.
 | [core/file_dwg_api.php](core/file_dwg_api.php) | `file_dwg_primary_register()`, path template/sanitizer/collision, project-keyed wrappers, worktree sync, approved-SHA pinning |
 | [core/classes/GitFileStorageBackend.class.php](core/classes/GitFileStorageBackend.class.php) | store/retrieve/delete via `git_path` |
 | [core/git_http_api.php](core/git_http_api.php) | Smart HTTP gateway — resolves `-r<id>`, authorises against the repository's owner project |
+| [core/git_store_api.php](core/git_store_api.php) / [manage_git_store_page.php](manage_git_store_page.php) | Manage → **Git Store** (administrators, read-only, work in progress). Lists every repository in the database or on disk and flags mismatches. For a selected repository it shows: files by folder with search; per-file history, preview and download (`manage_git_store_download.php`); registered documents with On Record vs HEAD state; commits; refs, including approved-version pins; and the server worktree |
 | [core/constant_inc.php](core/constant_inc.php) | `define('GIT', 3)` (still used by attachment mapping) |
 | [config_defaults_inc.php](config_defaults_inc.php) | `$g_git_storage_root`, `$g_git_worktree_root`, `$g_dwg_repo_path_template` |
 | [core/file_api.php](core/file_api.php) / [core/print_dwg_api.php](core/print_dwg_api.php) / [file_download.php](file_download.php) | Attachment-side `GIT → DATABASE` fall-throughs |

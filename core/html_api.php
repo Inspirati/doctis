@@ -791,6 +791,7 @@ function print_manage_menu( $p_page = '' ) {
 	}
 	if( access_has_global_level( ADMINISTRATOR ) ) {
 		$t_pages['manage_import_data_page.php'] = array( 'url'   => 'manage_import_data_page.php', 'label' => 'manage_import_link' );
+		$t_pages['manage_git_store_page.php'] = array( 'url'   => 'manage_git_store_page.php', 'label' => 'manage_git_store_link' );
 	}
 	if( access_has_global_level( config_get( 'tag_edit_threshold' ) ) ) {
 		$t_pages['manage_tags_page.php'] = array( 'url'   => 'manage_tags_page.php', 'label' => 'manage_tags_link' );

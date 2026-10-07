@@ -973,6 +973,7 @@ $s_my_view_cnf_link = 'My Configuration View';
 $s_manage_projects_link = 'Projects';
 $s_manage_licenses_link = 'Licenses';
 $s_manage_import_link = 'Import Data';
+$s_manage_git_store_link = 'Git Store';
 $s_manage_custom_field_link = 'Custom Fields';
 $s_manage_global_profiles_link = 'Global Profiles';
 $s_manage_plugin_link = 'Plugins';
