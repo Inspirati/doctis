@@ -218,8 +218,8 @@ function doctis_get_git_version_info() {
 			<?php print_icon( 'fa-random', 'ace-icon' ); ?> Git Branches
 		</a>
 		&nbsp;
-		<a href="manage_db_load_sample_page.php" class="btn btn-sm btn-warning">
-			<?php print_icon( 'fa-refresh', 'ace-icon' ); ?> Load Sample Data
+		<a href="manage_db_load_page.php" class="btn btn-sm btn-warning">
+			<?php print_icon( 'fa-upload', 'ace-icon' ); ?> Load Data
 		</a>
 		&nbsp;
 		<a href="manage_db_rebuild_page.php" class="btn btn-sm btn-danger">

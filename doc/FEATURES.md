@@ -98,8 +98,8 @@ enforce `auth_reauthenticate()` and `access_ensure_global_level(ADMINISTRATOR)`.
 | Config file download/upload | `manage_config_file_page.php`, `manage_config_file_download.php`, `manage_config_file_upload.php` | Upload writes via sudo wrapper to handle ownership |
 | Git pull (self-update) | `manage_git_pull_page.php`, `manage_git_pull_action.php` | Requires `safe.directory` + sudoers — see §Setup below |
 | Database rebuild | `manage_db_rebuild_page.php`, `manage_db_rebuild_action.php` | Requires typing `REBUILD` to confirm; most destructive |
-| Load sample data | `manage_db_load_sample_page.php`, `manage_db_load_sample_action.php` | Requires typing `LOAD`; not idempotent — only run on empty DB |
-| Database backup | `manage_db_backup_page.php`, `manage_db_backup_download.php` | Streams `mysqldump | gzip` directly to browser |
+| Load data | `manage_db_load_page.php`, `manage_db_load_script_action.php`, `manage_db_load_sample_action.php` | Runs an uploaded `.sql`/`.sql.gz` script through the app's DB connection (`core/db_script_api.php`; optional single transaction, stops at the first error), or loads the built-in sample data. Both require typing `LOAD` |
+| Database backup | `manage_db_backup_page.php`, `manage_db_backup_download.php`, `manage_db_snapshot_download.php` | Full backup runs `mariadb-dump`/`mysqldump` as the web user with the app's DB credentials (temporary 0600 option file, no sudo), dumps to a temp file and checks the exit status, then streams it gzip-compressed; a failure shows an error page instead of an empty download. Data Snapshot writes the rows of selected tables as `REPLACE`/`INSERT` statements with column lists, for reloading with Load Data after a rebuild |
 | Git store backup | `manage_git_backup_page.php`, `manage_git_backup_download.php` | Streams `tar czf` of bare repos; no sudo needed |
 
 Visual risk hierarchy on the widget: grey (safe) → blue (reversible) →

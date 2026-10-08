@@ -57,13 +57,13 @@ print_manage_menu( 'manage_overview_page.php' );
 		<?php } else { ?>
 		<div class="alert alert-success">
 			<strong>Database rebuilt successfully.</strong>
-			You may now load sample data if required.
+			You may now load a data script or the sample data if required.
 		</div>
 		<?php } ?>
 		<pre style="background:#f5f5f5;padding:12px;border:1px solid #ddd;overflow:auto;max-height:400px;"><?php echo htmlspecialchars( $t_output ); ?></pre>
 		<div class="space-10"></div>
-		<a href="manage_db_load_sample_page.php" class="btn btn-sm btn-warning">
-			<?php print_icon( 'fa-refresh', 'ace-icon' ); ?> Load Sample Data
+		<a href="manage_db_load_page.php" class="btn btn-sm btn-warning">
+			<?php print_icon( 'fa-upload', 'ace-icon' ); ?> Load Data
 		</a>
 		&nbsp;
 		<a href="manage_git_reset_page.php" class="btn btn-sm btn-danger">
