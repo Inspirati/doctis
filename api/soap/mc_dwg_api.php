@@ -1915,6 +1915,11 @@ function mci_dwg_data_as_array( DwgData $p_issue_data, $p_user_id, $p_lang, $p_f
 		$t_issue['monitors'] = mci_account_get_array_by_ids( dwg_get_monitors( $p_issue_data->id ) );
 	}
 
+	# Get Documentation Topic tags - access checked as part of returning them.
+	if( $t_fields === null || isset( $t_fields['topics'] ) ) {
+		$t_issue['topics'] = mci_dwg_get_topics( $p_issue_data->id, $p_user_id );
+	}
+
 	# Get licenses applied to dwg - access checked as part of returning license? list.
 	if( $t_fields === null || isset( $t_fields['licenses'] ) ) {
 		$t_issue['licenses'] = mci_license_get_array_by_ids( dwg_get_licenses( $p_issue_data->id ) );
@@ -1933,6 +1938,33 @@ function mci_dwg_data_as_array( DwgData $p_issue_data, $p_user_id, $p_lang, $p_f
 	}
 
 	return $t_issue;
+}
+
+/**
+ * Get the Documentation Topic tags of a document: code, title, extent
+ * (ObjectRef 10 part / 20 whole) and sections. Empty unless the document's
+ * project uses Topics and the user may view them.
+ * @param integer $p_dwg_id  A document identifier.
+ * @param integer $p_user_id User accessing the information.
+ * @return array
+ */
+function mci_dwg_get_topics( $p_dwg_id, $p_user_id ) {
+	require_api( 'topic_api.php' );
+	$t_project_id = (int)dwg_get_field( $p_dwg_id, 'project_id' );
+	if( !topic_project_is_enabled( $t_project_id ) || !topic_can_view_project( $t_project_id, (int)$p_user_id ) ) {
+		return array();
+	}
+	$t_result = array();
+	foreach( topic_dwg_get_for_dwg( (int)$p_dwg_id ) as $t_tag ) {
+		$t_extent = (int)$t_tag['extent'];
+		$t_result[] = array(
+			'code' => $t_tag['code'],
+			'title' => $t_tag['title'],
+			'extent' => array( 'id' => $t_extent, 'name' => $t_extent == TOPIC_EXTENT_WHOLE ? 'whole' : 'part' ),
+			'sections' => $t_tag['locator'],
+		);
+	}
+	return $t_result;
 }
 
 /**

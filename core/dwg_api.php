@@ -134,7 +134,10 @@ function dwg_link_url_is_valid( $p_url ) {
  * @property string $steps_to_reproduce
  * @property string $additional_information
  */
-// #[AllowDynamicProperties]
+# The row query adds aliased columns (doc_classification, doc_link_url) as
+# dynamic properties; without this PHP 8.2+ deprecates them, which SOAP turns
+# into a fault for every mc_dwg_get.
+#[AllowDynamicProperties]
 class DwgData {
 	protected $id;
 	protected $document_id;
@@ -2508,6 +2511,10 @@ function dwg_cache_columns_data( array $p_bugs, array $p_selected_columns ) {
 				break;
 			case 'tags':
 				tag_dwg_cache_bug_tag_rows( $t_bug_ids );
+				break;
+			case 'topics':
+				require_api( 'topic_api.php' );
+				topic_dwg_cache_tags( $t_bug_ids );
 				break;
 		}
 	}

@@ -1422,6 +1422,7 @@ $g_view_dwg_page_columns = array(
 	'dwgnotes_count', 'attachment_count',
 	'issue_count',
 	'category_id', 'status', 'last_updated', 'title', 'number', 'revision', 'reference',
+	'topics', // Documentation Topics; hidden unless the project uses them
 	'date', // @TODO RobD - for some reason 'date' needs to be here to avoid error on bug_update_page.php 'Undefined array key "updated_at"' in '/var/www/html/doctis/core/commands/DwgViewPageCommand.php' line 184
 );
 
@@ -1438,7 +1439,7 @@ $g_print_issues_page_columns = array(
 );
 $g_print_dwg_page_columns = array(
 	'selection', 'priority', 'id', 'title', 'dwgnotes_count', 'attachment_count',
-	'category_id', 'severity', 'status', 'number', 'revision', 'reference', 'date', 'release_date',
+	'category_id', 'severity', 'status', 'number', 'revision', 'reference', 'topics', 'date', 'release_date',
 );
 
 /**

@@ -1414,3 +1414,226 @@ function topic_sidebar_visible( int $p_project_id ): bool {
 	return ( topic_project_is_enabled( $p_project_id ) && topic_can_view_project( $p_project_id ) )
 		|| topic_can_manage_project( $p_project_id );
 }
+
+# ── Document list ────────────────────────────────────────────────────────────
+
+/**
+ * Load the tags of many documents (in their own projects) in one query, for
+ * the document list's Topics column.
+ *
+ * @param array $p_dwg_ids Document ids.
+ * @return void
+ */
+function topic_dwg_cache_tags( array $p_dwg_ids ): void {
+	global $g_cache_topic_dwg_tags;
+	$t_ids = array();
+	foreach( $p_dwg_ids as $t_id ) {
+		$t_id = (int)$t_id;
+		if( $t_id > 0 && !isset( $g_cache_topic_dwg_tags[$t_id] ) ) {
+			$t_ids[] = $t_id;
+			$g_cache_topic_dwg_tags[$t_id] = array();
+		}
+	}
+	if( !$t_ids ) {
+		return;
+	}
+	$t_result = db_query( 'SELECT dt.dwg_id, dt.extent, dt.locator, t.code, t.title, t.sort_order, t.parent_id
+		FROM {dwg_topic} dt
+		JOIN {dwg} d ON d.id=dt.dwg_id AND d.project_id=dt.project_id
+		JOIN {topic} t ON t.id=dt.topic_id
+		WHERE dt.dwg_id IN (' . implode( ',', $t_ids ) . ')
+		ORDER BY t.sort_order, t.code' );
+	while( $t_row = db_fetch_array( $t_result ) ) {
+		$g_cache_topic_dwg_tags[(int)$t_row['dwg_id']][] = $t_row;
+	}
+}
+
+/**
+ * HTML of a document's Topic codes for the document list: one code per tag,
+ * whole-Topic tags in bold, the full description as a tooltip. Empty when
+ * the project does not use Topics or the user may not see them.
+ *
+ * @param integer $p_dwg_id     Document.
+ * @param integer $p_project_id Its project.
+ * @return string HTML.
+ */
+function topic_dwg_codes_html( int $p_dwg_id, int $p_project_id ): string {
+	global $g_cache_topic_dwg_tags;
+	if( !topic_project_is_enabled( $p_project_id ) || !topic_can_view_project( $p_project_id ) ) {
+		return '';
+	}
+	if( !isset( $g_cache_topic_dwg_tags[$p_dwg_id] ) ) {
+		topic_dwg_cache_tags( array( $p_dwg_id ) );
+	}
+	$t_codes = array();
+	foreach( $g_cache_topic_dwg_tags[$p_dwg_id] as $t_tag ) {
+		$t_whole = (int)$t_tag['extent'] == TOPIC_EXTENT_WHOLE;
+		$t_tip = $t_tag['code'] . ' ' . $t_tag['title'] . ' — ' . topic_extent_label( (int)$t_tag['extent'] )
+			. ( $t_tag['locator'] !== '' ? ': ' . $t_tag['locator'] : '' );
+		$t_code = string_display_line( $t_tag['code'] );
+		$t_codes[] = '<span title="' . string_attribute( $t_tip ) . '">' . ( $t_whole ? '<strong>' . $t_code . '</strong>' : $t_code ) . '</span>';
+	}
+	return implode( ' ', $t_codes );
+}
+
+/**
+ * Topic codes on offer where a code (not an id) is chosen, e.g. the document
+ * list filter and bulk tagging, which may span projects: the current
+ * project's catalogue, or with All Projects every catalogue in use. The first
+ * catalogue wins a code's title.
+ *
+ * @param integer $p_project_id Current project.
+ * @return array code => array( 'title' => string, 'children' => codes[] ), in catalogue order.
+ */
+function topic_code_options( int $p_project_id ): array {
+	if( $p_project_id != ALL_PROJECTS && topic_project_is_enabled( $p_project_id ) ) {
+		$t_catalogue_ids = array( (int)topic_project_get( $p_project_id )['catalogue_id'] );
+	} else {
+		$t_catalogue_ids = array();
+		$t_result = db_query( 'SELECT DISTINCT catalogue_id FROM {topic_project} WHERE enabled=1 ORDER BY catalogue_id' );
+		while( $t_row = db_fetch_array( $t_result ) ) {
+			$t_catalogue_ids[] = (int)$t_row['catalogue_id'];
+		}
+	}
+
+	$t_options = array();
+	foreach( $t_catalogue_ids as $t_catalogue_id ) {
+		$t_topics = topic_get_all( $t_catalogue_id, true );
+		foreach( $t_topics as $t_topic ) {
+			$t_code = $t_topic['code'];
+			if( !isset( $t_options[$t_code] ) ) {
+				$t_options[$t_code] = array( 'title' => $t_topic['title'], 'children' => array() );
+			}
+		}
+		foreach( $t_topics as $t_topic ) {
+			$t_parent_id = (int)$t_topic['parent_id'];
+			if( $t_parent_id != 0 && isset( $t_topics[$t_parent_id] ) ) {
+				$t_parent_code = $t_topics[$t_parent_id]['code'];
+				if( !in_array( $t_topic['code'], $t_options[$t_parent_code]['children'], true ) ) {
+					$t_options[$t_parent_code]['children'][] = $t_topic['code'];
+				}
+			}
+		}
+	}
+	return $t_options;
+}
+
+/**
+ * The enabled Topic with a given code in a project's catalogue.
+ *
+ * @param integer $p_project_id Project with Topics enabled.
+ * @param string  $p_code       Topic code.
+ * @return array|null Row of {topic}, null when the catalogue has no such enabled Topic.
+ */
+function topic_get_by_code( int $p_project_id, string $p_code ): ?array {
+	$t_row = topic_project_get( $p_project_id );
+	if( $t_row === null ) {
+		return null;
+	}
+	db_param_push();
+	$t_result = db_query( 'SELECT * FROM {topic} WHERE catalogue_id=' . db_param() . ' AND code=' . db_param() . ' AND enabled=1',
+		array( (int)$t_row['catalogue_id'], $p_code ) );
+	$t_topic = db_fetch_array( $t_result );
+	return $t_topic ?: null;
+}
+
+# ── Document create form ─────────────────────────────────────────────────────
+
+/**
+ * Whether the create form offers Topics for a project: Topics enabled there
+ * and the user may tag its documents.
+ *
+ * @param integer $p_project_id Project of the new document.
+ * @return boolean
+ */
+function topic_create_form_enabled( int $p_project_id ): bool {
+	return topic_project_is_enabled( $p_project_id )
+		&& access_has_project_level( config_get( 'topic_tag_threshold', null, null, $p_project_id ), $p_project_id );
+}
+
+/**
+ * The Topics chosen on the document create form, validated before the
+ * document is created so a bad choice cannot leave a half-tagged document.
+ *
+ * Form fields: topic_ids[] (ticked Topic ids), topic_extent[<id>],
+ * topic_locator[<id>].
+ *
+ * @param integer $p_project_id Project of the new document.
+ * @return array Per tag: topic_id, extent, locator. Empty when none chosen.
+ * @throws ClientException
+ */
+function topic_create_form_tags( int $p_project_id ): array {
+	$t_ids = array_unique( gpc_get_int_array( 'topic_ids', array() ) );
+	if( !$t_ids ) {
+		return array();
+	}
+	if( !topic_create_form_enabled( $p_project_id ) ) {
+		topic_error( 'you cannot tag documents of this project.' );
+	}
+	$t_extents = gpc_get_int_array( 'topic_extent', array() );
+	$t_locators = gpc_get_string_array( 'topic_locator', array() );
+	$t_tags = array();
+	foreach( $t_ids as $t_topic_id ) {
+		topic_project_catalogue( $p_project_id, $t_topic_id );
+		$t_topic = topic_get( $t_topic_id );
+		if( (int)$t_topic['enabled'] != 1 ) {
+			topic_error( 'Topic ' . $t_topic['code'] . ' is retired.' );
+		}
+		$t_extent = (int)( $t_extents[$t_topic_id] ?? TOPIC_EXTENT_PART );
+		$t_tags[] = array(
+			'topic_id' => $t_topic_id,
+			'extent' => $t_extent,
+			'locator' => topic_dwg_validate( $t_extent, (string)( $t_locators[$t_topic_id] ?? '' ) ),
+		);
+	}
+	return $t_tags;
+}
+
+# ── Export ───────────────────────────────────────────────────────────────────
+
+/**
+ * Rows of a project's Topics for export (CSV and print), from the same view
+ * and permissions as the Topics page: one row per tagged document visible to
+ * the reader, one "restricted" row per Topic with hidden documents, and one
+ * row for a Topic without documents.
+ *
+ * @param array $p_view Result of topic_project_view().
+ * @return array Rows: code, topic, parent, required, rationale, coverage,
+ *               document, title, status, extent, sections, inactive.
+ */
+function topic_export_rows( array $p_view ): array {
+	$t_codes = array();
+	foreach( $p_view['topics'] as $t_topic_id => $t_topic ) {
+		$t_codes[$t_topic_id] = $t_topic['code'];
+	}
+	$t_rows = array();
+	foreach( $p_view['topics'] as $t_topic ) {
+		$t_base = array(
+			'code' => $t_topic['code'],
+			'topic' => $t_topic['title'] . ( (int)$t_topic['enabled'] != 1 ? ' (' . lang_get( 'topic_retired' ) . ')' : '' ),
+			'parent' => $t_codes[(int)$t_topic['parent_id']] ?? '',
+			'required' => topic_applicability_label( (int)$t_topic['applicability'] ),
+			'rationale' => $t_topic['decision']['rationale'] ?? '',
+			'coverage' => topic_state_label( $t_topic['state'] ),
+			'document' => '', 'title' => '', 'status' => '', 'extent' => '', 'sections' => '', 'inactive' => false,
+		);
+		foreach( $t_topic['tags'] as $t_tag ) {
+			$t_document = $t_tag['document'];
+			$t_rows[] = array_merge( $t_base, array(
+				'document' => $t_document['number'] !== '' ? $t_document['number'] : dwg_format_id( (int)$t_document['id'] ),
+				'title' => $t_document['title'],
+				'status' => get_enum_element( 'dwg_status', (int)$t_document['status'] ),
+				'extent' => topic_extent_label( (int)$t_tag['extent'] ),
+				'sections' => $t_tag['locator'],
+				'inactive' => $t_tag['inactive'],
+			) );
+		}
+		if( $t_topic['restricted'] ) {
+			$t_rows[] = array_merge( $t_base, array( 'document' => lang_get( 'topic_restricted_short' ) ) );
+		}
+		if( !$t_topic['tags'] && !$t_topic['restricted'] ) {
+			$t_rows[] = $t_base;
+		}
+	}
+	return $t_rows;
+}

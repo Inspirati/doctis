@@ -295,6 +295,14 @@ function dwg_group_action_get_commands( array $p_project_ids = [] ) {
 			$t_commands['EXT_ATTACH_TAGS'] = lang_get( 'actiongroup_menu_attach_tags' );
 		}
 
+		if( !isset( $t_commands['EXT_ADD_TOPIC'] ) && ON == config_get( 'topics_enabled' ) && $t_project_id != ALL_PROJECTS ) {
+			require_api( 'topic_api.php' );
+			if( topic_project_is_enabled( $t_project_id ) &&
+				access_has_project_level( config_get( 'topic_tag_threshold', null, $t_user_id, $t_project_id ), $t_project_id ) ) {
+				$t_commands['EXT_ADD_TOPIC'] = lang_get( 'topic_actiongroup_add' );
+			}
+		}
+
 		if( !isset( $t_commands['UP_DUE_DATE'] ) &&
 			access_has_project_level( config_get( 'due_date_update_threshold', null, $t_user_id, $t_project_id ), $t_project_id ) ) {
 			$t_commands['UP_DUE_DATE'] = lang_get( 'actiongroup_menu_update_due_date' );

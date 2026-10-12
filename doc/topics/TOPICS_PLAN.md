@@ -1,7 +1,8 @@
 # Document Topics — Implementation Plan
 
-Status: Phase 1 implemented on branch `topics` (2026-10-13); see
-[Phase 1 as built](#phase-1-as-built). Phases 1b, 2 and 3 are not started.
+Status: Phases 1 and 1b implemented on branch `topics` (2026-10-13); see
+[Phase 1 as built](#phase-1-as-built) and
+[Phase 1b as built](#phase-1b-as-built). Phases 2 and 3 are not started.
 
 This plan describes how Doctis can support the Engineering Project Document
 Topic System. The QMS sources are in the HCRQMS repository:
@@ -48,6 +49,8 @@ Owner decisions, 2026-10-08:
   HCRQMS. HCRQMS is the standalone QMS site-content project.
 - **Pilot and test projects** will be created to scope and develop the feature
   (section 6).
+- **Development stays on branch `topics`** until the feature is fully
+  developed (2026-10-13); it is merged into `dev` after that.
 - **Parent Topics do not depend on their children.** Topics 21–23 are grouped
   under 20 for display and filtering only. A child's state never affects the
   parent's state, and the parent's applicability does not constrain the
@@ -166,8 +169,8 @@ Pages `manage_topic_*.php`, modelled on `manage_license_*.php`:
   approved in Doctis. A **Published** catalogue is frozen: Topics can be
   retired but not edited or deleted, and codes are never reassigned. Revising
   it means a new catalogue (Phase 3 adds migration).
-- A project using a Draft catalogue shows the Draft label prominently on its
-  Topics page. Which projects may adopt a Draft catalogue is open question 4.
+- Any project may adopt a Draft catalogue (decided 2026-10-13); its Topics
+  page then shows the Draft label prominently.
 
 ### 4.3 Project Documentation Topics page
 
@@ -315,8 +318,8 @@ Implemented on branch `topics`, 2026-10-13. Differences from the plan above:
   reader cannot see, so all readers see the same state. Hidden documents are
   not listed; a generic note says they exist, and a banner says the view is
   limited.
-- **Draft catalogues:** any project may adopt one (open question 4 is still
-  open). The Topics page shows a Draft warning.
+- **Draft catalogues:** any project may adopt one (owner decision,
+  2026-10-13). The Topics page shows a Draft warning.
 - **Codes:** 1–8 letters or digits, also `.`, `_` and `-`. History types
   `DWG_TOPIC_ATTACHED/UPDATED/DETACHED` (80–82) store `code|extent|locator`.
   Validation errors use `ERROR_TOPIC` (1250).
@@ -339,6 +342,28 @@ Any order, after Phase 1:
 - Topic selection on the document create form.
 - CSV and print versions of the Topics page (TOP-FR-023, live view).
 - Topics included in SOAP `mc_dwg_get`.
+
+### Phase 1b as built
+
+Implemented on branch `topics`, 2026-10-13.
+
+| Item | Implementation |
+|------|----------------|
+| Topics column | `topics` column in `core/columns_dwg_api.php`, filled from one query per page (`topic_dwg_cache_tags()` via `dwg_cache_columns_data()`). It is in the default list and print columns, and `helper_get_dwg_columns_to_view()` removes it unless the current project uses Topics (kept for All Projects). Whole-Topic codes are bold; tooltips give Topic, extent and sections |
+| Topic filter | `core/classes/TopicFilter.class.php`, a `MantisFilter` registered in `filter_dwg_get_plugin_filters()` (the document filter's plugin hook, otherwise unused). It is offered for All Projects and for projects that use Topics. Values are codes prefixed `T` (a bare `00` would equal `META_FILTER_ANY`), so the filter works across catalogues; `[no Topic]` (`META_FILTER_NONE`) finds untagged documents of Topics projects. A principal Topic also matches its children's tags (TOP-FR-013) |
+| Bulk Add Topic | Group action `EXT_ADD_TOPIC`, `dwg_actiongroup_add_topic_inc.php`, registered in `core/dwg_group_action_api.php`. Chooses a code, so a selection may span projects; documents already tagged, or whose catalogue lacks the code, are reported as failed |
+| Create form | `dwg_create_topics_inc.php` on `dwg_create_page.php`: one row per Topic (tick, part/whole, sections). `dwg_create.php` validates the choice with `topic_create_form_tags()` before creating the document, then tags it |
+| Export | `topic_export.php?format=csv\|print`: rows from `topic_export_rows()` over `topic_project_view()`, so permissions and hidden documents match the Topics page. Labelled with project, catalogue, generation time and user, and "live view, not a snapshot" (TOP-FR-023, live part) |
+| SOAP/REST | `topics` (`TopicTagData[]`: code, title, extent ObjectRef, sections) in `DwgData` (`mantisconnect.wsdl`, `mci_dwg_get_topics()`). The REST `/api/rest/documents` endpoint shares `mci_dwg_data_as_array()` and returns it too |
+
+Fixed on the way: `mc_dwg_get` faulted for every document on PHP 8.2+,
+because the row query's aliased columns (`doc_classification`,
+`doc_link_url`) became dynamic properties of `DwgData` after its
+`#[AllowDynamicProperties]` attribute had been commented out. The attribute
+is restored, as on `BugData`.
+
+Not done: there is no document CSV/Excel export in Doctis to add the column
+to; the Topics page export covers that need.
 
 ## 6. Pilot projects
 
@@ -429,7 +454,7 @@ assessment, percentage scores, notifications, and roll-up across projects.
 | Phase | TOP-FR covered |
 |-------|----------------|
 | 1 | All of 001, 002, 004, 008, 012, 021, 025, 026, 027, 029. Part of: 003 (frozen Published catalogue), 005 (applicability and rationale), 009 (table ready, same-project only), 010 (locator), 011 (any registered document type can be tagged), 013 (untagged list), 016 (declared view), 024 (tag and applicability history) |
-| 1b | The rest of 013 (filter); 023 (live export) |
+| 1b (done) | The rest of 013 (filter); 023 (live export) |
 | 2 | The rest of 005, 010 and 016; 006 (without the parent/child rule), 007, 014, 015, 017, 018, 019, 020 |
 | 3 | The rest of 003, 009, 011, 023 and 024; 022, 028 |
 
@@ -460,5 +485,6 @@ STD-IT-001:
 2. Should HCRQMS keep the HCR571 exemplars once the pilot project holds them?
 3. Who owns the catalogue: is `ADMINISTRATOR` right for the Engineering Lead,
    or should it be a global `MANAGER`?
-4. Should a Draft catalogue be adoptable by any project, or only by projects
-   flagged as pilots?
+4. ~~Should a Draft catalogue be adoptable by any project, or only by projects
+   flagged as pilots?~~ Decided 2026-10-13: any project may adopt one (as
+   built). The Topics page shows a Draft warning.

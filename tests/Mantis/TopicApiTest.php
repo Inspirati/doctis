@@ -331,6 +331,96 @@ class TopicApiTest extends MantisCoreBase {
 		$this->assertContains( DWG_TOPIC_DETACHED, $this->historyTypes( $t_dwg ) );
 	}
 
+	# ── Phase 1b: list column, filter, bulk/create helpers, export ──────────
+
+	/** Ids of a project's documents matched by the Topic filter for $p_values. */
+	private function filterMatches( int $p_project_id, array $p_values ): array {
+		$t_query = ( new \TopicFilter() )->query( $p_values );
+		$t_where = preg_replace_callback( '/\?/', function() { return db_param(); }, $t_query['where'] );
+		$t_result = db_query( 'SELECT id FROM {dwg} WHERE project_id=' . db_param() . ' AND ' . $t_where . ' ORDER BY id',
+			array_merge( array( $p_project_id ), $t_query['params'] ) );
+		$t_ids = array();
+		while( $t_row = db_fetch_array( $t_result ) ) {
+			$t_ids[] = (int)$t_row['id'];
+		}
+		return $t_ids;
+	}
+
+	public function testTopicFilterMatchesCodesChildrenAndUntagged() {
+		$t_cat = $this->makeTopicProject();
+		$t_project_id = $t_cat['project_id'];
+		$t_a = $this->makeDocument( $t_project_id );
+		$t_b = $this->makeDocument( $t_project_id );
+		$t_untagged = $this->makeDocument( $t_project_id );
+		topic_dwg_add( $t_a, $t_cat['10'], TOPIC_EXTENT_WHOLE, '' );
+		topic_dwg_add( $t_b, $t_cat['21'], TOPIC_EXTENT_PART, '' );
+
+		$this->assertSame( array( $t_a ), $this->filterMatches( $t_project_id, array( 'T10' ) ) );
+		# A principal Topic also matches its children's tags.
+		$this->assertSame( array( $t_b ), $this->filterMatches( $t_project_id, array( 'T20' ) ) );
+		$this->assertSame( array( $t_b ), $this->filterMatches( $t_project_id, array( 'T21' ) ) );
+		$this->assertSame( array( $t_untagged ), $this->filterMatches( $t_project_id, array( (string)META_FILTER_NONE ) ) );
+		$this->assertSame( array( $t_a, $t_untagged ), $this->filterMatches( $t_project_id, array( 'T10', (string)META_FILTER_NONE ) ) );
+
+		# "00" must not be mistaken for META_FILTER_ANY: values carry a prefix.
+		$this->assertFalse( filter_dwg_field_is_any( array( \TopicFilter::value( '00' ) ) ) );
+		$this->assertTrue( ( new \TopicFilter() )->validate( array( 'T00', '-2', '0' ) ) );
+		$this->assertFalse( ( new \TopicFilter() )->validate( array( "T10' OR 1=1" ) ) );
+	}
+
+	public function testCodeOptionsAndLookupByCode() {
+		$t_cat = $this->makeTopicProject();
+		$t_options = topic_code_options( $t_cat['project_id'] );
+		$this->assertSame( array( '10', '20', '21' ), array_map( 'strval', array_keys( $t_options ) ) );
+		$this->assertSame( array( '21' ), $t_options['20']['children'] );
+		$this->assertEquals( $t_cat['21'], (int)topic_get_by_code( $t_cat['project_id'], '21' )['id'] );
+		$this->assertNull( topic_get_by_code( $t_cat['project_id'], '99' ) );
+		topic_set_enabled( $t_cat['21'], false );
+		$this->assertNull( topic_get_by_code( $t_cat['project_id'], '21' ) );
+	}
+
+	public function testCreateFormTagsAreValidatedBeforeCreation() {
+		$t_cat = $this->makeTopicProject();
+		$t_other = $this->makeCatalogue();
+		try {
+			$_POST['topic_ids'] = array( (string)$t_cat['10'], (string)$t_cat['21'] );
+			$_POST['topic_extent'] = array( $t_cat['10'] => (string)TOPIC_EXTENT_WHOLE );
+			$_POST['topic_locator'] = array( $t_cat['21'] => ' §4 ' );
+			$t_tags = topic_create_form_tags( $t_cat['project_id'] );
+			$this->assertEquals( array(
+				array( 'topic_id' => $t_cat['10'], 'extent' => TOPIC_EXTENT_WHOLE, 'locator' => '' ),
+				array( 'topic_id' => $t_cat['21'], 'extent' => TOPIC_EXTENT_PART, 'locator' => '§4' ),
+			), $t_tags );
+
+			$_POST['topic_ids'] = array( (string)$t_other['10'] );
+			$this->expectTopicError( function() use ( $t_cat ) { topic_create_form_tags( $t_cat['project_id'] ); }, 'not in the project' );
+
+			unset( $_POST['topic_ids'] );
+			$this->assertSame( array(), topic_create_form_tags( $t_cat['project_id'] ) );
+		} finally {
+			unset( $_POST['topic_ids'], $_POST['topic_extent'], $_POST['topic_locator'] );
+		}
+	}
+
+	public function testListCodesAndExportRows() {
+		$t_cat = $this->makeTopicProject();
+		$t_dwg = $this->makeDocument( $t_cat['project_id'], PENDING, 'EXP-1' );
+		topic_dwg_add( $t_dwg, $t_cat['10'], TOPIC_EXTENT_WHOLE, '' );
+		topic_dwg_add( $t_dwg, $t_cat['21'], TOPIC_EXTENT_PART, '§2' );
+
+		$t_html = topic_dwg_codes_html( $t_dwg, $t_cat['project_id'] );
+		$this->assertStringContainsString( '<strong>10</strong>', $t_html );
+		$this->assertStringContainsString( '>21</span>', $t_html );
+		$this->assertStringNotContainsString( '<strong>21', $t_html );
+
+		$t_rows = topic_export_rows( topic_project_view( $t_cat['project_id'] ) );
+		# 10 with its document, 20 without documents, 21 with its document.
+		$this->assertSame( array( '10', '20', '21' ), array_column( $t_rows, 'code' ) );
+		$this->assertSame( array( 'EXP-1', '', 'EXP-1' ), array_column( $t_rows, 'document' ) );
+		$this->assertSame( '20', $t_rows[2]['parent'] );
+		$this->assertSame( '§2', $t_rows[2]['sections'] );
+	}
+
 	public function testDocumentDeletionRemovesItsTags() {
 		$t_cat = $this->makeTopicProject();
 		$t_dwg = $this->makeDocument( $t_cat['project_id'] );

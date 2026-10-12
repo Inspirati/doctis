@@ -508,8 +508,34 @@ Choose:
   example "§3–5, Appendix B". Use this for combined documents, so one
   document can cover several Topics.
 
+You can also tick Topics when creating a document: the create form lists the
+project's Topics, each with part or whole and sections.
+
+To tag many documents at once, select them in the document list and choose
+**Add Topic** from the action menu at the bottom. Pick the Topic, part or
+whole, and optional sections; documents that already have the Topic are
+listed as failed and left unchanged.
+
 A document can have any number of Topics, and a Topic any number of documents.
 Every tag change is recorded in the document's history.
+
+### Topics in the document list
+
+In a project that uses Topics, the document list has a **Topics** column with
+each document's Topic codes; whole-Topic tags are in bold, and hovering over a
+code shows the Topic, extent and sections. The filter has a **Topics** field:
+choose one or more Topics, or **[no Topic]** for documents not yet tagged.
+Choosing a principal Topic such as 20 also finds documents tagged with its
+children (21–23); the column shows each document's own codes.
+
+### Printing and exporting
+
+**Print** on the Topics page opens a printable copy, and **CSV** downloads the
+same rows for a spreadsheet: one row per Topic and document, with
+applicability, rationale, coverage, document status, extent and sections.
+Both state the project, the catalogue, when and by whom they were generated,
+and that they are a live view rather than a review snapshot. They show only
+what you may see.
 
 ### Deciding whether a Topic applies
 

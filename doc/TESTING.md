@@ -438,9 +438,19 @@ refused; the feature switch; moves, document deletion and project deletion.
   decides; only administrators reach Manage → Topics.
 - Make a tagged document private: a reporter sees "Restricted documents are
   also tagged" instead of it, and the coverage is unchanged.
+- Phase 1b. Document list of a Topics project: Topics column (whole tags in
+  bold) and Topics filter; `dwg_search.php?project_id=<P>&topic[]=T20` lists
+  documents tagged 20 or 21–23, `topic[]=-2` the untagged ones (log in at the
+  server's own address so the redirect keeps the session). A project without
+  Topics shows neither. Bulk **Add Topic** tags the selection and reports
+  documents already tagged. The create form's Topics block tags the new
+  document; an unknown Topic id is refused before anything is created.
+  `topic_export.php?format=csv|print&project_id=<P>` (viewer refused).
+  SOAP `mc_dwg_get` and REST `/api/rest/documents/<id>` return `topics`.
 
 Run 2026-10-13 on the native VM (HCR571 pilot, project 29): 256 `mantis` tests
-passed, including 12 `TopicApiTest`; all page and role checks passed.
+passed, including 12 `TopicApiTest`; all page and role checks passed. Phase 1b,
+same day: 260 tests (16 `TopicApiTest`) and the checks above passed.
 
 ---
 

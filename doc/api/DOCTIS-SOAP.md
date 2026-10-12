@@ -191,6 +191,13 @@ Fields shared with IssueData: `id`, `summary` (vestigial â€” always blank, see Â
 `handler`, `created_at`, `updated_at`, `due_date`, `custom_fields`, `attachments`,
 `notes`, `relationships`, `monitors`, `tags`, `sticky`.
 
+`topics` (Documentation Topics, `TopicTagData[]`): the document's Topic tags
+in its own project, each with `code`, `title`, `extent` (ObjectRef: 10 `part`,
+20 `whole`) and `sections`. Empty unless the project uses Topics and the
+caller may view them (`$g_topic_view_threshold`). The REST
+`/api/rest/documents` response includes the same `topics` array (omitted when
+empty).
+
 `status` uses the `dwg_status` enum rather than the MantisBT `status` enum.
 Use `mc_enum_dwg_status` to discover valid values.
 

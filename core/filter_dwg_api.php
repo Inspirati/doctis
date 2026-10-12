@@ -155,6 +155,16 @@ function filter_dwg_get_plugin_filters() {
 		// 		}
 		// 	}
 		// }
+
+		# Documentation Topics filter (Doctis), where Topics can be seen.
+		if( ON == config_get( 'topics_enabled' ) ) {
+			require_api( 'topic_api.php' );
+			$t_project_id = helper_get_current_project();
+			if( $t_project_id == ALL_PROJECTS
+				|| ( topic_project_is_enabled( $t_project_id ) && topic_can_view_project( $t_project_id ) ) ) {
+				$s_field_array['topic'] = new TopicFilter();
+			}
+		}
 	}
 
 	return $s_field_array;

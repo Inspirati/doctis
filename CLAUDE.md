@@ -113,9 +113,13 @@ child Topics never affect each other. Off unless `$g_topics_enabled = ON`.
 
 API: [core/topic_api.php](core/topic_api.php) (tables `{topic_catalogue}`,
 `{topic}`, `{topic_project}`, `{topic_applicability}`, `{dwg_topic}`). Pages:
-`manage_topic_*.php` (catalogues), `topic_page.php` and `topic_detail_page.php`
-(project view), `dwg_view_topics_inc.php` and `dwg_topic_*.php` (document
-tags). Plan, phases and as-built notes:
+`manage_topic_*.php` (catalogues), `topic_page.php`, `topic_detail_page.php`
+and `topic_export.php` (project view, CSV/print), `dwg_view_topics_inc.php`,
+`dwg_topic_*.php` and `dwg_create_topics_inc.php` (document tags),
+`dwg_actiongroup_add_topic_inc.php` (bulk tagging), the document list's
+`topics` column and `core/classes/TopicFilter.class.php` (list filter;
+registered in `filter_dwg_get_plugin_filters()`). SOAP/REST `DwgData` has
+`topics`. Plan, phases and as-built notes:
 [doc/topics/TOPICS_PLAN.md](doc/topics/TOPICS_PLAN.md).
 
 ## Development Environment

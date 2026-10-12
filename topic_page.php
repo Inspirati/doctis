@@ -127,6 +127,11 @@ if( $f_project_id == ALL_PROJECTS ) {
 	if( $t_view['restricted'] ) {
 		echo '<div class="alert alert-info">' . lang_get( 'topic_limited_view' ) . '</div>';
 	}
+	echo '<div class="noprint">';
+	print_link_button( 'topic_export.php?format=print&project_id=' . (int)$f_project_id, lang_get( 'topic_export_print' ), 'btn-xs', true );
+	echo ' ';
+	print_link_button( 'topic_export.php?format=csv&project_id=' . (int)$f_project_id, lang_get( 'topic_export_csv' ), 'btn-xs' );
+	echo '</div>';
 ?>
 	</div>
 	<div class="widget-main no-padding">
