@@ -81,3 +81,9 @@ CLAUDE.md
 .claude/
 
 lang/*
+
+# Local data scripts for the wipe-and-reload test cycle (System Operations →
+# Load Data). They hold real account data and password hashes; only the
+# README is tracked.
+admin/tools/data-scripts/*
+!admin/tools/data-scripts/README.md
