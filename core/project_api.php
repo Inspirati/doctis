@@ -398,6 +398,10 @@ function project_delete( $p_project_id ) {
 	# Delete the documents
 	dwg_delete_all( $p_project_id );
 
+	# Delete the project's Documentation Topic records
+	require_api( 'topic_api.php' );
+	topic_project_delete( (int)$p_project_id );
+
 	# Delete associations with custom field definitions.
 	custom_field_unlink_all( $p_project_id );
 

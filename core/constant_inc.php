@@ -270,6 +270,9 @@ define( 'DWG_PAID_SPONSORSHIP', 74 );
 
 define( 'DWG_REVISION_DROPPED', 78 );
 define( 'DWGNOTE_REVISION_DROPPED', 79 );
+define( 'DWG_TOPIC_ATTACHED', 80 );
+define( 'DWG_TOPIC_UPDATED', 81 );
+define( 'DWG_TOPIC_DETACHED', 82 );
 
 
 # bug revisions
@@ -278,6 +281,16 @@ define( 'REV_DESCRIPTION', 1 );
 define( 'REV_STEPS_TO_REPRODUCE', 2 );
 define( 'REV_ADDITIONAL_INFO', 3 );
 define( 'REV_BUGNOTE', 4 );
+
+# Document Topics: catalogue status, project applicability, tag extent
+define( 'TOPIC_CATALOGUE_DRAFT', 10 );
+define( 'TOPIC_CATALOGUE_PUBLISHED', 30 );
+define( 'TOPIC_CATALOGUE_RETIRED', 90 );
+define( 'TOPIC_UNDECIDED', 0 );
+define( 'TOPIC_APPLICABLE', 10 );
+define( 'TOPIC_NOT_APPLICABLE', 20 );
+define( 'TOPIC_EXTENT_PART', 10 );
+define( 'TOPIC_EXTENT_WHOLE', 20 );
 
 # dwg revisions
 // define( 'REV_ANY', 0 );
@@ -451,6 +464,9 @@ define( 'ERROR_DWG_REVISION_NOT_FOUND', 1190 );
 # ERROR_EMAIL_*
 define( 'ERROR_EMAIL_INVALID', 1200 );
 define( 'ERROR_EMAIL_DISPOSABLE', 1201 );
+
+# ERROR_TOPIC_* (Document Topics)
+define( 'ERROR_TOPIC', 1250 );
 
 # ERROR_CUSTOM_FIELD_*
 define( 'ERROR_CUSTOM_FIELD_NOT_FOUND', 1300 );

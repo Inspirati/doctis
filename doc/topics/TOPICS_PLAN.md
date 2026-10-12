@@ -1,6 +1,7 @@
 # Document Topics — Implementation Plan
 
-Status: proposal, 2026-10-08. Nothing is implemented yet.
+Status: Phase 1 implemented on branch `topics` (2026-10-13); see
+[Phase 1 as built](#phase-1-as-built). Phases 1b, 2 and 3 are not started.
 
 This plan describes how Doctis can support the Engineering Project Document
 Topic System. The QMS sources are in the HCRQMS repository:
@@ -110,7 +111,7 @@ parent/child dependency and need the same revision as STD-ENG-004.
 | Document history (`dwg_history`, `core/history_dwg_api.php`) | Records Topic tag changes on each document |
 | `dwg_primary_file.git_sha`: the On Record commit of each document; `dwg_primary_draft`: a staged replacement awaiting promotion | Phase 2 evidence version identity; "evidence changed" detection; a new draft visible beside the baseline |
 | Licenses held by named users | Phase 2 assessor competence. Access levels are hierarchical, so an administrator passes every threshold; a license does not have that problem. This meets STD-IT-001's rule that administrator access alone must not confer assessment |
-| `access_has_dwg_level()` | Per-document visibility on Topic views, including license restrictions |
+| `access_has_dwg_level()` | Per-document visibility on Topic views, by the same rules as the document list (private documents, limited view). Licenses are enforced elsewhere (document content), not by this check |
 
 The existing free-form document tags (`tag` / `dwg_tag`) are not suitable.
 They are global and uncontrolled, and have no extent. Their display on the
@@ -255,12 +256,19 @@ All checks run on the server, including for direct requests to action pages
 
 ### 4.7 Code layout
 
+As built (the planned names changed slightly):
+
 | New | Purpose |
 |-----|---------|
-| `core/topic_api.php` | Catalogue, project enablement, applicability, tags, coverage calculation |
-| `manage_topic_page.php`, `manage_topic_edit_page.php`, `manage_topic_update.php`, `manage_topic_catalogue_*.php` | Catalogue administration |
-| `topic_page.php`, `topic_project_enable.php`, `topic_applicability_update.php` | Project Topics page and its actions |
-| `dwg_topic_add.php`, `dwg_topic_update.php`, `dwg_topic_delete.php`, `dwg_view_topics_inc.php` | Document block and its actions (named like `dwg_license_*`) |
+| `core/topic_api.php` | Catalogue, project enablement, applicability, tags, coverage calculation, display helpers |
+| `core/topic_catalogues/std-eng-004-rev-a.json` | Bundled catalogue, transcribed from STD-ENG-004 Rev A §4 |
+| `manage_topic_page.php`, `manage_topic_catalogue_page.php`, `manage_topic_edit_page.php`, `manage_topic_form_inc.php` | Catalogue administration pages |
+| `manage_topic_catalogue_action.php`, `manage_topic_action.php` | Catalogue and Topic actions (create, update, publish, retire, delete, load) |
+| `topic_page.php`, `topic_detail_page.php` | Project Topics page; one Topic's decision history and documents |
+| `topic_project_action.php`, `topic_applicability_update.php` | Enable/disable Topics; record a decision |
+| `dwg_view_topics_inc.php`, `dwg_topic_edit_inc.php` | Document view block; inline tag controls |
+| `dwg_topic_add.php`, `dwg_topic_update.php`, `dwg_topic_delete.php` | Tag actions (named like `dwg_license_*`) |
+| `tests/Mantis/TopicApiTest.php` | API tests |
 
 Small hooks in existing files:
 
@@ -274,7 +282,8 @@ Small hooks in existing files:
 | `core/layout_api.php` | Sidebar entry |
 | `dwg_view_inc.php` | Include |
 | `lang/strings_english.txt` | Strings |
-| `core/dwg_api.php` | `dwg_delete()` removes tags. `dwg_move()` retargets tags when the destination uses the same catalogue and drops them otherwise, with history in both cases |
+| `core/dwg_api.php` | `dwg_delete()` removes tags. `dwg_move()` retargets tags when the destination uses the same catalogue and drops them otherwise, recording removals in the history |
+| `core/project_api.php` | `project_delete()` removes the project's Topic records |
 
 ### 4.8 Tests and documentation
 
@@ -291,6 +300,32 @@ Small hooks in existing files:
   Help tab.
 - Phase 1 acceptance subset of STD-IT-001: TOP-AT-001, 002 (no versioning),
   003 (applicability part), 004, 011, 013, and 015 (tag part).
+
+### Phase 1 as built
+
+Implemented on branch `topics`, 2026-10-13. Differences from the plan above:
+
+- **Schema:** the five tables were appended as steps 65–69
+  (`database_version` 69), so existing databases upgrade with
+  `admin/install.php` or `admin/upgrade_unattended.php` without a rebuild.
+- **Topic page per Topic:** `topic_detail_page.php` holds the applicability
+  form, the decision history and tagging from the Topic's side. The Topics
+  table links to it, and managers' **Decide** links open its form.
+- **Restricted documents:** coverage counts every tag, including documents the
+  reader cannot see, so all readers see the same state. Hidden documents are
+  not listed; a generic note says they exist, and a banner says the view is
+  limited.
+- **Draft catalogues:** any project may adopt one (open question 4 is still
+  open). The Topics page shows a Draft warning.
+- **Codes:** 1–8 letters or digits, also `.`, `_` and `-`. History types
+  `DWG_TOPIC_ATTACHED/UPDATED/DETACHED` (80–82) store `code|extent|locator`.
+  Validation errors use `ERROR_TOPIC` (1250).
+- **Sample data** does not load a catalogue. Use Manage → Topics → Load, or
+  a Data Snapshot script.
+
+Verified on the native VM: `TopicApiTest` (12 tests) and the full `mantis`
+suite (256 tests) pass, and page, role and restricted-document checks pass
+over HTTP (`doc/TESTING.md` §7b).
 
 ## 5. Phase 1b — Conveniences
 
@@ -315,6 +350,13 @@ repositories. They are never sub-projects of HCRQMS.
   3). Enable Topics, tag 10 / 20 / 30, decide applicability for every Topic,
   and record what is missing. Whether HCRQMS keeps its exemplar copies is a
   QMS content decision.
+
+  Started on the native VM, 2026-10-13: project HCR571 (id 29, top-level)
+  holds PRD-, ICD- and TP-HCR571 (documents 142–144, uploaded from HCRQMS
+  `content/engineering/designs/`). It uses the Draft STD-ENG-004 Rev A
+  catalogue, with PRD → 10 (whole), ICD → 20 (part, §2–4) and TP → 30
+  (part). 10, 20 and 30 are Applicable; the other Topics are Undecided,
+  awaiting the Project Engineering Lead.
 - **A second, smaller pilot** with a different shape, for example a
   software-only or prototype project, to exercise Not applicable decisions
   and combined documents.

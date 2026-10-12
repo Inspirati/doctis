@@ -3844,6 +3844,64 @@ $g_manage_license_threshold = MANAGER;
 $g_manage_import_threshold = ADMINISTRATOR;
 
 /**
+ * Document Topics (doc/topics/TOPICS_PLAN.md).
+ *
+ * Projects can classify their documents by the Topics of a managed catalogue
+ * (e.g. STD-ENG-004) and record which Topics they need. OFF hides every Topic
+ * page, block and menu entry; Topic records are kept.
+ *
+ * @global int $g_topics_enabled
+ */
+$g_topics_enabled = OFF;
+
+/**
+ * Threshold (global) to manage Topic catalogues: Manage > Topics.
+ *
+ * @global int $g_manage_topic_threshold
+ */
+$g_manage_topic_threshold = ADMINISTRATOR;
+
+/**
+ * Threshold (project) to enable Topics on a project, choose its catalogue and
+ * decide whether each Topic applies.
+ *
+ * @global int $g_topic_profile_threshold
+ */
+$g_topic_profile_threshold = MANAGER;
+
+/**
+ * Threshold (document) to add, change and remove a document's Topic tags.
+ *
+ * @global int $g_topic_tag_threshold
+ */
+$g_topic_tag_threshold = DEVELOPER;
+
+/**
+ * Threshold (project) to view a project's Topics page and documents' Topics.
+ *
+ * @global int $g_topic_view_threshold
+ */
+$g_topic_view_threshold = REPORTER;
+
+/**
+ * Document statuses whose Topic tags are shown but not counted towards
+ * coverage, e.g. archived documents. The status set is provisional, so this
+ * is configuration rather than code.
+ *
+ * @global array $g_topic_inactive_status
+ */
+$g_topic_inactive_status = array( ARCHIVED );
+
+/**
+ * Document statuses that count as approved for publishing a Topic catalogue:
+ * a catalogue can be published only when its source document has one of
+ * these statuses.
+ *
+ * @global array $g_topic_catalogue_publish_status
+ */
+$g_topic_catalogue_publish_status = array( ACCEPTED, INCORPORATED );
+
+/**
  * Threshold needed to add/delete/modify news.
  *
  * @global int $g_manage_news_threshold

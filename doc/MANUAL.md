@@ -25,7 +25,8 @@ in the [MantisBT documentation](https://mantisbt.org/documentation.php).
 9. [My View and your profile](#9-my-view-and-your-profile)
 10. [Meetings](#10-meetings)
 11. [AI Assistant and knowledge base](#11-ai-assistant-and-knowledge-base)
-12. [Administration notes](#12-administration-notes)
+12. [Documentation Topics](#12-documentation-topics)
+13. [Administration notes](#13-administration-notes)
 
 ---
 
@@ -173,6 +174,13 @@ relationship panel.
 
 Lists the access licenses (skills, clearances, or qualifications) required to
 view this document.  See [section 8](#8-licenses).
+
+### Documentation Topics
+
+When the project uses Documentation Topics, this panel lists the Topics the
+document is tagged with, each as part of the Topic or the whole of it, with
+the relevant sections. Developers can add, change and remove tags here. See
+[section 12](#12-documentation-topics).
 
 ### Document Notes
 
@@ -448,7 +456,110 @@ access to that project see it.
 
 ---
 
-## 12. Administration notes
+## 12. Documentation Topics
+
+Documentation Topics classify a project's documents by the numbered Topics of
+a catalogue such as STD-ENG-004 (Engineering Project Document Topic System):
+00 Project Governance and Documentation Planning, 10 System Concept and
+Requirements, 20 Design and Descriptive Data with 21–23 beneath it, 30
+Verification and Validation, and 40–60 for production, in-service use and
+retirement. They show which Topics a project needs and which documents cover
+them. Doctis is the index: there is no separate index document to maintain.
+
+Topics are optional. An administrator switches the feature on, and each
+project chooses whether to use it.
+
+### The Topics page
+
+Open **Topics** in the sidebar with a project selected. The page lists every
+Topic of the project's catalogue with:
+
+- **Required**: the project's decision for the Topic: Applicable, Not
+  applicable (with its rationale) or Undecided. Every Topic starts Undecided.
+- **Documents**: the documents tagged with the Topic, with their status,
+  whether each is part of the Topic or the whole of it, and the sections.
+- **Coverage**: Complete (declared) when a document is tagged as the whole
+  Topic, Partial when only parts are tagged, No documents, or Not applicable.
+
+The header counts the Topics in each state. Below the table, **Untagged
+documents** lists the project's documents with no Topic yet, each with a
+form to tag it.
+
+Coverage is a declaration by the documents' authors, not an assessment: a tag
+does not say the content is adequate, and it does not approve a document or a
+release. Each Topic's coverage comes from its own tags only. Topics 21–23 are
+grouped under 20 for display: tagging 21 does not cover 20, and 20 being Not
+applicable does not affect 21–23. Archived documents stay listed (struck
+through) but do not count.
+
+If some tagged documents are hidden from you (for example private documents),
+the page says so without naming them; coverage still counts them.
+
+### Tagging a document
+
+Tag from the document's **Documentation Topics** panel, from **Untagged
+documents** on the Topics page, or from a Topic's own page (click its title).
+Choose:
+
+- **Whole Topic**: this document is all of the Topic's required
+  documentation.
+- **Part of Topic**: it is one contributor among several.
+- **Sections** (optional): which parts of the document are relevant, for
+  example "§3–5, Appendix B". Use this for combined documents, so one
+  document can cover several Topics.
+
+A document can have any number of Topics, and a Topic any number of documents.
+Every tag change is recorded in the document's history.
+
+### Deciding whether a Topic applies
+
+Project managers click **Decide** (or open the Topic's page). Choose
+Applicable, Not applicable or Undecided and record a rationale. Not applicable
+requires a rationale. A missing document, lack of time or work planned for
+later is not a reason (STD-ENG-004 §5.1). Every decision is kept, with who
+made it and when, in the Topic's decision history.
+
+### Enabling Topics on a project
+
+A project manager opens **Topics** with the project selected, chooses a
+catalogue and clicks **Enable Topics**. **Disable Topics** at the bottom of
+the page hides them again but keeps every tag and decision. A project keeps
+its catalogue: changing to another catalogue is not possible once it has
+records.
+
+### Catalogues (administrators)
+
+**Manage → Topics** lists the catalogues. **Load STD-ENG-004 Rev A** creates
+the bundled catalogue, transcribed from the standard.
+
+- **Draft**: a catalogue can be edited freely (Topics, codes, parents,
+  descriptions), and projects may adopt it for pilots. Their Topics page
+  shows that the catalogue is a Draft.
+- **Published**: the catalogue is frozen. Topics can be retired or restored,
+  but not edited, and codes are never reused. Publishing requires a source
+  document (the standard's Doctis record) that is accepted or incorporated.
+- **Retired**: no new project can adopt it.
+
+Topics nest one level only (principal Topic and child). A retired Topic can
+no longer be added to documents; existing tags stay.
+
+---
+
+## 13. Administration notes
+
+### Documentation Topics settings
+
+In `config/config_inc.php`:
+
+| Setting | Purpose |
+|---------|---------|
+| `$g_topics_enabled` | `ON` shows Topics (default `OFF`); records are kept when off |
+| `$g_manage_topic_threshold` | Who manages catalogues (default ADMINISTRATOR) |
+| `$g_topic_profile_threshold` | Who enables Topics on a project and decides applicability (default MANAGER) |
+| `$g_topic_tag_threshold` | Who tags documents (default DEVELOPER) |
+| `$g_topic_view_threshold` | Who sees Topics (default REPORTER) |
+| `$g_topic_inactive_status` | Statuses whose tags are shown but not counted (default archived) |
+| `$g_topic_catalogue_publish_status` | Source document statuses that allow publishing a catalogue (default accepted, incorporated) |
 
 ### AI Assistant and meeting settings
 

@@ -1,0 +1,60 @@
+{
+ "name": "STD-ENG-004",
+ "revision": "A",
+ "source": "Engineering Project Document Topic System Standard (STD-ENG-004) Rev A, section 4. Draft: loading this catalogue does not approve the standard.",
+ "topics": [
+  {
+   "code": "00",
+   "title": "Project Governance and Documentation Planning",
+   "description": "Scope, intended output, planning authority, lifecycle and deliverables; references to Proposal, ECP/SEMP, review and change records. Topic applicability and coverage expectations reside directly in Doctis."
+  },
+  {
+   "code": "10",
+   "title": "System Concept and Requirements",
+   "description": "Stakeholder needs, intended use, operational concept, boundaries, operating environment, requirements, constraints, acceptance criteria and traceability; typically PRD and concept material."
+  },
+  {
+   "code": "20",
+   "title": "Design and Descriptive Data",
+   "description": "Integrated system description, functional and physical architecture, interfaces, design rationale, trade-offs, allocations and configuration references; typically design description and ICD."
+  },
+  {
+   "code": "21",
+   "title": "Hardware and Physical Design",
+   "description": "Mechanical/electrical design, CAD, schematics, PCB data, BOM, tolerances, component choices, physical configuration and manufacturing design outputs. Applies where physical hardware is designed or integrated.",
+   "parent": "20"
+  },
+  {
+   "code": "22",
+   "title": "Software, Firmware and AI Design",
+   "description": "Architecture, interfaces, dependencies, build configuration and implementation versions. For AI: dataset provenance and permitted use, partitioning, model/training configuration, evaluation baseline and known limitations. Applies where software, firmware or AI is developed or integrated.",
+   "parent": "20"
+  },
+  {
+   "code": "23",
+   "title": "Safety, Risk and Compliance",
+   "description": "Project risk assessment, hazards, applicable obligations, controls, safety requirements, verification links and residual-risk decisions. Safety screening is required even when a detailed safety case is unnecessary.",
+   "parent": "20"
+  },
+  {
+   "code": "30",
+   "title": "Verification and Validation",
+   "description": "Strategy, methods, traceability, procedures and acceptance criteria, equipment and test configuration, actual results, validation of intended use, failures, deviations and disposition; typically MTP, TP, VTM and Test Report."
+  },
+  {
+   "code": "40",
+   "title": "Production, Deployment, Operations and Maintenance",
+   "description": "Build and acceptance instructions where manufactured, installation and commissioning, operating limits, user/API documentation, calibration, servicing, diagnostics, updates and recovery appropriate to the intended use."
+  },
+  {
+   "code": "50",
+   "title": "In-Service Surveillance and Improvement",
+   "description": "Monitoring responsibilities, intervals, measures and intervention thresholds; inspections, reliability/field trends, AI drift where relevant, incident escalation and feedback into controlled engineering change."
+  },
+  {
+   "code": "60",
+   "title": "Retirement, Disposal and Archival",
+   "description": "Safe withdrawal, decommissioning, material disposal, data erasure, retention of design/IP/evidence, dependencies and responsibilities. A brief prototype closure instruction may suffice."
+  }
+ ]
+}

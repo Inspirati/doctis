@@ -1090,8 +1090,107 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
+# ── Step 65: topic_catalogue ────────────────────────────────────────────────
+# Document Topics (doc/topics/TOPICS_PLAN.md). A versioned list of Topics,
+# e.g. STD-ENG-004 Rev A. source_dwg_id is the registered standard it comes
+# from (0 = none). status: 10 Draft (editable), 30 Published (frozen; Topics
+# can only be retired), 90 Retired (no new adoption).
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'topic_catalogue' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `name` varchar(128) NOT NULL DEFAULT '',
+	  `revision` varchar(32) NOT NULL DEFAULT '',
+	  `source_dwg_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `status` smallint(6) NOT NULL DEFAULT 10,
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `date_created` int(10) unsigned NOT NULL DEFAULT 1,
+	  `date_updated` int(10) unsigned NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`id`),
+	  UNIQUE KEY `idx_topic_catalogue_name_revision` (`name`, `revision`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 66: topic ──────────────────────────────────────────────────────────
+# One Topic of a catalogue. code is a string so "00" keeps its leading zero.
+# parent_id 0 = principal Topic; otherwise a principal Topic of the same
+# catalogue (one level only). The grouping is for display: a child never
+# affects its parent's state. enabled 0 = retired.
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'topic' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `catalogue_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `code` varchar(8) NOT NULL DEFAULT '',
+	  `parent_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `title` varchar(128) NOT NULL DEFAULT '',
+	  `description` text NOT NULL,
+	  `sort_order` int(11) NOT NULL DEFAULT 0,
+	  `enabled` tinyint(4) NOT NULL DEFAULT 1,
+	  `date_created` int(10) unsigned NOT NULL DEFAULT 1,
+	  `date_updated` int(10) unsigned NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`id`),
+	  UNIQUE KEY `idx_topic_catalogue_code` (`catalogue_id`, `code`),
+	  KEY `idx_topic_parent` (`parent_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 67: topic_project ──────────────────────────────────────────────────
+# Topics enablement for a project and the catalogue it adopted. Disabling
+# keeps every Topic record of the project.
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'topic_project' ) . " (
+	  `project_id` int(10) unsigned NOT NULL,
+	  `catalogue_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `enabled` tinyint(4) NOT NULL DEFAULT 1,
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `date_updated` int(10) unsigned NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`project_id`),
+	  KEY `idx_topic_project_catalogue` (`catalogue_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 68: topic_applicability ────────────────────────────────────────────
+# Applicability decisions, append-only: the newest row per (project, topic)
+# is current and older rows are its history. No row = Undecided.
+# applicability: 0 Undecided, 10 Applicable, 20 Not applicable.
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'topic_applicability' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `project_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `topic_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `applicability` smallint(6) NOT NULL DEFAULT 0,
+	  `rationale` varchar(1024) NOT NULL DEFAULT '',
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `date_decided` int(10) unsigned NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`id`),
+	  KEY `idx_topic_applicability_project_topic` (`project_id`, `topic_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 69: dwg_topic ──────────────────────────────────────────────────────
+# A document tagged with a Topic in a project's Topic profile. project_id is
+# the profile's project (equal to dwg.project_id for now). extent: 10 the
+# document is part of the Topic's documentation, 20 it is the whole of it.
+# locator: which sections of the document are relevant. Changes are logged
+# in {dwg_history}.
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'dwg_topic' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `project_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `dwg_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `topic_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `extent` smallint(6) NOT NULL DEFAULT 10,
+	  `locator` varchar(255) NOT NULL DEFAULT '',
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `date_added` int(10) unsigned NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`id`),
+	  UNIQUE KEY `idx_dwg_topic_project_dwg_topic` (`project_id`, `dwg_id`, `topic_id`),
+	  KEY `idx_dwg_topic_dwg` (`dwg_id`),
+	  KEY `idx_dwg_topic_topic` (`topic_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
 # ── End of schema definition ─────────────────────────────────────────────────
-# $t_idx = 65 → database_version = 64 on a fresh install.
+# $t_idx = 70 → database_version = 69 on a fresh install.
 #
 # To add a new table: append a new step here and run the schema upgrade.
 # Label it "Step N" with its real index, which is the database_version the

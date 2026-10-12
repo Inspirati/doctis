@@ -1424,6 +1424,10 @@ function dwg_move( $p_bug_id, $p_target_project_id ) {
 	# Attempt to move disk based document attachments to the new project directory.
 	file_dwg_move_dwg_attachments( $p_bug_id, $p_target_project_id );
 
+	# Documentation Topic tags follow the document when they can.
+	require_api( 'topic_api.php' );
+	topic_dwg_move( (int)$p_bug_id, (int)dwg_get_field( $p_bug_id, 'project_id' ), (int)$p_target_project_id );
+
 	# Move the document to the new project.
 	dwg_set_field( $p_bug_id, 'project_id', $p_target_project_id );
 
@@ -1507,6 +1511,10 @@ function dwg_delete( $p_bug_id ) {
 
 	# Detach tags
 	tag_dwg_detach_all( $p_bug_id, false );
+
+	# Remove Documentation Topic tags
+	require_api( 'topic_api.php' );
+	topic_dwg_delete_all( $c_bug_id );
 
 	# Delete the bug history
 	history_dwg_delete( $p_bug_id );

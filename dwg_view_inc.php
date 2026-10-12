@@ -1543,6 +1543,9 @@ print_dwg_license_add_form( $f_dwg_id );
 <?php
 }
 
+# Documentation Topics (Doctis)
+include( $t_mantis_dir . 'dwg_view_topics_inc.php' );
+
 if( $t_flags['dwgnotes_show'] && access_has_dwg_level( config_get( 'dwgnote_view_threshold' ), $f_dwg_id ) ) {
 	# Dwgnotes and "Add Note" box
 	if( 'ASC' == current_user_get_pref( 'dwgnote_order' ) ) {

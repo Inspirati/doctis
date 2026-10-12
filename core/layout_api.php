@@ -776,6 +776,18 @@ function layout_print_sidebar( $p_active_sidebar_page = null ) {
 			);
 		}
 
+		# Documentation Topics (Doctis)
+		if( ON == config_get( 'topics_enabled' ) ) {
+			require_api( 'topic_api.php' );
+			if( topic_sidebar_visible( helper_get_current_project() ) ) {
+				$t_sidebar_items[] = array(
+					'url' => 'topic_page.php',
+					'title' => 'topics_link',
+					'icon' => 'fa-tags'
+				);
+			}
+		}
+
 		# Changelog Page
 		$t_sidebar_items[] = array(
 			'url' => 'changelog_page.php',

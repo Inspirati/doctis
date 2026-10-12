@@ -102,6 +102,22 @@ licensing; the term is Doctis-specific.
 
 API: [core/license_api.php](core/license_api.php). Command layer: [core/commands/License*Command.php](core/commands/).
 
+## Documentation Topics
+
+Projects can classify their documents by the numbered Topics of a managed
+catalogue (e.g. STD-ENG-004: 00–60, with 21–23 grouped under 20) and record
+which Topics they need. A tag marks a document as part of, or the whole of, a
+Topic's documentation, with optional sections. Tags are declarations, not
+assessments. Each Topic's coverage comes from its own tags only: parent and
+child Topics never affect each other. Off unless `$g_topics_enabled = ON`.
+
+API: [core/topic_api.php](core/topic_api.php) (tables `{topic_catalogue}`,
+`{topic}`, `{topic_project}`, `{topic_applicability}`, `{dwg_topic}`). Pages:
+`manage_topic_*.php` (catalogues), `topic_page.php` and `topic_detail_page.php`
+(project view), `dwg_view_topics_inc.php` and `dwg_topic_*.php` (document
+tags). Plan, phases and as-built notes:
+[doc/topics/TOPICS_PLAN.md](doc/topics/TOPICS_PLAN.md).
+
 ## Development Environment
 
 Doctis runs directly under Apache on **vaio** (`10.0.0.10`). There is one
