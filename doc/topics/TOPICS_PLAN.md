@@ -44,6 +44,11 @@ Owner decisions, 2026-10-08:
   Production will use a smaller set aligned with the QMS and engineering
   approval workflow, which is not yet defined. Topic code must not hard-code
   status values: any status-to-maturity rule is configuration (Phase 2).
+- **Lifecycle maturity (2026-10-13).** Draft = status 165 (`rework`, to be
+  renamed `draft`), Under Review = 160 (`review`), Approved = 180
+  (`accepted`, to be renamed `approved`). The labels are renamed later, when
+  convenient; the status values do not change, so stored data and workflow
+  settings are unaffected. See [Status label rename](#status-label-rename).
 - **Engineering projects are standalone.** HCR571 and every other product
   development project are top-level Doctis projects, not sub-projects of
   HCRQMS. HCRQMS is the standalone QMS site-content project.
@@ -420,9 +425,13 @@ repositories. They are never sub-projects of HCRQMS.
   - A staged draft (`dwg_primary_draft`) does not trigger reassessment;
     promoting it does (TOP-FR-019).
 - **Maturity mapping** in configuration: an array mapping each document status
-  to Draft, Under Review, Approved or Inactive. It is defined once the
-  production status set exists. Unmapped statuses fail closed as Pending, with
-  the reason shown.
+  to Draft, Under Review, Approved or Inactive. Owner decision (2026-10-13):
+  165 → Draft, 160 → Under Review, 180 → Approved. Proposed defaults for the
+  statuses the reduced production set will drop: 110–150 (pending to
+  assigned) → Draft, 170 (independent review) → Under Review, 190
+  (incorporated) → Approved, 195 (archived) → Inactive. Approved satisfies an
+  Under Review or Draft requirement, and Under Review satisfies Draft.
+  Unmapped statuses fail closed as Pending, with the reason shown.
 - **Profile authorisation** checks that:
   - every Topic is decided;
   - each applicable Topic has at least one expectation.
@@ -477,6 +486,28 @@ STD-IT-001:
 - Remove the parent/child rules from FR-006, §6.2 and TOP-AT-008.
 - Rename Unassessed to Undecided throughout.
 - §6.1 maturity: refer to a configured mapping rather than fixed statuses.
+
+## Status label rename
+
+Owner decision, 2026-10-13: rename `rework` (165) to `draft` and `accepted`
+(180) to `approved`, when convenient. The values stay the same. The labels are
+used as keys in several places, so a rename touches:
+
+| Where | What |
+|-------|------|
+| `config_defaults_inc.php` `$g_dwg_status_enum_string` | `165:draft`, `180:approved` |
+| `lang/strings_english.txt` `$s_dwg_status_enum_string` (and `$s_status_enum_string`, which carries the same values) | The displayed labels |
+| `config_defaults_inc.php` `$g_status_colors` | The `rework` and `accepted` colour keys |
+| `lang/strings_english.txt` `$s_rework_dwg_button`, `$s_rework_dwg_title`, `$s_accepted_dwg_button`, `$s_accepted_dwg_title` | Renamed to `draft_…` / `approved_…`; `dwg_change_status_page.php` looks them up by label |
+| `ai_assist_help_api.php` | The lifecycle sentence in the Help prompt |
+| `doc/MANUAL.md` §6 | Document status workflow |
+| `admin/import-git-repo.php` `status_map()` | Frontmatter `Draft` maps to 110 (`pending`) today. Decide whether imports should map it to 165 (`draft`) instead |
+| Deployed `config_inc.php` files | Any local override of the enum string or colours |
+
+The constants `REWORK` and `ACCEPTED` can keep their names (or gain `DRAFT`
+and `APPROVED` aliases); filters, workflow and stored data use the values.
+New documents start at `$g_dwg_submit_status` (110, `pending`); whether they
+should start at Draft belongs to the wider reduction of the status set.
 
 ## 11. Open questions
 
