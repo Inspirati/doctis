@@ -654,7 +654,7 @@ function topic_set_enabled( int $p_topic_id, bool $p_enabled ): void {
  * @return boolean
  */
 function topic_is_used( int $p_topic_id ): bool {
-	foreach( array( '{dwg_topic}', '{topic_applicability}' ) as $t_table ) {
+	foreach( array( '{dwg_topic}', '{topic_applicability}', '{topic_expectation}' ) as $t_table ) {
 		db_param_push();
 		$t_result = db_query( 'SELECT COUNT(*) FROM ' . $t_table . ' WHERE topic_id=' . db_param(), array( $p_topic_id ) );
 		if( (int)db_result( $t_result ) > 0 ) {
@@ -722,7 +722,7 @@ function topic_project_is_enabled( int $p_project_id ): bool {
  * @return boolean
  */
 function topic_project_has_records( int $p_project_id ): bool {
-	foreach( array( '{dwg_topic}', '{topic_applicability}' ) as $t_table ) {
+	foreach( array( '{dwg_topic}', '{topic_applicability}', '{topic_expectation}' ) as $t_table ) {
 		db_param_push();
 		$t_result = db_query( 'SELECT COUNT(*) FROM ' . $t_table . ' WHERE project_id=' . db_param(), array( $p_project_id ) );
 		if( (int)db_result( $t_result ) > 0 ) {
@@ -790,7 +790,16 @@ function topic_project_disable( int $p_project_id ): void {
  * @return void
  */
 function topic_project_delete( int $p_project_id ): void {
-	foreach( array( '{dwg_topic}', '{topic_applicability}', '{topic_project}' ) as $t_table ) {
+	# Phase 2 records hang off expectations.
+	db_param_push();
+	$t_result = db_query( 'SELECT id FROM {topic_expectation} WHERE project_id=' . db_param(), array( $p_project_id ) );
+	while( $t_row = db_fetch_array( $t_result ) ) {
+		foreach( array( '{topic_evidence}', '{topic_assessment}', '{topic_expectation_revision}' ) as $t_table ) {
+			db_param_push();
+			db_query( 'DELETE FROM ' . $t_table . ' WHERE expectation_id=' . db_param(), array( (int)$t_row['id'] ) );
+		}
+	}
+	foreach( array( '{dwg_topic}', '{topic_applicability}', '{topic_expectation}', '{topic_milestone}', '{topic_profile}', '{topic_project}' ) as $t_table ) {
 		db_param_push();
 		db_query( 'DELETE FROM ' . $t_table . ' WHERE project_id=' . db_param(), array( $p_project_id ) );
 	}
@@ -1091,6 +1100,9 @@ function topic_dwg_update( int $p_tag_id, int $p_extent, string $p_locator ): bo
  */
 function topic_dwg_remove( int $p_tag_id ): void {
 	$t_tag = topic_dwg_get( $p_tag_id );
+	# Evidence needs the tag: drop the document's links to this Topic's expectations.
+	require_api( 'topic_expectation_api.php' );
+	topic_evidence_remove_for_dwg( (int)$t_tag['dwg_id'], (int)$t_tag['project_id'], (int)$t_tag['topic_id'] );
 	db_param_push();
 	db_query( 'DELETE FROM {dwg_topic} WHERE id=' . db_param(), array( $p_tag_id ) );
 	history_dwg_log_event_special( (int)$t_tag['dwg_id'], DWG_TOPIC_DETACHED,
@@ -1104,6 +1116,8 @@ function topic_dwg_remove( int $p_tag_id ): void {
  * @return void
  */
 function topic_dwg_delete_all( int $p_dwg_id ): void {
+	require_api( 'topic_expectation_api.php' );
+	topic_evidence_remove_for_dwg( $p_dwg_id, 0, 0 );
 	db_param_push();
 	db_query( 'DELETE FROM {dwg_topic} WHERE dwg_id=' . db_param(), array( $p_dwg_id ) );
 }
@@ -1132,7 +1146,10 @@ function topic_dwg_move( int $p_dwg_id, int $p_old_project_id, int $p_new_projec
 	db_param_push();
 	$t_result = db_query( 'SELECT dt.*, t.code FROM {dwg_topic} dt JOIN {topic} t ON t.id=dt.topic_id
 		WHERE dt.dwg_id=' . db_param() . ' AND dt.project_id=' . db_param(), array( $p_dwg_id, $p_old_project_id ) );
+	require_api( 'topic_expectation_api.php' );
 	while( $t_tag = db_fetch_array( $t_result ) ) {
+		# Expectations belong to the old project: the document leaves their evidence.
+		topic_evidence_remove_for_dwg( $p_dwg_id, $p_old_project_id, (int)$t_tag['topic_id'] );
 		$t_value = topic_dwg_history_value( $t_tag['code'], (int)$t_tag['extent'], $t_tag['locator'] );
 		if( $t_keep ) {
 			db_param_push();

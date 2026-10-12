@@ -553,6 +553,76 @@ the page hides them again but keeps every tag and decision. A project keeps
 its catalogue: changing to another catalogue is not possible once it has
 records.
 
+### Milestones, expectations and assessment
+
+Tags say which documents belong to a Topic. Expectations say what information
+the project actually needs, and assessments record whether the evidence
+provides it.
+
+- **Milestones.** Open **Milestones** from the Topics page. A project manager
+  can load the STD-ENG-004 list (Planning / ECP, SRR / PDR, CDR, TRR,
+  Release / Incorporation Approval, In-service review, Retirement / closure)
+  or define their own, and mark each one achieved. The **current**
+  milestone is the first not yet achieved. The Topics pages have a
+  milestone selector; states follow milestone order, not dates.
+- **Expectations.** On a Topic's page a project manager adds expectations:
+  what information is needed, its owner, the milestone it is due from, and
+  the maturity it needs (Draft, Under Review or Approved). A Topic can have
+  several, for example V&V planning, traceability, procedures and results
+  under Topic 30. Every change to an expectation makes a new revision.
+- **Evidence.** On an expectation's page, link the documents that provide
+  the information, with the relevant sections. Only documents of the project
+  tagged with the Topic can be evidence; removing the tag removes the link.
+- **Assessment.** An authorised assessor records **Adequate** or **Gap**,
+  with a rationale. The assessment records each evidence document's version
+  (its On Record commit, or its edition and revision without a primary
+  file).
+
+Each expectation then has a state at the selected milestone:
+
+| State | Meaning |
+|-------|---------|
+| Not due | Due from a later milestone |
+| Reassessment required | The evidence, its version or sections, or the expectation changed after the assessment; the reasons say what |
+| Missing | No evidence linked |
+| Gap | The assessment found the content insufficient |
+| Pending | Not assessed yet, or evidence below the required maturity, or inactive; the reasons say which |
+| Satisfied | Assessed adequate, and every evidence document has the required maturity |
+
+Document status gives maturity: Draft for rework (165) and the earlier
+statuses (pending to assigned), Under Review for review and independent
+review, Approved for accepted (180) and incorporated. Approved meets an
+Under Review or Draft requirement, and Under Review meets Draft. A staged
+draft of a document does not change its version; promoting it does.
+
+A Topic is **Satisfied** when every expectation due is satisfied,
+**Incomplete** otherwise, **Not due** when none is due yet, and **No
+expectations** when an applicable Topic has none. A child Topic never
+affects its parent.
+
+### Profile and documentation readiness
+
+The project's **profile** is its applicability decisions, expectations and
+milestones. A project manager authorises it in the **Topic profile**
+section of the Topics page, once every Topic is decided, every applicable
+Topic has an expectation, and every expectation has an owner. Each
+authorisation is a numbered revision; later changes show as **Changed since
+authorisation** until it is authorised again. Achieving a milestone,
+linking evidence and assessing are not profile changes.
+
+**Documentation readiness** for the selected milestone is:
+
+- **Ready**: the profile is authorised and unchanged, and every expectation
+  due is satisfied;
+- **Not ready**: some expectation due is not satisfied;
+- **No expectations due**;
+- **Profile unresolved**: not authorised, changed since, Topics undecided, or
+  no milestones.
+
+Readiness describes documentation only. It does not approve documents or
+authorise a review, gate or release. Print and CSV include the milestone,
+readiness, profile and expectations.
+
 ### Catalogues (administrators)
 
 **Manage → Topics** lists the catalogues. **Load STD-ENG-004 Rev A** creates
@@ -586,6 +656,9 @@ In `config/config_inc.php`:
 | `$g_topic_view_threshold` | Who sees Topics (default REPORTER) |
 | `$g_topic_inactive_status` | Statuses whose tags are shown but not counted (default archived) |
 | `$g_topic_catalogue_publish_status` | Source document statuses that allow publishing a catalogue (default accepted, incorporated) |
+| `$g_topic_maturity_map` | Maturity (Draft, Under Review, Approved) of each document status; unmapped statuses keep expectations Pending |
+| `$g_topic_assess_threshold` | Who may record assessments (default MANAGER) |
+| `$g_topic_assessor_licenses` | Licenses assessors must also hold, by Topic code (`'*'` for all), e.g. `array( '*' => 'Topic Assessor', '23' => 'Safety Assessor' )`; empty = threshold only. Unlike an access level, a license does not pass to administrators automatically |
 
 ### AI Assistant and meeting settings
 

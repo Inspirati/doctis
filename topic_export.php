@@ -13,19 +13,38 @@ require_api( 'lang_api.php' );
 require_api( 'project_api.php' );
 require_api( 'string_api.php' );
 require_api( 'topic_api.php' );
+require_api( 'topic_expectation_api.php' );
 require_api( 'user_api.php' );
 
 auth_ensure_user_authenticated();
 
 $f_project_id = gpc_get_int( 'project_id', helper_get_current_project() );
 $f_format = gpc_get_string( 'format', 'print' ) == 'csv' ? 'csv' : 'print';
+$f_milestone_id = gpc_get_int( 'milestone_id', 0 );
 
 project_ensure_exists( $f_project_id );
 if( !topic_can_view_project( $f_project_id ) ) {
 	access_denied();
 }
 
-$t_view = topic_project_view( $f_project_id );
+$t_view = topic_coverage_view( $f_project_id, $f_milestone_id );
+$t_expectation_rows = topic_export_expectation_rows( $t_view );
+$t_milestone_text = $t_view['milestones']
+	? ( $t_view['milestones'][$t_view['milestone_id']]['name'] ?? '' ) . ' — ' . lang_get( 'topic_readiness' ) . ': ' . topic_exp_state_label( $t_view['readiness'] )
+	: '';
+$t_profile = $t_view['profile'];
+$t_profile_text = $t_profile['current'] === null ? lang_get( 'topic_profile_not_authorised' )
+	: sprintf( lang_get( 'topic_profile_authorised' ), (int)$t_profile['current']['revision'],
+		topic_user_name( (int)$t_profile['current']['user_id'] ),
+		date( config_get( 'normal_date_format' ), (int)$t_profile['current']['date_authorised'] ) )
+		. ( $t_profile['changed'] ? ' ' . lang_get( 'topic_profile_changed' ) . '.' : '' );
+$t_expectation_headings = array(
+	'code' => lang_get( 'topic_code' ), 'ref' => '#', 'expectation' => lang_get( 'topic_expectation' ),
+	'owner' => lang_get( 'topic_owner' ), 'due' => lang_get( 'topic_due_from' ),
+	'maturity' => lang_get( 'topic_required_maturity' ), 'state' => lang_get( 'topic_state' ),
+	'reasons' => lang_get( 'topic_reasons' ), 'evidence' => lang_get( 'topic_evidence' ),
+	'assessment' => lang_get( 'topic_latest_assessment' ),
+);
 $t_rows = topic_export_rows( $t_view );
 $t_catalogue = $t_view['catalogue'];
 $t_project_name = project_get_name( $f_project_id );
@@ -49,6 +68,10 @@ if( $f_format == 'csv' ) {
 	$t_line( array( lang_get( 'topic_page_title' ), $t_project_name ) );
 	$t_line( array( lang_get( 'topic_catalogue' ), $t_catalogue_text ) );
 	$t_line( array( lang_get( 'topic_export_generated' ), $t_generated ) );
+	if( $t_milestone_text !== '' ) {
+		$t_line( array( lang_get( 'topic_milestone' ), $t_milestone_text ) );
+	}
+	$t_line( array( lang_get( 'topic_profile' ), $t_profile_text ) );
 	$t_line( array( lang_get( 'topic_export_view' ), lang_get( 'topic_export_live' )
 		. ( $t_view['restricted'] ? ' ' . lang_get( 'topic_export_limited' ) : '' ) ) );
 	$t_line( array( lang_get( 'topic_declared_notice' ) ) );
@@ -64,6 +87,13 @@ if( $f_format == 'csv' ) {
 		}
 		$t_line( $t_values );
 	}
+	if( $t_expectation_rows ) {
+		echo $t_nl;
+		$t_line( array_values( $t_expectation_headings ) );
+		foreach( $t_expectation_rows as $t_row ) {
+			$t_line( array_map( 'strval', array_values( array_intersect_key( array_merge( $t_expectation_headings, $t_row ), $t_expectation_headings ) ) ) );
+		}
+	}
 	exit;
 }
 
@@ -75,6 +105,10 @@ layout_page_header( lang_get( 'topic_page_title' ) . ' — ' . $t_project_name )
 	<table class="table table-bordered table-condensed" style="max-width:800px;">
 		<tr><th class="category"><?php echo lang_get( 'topic_catalogue' ) ?></th><td><?php echo string_display_line( $t_catalogue_text ) ?></td></tr>
 		<tr><th class="category"><?php echo lang_get( 'topic_export_generated' ) ?></th><td><?php echo string_display_line( $t_generated ) ?></td></tr>
+		<?php if( $t_milestone_text !== '' ) { ?>
+		<tr><th class="category"><?php echo lang_get( 'topic_milestone' ) ?></th><td><?php echo string_display_line( $t_milestone_text ) ?></td></tr>
+		<?php } ?>
+		<tr><th class="category"><?php echo lang_get( 'topic_profile' ) ?></th><td><?php echo string_display_line( $t_profile_text ) ?></td></tr>
 		<tr><th class="category"><?php echo lang_get( 'topic_export_view' ) ?></th><td><?php
 			echo lang_get( 'topic_export_live' ) . ( $t_view['restricted'] ? ' ' . lang_get( 'topic_export_limited' ) : '' ) ?></td></tr>
 	</table>
@@ -97,6 +131,23 @@ layout_page_header( lang_get( 'topic_page_title' ) . ' — ' . $t_project_name )
 		<?php } ?>
 		</tbody>
 	</table>
+	<?php if( $t_expectation_rows ) { ?>
+	<h4><?php echo lang_get( 'topic_expectations' ) ?></h4>
+	<table class="table table-bordered table-condensed">
+		<thead><tr>
+		<?php foreach( $t_expectation_headings as $t_heading ) { echo '<th>' . $t_heading . '</th>'; } ?>
+		</tr></thead>
+		<tbody>
+		<?php foreach( $t_expectation_rows as $t_row ) {
+			echo '<tr>';
+			foreach( array_keys( $t_expectation_headings ) as $t_key ) {
+				echo '<td>' . string_display_line( (string)$t_row[$t_key] ) . '</td>';
+			}
+			echo '</tr>';
+		} ?>
+		</tbody>
+	</table>
+	<?php } ?>
 	<p class="noprint"><a href="topic_page.php?project_id=<?php echo (int)$f_project_id ?>"><?php echo lang_get( 'topic_back_to_topics' ) ?></a></p>
 </div>
 <?php

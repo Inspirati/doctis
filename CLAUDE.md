@@ -119,7 +119,12 @@ and `topic_export.php` (project view, CSV/print), `dwg_view_topics_inc.php`,
 `dwg_actiongroup_add_topic_inc.php` (bulk tagging), the document list's
 `topics` column and `core/classes/TopicFilter.class.php` (list filter;
 registered in `filter_dwg_get_plugin_filters()`). SOAP/REST `DwgData` has
-`topics`. Plan, phases and as-built notes:
+`topics`. Phase 2 (milestones, expectations, evidence, adequacy assessments,
+coverage states, profile authorisation):
+[core/topic_expectation_api.php](core/topic_expectation_api.php),
+`topic_milestone_*.php`, `topic_expectation_*.php`, `topic_evidence_action.php`,
+`topic_assessment_add.php`, `topic_profile_authorise.php`. Plan, phases and
+as-built notes:
 [doc/topics/TOPICS_PLAN.md](doc/topics/TOPICS_PLAN.md).
 
 ## Development Environment

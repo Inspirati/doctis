@@ -1,8 +1,8 @@
 # Document Topics — Implementation Plan
 
-Status: Phases 1 and 1b implemented on branch `topics` (2026-10-13); see
-[Phase 1 as built](#phase-1-as-built) and
-[Phase 1b as built](#phase-1b-as-built). Phases 2 and 3 are not started.
+Status: Phases 1, 1b and 2 implemented on branch `topics` (2026-10-13); see
+[Phase 1 as built](#phase-1-as-built), [Phase 1b as built](#phase-1b-as-built)
+and [Phase 2 as built](#phase-2-as-built). Phase 3 is not started.
 
 This plan describes how Doctis can support the Engineering Project Document
 Topic System. The QMS sources are in the HCRQMS repository:
@@ -426,9 +426,9 @@ repositories. They are never sub-projects of HCRQMS.
     promoting it does (TOP-FR-019).
 - **Maturity mapping** in configuration: an array mapping each document status
   to Draft, Under Review, Approved or Inactive. Owner decision (2026-10-13):
-  165 → Draft, 160 → Under Review, 180 → Approved. Proposed defaults for the
-  statuses the reduced production set will drop: 110–150 (pending to
-  assigned) → Draft, 170 (independent review) → Under Review, 190
+  165 → Draft, 160 → Under Review, 180 → Approved. Defaults (agreed
+  2026-10-13) for the statuses the reduced production set will drop: 110–150
+  (pending to assigned) → Draft, 170 (independent review) → Under Review, 190
   (incorporated) → Approved, 195 (archived) → Inactive. Approved satisfies an
   Under Review or Draft requirement, and Under Review satisfies Draft.
   Unmapped statuses fail closed as Pending, with the reason shown.
@@ -439,6 +439,29 @@ repositories. They are never sub-projects of HCRQMS.
   It then records who authorised it and when, and increments the profile
   revision. Later edits show as changes awaiting authorisation (TOP-FR-007).
   There is no parent/child consistency rule (section 1).
+
+### Phase 2 as built
+
+Implemented on branch `topics`, 2026-10-13, in `core/topic_expectation_api.php`
+(schema steps 70–75, `database_version` 75).
+
+| Item | Implementation |
+|------|----------------|
+| Milestones | `{topic_milestone}`: ordered, editable, `date_achieved`; the current milestone is the first not achieved. `topic_milestone_page.php`, `topic_milestone_action.php`; "Load the STD-ENG-004 milestones" |
+| Expectations | `{topic_expectation}` with `revision`, plus the append-only `{topic_expectation_revision}`. They are added on the Topic page and shown and edited on `topic_expectation_page.php` (`topic_expectation_action.php`). Referenced as `E<id>` |
+| Evidence | `{topic_evidence}`: documents of the project tagged with the Topic, with sections (`topic_evidence_action.php`). Removing the tag, moving or deleting the document removes the link. Changes appear in the document history (types 83/84) |
+| Assessments | Append-only `{topic_assessment}`: Adequate/Gap, rationale, milestone, expectation revision, and a JSON evidence set with each document's version (`sha:<On Record commit>`, or `rev:<edition>/<revision>` without a primary file) and sections (`topic_assessment_add.php`) |
+| Assessor | `$g_topic_assess_threshold` (MANAGER) plus, when configured, a granted license from `$g_topic_assessor_licenses` (by code, `'*'` default). Administrators get no automatic right when a license is configured |
+| States | `topic_expectation_state()`: Not due, Reassessment required (expectation revision, or the evidence set, version or sections changed), Missing, Gap, Pending (not assessed, inactive, unmapped status, or below maturity), Satisfied. Document status is a maturity condition, not an assessment dependency, so approving the assessed version completes it |
+| Maturity | `$g_topic_maturity_map` (owner decision: 165 Draft, 160 Under Review, 180 Approved; agreed defaults for the rest) |
+| Topic and project | Topic: Satisfied, Incomplete, Not due, No expectations or Not applicable, never from parent/child. Project readiness at the milestone: Ready, Not ready, No expectations due, Profile unresolved |
+| Profile | `{topic_profile}`: numbered authorisations with note and a content fingerprint (decisions, expectation revisions, milestone names/order). "Changed since authorisation" compares fingerprints, so it is exact rather than time-based; achieving milestones, evidence and assessments are not profile changes. Blockers: no milestones, Undecided Topics, applicable Topics without expectations, expectations without owners (TOP-FR-006 without the parent/child rule) |
+| Pages | The Topics page has the milestone selector, readiness, expectation counts, an Expectations column and the profile section. The Topic page has its expectations; the expectation page has its state and reasons, evidence, assessment form and history, and revisions |
+| Export | CSV/print add the milestone, readiness, profile and an expectations table |
+
+Configuration context (TOP-FR-020) is not modelled: an assessment applies to
+the evidence versions it records, whatever the configuration. Concurrent
+edits are not detected (Phase 3, TOP-FR-028).
 
 ## 8. Phase 3 — Evidence records
 
@@ -464,7 +487,7 @@ assessment, percentage scores, notifications, and roll-up across projects.
 |-------|----------------|
 | 1 | All of 001, 002, 004, 008, 012, 021, 025, 026, 027, 029. Part of: 003 (frozen Published catalogue), 005 (applicability and rationale), 009 (table ready, same-project only), 010 (locator), 011 (any registered document type can be tagged), 013 (untagged list), 016 (declared view), 024 (tag and applicability history) |
 | 1b (done) | The rest of 013 (filter); 023 (live export) |
-| 2 | The rest of 005, 010 and 016; 006 (without the parent/child rule), 007, 014, 015, 017, 018, 019, 020 |
+| 2 (done) | The rest of 005, 010 and 016; 006 (without the parent/child rule), 007, 014, 015, 017, 018, 019; 020 only as evidence versions (no configuration context) |
 | 3 | The rest of 003, 009, 011, 023 and 024; 022, 028 |
 
 ## 10. Changes proposed to the QMS documents
@@ -490,7 +513,9 @@ STD-IT-001:
 ## Status label rename
 
 Owner decision, 2026-10-13: rename `rework` (165) to `draft` and `accepted`
-(180) to `approved`, when convenient. The values stay the same. The labels are
+(180) to `approved`. **Scheduled as a precursor task to the next database
+rebuild**: do the rename before that rebuild, so the rebuilt database and its
+reloaded data use the new labels. The values stay the same. The labels are
 used as keys in several places, so a rename touches:
 
 | Where | What |

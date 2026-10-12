@@ -3903,6 +3903,50 @@ $g_topic_inactive_status = array( ARCHIVED );
 $g_topic_catalogue_publish_status = array( ACCEPTED, INCORPORATED );
 
 /**
+ * Lifecycle maturity of each document status, for expectations that require
+ * Draft, Under Review or Approved evidence. Approved satisfies an Under
+ * Review or Draft requirement, and Under Review satisfies Draft. A status
+ * missing here fails closed (the expectation stays Pending, with the reason).
+ * Owner decision 2026-10-13: Draft = 165 (to be renamed "draft"), Under
+ * Review = 160, Approved = 180 (to be renamed "approved"); the other statuses
+ * are placed until the status set is reduced. Statuses in
+ * $g_topic_inactive_status never count.
+ *
+ * @global array $g_topic_maturity_map
+ */
+$g_topic_maturity_map = array(
+	PENDING => TOPIC_MATURITY_DRAFT,
+	RECEIVED => TOPIC_MATURITY_DRAFT,
+	TRIAGE => TOPIC_MATURITY_DRAFT,
+	JOS => TOPIC_MATURITY_DRAFT,
+	150 => TOPIC_MATURITY_DRAFT,        # assigned to
+	REWORK => TOPIC_MATURITY_DRAFT,     # 165, to be renamed "draft"
+	REVIEW => TOPIC_MATURITY_UNDER_REVIEW,
+	INDEPENDENT_REVIEW => TOPIC_MATURITY_UNDER_REVIEW,
+	ACCEPTED => TOPIC_MATURITY_APPROVED, # 180, to be renamed "approved"
+	INCORPORATED => TOPIC_MATURITY_APPROVED,
+);
+
+/**
+ * Threshold (project) to record adequacy assessments of expectations.
+ *
+ * @global int $g_topic_assess_threshold
+ */
+$g_topic_assess_threshold = MANAGER;
+
+/**
+ * Licenses an assessor must also hold (status granted), by Topic code; '*'
+ * applies to every Topic without its own entry. Example:
+ * array( '*' => 'Topic Assessor', '23' => 'Safety Assessor' ). Empty: the
+ * threshold alone decides. A license is held by named people, so unlike
+ * an access level it does not pass automatically to administrators.
+ * Licenses are granted on Manage > Licenses ($g_licenses_enabled = ON).
+ *
+ * @global array $g_topic_assessor_licenses
+ */
+$g_topic_assessor_licenses = array();
+
+/**
  * Threshold needed to add/delete/modify news.
  *
  * @global int $g_manage_news_threshold

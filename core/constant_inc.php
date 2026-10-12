@@ -273,6 +273,8 @@ define( 'DWGNOTE_REVISION_DROPPED', 79 );
 define( 'DWG_TOPIC_ATTACHED', 80 );
 define( 'DWG_TOPIC_UPDATED', 81 );
 define( 'DWG_TOPIC_DETACHED', 82 );
+define( 'DWG_TOPIC_EVIDENCE_ADDED', 83 );
+define( 'DWG_TOPIC_EVIDENCE_REMOVED', 84 );
 
 
 # bug revisions
@@ -291,6 +293,11 @@ define( 'TOPIC_APPLICABLE', 10 );
 define( 'TOPIC_NOT_APPLICABLE', 20 );
 define( 'TOPIC_EXTENT_PART', 10 );
 define( 'TOPIC_EXTENT_WHOLE', 20 );
+define( 'TOPIC_MATURITY_DRAFT', 10 );
+define( 'TOPIC_MATURITY_UNDER_REVIEW', 20 );
+define( 'TOPIC_MATURITY_APPROVED', 30 );
+define( 'TOPIC_FINDING_ADEQUATE', 10 );
+define( 'TOPIC_FINDING_GAP', 20 );
 
 # dwg revisions
 // define( 'REV_ANY', 0 );

@@ -413,8 +413,12 @@ rows and catalogues, removed afterwards; no git, no email):
 
 ```bash
 cd /var/www/html/doctis
-vendor/bin/phpunit --testsuite mantis --filter TopicApiTest --testdox
+vendor/bin/phpunit --testsuite mantis --filter Topic --testdox
 ```
+
+`TopicApiTest` (phases 1 and 1b) and `TopicExpectationApiTest` (phase 2)
+share `TopicTestCase` (throwaway records; project deletion removes every
+Topic record of the project).
 
 Covers: the bundled STD-ENG-004 Rev A catalogue (codes as strings, 21–23
 under 20); code, title and one-level parent validation; publish needs an
@@ -447,10 +451,24 @@ refused; the feature switch; moves, document deletion and project deletion.
   document; an unknown Topic id is refused before anything is created.
   `topic_export.php?format=csv|print&project_id=<P>` (viewer refused).
   SOAP `mc_dwg_get` and REST `/api/rest/documents/<id>` return `topics`.
+- Phase 2, in a throwaway project (not a pilot: expectations and assessments
+  are engineering decisions): load the default milestones; add an
+  expectation (due SRR/PDR, Approved); its page shows Not due at Planning
+  and Missing at SRR/PDR; link a tagged document (Pending: assessment
+  required, Draft but Approved required); assess Adequate (Pending: maturity);
+  set the document to accepted (Satisfied); change its revision
+  (Reassessment required, "has a new version"); reassess (Satisfied).
+  Decide every Topic and authorise the profile; the Topics page shows
+  readiness No expectations due at Planning and Ready at SRR/PDR. Roles:
+  viewer refused; reporter reads; developer links and removes evidence;
+  manager edits, assesses and manages milestones. Delete the project via
+  Manage → Projects: every Topic record of it goes.
 
 Run 2026-10-13 on the native VM (HCR571 pilot, project 29): 256 `mantis` tests
 passed, including 12 `TopicApiTest`; all page and role checks passed. Phase 1b,
-same day: 260 tests (16 `TopicApiTest`) and the checks above passed.
+same day: 260 tests (16 `TopicApiTest`) and the checks above passed. Phase 2,
+same day: 268 tests (16 + 8 `TopicExpectationApiTest`) and the phase 2 walk
+through above passed.
 
 ---
 

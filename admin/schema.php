@@ -1189,8 +1189,129 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
+# ── Step 70: topic_milestone ────────────────────────────────────────────────
+# Documentation Topics phase 2: a project's ordered lifecycle milestones
+# (default list from STD-ENG-004 §6). Expectations fall due from a milestone;
+# states follow milestone order, not dates. date_achieved 0 = not achieved.
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'topic_milestone' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `project_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `name` varchar(64) NOT NULL DEFAULT '',
+	  `description` varchar(255) NOT NULL DEFAULT '',
+	  `sort_order` int(11) NOT NULL DEFAULT 0,
+	  `date_achieved` int(10) unsigned NOT NULL DEFAULT 0,
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `date_updated` int(10) unsigned NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`id`),
+	  KEY `idx_topic_milestone_project` (`project_id`, `sort_order`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 71: topic_expectation ──────────────────────────────────────────────
+# Information a project requires for a Topic: due from milestone_id, at the
+# required maturity (10 Draft, 20 Under Review, 30 Approved). revision is
+# incremented by every change; assessments record the revision they judged.
+# enabled 0 = retired.
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'topic_expectation' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `project_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `topic_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `statement` varchar(1024) NOT NULL DEFAULT '',
+	  `owner_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `milestone_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `maturity` smallint(6) NOT NULL DEFAULT 10,
+	  `revision` int(10) unsigned NOT NULL DEFAULT 1,
+	  `enabled` tinyint(4) NOT NULL DEFAULT 1,
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `date_created` int(10) unsigned NOT NULL DEFAULT 1,
+	  `date_updated` int(10) unsigned NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`id`),
+	  KEY `idx_topic_expectation_project_topic` (`project_id`, `topic_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 72: topic_expectation_revision ─────────────────────────────────────
+# Append-only copy of every expectation revision (audit trail).
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'topic_expectation_revision' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `expectation_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `revision` int(10) unsigned NOT NULL DEFAULT 1,
+	  `statement` varchar(1024) NOT NULL DEFAULT '',
+	  `owner_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `milestone_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `maturity` smallint(6) NOT NULL DEFAULT 10,
+	  `enabled` tinyint(4) NOT NULL DEFAULT 1,
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `date_changed` int(10) unsigned NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`id`),
+	  KEY `idx_topic_expectation_revision_expectation` (`expectation_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 73: topic_evidence ─────────────────────────────────────────────────
+# A document (tagged with the expectation's Topic) offered as evidence for an
+# expectation, with the relevant sections. Changes are logged in
+# {dwg_history}.
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'topic_evidence' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `expectation_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `dwg_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `locator` varchar(255) NOT NULL DEFAULT '',
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `date_added` int(10) unsigned NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`id`),
+	  UNIQUE KEY `idx_topic_evidence_expectation_dwg` (`expectation_id`, `dwg_id`),
+	  KEY `idx_topic_evidence_dwg` (`dwg_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 74: topic_assessment ───────────────────────────────────────────────
+# Append-only adequacy assessments. finding: 10 Adequate, 20 Gap. evidence is
+# JSON: the evidence set judged, each item {dwg_id, version, status, locator}
+# where version is the On Record commit ("sha:…") or, without a primary
+# file, the document's edition/revision ("rev:…"). A later change to any of
+# these, or to the expectation revision, makes the assessment stale.
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'topic_assessment' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `expectation_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `expectation_revision` int(10) unsigned NOT NULL DEFAULT 1,
+	  `milestone_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `finding` smallint(6) NOT NULL DEFAULT 10,
+	  `rationale` text NOT NULL,
+	  `evidence` text NOT NULL,
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `date_assessed` int(10) unsigned NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`id`),
+	  KEY `idx_topic_assessment_expectation` (`expectation_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 75: topic_profile ──────────────────────────────────────────────────
+# Authorisations of a project's Topic profile (applicability, expectations,
+# milestones). Each authorisation is a new revision; the newest row is
+# current. fingerprint: hash of the profile content authorised, so a later
+# change is detected by content rather than by time.
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'topic_profile' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `project_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `revision` int(10) unsigned NOT NULL DEFAULT 1,
+	  `note` varchar(255) NOT NULL DEFAULT '',
+	  `fingerprint` varchar(64) NOT NULL DEFAULT '',
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `date_authorised` int(10) unsigned NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`id`),
+	  KEY `idx_topic_profile_project` (`project_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
 # ── End of schema definition ─────────────────────────────────────────────────
-# $t_idx = 70 → database_version = 69 on a fresh install.
+# $t_idx = 76 → database_version = 75 on a fresh install.
 #
 # To add a new table: append a new step here and run the schema upgrade.
 # Label it "Step N" with its real index, which is the database_version the

@@ -14,18 +14,22 @@ require_api( 'project_api.php' );
 require_api( 'string_api.php' );
 require_api( 'topic_api.php' );
 require_api( 'user_api.php' );
+require_api( 'topic_expectation_api.php' );
 
 auth_ensure_user_authenticated();
 
 $f_project_id = gpc_get_int( 'project_id' );
 $f_topic_id = gpc_get_int( 'topic_id' );
+$f_milestone_id = gpc_get_int( 'milestone_id', 0 );
 
 project_ensure_exists( $f_project_id );
 if( !topic_can_view_project( $f_project_id ) ) {
 	access_denied();
 }
 $t_catalogue = topic_project_catalogue( $f_project_id, $f_topic_id );
-$t_view = topic_project_view( $f_project_id );
+$t_view = topic_coverage_view( $f_project_id, $f_milestone_id );
+$t_milestone_id = $t_view['milestone_id'];
+$t_milestones = $t_view['milestones'];
 if( !isset( $t_view['topics'][$f_topic_id] ) ) {
 	topic_error( 'that Topic is retired and has no records in this project.' );
 }
@@ -138,6 +142,89 @@ layout_page_begin( 'topic_page.php' );
 	</div>
 </div>
 
+<div class="col-md-12 col-xs-12" id="expectations">
+	<div class="space-10"></div>
+	<div class="widget-box widget-color-blue2">
+	<div class="widget-header widget-header-small">
+		<h4 class="widget-title lighter">
+			<?php print_icon( 'fa-list-ol', 'ace-icon' ); ?>
+			<?php echo lang_get( 'topic_expectations' ) ?>
+		</h4>
+		<div class="widget-toolbar"><?php echo topic_exp_state_html( $t_topic['expectation_state'] ) ?></div>
+	</div>
+	<div class="widget-body">
+	<div class="widget-main">
+		<?php print_topic_milestone_selector( 'topic_detail_page.php',
+			array( 'project_id' => $f_project_id, 'topic_id' => $f_topic_id ), $t_milestones, $t_milestone_id ); ?>
+		<p class="small grey"><?php echo lang_get( 'topic_expectations_intro' ) ?></p>
+	</div>
+	<div class="widget-main no-padding">
+	<div class="table-responsive">
+	<table class="table table-bordered table-condensed table-striped">
+		<thead><tr>
+			<th><?php echo lang_get( 'topic_expectation' ) ?></th>
+			<th><?php echo lang_get( 'topic_owner' ) ?></th>
+			<th><?php echo lang_get( 'topic_due_from' ) ?></th>
+			<th><?php echo lang_get( 'topic_required_maturity' ) ?></th>
+			<th><?php echo lang_get( 'topic_evidence' ) ?></th>
+			<th><?php echo lang_get( 'topic_state' ) ?></th>
+		</tr></thead>
+		<tbody>
+		<?php if( !$t_topic['expectations'] ) { ?>
+			<tr><td colspan="6"><?php echo lang_get( 'topic_no_expectations' ) ?></td></tr>
+		<?php }
+		foreach( $t_topic['expectations'] as $t_expectation_id => $t_expectation ) {
+			$t_link = 'topic_expectation_page.php?id=' . (int)$t_expectation_id . '&milestone_id=' . (int)$t_milestone_id; ?>
+			<tr>
+				<td><a href="<?php echo string_attribute( $t_link ) ?>"><?php echo string_display_line( topic_expectation_ref( $t_expectation ) ) ?></a>
+					<?php echo string_display_line( $t_expectation['statement'] ) ?></td>
+				<td><?php echo string_display_line( topic_user_name( (int)$t_expectation['owner_id'] ) ) ?></td>
+				<td><?php echo string_display_line( $t_milestones[(int)$t_expectation['milestone_id']]['name'] ?? '' ) ?></td>
+				<td><?php echo topic_maturity_label( (int)$t_expectation['maturity'] ) ?></td>
+				<td class="center"><?php echo count( $t_expectation['evidence_visible'] ) ?></td>
+				<td><?php echo topic_exp_state_with_reasons_html( $t_expectation['state'], $t_expectation['reasons'] ) ?></td>
+			</tr>
+		<?php } ?>
+		</tbody>
+	</table>
+	</div>
+	</div>
+	<?php if( $t_can_manage && $t_milestones && (int)$t_topic['enabled'] == 1 ) { ?>
+	<div class="widget-main">
+		<form method="post" action="topic_expectation_action.php">
+			<?php echo form_security_field( 'topic_expectation_action' ) ?>
+			<input type="hidden" name="action" value="create" />
+			<input type="hidden" name="project_id" value="<?php echo (int)$f_project_id ?>" />
+			<input type="hidden" name="topic_id" value="<?php echo (int)$f_topic_id ?>" />
+			<input type="hidden" name="milestone_view" value="<?php echo (int)$t_milestone_id ?>" />
+			<div class="form-group">
+				<label for="expectation-statement"><?php echo lang_get( 'topic_add_expectation' ) ?></label>
+				<textarea id="expectation-statement" name="statement" class="form-control" rows="2" maxlength="1024" required
+					placeholder="<?php echo lang_get( 'topic_expectation_placeholder' ) ?>"></textarea>
+			</div>
+			<div class="form-inline">
+				<label for="expectation-owner"><?php echo lang_get( 'topic_owner' ) ?></label>
+				<select id="expectation-owner" name="owner_id" class="input-sm">
+					<option value="0">&mdash;</option>
+					<?php print_user_option_list( 0, $f_project_id, REPORTER ); ?>
+				</select>
+				<label for="expectation-milestone"><?php echo lang_get( 'topic_due_from' ) ?></label>
+				<select id="expectation-milestone" name="milestone_id" class="input-sm">
+					<?php print_topic_milestone_option_list( $t_milestones, $t_milestone_id ); ?>
+				</select>
+				<label for="expectation-maturity"><?php echo lang_get( 'topic_required_maturity' ) ?></label>
+				<?php print_topic_maturity_select( 'maturity', TOPIC_MATURITY_DRAFT, 'expectation-maturity' ); ?>
+				<button type="submit" class="btn btn-primary btn-sm btn-white btn-round"><?php echo lang_get( 'topic_add_expectation' ) ?></button>
+			</div>
+		</form>
+	</div>
+	<?php } else if( $t_can_manage && !$t_milestones ) { ?>
+	<div class="widget-main"><a href="topic_milestone_page.php?project_id=<?php echo (int)$f_project_id ?>"><?php echo lang_get( 'topic_no_milestones' ) ?></a></div>
+	<?php } ?>
+	</div>
+	</div>
+</div>
+
 <div class="col-md-12 col-xs-12">
 	<div class="space-10"></div>
 	<div class="widget-box widget-color-blue2">
@@ -209,7 +296,7 @@ layout_page_begin( 'topic_page.php' );
 
 <div class="col-md-12 col-xs-12">
 	<div class="space-10"></div>
-	<?php print_link_button( 'topic_page.php?project_id=' . (int)$f_project_id, lang_get( 'topic_back_to_topics' ) ); ?>
+	<?php print_link_button( 'topic_page.php?project_id=' . (int)$f_project_id . '&milestone_id=' . (int)$t_milestone_id, lang_get( 'topic_back_to_topics' ) ); ?>
 </div>
 
 <?php

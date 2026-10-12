@@ -3,8 +3,10 @@
 # (doc/topics/TOPICS_PLAN.md §4.3).
 #
 # Lists every Topic of the project's catalogue with its applicability, the
-# documents tagged with it and its declared coverage, and the project's
-# untagged documents. Project managers enable Topics here.
+# documents tagged with it, its declared coverage and (phase 2) the state of
+# its expectations at the selected milestone; the project's documentation
+# readiness and profile authorisation; and the untagged documents. Project
+# managers enable Topics and authorise the profile here.
 
 require_once( 'core.php' );
 require_api( 'access_api.php' );
@@ -18,6 +20,7 @@ require_api( 'print_api.php' );
 require_api( 'project_api.php' );
 require_api( 'string_api.php' );
 require_api( 'topic_api.php' );
+require_api( 'topic_expectation_api.php' );
 
 auth_ensure_user_authenticated();
 if( !topic_feature_enabled() ) {
@@ -25,6 +28,7 @@ if( !topic_feature_enabled() ) {
 }
 
 $f_project_id = gpc_get_int( 'project_id', helper_get_current_project() );
+$f_milestone_id = gpc_get_int( 'milestone_id', 0 );
 if( $f_project_id != ALL_PROJECTS ) {
 	project_ensure_exists( $f_project_id );
 }
@@ -51,8 +55,10 @@ $t_title = lang_get( 'topic_page_title' )
 			<?php echo string_display_line( $t_title ) ?>
 		</h4>
 		<?php if( $t_enabled ) {
-			$t_view = topic_project_view( $f_project_id );
-			$t_catalogue = $t_view['catalogue']; ?>
+			$t_view = topic_coverage_view( $f_project_id, $f_milestone_id );
+			$t_catalogue = $t_view['catalogue'];
+			$t_milestone_id = $t_view['milestone_id'];
+			$t_milestone_param = $t_milestone_id > 0 ? '&milestone_id=' . $t_milestone_id : ''; ?>
 		<div class="widget-toolbar">
 			<span class="white"><?php echo lang_get( 'topic_catalogue' ) ?>:
 				<?php echo string_display_line( topic_catalogue_label( $t_catalogue ) ) ?>
@@ -127,10 +133,45 @@ if( $f_project_id == ALL_PROJECTS ) {
 	if( $t_view['restricted'] ) {
 		echo '<div class="alert alert-info">' . lang_get( 'topic_limited_view' ) . '</div>';
 	}
+
+	# Phase 2: milestone, readiness and expectation counts.
+	$t_profile = $t_view['profile'];
+	echo '<div class="well well-sm">';
+	if( $t_view['milestones'] ) {
+		print_topic_milestone_selector( 'topic_page.php', array( 'project_id' => $f_project_id ), $t_view['milestones'], $t_milestone_id );
+		echo ' &nbsp; <strong>' . lang_get( 'topic_readiness' ) . ':</strong> ' . topic_exp_state_html( $t_view['readiness'] );
+		$t_ec = $t_view['expectation_counts'];
+		echo '<br /><strong>' . lang_get( 'topic_expectations' ) . ':</strong> ';
+		$t_parts = array();
+		foreach( $t_ec as $t_state => $t_count ) {
+			$t_parts[] = topic_exp_state_label( $t_state ) . ' ' . $t_count;
+		}
+		echo implode( ' &middot; ', $t_parts );
+	} else {
+		echo lang_get( 'topic_no_milestones' );
+	}
+	echo '<br /><strong>' . lang_get( 'topic_profile' ) . ':</strong> ';
+	if( $t_profile['current'] === null ) {
+		echo lang_get( 'topic_profile_not_authorised' );
+	} else {
+		echo string_display_line( sprintf( lang_get( 'topic_profile_authorised' ), (int)$t_profile['current']['revision'],
+			topic_user_name( (int)$t_profile['current']['user_id'] ),
+			date( config_get( 'normal_date_format' ), (int)$t_profile['current']['date_authorised'] ) ) );
+		if( $t_profile['changed'] ) {
+			echo ' <span class="label label-warning">' . lang_get( 'topic_profile_changed' ) . '</span>';
+		}
+	}
+	echo ' <a class="small" href="#profile">' . lang_get( 'topic_profile_details' ) . '</a>';
+	if( $t_can_manage || $t_view['milestones'] ) {
+		echo ' &middot; <a class="small" href="topic_milestone_page.php?project_id=' . (int)$f_project_id . '">' . lang_get( 'topic_milestones' ) . '</a>';
+	}
+	echo '<br /><span class="small grey">' . lang_get( 'topic_readiness_notice' ) . '</span>';
+	echo '</div>';
+
 	echo '<div class="noprint">';
-	print_link_button( 'topic_export.php?format=print&project_id=' . (int)$f_project_id, lang_get( 'topic_export_print' ), 'btn-xs', true );
+	print_link_button( 'topic_export.php?format=print&project_id=' . (int)$f_project_id . $t_milestone_param, lang_get( 'topic_export_print' ), 'btn-xs', true );
 	echo ' ';
-	print_link_button( 'topic_export.php?format=csv&project_id=' . (int)$f_project_id, lang_get( 'topic_export_csv' ), 'btn-xs' );
+	print_link_button( 'topic_export.php?format=csv&project_id=' . (int)$f_project_id . $t_milestone_param, lang_get( 'topic_export_csv' ), 'btn-xs' );
 	echo '</div>';
 ?>
 	</div>
@@ -144,11 +185,12 @@ if( $f_project_id == ALL_PROJECTS ) {
 				<th><?php echo lang_get( 'topic_required' ) ?></th>
 				<th><?php echo lang_get( 'topic_documents' ) ?></th>
 				<th><?php echo lang_get( 'topic_coverage' ) ?></th>
+				<th><?php echo lang_get( 'topic_expectations' ) ?></th>
 			</tr>
 		</thead>
 		<tbody>
 		<?php foreach( $t_view['topics'] as $t_topic_id => $t_topic ) {
-			$t_detail = 'topic_detail_page.php?project_id=' . (int)$f_project_id . '&topic_id=' . (int)$t_topic_id;
+			$t_detail = 'topic_detail_page.php?project_id=' . (int)$f_project_id . '&topic_id=' . (int)$t_topic_id . $t_milestone_param;
 			$t_decision = $t_topic['decision']; ?>
 			<tr>
 				<td class="nowrap"><?php echo ( $t_topic['level'] ? '&nbsp;&nbsp;&raquo; ' : '' ) . string_display_line( $t_topic['code'] ) ?></td>
@@ -179,6 +221,23 @@ if( $f_project_id == ALL_PROJECTS ) {
 					?>
 				</td>
 				<td class="nowrap"><?php echo topic_state_html( $t_topic['state'] ) ?></td>
+				<td class="nowrap">
+					<?php
+					echo topic_exp_state_html( $t_topic['expectation_state'] );
+					if( $t_topic['expectations'] ) {
+						$t_satisfied = 0;
+						$t_due = 0;
+						foreach( $t_topic['expectations'] as $t_expectation ) {
+							if( $t_expectation['state'] != TOPIC_EXP_NOT_DUE ) {
+								$t_due++;
+								$t_satisfied += $t_expectation['state'] == TOPIC_EXP_SATISFIED ? 1 : 0;
+							}
+						}
+						echo '<br /><span class="small grey">' . string_display_line( sprintf( lang_get( 'topic_expectations_due_count' ),
+							$t_satisfied, $t_due, count( $t_topic['expectations'] ) ) ) . '</span>';
+					}
+					?>
+				</td>
 			</tr>
 		<?php } ?>
 		</tbody>
@@ -239,6 +298,65 @@ if( $t_enabled ) {
 		<?php } ?>
 	</table>
 	</div>
+	</div>
+	</div>
+	</div>
+</div>
+
+<div class="col-md-12 col-xs-12" id="profile">
+	<div class="space-10"></div>
+	<div class="widget-box widget-color-blue2">
+	<div class="widget-header widget-header-small">
+		<h4 class="widget-title lighter">
+			<?php print_icon( 'fa-check-circle', 'ace-icon' ); ?>
+			<?php echo lang_get( 'topic_profile' ) ?>
+		</h4>
+	</div>
+	<div class="widget-body">
+	<div class="widget-main">
+		<p><?php echo lang_get( 'topic_profile_intro' ) ?></p>
+		<?php
+		$t_profiles = topic_profile_history( $f_project_id );
+		if( $t_profiles ) { ?>
+		<table class="table table-bordered table-condensed table-striped" style="max-width:900px;">
+			<thead><tr>
+				<th><?php echo lang_get( 'topic_revision' ) ?></th>
+				<th><?php echo lang_get( 'date_modified' ) ?></th>
+				<th><?php echo lang_get( 'username' ) ?></th>
+				<th><?php echo lang_get( 'topic_note' ) ?></th>
+			</tr></thead>
+			<tbody>
+			<?php foreach( $t_profiles as $t_row ) { ?>
+				<tr>
+					<td><?php echo (int)$t_row['revision'] ?></td>
+					<td class="nowrap"><?php echo date( config_get( 'normal_date_format' ), (int)$t_row['date_authorised'] ) ?></td>
+					<td><?php echo string_display_line( topic_user_name( (int)$t_row['user_id'] ) ) ?></td>
+					<td><?php echo string_display_line( $t_row['note'] ) ?></td>
+				</tr>
+			<?php } ?>
+			</tbody>
+		</table>
+		<?php }
+		if( $t_can_manage ) {
+			$t_blockers = topic_profile_blockers( $f_project_id );
+			if( $t_blockers ) {
+				echo '<p><strong>' . lang_get( 'topic_profile_blocked' ) . '</strong></p><ul>';
+				foreach( $t_blockers as $t_blocker ) {
+					echo '<li>' . string_display_line( $t_blocker ) . '</li>';
+				}
+				echo '</ul>';
+			} else if( $t_profile['changed'] ) { ?>
+		<form method="post" action="topic_profile_authorise.php" class="form-inline">
+			<?php echo form_security_field( 'topic_profile_authorise' ) ?>
+			<input type="hidden" name="project_id" value="<?php echo (int)$f_project_id ?>" />
+			<label for="topic-profile-note"><?php echo lang_get( 'topic_note' ) ?></label>
+			<input type="text" id="topic-profile-note" name="note" class="input-sm" size="50" maxlength="255" />
+			<button type="submit" class="btn btn-primary btn-sm btn-white btn-round"><?php echo lang_get( 'topic_profile_authorise' ) ?></button>
+		</form>
+		<?php } else {
+				echo '<p class="grey">' . lang_get( 'topic_profile_up_to_date' ) . '</p>';
+			}
+		} ?>
 	</div>
 	</div>
 	</div>

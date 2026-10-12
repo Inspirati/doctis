@@ -742,6 +742,12 @@ function history_dwg_get_type_name( $p_type ) {
 		case DWG_TOPIC_DETACHED:
 			$t_type_name = 'topic-deleted';
 			break;
+		case DWG_TOPIC_EVIDENCE_ADDED:
+			$t_type_name = 'topic-evidence-added';
+			break;
+		case DWG_TOPIC_EVIDENCE_REMOVED:
+			$t_type_name = 'topic-evidence-deleted';
+			break;
 		default:
 			$t_type_name = '';
 			break;
@@ -999,6 +1005,16 @@ function history_dwg_localize_item( $p_bug_id, $p_field_name, $p_type, $p_old_va
 				require_api( 'topic_api.php' );
 				$t_note = lang_get( 'topic_history_detached' );
 				$t_change = topic_dwg_history_describe( $p_old_value );
+				break;
+			case DWG_TOPIC_EVIDENCE_ADDED:
+				require_api( 'topic_expectation_api.php' );
+				$t_note = lang_get( 'topic_history_evidence_added' );
+				$t_change = topic_evidence_history_describe( $p_new_value );
+				break;
+			case DWG_TOPIC_EVIDENCE_REMOVED:
+				require_api( 'topic_expectation_api.php' );
+				$t_note = lang_get( 'topic_history_evidence_removed' );
+				$t_change = topic_evidence_history_describe( $p_old_value );
 				break;
 		}
 	}
