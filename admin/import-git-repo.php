@@ -344,9 +344,10 @@ function frontmatter_parse( string $p_content ): array {
  */
 function status_map( string $p_status ): int {
 	$t_status = strtolower( trim( $p_status ) );
-	# Qualified draft statuses ("Draft — requires CEO signature…") are drafts.
+	# Qualified draft statuses ("Draft — requires CEO signature…") are drafts:
+	# status 165, labelled "draft" (owner decision 2026-10-13).
 	if( strpos( $t_status, 'draft' ) === 0 ) {
-		return 110;
+		return 165;
 	}
 	switch( $t_status ) {
 		case '':

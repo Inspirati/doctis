@@ -333,8 +333,8 @@ $s_priority_enum_string = '10:none,20:low,30:normal,40:high,50:urgent,60:immedia
 $s_severity_enum_string = '10:feature,20:comment,30:query,40:tweak,50:minor,60:major,70:crash,80:block';
 
 $s_reproducibility_enum_string = '10:always,30:sometimes,50:random,70:have not tried,90:unable to reproduce,100:N/A';
-$s_status_enum_string = '10:new,20:feedback,30:acknowledged,40:confirmed,50:assigned,80:resolved,90:closed,110:pending,120:received,130:triage,140:JoS,150:assigned,160:review,165:rework,170:independent review,180:accepted,190:incorporated,195:archived';
-$s_dwg_status_enum_string = '10:new,20:feedback,30:acknowledged,40:confirmed,50:assigned,80:resolved,90:closed,110:pending,120:received,130:triage,140:JoS,150:assigned,160:review,165:rework,170:independent review,180:accepted,190:incorporated,195:archived';
+$s_status_enum_string = '10:new,20:feedback,30:acknowledged,40:confirmed,50:assigned,80:resolved,90:closed,110:pending,120:received,130:triage,140:JoS,150:assigned,160:review,165:draft,170:independent review,180:approved,190:incorporated,195:archived';
+$s_dwg_status_enum_string = '10:new,20:feedback,30:acknowledged,40:confirmed,50:assigned,80:resolved,90:closed,110:pending,120:received,130:triage,140:JoS,150:assigned,160:review,165:draft,170:independent review,180:approved,190:incorporated,195:archived';
 $s_resolution_enum_string = '10:open,20:fixed,30:reopened,40:unable to reproduce,50:not fixable,60:duplicate,70:no change required,80:suspended,90:won\'t fix';
 $s_projection_enum_string = '10:none,30:tweak,50:minor fix,70:major rework,90:redesign';
 $s_eta_enum_string = '10:none,20:< 1 day,30:2-3 days,40:< 1 week,50:< 1 month,60:> 1 month';
@@ -611,9 +611,9 @@ $s_assigned_dwg_button = 'Set to Assigned';
 $s_assigned_to_dwg_button = 'Set to Assigned';
 $s_JoS_dwg_button = 'Set to JoS required';
 $s_review_dwg_button = 'Set to Review';
-$s_rework_dwg_button = 'Set to Rework';
+$s_draft_dwg_button = 'Set to Draft';
 $s_independent_review_dwg_button = 'Set to Independent Review';
-$s_accepted_dwg_button = 'Set to Accepted';
+$s_approved_dwg_button = 'Set to Approved';
 $s_incorporated_dwg_button = 'Set to Incorporated';
 $s_archived_dwg_button = 'Set to Archived';
 
@@ -622,9 +622,9 @@ $s_received_dwg_title = 'Set Document to Received';
 $s_triage_dwg_title = 'Set Document to Perform Triage';
 $s_JoS_dwg_title = 'Set Document to Assign Judgement of Significance (JoS)';
 $s_review_dwg_title = 'Set Document to Review Required';
-$s_rework_dwg_title = 'Set Document to Send for Rework';
+$s_draft_dwg_title = 'Return Document to Draft';
 $s_independent_review_dwg_title = 'Set Document to Independent Review';
-$s_accepted_dwg_title = 'Set Document to Accepted';
+$s_approved_dwg_title = 'Set Document to Approved';
 $s_incorporated_dwg_title = 'Set Document to Incorporated';
 $s_archived_dwg_title = 'Set Document to Archived';
 
@@ -1335,7 +1335,7 @@ $s_my_view_title_my_comments = 'Issues I Have Commented On';
 
 # my_view_dwg_page.php
 $s_my_view_title_created = 'Owned by Me';
-$s_my_view_title_accepted = 'Accepted by Me';
+$s_my_view_title_accepted = 'Approved by Me';
 
 # news_add.php
 $s_news_added_msg = 'News item added...';
@@ -1527,7 +1527,7 @@ $s_summary_dwg_title = 'Document Summary';
 $s_by_creator = 'By Creator';
 $s_creator_by_resolution = 'Creator By Resolution';
 $s_creator_effectiveness = 'Creator Effectiveness';
-$s_dwg_time_stats = 'Time Stats For Accepted Documents (days)';
+$s_dwg_time_stats = 'Time Stats For Approved Documents (days)';
 $s_creator_stats = 'Creator Stats';
 
 # view_all_bug_page.php

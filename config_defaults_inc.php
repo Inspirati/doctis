@@ -3907,9 +3907,9 @@ $g_topic_catalogue_publish_status = array( ACCEPTED, INCORPORATED );
  * Draft, Under Review or Approved evidence. Approved satisfies an Under
  * Review or Draft requirement, and Under Review satisfies Draft. A status
  * missing here fails closed (the expectation stays Pending, with the reason).
- * Owner decision 2026-10-13: Draft = 165 (to be renamed "draft"), Under
- * Review = 160, Approved = 180 (to be renamed "approved"); the other statuses
- * are placed until the status set is reduced. Statuses in
+ * Owner decision 2026-10-13: Draft = 165 (draft), Under Review = 160
+ * (review), Approved = 180 (approved); the other statuses are placed until
+ * the status set is reduced. Statuses in
  * $g_topic_inactive_status never count.
  *
  * @global array $g_topic_maturity_map
@@ -3920,10 +3920,10 @@ $g_topic_maturity_map = array(
 	TRIAGE => TOPIC_MATURITY_DRAFT,
 	JOS => TOPIC_MATURITY_DRAFT,
 	150 => TOPIC_MATURITY_DRAFT,        # assigned to
-	REWORK => TOPIC_MATURITY_DRAFT,     # 165, to be renamed "draft"
+	REWORK => TOPIC_MATURITY_DRAFT,     # 165 draft
 	REVIEW => TOPIC_MATURITY_UNDER_REVIEW,
 	INDEPENDENT_REVIEW => TOPIC_MATURITY_UNDER_REVIEW,
-	ACCEPTED => TOPIC_MATURITY_APPROVED, # 180, to be renamed "approved"
+	ACCEPTED => TOPIC_MATURITY_APPROVED, # 180 approved
 	INCORPORATED => TOPIC_MATURITY_APPROVED,
 );
 
@@ -4479,8 +4479,8 @@ $g_status_colors = array(
 	'triage'              => '#d9b3e6', # soft lavender
 	'JoS'                 => '#f7e49b', # warm pastel yellow
 	'review'              => '#f9c97a', # mellow apricot
-	'rework'              => '#b5e7a0', # pale green
-	'accepted'            => '#a2b9bc', # muted teal-grey
+	'draft'               => '#b5e7a0', # pale green (165, formerly rework)
+	'approved'            => '#a2b9bc', # muted teal-grey (180, formerly accepted)
 	'archived'            => '#d0d0d0', # soft neutral grey
 	'incorporated'        => '#b8d8ba', # gentle sage
 	'independent review'  => '#b0e0e6', # powder blue
@@ -4502,8 +4502,8 @@ $g_status_colors = array(
     'triage'              => '#ab47bc', // material purple 400
     'JoS'                 => '#fdd835', // material yellow 500
     'review'              => '#ffb74d', // material orange 300
-    'rework'              => '#66bb6a', // material green 400
-    'accepted'            => '#26c6da', // material cyan 400
+    'draft'               => '#66bb6a', // material green 400
+    'approved'            => '#26c6da', // material cyan 400
     'archived'            => '#bdbdbd', // material grey 400
     'incorporated'        => '#9ccc65', // material light green 400
     'independent review'  => '#29b6f6', // material light blue 400
@@ -4526,8 +4526,8 @@ $g_status_colors = array(
     'triage'              => '#c9a0f5', // soft neon violet
     'JoS'                 => '#f4f18b', // soft neon yellow
     'review'              => '#ffbd75', // soft neon orange
-    'rework'              => '#9df5a0', // soft neon green
-    'accepted'            => '#7fc1c4', // muted neon teal
+    'draft'               => '#9df5a0', // soft neon green
+    'approved'            => '#7fc1c4', // muted neon teal
     'archived'            => '#bdbdbd', // gentle grey
     'incorporated'        => '#a8d4a4', // soft mint
     'independent review'  => '#90e0f0', // powder neon blue
@@ -4825,7 +4825,7 @@ $g_projection_enum_string = '10:none,30:tweak,50:minor fix,70:major rework,90:re
  * @global string $g_dwg_status_enum_string
  */
 // $g_dwg_status_enum_string = '10:pending,20:received,30:triage,40:JoS,50:assigned,60:review,65:rework,70:independent review,80:accepted,90:incorporated,95:archived';
-$g_dwg_status_enum_string = '110:pending,120:received,130:triage,140:JoS,150:assigned to,160:review,165:rework,170:independent review,180:accepted,190:incorporated,195:archived';
+$g_dwg_status_enum_string = '110:pending,120:received,130:triage,140:JoS,150:assigned to,160:review,165:draft,170:independent review,180:approved,190:incorporated,195:archived';
 
 /**
  * Change Class enumeration.

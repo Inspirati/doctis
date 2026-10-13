@@ -231,8 +231,8 @@ Document records move through a configurable status sequence during their
 review lifecycle.  The default workflow is:
 
 ```
-pending → received → triage → JoS → assigned to → review → rework
-       → independent review → accepted → incorporated → archived
+pending → received → triage → JoS → assigned to → review → draft
+       → independent review → approved → incorporated → archived
 ```
 
 | Status | Meaning |
@@ -243,11 +243,15 @@ pending → received → triage → JoS → assigned to → review → rework
 | **JoS** | Judgment of Suitability — initial technical assessment |
 | **assigned to** | Assigned to a reviewer |
 | **review** | Under active review |
-| **rework** | Returned to originator for correction |
+| **draft** | Being drafted, or returned to the author for correction |
 | **independent review** | Secondary review by an independent party |
-| **accepted** | Review complete; document accepted as-is |
+| **approved** | Review complete; document approved |
 | **incorporated** | Comments incorporated; final version on record |
 | **archived** | Superseded or withdrawn; no longer active |
+
+The **draft** and **approved** statuses were named rework and accepted before
+2026-10-13; their values (165 and 180) did not change. The status set is
+provisional and will be aligned with the QMS approval workflow.
 
 Status transitions are made from the **Update Document** page
 (`dwg_update_page.php?bug_id=N`) or via the quick-status buttons on the document
@@ -589,9 +593,9 @@ Each expectation then has a state at the selected milestone:
 | Pending | Not assessed yet, or evidence below the required maturity, or inactive; the reasons say which |
 | Satisfied | Assessed adequate, and every evidence document has the required maturity |
 
-Document status gives maturity: Draft for rework (165) and the earlier
+Document status gives maturity: Draft for draft (165) and the earlier
 statuses (pending to assigned), Under Review for review and independent
-review, Approved for accepted (180) and incorporated. Approved meets an
+review, Approved for approved (180) and incorporated. Approved meets an
 Under Review or Draft requirement, and Under Review meets Draft. A staged
 draft of a document does not change its version; promoting it does.
 
@@ -704,7 +708,7 @@ In `config/config_inc.php`:
 | `$g_topic_tag_threshold` | Who tags documents (default DEVELOPER) |
 | `$g_topic_view_threshold` | Who sees Topics (default REPORTER) |
 | `$g_topic_inactive_status` | Statuses whose tags are shown but not counted (default archived) |
-| `$g_topic_catalogue_publish_status` | Source document statuses that allow publishing a catalogue (default accepted, incorporated) |
+| `$g_topic_catalogue_publish_status` | Source document statuses that allow publishing a catalogue (default approved, incorporated) |
 | `$g_topic_maturity_map` | Maturity (Draft, Under Review, Approved) of each document status; unmapped statuses keep expectations Pending |
 | `$g_topic_assess_threshold` | Who may record assessments (default MANAGER) |
 | `$g_topic_snapshot_threshold` | Who takes snapshots (default MANAGER) |

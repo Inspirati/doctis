@@ -6,7 +6,7 @@ verified on vaio (see [GIT_TODO.md §6](GIT_TODO.md) WP7 for the
 implementation record).  This document is retained as the requirements and
 design spec.  Implementation deviations from the plan: frontmatter `doc_id`
 maps to `documents.number` (Doctis manages `reference` as the registered
-Git SHA); `status: Active` maps to accepted (180); the register primitive is
+Git SHA); `status: Active` maps to approved (180); the register primitive is
 `file_dwg_primary_register()` per the C1 model rather than §4's P-numbers.
 
 **Current deployment scope (2026-09-27):** one-time adoption from GitHub into
@@ -394,7 +394,7 @@ carry `doc_id`, `title`, `revision`, `status`, `owner`, `approver`,
 | `doc_id` | `documents.number` | e.g. `WI-IT-001`; `reference` stores the registered Git SHA |
 | `revision` | `documents.revision` | |
 | `classification` | `dwg.classification` / `documents.classification` | e.g. `Internal` |
-| `status` | `dwg.status` | Map: `Draft`→110 pending; `In Review`→160 review; `Approved`/`Effective`→180 accepted; `Released`→190 incorporated; `Superseded`/`Obsolete`→195 archived; unknown→110 + warning. Status mapping does not create an approval pin. |
+| `status` | `dwg.status` | Map: `Draft`→165 draft; `In Review`→160 review; `Approved`/`Effective`→180 approved; `Released`→190 incorporated; `Superseded`/`Obsolete`→195 archived; unknown→110 + warning. Status mapping does not create an approval pin. |
 | `owner` / `approver` | `dwg.handler_id` | Resolved only if it matches a Doctis username/realname; else noted in the import report |
 | `effective_date` | `documents.release_date` | Parse to Unix int (`INT UNSIGNED` convention) |
 | `review_period` | `dwg.due_date` | `effective_date + period` when both parse |

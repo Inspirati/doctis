@@ -188,7 +188,7 @@ class TopicExpectationApiTest extends TopicTestCase {
 		$this->assertSame( TOPIC_EXP_SATISFIED, $this->state( $t_draft, $t_cat['milestones'][0] )['state'] );
 		$this->assertSame( TOPIC_EXP_SATISFIED, $this->state( $t_review, $t_cat['milestones'][0] )['state'] );
 		$this->assertSame( TOPIC_EXP_PENDING, $this->state( $t_approved, $t_cat['milestones'][0] )['state'] );
-		# The owner's decisions: rework (165) is Draft, accepted (180) Approved.
+		# The owner's decisions: draft (165) is Draft, approved (180) Approved.
 		$this->assertSame( TOPIC_MATURITY_DRAFT, topic_status_maturity( REWORK, $t_project_id ) );
 		$this->assertSame( TOPIC_MATURITY_UNDER_REVIEW, topic_status_maturity( REVIEW, $t_project_id ) );
 		$this->assertSame( TOPIC_MATURITY_APPROVED, topic_status_maturity( ACCEPTED, $t_project_id ) );

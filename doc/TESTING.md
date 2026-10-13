@@ -458,7 +458,7 @@ refused; the feature switch; moves, document deletion and project deletion.
   expectation (due SRR/PDR, Approved); its page shows Not due at Planning
   and Missing at SRR/PDR; link a tagged document (Pending: assessment
   required, Draft but Approved required); assess Adequate (Pending: maturity);
-  set the document to accepted (Satisfied); change its revision
+  set the document to approved (Satisfied); change its revision
   (Reassessment required, "has a new version"); reassess (Satisfied).
   Decide every Topic and authorise the profile; the Topics page shows
   readiness No expectations due at Planning and Ready at SRR/PDR. Roles:

@@ -115,9 +115,9 @@ define( 'JOS', 140 );
 //define( 'ASSIGNED', 50 );  // BEWARE: this is the same identifier as defined earlier, and hence must keep the same value as the previous definition
 define( 'ASSIGNED_TO', 150 );
 define( 'REVIEW', 160 );
-define( 'REWORK', 165 );
+define( 'REWORK', 165 );   # labelled 'draft' since 2026-10-13; the constant name is kept
 define( 'INDEPENDENT_REVIEW', 170 );
-define( 'ACCEPTED', 180 );
+define( 'ACCEPTED', 180 ); # labelled 'approved' since 2026-10-13; the constant name is kept
 define( 'REJECTED', 185 );
 define( 'INCORPORATED', 190 );
 define( 'ARCHIVED', 195 );

@@ -45,11 +45,10 @@ Owner decisions, 2026-10-08:
   Production will use a smaller set aligned with the QMS and engineering
   approval workflow, which is not yet defined. Topic code must not hard-code
   status values: any status-to-maturity rule is configuration (Phase 2).
-- **Lifecycle maturity (2026-10-13).** Draft = status 165 (`rework`, to be
-  renamed `draft`), Under Review = 160 (`review`), Approved = 180
-  (`accepted`, to be renamed `approved`). The labels are renamed later, when
-  convenient; the status values do not change, so stored data and workflow
-  settings are unaffected. See [Status label rename](#status-label-rename).
+- **Lifecycle maturity (2026-10-13).** Draft = status 165 (`draft`, formerly
+  `rework`), Under Review = 160 (`review`), Approved = 180 (`approved`,
+  formerly `accepted`). The labels were renamed on 2026-10-13; the status
+  values did not change. See [Status label rename](#status-label-rename).
 - **Engineering projects are standalone.** HCR571 and every other product
   development project are top-level Doctis projects, not sub-projects of
   HCRQMS. HCRQMS is the standalone QMS site-content project.
@@ -509,8 +508,7 @@ Implemented on branch `topics`, 2026-10-13 (schema steps 76–77,
   ordinary tables in the database backup; restoring has not been rehearsed.
 - **Performance measurement** with 100 documents and 50 expectations
   (STD-IT-001 §8).
-- **Status label rename** (see [Status label rename](#status-label-rename)),
-  due before the next database rebuild.
+- ~~Status label rename~~ — done 2026-10-13.
 
 ## 9. Requirement mapping
 
@@ -544,10 +542,10 @@ STD-IT-001:
 ## Status label rename
 
 Owner decision, 2026-10-13: rename `rework` (165) to `draft` and `accepted`
-(180) to `approved`. **Scheduled as a precursor task to the next database
-rebuild**: do the rename before that rebuild, so the rebuilt database and its
-reloaded data use the new labels. The values stay the same. The labels are
-used as keys in several places, so a rename touches:
+(180) to `approved`, before the next database rebuild. **Done 2026-10-13** on
+branch `topics`. The values stay the same, so stored documents, filters and
+workflow settings were unaffected. The labels are used as keys in several
+places; the rename touched:
 
 | Where | What |
 |-------|------|
@@ -557,11 +555,12 @@ used as keys in several places, so a rename touches:
 | `lang/strings_english.txt` `$s_rework_dwg_button`, `$s_rework_dwg_title`, `$s_accepted_dwg_button`, `$s_accepted_dwg_title` | Renamed to `draft_…` / `approved_…`; `dwg_change_status_page.php` looks them up by label |
 | `ai_assist_help_api.php` | The lifecycle sentence in the Help prompt |
 | `doc/MANUAL.md` §6 | Document status workflow |
-| `admin/import-git-repo.php` `status_map()` | Frontmatter `Draft` maps to 110 (`pending`) today. Decide whether imports should map it to 165 (`draft`) instead |
-| Deployed `config_inc.php` files | Any local override of the enum string or colours |
+| `admin/import-git-repo.php` `status_map()` | Frontmatter `Draft` now maps to 165 (`draft`) instead of 110 (`pending`), following the owner's decision that 165 is Draft. Revert to 110 if imports should start at intake |
+| Deployed `config_inc.php` files | Checked on the native VM: no overrides in `config_inc.php` or `{config}`. The live version's configuration is not visible from here: check it for a local `$g_dwg_status_enum_string` or `$g_status_colors` before it pulls this change |
+| Also | `$s_my_view_title_accepted` ("Approved by Me"; the My View box key `accepted` is kept because it is stored in user preferences), `$s_dwg_time_stats`, `doc/FEATURES.md`, `doc/git/GIT_IMPORTER.md`, the `REWORK`/`ACCEPTED` constant comments |
 
-The constants `REWORK` and `ACCEPTED` can keep their names (or gain `DRAFT`
-and `APPROVED` aliases); filters, workflow and stored data use the values.
+The constants `REWORK` and `ACCEPTED` keep their names, with comments; filters,
+workflow and stored data use the values.
 New documents start at `$g_dwg_submit_status` (110, `pending`); whether they
 should start at Draft belongs to the wider reduction of the status set.
 
