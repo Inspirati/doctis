@@ -11,19 +11,19 @@ The project is actively developed (beta) and maintained on the `dev` branch, tra
 ```
 /                           PHP page entry-points (bug_*, dwg_*, manage_*, login_*, etc.)
 core/                       API library functions (*_api.php, classes/, commands/, exceptions/)
-api/rest/restcore/          Slim-framework REST endpoints (MantisBT standard; no dwg routes yet)
-api/rest/restcore/issues_rest.php  — issues (bugs) REST; no document equivalent
+api/rest/restcore/          Slim-framework REST endpoints: MantisBT's, plus Doctis documents_rest.php,
+                            licenses_rest.php and topics_rest.php (read-only)
+api/soap/                   SOAP API (mantisconnect), including the Doctis mc_dwg_* operations
 config/                     Local config (config_inc.php, not committed)
 config_defaults_inc.php     All defaults including Doctis-specific $g_dwg_* settings
-admin/                      Admin/diagnostic PHP scripts (db_stats.php, test_langs.php, etc.)
-admin/tools/                Install/setup shell scripts
-doc/                        Design and planning documents for Doctis-specific features
+admin/                      Installer, schema.php, importer and diagnostic PHP scripts
+admin/tools/                Install, reset, backup and test shell scripts
+admin/tools/data-scripts/   Local SQL data scripts and backups (gitignored except README.md)
+doc/                        Design, planning and user documentation for Doctis-specific features
 plugins/                    MantisBT plugin system (Gravatar, MantisGraph, etc.)
 lang/strings_english.txt    All UI strings including Doctis additions
+scripts/                    Cron entry points (send_emails.php, meeting_schedule.php)
 tests/                      PHPUnit + REST/SOAP integration tests
-docker/                     Legacy — remote deployment only, not used for active development
-docker-live/                Legacy — remote deployment only, not used for active development
-docker-test/                Legacy — remote deployment only, not used for active development
 ```
 
 ## Key Naming Conventions
@@ -132,78 +132,113 @@ snapshots), `topic_snapshot_*.php`, `topic_activity_page.php`,
 
 ## Development Environment
 
-Doctis runs directly under Apache on **vaio** (`10.0.0.10`). There is one
-running instance; it serves as both the development and local test environment.
+Development and testing happen on a native **Debian 13 VM** (`10.0.0.94`),
+with nginx, PHP-FPM 8.4 and MariaDB 11.8. Claude Code runs on the same VM, so
+every command below runs locally: no SSH and no NFS mount. The former `vaio`
+host (`10.0.0.10`, Apache, NFS mount) is no longer the development
+environment. Install profile and layout:
+[doc/NATIVE-DEVELOPMENT.md](doc/NATIVE-DEVELOPMENT.md).
 
 | Item | Detail |
 |------|--------|
-| Apache webroot | `/var/www/html/doctis/` on vaio |
-| URL | `http://10.0.0.10/doctis/` |
-| Database | MariaDB on `localhost`, database `doctis`, user `admin` |
-| NFS mount (dev machine) | `/home/hcr/html/doctis/` → vaio:`/var/www/html/doctis/` |
+| Working clone | `/home/robert/Documents/doctis`: edit and commit here |
+| Running clone | `/var/www/html/doctis`: what nginx serves; owned `robert:www-data`, not edited directly |
+| URL | `http://10.0.0.94/doctis/` (matches `$g_path`; use this host, not 127.0.0.1, so login cookies match) |
+| Database | MariaDB on `127.0.0.1`, database and app account both `doctis`; Linux user `robert` has no MariaDB account |
+| nginx / PHP-FPM | site `/etc/nginx/sites-available/doctis`; pool `/etc/php/8.4/fpm/pool.d/doctis.conf` |
+| Git document store | `/var/git/doctis/` (bare repos) and `/var/www/doctis/worktrees/` |
+| Cron (`/etc/cron.d/doctis`) | `scripts/send_emails.php` every minute and `scripts/meeting_schedule.php` hourly, as `www-data` |
 
-Edit PHP files locally via the NFS mount; changes are immediately live on
-vaio's Apache — no sync or restart required.
+### Deploying a change to the running clone
 
-Commands that must run in vaio's environment (Composer installs, git
-infrastructure setup, schema migrations) are executed via SSH:
-
-```bash
-ssh hcr@vaio "<command>"
-ssh hcr@vaio "sudo -u www-data <git-command>"
-```
-
-Because `admin/` is NFS-mounted on vaio, scripts placed there can be run
-directly without a copy step:
+The running clone fetches from the working clone, so unpushed branches can be
+tested. Run as `robert`: `www-data` cannot read `/home/robert`. Check
+`git status` in the running clone first; the reset discards tracked changes
+(`config/config_inc.php` and `tests/bootstrap.php` are gitignored and survive).
 
 ```bash
-ssh hcr@vaio "sudo -u www-data php /var/www/html/doctis/admin/<script>.php"
+cd /var/www/html/doctis
+git fetch /home/robert/Documents/doctis <branch> && git reset --hard FETCH_HEAD
+php admin/upgrade_unattended.php      # only when admin/schema.php gained steps
 ```
 
-**When development moves to a new host:** all vaio-specific infrastructure
-(git storage directories, `.gitconfig`, Composer vendor/) must be recreated on
-the new host from scratch. Follow [doc/doctis-git-server-setup.txt](doc/doctis-git-server-setup.txt)
-in full, then run the PHP integration test before resuming development.
+Pushing to GitHub (`origin`, `Inspirati/doctis`) needs the owner's explicit
+approval. System Operations → **Git Pull** pulls the running clone from
+`origin` through the sudoers rule
+`www-data ALL=(robert) NOPASSWD: /usr/bin/git -C /var/www/html/doctis pull`.
 
-## Diagnosing PHP/Apache Errors on Vaio
+### Querying the database
 
-Understanding the error reporting stack is essential. There are three distinct
-places errors appear, with different information in each.
+Use the app account, reading its password from the running clone at run time.
+Never print it or copy it into a file:
+
+```bash
+export MYSQL_PWD=$(php -r 'require "/var/www/html/doctis/core/constant_inc.php";
+  include "/var/www/html/doctis/config/config_inc.php"; echo $g_db_password;')
+mysql -h 127.0.0.1 -u doctis doctis -e "SELECT id, name FROM project;"
+```
+
+Root access goes through the unix socket (`sudo mysql doctis`); the reset and
+rebuild scripts below rely on it.
+
+### Outbound email is live
+
+The VM sends real email through Gmail SMTP, and cron flushes the queue every
+minute. Several sample accounts have `@gmail.com` addresses. Before anything
+that queues notifications in bulk (imports, reloads, scripted document
+creation), add `$g_enable_email_notification = OFF;` to `config/config_inc.php`,
+and remove it afterwards.
+
+### Rebuilding on a new host
+
+Git storage directories, `/var/www/.gitconfig`, Composer `vendor/`, the
+nginx/PHP-FPM configuration and the cron and sudoers entries are host-specific.
+Install with the native profile ([doc/NATIVE-DEVELOPMENT.md](doc/NATIVE-DEVELOPMENT.md)),
+check git storage against [doc/git/GIT_SERVER_SETUP.md](doc/git/GIT_SERVER_SETUP.md),
+then run the git integration tests (below) before resuming development.
+
+## Live Version
+
+The **live version** is `https://qms.hcrobo.com/doctis`: a remote Docker
+deployment of `dev` that is expected to become production. Nobody has
+console access. It is updated through System Operations (Git Pull, Rebuild
+Database, Reset Git Store, Load Data). Reading pages is fine; ask the owner
+before any change to it. It does not get sample data.
+
+## Diagnosing PHP Errors
 
 ### Log file locations
 
 ```bash
-# PHP exceptions caught by MantisBT — most useful for application errors
-ssh hcr@vaio "sudo tail -50 /var/log/apache2/error.log | grep -v Xdebug"
+# PHP errors, warnings and exceptions logged by MantisBT's handler (PHP-FPM error_log)
+tail -50 /var/log/doctis/php_errors.log
 
-# PHP warnings/notices not caught by MantisBT
-ssh hcr@vaio "sudo tail -50 /var/log/apache2/php_error.log | grep -v imap"
+# nginx errors (FastCGI failures, forbidden paths) and requests with HTTP status
+sudo tail -50 /var/log/nginx/doctis_error.log
+sudo tail -20 /var/log/nginx/doctis_access.log
 
-# HTTP status codes — confirms which URL/script is failing
-ssh hcr@vaio "sudo tail -20 /var/log/apache2/access.log"
+# Cron output: email flush and meeting scheduler
+tail -50 /var/log/doctis/cron.log
 ```
+
+MantisBT's own logging (`$g_log_level`) is off unless `LOG_LEVEL` is set in the
+PHP-FPM pool (`env[LOG_LEVEL]`; FPM does not pass the shell environment); it
+then writes to `/var/log/doctis/mantis.log`. There is no Xdebug on the VM.
 
 ### How MantisBT handles exceptions
 
-MantisBT catches PHP exceptions in its error handler and, when
-`$g_show_detailed_errors = ON` (set in `config/config_inc.php`), renders a full
-HTML stack trace in the browser response. This is the primary diagnostic for
-`APPLICATION ERROR #0` pages — read the browser output, not just the logs.
+MantisBT catches PHP exceptions in its error handler. With
+`$g_show_detailed_errors = ON` it renders a full HTML stack trace in the
+browser response. The VM's `config/config_inc.php` does not set it (default
+OFF); add it temporarily when an `APPLICATION ERROR #0` page needs diagnosing.
 
 The stack trace shows filename, line number, class, function, and all arguments
 at each frame, including the contents of arrays passed to the failing function.
 This is often enough to identify the exact error without adding debug logging.
 
-MantisBT also calls `error_log()` in its exception handler, so caught exceptions
-appear in `/var/log/apache2/error.log` as `[php:notice]` entries with a
-condensed stack trace on one line.
-
-### Xdebug noise
-
-Xdebug is installed on vaio but no step-debug listener is running. This produces
-harmless `[php:notice] Xdebug: [Step Debug] Could not connect to debugging
-client` messages in the Apache error log for every request. Filter them out
-with `grep -v Xdebug` on every log read.
+MantisBT also calls `error_log()` in its exception handler, so caught
+exceptions appear in `/var/log/doctis/php_errors.log` with a condensed stack
+trace on one line.
 
 ### Adding temporary debug logging
 
@@ -214,8 +249,8 @@ where exceptions are caught and re-thrown), use `error_log()`:
 error_log( 'MyClass::method() reached with var=' . $t_var );
 ```
 
-Output goes to `/var/log/apache2/error.log`. Remove all `error_log()` calls
-before committing.
+Output goes to `/var/log/doctis/php_errors.log`. Remove all `error_log()`
+calls before committing.
 
 ### Typical error sources for the GIT backend
 
@@ -241,39 +276,43 @@ remote clone/push gateway test, curl-based live testing, clean-room reset)
 with what each covers and how to run it — check there before writing a new
 ad hoc test script.
 
+PHPUnit runs in the running clone (after deploying the change), as `www-data`.
+`tests/bootstrap.php` is local and gitignored; it already exists there
+(template: `tests/bootstrap.php.sample`).
+
 ```bash
-composer install
-./vendor/bin/phpunit
+cd /var/www/html/doctis
+sudo -u www-data vendor/bin/phpunit --testsuite mantis
 ```
 
-REST/SOAP integration tests live under `tests/`. Bootstrap: `tests/bootstrap.php.sample` → copy to `tests/bootstrap.php` and configure.
+The Doctis PHPUnit tests live in `tests/Mantis/` (e.g. the `Topic*Test.php`
+files), alongside MantisBT's own.
 
 ## Database Schema Changes
 
 **Rule: `admin/schema.php` is the single source of truth for the database schema.
 Never apply `ALTER TABLE` directly. Never write standalone migration scripts.**
 
-Every table is defined in its current, final form as a `CREATE TABLE IF NOT EXISTS`
-statement in [admin/schema.php](admin/schema.php).  When you need to add a column,
-add a table, rename a column, or change a type:
+Every table is defined once, in its current final form, as a
+`CREATE TABLE IF NOT EXISTS` step in [admin/schema.php](admin/schema.php). Each
+step's index is the `database_version` the installer records after running it.
 
-1. **Edit `admin/schema.php`** — find the relevant `CREATE TABLE` block and update it
-   in place.  There are no incremental `AddColumnSQL` / `AlterColumnSQL` steps; just
-   modify the base definition.
-2. **Rebuild the database on vaio**:
-   ```bash
-   ssh hcr@vaio "echo 'yes' | bash /var/www/html/doctis/admin/tools/doctis-drop-and-create-new-database.sh"
-   ```
-3. **Reload sample data**:
-   ```bash
-   ssh hcr@vaio "echo 'yes' | bash /var/www/html/doctis/admin/tools/doctis-load-sample-data.sh"
-   ```
+- **New table:** append a step at the end, label it "Step N" with its real
+  index, and update the trailer comment (`$t_idx = N+1 → database_version = N`).
+  Deploy, then run `php admin/upgrade_unattended.php` in the running clone. No
+  rebuild is needed.
+- **Change to an existing table** (add, rename or retype a column; change a
+  key): edit its `CREATE TABLE` block in place, then rebuild the database (see
+  below). There is no production release yet, so rebuilds are acceptable.
+- Never insert a step between existing ones, and never remove or renumber one;
+  replace an obsolete step with `null`.
 
-Steps 2 and 3 together replace the database completely from the schema and restore
-the standard test dataset.  The git document store is unaffected; only the database
-is rebuilt.  If a full clean-room reset is also needed (e.g. after a test run that
-created document records), see **Resetting to a Clean Slate for Testing** below,
-which additionally wipes the git store.
+**Rebuilding the VM database** replaces the imported projects and documents
+too. First back up the database (System Operations → Backup Database, or
+`mariadb-dump`) and the git store (a tar of `/var/git/doctis` and
+`/var/www/doctis/worktrees`) into `admin/tools/data-scripts/`. Then reset both
+together (next section) and reload the data. The reload order and the data
+scripts are in [admin/tools/data-scripts/README.md](admin/tools/data-scripts/README.md).
 
 ### Conventions
 
@@ -281,9 +320,10 @@ which additionally wipes the git store.
   not a datetime string.
 - Use `NOT NULL DEFAULT ''` for optional string columns rather than `DEFAULT NULL`,
   to avoid nullable string comparisons throughout the PHP layer.
-- After editing `schema.php`, always rebuild immediately and confirm with:
+- After a schema change, confirm the result (with `MYSQL_PWD` set as in
+  **Querying the database**):
   ```bash
-  ssh hcr@vaio "mysql -e 'DESCRIBE doctis.<table_name>;'"
+  mysql -h 127.0.0.1 -u doctis doctis -e 'DESCRIBE <table_name>;'
   ```
 - The schema comment at the top of `schema.php` restates these rules — keep it
   accurate if conventions change.
@@ -292,62 +332,73 @@ which additionally wipes the git store.
 
 | Prohibited | Why |
 |------------|-----|
-| `ALTER TABLE doctis.foo ADD COLUMN ...` run directly on vaio | Schema.php will not reflect the change; a future rebuild will silently drop the column |
+| `ALTER TABLE doctis.foo ADD COLUMN ...` run directly against the database | Schema.php will not reflect the change; a future rebuild will silently drop the column |
 | Standalone `admin/foo_migrate.php` scripts | The installer does not call them; they create false confidence that the schema is up to date |
 | `AddColumnSQL` / `AlterColumnSQL` entries appended to schema.php | Contradicts the flat-schema design; makes the definition hard to read and impossible to audit against the live DB |
 
 ## Resetting to a Clean Slate for Testing
 
 A full clean-room reset wipes both the MariaDB database and the git document
-store, then reinstalls the schema and reloads example data.  This is required
-before any test session that must start from a known-empty state.
+store and reinstalls the schema. **Always reset both together**: the database
+and the git store reference each other, and resetting one alone leaves them
+out of sync. The scripts run as root, so MariaDB is reached through its unix
+socket and no password is needed.
 
-**Always run both steps together** — the database and the git store reference
-each other.  Running one without the other leaves them out of sync.
-
-### Step 1 — Reset the git document store
-
-The script must be run as root (it touches `/var/git/doctis/` and
-`/var/www/doctis/worktrees/`).  It prompts for confirmation when invoked
-directly:
+### Option A: one command, with sample data
 
 ```bash
-ssh hcr@vaio "echo 'yes' | sudo bash /var/www/html/doctis/admin/tools/doctis-git-reset.sh"
+sudo bash /var/www/html/doctis/admin/tools/doctis-reset-native-test.sh --preview
+sudo bash /var/www/html/doctis/admin/tools/doctis-reset-native-test.sh --execute
 ```
 
-Expected output ends with: `Git store reset: N item(s) removed.`
+`--execute` resets the git store, rebuilds the database, and loads the sample
+data: the `example` project, licences and the test accounts. It then checks
+the result and ends with `Reset complete: ...`.
 
-### Step 2 — Drop, recreate, and install the database
+### Option B: step by step, without sample data
+
+Use this when the reload comes from data scripts and imports instead
+([admin/tools/data-scripts/README.md](admin/tools/data-scripts/README.md)):
 
 ```bash
-ssh hcr@vaio "echo 'yes' | bash /var/www/html/doctis/admin/tools/doctis-drop-and-create-new-database.sh"
+# 1. Git store: bare repos and worktrees. Ends "Git store reset: N item(s) removed."
+sudo bash /var/www/html/doctis/admin/tools/doctis-git-reset.sh <<< yes
+
+# 2. Database: drop, recreate, install from admin/schema.php. The installer is
+#    served over loopback only, hence 127.0.0.1; the password argument is unused.
+sudo bash /var/www/html/doctis/admin/tools/doctis-drop-and-create-new-database.sh doctis not-used 127.0.0.1 <<< yes
+
+# 3. (optional) the standard sample data
+sudo bash /var/www/html/doctis/admin/tools/doctis-load-sample-data.sh <<< yes
 ```
 
-Expected output includes:
-- `✔ doctis database install successful.`
-- `Example data loaded.`
-- `Database doctis loaded.`
-
-A timestamped HTML log of the installer output is saved to
-`admin/tools/doctis_install_<YYYYMMDD_HHMMSS>.html` (excluded from git via
-`.gitignore`).
+Step 2 prints `✔ doctis database install successful.` and saves the installer
+output to `/tmp/doctis-install.XXXXXX.html`. It leaves only the
+`administrator` account (password `root`).
 
 ### Verifying the reset
 
-After both steps, confirm the state is clean:
-
 ```bash
-# Database: should show only the example project and test users
-ssh hcr@vaio "mysql -e 'SELECT id, name FROM doctis.project; SELECT id, username FROM doctis.user;'"
-
-# Git store: directories should be absent or empty
-ssh hcr@vaio "ls /var/git/doctis/ /var/www/doctis/worktrees/ 2>&1"
+sudo mysql doctis -e 'SELECT id, name FROM project; SELECT id, username FROM user;'
+ls /var/git/doctis/ /var/www/doctis/worktrees/    # empty after a reset
 ```
 
-## Curl-Based Live Testing
+## Curl-Based Testing
 
-Use `curl` to exercise the live vaio instance programmatically when browser
-access is not possible. All state lives in a cookie jar file.
+Use `curl` to exercise the VM instance programmatically when browser access is
+not possible. All state lives in a cookie jar file; keep it in the scratchpad
+and delete it afterwards. The examples use:
+
+```bash
+B=http://10.0.0.94/doctis          # the $g_path host; 127.0.0.1 breaks the login cookie
+C=<scratchpad>/doctis_cookies.txt
+```
+
+Accounts: `administrator` / `root` exists after every rebuild. The sample role
+accounts (`manager`, `developer`, `reporter`, `viewer` and others) have blank
+passwords; they exist once sample data or `vm-users.sql` is loaded. Some pages
+(Manage, Load Data) ask for the password again; repeat the login if a POST is
+redirected to `login_password_page.php`.
 
 ### One-time setup — login
 
@@ -355,21 +406,21 @@ MantisBT login is a two-step POST. Do both in sequence:
 
 ```bash
 # Step 1 — submit username; server redirects to password page
-curl -s -c /tmp/doctis_cookies.txt -b /tmp/doctis_cookies.txt \
-  -X POST "http://10.0.0.10/doctis/login_password_page.php" \
+curl -s -c "$C" -b "$C" \
+  -X POST "$B/login_password_page.php" \
   -d "username=manager&return=index.php" -o /dev/null
 
 # Step 2 — submit password (blank for the default manager account)
-curl -s -c /tmp/doctis_cookies.txt -b /tmp/doctis_cookies.txt \
-  -X POST "http://10.0.0.10/doctis/login.php" \
+curl -s -c "$C" -b "$C" \
+  -X POST "$B/login.php" \
   -d "username=manager&password=&return=index.php&secure_session=0" -o /dev/null
 ```
 
 Verify success by fetching any authenticated page and grepping for the username:
 
 ```bash
-curl -s -L -c /tmp/doctis_cookies.txt -b /tmp/doctis_cookies.txt \
-  "http://10.0.0.10/doctis/my_view_dwg_page.php" | grep -o 'manager'
+curl -s -L -c "$C" -b "$C" \
+  "$B/my_view_dwg_page.php" | grep -o 'manager'
 ```
 
 ### Project context
@@ -380,8 +431,8 @@ Pages that require a project selected will redirect to
 handle this transparently:
 
 ```bash
-curl -s -L -c /tmp/doctis_cookies.txt -b /tmp/doctis_cookies.txt \
-  "http://10.0.0.10/doctis/dwg_create_page.php" -o /tmp/page.html
+curl -s -L -c "$C" -b "$C" \
+  "$B/dwg_create_page.php" -o /tmp/page.html
 ```
 
 ### Reading CSRF tokens from a page
@@ -395,6 +446,9 @@ TOKEN=$(grep -oP 'name="dwg_report_token" value="\K[^"]+' /tmp/page.html)
 TOKEN=$(grep -oP 'name="<token_name>" value="\K[^"]+' /tmp/page.html)
 ```
 
+In Claude Code's shell, `grep` is a ugrep wrapper that skips gitignored files
+and can reject complex `-P` patterns; use `/bin/grep` when that gets in the way.
+
 Token names follow the pattern `<action>_token`, e.g.:
 - `dwg_report_token` — document create form
 - `dwg_primary_file_update_token` — primary document upload on view page
@@ -402,12 +456,12 @@ Token names follow the pattern `<action>_token`, e.g.:
 ### Creating a document
 
 ```bash
-curl -s -L -c /tmp/doctis_cookies.txt -b /tmp/doctis_cookies.txt \
-  "http://10.0.0.10/doctis/dwg_create_page.php" -o /tmp/create.html
+curl -s -L -c "$C" -b "$C" \
+  "$B/dwg_create_page.php" -o /tmp/create.html
 TOKEN=$(grep -oP 'name="dwg_report_token" value="\K[^"]+' /tmp/create.html)
 
-curl -s -c /tmp/doctis_cookies.txt -b /tmp/doctis_cookies.txt \
-  -X POST "http://10.0.0.10/doctis/dwg_create.php" \
+curl -s -c "$C" -b "$C" \
+  -X POST "$B/dwg_create.php" \
   -F "dwg_report_token=${TOKEN}" \
   -F "m_dwg_id=0" -F "project_id=1" -F "category_id=0" \
   -F "dwg_title=Test Document" -F "dwg_author=Test Author" \
@@ -430,12 +484,12 @@ To include a primary document file on create, add:
 ### Uploading/replacing a primary document (view page)
 
 ```bash
-curl -s -L -c /tmp/doctis_cookies.txt -b /tmp/doctis_cookies.txt \
-  "http://10.0.0.10/doctis/dwg_view.php?id=<N>" -o /tmp/view.html
+curl -s -L -c "$C" -b "$C" \
+  "$B/dwg_view.php?id=<N>" -o /tmp/view.html
 UPLOAD_TOKEN=$(grep -oP 'dwg_primary_file_update[^"]*" value="\K[^"]+' /tmp/view.html)
 
-curl -s -c /tmp/doctis_cookies.txt -b /tmp/doctis_cookies.txt \
-  -X POST "http://10.0.0.10/doctis/dwg_primary_file_update.php" \
+curl -s -c "$C" -b "$C" \
+  -X POST "$B/dwg_primary_file_update.php" \
   -F "dwg_primary_file_update_token=${UPLOAD_TOKEN}" \
   -F "dwg_id=<N>" \
   -F "primary_document_file=@/tmp/myfile.pdf;type=application/pdf;filename=myfile.pdf" \
@@ -447,15 +501,15 @@ curl -s -c /tmp/doctis_cookies.txt -b /tmp/doctis_cookies.txt \
 ### Downloading a primary document
 
 ```bash
-curl -s -c /tmp/doctis_cookies.txt -b /tmp/doctis_cookies.txt \
-  "http://10.0.0.10/doctis/file_download.php?type=dwg_primary&id=<N>"
+curl -s -c "$C" -b "$C" \
+  "$B/file_download.php?type=dwg_primary&id=<N>"
 ```
 
 ### Diagnosing curl failures
 
 - **0-byte response** — the page redirected without `-L`; add `-L` to follow
 - **302 to `login_select_proj_page.php`** — project cookie missing; follow the
-  redirect chain with `-L` and vaio will auto-select project 1
+  redirect chain with `-L` and Doctis will auto-select a project
 - **HTTP 500 with `<p>error message</p>`** — extract with:
   `grep -oP "(?<=<p>)[^<]+(?=</p>)" /tmp/result.html`
 - **Empty `Location:` header** — POST was rejected (CSRF mismatch, access
@@ -473,42 +527,40 @@ endpoints without requiring a browser or a configured SoapClient.
 ### Smoke test — all Doctis SOAP endpoints in one command
 
 ```bash
-ssh hcr@vaio "bash /var/www/html/doctis/admin/tools/doctis-soap-test.sh"
+bash /var/www/html/doctis/admin/tools/doctis-soap-test.sh \
+  http://10.0.0.94/doctis manager '' <dwg_id>
+#  host                    user    pw  test document
 ```
 
 Runs 13 tests covering every Doctis-specific SOAP endpoint (enum, document
 fetch, primary file lifecycle, attachment lifecycle).  Non-fatal — all
-steps run even if earlier ones fail.  Idempotent — cleans up leftover state
-at the start.  Exit code 0 = all pass.  Full description in
-[admin/tools/README.md](admin/tools/README.md).
+steps run even if earlier ones fail.  Exit code 0 = all pass.  Full
+description in [admin/tools/README.md](admin/tools/README.md).
 
-Override defaults to test a specific document or user:
-
-```bash
-ssh hcr@vaio "bash /var/www/html/doctis/admin/tools/doctis-soap-test.sh \
-  http://10.0.0.10/doctis manager '' 3"
-#                           host   user  pw  dwg_id
-```
+Always pass all four arguments. The script's defaults are the former vaio
+host (`10.0.0.10`) and document 2. **Point it only at a throwaway document**, created for the
+test in a scratch project: it deletes the target's primary file at the start
+and again in step 7, and on the VM every document holds imported content.
 
 ### SOAP endpoint and WSDL
 
 ```
-SOAP endpoint : http://10.0.0.10/doctis/api/soap/mantisconnect.php
-WSDL          : http://10.0.0.10/doctis/api/soap/mantisconnect.php?wsdl
+SOAP endpoint : http://10.0.0.94/doctis/api/soap/mantisconnect.php
+WSDL          : http://10.0.0.94/doctis/api/soap/mantisconnect.php?wsdl
 ```
 
 List all available operations (useful to confirm new endpoints appear after
 a WSDL change):
 
 ```bash
-curl -s "http://10.0.0.10/doctis/api/soap/mantisconnect.php?wsdl" \
+curl -s "http://10.0.0.94/doctis/api/soap/mantisconnect.php?wsdl" \
   | grep -oP 'operation name="\K[^"]+' | sort
 ```
 
 Look up parameter names for a specific method:
 
 ```bash
-curl -s "http://10.0.0.10/doctis/api/soap/mantisconnect.php?wsdl" \
+curl -s "http://10.0.0.94/doctis/api/soap/mantisconnect.php?wsdl" \
   | grep -A8 '"mc_dwg_primary_uploadRequest"'
 ```
 
@@ -532,7 +584,7 @@ curl -s \
     </man:OPERATION_NAME>
   </soapenv:Body>
 </soapenv:Envelope>' \
-  "http://10.0.0.10/doctis/api/soap/mantisconnect.php"
+  "http://10.0.0.94/doctis/api/soap/mantisconnect.php"
 ```
 
 ### Useful diagnostic one-liners
@@ -542,7 +594,7 @@ curl -s \
 ```bash
 curl -s -H "Content-Type: text/xml" -H 'SOAPAction: ""' \
   --data '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:man="http://futureware.biz/mantisconnect"><soapenv:Body><man:mc_version><username>manager</username><password></password></man:mc_version></soapenv:Body></soapenv:Envelope>' \
-  "http://10.0.0.10/doctis/api/soap/mantisconnect.php" | grep -oP '(?<=<return[^>]*>)[^<]+'
+  "http://10.0.0.94/doctis/api/soap/mantisconnect.php" | grep -oP '(?<=<return[^>]*>)[^<]+'
 ```
 
 **List all document status values:**
@@ -550,7 +602,7 @@ curl -s -H "Content-Type: text/xml" -H 'SOAPAction: ""' \
 ```bash
 curl -s -H "Content-Type: text/xml" -H 'SOAPAction: ""' \
   --data '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:man="http://futureware.biz/mantisconnect"><soapenv:Body><man:mc_enum_dwg_status><username>manager</username><password></password></man:mc_enum_dwg_status></soapenv:Body></soapenv:Envelope>' \
-  "http://10.0.0.10/doctis/api/soap/mantisconnect.php" \
+  "http://10.0.0.94/doctis/api/soap/mantisconnect.php" \
   | grep -oP '(?<=<name xsi:type="xsd:string">)[^<]+'
 ```
 
@@ -559,7 +611,7 @@ curl -s -H "Content-Type: text/xml" -H 'SOAPAction: ""' \
 ```bash
 curl -s -H "Content-Type: text/xml" -H 'SOAPAction: ""' \
   --data '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:man="http://futureware.biz/mantisconnect"><soapenv:Body><man:mc_dwg_get><username>manager</username><password></password><issue_id>2</issue_id></man:mc_dwg_get></soapenv:Body></soapenv:Envelope>' \
-  "http://10.0.0.10/doctis/api/soap/mantisconnect.php" \
+  "http://10.0.0.94/doctis/api/soap/mantisconnect.php" \
   | grep -oP '(?<=<title[^>]*>)[^<]+'
 ```
 
@@ -568,7 +620,7 @@ curl -s -H "Content-Type: text/xml" -H 'SOAPAction: ""' \
 ```bash
 curl -s -H "Content-Type: text/xml" -H 'SOAPAction: ""' \
   --data '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:man="http://futureware.biz/mantisconnect"><soapenv:Body><man:mc_dwg_primary_get><username>manager</username><password></password><dwg_id>2</dwg_id></man:mc_dwg_primary_get></soapenv:Body></soapenv:Envelope>' \
-  "http://10.0.0.10/doctis/api/soap/mantisconnect.php"
+  "http://10.0.0.94/doctis/api/soap/mantisconnect.php"
 # Returns empty PrimaryFileData if no file; filename/filesize/file_type/download_url if present
 ```
 
@@ -599,10 +651,10 @@ After any upload or delete via SOAP (or the web UI), confirm the commit is
 attributed to the correct Doctis user:
 
 ```bash
-ssh hcr@vaio "git --git-dir=/var/git/doctis/example-r<N>.git \
-  log --format='%h %an <%ae> %s' -5"
+git --git-dir=/var/git/doctis/<slug>-r<N>.git log --format='%h %an <%ae> %s' -5
 # (repo basename is <slug>-r<repository_id> — ls /var/git/doctis/ to find it)
-# Should show the Doctis user's realname and email, not "Doctis <doctis@vaio.local>"
+# Should show the Doctis user's realname (or username) and email, not the
+# server identity "Doctis <doctis@vaio.local>" from /var/www/.gitconfig
 ```
 
 ### Diagnosing "Procedure not present" SOAP errors
@@ -616,9 +668,10 @@ registered PHP function for.  Work through in order:
    # Must appear in <message>, <portType>, and <binding> sections
    ```
 
-2. **Clear the WSDL cache** (PHP caches parsed WSDL in `/tmp/wsdl-*`):
+2. **Clear the WSDL cache** (PHP caches parsed WSDL in `/tmp/wsdl-*`;
+   PHP-FPM has no private `/tmp` on the VM):
    ```bash
-   ssh hcr@vaio "sudo rm -f /tmp/wsdl-*"
+   sudo rm -f /tmp/wsdl-*
    ```
 
 3. **Force OPcache recompilation of `mc_core.php`** — the most common cause
@@ -626,16 +679,15 @@ registered PHP function for.  Work through in order:
    keyed on file mtime; touching the file forces recompilation on the next
    request:
    ```bash
-   ssh hcr@vaio "touch /var/www/html/doctis/api/soap/mc_core.php"
+   touch /var/www/html/doctis/api/soap/mc_core.php
    ```
-   Alternatively, adding any whitespace edit and saving achieves the same
-   effect via the NFS mount.
+   If that is not enough, `sudo systemctl reload php8.4-fpm` clears OPcache.
 
 4. **Confirm the PHP function is defined** by loading the SOAP stack from
    CLI as the correct user:
    ```bash
    # Write a check script:
-   cat > /tmp/check_fns.php << 'EOF'
+   cat << 'EOF' | sudo -u www-data php
    <?php
    # Bootstrap MantisBT, then load the SOAP stack
    $t_mantis_dir = '/var/www/html/doctis/';
@@ -646,14 +698,13 @@ registered PHP function for.  Work through in order:
    sort($fns);
    echo implode("\n", $fns) . "\n";
    EOF
-   ssh hcr@vaio "php /tmp/check_fns.php"
    # If the function is absent, the require_once chain has a gap
    ```
 
-5. **Check Apache error log** for include-time PHP errors that silently abort
+5. **Check the PHP error log** for include-time PHP errors that silently abort
    the SOAP bootstrap:
    ```bash
-   ssh hcr@vaio "sudo tail -30 /var/log/apache2/error.log | grep -v Xdebug"
+   tail -30 /var/log/doctis/php_errors.log
    ```
 
 ---
@@ -671,8 +722,7 @@ memory in:
 
 ```
 .claude/memory/MEMORY.md              index (read this first)
-.claude/memory/project_doctis_overview.md
-.claude/memory/user_role.md
+.claude/memory/<type>_<topic>.md      one fact per file, listed in MEMORY.md
 ```
 
 **REQUIRED — session start:** You MUST read `.claude/memory/MEMORY.md` and
@@ -684,8 +734,10 @@ using the standard frontmatter format (`name`, `description`, `type`), and
 update `.claude/memory/MEMORY.md`. Never write only to `~/.claude/projects/...`;
 that path is machine-local and will not survive a move to another host.
 
-The `.claude/` directory is intentionally not committed to git — it contains
-conversation history files alongside the memory `.md` files.
+The `.claude/` directory is intentionally not committed to git (`.gitignore`) —
+it holds the memory files and the local Claude Code settings
+(`settings.local.json`). Conversation transcripts are stored separately under
+`~/.claude/projects/`.
 
 ## MantisBT Autoloader and Namespace Rules
 
@@ -712,7 +764,7 @@ Without these, the autoloader loads the file (defining
 `Mantis\Exceptions\ServiceException`) but the unqualified name
 `ServiceException` remains undefined in the calling file's namespace. The
 runtime error is `Class "ServiceException" not found` — it appears in the
-Apache error log and takes effect only when the exception is first thrown, not
+PHP error log and takes effect only when the exception is first thrown, not
 at class load time.
 
 See `core/commands/DwgAddCommand.php` for the canonical correct pattern.
@@ -728,7 +780,7 @@ prerequisite).  `DISK`/`DATABASE` remain for **attachments only**:
 |-----------|-------------|----------|
 | Primary registered document | (nothing — always GIT) | `GitFileStorageBackend` |
 | Document attachments (`{dwg_file}`) | `$g_dwg_upload_method` | `DISK` / `DATABASE` (`GIT` value maps to `DATABASE`) |
-| Bug/issue attachments (`{bug_file}`) | `$g_file_upload_method` | `DISK` / `DATABASE` (`case GIT:` falls through to `DATABASE` in `file_api.php`, `file_download.php`, `print_dwg_attachment_preview_text()`) |
+| Bug/issue attachments (`{bug_file}`) | `$g_file_upload_method` | `DISK` / `DATABASE` (`case GIT:` falls through to `DATABASE` in `file_api.php` and `print_dwg_attachment_preview_text()`; `file_download.php` remaps `GIT` to `DATABASE` before its switches) |
 
 Rationale: the registered document is the only item a `git clone` user should
 see and the only revision-controlled record; attachments are Doctis
@@ -793,17 +845,19 @@ always be derived via `dwg_get_field($dwg_id, 'project_id')`.
 history. The bare repo receives nothing until `git push` is called.
 `GitFileStorageBackend::store()` always pushes as its final step.
 
-**Apache HOME fix:** Apache does not set `HOME` for `www-data` worker processes,
-so git cannot find `/var/www/.gitconfig`. `GitFileStorageBackend::ensure_git_home()`
-calls `putenv('HOME=...')` using `posix_getpwuid()` before every git operation.
-This is transparent at runtime but explains why manual SSH tests (`sudo -u www-data`)
-always work while Apache requests failed before the fix was in place.
+**HOME fix:** web-server PHP workers run without `HOME` (PHP-FPM clears the
+environment by default; Apache did the same), so git cannot find
+`/var/www/.gitconfig`. `GitFileStorageBackend::ensure_git_home()` calls
+`putenv('HOME=...')` using `posix_getpwuid()` before every git operation.
+This is transparent at runtime but explains why manual `sudo -u www-data`
+tests always worked while web requests failed before the fix was in place.
 
 **Branch name:** `init.defaultBranch = main` in `/var/www/.gitconfig` ensures
 new repos use `main`. The PHP backend calls `getCurrentBranchName()` before
 every push rather than hardcoding `'main'`, so both `main` and `master` repos
-are handled correctly. See [doc/doctis-git-server-setup.txt](doc/doctis-git-server-setup.txt)
-Step 5a for how to rename an existing `master` branch.
+are handled correctly. ZIP imports create `dev`. See "Branch naming: main vs
+master" in [doc/git/GIT_SERVER_SETUP.md](doc/git/GIT_SERVER_SETUP.md) for how
+to rename an existing `master` branch.
 
 **Soft delete:** `git rm` + commit + push. The file disappears from HEAD but
 the full commit history is retained in the bare repo.
@@ -829,28 +883,28 @@ the existing HEAD SHA.
 ### Integration tests
 
 ```bash
-# Pure git mechanics (no core bootstrap) — 20 steps
-ssh hcr@vaio "sudo -u www-data php /var/www/html/doctis/admin/test-git-php.php"
+# Pure git mechanics (no core bootstrap)
+sudo -u www-data php /var/www/html/doctis/admin/test-git-php.php
 
 # Mapping layer (bootstraps core) — sanitizer, repository entity/resolution,
 # path templates, register-by-reference, collisions, dangling paths,
 # sync-to-HEAD, repository adoption, rename relocation
-ssh hcr@vaio "sudo -u www-data php /var/www/html/doctis/admin/test-git-doctis.php"
+sudo -u www-data php /var/www/html/doctis/admin/test-git-doctis.php
 ```
 
 Both create and tear down their own state and must pass before enabling git
 storage on any new server.
 
-### Server infrastructure status (vaio) — current state
+### Server infrastructure status (native VM) — current state
 
 | Item | Status |
 |------|--------|
-| `/var/git/doctis/` | Created; `www-data:www-data`, mode `2770` |
-| `/var/www/doctis/worktrees/` | Created; `www-data:www-data`, mode `2770` |
-| `/var/www/.gitconfig` | Written as root; `www-data` identity set (`doctis@vaio.local`, `init.defaultBranch=main`) |
+| `/var/git/doctis/` | `www-data:www-data`, mode `2770`; `robert` reads it through the `www-data` group |
+| `/var/www/doctis/worktrees/` | `www-data:www-data`, mode `2770` |
+| `/var/www/.gitconfig` | Server identity `Doctis <doctis@vaio.local>` (carried over from vaio), `init.defaultBranch=main`, `safe.directory=*` |
 | `czproject/git-php v4.4.0` | Installed via Composer into `vendor/` |
-| `example` project repository | `/var/git/doctis/example-r<N>.git` — created on demand at first upload; `main` branch, pre-receive hook installed, `http.receivepack=true` |
-| `$g_file_upload_method` / `$g_dwg_upload_method` | Set to `GIT` in `config/config_inc.php` — governs attachments only (maps to DATABASE); primaries are always git |
+| Repositories | One per top-level project, created on import or at first upload: currently `hcrqms-r1` and `lidar-r2` (imported, branch `dev`) and `hcr571-r3` (`main`); each has the pre-receive hook and `http.receivepack=true` |
+| `$g_file_upload_method` / `$g_dwg_upload_method` | `DISK` / `GIT` in `config/config_inc.php` — attachments only (`GIT` maps to DATABASE); primaries are always git |
 
 ## AI Assistant Feature
 
@@ -889,18 +943,20 @@ Key files (one PHP and one JS module per tab):
 The API key (`$g_anthropic_api_key`) is set in `config/config_inc.php` (not committed).
 The sidebar button is suppressed entirely when the key is blank.
 
-**Adding new AI tables:** Follow the standard schema change workflow — edit
-`admin/schema.php` and rebuild the database.  See **Database Schema Changes** above
-for the full procedure and conventions.  See §3 and §6 of `doc/ai/ai-todo.md` for
-`{ai_sessions}` notes.  On the native VM a rebuild also wipes imported data — check
-DEV-SETUP.md first.
+**Adding new AI tables:** Follow the standard schema change workflow: append a
+step to `admin/schema.php` and run the upgrade; changing an existing table
+needs a rebuild.  See **Database Schema Changes** above for the full procedure
+and conventions.  See §3 and §6 of `doc/ai/ai-todo.md` for `{ai_sessions}`
+notes.  On the native VM a rebuild also wipes imported data and the meetings
+stored in it — follow
+[admin/tools/data-scripts/README.md](admin/tools/data-scripts/README.md).
 
 ## Known Architectural Trade-offs
 
 1. **Filter hacks** — [core/filter_api.php](core/filter_api.php) lines 101, 1156, 1192 contain admitted "quick'n'dirty" hacks to route document queries through the bug filter pipeline without changing all call sites.
 2. **`document_api.php`** — currently a thin wrapper; some category-style logic was copied from `category_api.php` and has a stale file header.
-3. **REST API** — no dwg/document/license REST endpoints exist yet; Commands are used internally only.
-4. **Bulk import** — no UI; must use `phpMyAdmin` or CLI directly.
+3. **REST API** — `api/rest/restcore/documents_rest.php` and `licenses_rest.php` provide CRUD for documents and licenses, and `topics_rest.php` is read-only. Document file operations (primary file, attachments) are SOAP-only (`mc_dwg_*`). See [doc/api/REST-AND-SOAP-API.md](doc/api/REST-AND-SOAP-API.md).
+4. **Bulk import** — documents can be imported only from files: Manage → **Import Data** (a ZIP upload becomes a new project and repository; file patterns default to `*.md`) or `admin/import-git-repo.php` (adopt an existing git repository). Neither imports document metadata from a spreadsheet or other structured source.
 5. **Two attachment config keys; primaries are git-only** — bug/issue attachments use `$g_file_upload_method`; document attachments use `$g_dwg_upload_method` (*separate* keys, attachments only). A `GIT` value in either falls back to DATABASE for attachments. The **primary registered document** ignores both — it is always stored in git (no configuration). This is intentional — attachments are "assisting metadata", not revision-controlled. See `doc/git/GIT_ARCHITECTURE.md`.
-6. **`file_api.php` switch statements** — MantisBT's original bug attachment code has multiple `switch($file_upload_method)` blocks. Each new storage method requires a case in all of them. Discovered locations: upload (around line 1009), MIME detection (line 1314), content output (`file_download.php` line 238). Search for `file_upload_method` when adding future methods.
+6. **`file_api.php` switch statements** — MantisBT's original bug attachment code has multiple `switch($file_upload_method)` blocks. Each new storage method requires a case in all of them. Discovered locations: upload (around line 1007), MIME detection (around line 1317), content output (`file_download.php`, which remaps `GIT` around line 324). Search for `file_upload_method` and `dwg_upload_method` when adding future methods.
 7. **Git infrastructure is an install prerequisite** — primary-document storage requires the git binary, `$g_git_storage_root`, and `$g_git_worktree_root` to be functional; there is no DATABASE fallback for primaries. `install-target.sh`:`configure_target()` writes the storage paths into `config_inc.php` before `install_git_storage()` has run — if `install_git_storage()` subsequently fails (git not installed, permission error creating `/var/git/doctis/`), primary-document uploads will error at runtime. **Future hardening:** `install_git_storage()` failure should abort the install, and `admin/check` should verify the git binary and storage-root permissions.
