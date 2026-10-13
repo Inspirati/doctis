@@ -11,8 +11,6 @@
 #
 #   sudo bash /var/www/html/doctis/admin/tools/doctis-git-setup.sh [WEBROOT]
 #
-#   ssh hcr@vaio "sudo bash /var/www/html/doctis/admin/tools/doctis-git-setup.sh"
-#
 # Default WEBROOT: /var/www/html/doctis
 # Idempotent: safe to re-run on an already-configured server.
 # =============================================================================

@@ -6,7 +6,7 @@
  * full store/retrieve/delete cycle, then tears everything down.  Leaves no
  * residue on success or failure.
  *
- * Run on vaio as www-data:
+ * Run on the server (the native development VM) as www-data:
  *   sudo -u www-data php /var/www/html/doctis/admin/test-git-php.php
  */
 

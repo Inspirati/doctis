@@ -5,21 +5,20 @@ Doctis stress-test SQL generator.
 Generates a self-contained SQL script that inserts a large synthetic dataset
 into an existing Doctis database (post-install, post-sample-data-load).
 
-Usage:
+Usage (on the server, e.g. the native development VM; MariaDB as root via
+its unix socket):
     # Generate and load in one step:
-    python3 admin/tools/doctis-generate-stress-data.py | \
-        ssh hcr@vaio "mysql doctis"
+    python3 admin/tools/doctis-generate-stress-data-tiny.py | sudo mysql doctis
 
     # Or save first then load:
-    python3 admin/tools/doctis-generate-stress-data.py > /tmp/stress.sql
-    cat /tmp/stress.sql | ssh hcr@vaio "mysql doctis"
+    python3 admin/tools/doctis-generate-stress-data-tiny.py > stress.sql
+    sudo mysql doctis < stress.sql
 
 Tune the CONSTANTS block below, then re-run.  A fresh reset is required
-before each load (the INSERTs are not idempotent):
+before each load (the INSERTs are not idempotent).  On the native VM this
+deletes the imported projects: back up first (admin/tools/data-scripts/README.md).
 
-    ssh hcr@vaio "echo 'yes' | sudo bash /var/www/html/doctis/admin/tools/doctis-git-reset.sh"
-    ssh hcr@vaio "echo 'yes' | bash /var/www/html/doctis/admin/tools/doctis-drop-and-create-new-database.sh"
-    ssh hcr@vaio "echo 'yes' | bash /var/www/html/doctis/admin/tools/doctis-load-sample-data.sh"
+    sudo bash /var/www/html/doctis/admin/tools/doctis-reset-native-test.sh --execute
 """
 
 import hashlib

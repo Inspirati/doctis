@@ -11,7 +11,7 @@ green = success/diagnostic, yellow = warning, red = failure).
 | Script | Purpose | Run as |
 |--------|---------|--------|
 | `install.sh` | Bootstrap: fetch `install-option.sh` from GitHub and run a full install | user |
-| `install-lan.sh` | Like `install.sh` but fetches scripts from the local vaio server instead of GitHub | user |
+| `install-lan.sh` | Like `install.sh` but fetches scripts from the LAN server vaio (`10.0.0.10`) instead of GitHub | user |
 | `install-option.sh` | Dispatcher — parses verbs (`install all\|system\|target`) and sources sub-scripts | user |
 | `install-system.sh` | System-level setup: LAMP stack, extra packages, MariaDB, VS Code, Xdebug | sudo |
 | `install-target.sh` | Application-level setup: clone repo, configure DB, run MantisBT installer, git storage | sudo |
@@ -19,8 +19,10 @@ green = success/diagnostic, yellow = warning, red = failure).
 | `check.sh` | Development scratch / URL sanity check (incomplete, not for production use) | user |
 | `doctis-git-setup.sh` | One-time git document-store infrastructure setup (directories, gitconfig, Composer) | sudo |
 | `doctis-git-reset.sh` | Wipe the git document store to an empty state (for testing clean-room resets) | sudo |
-| `doctis-drop-and-create-new-database.sh` | Drop and recreate the MariaDB database, run the installer, reload example data | user (mysql via ~/.my.cnf) |
-| `doctis-soap-test.sh` | Exercise Doctis-specific SOAP endpoints end-to-end; prints pass/fail per test | user |
+| `doctis-drop-and-create-new-database.sh` | Drop and recreate the MariaDB database and run the schema installer (no sample data) | sudo (MariaDB via unix socket), or a user with `~/.my.cnf` |
+| `doctis-load-sample-data.sh` | Load the example project, licences and test users into an installed database | sudo, like the line above |
+| `doctis-reset-native-test.sh` | Native VM: reset git store and database together, reload sample data, verify (`--preview` / `--execute`) | sudo |
+| `doctis-soap-test.sh` | Exercise Doctis-specific SOAP endpoints end-to-end against a throwaway document; prints pass/fail per test | user |
 | `doctis-git-import.sh` | Import an existing git repository as a Doctis project (wrapper for `admin/import-git-repo.php`; see `--help` and doc/git/GIT_IMPORTER.md) | sudo (runs as www-data) |
 
 ---
@@ -72,7 +74,11 @@ This is equivalent to:
 
 LAN variant of `install.sh`.  Fetches scripts from vaio (`10.0.0.10`) instead
 of GitHub.  Use this when the target VM can reach vaio but not the internet,
-or to test install scripts that have not yet been pushed to GitHub.
+or to test install scripts that have not yet been pushed to GitHub.  vaio is
+the former development host, now only a LAN file server; its served checkout
+must be updated to the intended `dev` first (on 2026-10-13 it was still at
+`8939aea32`, without nginx support). See
+[NATIVE-DEVELOPMENT.md](../../doc/NATIVE-DEVELOPMENT.md).
 
 ```bash
 # On the target VM:
@@ -165,7 +171,7 @@ Entry function: `install_target "$@"`
 
 | Position | Example | Description |
 |----------|---------|-------------|
-| 1 | `10.0.0.10` | Domain / IP address used in URLs |
+| 1 | `10.0.0.94` | Domain / IP address used in URLs |
 | 2 | `password` | MariaDB admin password |
 | 3 | `me@gmail.com` | Email address for notifications |
 | 4 | `AppPassword` | Gmail app password |
@@ -208,11 +214,10 @@ What it does:
 Must be run as root:
 
 ```bash
-# Via SSH from dev machine:
-ssh hcr@vaio "sudo bash /var/www/html/doctis/admin/tools/doctis-git-setup.sh"
+sudo bash /var/www/html/doctis/admin/tools/doctis-git-setup.sh
 
 # With explicit webroot (default is /var/www/html/doctis):
-ssh hcr@vaio "sudo bash /var/www/html/doctis/admin/tools/doctis-git-setup.sh /var/www/html/doctis"
+sudo bash /var/www/html/doctis/admin/tools/doctis-git-setup.sh /var/www/html/doctis
 ```
 
 This script is also called automatically by `install-target.sh` during a full install.
@@ -239,8 +244,8 @@ Must be run as root.  Prompts for confirmation when invoked directly;
 runs without prompting when sourced:
 
 ```bash
-# Interactive (direct invocation):
-ssh hcr@vaio "echo 'yes' | sudo bash /var/www/html/doctis/admin/tools/doctis-git-reset.sh"
+# Direct invocation (answers the confirmation prompt):
+sudo bash /var/www/html/doctis/admin/tools/doctis-git-reset.sh <<< yes
 
 # Non-interactive (sourced from another script):
 # source doctis-git-reset.sh   →  main() is called automatically
@@ -254,16 +259,14 @@ Drops the `doctis` MariaDB database, recreates it, and runs the Doctis schema
 installer. It does not reload example data; use `doctis-load-sample-data.sh`
 afterward when that fixture set is needed.
 
-**Must be run from its own directory.**  It uses the relative path
-`../../../doctis` to construct the correct installer URL.  Running from any
-other directory causes a 404 and the schema is not installed.
+It runs `mysql` with the client defaults: as root (via `sudo`) that is
+MariaDB's unix-socket login, so no password is needed. It resolves the
+installer URL from its own location, so it can be run from any directory. On
+the native VM the installer is served over loopback only, so pass
+`127.0.0.1` as the domain:
 
 ```bash
-# Correct — cd into the script's directory first:
-ssh hcr@vaio "echo 'yes' | bash -c 'cd /var/www/html/doctis/admin/tools && bash doctis-drop-and-create-new-database.sh'"
-
-# Wrong — will 404 and leave the database empty:
-ssh hcr@vaio "echo 'yes' | bash /var/www/html/doctis/admin/tools/doctis-drop-and-create-new-database.sh"
+sudo bash /var/www/html/doctis/admin/tools/doctis-drop-and-create-new-database.sh doctis not-used 127.0.0.1 <<< yes
 ```
 
 Accepts optional positional parameters to override defaults:
@@ -275,11 +278,11 @@ doctis-drop-and-create-new-database.sh [target] [mysql_pass] [domain_ip]
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `target` | `doctis` | Database name and URL path |
-| `mysql_pass` | `password` | MariaDB admin password |
-| `domain_ip` | auto-detected | IP/hostname used to reach the installer URL |
+| `mysql_pass` | `password` | Unused while the admin-user setup step stays disabled |
+| `domain_ip` | auto-detected | IP/hostname used to reach the installer URL (`127.0.0.1` on the native VM) |
 
-A timestamped HTML log of the installer output is saved to the current
-directory as `doctis_install_<YYYYMMDD_HHMMSS>.html` (excluded from git).
+The installer's HTML output is saved to `/tmp/doctis-install.XXXXXX.html`
+(mode 600); the script prints the path.
 
 ---
 
@@ -309,24 +312,26 @@ End-to-end test for the Doctis-specific SOAP endpoints introduced in
 | 12 | `mc_dwg_attachment_get` | Returns "not found" fault after delete |
 
 Failures are non-fatal — the script runs all steps and prints a summary.
-Exit code is 0 if all tests pass, 1 if any fail.
+Exit code is 0 if all tests pass, 1 if any fail, 2 if `dwg_id` is missing.
+
+**The target must be a throwaway document.** Steps 3 and 7 delete its primary
+file (step 3 first clears a previous run). Create a scratch project and a
+document in it, and remove both afterwards: the upload creates a repository
+for the project. See [doc/TESTING.md](../../doc/TESTING.md) §3.
 
 **Usage:**
 
 ```bash
-# Run with defaults (host=http://10.0.0.10/doctis, user=manager, dwg_id=2):
-ssh hcr@vaio "bash /var/www/html/doctis/admin/tools/doctis-soap-test.sh"
-
-# Override all parameters:
 bash admin/tools/doctis-soap-test.sh <host> <username> <password> <dwg_id>
 
-# Example — different document:
-ssh hcr@vaio "bash /var/www/html/doctis/admin/tools/doctis-soap-test.sh http://10.0.0.10/doctis manager '' 3"
+# Native VM (host, user and password shown are the defaults; dwg_id is required):
+bash /var/www/html/doctis/admin/tools/doctis-soap-test.sh http://10.0.0.94/doctis manager '' <dwg_id>
 ```
 
 **Requirements:**
 - `curl`, `base64`, `grep`, `sed` — all standard on Debian/Ubuntu.
-- At least one document must exist in the database.
+- A throwaway document in a real project (not the seed row, `dwg` id 1).
+- Email notifications off while it runs, on an instance with live SMTP.
 - The test account must have Manager-level access to the target document's project.
 - The GIT file storage backend must be configured and operational.
 
@@ -354,27 +359,29 @@ sudo bash /var/www/html/doctis/admin/tools/doctis-reset-native-test.sh --preview
 sudo bash /var/www/html/doctis/admin/tools/doctis-reset-native-test.sh --execute
 ```
 
-The older vaio commands below remain for that environment.
-
-Run these two commands in order before any test session that must start from
-a known-empty state:
+Without sample data, run the two resets in order instead (for example before
+reloading from `data-scripts/`, as described in
+[data-scripts/README.md](data-scripts/README.md)):
 
 ```bash
 # 1. Wipe git document store
-ssh hcr@vaio "echo 'yes' | sudo bash /var/www/html/doctis/admin/tools/doctis-git-reset.sh"
+sudo bash /var/www/html/doctis/admin/tools/doctis-git-reset.sh <<< yes
 
 # 2. Drop, recreate, and reinstall the database
-ssh hcr@vaio "echo 'yes' | bash -c 'cd /var/www/html/doctis/admin/tools && bash doctis-drop-and-create-new-database.sh'"
+sudo bash /var/www/html/doctis/admin/tools/doctis-drop-and-create-new-database.sh doctis not-used 127.0.0.1 <<< yes
 ```
+
+On the native VM either form deletes the imported projects and the pilot
+data. Back them up first.
 
 Verify afterwards:
 
 ```bash
 # Git store should be empty
-ssh hcr@vaio "ls /var/git/doctis/ /var/www/doctis/worktrees/"
+ls /var/git/doctis/ /var/www/doctis/worktrees/
 
-# Database should have example project and test users only
-ssh hcr@vaio "mysql -e 'SELECT id,name FROM doctis.project; SELECT id,username FROM doctis.user;'"
+# No projects and only administrator, or the example project and test users
+sudo mysql doctis -e 'SELECT id,name FROM project; SELECT id,username FROM user;'
 ```
 
 ---

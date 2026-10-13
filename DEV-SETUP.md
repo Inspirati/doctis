@@ -1,24 +1,28 @@
 # Local development handover
 
-Status: 2026-10-08. This is the native Debian 13 development VM, not the
-company's Docker deployment. Read [AGENTS.md](AGENTS.md) for project guidance
-and [doc/TESTING.md](doc/TESTING.md) for test procedures. Some dated status
-in AGENTS.md describes earlier VM snapshots; use the current checks below.
+Status: 2026-10-13. This native Debian 13 VM (`10.0.0.94`) is the primary
+development and test environment, not the company's Docker deployment. Its
+nginx serves the running clone at `/var/www/html/doctis`. Read
+[CLAUDE.md](CLAUDE.md) and [AGENTS.md](AGENTS.md) for project guidance and
+[doc/TESTING.md](doc/TESTING.md) for test procedures. Some dated status in
+AGENTS.md describes earlier VM snapshots; use the current checks below.
 
 ## Checkouts and current branches
 
 - **Working clone:** `/home/robert/Documents/doctis` (this directory), owned by
-  `robert`. Develop and commit here on `dev`, the main development branch.
-  The former `nginx` feature branch was merged into `dev` with its full history
-  and is deprecated.
+  `robert`. Develop and commit here: on `dev`, the main development branch, or
+  on a feature branch (currently `topics`, Documentation Topics, unpushed until
+  the feature is complete). The former `nginx` and `ai-meeting` feature
+  branches were merged into `dev` with their full history and are deprecated.
 - **Running application:** `/var/www/html/doctis`, a separate Git clone owned
-  by `robert`, served at `http://10.0.0.94/doctis/`. On 2026-10-02 it was
-  switched to `dev`, tracking and fetching only `origin/dev`. The obsolete
-  local `nginx` refs were removed from this clone. On 2026-10-08 it was
-  fast-forwarded after the `ai-meeting` merge; that merged local feature branch
-  was also removed. Both feature histories remain in `dev`.
-- **Other source:** `/home/robert/html/doctis` is the vaio NFS checkout. Do not
-  alter it as part of this VM's ordinary development cycle.
+  by `robert` (group `www-data`), served at `http://10.0.0.94/doctis/`. Its
+  `origin` is GitHub and it tracks `origin/dev`; on 2026-10-13 it was checked
+  out on a local `topics` branch fetched from the working clone, to test
+  unpushed work.
+- **Other source:** `/home/robert/html/doctis` is the former development
+  checkout on vaio (`10.0.0.10`), NFS-mounted here and last updated at
+  `8939aea32`. vaio is no longer the development host. Do not alter that
+  checkout as part of this VM's ordinary development cycle.
 
 Do not edit application code in the running clone. Its
 `config/config_inc.php` contains local settings and secrets and must stay out
@@ -27,13 +31,17 @@ new code or update an existing database schema.
 
 ## Edit, publish, and test
 
-1. In the working clone, check `git status`, edit on `dev`, run relevant checks,
-   commit, and push to `origin/dev`. Do not push test data, credentials, or
-   customer documents.
+1. In the working clone, check `git status`, edit, run relevant checks and
+   commit. Push to `origin` only with the owner's approval. Do not push test
+   data, credentials, or customer documents.
 2. Run `git -C /var/www/html/doctis status --short --branch`, then update the
-   running clone as `robert` with `git -C /var/www/html/doctis pull --ff-only`.
-   Confirm its HEAD matches the intended `origin/dev` commit. The administrator
-   **Git Pull (Update)** button also pulls this clone's tracked `dev` branch.
+   running clone as `robert`. For pushed `dev`, use
+   `git -C /var/www/html/doctis pull --ff-only` (the administrator **Git Pull
+   (Update)** button does the same). For an unpushed branch, fetch from the
+   working clone: in `/var/www/html/doctis`, run
+   `git fetch /home/robert/Documents/doctis <branch> && git reset --hard FETCH_HEAD`.
+   Confirm its HEAD is the intended commit. If `admin/schema.php` gained steps,
+   run `php admin/upgrade_unattended.php` there.
 3. Exercise the change through the running site and inspect nginx/PHP logs as
    needed. Use `php -l` for changed PHP files and `bash -n` for changed shell
    scripts; choose deeper tests from `doc/TESTING.md`. Some Git and integration
@@ -68,12 +76,16 @@ invitees. Check `SELECT * FROM meeting_series WHERE active=1` before leaving a
 test series repeating; stop one from its meeting page (Repeats → Does not
 repeat).
 
-This VM's data is **not empty**: on 2026-10-08 it had four projects, 131
-project documents, two document repositories, three meetings, and 15 users.
-The schema was at version 64. A whole-instance reset deletes both database
-and Git data. The wrapper
-`admin/tools/doctis-reset-native-test.sh --execute` also reloads sample data;
-it is not the no-sample reset used for the HCRQMS ZIP rehearsal. See
+This VM's data is **not empty**. It was rebuilt on 2026-10-13 (schema 77) and
+reloaded with: 15 users; HCRQMS (project 1) and LiDAR (2), imported from ZIPs,
+with their sub-projects Engineering (3) and LiDAR/Engineering (4); and the
+Documentation Topics pilot HCR571 (5), which also holds a test document added
+in the browser. That is 130 project documents in three document repositories,
+and no meetings. A whole-instance reset deletes both
+database and Git data. Back up and reload with
+[admin/tools/data-scripts/README.md](admin/tools/data-scripts/README.md). The
+wrapper `admin/tools/doctis-reset-native-test.sh --execute` also reloads sample
+data; it is not the no-sample reset used for the HCRQMS ZIP rehearsal. See
 [doc/git/HCRQMS_ZIP_UI_IMPORT.md](doc/git/HCRQMS_ZIP_UI_IMPORT.md) for that
 rehearsal. Never use a development reset as a production rollback.
 

@@ -269,7 +269,7 @@ on top of it.
 1. Determines the path: registered directory (sticky) + new basename for
    replacements; `$g_dwg_repo_path_template` for first upload. Collision
    check **before** any git write.
-2. `store()`: `ensure_git_home()` (HOME fix for Apache), author env from the
+2. `store()`: `ensure_git_home()` (HOME fix for web-server PHP workers), author env from the
    Doctis user, `repository_ensure_on_disk()`, `dwg_git_worktree_sync()`
    (fetch + reset so the commit builds on the latest pushed state), write the
    file at `git_path`, `git add` + `git commit`
@@ -354,9 +354,10 @@ the On Record version.
 ### Architecture
 
 ```
-git clone http://<user>:<API_TOKEN>@vaio/git/<slug>-r<id>.git
+git clone http://<user>:<API_TOKEN>@<server>/git/<slug>-r<id>.git
                ↓
-        Apache routes /git/* to git_http.php
+        the web server routes /git/* to git_http.php
+        (nginx location on the native VM; Apache Alias in git-serve.conf)
                ↓
         core/git_http_api.php:
           - Extract HTTP Basic credentials from Authorization header
@@ -410,8 +411,11 @@ Developers with shell access to the server can clone and push to bare repos
 directly:
 
 ```bash
-git clone hcr@vaio:/var/git/doctis/example-r1.git
+git clone <user>@10.0.0.94:/var/git/doctis/<slug>-r<id>.git
 ```
+
+(The account needs SSH access and membership of the `www-data` group, which
+owns the bare repositories, mode `2770`.)
 
 This is entirely independent of Doctis. Developers push freely as part of
 normal iterative development — pushes advance the Draft only; Doctis remains
@@ -473,4 +477,4 @@ only legitimate git-facing operations are:
 | `admin/tools/git-hooks/pre-receive` | Pre-receive hook source of truth (installed into every bare repo) |
 | `admin/test-git-php.php` | 20-step git-mechanics test (no core bootstrap) |
 | `admin/test-git-doctis.php` | Mapping-layer integration test: entity, resolution, templates, register, collisions, dangling paths, adoption, relocation |
-| `admin/tools/git-serve.conf` | Apache config for Smart HTTP routing |
+| `admin/tools/git-serve.conf` | Apache config for Smart HTTP routing (nginx installs use the `/git/` location in their site file) |

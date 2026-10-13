@@ -5,9 +5,16 @@ what each one covers, when to reach for it, and how to run it. It is a map,
 not a tutorial — each section links to the authoritative source (script
 `--help`, source file, or a design doc) for full detail.
 
-All server-side commands run **on vaio** via `ssh hcr@vaio "..."` per
-[CLAUDE.md](../CLAUDE.md)'s Development Environment section, unless a section
-says otherwise (the git-import client script explicitly does not).
+All commands run **locally on the native development VM** (`10.0.0.94`),
+whose nginx serves the running clone at `/var/www/html/doctis` as
+`http://10.0.0.94/doctis/`. See [CLAUDE.md](../CLAUDE.md)'s Development
+Environment section and [DEV-SETUP.md](../DEV-SETUP.md). Deploy a change to
+the running clone before testing it. The former vaio host is no longer the
+test environment; older run records below that mention it are history.
+
+The VM holds persistent data (imported projects and the HCR571 pilot), and its
+outbound email is live. Use throwaway projects for anything destructive, and
+turn email notifications off before tests that queue mail in bulk.
 
 ---
 
@@ -20,37 +27,38 @@ says otherwise (the git-import client script explicitly does not).
 | Git storage backend / repository resolution / path handling | §4 `test-git-php.php` + `test-git-doctis.php` |
 | Repository import (`admin/import-git-repo.php`) | §5 Import dry-run/real-run against a scratch repo |
 | Smart HTTP gateway (clone/push, auth, hook enforcement) | §6 remote clone/push script, or §4's hook-enforcement steps |
-| A page, form, or workflow with no good headless test | §7 curl-based live testing |
+| A page, form, or workflow with no good headless test | §7 curl-based testing |
 | AI Meeting Assistant, meetings, My Meetings, minutes approval | §7a meeting end-to-end |
 | Documentation Topics (catalogues, tags, applicability, Topics page) | §2 `TopicApiTest` + §7b |
-| Anything touching schema | Rebuild first — §8 — then re-run the relevant suite above |
+| Anything touching schema | §8: upgrade (new table) or rebuild (changed table) first, then re-run the relevant suite above |
 | You aren't sure what else broke | §9 full regression sweep |
 
 ---
 
 ## 2. PHPUnit (`tests/`)
 
-**What it covers:** MantisBT core API unit tests (`tests/Mantis/`) and SOAP
-integration tests (`tests/soap/`) via PHP's SoapClient. Doctis has not yet
-added its own PHPUnit suites for `dwg_api.php` / document workflows — new
-document-domain unit tests belong here as they're written.
+**What it covers:** MantisBT core API unit tests and the Doctis tests in
+`tests/Mantis/` (`Topic*Test`, `MeetingApiTest`, `AiKnowledgeTest` and
+others), plus SOAP integration tests (`tests/soap/`) via PHP's SoapClient.
+New document-domain unit tests belong in `tests/Mantis/`.
 
-**Setup (one-time):**
-```bash
-cd /var/www/html/doctis   # on vaio
-composer install
-cp tests/bootstrap.php.sample tests/bootstrap.php
-# edit tests/bootstrap.php: MANTIS_TESTSUITE_SOAP_HOST, USERNAME, PASSWORD
-```
+**Setup (one-time, already done on the VM):** in the running clone,
+`composer install`, then `cp tests/bootstrap.php.sample tests/bootstrap.php`
+and set `MANTIS_TESTSUITE_SOAP_HOST`, `USERNAME` and `PASSWORD`. The VM's
+`tests/bootstrap.php` (gitignored) points SOAP at
+`http://10.0.0.94/doctis/api/soap/mantisconnect.php?wsdl` as administrator.
 
-**Run:**
+**Run** in the running clone, after deploying the change:
 ```bash
-ssh hcr@vaio "cd /var/www/html/doctis && ./vendor/bin/phpunit"
+cd /var/www/html/doctis
+sudo -u www-data vendor/bin/phpunit --testsuite mantis     # 276 tests, 2026-10-13
+vendor/bin/phpunit --testsuite mantis --filter Topic       # a filtered run also works as robert
 ```
 
 Config: [phpunit.xml](../phpunit.xml) — three suites (`mantis`, `soap`,
-`mantis core formatting`; a `rest` suite exists but is commented out, tracking
-the "no REST endpoints for dwg/document" gap in CLAUDE.md).
+`mantis core formatting`). A `rest` suite exists but is commented out: its
+tests target stock MantisBT REST (`MANTIS_TESTSUITE_REST_HOST`), not the
+Doctis `documents`, `licenses` and `topics` routes.
 
 ---
 
@@ -64,16 +72,28 @@ after a change, without a browser.
 
 **Properties:** non-fatal (later steps run even if earlier ones fail so you
 get a full picture), idempotent (cleans up leftover state from a prior run at
-the start), needs a real `dwg_id` in a real project — the schema's seed
-row (`dwg` id 1) has `project_id=0` and will fail step 4 onward; create or
-pick a real document first.
+the start). The target `dwg_id` is required and must be a **throwaway
+document** in a real project: the test deletes its primary file at the start
+and again in step 7. The schema's seed row (`dwg` id 1) has `project_id=0`
+and fails from step 4.
+
+**Setup:** create a scratch top-level project and a document in it (no file
+needed). Turn email notifications off while the test runs: `manager` has a
+real address and `$g_email_receive_own` is ON.
 
 **Run:**
 ```bash
-ssh hcr@vaio "bash /var/www/html/doctis/admin/tools/doctis-soap-test.sh \
-  http://10.0.0.10/doctis manager '' <dwg_id>"
-#                           host          user  pw  target document
+bash /var/www/html/doctis/admin/tools/doctis-soap-test.sh \
+  http://10.0.0.94/doctis manager '' <dwg_id>
+#  host                    user    pw  throwaway document
 ```
+
+**Clean up:** the upload creates a repository for the scratch project. Delete
+the document, the `{repository}` and `{project_repository}` rows, the project,
+and `/var/git/doctis/<slug>-r<id>.git` plus its worktree.
+
+Run 2026-10-13 on the native VM, against a scratch project removed afterwards:
+13 of 13 passed.
 
 Full endpoint reference, raw-curl SOAP templates, and base64Binary
 double-encoding notes: CLAUDE.md §"SOAP API Testing and Diagnostics".
@@ -98,16 +118,17 @@ retrieve, SHA256 integrity, soft-delete, history retention, and
 down its own temporary bare repo.
 
 ```bash
-ssh hcr@vaio "sudo -u www-data php /var/www/html/doctis/admin/test-git-php.php"
+sudo -u www-data php /var/www/html/doctis/admin/test-git-php.php
 ```
 
-Must pass before enabling git storage on any new server.
+Must pass before enabling git storage on any new server. Run 2026-10-13 on
+the native VM: 20 of 20 passed.
 
 ### 4b. `admin/test-git-doctis.php` — the Doctis mapping layer
 
 **What it covers:** everything `core/repository_api.php` and the
-path-as-data model in `core/file_dwg_api.php` add on top of raw git — 59
-checks across 13 steps: path sanitiser, repository-entity CRUD, project→
+path-as-data model in `core/file_dwg_api.php` add on top of raw git — 93
+checks (2026-10-13): path sanitiser, repository-entity CRUD, project→
 repository resolution (explicit link → hierarchy inheritance → create at
 top-level project), on-disk materialisation, primary upload with the default
 and a `{category}/{filename}` template, same-filename vs. new-filename
@@ -119,8 +140,11 @@ delete), sync-to-HEAD promotion, repository adoption (`repository_adopt()`
 full core, creates and tears down its own projects/documents/repositories.
 
 ```bash
-ssh hcr@vaio "sudo -u www-data php /var/www/html/doctis/admin/test-git-doctis.php"
+sudo -u www-data php /var/www/html/doctis/admin/test-git-doctis.php
 ```
+
+Run 2026-10-13 on the native VM: 93 passed, 0 failed; the existing projects
+and repositories were untouched.
 
 Architecture reference: [doc/git/GIT_ARCHITECTURE.md](git/GIT_ARCHITECTURE.md).
 
@@ -143,27 +167,33 @@ unmatched owner account) — without writing anything to the database or
 touching git.
 
 ```bash
-ssh hcr@vaio "sudo -u www-data php /var/www/html/doctis/admin/import-git-repo.php --help"
+I=/var/www/html/doctis/admin/import-git-repo.php
+sudo -u www-data php $I --help
 
 # Dry run — flat *.md tree, directory allowlist (HCRQMS-style)
-ssh hcr@vaio "sudo -u www-data php /var/www/html/doctis/admin/import-git-repo.php \
-  --source /var/git/MyDocs --name 'My Docs' \
-  --directories content,system --patterns '*.md' --dry-run"
+sudo -u www-data php $I --source /var/git/MyDocs --name 'My Docs' \
+  --directories content,system --patterns '*.md' --dry-run
 
 # Dry run — one sub-project per top-level directory (monorepo-style)
-ssh hcr@vaio "sudo -u www-data php /var/www/html/doctis/admin/import-git-repo.php \
-  --source /var/git/MyHardware --name 'My Hardware' \
-  --subprojects subdirs --patterns '*.pdf' --filename-parse yes --dry-run"
+sudo -u www-data php $I --source /var/git/MyHardware --name 'My Hardware' \
+  --subprojects subdirs --patterns '*.pdf' --filename-parse yes --dry-run
 
 # Real run (same flags, minus --dry-run); wrapper form:
-ssh hcr@vaio "bash /var/www/html/doctis/admin/tools/doctis-git-import.sh \
-  --source /var/git/MyDocs --name 'My Docs' --directories content,system --patterns '*.md'"
+bash /var/www/html/doctis/admin/tools/doctis-git-import.sh \
+  --source /var/git/MyDocs --name 'My Docs' --directories content,system --patterns '*.md'
 
 # Re-run later to pick up new commits — registers only new/unregistered
 # paths, never deletes, reports any registered path missing at HEAD:
-ssh hcr@vaio "... import-git-repo.php --source /var/git/MyDocs --name 'My Docs' \
-  --directories content,system --patterns '*.md' --update"
+sudo -u www-data php $I --source /var/git/MyDocs --name 'My Docs' \
+  --directories content,system --patterns '*.md' --update
 ```
+
+The browser route is Manage → **Import Data**. It takes a ZIP upload, stages
+it as a one-commit repository and runs the same importer with
+`--subprojects none`. The VM's HCRQMS and LiDAR projects were loaded this way;
+see [doc/git/HCRQMS_ZIP_UI_IMPORT.md](git/HCRQMS_ZIP_UI_IMPORT.md) and the
+reload steps in
+[admin/tools/data-scripts/README.md](../admin/tools/data-scripts/README.md).
 
 **Source repository placement:** stage the source repo anywhere readable by
 `www-data` *outside* `$g_git_storage_root` (`/var/git/doctis/` by default) —
@@ -177,8 +207,8 @@ end-to-end — this is what actually proves the registration is correct, not
 just that rows were inserted:
 ```bash
 # Compare a downloaded document against the git blob directly
-curl -s -b cookies.txt "http://10.0.0.10/doctis/file_download.php?type=dwg_primary&id=<dwg_id>" | md5sum
-ssh hcr@vaio "git --git-dir=/var/git/doctis/<repo-basename>.git show 'HEAD:<git_path>'" | md5sum
+curl -s -b "$C" "http://10.0.0.94/doctis/file_download.php?type=dwg_primary&id=<dwg_id>" | md5sum
+git --git-dir=/var/git/doctis/<repo-basename>.git show 'HEAD:<git_path>' | md5sum
 ```
 Both hashes must match. See §7 for the curl login/session pattern.
 
@@ -191,35 +221,40 @@ Both hashes must match. See §7 for the curl login/session pattern.
 the perspective of an actual external contributor: clone with a personal API
 token, edit a file, commit, push — over the network, with no server shell
 access. This is the one workflow the other test methods above don't reach,
-because they all run *on* vaio.
+because they all use the server's shell.
 
 **Script:** [doc/git/doctis-remote-clone-edit-push.sh](git/doctis-remote-clone-edit-push.sh)
-— run on a **workstation** (this machine), not via `ssh hcr@vaio`. It talks
-to the Doctis host only over HTTP(S), exactly as a real remote user would.
+— it talks to the Doctis host only over HTTP(S), exactly as a real remote
+user would. Run it from any machine that can reach the VM, the VM included.
 
 **Prerequisites:**
-- `$g_git_http_enabled = ON` on the target instance
+- `$g_git_http_enabled = ON` on the target instance (it is on the VM)
 - A personal API token (*My Account → API Tokens* in the Doctis UI, or
   `api_token_create()` for scripted setup — see the script's own header for
   a one-liner)
-- The repository basename (`<slug>-r<id>`, e.g. `hcrqms-r5`) — shown on a
+- The repository basename (`<slug>-r<id>`, e.g. `hcrqms-r1`) — shown on a
   document's "Advanced: Direct Git Repository Access" panel
   (`dwg_primary_head_warn.php`), or `ls /var/git/doctis/` on the server
+- **A scratch repository.** The script commits an edit to the first `*.md`
+  file it finds and pushes it, so on the VM do not point it at the imported
+  `hcrqms`, `lidar` or `hcr571` repositories. Upload a Markdown document to a
+  throwaway top-level project to create one, and remove it afterwards (see §3).
 
 **Run:**
 ```bash
 bash doc/git/doctis-remote-clone-edit-push.sh --help
 
 bash doc/git/doctis-remote-clone-edit-push.sh \
-  --host 10.0.0.10 --repo hcrqms-r5 --user manager
+  --host 10.0.0.94 --repo <scratch-slug>-r<id> --user manager
 # prompts for the API token; edits the first *.md file found, commits, pushes
 ```
 
-> **Gateway host note:** the gateway is mounted at the **vhost root**
-> (`Alias /git /var/www/html/doctis/git_http.php` in
-> `admin/tools/git-serve.conf`), *not* under the app path — `--host` is
-> `10.0.0.10`, not `10.0.0.10/doctis`, even though the web UI itself lives at
-> `http://10.0.0.10/doctis/`.
+> **Gateway host note:** the gateway is mounted at the **server root**, *not*
+> under the app path. On the VM's nginx, `location ~ ^/git/(.+)$` in
+> `/etc/nginx/sites-available/doctis` runs `git_http.php`; Apache used
+> `Alias /git` in `admin/tools/git-serve.conf`. So `--host` is `10.0.0.94`,
+> not `10.0.0.94/doctis`, even though the web UI itself lives at
+> `http://10.0.0.94/doctis/`.
 
 **What a successful run proves:** authentication, read access, write access,
 and — critically — that the push advanced only the repository **Draft**
@@ -228,8 +263,9 @@ recorded SHA until a manager explicitly promotes the new HEAD (*Sync to
 HEAD* in the Primary Document panel, or `dwg_primary_file_sync_head.php`).
 Check this directly:
 ```bash
-ssh hcr@vaio "mysql -N -e \"SELECT git_sha FROM doctis.dwg_primary_file WHERE dwg_id=<id>;\""
-ssh hcr@vaio "git --git-dir=/var/git/doctis/<repo-basename>.git rev-parse HEAD"
+# MYSQL_PWD set as in CLAUDE.md "Querying the database"
+mysql -h 127.0.0.1 -u doctis doctis -N -e "SELECT git_sha FROM dwg_primary_file WHERE dwg_id=<id>;"
+git --git-dir=/var/git/doctis/<repo-basename>.git rev-parse HEAD
 # the two will now differ — that's the expected, correct outcome
 ```
 The document's view page should show a "missing at HEAD" or "updated" badge
@@ -243,26 +279,26 @@ this script does not repeat them.
 
 ---
 
-## 7. Curl-based live testing
+## 7. Curl-based testing
 
 **What it covers:** anything with real HTTP/session/CSRF/redirect behaviour
 that the API-level tests above don't exercise — page rendering, form
 submission, login flow, project-context redirects, file upload via
 multipart. The closest thing to a browser test without a browser.
 
-**Login (two-step, cookie jar):**
+**Login (two-step, cookie jar):** use the `$g_path` host, `10.0.0.94`.
+Logging in at `127.0.0.1` loses the session on the first redirect.
 ```bash
-curl -s -c /tmp/doctis_cookies.txt -b /tmp/doctis_cookies.txt \
-  -X POST "http://10.0.0.10/doctis/login_password_page.php" \
+B=http://10.0.0.94/doctis; C=<scratch dir>/doctis_cookies.txt
+curl -s -c "$C" -b "$C" -X POST "$B/login_password_page.php" \
   -d "username=manager&return=index.php" -o /dev/null
-curl -s -c /tmp/doctis_cookies.txt -b /tmp/doctis_cookies.txt \
-  -X POST "http://10.0.0.10/doctis/login.php" \
+curl -s -c "$C" -b "$C" -X POST "$B/login.php" \
   -d "username=manager&password=&return=index.php&secure_session=0" -o /dev/null
 ```
 
 Full pattern library (CSRF token extraction, document creation, primary-file
 upload/replace, download, diagnosing 0-byte/302/500 responses): CLAUDE.md
-§"Curl-Based Live Testing".
+§"Curl-Based Testing".
 
 ### 7a. AI Meeting Assistant end to end — `doctis-meeting-chat.py`
 
@@ -490,7 +526,8 @@ passed, including 12 `TopicApiTest`; all page and role checks passed. Phase 1b,
 same day: 260 tests (16 `TopicApiTest`) and the checks above passed. Phase 2,
 same day: 268 tests (16 + 8 `TopicExpectationApiTest`) and the phase 2 walk
 through above passed. Phase 3, same day: 276 tests (32 Topic tests: 16 + 13 + 3)
-and the phase 3 checks above passed.
+and the phase 3 checks above passed. After the same day's database rebuild,
+the pilot is project 5 and the full `mantis` suite passed again.
 
 ---
 
@@ -500,28 +537,37 @@ and the phase 3 checks above passed.
 that must start clean — required before re-running any suite above if a
 prior session left ad hoc test data behind.
 
-**Always run both steps together** — they reference each other:
+**Always reset both stores together** — they reference each other. On the
+VM a reset also deletes the imported projects, the HCR571 pilot and any
+meetings: back up first and reload afterwards, following
+[admin/tools/data-scripts/README.md](../admin/tools/data-scripts/README.md).
+The scripts run as root, which reaches MariaDB through its unix socket.
 
 ```bash
+# Either: one command, with sample data (example project, licences, test users)
+sudo bash /var/www/html/doctis/admin/tools/doctis-reset-native-test.sh --preview
+sudo bash /var/www/html/doctis/admin/tools/doctis-reset-native-test.sh --execute
+
+# Or: step by step
 # 1. Wipe the git document store (bare repos + worktrees)
-ssh hcr@vaio "echo 'yes' | sudo bash /var/www/html/doctis/admin/tools/doctis-git-reset.sh"
-
+sudo bash /var/www/html/doctis/admin/tools/doctis-git-reset.sh <<< yes
 # 2. Drop, recreate, and install the database from admin/schema.php
-ssh hcr@vaio "echo 'yes' | bash /var/www/html/doctis/admin/tools/doctis-drop-and-create-new-database.sh"
-
-# 3. (optional) reload the standard example project/licenses/test users
-ssh hcr@vaio "echo 'yes' | bash /var/www/html/doctis/admin/tools/doctis-load-sample-data.sh"
+#    (installer reached over loopback; the password argument is unused)
+sudo bash /var/www/html/doctis/admin/tools/doctis-drop-and-create-new-database.sh doctis not-used 127.0.0.1 <<< yes
+# 3. (optional) the standard example project/licences/test users
+sudo bash /var/www/html/doctis/admin/tools/doctis-load-sample-data.sh <<< yes
 ```
 
-Verify: `mysql -e 'SELECT id, name FROM doctis.project;'` should show only
-`administrator` (no sample data) or the example project (sample data
-loaded); `ls /var/git/doctis/ /var/www/doctis/worktrees/` should be empty.
-Full procedure and rationale: CLAUDE.md §"Resetting to a Clean Slate for
-Testing".
+Verify: `sudo mysql doctis -e 'SELECT id, name FROM project; SELECT username FROM user;'`
+shows no projects and only `administrator` (no sample data), or the example
+project and test users (sample data loaded);
+`ls /var/git/doctis/ /var/www/doctis/worktrees/` is empty. Full procedure and
+rationale: CLAUDE.md §"Resetting to a Clean Slate for Testing".
 
-**After any schema change:** rebuild (steps 1–2 above) before running §4 or
-§5 — a stale schema is the most common cause of confusing failures in both.
-See CLAUDE.md §"Database Schema Changes".
+**After a schema change:** a new table needs only `php admin/upgrade_unattended.php`
+in the running clone. A changed table needs a rebuild (steps 1–2 above) before
+running §4 or §5 — a stale schema is the most common cause of confusing
+failures in both. See CLAUDE.md §"Database Schema Changes".
 
 ---
 
@@ -531,25 +577,24 @@ Run in this order after a change that touches the git/document storage
 layer — each step's failure mode points cleanly at the layer above it:
 
 ```bash
-# 0. Rebuild clean (§8)
-ssh hcr@vaio "echo 'yes' | sudo bash /var/www/html/doctis/admin/tools/doctis-git-reset.sh"
-ssh hcr@vaio "echo 'yes' | bash /var/www/html/doctis/admin/tools/doctis-drop-and-create-new-database.sh"
-ssh hcr@vaio "echo 'yes' | bash /var/www/html/doctis/admin/tools/doctis-load-sample-data.sh"
+# 0. Optional clean rebuild (§8). On the VM this deletes the imported data:
+#    back up and reload afterwards, or skip it. Steps 1-2 create and remove
+#    their own state, and steps 3-4 use throwaway projects.
 
 # 1. Git mechanics (§4a)
-ssh hcr@vaio "sudo -u www-data php /var/www/html/doctis/admin/test-git-php.php"
+sudo -u www-data php /var/www/html/doctis/admin/test-git-php.php
 
 # 2. Mapping layer (§4b)
-ssh hcr@vaio "sudo -u www-data php /var/www/html/doctis/admin/test-git-doctis.php"
+sudo -u www-data php /var/www/html/doctis/admin/test-git-doctis.php
 
-# 3. SOAP lifecycle against a real document (§3 — create one first if needed)
-ssh hcr@vaio "bash /var/www/html/doctis/admin/tools/doctis-soap-test.sh http://10.0.0.10/doctis manager '' <dwg_id>"
+# 3. SOAP lifecycle against a throwaway document (§3)
+bash /var/www/html/doctis/admin/tools/doctis-soap-test.sh http://10.0.0.94/doctis manager '' <dwg_id>
 
-# 4. Gateway, from a workstation (§6)
-bash doc/git/doctis-remote-clone-edit-push.sh --host 10.0.0.10 --repo <repo-basename> --user manager
+# 4. Gateway, against a scratch repository (§6)
+bash doc/git/doctis-remote-clone-edit-push.sh --host 10.0.0.94 --repo <scratch-repo-basename> --user manager
 
 # 5. PHPUnit (§2), if core API surface changed
-ssh hcr@vaio "cd /var/www/html/doctis && ./vendor/bin/phpunit"
+cd /var/www/html/doctis && sudo -u www-data vendor/bin/phpunit --testsuite mantis
 ```
 
 All must be green (or, for step 4, produce the expected Draft/On-Record

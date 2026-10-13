@@ -15,29 +15,35 @@
 #
 # Prerequisites:
 #   • curl, grep, sed, base64 (all standard on Debian/Ubuntu)
-#   • A running Doctis instance with at least one document in the database.
+#   • A running Doctis instance and a THROWAWAY document in a real project.
+#     The test deletes the target document's primary file (at the start, to
+#     clear a previous run, and again in step 7) and replaces it with test
+#     content. Never point it at a document whose file matters.
 #   • The test account must have at least Manager-level access to the project.
 #
 # Usage:
-#   bash admin/tools/doctis-soap-test.sh [host] [username] [password] [dwg_id]
+#   bash admin/tools/doctis-soap-test.sh <host> <username> <password> <dwg_id>
 #
-# Parameters (all optional — defaults shown):
-#   host       http://10.0.0.10/doctis     Base URL of the Doctis instance
+# Parameters (host, username and password have defaults; dwg_id is required):
+#   host       http://10.0.0.94/doctis     Base URL of the Doctis instance (native dev VM)
 #   username   manager                      SOAP / web login username
 #   password   (blank)                      Password (blank for default test users)
-#   dwg_id     2                            Document id to use as test target
+#   dwg_id     (none)                       Throwaway document id to use as test target
 #
-# Example:
-#   bash admin/tools/doctis-soap-test.sh http://10.0.0.10/doctis manager "" 2
-#
-# Remote execution via SSH (from the dev machine):
-#   ssh hcr@vaio "bash /var/www/html/doctis/admin/tools/doctis-soap-test.sh"
+# Example, on the native development VM:
+#   bash admin/tools/doctis-soap-test.sh http://10.0.0.94/doctis manager "" 131
 #
 
-HOST="${1:-http://10.0.0.10/doctis}"
+HOST="${1:-http://10.0.0.94/doctis}"
 USERNAME="${2:-manager}"
 PASSWORD="${3:-}"
-DWG_ID="${4:-2}"
+DWG_ID="${4:-}"
+
+if [[ ! "${DWG_ID}" =~ ^[1-9][0-9]*$ ]]; then
+    echo "Usage: bash $0 <host> <username> <password> <dwg_id>" >&2
+    echo "dwg_id is required: a throwaway document whose primary file the test may delete." >&2
+    exit 2
+fi
 
 SOAP_URL="${HOST}/api/soap/mantisconnect.php"
 SOAP_NS="http://futureware.biz/mantisconnect"

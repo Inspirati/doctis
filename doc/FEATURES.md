@@ -111,18 +111,32 @@ The web process runs as `www-data`.  Relevant ownership:
 
 | Resource | Owner | www-data access |
 |---|---|---|
-| `config/config_inc.php` | hcr:share | **read** only |
-| `/var/www/html/doctis/.git/` | hcr:share | **read** only |
+| `config/config_inc.php` | deploy account | **read** only |
+| `/var/www/html/doctis/.git/` | deploy account | **read** only |
 | `/var/git/doctis/` | www-data:www-data | **full** |
 | `/var/www/doctis/worktrees/` | www-data:www-data | **full** |
 
-`www-data` cannot write the working tree or config directory.  `hcr` owns the
-working tree, is in both `www-data` and `share`, and holds `~/.my.cnf` (MariaDB
-credentials).  Operations that need write access run as `hcr` via `sudo`.
+`www-data` cannot write the working tree or config directory.  The deploy
+account owns the working tree and is in the `www-data` group: `hcr` on the
+former vaio host and in the Docker image, `robert` (group `www-data`) on the
+native development VM.  Operations that need write access run as that account
+via `sudo`.
 
 The deploy account is recorded in `$g_updater_run_as_user` in `config_inc.php`.
 All system operations pages build `sudo -u <that user>` commands via
 `system_ops_sudo_prefix()` in `core/system_ops_api.php`.
+
+**Database Backup** no longer uses sudo: `manage_db_backup_download.php` runs
+`mariadb-dump` (or `mysqldump`) as `www-data` with the application's own
+database credentials, passed in a temporary `--defaults-extra-file`.
+**Load Data** runs the uploaded SQL through the application's own database
+connection, also without sudo.
+
+**Native VM (2026-10-13):** `/etc/sudoers.d/doctis-web` grants only the
+`git pull` rule. Rebuild Database, Load Sample Data and the config file upload
+therefore have no sudo rule there; use the shell scripts in `admin/tools/` as
+root instead (see [admin/tools/README.md](../admin/tools/README.md)), or add
+the rules below.
 
 #### Required server infrastructure (one-time manual setup on each host)
 
@@ -135,13 +149,12 @@ www-data ALL=($USER) NOPASSWD: /usr/bin/git -C /var/www/html/doctis pull
 www-data ALL=($USER) NOPASSWD: /var/www/html/doctis/admin/tools/doctis-write-config.sh
 www-data ALL=($USER) NOPASSWD: /var/www/html/doctis/admin/tools/doctis-drop-and-create-new-database.sh
 www-data ALL=($USER) NOPASSWD: /var/www/html/doctis/admin/tools/doctis-load-sample-data.sh
-www-data ALL=($USER) NOPASSWD: /var/www/html/doctis/admin/tools/doctis-backup-database.sh
 EOF
 sudo visudo -c -f /etc/sudoers.d/doctis-web
 ```
 
 Note: `doctis-git-setup.sh` (Step 9) automates the `git pull` line.  The
-remaining four lines must be added manually (they require the deploy user's
+remaining three lines must be added manually (they require the deploy user's
 credentials and script paths that `doctis-git-setup.sh` does not know).
 
 **2. System gitconfig `safe.directory`** — required for both `www-data` (the
@@ -160,21 +173,21 @@ This is also handled by `doctis-git-setup.sh` Step 9, but only for the
 
 ```bash
 chmod +x /var/www/html/doctis/admin/tools/doctis-write-config.sh
-chmod +x /var/www/html/doctis/admin/tools/doctis-backup-database.sh
 ```
+
+`admin/tools/doctis-backup-database.sh` (a sudo-based dump to stdout) is no
+longer called by the Backup Database page and needs no sudo rule.
 
 #### Smoke-testing the sudo rules
 
 ```bash
-# Config write (non-destructive — creates a backup automatically)
+# Config write (non-destructive — creates a backup automatically);
+# replace hcr with the deploy account ($g_updater_run_as_user)
 sudo -u www-data bash -c 'echo "<?php # test" | sudo -u hcr /var/www/html/doctis/admin/tools/doctis-write-config.sh'
 
 # Git pull prerequisites — verify safe.directory and sudoers (NOT 'git status' — not in allowlist)
 sudo -u www-data git -C /var/www/html/doctis rev-parse --abbrev-ref HEAD
 sudo -l -U www-data | grep 'doctis pull'
-
-# DB backup
-sudo -u www-data bash -c 'sudo -u hcr /var/www/html/doctis/admin/tools/doctis-backup-database.sh | head -5'
 
 # Git backup (no sudo required)
 sudo -u www-data bash -c 'tar czf - -C /var/git/doctis . | wc -c'
@@ -380,7 +393,8 @@ where the filename is recovered from the commit tree via
 
 - **Audit log?** System operations leave no Doctis-level audit trail.  Consider
   `error_log( 'ADMIN: ' . current_user_get_field('username') . ' executed X at ' . date('c') )`
-  in each action page, writing a breadcrumb to `/var/log/apache2/error.log`.
+  in each action page, writing a breadcrumb to the PHP error log
+  (`/var/log/doctis/php_errors.log` on the native VM). Load Data already does this.
 
 - **Config backup cleanup?** `doctis-write-config.sh` accumulates
   `.bak.YYYYMMDD_HHMMSS` files in `config/`.  Either add a `find … -delete`

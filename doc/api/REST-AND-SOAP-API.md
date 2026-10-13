@@ -156,14 +156,14 @@ Log in → click your username (top-right) → My Account → API Tokens tab →
 **Creating a token via PHP (for scripted setup on a new server):**
 
 ```bash
-ssh hcr@vaio "php -r \"
-define('MANTIS_CORE', true);
-chdir('/var/www/html/doctis');
-require_once 'core.php';
-\\\$user_id = user_get_id_by_name('manager');
-\\\$token = api_token_create('rest-test', \\\$user_id);
-echo \\\$token . PHP_EOL;
-\""
+# On the server (e.g. the native development VM), as the web server user:
+sudo -u www-data php -r '
+chdir("/var/www/html/doctis");
+require_once "core.php";
+$user_id = user_get_id_by_name("manager");
+$token = api_token_create("rest-test", $user_id);
+echo $token . PHP_EOL;
+'
 ```
 
 ### SOAP — username and password
@@ -193,7 +193,7 @@ Returns full document detail including description, workflow state, and history.
 ```bash
 TOKEN="your-api-token-here"
 curl -s -H "Authorization: $TOKEN" \
-  'http://10.0.0.10/doctis/api/rest/documents/2' | python3 -m json.tool
+  'http://10.0.0.94/doctis/api/rest/documents/2' | python3 -m json.tool
 ```
 
 **Response 200:**
@@ -238,15 +238,15 @@ Returns paginated list with workflow state for each document. All fields shown i
 ```bash
 # All documents in project 1, page 1, 50 per page (default)
 curl -s -H "Authorization: $TOKEN" \
-  'http://10.0.0.10/doctis/api/rest/documents?project_id=1'
+  'http://10.0.0.94/doctis/api/rest/documents?project_id=1'
 
 # Paginate
 curl -s -H "Authorization: $TOKEN" \
-  'http://10.0.0.10/doctis/api/rest/documents?project_id=1&page=2&page_size=10'
+  'http://10.0.0.94/doctis/api/rest/documents?project_id=1&page=2&page_size=10'
 
 # All projects
 curl -s -H "Authorization: $TOKEN" \
-  'http://10.0.0.10/doctis/api/rest/documents'
+  'http://10.0.0.94/doctis/api/rest/documents'
 ```
 
 **Response 200:**
@@ -283,7 +283,7 @@ curl -s -H "Authorization: $TOKEN" \
   "description":    "Safety case for release 2.0.",
   "category":       { "id": 1 }
 }' \
-  'http://10.0.0.10/doctis/api/rest/documents'
+  'http://10.0.0.94/doctis/api/rest/documents'
 ```
 
 **Response 201:** Document object under `"document"` key (singular).
@@ -308,7 +308,7 @@ curl -s -X PATCH \
      -H "Authorization: $TOKEN" \
      -H "Content-Type: application/json" \
      -d '{ "status": { "id": 120, "name": "received" } }' \
-  'http://10.0.0.10/doctis/api/rest/documents/5'
+  'http://10.0.0.94/doctis/api/rest/documents/5'
 
 # Assign a handler and update description
 curl -s -X PATCH \
@@ -318,7 +318,7 @@ curl -s -X PATCH \
   "handler":     { "id": 7 },
   "description": "Updated scope — now covers subsystem B."
 }' \
-  'http://10.0.0.10/doctis/api/rest/documents/5'
+  'http://10.0.0.94/doctis/api/rest/documents/5'
 ```
 
 **Response 200:** Updated document under `"documents"` key (array with one entry).
@@ -329,7 +329,7 @@ Removes the `dwg` and `dwg_text` rows, all notes, attachments, history, and rela
 
 ```bash
 curl -s -X DELETE -H "Authorization: $TOKEN" \
-  'http://10.0.0.10/doctis/api/rest/documents/5' -w '%{http_code}\n'
+  'http://10.0.0.94/doctis/api/rest/documents/5' -w '%{http_code}\n'
 # → 204
 ```
 
@@ -350,7 +350,7 @@ Returns id and name only for all licenses. No pagination — the full list is re
 
 ```bash
 curl -s -H "Authorization: $TOKEN" \
-  'http://10.0.0.10/doctis/api/rest/licenses'
+  'http://10.0.0.94/doctis/api/rest/licenses'
 ```
 
 **Response 200:**
@@ -367,7 +367,7 @@ curl -s -H "Authorization: $TOKEN" \
 
 ```bash
 curl -s -H "Authorization: $TOKEN" \
-  'http://10.0.0.10/doctis/api/rest/licenses/1'
+  'http://10.0.0.94/doctis/api/rest/licenses/1'
 ```
 
 **Response 200:**
@@ -399,7 +399,7 @@ curl -s -H "Authorization: $TOKEN" \
   "description": "External audit qualification",
   "enabled":     true
 }' \
-  'http://10.0.0.10/doctis/api/rest/licenses'
+  'http://10.0.0.94/doctis/api/rest/licenses'
 ```
 
 **Response 201:** Full license detail under `"license"` key (singular).
@@ -412,7 +412,7 @@ curl -s -X PATCH \
      -H "Authorization: $TOKEN" \
      -H "Content-Type: application/json" \
      -d '{ "enabled": false }' \
-  'http://10.0.0.10/doctis/api/rest/licenses/27'
+  'http://10.0.0.94/doctis/api/rest/licenses/27'
 ```
 
 **Response 200:** Full license detail under `"license"` key.
@@ -421,7 +421,7 @@ curl -s -X PATCH \
 
 ```bash
 curl -s -X DELETE -H "Authorization: $TOKEN" \
-  'http://10.0.0.10/doctis/api/rest/licenses/27' -w '%{http_code}\n'
+  'http://10.0.0.94/doctis/api/rest/licenses/27' -w '%{http_code}\n'
 # → 204
 ```
 
@@ -439,14 +439,14 @@ Full WSDL: append `?wsdl` to the endpoint URL.
 
 ```bash
 # List all available operations
-curl -s "http://10.0.0.10/doctis/api/soap/mantisconnect.php?wsdl" \
+curl -s "http://10.0.0.94/doctis/api/soap/mantisconnect.php?wsdl" \
   | grep -oP 'operation name="\K[^"]+' | sort
 ```
 
 ### SOAP envelope template
 
 ```bash
-SOAP_URL="http://10.0.0.10/doctis/api/soap/mantisconnect.php"
+SOAP_URL="http://10.0.0.94/doctis/api/soap/mantisconnect.php"
 SOAP() {
   curl -s \
     -H "Content-Type: text/xml; charset=utf-8" \

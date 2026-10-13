@@ -8,28 +8,34 @@ No installer, container build, database operation, or runtime test was executed
 for this assessment. The supplied files describe a deployment; they do not
 establish the company's actual running configuration.
 
-## Current operating status — 2026-10-08
+## Current operating status — 2026-10-13
 
-The native nginx profile and subsequent feature work were merged from the
-`nginx` feature branch into `dev`. **Use `dev` for all new development and
-installation work; `nginx` is deprecated.** The working clone is
-`/home/robert/Documents/doctis`. The running clone at
-`/var/www/html/doctis` was switched to `dev`, tracks and fetches only
-`origin/dev`, and served the login page successfully after the switch. Its
-old local `nginx` refs were removed; the GitHub branch remains as history.
-The `ai-meeting` feature branch is also fully merged into `dev` and deprecated.
-The running clone was fast-forwarded to `dev` on 2026-10-08; its local
-`ai-meeting` branch was removed. See [DEV-SETUP.md](DEV-SETUP.md) for the
-edit, push, pull, and test cycle.
+**The native Debian 13 VM at `10.0.0.94` is the primary development and test
+environment.** Its nginx and PHP-FPM serve the running clone at
+`/var/www/html/doctis` as `http://10.0.0.94/doctis/`. Development happens in
+the working clone `/home/robert/Documents/doctis` on the same VM. The former
+vaio host (`10.0.0.10`, Apache with an NFS-mounted checkout) is no longer used
+for development; its old checkout is still mounted at `/home/robert/html/doctis`
+and must be left alone. See [DEV-SETUP.md](DEV-SETUP.md) for the edit,
+deploy, and test cycle, and the Development Environment section of
+[CLAUDE.md](CLAUDE.md).
 
-The native VM has persistent test data, not a fresh installation. On this
-date it had four projects, 131 project documents, two document repositories,
-three meetings, and 15 users; its database schema version was 64. SMTP and
+**Use `dev` for all new development and installation work**; `nginx` and
+`ai-meeting` are merged into `dev` and deprecated. Feature work may run on a
+local branch: Documentation Topics is on `topics`, unpushed until complete.
+The running clone tracks `origin/dev` but can be checked out on a local
+branch fetched from the working clone to test unpushed work. On 2026-10-13 it
+was on `topics`.
+
+The native VM has persistent data, not a fresh installation. It was rebuilt
+on 2026-10-13 (schema 77) and reloaded with users, the HCRQMS and LiDAR
+projects imported from ZIPs, their Engineering sub-projects, and the HCR571
+Documentation Topics pilot (`admin/tools/data-scripts/README.md`). SMTP and
 cron email delivery are live, so inspect recipients before tests that queue
-mail. Do not assume the earlier import IDs, sample-data counts, or
-reset status below are current. The dated assessment and implementation
-sections record earlier experiments, not instructions to redo them; the
-repository guidance at the end still applies.
+mail. Do not assume the earlier import IDs, sample-data counts, or reset
+status below are current. The dated assessment and implementation sections
+record earlier experiments, not instructions to redo them; the repository
+guidance at the end still applies.
 
 ## Implementation status — 2026-09-27 (historical snapshot)
 
@@ -391,11 +397,12 @@ a storage setting does not migrate existing content.
 - Implement the native Debian/nginx profile; retain Apache as an explicit option. Keep changes
   scoped and maintain Doctis/MantisBT conventions: minimal upstream differences,
   existing naming patterns, tabs for indentation, and spaces for alignment.
-- `CLAUDE.md` and `doc/TESTING.md` contain useful application context but assume
-  the historical vaio/NFS environment and describe Docker as legacy. Those
-  environment assumptions do not override the owner's native nginx development
-  requirement and use of Docker as a separate reference. Do not automatically SSH to vaio or run database rebuilds merely
-  because those documents show such commands.
+- `CLAUDE.md`, `DEV-SETUP.md` and `doc/TESTING.md` describe the native VM
+  environment (updated 2026-10-13). Some other documents still show vaio
+  commands in dated records; do not SSH to vaio because of them. Docker
+  remains the separate reference for the company deployment. Do not run
+  database rebuilds merely because a document shows the commands: the VM
+  holds imported data that a rebuild deletes.
 - Inspect installation/maintenance scripts before executing them: they can
   modify host packages, sudoers, databases, and document repositories. Use a
   disposable test target for installation and destructive fixture operations.

@@ -134,9 +134,11 @@ snapshots), `topic_snapshot_*.php`, `topic_activity_page.php`,
 
 Development and testing happen on a native **Debian 13 VM** (`10.0.0.94`),
 with nginx, PHP-FPM 8.4 and MariaDB 11.8. Claude Code runs on the same VM, so
-every command below runs locally: no SSH and no NFS mount. The former `vaio`
-host (`10.0.0.10`, Apache, NFS mount) is no longer the development
-environment. Install profile and layout:
+every command below runs locally; no SSH is needed. The former `vaio` host
+(`10.0.0.10`, Apache) is no longer the development environment. Its old
+checkout is still NFS-mounted here at `/home/robert/html/doctis`; leave it
+alone. Day-to-day handover and current VM state:
+[DEV-SETUP.md](DEV-SETUP.md). Install profile and layout:
 [doc/NATIVE-DEVELOPMENT.md](doc/NATIVE-DEVELOPMENT.md).
 
 | Item | Detail |
@@ -166,6 +168,10 @@ Pushing to GitHub (`origin`, `Inspirati/doctis`) needs the owner's explicit
 approval. System Operations → **Git Pull** pulls the running clone from
 `origin` through the sudoers rule
 `www-data ALL=(robert) NOPASSWD: /usr/bin/git -C /var/www/html/doctis pull`.
+That is the VM's only System Operations sudo rule, so the web Rebuild
+Database, Load Sample Data and config upload actions fail there; use the
+`admin/tools/` scripts with `sudo` instead. Backup Database and Load Data need
+no sudo.
 
 ### Querying the database
 
@@ -272,7 +278,7 @@ Upstream MantisBT changes flow in via the `upstream_sync` branch, then merged in
 
 **[doc/TESTING.md](doc/TESTING.md) indexes every test method** (PHPUnit, SOAP
 smoke test, git mechanics/mapping-layer integration tests, repository import,
-remote clone/push gateway test, curl-based live testing, clean-room reset)
+remote clone/push gateway test, curl-based testing, clean-room reset)
 with what each covers and how to run it — check there before writing a new
 ad hoc test script.
 
@@ -537,10 +543,13 @@ fetch, primary file lifecycle, attachment lifecycle).  Non-fatal — all
 steps run even if earlier ones fail.  Exit code 0 = all pass.  Full
 description in [admin/tools/README.md](admin/tools/README.md).
 
-Always pass all four arguments. The script's defaults are the former vaio
-host (`10.0.0.10`) and document 2. **Point it only at a throwaway document**, created for the
-test in a scratch project: it deletes the target's primary file at the start
-and again in step 7, and on the VM every document holds imported content.
+The document id is required (the script refuses to run without one); host,
+user and password default to the values shown. **Point it only at a throwaway
+document**, created for the test in a scratch project: it deletes the target's
+primary file at the start and again in step 7, and on the VM every document
+holds imported content. Turn email notifications off while it runs, and
+remove the scratch project and its repository afterwards
+([doc/TESTING.md](doc/TESTING.md) §3).
 
 ### SOAP endpoint and WSDL
 
