@@ -623,6 +623,46 @@ Readiness describes documentation only. It does not approve documents or
 authorise a review, gate or release. Print and CSV include the milestone,
 readiness, profile and expectations.
 
+### Snapshots for reviews
+
+At a technical review or baseline decision, a project manager takes a
+**snapshot** in the Snapshots section of the Topics page. It freezes the
+coverage at the selected milestone: decisions, documents, expectations,
+states and reasons, evidence versions, assessments, readiness and the
+profile revision. Unresolved states are kept as they were. A snapshot is
+never changed afterwards; it carries a fingerprint (SHA-256), and its page
+says if the stored record no longer matches it. Snapshots print and export
+to CSV like the live page and are labelled as frozen records. A snapshot is
+evidence of a decision, not an approval.
+
+When you open a snapshot, documents you cannot see now are not named, even
+if they were in the snapshot.
+
+### Documents from other projects
+
+A project can use another project's document, for example a shared interface
+specification, in its own Topics. In the **Documents from other projects**
+section of the Topics page, enter the document's ID with the Topic, part or
+whole, and sections. It then appears as "from <project>" and can be evidence
+for this project's expectations, assessed by this project. The document stays
+in its own project; its page lists the projects that use it.
+
+### Activity, changes and conflicts
+
+**Activity** (linked from the Topics page) lists everything done with the
+project's Topics: decisions, tags, milestones, expectations, evidence,
+assessments, authorisations, snapshots and catalogue changes, with who and
+when.
+
+If someone else changes a decision, an expectation, the evidence of an
+expectation or the profile while you have its page open, your change is
+refused with a message to reload and check. This makes sure an assessor
+judges, and an authoriser approves, exactly what they saw.
+
+Evidence needs an identifiable version: a primary file, or an edition or
+revision for documents held elsewhere (standards, external reports). Without
+one the expectation stays Pending.
+
 ### Catalogues (administrators)
 
 **Manage → Topics** lists the catalogues. **Load STD-ENG-004 Rev A** creates
@@ -638,6 +678,15 @@ the bundled catalogue, transcribed from the standard.
 
 Topics nest one level only (principal Topic and child). A retired Topic can
 no longer be added to documents; existing tags stay.
+
+To revise a Published catalogue, use **New revision** on its page: it copies
+the catalogue and its Topics as a Draft with the new revision. Edit and
+publish it. Each project then moves to it from its Topics page (**Review the
+change**): a preview matches every Topic by code and shows which are
+unchanged, changed, added, retired or missing, with the project's records.
+A missing code that still has records blocks the move. After the move,
+expectations of changed Topics need reassessment and the profile needs
+authorising again; earlier snapshots keep the old revision.
 
 ---
 
@@ -658,6 +707,7 @@ In `config/config_inc.php`:
 | `$g_topic_catalogue_publish_status` | Source document statuses that allow publishing a catalogue (default accepted, incorporated) |
 | `$g_topic_maturity_map` | Maturity (Draft, Under Review, Approved) of each document status; unmapped statuses keep expectations Pending |
 | `$g_topic_assess_threshold` | Who may record assessments (default MANAGER) |
+| `$g_topic_snapshot_threshold` | Who takes snapshots (default MANAGER) |
 | `$g_topic_assessor_licenses` | Licenses assessors must also hold, by Topic code (`'*'` for all), e.g. `array( '*' => 'Topic Assessor', '23' => 'Safety Assessor' )`; empty = threshold only. Unlike an access level, a license does not pass to administrators automatically |
 
 ### AI Assistant and meeting settings

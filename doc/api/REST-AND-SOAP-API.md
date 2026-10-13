@@ -16,6 +16,7 @@
 7. [SOAP API — licenses](#7-soap-api--licenses)
 8. [Web server setup — Apache](#8-web-server-setup--apache)
 9. [Web server setup — nginx](#9-web-server-setup--nginx)
+10. [REST API — Documentation Topics (read-only)](#10-rest-api--documentation-topics-read-only)
 
 ---
 
@@ -772,6 +773,32 @@ curl -s -H "Authorization: your-token" \
 ### nginx on a subdirectory vs subdomain
 
 If Doctis is not at the root of the server (e.g. `http://host/doctis/` rather than `http://host/`), adjust the `location` prefixes accordingly, and ensure the PHP `$_SERVER['SCRIPT_NAME']` value reflects the correct path so Slim 3 computes its base path correctly. Slim 3 derives its base path from `SCRIPT_NAME` — if that is wrong, all routes return 404.
+
+---
+
+## 10. REST API — Documentation Topics (read-only)
+
+`api/rest/restcore/topics_rest.php`, available when `$g_topics_enabled = ON`
+(see `doc/topics/TOPICS_PLAN.md`). Same authentication as above. The same
+permissions as the web pages apply: a project whose Topics the caller may not
+view returns 404, and documents the caller cannot see appear only as
+`{"restricted": true}` (state reasons that name them are replaced with a
+generic text). States are stable keys, not translated labels.
+
+| Route | Returns |
+|-------|---------|
+| `GET /api/rest/topics/catalogues` | Catalogues (`name`, `revision`, `status` draft/published/retired, `source_document_id`) with their Topics (`code`, `title`, `parent`, `description`, `retired`) |
+| `GET /api/rest/topics/{project_id}?milestone_id=` | Live coverage at the milestone (default: the current one): `readiness` (`ready`, `not_ready`, `nothing_due`, `profile_unresolved`), `profile` (revision, authorised by/at, `changed_since_authorisation`) and per Topic `applicability` (`applicable`, `not_applicable`, `undecided`), `declared_coverage` (`complete`, `partial`, `none`, `not_applicable`), `expectation_state`, `documents` (number, title, status, extent `part`/`whole`, sections, `shared_from_project_id`) and `expectations` (ref, statement, owner, `due_from`, `maturity`, revision, `state` — `not_due`, `reassess`, `missing`, `gap`, `pending`, `satisfied` — `reasons`, evidence with versions, latest assessment). `live: true` |
+| `GET /api/rest/topics/{project_id}/snapshots` | The project's snapshots: id, title, milestone, readiness, profile revision, taken by/at |
+| `GET /api/rest/topics/snapshots/{id}` | One frozen snapshot in the same shape (`live: false`), with `intact` (the stored record matches its SHA-256) |
+
+```bash
+curl -s -H "Authorization: $TOKEN" "http://host/doctis/api/rest/topics/29?milestone_id=12" | jq '.readiness'
+```
+
+Document data from `GET /documents/{id}` and SOAP `mc_dwg_get` also carries
+the document's own Topic tags (`topics`). There are no write endpoints for
+Topics yet.
 
 ---
 

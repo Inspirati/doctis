@@ -123,8 +123,11 @@ registered in `filter_dwg_get_plugin_filters()`). SOAP/REST `DwgData` has
 coverage states, profile authorisation):
 [core/topic_expectation_api.php](core/topic_expectation_api.php),
 `topic_milestone_*.php`, `topic_expectation_*.php`, `topic_evidence_action.php`,
-`topic_assessment_add.php`, `topic_profile_authorise.php`. Plan, phases and
-as-built notes:
+`topic_assessment_add.php`, `topic_profile_authorise.php`. Phase 3:
+[core/topic_snapshot_api.php](core/topic_snapshot_api.php) (frozen review
+snapshots), `topic_snapshot_*.php`, `topic_activity_page.php`,
+`topic_catalogue_migrate*.php`, read-only REST in
+`api/rest/restcore/topics_rest.php`. Plan, phases and as-built notes:
 [doc/topics/TOPICS_PLAN.md](doc/topics/TOPICS_PLAN.md).
 
 ## Development Environment

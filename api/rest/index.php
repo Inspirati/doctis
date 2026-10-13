@@ -190,6 +190,7 @@ try {
 	require_once( $t_restcore_dir . 'issues_rest.php' );
 	require_once( $t_restcore_dir . 'documents_rest.php' );
 	require_once( $t_restcore_dir . 'licenses_rest.php' );
+	require_once( $t_restcore_dir . 'topics_rest.php' );
 	require_once( $t_restcore_dir . 'lang_rest.php' );
 	require_once( $t_restcore_dir . 'projects_rest.php' );
 	require_once( $t_restcore_dir . 'users_rest.php' );

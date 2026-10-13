@@ -1,8 +1,9 @@
 # Document Topics — Implementation Plan
 
-Status: Phases 1, 1b and 2 implemented on branch `topics` (2026-10-13); see
-[Phase 1 as built](#phase-1-as-built), [Phase 1b as built](#phase-1b-as-built)
-and [Phase 2 as built](#phase-2-as-built). Phase 3 is not started.
+Status: Phases 1, 1b, 2 and 3 implemented on branch `topics` (2026-10-13);
+see [Phase 1](#phase-1-as-built), [1b](#phase-1b-as-built),
+[2](#phase-2-as-built) and [3](#phase-3-as-built) as built. Remaining work is
+listed under [Not yet done](#not-yet-done).
 
 This plan describes how Doctis can support the Engineering Project Document
 Topic System. The QMS sources are in the HCRQMS repository:
@@ -481,6 +482,36 @@ edits are not detected (Phase 3, TOP-FR-028).
 Not planned, as STD-IT-001 §1 already excludes them: automatic content
 assessment, percentage scores, notifications, and roll-up across projects.
 
+### Phase 3 as built
+
+Implemented on branch `topics`, 2026-10-13 (schema steps 76–77,
+`database_version` 77).
+
+| Item | Implementation |
+|------|----------------|
+| Activity log | `{topic_event}`, written by every state-changing Topics function; `topic_activity_page.php` (TOP-FR-024 for project-level actions; tags are also in `{dwg_history}`) |
+| Conflicts | Applicability decisions, expectation edits and retirement, assessments and profile authorisation carry what the form showed (decision id, expectation revision, `topic_assessment_basis()`, profile fingerprint) and are refused when it changed (TOP-FR-028) |
+| Versioned evidence | Evidence without a commit, edition or revision keeps an expectation Pending (TOP-FR-011) |
+| Snapshots | `core/topic_snapshot_api.php`, `{topic_snapshot}`: captured in one `START TRANSACTION WITH CONSISTENT SNAPSHOT` read, unfiltered, as JSON with SHA-256; never updated. `topic_snapshot_page.php` and `topic_export.php?snapshot_id=` re-apply the reader's permissions (hidden documents unnamed, reasons naming them redacted) and flag a failed integrity check. `$g_topic_snapshot_threshold` (TOP-FR-022/023) |
+| Reason redaction | Live views also replace state reasons that name evidence the reader cannot see (TOP-FR-026) |
+| Catalogue revisions | `topic_catalogue_new_revision()` (Manage → Topics → New revision); `topic_catalogue_migrate_page.php` preview by code and `topic_catalogue_migrate()` in one transaction; changed Topics bump their expectations' revisions; blocked when a removed code has records (TOP-FR-003/007) |
+| Shared documents | `{dwg_topic}.project_id` is the consuming project; `topic_can_tag_dwg_in_project()`; Topics page "Documents from other projects"; the document page lists other projects using it; evidence may come from shared documents (TOP-FR-009) |
+| REST | `api/rest/restcore/topics_rest.php`: read-only catalogues, live coverage, snapshot list and snapshot, with stable state keys and the pages' permissions |
+
+### Not yet done
+
+- **Configuration context** (TOP-FR-020): assessments apply to the evidence
+  versions they record; there is no separate configuration/variant
+  dimension.
+- **Write API**: REST/SOAP endpoints for tagging, decisions, expectations
+  and assessments.
+- **Backup/restore demonstration** (TOP-FR-029): the Topic tables are
+  ordinary tables in the database backup; restoring has not been rehearsed.
+- **Performance measurement** with 100 documents and 50 expectations
+  (STD-IT-001 §8).
+- **Status label rename** (see [Status label rename](#status-label-rename)),
+  due before the next database rebuild.
+
 ## 9. Requirement mapping
 
 | Phase | TOP-FR covered |
@@ -488,7 +519,7 @@ assessment, percentage scores, notifications, and roll-up across projects.
 | 1 | All of 001, 002, 004, 008, 012, 021, 025, 026, 027, 029. Part of: 003 (frozen Published catalogue), 005 (applicability and rationale), 009 (table ready, same-project only), 010 (locator), 011 (any registered document type can be tagged), 013 (untagged list), 016 (declared view), 024 (tag and applicability history) |
 | 1b (done) | The rest of 013 (filter); 023 (live export) |
 | 2 (done) | The rest of 005, 010 and 016; 006 (without the parent/child rule), 007, 014, 015, 017, 018, 019; 020 only as evidence versions (no configuration context) |
-| 3 | The rest of 003, 009, 011, 023 and 024; 022, 028 |
+| 3 (done) | The rest of 003, 009, 011, 023 and 024; 022, 028 |
 
 ## 10. Changes proposed to the QMS documents
 

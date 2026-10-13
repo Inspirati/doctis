@@ -416,9 +416,11 @@ cd /var/www/html/doctis
 vendor/bin/phpunit --testsuite mantis --filter Topic --testdox
 ```
 
-`TopicApiTest` (phases 1 and 1b) and `TopicExpectationApiTest` (phase 2)
-share `TopicTestCase` (throwaway records; project deletion removes every
-Topic record of the project).
+`TopicApiTest` (phases 1 and 1b), `TopicExpectationApiTest` (phases 2 and
+3: stale writes, activity, unversioned evidence, catalogue migration, shared
+documents) and `TopicSnapshotApiTest` (phase 3 snapshots) share
+`TopicTestCase` (throwaway records; project deletion removes every Topic
+record of the project).
 
 Covers: the bundled STD-ENG-004 Rev A catalogue (codes as strings, 21–23
 under 20); code, title and one-level parent validation; publish needs an
@@ -463,12 +465,32 @@ refused; the feature switch; moves, document deletion and project deletion.
   viewer refused; reporter reads; developer links and removes evidence;
   manager edits, assesses and manages milestones. Delete the project via
   Manage → Projects: every Topic record of it goes.
+- Phase 3, in throwaway projects (create and delete them from the PHP
+  command line; a document needs a `{dwg_text}` row to show):
+  - Snapshot: with one public and one private evidence document, take a
+    snapshot from the Topics page. The administrator sees both; a reporter
+    sees the public one, "not visible to you now", and the reason naming the
+    private one redacted, on the snapshot page, its CSV
+    (`topic_export.php?format=csv&snapshot_id=`), the live Topic page and
+    REST.
+  - Catalogue revision: Create Revision on a catalogue, change a Topic in the
+    copy, open "Review the change" from the project's Topics page, confirm
+    the move; the project and its decisions use the new revision and
+    Activity records it.
+  - Shared document: share another project's document from the Topics page;
+    it shows "from <project>", and its own page lists "Also used by" even
+    when its project has no Topics. Remove the history rows it adds to the
+    shared document afterwards.
+  - REST, logged in: `api/rest/topics/catalogues`, `topics/<P>`,
+    `topics/<P>/snapshots`, `topics/snapshots/<id>`; a project without Topics
+    and a missing snapshot give 404.
 
 Run 2026-10-13 on the native VM (HCR571 pilot, project 29): 256 `mantis` tests
 passed, including 12 `TopicApiTest`; all page and role checks passed. Phase 1b,
 same day: 260 tests (16 `TopicApiTest`) and the checks above passed. Phase 2,
 same day: 268 tests (16 + 8 `TopicExpectationApiTest`) and the phase 2 walk
-through above passed.
+through above passed. Phase 3, same day: 276 tests (32 Topic tests: 16 + 13 + 3)
+and the phase 3 checks above passed.
 
 ---
 
