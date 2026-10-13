@@ -194,7 +194,7 @@ class TopicApiTest extends TopicTestCase {
 		$t_other = $this->makeCatalogue();
 		$this->expectTopicError( function() use ( $t_cat, $t_other ) {
 			topic_project_enable( $t_cat['project_id'], $t_other['id'] );
-		}, 'changing catalogue' );
+		}, 'catalogue revision preview' );
 	}
 
 	public function testFeatureSwitchOffHidesTopics() {

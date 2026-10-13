@@ -101,7 +101,18 @@ print_manage_menu( 'manage_topic_page.php' );
 			print_form_button( $t_action, lang_get( 'topic_republish' ),
 				array( 'action' => 'publish', 'id' => $f_catalogue_id ), null, $t_button );
 		}
-		?>
+		if( !$t_is_draft ) { ?>
+		<div class="space-10"></div>
+		<form method="post" action="<?php echo $t_action ?>" class="form-inline">
+			<?php echo form_security_field( 'manage_topic_catalogue_action' ) ?>
+			<input type="hidden" name="action" value="new_revision" />
+			<input type="hidden" name="id" value="<?php echo $f_catalogue_id ?>" />
+			<label for="catalogue-new-revision"><?php echo lang_get( 'topic_new_revision' ) ?></label>
+			<input type="text" id="catalogue-new-revision" name="revision" class="input-sm" size="6" maxlength="32" required />
+			<button type="submit" class="btn btn-primary btn-sm btn-white btn-round"><?php echo lang_get( 'topic_create_revision' ) ?></button>
+			<span class="grey small"><?php echo lang_get( 'topic_new_revision_hint' ) ?></span>
+		</form>
+		<?php } ?>
 	</div>
 	</div>
 	</div>

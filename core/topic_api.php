@@ -751,7 +751,7 @@ function topic_project_enable( int $p_project_id, int $p_catalogue_id ): void {
 	$t_row = topic_project_get( $p_project_id );
 	if( $t_row !== null && (int)$t_row['catalogue_id'] != $p_catalogue_id ) {
 		if( topic_project_has_records( $p_project_id ) ) {
-			topic_error( 'this project already uses another catalogue and has Topic records; changing catalogue is not supported yet.' );
+			topic_error( 'this project already uses another catalogue and has Topic records; move it with the catalogue revision preview instead.' );
 		}
 	}
 	if( (int)$t_catalogue['status'] == TOPIC_CATALOGUE_RETIRED
@@ -1754,4 +1754,172 @@ function topic_event_document( int $p_dwg_id ): string {
  */
 function topic_conflict( string $p_what ) {
 	topic_error( $p_what . ' was changed by someone else after you opened this page. Reload the page, check the change and try again.' );
+}
+
+# ── Catalogue revisions and migration (phase 3) ──────────────────────────────
+
+/**
+ * Copy a catalogue as a new Draft revision of the same name, with all its
+ * Topics (codes, parents, titles, descriptions, order, retired flags).
+ *
+ * @param integer $p_catalogue_id Catalogue to revise.
+ * @param string  $p_revision     New revision, e.g. "B".
+ * @return integer New catalogue id.
+ * @throws ClientException
+ */
+function topic_catalogue_new_revision( int $p_catalogue_id, string $p_revision ): int {
+	$t_source = topic_catalogue_get( $p_catalogue_id );
+	$t_new_id = topic_catalogue_create( $t_source['name'], $p_revision, (int)$t_source['source_dwg_id'] );
+	$t_ids = array();
+	# Principal Topics first, so children find their parent's new id.
+	$t_topics = topic_get_all( $p_catalogue_id );
+	foreach( array( 0, 1 ) as $t_level ) {
+		foreach( $t_topics as $t_topic_id => $t_topic ) {
+			if( (int)$t_topic['level'] != $t_level ) {
+				continue;
+			}
+			$t_ids[$t_topic_id] = topic_create( $t_new_id, $t_topic['code'],
+				$t_level ? $t_ids[(int)$t_topic['parent_id']] : 0,
+				$t_topic['title'], $t_topic['description'], (int)$t_topic['sort_order'] );
+			if( (int)$t_topic['enabled'] != 1 ) {
+				topic_set_enabled( $t_ids[$t_topic_id], false );
+			}
+		}
+	}
+	return $t_new_id;
+}
+
+/**
+ * Other revisions of a catalogue that a project could move to: same name,
+ * Draft or Published.
+ *
+ * @param integer $p_catalogue_id Current catalogue.
+ * @return array Rows of {topic_catalogue}.
+ */
+function topic_catalogue_other_revisions( int $p_catalogue_id ): array {
+	$t_current = topic_catalogue_get( $p_catalogue_id );
+	$t_rows = array();
+	foreach( topic_catalogue_get_all() as $t_row ) {
+		if( $t_row['name'] === $t_current['name'] && (int)$t_row['id'] != $p_catalogue_id
+			&& (int)$t_row['status'] != TOPIC_CATALOGUE_RETIRED ) {
+			$t_rows[] = $t_row;
+		}
+	}
+	return $t_rows;
+}
+
+/**
+ * Preview of moving a project's Topic records to another catalogue, matched
+ * by code (codes keep their meaning).
+ *
+ * @param integer $p_project_id   Project with Topics enabled.
+ * @param integer $p_catalogue_id Target catalogue.
+ * @return array rows (code => change: same, changed, added, retired, removed,
+ *               with old and new Topic rows and the project's record counts),
+ *               blockers (codes removed although the project has records),
+ *               changed_codes.
+ * @throws ClientException
+ */
+function topic_catalogue_migration_preview( int $p_project_id, int $p_catalogue_id ): array {
+	$t_current = topic_project_catalogue( $p_project_id );
+	$t_target = topic_catalogue_get( $p_catalogue_id );
+	if( (int)$t_target['id'] == (int)$t_current['id'] ) {
+		topic_error( 'the project already uses ' . topic_catalogue_label( $t_target ) . '.' );
+	}
+	if( (int)$t_target['status'] == TOPIC_CATALOGUE_RETIRED ) {
+		topic_error( topic_catalogue_label( $t_target ) . ' is retired and cannot be adopted.' );
+	}
+	$t_old = array_column( topic_get_all( (int)$t_current['id'] ), null, 'code' );
+	$t_new = array_column( topic_get_all( $p_catalogue_id ), null, 'code' );
+	$t_old_codes_by_id = array_column( topic_get_all( (int)$t_current['id'] ), 'code', 'id' );
+	$t_new_codes_by_id = array_column( topic_get_all( $p_catalogue_id ), 'code', 'id' );
+
+	$t_rows = array();
+	$t_blockers = array();
+	$t_changed = array();
+	foreach( array_unique( array_merge( array_keys( $t_old ), array_keys( $t_new ) ) ) as $t_code ) {
+		$t_code = (string)$t_code;
+		$t_o = $t_old[$t_code] ?? null;
+		$t_n = $t_new[$t_code] ?? null;
+		$t_records = 0;
+		if( $t_o !== null ) {
+			foreach( array( '{dwg_topic}', '{topic_applicability}', '{topic_expectation}' ) as $t_table ) {
+				db_param_push();
+				$t_records += (int)db_result( db_query( 'SELECT COUNT(*) FROM ' . $t_table . ' WHERE project_id=' . db_param()
+					. ' AND topic_id=' . db_param(), array( $p_project_id, (int)$t_o['id'] ) ) );
+			}
+		}
+		if( $t_o === null ) {
+			$t_change = 'added';
+		} else if( $t_n === null ) {
+			$t_change = 'removed';
+			if( $t_records > 0 ) {
+				$t_blockers[] = $t_code;
+			}
+		} else if( (int)$t_n['enabled'] != 1 && (int)$t_o['enabled'] == 1 ) {
+			$t_change = 'retired';
+		} else if( $t_o['title'] !== $t_n['title'] || $t_o['description'] !== $t_n['description']
+			|| ( $t_old_codes_by_id[(int)$t_o['parent_id']] ?? '' ) !== ( $t_new_codes_by_id[(int)$t_n['parent_id']] ?? '' ) ) {
+			$t_change = 'changed';
+			$t_changed[] = $t_code;
+		} else {
+			$t_change = 'same';
+		}
+		$t_rows[$t_code] = array( 'change' => $t_change, 'old' => $t_o, 'new' => $t_n, 'records' => $t_records );
+	}
+	return array( 'current' => $t_current, 'target' => $t_target, 'rows' => $t_rows,
+		'blockers' => $t_blockers, 'changed_codes' => $t_changed );
+}
+
+/**
+ * Move a project's Topic records to another catalogue revision by code.
+ * Expectations of Topics whose definition changed get a new revision, so
+ * their assessments need reassessment; the profile needs authorising again.
+ *
+ * @param integer $p_project_id   Project with Topics enabled.
+ * @param integer $p_catalogue_id Target catalogue.
+ * @return void
+ * @throws ClientException
+ */
+function topic_catalogue_migrate( int $p_project_id, int $p_catalogue_id ): void {
+	$t_preview = topic_catalogue_migration_preview( $p_project_id, $p_catalogue_id );
+	if( $t_preview['blockers'] ) {
+		topic_error( 'these Topics are not in ' . topic_catalogue_label( $t_preview['target'] )
+			. ' but the project has records for them: ' . implode( ', ', $t_preview['blockers'] ) . '.' );
+	}
+	require_api( 'topic_expectation_api.php' );
+	db_query( 'START TRANSACTION' );
+	try {
+		foreach( $t_preview['rows'] as $t_code => $t_row ) {
+			if( $t_row['old'] === null || $t_row['new'] === null ) {
+				continue;
+			}
+			foreach( array( '{dwg_topic}', '{topic_applicability}', '{topic_expectation}' ) as $t_table ) {
+				db_param_push();
+				db_query( 'UPDATE ' . $t_table . ' SET topic_id=' . db_param() . ' WHERE project_id=' . db_param() . ' AND topic_id=' . db_param(),
+					array( (int)$t_row['new']['id'], $p_project_id, (int)$t_row['old']['id'] ) );
+			}
+		}
+		db_param_push();
+		db_query( 'UPDATE {topic_project} SET catalogue_id=' . db_param() . ', user_id=' . db_param() . ', date_updated=' . db_param()
+			. ' WHERE project_id=' . db_param(), array( $p_catalogue_id, auth_get_current_user_id(), db_now(), $p_project_id ) );
+		# A changed Topic definition is a change to its expectations.
+		foreach( $t_preview['changed_codes'] as $t_code ) {
+			$t_topic_id = (int)$t_preview['rows'][$t_code]['new']['id'];
+			foreach( topic_expectation_get_all( $p_project_id, $t_topic_id, false ) as $t_expectation_id => $t_expectation ) {
+				db_param_push();
+				db_query( 'UPDATE {topic_expectation} SET revision=revision+1, user_id=' . db_param() . ', date_updated=' . db_param()
+					. ' WHERE id=' . db_param(), array( auth_get_current_user_id(), db_now(), $t_expectation_id ) );
+				topic_expectation_record_revision( $t_expectation_id );
+			}
+		}
+		$t_counts = array_count_values( array_column( $t_preview['rows'], 'change' ) );
+		topic_event_log( $p_project_id, 'catalogue_migrate', topic_catalogue_label( $t_preview['current'] ) . ' → '
+			. topic_catalogue_label( $t_preview['target'] ) . ': ' . ( $t_counts['changed'] ?? 0 ) . ' changed, '
+			. ( $t_counts['added'] ?? 0 ) . ' added, ' . ( $t_counts['retired'] ?? 0 ) . ' retired, ' . ( $t_counts['removed'] ?? 0 ) . ' removed' );
+		db_query( 'COMMIT' );
+	} catch( Throwable $e ) {
+		db_query( 'ROLLBACK' );
+		throw $e;
+	}
 }

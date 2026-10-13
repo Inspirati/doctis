@@ -395,6 +395,58 @@ class TopicExpectationApiTest extends TopicTestCase {
 		$this->assertSame( TOPIC_EXP_SATISFIED, $this->state( $t_id, $t_cat['milestones'][0] )['state'] );
 	}
 
+	public function testCatalogueRevisionMigration() {
+		$t_cat = $this->makeProjectWithMilestones();
+		$t_project_id = $t_cat['project_id'];
+		$t_user_id = auth_get_current_user_id();
+		$t_dwg = $this->makeDocument( $t_project_id, ACCEPTED, 'MIG-1' );
+		topic_dwg_add( $t_dwg, $t_cat['10'], TOPIC_EXTENT_WHOLE, '' );
+		topic_applicability_set( $t_project_id, $t_cat['21'], TOPIC_NOT_APPLICABLE, 'No hardware.' );
+		$t_e = topic_expectation_create( $t_project_id, $t_cat['10'], 'Requirements', $t_user_id, $t_cat['milestones'][0], TOPIC_MATURITY_DRAFT );
+		topic_evidence_add( $t_e, $t_dwg, '' );
+		topic_assessment_record( $t_e, TOPIC_FINDING_ADEQUATE, 'OK' );
+		$this->assertSame( TOPIC_EXP_SATISFIED, $this->state( $t_e, $t_cat['milestones'][0] )['state'] );
+
+		# Revision B: 10 reworded, 21 dropped, 30 added.
+		$t_b = topic_catalogue_new_revision( $t_cat['id'], 'B' );
+		$this->catalogue_ids[] = $t_b;
+		$t_b_topics = array_column( topic_get_all( $t_b ), null, 'code' );
+		$this->assertSame( array( '10', '20', '21' ), array_map( 'strval', array_keys( $t_b_topics ) ) );
+		$this->assertEquals( $t_b_topics['20']['id'], $t_b_topics['21']['parent_id'] );
+		topic_update( (int)$t_b_topics['10']['id'], '10', 0, 'Requirements', 'Needs, intended use and acceptance criteria', 10 );
+		topic_delete( (int)$t_b_topics['21']['id'] );
+		topic_create( $t_b, '30', 0, 'V&V', '', 40 );
+		$this->assertCount( 1, topic_catalogue_other_revisions( $t_cat['id'] ) );
+
+		$t_preview = topic_catalogue_migration_preview( $t_project_id, $t_b );
+		$this->assertSame( 'changed', $t_preview['rows']['10']['change'] );
+		$this->assertSame( 'same', $t_preview['rows']['20']['change'] );
+		$this->assertSame( 'removed', $t_preview['rows']['21']['change'] );
+		$this->assertSame( 'added', $t_preview['rows']['30']['change'] );
+		# 21 has a decision in this project: the move is blocked.
+		$this->assertSame( array( '21' ), $t_preview['blockers'] );
+		$this->expectTopicError( function() use ( $t_project_id, $t_b ) { topic_catalogue_migrate( $t_project_id, $t_b ); }, 'records for them' );
+
+		# Put 21 back (as in A) and move.
+		topic_create( $t_b, '21', (int)$t_b_topics['20']['id'], $t_b_topics['21']['title'], $t_b_topics['21']['description'], 30 );
+		$this->assertSame( array(), topic_catalogue_migration_preview( $t_project_id, $t_b )['blockers'] );
+		topic_applicability_set( $t_project_id, $t_cat['10'], TOPIC_APPLICABLE, '' );
+		topic_applicability_set( $t_project_id, $t_cat['20'], TOPIC_NOT_APPLICABLE, 'Test.' );
+		topic_profile_authorise( $t_project_id );
+		$this->assertFalse( topic_profile_status( $t_project_id )['changed'] );
+		topic_catalogue_migrate( $t_project_id, $t_b );
+
+		$t_new = array_column( topic_get_all( $t_b ), null, 'code' );
+		$this->assertEquals( $t_b, (int)topic_project_get( $t_project_id )['catalogue_id'] );
+		$this->assertEquals( (int)$t_new['10']['id'], (int)topic_dwg_get_for_dwg( $t_dwg )[0]['topic_id'] );
+		$this->assertArrayHasKey( (int)$t_new['21']['id'], topic_applicability_current( $t_project_id ) );
+		$this->assertEquals( (int)$t_new['10']['id'], (int)topic_expectation_get( $t_e )['topic_id'] );
+		# 10's definition changed: its expectation needs reassessment.
+		$this->assertSame( TOPIC_EXP_REASSESS, $this->state( $t_e, $t_cat['milestones'][0] )['state'] );
+		$this->assertTrue( topic_profile_status( $t_project_id )['changed'] );
+		$this->assertSame( 'catalogue_migrate', topic_event_get( $t_project_id )[0]['action'] );
+	}
+
 	public function testProjectDeletionRemovesPhase2Records() {
 		$t_cat = $this->makeProjectWithMilestones();
 		$t_project_id = $t_cat['project_id'];

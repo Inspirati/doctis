@@ -116,6 +116,14 @@ if( $f_project_id == ALL_PROJECTS ) {
 	if( (int)$t_catalogue['status'] == TOPIC_CATALOGUE_DRAFT ) {
 		echo '<div class="alert alert-warning">' . lang_get( 'topic_catalogue_is_draft' ) . '</div>';
 	}
+	if( $t_can_manage ) {
+		foreach( topic_catalogue_other_revisions( (int)$t_catalogue['id'] ) as $t_other ) {
+			echo '<div class="alert alert-info">' . string_display_line( sprintf( lang_get( 'topic_other_revision' ),
+				topic_catalogue_label( $t_other ), topic_catalogue_status_label( (int)$t_other['status'] ) ) )
+				. ' <a href="topic_catalogue_migrate_page.php?project_id=' . (int)$f_project_id . '&amp;catalogue_id=' . (int)$t_other['id'] . '">'
+				. lang_get( 'topic_review_change' ) . '</a></div>';
+		}
+	}
 	echo '<p>' . lang_get( 'topic_declared_notice' ) . '</p>';
 
 	$t_ac = $t_view['applicability_counts'];

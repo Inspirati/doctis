@@ -41,6 +41,9 @@ switch( $f_action ) {
 	case 'load_seed':
 		$f_catalogue_id = topic_catalogue_load_seed( gpc_get_string( 'file' ) );
 		break;
+	case 'new_revision':
+		$f_catalogue_id = topic_catalogue_new_revision( $f_catalogue_id, gpc_get_string( 'revision' ) );
+		break;
 	default:
 		error_parameters( 'action' );
 		trigger_error( ERROR_INVALID_FIELD_VALUE, ERROR );
