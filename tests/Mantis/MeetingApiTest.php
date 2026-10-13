@@ -43,7 +43,7 @@ class MeetingApiTest extends MantisCoreBase {
 
 	/** Create a throwaway user; $p_invite is the meeting_invite preference. */
 	private function makeUser( int $p_invite ): int {
-		$t_name = 'MeetingTest' . rand();
+		$t_name = 'mtgtest' . rand();
 		$t_email = strtolower( $t_name ) . '@example.test';
 		$t_id = user_get_id_by_cookie( user_create( $t_name, 'password', $t_email ) );
 		user_set_fields( $t_id, array( 'meeting_invite' => $p_invite, 'realname' => $t_name ) );

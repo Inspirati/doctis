@@ -58,6 +58,10 @@ abstract class MantisCoreBase extends MantisTestCase {
 		if( array_key_exists( 'MANTIS_TESTSUITE_PASSWORD', $GLOBALS ) ) {
 			self::$password = $GLOBALS['MANTIS_TESTSUITE_PASSWORD'];
 		}
+
+		# Doctis: test accounts use example.test addresses, whatever the site's
+		# approved email domains
+		config_set_global( 'limit_email_domains', array() );
 	}
 
 	/**

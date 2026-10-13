@@ -32,6 +32,7 @@
  * @uses helper_api.php
  * @uses lang_api.php
  * @uses print_api.php
+ * @uses signup_api.php
  * @uses user_api.php
  * @uses utility_api.php
  */
@@ -47,6 +48,7 @@ require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'print_api.php' );
+require_api( 'signup_api.php' );
 require_api( 'user_api.php' );
 require_api( 'utility_api.php' );
 
@@ -56,7 +58,8 @@ $f_username		= strip_tags( gpc_get_string( 'username' ) );
 $f_email		= strip_tags( gpc_get_string( 'email' ) );
 $f_captcha		= gpc_get_string( 'captcha', '' );
 
-$f_username = trim( $f_username );
+# Doctis: usernames are lowercase
+$f_username = mb_strtolower( trim( $f_username ) );
 $f_email = trim( $f_email );
 $f_captcha = mb_strtolower( trim( $f_captcha ) );
 
@@ -73,13 +76,21 @@ if( !auth_signup_enabled() ) {
 	exit;
 }
 
-if( ON == config_get( 'signup_use_captcha' ) && get_gd_version() > 0 &&
-	helper_call_custom_function( 'auth_can_change_password', array() ) ) {
-	# captcha image requires GD library and related option to ON
+# Doctis: explain a refused sign-up on the form instead of an error page.
+# Mistakes in the entries are reported before the captcha; clashes with
+# existing accounts only after it. Approved staff email domains skip the captcha.
+$t_problem = signup_form_problem( $f_username, $f_email );
+if( $t_problem === '' && signup_captcha_required( $f_email ) ) {
 	$t_securimage = new Securimage();
 	if( $t_securimage->check( $f_captcha ) == false ) {
-		trigger_error( ERROR_SIGNUP_NOT_MATCHING_CAPTCHA, ERROR );
+		$t_problem = 'captcha';
 	}
+}
+if( $t_problem === '' ) {
+	$t_problem = signup_account_problem( $f_username, $f_email );
+}
+if( $t_problem !== '' ) {
+	signup_return_to_form( $t_problem, $f_username, $f_email );
 }
 
 # notify the selected group a new user has signed-up

@@ -1472,6 +1472,17 @@ $s_signup_captcha_refresh = 'Generate a new code';
 $s_signup_info = 'On completion of this form and verification of your answers, you will be sent a confirmation message to the e-mail address you specified.<br />Using the link provided in the e-mail, you will be able to activate your account. If you fail to do so within seven days, it may be purged.<br />You must specify a valid e-mail address in order to receive the account confirmation e-mail.';
 $s_signup_title = 'Signup';
 $s_signup_button = 'Signup';
+# Doctis: signup form guidance and refusals (signup_api.php, js/signup.js)
+$s_signup_username_hint = 'Short and lowercase, the name colleagues know you by (e.g. rdickenson). Not your email address.';
+$s_signup_error_username_format = 'Choose a username of 2 to 20 characters: lowercase letters, digits, dots, hyphens or underscores, starting with a letter and ending with a letter or digit. No spaces.';
+$s_signup_error_username_email = 'That looks like an email address. Your email address goes in the Email field; for the username, choose a short name your colleagues will recognise, such as rdickenson.';
+$s_signup_error_username_reserved = 'The username "%s" is reserved. Please choose another.';
+$s_signup_error_username_taken = 'The username "%s" is already taken. Usernames are first come, first served: please choose another, such as a nickname your colleagues know you by.';
+$s_signup_error_email_invalid = 'Please enter a valid email address.';
+$s_signup_error_email_domain = 'Sign-up needs an email address from an approved domain.';
+$s_signup_error_email_staff = 'Staff: please use your work address (%s).';
+$s_signup_error_captcha = 'The code you entered does not match the image. Please enter the new code shown.';
+$s_signup_error_email_taken = 'That email address already has an account. Use "Lost your password?" on the login page to get back into it.';
 $s_no_password_request = 'Your password is managed by another system. Please contact your system administrator.';
 
 # site_settings_edit_page.php
@@ -2112,7 +2123,7 @@ $MANTIS_ERROR[ERROR_CATEGORY_CANNOT_UPDATE_DEFAULT] = 'Operation cannot be compl
 $MANTIS_ERROR[ERROR_CATEGORY_CANNOT_DELETE_HAS_ISSUES] = 'Category "%1$s" cannot be deleted, because it is associated with one or more issues.';
 $MANTIS_ERROR[ERROR_VERSION_DUPLICATE] = 'A version with that name already exists.';
 $MANTIS_ERROR[ERROR_VERSION_NOT_FOUND] = 'Version "%1$s" not found.';
-$MANTIS_ERROR[ERROR_USER_NAME_INVALID] = 'The username is invalid. Usernames may only contain Latin letters, numbers, spaces, hyphens, dots, plus signs and underscores.';
+$MANTIS_ERROR[ERROR_USER_NAME_INVALID] = 'The username is invalid. Usernames must be 2 to 20 characters: lowercase letters, digits, dots, hyphens or underscores, starting with a letter and ending with a letter or digit. Reserved names such as "admin" are not allowed.';
 $MANTIS_ERROR[ERROR_USER_REAL_NAME_INVALID] = 'The user real name is invalid.';
 $MANTIS_ERROR[ERROR_USER_DOES_NOT_HAVE_REQ_ACCESS] = 'User does not have required access level.';
 $MANTIS_ERROR[ERROR_SPONSORSHIP_NOT_ENABLED] = 'Sponsorship support not enabled.';
