@@ -117,6 +117,12 @@ class TopicApiTest extends TopicTestCase {
 		$this->expectTopicError( function() use ( $t_cat, $t_other ) {
 			topic_applicability_set( $t_cat['project_id'], $t_other['10'], TOPIC_APPLICABLE, '' );
 		}, 'not in the project' );
+
+		# Topic id 0 is refused before anything is written.
+		$this->expectTopicError( function() use ( $t_cat ) {
+			topic_applicability_set( $t_cat['project_id'], 0, TOPIC_APPLICABLE, '' );
+		}, 'does not exist' );
+		$this->assertArrayNotHasKey( 0, topic_applicability_current( $t_project_id ) );
 	}
 
 	# ── Tags and coverage ────────────────────────────────────────────────────

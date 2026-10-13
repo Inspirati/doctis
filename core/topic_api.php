@@ -832,16 +832,17 @@ function topic_project_delete( int $p_project_id ): void {
  * The enabled project's adopted catalogue, checking a Topic belongs to it.
  *
  * @param integer $p_project_id Project.
- * @param integer $p_topic_id   Topic, 0 to skip the check.
+ * @param integer|null $p_topic_id Topic, null to skip the check; any id
+ *                (0 included) must be a Topic of the catalogue.
  * @return array Row of {topic_catalogue}.
  * @throws ClientException
  */
-function topic_project_catalogue( int $p_project_id, int $p_topic_id = 0 ): array {
+function topic_project_catalogue( int $p_project_id, ?int $p_topic_id = null ): array {
 	if( !topic_project_is_enabled( $p_project_id ) ) {
 		topic_error( 'Topics are not enabled for this project.' );
 	}
 	$t_catalogue = topic_catalogue_get( (int)topic_project_get( $p_project_id )['catalogue_id'] );
-	if( $p_topic_id != 0 && (int)topic_get( $p_topic_id )['catalogue_id'] != (int)$t_catalogue['id'] ) {
+	if( $p_topic_id !== null && (int)topic_get( $p_topic_id )['catalogue_id'] != (int)$t_catalogue['id'] ) {
 		topic_error( 'that Topic is not in the project\'s catalogue.' );
 	}
 	return $t_catalogue;
