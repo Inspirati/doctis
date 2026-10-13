@@ -172,7 +172,7 @@ layout_page_begin( 'topic_page.php' );
 				<td><code><?php echo string_display_line( topic_evidence_version_label( $t_item['version'] ) ) ?></code></td>
 				<td><?php echo string_display_line( $t_item['locator'] ) ?></td>
 				<td class="nowrap"><?php
-					if( topic_can_tag_dwg( $t_dwg_id ) ) {
+					if( topic_can_tag_dwg_in_project( $t_dwg_id, $t_project_id ) ) {
 						print_form_button( 'topic_evidence_action.php', lang_get( 'topic_remove' ),
 							array( 'action' => 'remove', 'evidence_id' => (int)$t_item['evidence_id'], 'milestone_view' => $f_milestone_id ),
 							null, 'btn btn-danger btn-xs btn-white btn-round' );
@@ -192,7 +192,7 @@ layout_page_begin( 'topic_page.php' );
 		$t_view = topic_project_view( $t_project_id );
 		foreach( $t_view['topics'][(int)$t_topic['id']]['tags'] ?? array() as $t_tag ) {
 			$t_dwg_id = (int)$t_tag['dwg_id'];
-			if( !isset( $t_evidence[$t_dwg_id] ) && topic_can_tag_dwg( $t_dwg_id ) ) {
+			if( !isset( $t_evidence[$t_dwg_id] ) && topic_can_tag_dwg_in_project( $t_dwg_id, $t_project_id ) ) {
 				$t_candidates[$t_dwg_id] = $t_tag['document'];
 			}
 		}

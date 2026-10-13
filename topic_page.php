@@ -313,6 +313,40 @@ if( $t_enabled ) {
 	</div>
 </div>
 
+<?php if( access_has_project_level( config_get( 'topic_tag_threshold', null, null, $f_project_id ), $f_project_id ) ) { ?>
+<div class="col-md-12 col-xs-12" id="shared">
+	<div class="space-10"></div>
+	<div class="widget-box widget-color-blue2 collapsed">
+	<div class="widget-header widget-header-small">
+		<h4 class="widget-title lighter">
+			<?php print_icon( 'fa-share-alt', 'ace-icon' ); ?>
+			<?php echo lang_get( 'topic_share_title' ) ?>
+		</h4>
+		<div class="widget-toolbar"><a data-action="collapse" href="#"><?php print_icon( 'fa-chevron-down', '1 ace-icon bigger-125' ); ?></a></div>
+	</div>
+	<div class="widget-body">
+	<div class="widget-main">
+		<p class="small grey"><?php echo lang_get( 'topic_share_intro' ) ?></p>
+		<form method="post" action="dwg_topic_add.php" class="form-inline">
+			<?php echo form_security_field( 'dwg_topic_add' ) ?>
+			<input type="hidden" name="project_id" value="<?php echo (int)$f_project_id ?>" />
+			<input type="hidden" name="return" value="topics" />
+			<label for="topic-share-dwg"><?php echo lang_get( 'topic_share_document_id' ) ?></label>
+			<input type="number" id="topic-share-dwg" name="dwg_id" class="input-sm" min="1" required style="width:8em" />
+			<select name="topic_id" class="input-sm" aria-label="<?php echo lang_get( 'topic_topic' ) ?>">
+				<?php print_topic_option_list( (int)$t_catalogue['id'] ); ?>
+			</select>
+			<?php print_topic_extent_select( 'extent' ); ?>
+			<input type="text" name="locator" class="input-sm" size="16" maxlength="255"
+				placeholder="<?php echo lang_get( 'topic_sections' ) ?>" aria-label="<?php echo lang_get( 'topic_sections' ) ?>" />
+			<button type="submit" class="btn btn-primary btn-xs btn-white btn-round"><?php echo lang_get( 'topic_tag' ) ?></button>
+		</form>
+	</div>
+	</div>
+	</div>
+</div>
+<?php } ?>
+
 <div class="col-md-12 col-xs-12" id="snapshots">
 	<div class="space-10"></div>
 	<div class="widget-box widget-color-blue2">

@@ -19,7 +19,7 @@ switch( $f_action ) {
 		$t_expectation_id = gpc_get_int( 'expectation_id' );
 		$t_dwg_id = gpc_get_int( 'dwg_id' );
 		dwg_ensure_exists( $t_dwg_id );
-		if( !topic_can_tag_dwg( $t_dwg_id ) ) {
+		if( !topic_can_tag_dwg_in_project( $t_dwg_id, (int)topic_expectation_get( $t_expectation_id )['project_id'] ) ) {
 			access_denied();
 		}
 		topic_evidence_add( $t_expectation_id, $t_dwg_id, gpc_get_string( 'locator', '' ) );
@@ -27,7 +27,7 @@ switch( $f_action ) {
 	case 'remove':
 		$t_evidence = topic_evidence_get( gpc_get_int( 'evidence_id' ) );
 		$t_expectation_id = (int)$t_evidence['expectation_id'];
-		if( !topic_can_tag_dwg( (int)$t_evidence['dwg_id'] ) ) {
+		if( !topic_can_tag_dwg_in_project( (int)$t_evidence['dwg_id'], (int)topic_expectation_get( $t_expectation_id )['project_id'] ) ) {
 			access_denied();
 		}
 		topic_evidence_remove( (int)$t_evidence['id'] );

@@ -247,7 +247,7 @@ layout_page_begin( 'topic_page.php' );
 			<tr>
 				<td><?php echo topic_tag_html( $t_tag ) ?></td>
 				<td class="nowrap">
-				<?php if( topic_can_tag_dwg( $t_dwg_id ) ) {
+				<?php if( topic_can_tag_dwg_in_project( $t_dwg_id, $f_project_id ) ) {
 					$t_tag_id = (int)$t_tag['id'];
 					include( __DIR__ . '/dwg_topic_edit_inc.php' );
 				} ?>

@@ -7,10 +7,29 @@
 require_api( 'topic_api.php' );
 
 $t_topics_project_id = (int)dwg_get_field( $f_dwg_id, 'project_id' );
-if( topic_project_is_enabled( $t_topics_project_id ) && topic_can_view_project( $t_topics_project_id ) ) {
-	$t_topics_tags = topic_dwg_get_for_dwg( $f_dwg_id );
-	$t_topics_can_tag = !$t_force_readonly && topic_can_tag_dwg( $f_dwg_id );
-	$t_topics_catalogue_id = (int)topic_project_get( $t_topics_project_id )['catalogue_id'];
+$t_topics_own = topic_project_is_enabled( $t_topics_project_id ) && topic_can_view_project( $t_topics_project_id );
+
+# Other projects using this document as shared evidence (TOP-FR-009), shown
+# even when its own project does not use Topics.
+$t_shared_lines = array();
+if( topic_feature_enabled() ) {
+	foreach( topic_dwg_get_shared_uses( $f_dwg_id ) as $t_use_project_id => $t_use_tags ) {
+		if( !topic_can_view_project( $t_use_project_id ) ) {
+			continue;
+		}
+		$t_codes = array();
+		foreach( $t_use_tags as $t_use ) {
+			$t_codes[] = $t_use['code'] . ' (' . topic_extent_label( (int)$t_use['extent'] ) . ')';
+		}
+		$t_shared_lines[] = '<a href="topic_page.php?project_id=' . (int)$t_use_project_id . '">'
+			. string_display_line( project_get_name( $t_use_project_id ) ) . '</a>: ' . string_display_line( implode( ', ', $t_codes ) );
+	}
+}
+
+if( $t_topics_own || $t_shared_lines ) {
+	$t_topics_tags = $t_topics_own ? topic_dwg_get_for_dwg( $f_dwg_id ) : array();
+	$t_topics_can_tag = $t_topics_own && !$t_force_readonly && topic_can_tag_dwg( $f_dwg_id );
+	$t_topics_catalogue_id = $t_topics_own ? (int)topic_project_get( $t_topics_project_id )['catalogue_id'] : 0;
 	$t_return = array( 'return' => 'view' );
 
 	$t_collapse_block = is_collapsed( 'topics', false );
@@ -37,7 +56,7 @@ if( topic_project_is_enabled( $t_topics_project_id ) && topic_can_view_project( 
 			<div class="widget-main no-padding">
 				<div class="table-responsive">
 					<table class="table table-bordered table-condensed table-striped">
-					<?php if( !$t_topics_tags ) { ?>
+					<?php if( $t_topics_own && !$t_topics_tags ) { ?>
 						<tr><td colspan="4"><?php echo lang_get( 'topic_document_untagged' ) ?></td></tr>
 					<?php }
 					foreach( $t_topics_tags as $t_tag ) { ?>
@@ -82,10 +101,17 @@ if( topic_project_is_enabled( $t_topics_project_id ) && topic_can_view_project( 
 						</tr>
 					<?php }
 					} ?>
+					<?php if( $t_shared_lines ) { ?>
+						<tr>
+							<td colspan="4"><?php echo lang_get( 'topic_shared_uses' ) ?> <?php echo implode( '; ', $t_shared_lines ) ?></td>
+						</tr>
+					<?php } ?>
 						<tr>
 							<td colspan="4" class="grey small">
 								<?php echo lang_get( 'topic_extent_hint' ) ?>
+								<?php if( $t_topics_own ) { ?>
 								<a href="topic_page.php?project_id=<?php echo $t_topics_project_id ?>"><?php echo lang_get( 'topic_all_project_topics' ) ?></a>
+								<?php } ?>
 							</td>
 						</tr>
 					</table>

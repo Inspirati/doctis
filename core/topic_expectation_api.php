@@ -599,8 +599,8 @@ function topic_evidence_history_describe( string $p_value ): string {
 }
 
 /**
- * Link a document to an expectation as evidence. The document must belong to
- * the expectation's project and be tagged with its Topic.
+ * Link a document to an expectation as evidence. The document must be tagged
+ * with its Topic in the expectation's project (its own, or shared into it).
  *
  * @param integer $p_expectation_id Expectation (enabled).
  * @param integer $p_dwg_id         Document.
@@ -613,13 +613,14 @@ function topic_evidence_add( int $p_expectation_id, int $p_dwg_id, string $p_loc
 	if( (int)$t_expectation['enabled'] != 1 ) {
 		topic_error( 'the expectation is retired.' );
 	}
-	if( !dwg_exists( $p_dwg_id ) || (int)dwg_get_field( $p_dwg_id, 'project_id' ) != (int)$t_expectation['project_id'] ) {
-		topic_error( 'the document is not in the expectation\'s project.' );
+	if( !dwg_exists( $p_dwg_id ) ) {
+		topic_error( 'document ' . $p_dwg_id . ' does not exist.' );
 	}
-	$t_tagged = false;
-	foreach( topic_dwg_get_for_dwg( $p_dwg_id ) as $t_tag ) {
-		$t_tagged = $t_tagged || (int)$t_tag['topic_id'] == (int)$t_expectation['topic_id'];
-	}
+	# Tagged with the Topic in the expectation's project (its own document or
+	# one shared into the project).
+	db_param_push();
+	$t_tagged = db_num_rows( db_query( 'SELECT id FROM {dwg_topic} WHERE project_id=' . db_param() . ' AND dwg_id=' . db_param()
+		. ' AND topic_id=' . db_param(), array( (int)$t_expectation['project_id'], $p_dwg_id, (int)$t_expectation['topic_id'] ) ) ) > 0;
 	if( !$t_tagged ) {
 		topic_error( 'tag the document with Topic ' . topic_get( (int)$t_expectation['topic_id'] )['code'] . ' first.' );
 	}

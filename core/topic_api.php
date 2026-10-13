@@ -126,6 +126,26 @@ function topic_can_tag_dwg( int $p_dwg_id, ?int $p_user_id = null ): bool {
 }
 
 /**
+ * Whether the user may change a document's Topic tags in a given project's
+ * profile: the document's own project (topic_can_tag_dwg()), or another
+ * project that uses it as shared evidence (TOP-FR-009) — then the user needs
+ * the tag threshold in that project and must be able to see the document.
+ *
+ * @param integer      $p_dwg_id     Document.
+ * @param integer      $p_project_id Project whose profile the tag belongs to.
+ * @param integer|null $p_user_id    User, default current.
+ * @return boolean
+ */
+function topic_can_tag_dwg_in_project( int $p_dwg_id, int $p_project_id, ?int $p_user_id = null ): bool {
+	if( $p_project_id == (int)dwg_get_field( $p_dwg_id, 'project_id' ) ) {
+		return topic_can_tag_dwg( $p_dwg_id, $p_user_id );
+	}
+	return topic_feature_enabled() && topic_project_is_enabled( $p_project_id )
+		&& access_has_project_level( config_get( 'topic_tag_threshold', null, $p_user_id, $p_project_id ), $p_project_id, $p_user_id )
+		&& topic_can_see_dwg( $p_dwg_id, $p_user_id );
+}
+
+/**
  * Whether the user may see a document (the document list's rules).
  *
  * @param integer      $p_dwg_id  Document.
@@ -960,6 +980,19 @@ function topic_dwg_validate( int $p_extent, string $p_locator ): string {
 }
 
 /**
+ * Topic code as shown in a document's history: prefixed with the project
+ * name when the tag belongs to another project's profile (shared evidence).
+ *
+ * @param string  $p_code       Topic code.
+ * @param integer $p_project_id Project of the tag.
+ * @param integer $p_dwg_id     Document.
+ * @return string
+ */
+function topic_dwg_history_code( string $p_code, int $p_project_id, int $p_dwg_id ): string {
+	return $p_project_id == (int)dwg_get_field( $p_dwg_id, 'project_id' ) ? $p_code : project_get_name( $p_project_id ) . ':' . $p_code;
+}
+
+/**
  * History value of a tag: "code|extent|locator".
  *
  * @param string  $p_code    Topic code.
@@ -1044,14 +1077,19 @@ function topic_dwg_get_for_dwg( int $p_dwg_id ): array {
  * @param integer $p_topic_id Enabled Topic of the project's catalogue.
  * @param integer $p_extent   TOPIC_EXTENT_PART or TOPIC_EXTENT_WHOLE.
  * @param string  $p_locator  Relevant sections, may be empty.
+ * @param integer $p_project_id Project whose profile the tag belongs to; 0 =
+ *                the document's own project. Another project shares the
+ *                document as evidence (TOP-FR-009).
  * @return integer New tag id.
  * @throws ClientException
  */
-function topic_dwg_add( int $p_dwg_id, int $p_topic_id, int $p_extent, string $p_locator = '' ): int {
+function topic_dwg_add( int $p_dwg_id, int $p_topic_id, int $p_extent, string $p_locator = '', int $p_project_id = 0 ): int {
 	if( !dwg_exists( $p_dwg_id ) ) {
 		topic_error( 'document ' . $p_dwg_id . ' does not exist.' );
 	}
-	$t_project_id = (int)dwg_get_field( $p_dwg_id, 'project_id' );
+	$t_own_project_id = (int)dwg_get_field( $p_dwg_id, 'project_id' );
+	$t_project_id = $p_project_id == 0 ? $t_own_project_id : $p_project_id;
+	$t_shared = $t_project_id != $t_own_project_id;
 	topic_project_catalogue( $t_project_id, $p_topic_id );
 	$t_topic = topic_get( $p_topic_id );
 	if( (int)$t_topic['enabled'] != 1 ) {
@@ -1073,9 +1111,11 @@ function topic_dwg_add( int $p_dwg_id, int $p_topic_id, int $p_extent, string $p
 		array( $t_project_id, $p_dwg_id, $p_topic_id, $p_extent, $t_locator, auth_get_current_user_id(), db_now() ) );
 	$t_tag_id = (int)db_insert_id( db_get_table( 'dwg_topic' ) );
 
+	$t_history_code = topic_dwg_history_code( $t_topic['code'], $t_project_id, $p_dwg_id );
 	history_dwg_log_event_special( $p_dwg_id, DWG_TOPIC_ATTACHED, '',
-		topic_dwg_history_value( $t_topic['code'], $p_extent, $t_locator ) );
-	topic_event_log( $t_project_id, 'tag_add', topic_event_document( $p_dwg_id ) . ': '
+		topic_dwg_history_value( $t_history_code, $p_extent, $t_locator ) );
+	topic_event_log( $t_project_id, $t_shared ? 'shared_add' : 'tag_add', topic_event_document( $p_dwg_id )
+		. ( $t_shared ? ' [' . project_get_name( $t_own_project_id ) . ']' : '' ) . ': '
 		. topic_dwg_history_describe( topic_dwg_history_value( $t_topic['code'], $p_extent, $t_locator ) ) );
 	return $t_tag_id;
 }
@@ -1098,9 +1138,10 @@ function topic_dwg_update( int $p_tag_id, int $p_extent, string $p_locator ): bo
 	db_param_push();
 	db_query( 'UPDATE {dwg_topic} SET extent=' . db_param() . ', locator=' . db_param() . ' WHERE id=' . db_param(),
 		array( $p_extent, $t_locator, $p_tag_id ) );
+	$t_history_code = topic_dwg_history_code( $t_tag['code'], (int)$t_tag['project_id'], (int)$t_tag['dwg_id'] );
 	history_dwg_log_event_special( (int)$t_tag['dwg_id'], DWG_TOPIC_UPDATED,
-		topic_dwg_history_value( $t_tag['code'], (int)$t_tag['extent'], $t_tag['locator'] ),
-		topic_dwg_history_value( $t_tag['code'], $p_extent, $t_locator ) );
+		topic_dwg_history_value( $t_history_code, (int)$t_tag['extent'], $t_tag['locator'] ),
+		topic_dwg_history_value( $t_history_code, $p_extent, $t_locator ) );
 	topic_event_log( (int)$t_tag['project_id'], 'tag_change', topic_event_document( (int)$t_tag['dwg_id'] ) . ': '
 		. topic_dwg_history_describe( topic_dwg_history_value( $t_tag['code'], $p_extent, $t_locator ) ) );
 	return true;
@@ -1121,7 +1162,8 @@ function topic_dwg_remove( int $p_tag_id ): void {
 	db_param_push();
 	db_query( 'DELETE FROM {dwg_topic} WHERE id=' . db_param(), array( $p_tag_id ) );
 	history_dwg_log_event_special( (int)$t_tag['dwg_id'], DWG_TOPIC_DETACHED,
-		topic_dwg_history_value( $t_tag['code'], (int)$t_tag['extent'], $t_tag['locator'] ), '' );
+		topic_dwg_history_value( topic_dwg_history_code( $t_tag['code'], (int)$t_tag['project_id'], (int)$t_tag['dwg_id'] ),
+			(int)$t_tag['extent'], $t_tag['locator'] ), '' );
 	topic_event_log( (int)$t_tag['project_id'], 'tag_remove', topic_event_document( (int)$t_tag['dwg_id'] ) . ': ' . $t_tag['code'] );
 }
 
@@ -1168,9 +1210,14 @@ function topic_dwg_move( int $p_dwg_id, int $p_old_project_id, int $p_new_projec
 		topic_evidence_remove_for_dwg( $p_dwg_id, $p_old_project_id, (int)$t_tag['topic_id'] );
 		$t_value = topic_dwg_history_value( $t_tag['code'], (int)$t_tag['extent'], $t_tag['locator'] );
 		if( $t_keep ) {
+			# The destination may already share the document with this Topic: keep its tag.
 			db_param_push();
-			db_query( 'UPDATE {dwg_topic} SET project_id=' . db_param() . ' WHERE id=' . db_param(),
-				array( $p_new_project_id, (int)$t_tag['id'] ) );
+			$t_duplicate = db_num_rows( db_query( 'SELECT id FROM {dwg_topic} WHERE project_id=' . db_param() . ' AND dwg_id=' . db_param()
+				. ' AND topic_id=' . db_param(), array( $p_new_project_id, $p_dwg_id, (int)$t_tag['topic_id'] ) ) ) > 0;
+			db_param_push();
+			db_query( $t_duplicate ? 'DELETE FROM {dwg_topic} WHERE id=' . db_param()
+				: 'UPDATE {dwg_topic} SET project_id=' . (int)$p_new_project_id . ' WHERE id=' . db_param(),
+				array( (int)$t_tag['id'] ) );
 			topic_event_log( $p_old_project_id, 'tag_moved_out', topic_event_document( $p_dwg_id ) . ': ' . $t_tag['code'] );
 			topic_event_log( $p_new_project_id, 'tag_moved_in', topic_event_document( $p_dwg_id ) . ': ' . topic_dwg_history_describe( $t_value ) );
 		} else {
@@ -1220,7 +1267,7 @@ function topic_coverage_state( int $p_applicability, array $p_extents ): string 
  */
 function topic_project_documents( int $p_project_id ): array {
 	db_param_push();
-	$t_result = db_query( 'SELECT d.id, d.status, doc.number, doc.title FROM {dwg} d
+	$t_result = db_query( 'SELECT d.id, d.status, d.project_id, doc.number, doc.title FROM {dwg} d
 		JOIN {documents} doc ON doc.id=d.document_id
 		WHERE d.project_id=' . db_param() . ' ORDER BY doc.number, doc.title, d.id', array( $p_project_id ) );
 	$t_documents = array();
@@ -1228,6 +1275,44 @@ function topic_project_documents( int $p_project_id ): array {
 		$t_documents[(int)$t_row['id']] = $t_row;
 	}
 	return $t_documents;
+}
+
+/**
+ * Documents of other projects that a project has tagged as shared evidence.
+ *
+ * @param integer $p_project_id Project.
+ * @return array dwg_id => id, number, title, status, project_id (the document's own).
+ */
+function topic_project_shared_documents( int $p_project_id ): array {
+	db_param_push();
+	$t_result = db_query( 'SELECT DISTINCT d.id, d.status, d.project_id, doc.number, doc.title FROM {dwg_topic} dt
+		JOIN {dwg} d ON d.id=dt.dwg_id JOIN {documents} doc ON doc.id=d.document_id
+		WHERE dt.project_id=' . db_param() . ' AND d.project_id<>dt.project_id ORDER BY doc.number, d.id', array( $p_project_id ) );
+	$t_documents = array();
+	while( $t_row = db_fetch_array( $t_result ) ) {
+		$t_documents[(int)$t_row['id']] = $t_row;
+	}
+	return $t_documents;
+}
+
+/**
+ * Projects other than its own that use a document as shared evidence, with
+ * their tags.
+ *
+ * @param integer $p_dwg_id Document.
+ * @return array project_id => list of tag rows (code, title, extent, locator).
+ */
+function topic_dwg_get_shared_uses( int $p_dwg_id ): array {
+	db_param_push();
+	$t_result = db_query( 'SELECT dt.*, t.code, t.title FROM {dwg_topic} dt JOIN {topic} t ON t.id=dt.topic_id
+		JOIN {dwg} d ON d.id=dt.dwg_id
+		WHERE dt.dwg_id=' . db_param() . ' AND dt.project_id<>d.project_id ORDER BY dt.project_id, t.sort_order, t.code',
+		array( $p_dwg_id ) );
+	$t_uses = array();
+	while( $t_row = db_fetch_array( $t_result ) ) {
+		$t_uses[(int)$t_row['project_id']][] = $t_row;
+	}
+	return $t_uses;
 }
 
 /**
@@ -1252,6 +1337,8 @@ function topic_project_view( int $p_project_id, ?int $p_user_id = null, bool $p_
 	$t_topics = topic_get_all( (int)$t_catalogue['id'] );
 	$t_decisions = topic_applicability_current( $p_project_id );
 	$t_documents = topic_project_documents( $p_project_id );
+	$t_own_ids = array_keys( $t_documents );
+	$t_documents += topic_project_shared_documents( $p_project_id );
 	$t_inactive = array_map( 'intval', (array)config_get( 'topic_inactive_status', null, $p_user_id, $p_project_id ) );
 
 	if( $t_documents ) {
@@ -1309,7 +1396,8 @@ function topic_project_view( int $p_project_id, ?int $p_user_id = null, bool $p_
 	}
 
 	$t_untagged = array();
-	foreach( $t_documents as $t_dwg_id => $t_document ) {
+	foreach( $t_own_ids as $t_dwg_id ) {
+		$t_document = $t_documents[$t_dwg_id];
 		if( !isset( $t_tagged[$t_dwg_id] ) && $t_visible[$t_dwg_id] ) {
 			$t_untagged[$t_dwg_id] = $t_document;
 		}
@@ -1406,6 +1494,8 @@ function topic_tag_html( array $p_tag ): string {
 	$t_html = string_get_dwg_view_title_link( (int)$t_document['id'],
 		string_display_line( topic_document_label( $t_document ) ), false )
 		. ' <span class="grey">(' . string_display_line( get_enum_element( 'dwg_status', (int)$t_document['status'] ) ) . ')</span>'
+		. ( (int)( $t_document['project_id'] ?? $p_tag['project_id'] ) != (int)$p_tag['project_id']
+			? ' <span class="label label-info">' . string_display_line( sprintf( lang_get( 'topic_shared_from' ), project_get_name( (int)$t_document['project_id'] ) ) ) . '</span>' : '' )
 		. ' &mdash; ' . topic_extent_label( (int)$p_tag['extent'] )
 		. ( $p_tag['locator'] !== '' ? ': ' . string_display_line( $p_tag['locator'] ) : '' );
 	return $p_tag['inactive'] ? '<del title="' . string_attribute( lang_get( 'topic_inactive_document' ) ) . '">' . $t_html . '</del>' : $t_html;
@@ -1416,11 +1506,12 @@ function topic_tag_html( array $p_tag ): string {
  * ('topics'), a Topic's detail page ('detail', with topic_id) or the document
  * (default).
  *
- * @param integer $p_dwg_id Document acted on.
+ * @param integer $p_dwg_id     Document acted on.
+ * @param integer $p_project_id Project of the tag, 0 = the document's own.
  * @return void Does not return.
  */
-function dwg_topic_redirect( int $p_dwg_id ): void {
-	$t_project_id = (int)dwg_get_field( $p_dwg_id, 'project_id' );
+function dwg_topic_redirect( int $p_dwg_id, int $p_project_id = 0 ): void {
+	$t_project_id = $p_project_id > 0 ? $p_project_id : (int)dwg_get_field( $p_dwg_id, 'project_id' );
 	switch( gpc_get_string( 'return', 'view' ) ) {
 		case 'topics':
 			print_header_redirect( 'topic_page.php?project_id=' . $t_project_id );

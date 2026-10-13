@@ -447,6 +447,55 @@ class TopicExpectationApiTest extends TopicTestCase {
 		$this->assertSame( 'catalogue_migrate', topic_event_get( $t_project_id )[0]['action'] );
 	}
 
+	public function testDocumentSharedIntoAnotherProject() {
+		$t_a = $this->makeProjectWithMilestones();
+		$t_b_project = $this->makeProject();
+		topic_project_enable( $t_b_project, $t_a['id'] );
+		topic_milestone_load_defaults( $t_b_project );
+		$t_b_milestone = array_keys( topic_milestone_get_all( $t_b_project ) )[0];
+		$t_doc = $this->makeDocument( $t_a['project_id'], ACCEPTED, 'SHARED-ICD' );
+		topic_dwg_add( $t_doc, $t_a['20'], TOPIC_EXTENT_PART, '§1' );   # in its own project A
+
+		# Project B shares it, with its own tag.
+		$this->assertTrue( topic_can_tag_dwg_in_project( $t_doc, $t_b_project ) );
+		topic_dwg_add( $t_doc, $t_a['20'], TOPIC_EXTENT_WHOLE, '§2-4', $t_b_project );
+		$t_view_b = topic_project_view( $t_b_project );
+		$this->assertCount( 1, $t_view_b['topics'][$t_a['20']]['tags'] );
+		$this->assertSame( TOPIC_STATE_COMPLETE, $t_view_b['topics'][$t_a['20']]['state'] );
+		$this->assertArrayNotHasKey( $t_doc, $t_view_b['untagged'] );
+		# A keeps its own tag; the document's own-project list is unchanged.
+		$this->assertSame( TOPIC_STATE_PARTIAL, topic_project_view( $t_a['project_id'] )['topics'][$t_a['20']]['state'] );
+		$this->assertCount( 1, topic_dwg_get_for_dwg( $t_doc ) );
+		$this->assertArrayHasKey( $t_b_project, topic_dwg_get_shared_uses( $t_doc ) );
+		$t_history = db_result( db_query( 'SELECT new_value FROM {dwg_history} WHERE dwg_id=' . db_param() . ' AND type=' . db_param()
+			. ' ORDER BY id DESC', array( $t_doc, DWG_TOPIC_ATTACHED ), 1 ) );
+		$this->assertStringStartsWith( project_get_name( $t_b_project ) . ':20|', $t_history );
+		$this->assertContains( 'shared_add', array_column( topic_event_get( $t_b_project ), 'action' ) );
+
+		# B uses it as evidence and assesses it independently.
+		$t_e = topic_expectation_create( $t_b_project, $t_a['20'], 'Interface definition', auth_get_current_user_id(), $t_b_milestone, TOPIC_MATURITY_APPROVED );
+		topic_evidence_add( $t_e, $t_doc, '§2-4' );
+		topic_assessment_record( $t_e, TOPIC_FINDING_ADEQUATE, 'Shared ICD covers the interfaces.' );
+		$this->assertSame( TOPIC_EXP_SATISFIED, $this->state( $t_e, $t_b_milestone )['state'] );
+
+		# Removing B's tag removes B's evidence, not A's tag.
+		$t_b_tag = (int)db_result( db_query( 'SELECT id FROM {dwg_topic} WHERE project_id=' . db_param() . ' AND dwg_id=' . db_param(),
+			array( $t_b_project, $t_doc ) ) );
+		topic_dwg_remove( $t_b_tag );
+		$this->assertSame( array(), topic_evidence_get_all( $t_e ) );
+		$this->assertCount( 1, topic_dwg_get_for_dwg( $t_doc ) );
+
+		# Moving the document into B while B shares it with the same Topic keeps one tag.
+		topic_dwg_add( $t_doc, $t_a['20'], TOPIC_EXTENT_WHOLE, '', $t_b_project );
+		topic_dwg_move( $t_doc, $t_a['project_id'], $t_b_project );
+		$this->assertEquals( 1, (int)db_result( db_query( 'SELECT COUNT(*) FROM {dwg_topic} WHERE dwg_id=' . db_param(), array( $t_doc ) ) ) );
+
+		# Deleting the document removes every tag of it.
+		topic_dwg_add( $t_doc, $t_a['10'], TOPIC_EXTENT_PART, '', $t_a['project_id'] );
+		topic_dwg_delete_all( $t_doc );
+		$this->assertEquals( 0, (int)db_result( db_query( 'SELECT COUNT(*) FROM {dwg_topic} WHERE dwg_id=' . db_param(), array( $t_doc ) ) ) );
+	}
+
 	public function testProjectDeletionRemovesPhase2Records() {
 		$t_cat = $this->makeProjectWithMilestones();
 		$t_project_id = $t_cat['project_id'];
