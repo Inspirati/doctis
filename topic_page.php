@@ -21,6 +21,7 @@ require_api( 'project_api.php' );
 require_api( 'string_api.php' );
 require_api( 'topic_api.php' );
 require_api( 'topic_expectation_api.php' );
+require_api( 'topic_snapshot_api.php' );
 
 auth_ensure_user_authenticated();
 if( !topic_feature_enabled() ) {
@@ -300,6 +301,62 @@ if( $t_enabled ) {
 	</table>
 	</div>
 	</div>
+	</div>
+	</div>
+</div>
+
+<div class="col-md-12 col-xs-12" id="snapshots">
+	<div class="space-10"></div>
+	<div class="widget-box widget-color-blue2">
+	<div class="widget-header widget-header-small">
+		<h4 class="widget-title lighter">
+			<?php print_icon( 'fa-camera', 'ace-icon' ); ?>
+			<?php echo lang_get( 'topic_snapshots' ) ?>
+		</h4>
+	</div>
+	<div class="widget-body">
+	<div class="widget-main">
+		<p class="small grey"><?php echo lang_get( 'topic_snapshots_intro' ) ?></p>
+		<?php if( topic_can_snapshot( $f_project_id ) ) { ?>
+		<form method="post" action="topic_snapshot_action.php" class="form-inline">
+			<?php echo form_security_field( 'topic_snapshot_action' ) ?>
+			<input type="hidden" name="project_id" value="<?php echo (int)$f_project_id ?>" />
+			<input type="hidden" name="milestone_id" value="<?php echo (int)$t_milestone_id ?>" />
+			<label for="topic-snapshot-title"><?php echo lang_get( 'topic_snapshot_title' ) ?></label>
+			<input type="text" id="topic-snapshot-title" name="title" class="input-sm" size="40" maxlength="128" required
+				placeholder="<?php echo lang_get( 'topic_snapshot_title_placeholder' ) ?>" />
+			<button type="submit" class="btn btn-primary btn-sm btn-white btn-round"><?php echo string_display_line( sprintf( lang_get( 'topic_snapshot_take' ),
+				$t_view['milestones'][$t_milestone_id]['name'] ?? '—' ) ) ?></button>
+		</form>
+		<?php } ?>
+	</div>
+	<?php $t_snapshots = topic_snapshot_get_all( $f_project_id );
+	if( $t_snapshots ) { ?>
+	<div class="widget-main no-padding">
+	<table class="table table-bordered table-condensed table-striped">
+		<thead><tr>
+			<th>#</th>
+			<th><?php echo lang_get( 'topic_snapshot_title' ) ?></th>
+			<th><?php echo lang_get( 'topic_milestone' ) ?></th>
+			<th><?php echo lang_get( 'topic_readiness' ) ?></th>
+			<th><?php echo lang_get( 'topic_profile' ) ?></th>
+			<th><?php echo lang_get( 'topic_snapshot_taken' ) ?></th>
+		</tr></thead>
+		<tbody>
+		<?php foreach( $t_snapshots as $t_row ) { ?>
+			<tr>
+				<td><a href="topic_snapshot_page.php?id=<?php echo (int)$t_row['id'] ?>">S<?php echo (int)$t_row['id'] ?></a></td>
+				<td><a href="topic_snapshot_page.php?id=<?php echo (int)$t_row['id'] ?>"><?php echo string_display_line( $t_row['title'] ) ?></a></td>
+				<td><?php echo string_display_line( $t_row['milestone_name'] ) ?></td>
+				<td><?php echo topic_exp_state_html( $t_row['readiness'] ) ?></td>
+				<td><?php echo (int)$t_row['profile_revision'] > 0 ? string_display_line( sprintf( lang_get( 'topic_revision_short' ), (int)$t_row['profile_revision'] ) ) : '&mdash;' ?></td>
+				<td class="nowrap"><?php echo string_display_line( date( config_get( 'normal_date_format' ), (int)$t_row['date_created'] ) . ' — ' . topic_user_name( (int)$t_row['user_id'] ) ) ?></td>
+			</tr>
+		<?php } ?>
+		</tbody>
+	</table>
+	</div>
+	<?php } ?>
 	</div>
 	</div>
 </div>

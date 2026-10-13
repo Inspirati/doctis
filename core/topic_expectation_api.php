@@ -1132,6 +1132,31 @@ function topic_profile_status( int $p_project_id ): array {
 # ── Coverage view ────────────────────────────────────────────────────────────
 
 /**
+ * Replace reasons that name a document the reader cannot see with a generic
+ * text (TOP-FR-026).
+ *
+ * @param array $p_reasons       Reason strings.
+ * @param array $p_hidden_labels Labels of documents hidden from the reader.
+ * @return array
+ */
+function topic_redact_reasons( array $p_reasons, array $p_hidden_labels ): array {
+	if( !$p_hidden_labels ) {
+		return $p_reasons;
+	}
+	$t_result = array();
+	foreach( $p_reasons as $t_reason ) {
+		foreach( $p_hidden_labels as $t_label ) {
+			if( $t_label !== '' && strpos( $t_reason, $t_label ) !== false ) {
+				$t_reason = lang_get( 'topic_reason_restricted' );
+				break;
+			}
+		}
+		$t_result[] = $t_reason;
+	}
+	return array_values( array_unique( $t_result ) );
+}
+
+/**
  * The Topics page data with expectations: topic_project_view() plus, per
  * Topic, 'expectations' (each with evidence, latest assessment, state and
  * reasons) and 'expectation_state'; and for the project the milestones, the
@@ -1144,11 +1169,12 @@ function topic_profile_status( int $p_project_id ): array {
  * @param integer      $p_project_id   Project with Topics enabled.
  * @param integer      $p_milestone_id Selected milestone, 0 = current.
  * @param integer|null $p_user_id      Reader, default current.
+ * @param boolean      $p_unfiltered   Treat every document as visible (snapshot capture).
  * @return array
  * @throws ClientException
  */
-function topic_coverage_view( int $p_project_id, int $p_milestone_id = 0, ?int $p_user_id = null ): array {
-	$t_view = topic_project_view( $p_project_id, $p_user_id );
+function topic_coverage_view( int $p_project_id, int $p_milestone_id = 0, ?int $p_user_id = null, bool $p_unfiltered = false ): array {
+	$t_view = topic_project_view( $p_project_id, $p_user_id, $p_unfiltered );
 	$t_milestones = topic_milestone_get_all( $p_project_id );
 	if( !isset( $t_milestones[$p_milestone_id] ) ) {
 		$p_milestone_id = topic_milestone_current( $t_milestones );
@@ -1169,16 +1195,24 @@ function topic_coverage_view( int $p_project_id, int $p_milestone_id = 0, ?int $
 		$t_latest = $t_history[0] ?? null;
 		$t_state = topic_expectation_state( $t_expectation, $t_milestones, $p_milestone_id, $t_evidence, $t_latest );
 		$t_visible = array();
+		$t_hidden_labels = array();
 		foreach( $t_evidence as $t_dwg_id => $t_item ) {
-			if( topic_can_see_dwg( $t_dwg_id, $p_user_id ) ) {
+			if( $p_unfiltered || topic_can_see_dwg( $t_dwg_id, $p_user_id ) ) {
 				$t_visible[$t_dwg_id] = $t_item;
+			} else {
+				$t_hidden_labels[] = topic_document_label( $t_item );
+			}
+		}
+		foreach( array_keys( $t_latest['evidence'] ?? array() ) as $t_dwg_id ) {
+			if( !isset( $t_evidence[$t_dwg_id] ) && !$p_unfiltered && dwg_exists( (int)$t_dwg_id ) && !topic_can_see_dwg( (int)$t_dwg_id, $p_user_id ) ) {
+				$t_hidden_labels[] = dwg_format_id( (int)$t_dwg_id );
 			}
 		}
 		$t_expectation['evidence'] = $t_evidence;
 		$t_expectation['evidence_visible'] = $t_visible;
 		$t_expectation['assessment'] = $t_latest;
 		$t_expectation['state'] = $t_state['state'];
-		$t_expectation['reasons'] = $t_state['reasons'];
+		$t_expectation['reasons'] = topic_redact_reasons( $t_state['reasons'], $t_hidden_labels );
 		$t_view['topics'][$t_topic_id]['expectations'][$t_id] = $t_expectation;
 		if( $t_view['topics'][$t_topic_id]['applicability'] != TOPIC_NOT_APPLICABLE ) {
 			$t_counts[$t_state['state']]++;

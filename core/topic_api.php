@@ -1240,12 +1240,14 @@ function topic_project_documents( int $p_project_id ): array {
  *
  * @param integer      $p_project_id Project with Topics enabled.
  * @param integer|null $p_user_id    Reader, default current.
+ * @param boolean      $p_unfiltered Treat every document as visible (snapshot
+ *                                   capture; permissions apply when shown).
  * @return array catalogue, topics (id => topic row + applicability,
  *               decision, tags, restricted, state), counts (state => n),
  *               applicability_counts, untagged (visible documents), restricted.
  * @throws ClientException
  */
-function topic_project_view( int $p_project_id, ?int $p_user_id = null ): array {
+function topic_project_view( int $p_project_id, ?int $p_user_id = null, bool $p_unfiltered = false ): array {
 	$t_catalogue = topic_project_catalogue( $p_project_id );
 	$t_topics = topic_get_all( (int)$t_catalogue['id'] );
 	$t_decisions = topic_applicability_current( $p_project_id );
@@ -1257,7 +1259,7 @@ function topic_project_view( int $p_project_id, ?int $p_user_id = null ): array 
 	}
 	$t_visible = array();
 	foreach( $t_documents as $t_dwg_id => $t_document ) {
-		$t_visible[$t_dwg_id] = topic_can_see_dwg( $t_dwg_id, $p_user_id );
+		$t_visible[$t_dwg_id] = $p_unfiltered || topic_can_see_dwg( $t_dwg_id, $p_user_id );
 	}
 
 	db_param_push();

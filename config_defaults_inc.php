@@ -3947,6 +3947,14 @@ $g_topic_assess_threshold = MANAGER;
 $g_topic_assessor_licenses = array();
 
 /**
+ * Threshold (project) to take snapshots of a project's Topic coverage for a
+ * technical review or baseline decision. Snapshots are never changed.
+ *
+ * @global int $g_topic_snapshot_threshold
+ */
+$g_topic_snapshot_threshold = MANAGER;
+
+/**
  * Threshold needed to add/delete/modify news.
  *
  * @global int $g_manage_news_threshold
