@@ -381,8 +381,9 @@ repositories. They are never sub-projects of HCRQMS.
   and record what is missing. Whether HCRQMS keeps its exemplar copies is a
   QMS content decision.
 
-  Started on the native VM, 2026-10-13: project HCR571 (id 29, top-level)
-  holds PRD-, ICD- and TP-HCR571 (documents 142–144, uploaded from HCRQMS
+  Started on the native VM, 2026-10-13, and set up again after that day's
+  database rebuild: project HCR571 (id 5, top-level) holds PRD-, ICD- and
+  TP-HCR571 (documents 128–130, uploaded from HCRQMS
   `content/engineering/designs/`). It uses the Draft STD-ENG-004 Rev A
   catalogue, with PRD → 10 (whole), ICD → 20 (part, §2–4) and TP → 30
   (part). 10, 20 and 30 are Applicable; the other Topics are Undecided,
