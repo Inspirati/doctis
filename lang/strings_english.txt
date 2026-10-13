@@ -1473,9 +1473,9 @@ $s_signup_info = 'On completion of this form and verification of your answers, y
 $s_signup_title = 'Signup';
 $s_signup_button = 'Signup';
 # Doctis: signup form guidance and refusals (signup_api.php, js/signup.js)
-$s_signup_username_hint = 'Short and lowercase, the name colleagues know you by (e.g. rdickenson). Not your email address.';
+$s_signup_username_hint = 'Your first name in lowercase, if it is free (e.g. hermione). Not your email address.';
 $s_signup_error_username_format = 'Choose a username of 2 to 20 characters: lowercase letters, digits, dots, hyphens or underscores, starting with a letter and ending with a letter or digit. No spaces.';
-$s_signup_error_username_email = 'That looks like an email address. Your email address goes in the Email field; for the username, choose a short name your colleagues will recognise, such as rdickenson.';
+$s_signup_error_username_email = 'That looks like an email address. Your email address goes in the Email field; for the username, use your first name, such as hermione.';
 $s_signup_error_username_reserved = 'The username "%s" is reserved. Please choose another.';
 $s_signup_error_username_taken = 'The username "%s" is already taken. Usernames are first come, first served: please choose another, such as a nickname your colleagues know you by.';
 $s_signup_error_email_invalid = 'Please enter a valid email address.';

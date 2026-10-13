@@ -331,8 +331,8 @@ require it.
 Use **Signup for a new account** on the login page. Enter a username and
 your email address. Doctis emails you a link to set your password.
 
-- **Username:** short and lowercase, the name colleagues know you by (for
-  example `rdickenson`). It must be 2 to 20 characters of lowercase letters,
+- **Username:** your first name in lowercase where it is still free (for
+  example `hermione`). It must be 2 to 20 characters of lowercase letters,
   digits, dots, hyphens or underscores, starting with a letter and ending
   with a letter or digit. Capitals are converted to lowercase. An email
   address, spaces and reserved names such as `admin` are refused. You can

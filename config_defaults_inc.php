@@ -4312,13 +4312,15 @@ $g_user_name_policy_regex = '/^[a-z][a-z0-9._-]{0,18}[a-z0-9]$/';
  * Doctis: usernames nobody can sign up with or be renamed to.
  *
  * Compared without regard to case. Administrators can still create or rename
- * accounts with these names from Manage Users.
+ * accounts with these names from Manage Users. 'hermione' is the example name
+ * on the signup page, reserved so that it never belongs to a real account.
  *
  * @global array $g_user_reserved_names
  */
 $g_user_reserved_names = array(
 	'admin', 'administrator', 'anonymous', 'doctis', 'git', 'guest', 'noreply',
 	'postmaster', 'root', 'security', 'support', 'system', 'webmaster',
+	'hermione',
 );
 
 /**

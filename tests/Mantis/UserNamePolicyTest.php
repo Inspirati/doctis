@@ -33,7 +33,7 @@ class UserNamePolicyTest extends MantisCoreBase {
 	public static function providerNames() {
 		return array(
 			'short name' => array( 'robert', '' ),
-			'initial and surname' => array( 'rdickenson', '' ),
+			'first name' => array( 'samwise', '' ),
 			'dotted' => array( 'robert.dickenson', '' ),
 			'hyphen and digit' => array( 'j-smith2', '' ),
 			'20 characters' => array( str_repeat( 'a', 20 ), '' ),
@@ -62,6 +62,7 @@ class UserNamePolicyTest extends MantisCoreBase {
 		try {
 			$this->assertSame( 'reserved', user_name_policy_problem( 'admin' ) );
 			$this->assertSame( 'reserved', user_name_policy_problem( 'root' ) );
+			$this->assertSame( 'reserved', user_name_policy_problem( 'hermione' ), 'the signup page example' );
 			$this->assertSame( '', user_name_policy_problem( 'rootbeer' ) );
 		} finally {
 			current_user_set( $t_old_user_id );
