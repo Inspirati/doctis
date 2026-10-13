@@ -407,6 +407,20 @@ $g_send_reset_password = ON;
 $g_signup_use_captcha = ON;
 
 /**
+ * Doctis: email domains whose users sign up without the captcha.
+ *
+ * Intended for the organisation's own domains, e.g.
+ * $g_signup_captcha_exempt_domains = array( 'example.com' );
+ * Sign-ups from any other domain still need the captcha. The signup page names
+ * these domains when it asks staff for their work address. To restrict sign-up
+ * to approved domains, list them (these and any others) in
+ * $g_limit_email_domains.
+ *
+ * @global array $g_signup_captcha_exempt_domains
+ */
+$g_signup_captcha_exempt_domains = array();
+
+/**
  * Path to TrueType font files.
  *
  * Absolute path (with trailing slash!) to the folder containing the TrueType
@@ -4278,6 +4292,38 @@ $g_dwg_count_hyperlink_prefix = 'view_dwg_set.php?type=' . FILTER_ACTION_PARSE_N
 $g_user_login_valid_regex = '/^([a-z\d\-.+_ ]+(@[a-z\d\-.]+\.[a-z]{2,18})?)$/i';
 
 /**
+ * Doctis: the naming policy for new and renamed usernames.
+ *
+ * Applies when an account is created or renamed, on top of
+ * $g_user_login_valid_regex. Login is not checked against it, so existing
+ * accounts keep working. New usernames are converted to lowercase first.
+ *
+ * The default allows 2 to 20 characters: lowercase letters, digits, dots,
+ * hyphens and underscores, starting with a letter and ending with a letter or
+ * digit. That keeps usernames short in page displays, usable as @mentions and
+ * usable in git clone URLs. If you change it, update the
+ * ERROR_USER_NAME_INVALID and signup_error_username_format strings.
+ *
+ * @global string $g_user_name_policy_regex
+ */
+$g_user_name_policy_regex = '/^[a-z][a-z0-9._-]{0,18}[a-z0-9]$/';
+
+/**
+ * Doctis: usernames nobody can sign up with or be renamed to.
+ *
+ * Compared without regard to case. Administrators can still create or rename
+ * accounts with these names from Manage Users. 'hermione' is the example name
+ * on the signup page, reserved so that it never belongs to a real account.
+ *
+ * @global array $g_user_reserved_names
+ */
+$g_user_reserved_names = array(
+	'admin', 'administrator', 'anonymous', 'doctis', 'git', 'guest', 'noreply',
+	'postmaster', 'root', 'security', 'support', 'system', 'webmaster',
+	'hermione',
+);
+
+/**
  * Default tag prefix used to filter the list of tags in manage_tags_page.php.
  *
  * Change this to 'A' (or any other letter) if you have a lot of tags in the
@@ -6531,6 +6577,7 @@ $g_public_config_names = array(
 	'show_user_realname_threshold',
 	'show_version_dates_threshold',
 	'show_version_suffix',
+	'signup_captcha_exempt_domains',
 	'signup_use_captcha',
 	'sort_by_last_name',
 	'sort_icon_arr',
@@ -6588,6 +6635,8 @@ $g_public_config_names = array(
 	'use_dynamic_filters',
 	'use_dynamic_filters_dwg',
 	'user_login_valid_regex',
+	'user_name_policy_regex',
+	'user_reserved_names',
 	'validate_email',
 	'version_prefix',
 	'version_suffix',

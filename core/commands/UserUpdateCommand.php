@@ -156,6 +156,7 @@ class UserUpdateCommand extends Command {
 		if( !is_null( $t_new_username ) && $t_new_username !== $t_old_username ) {
 			user_ensure_name_unique( $t_new_username, $this->user_id );
 			user_ensure_name_valid( $t_new_username );
+			user_ensure_name_allowed( $t_new_username );
 
 			$this->username = $t_new_username;
 		}

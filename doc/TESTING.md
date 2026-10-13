@@ -403,6 +403,32 @@ meeting page. A reporter who is not a participant is refused the meeting page.
 
 Run 2026-10-02: series 27 scheduled MIN-QA-20261103 as of 31 Oct; all checks passed.
 
+### 7c. Self sign-up — naming policy, approved domains, captcha exemption
+
+**Unit tests** (`tests/Mantis/UserNamePolicyTest.php`): the username format,
+reserved names (refused unless an administrator creates the account),
+lowercase storage, domain matching, and the before- and after-captcha checks.
+
+```bash
+vendor/bin/phpunit --testsuite mantis --filter UserNamePolicyTest --testdox
+```
+
+**Page flow** (curl, anonymous): fetch `signup_page.php` for `signup_token`,
+POST `signup.php` with `username`, `email` and `captcha`, then fetch
+`signup_page.php` again. A refused sign-up redirects there, and the reason is
+in `<div id="signup-message">`, with the values entered filled back in. A
+captcha cannot be solved from curl, so test the captcha refusal with an
+approved non-staff domain, and a successful sign-up with a domain in
+`$g_signup_captcha_exempt_domains`. Set `$g_enable_email_notification = OFF`
+first, and delete the test account afterwards (`user_delete()`). The page
+script `js/signup.js` (lowercasing, the email-address and reserved-name
+messages, hiding the captcha) has no browser test; check it in a browser.
+
+Run 2026-10-14 on the VM: every refusal returned to the form with its
+message, a staff-domain sign-up created a lowercase account without the
+captcha, and the full `mantis` suite passed (295 tests on `topics` with this
+work merged).
+
 ---
 
 ## 8. Clean-room database and git-store reset

@@ -326,6 +326,23 @@ require it.
 | My Configuration View | `my_view_cnf_page.php` | Your profile, licences and system information |
 | Organisational Chart | `my_view_org_page.php` | Who's who in the organisation |
 
+### Creating your account
+
+Use **Signup for a new account** on the login page. Enter a username and
+your email address. Doctis emails you a link to set your password.
+
+- **Username:** your first name in lowercase where it is still free (for
+  example `hermione`). It must be 2 to 20 characters of lowercase letters,
+  digits, dots, hyphens or underscores, starting with a letter and ending
+  with a letter or digit. Capitals are converted to lowercase. An email
+  address, spaces and reserved names such as `admin` are refused. You can
+  log in with any mix of capitals.
+- **First come, first served:** if your username is already taken, choose
+  another, such as a nickname your colleagues know you by.
+- **Email address:** staff use their work address. Only approved email
+  domains can sign up. Staff domains skip the captcha (the image code);
+  other approved domains must enter it.
+
 ### Your profile (My Configuration View)
 
 Keep your profile current: other pages and the AI Assistant use it.

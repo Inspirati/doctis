@@ -465,6 +465,49 @@ function user_ensure_name_valid( $p_username ) {
 }
 
 /**
+ * Doctis: check a new or changed username against the naming policy.
+ *
+ * Login does not use this check, so existing accounts keep working.
+ * Administrators may use reserved names; the format rule applies to everyone.
+ * {@see $g_user_name_policy_regex} {@see $g_user_reserved_names}
+ *
+ * @param string $p_username The username to check.
+ *
+ * @return string '' if allowed, otherwise 'format' or 'reserved'
+ */
+function user_name_policy_problem( $p_username ) {
+	if( 0 == preg_match( config_get( 'user_name_policy_regex' ), $p_username ) ) {
+		return 'format';
+	}
+
+	if( !current_user_is_administrator() ) {
+		$t_reserved = array_map( 'mb_strtolower', config_get( 'user_reserved_names' ) );
+		if( in_array( mb_strtolower( $p_username ), $t_reserved, true ) ) {
+			return 'reserved';
+		}
+	}
+
+	return '';
+}
+
+/**
+ * Doctis: check a new or changed username against the naming policy, trigger
+ * error if it fails.
+ *
+ * @param string $p_username The username to check.
+ *
+ * @return void
+ * @throws ClientException if the username breaks the naming policy
+ */
+function user_ensure_name_allowed( $p_username ) {
+	if( user_name_policy_problem( $p_username ) !== '' ) {
+		throw new ClientException(
+			sprintf( "Username '%s' not allowed", $p_username ),
+			ERROR_USER_NAME_INVALID );
+	}
+}
+
+/**
  * Check whether user is monitoring bug.
  * 
  * @param int $p_user_id A valid user identifier.
@@ -693,8 +736,12 @@ function user_create( $p_username, $p_password, $p_email = '',
 
 	$c_enabled = (bool)$p_enabled;
 
-	user_ensure_name_valid( $p_username );
-	user_ensure_name_unique( $p_username );
+	# Doctis: usernames are stored in lowercase (logins match case-insensitively)
+	$t_username = mb_strtolower( $p_username );
+
+	user_ensure_name_valid( $t_username );
+	user_ensure_name_allowed( $t_username );
+	user_ensure_name_unique( $t_username );
 	user_ensure_email_unique( $p_email );
 	email_ensure_valid( $p_email );
 	email_ensure_not_disposable( $p_email );
@@ -708,7 +755,7 @@ function user_create( $p_username, $p_password, $p_email = '',
 				  VALUES
 				    ( ' . db_param() . ', ' . db_param() . ', ' . db_param() . ', ' . db_param() . ', ' . db_param()  . ',
 				     ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ', ' . db_param() . ')';
-	db_query( $t_query, array( $p_username, $p_email, $t_password, db_now(), db_now(), $c_enabled, (int)$p_access_level, 0, $t_cookie_string, $p_realname ) );
+	db_query( $t_query, array( $t_username, $p_email, $t_password, db_now(), db_now(), $c_enabled, (int)$p_access_level, 0, $t_cookie_string, $p_realname ) );
 
 	# Create preferences for the user
 	$t_user_id = db_insert_id( db_get_table( 'user' ) );
@@ -2265,6 +2312,7 @@ function user_set_realname( $p_user_id, $p_realname ) {
  */
 function user_set_name( $p_user_id, $p_username ) {
 	user_ensure_name_valid( $p_username );
+	user_ensure_name_allowed( $p_username );
 	user_ensure_name_unique( $p_username, $p_user_id );
 
 	return user_set_field( $p_user_id, 'username', $p_username );

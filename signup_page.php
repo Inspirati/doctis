@@ -30,6 +30,9 @@
  * @uses html_api.php
  * @uses lang_api.php
  * @uses print_api.php
+ * @uses session_api.php
+ * @uses signup_api.php
+ * @uses string_api.php
  * @uses utility_api.php
  */
 
@@ -42,11 +45,15 @@ require_api( 'helper_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'print_api.php' );
+require_api( 'session_api.php' );
+require_api( 'signup_api.php' );
+require_api( 'string_api.php' );
 require_api( 'utility_api.php' );
 
 require_css( 'login.css' );
 
 require_js( 'login.js' );
+require_js( 'signup.js' );
 
 $t_form_title = lang_get( 'signup_title' );
 
@@ -58,6 +65,19 @@ if( !auth_signup_enabled() || LDAP == config_get_global( 'login_method' ) ) {
 layout_login_page_begin( $t_form_title );
 
 $t_public_key = crypto_generate_uri_safe_nonce( 64 );
+
+# Doctis: a refused sign-up returns here with the reason and the values entered
+$t_signup_form = session_get( 'signup_form', array() );
+session_delete( 'signup_form' );
+$t_signup_problem = $t_signup_form['problem'] ?? '';
+$t_signup_username = $t_signup_form['username'] ?? '';
+$t_signup_email = $t_signup_form['email'] ?? '';
+
+# Doctis: the naming policy, for the checks signup.js makes while the user types
+preg_match( '/^(.)(.*)\1([a-zA-Z]*)$/s', config_get( 'user_name_policy_regex' ), $t_match );
+$t_name_pattern = $t_match[2] ?? '';
+$t_name_flags = strpos( $t_match[3] ?? '', 'i' ) !== false ? 'i' : '';
+$t_reserved_names = array_map( 'mb_strtolower', config_get( 'user_reserved_names' ) );
 ?>
 
 <div class="col-md-offset-3 col-md-6 col-sm-10 col-sm-offset-1">
@@ -77,22 +97,41 @@ $t_public_key = crypto_generate_uri_safe_nonce( 64 );
 					</h4>
 					<div class="space-10"></div>
 
-	<form id="signup-form" method="post" action="signup.php">
+	<form id="signup-form" method="post" action="signup.php"
+		data-name-pattern="<?php echo string_attribute( $t_name_pattern ) ?>"
+		data-name-flags="<?php echo $t_name_flags ?>"
+		data-reserved="<?php echo string_attribute( implode( ',', $t_reserved_names ) ) ?>"
+		data-exempt-domains="<?php echo string_attribute( implode( ',', config_get( 'signup_captcha_exempt_domains' ) ) ) ?>"
+		data-msg-format="<?php echo string_attribute( lang_get( 'signup_error_username_format' ) ) ?>"
+		data-msg-email="<?php echo string_attribute( lang_get( 'signup_error_username_email' ) ) ?>"
+		data-msg-reserved="<?php echo string_attribute( lang_get( 'signup_error_username_reserved' ) ) ?>">
 		<fieldset>
 			<?php echo form_security_field( 'signup' ); ?>
+
+			<div id="signup-message" class="alert alert-danger<?php echo $t_signup_problem === '' ? ' hidden' : '' ?>"
+				data-field="<?php echo $t_signup_problem === '' ? '' : signup_problem_field( $t_signup_problem ) ?>"><?php
+				if( $t_signup_problem !== '' ) {
+					echo string_html_specialchars( signup_problem_message( $t_signup_problem, $t_signup_username ) );
+				}
+			?></div>
 
 			<label for="username" class="block clearfix">
 				<span class="block input-icon input-icon-right">
 					<input id="username" name="username" type="text" placeholder="<?php echo lang_get( 'username' ) ?>"
-						size="32" maxlength="<?php echo DB_FIELD_SIZE_USERNAME;?>" class="form-control autofocus">
+						size="32" maxlength="<?php echo DB_FIELD_SIZE_USERNAME;?>" class="form-control autofocus"
+						value="<?php echo string_attribute( $t_signup_username ) ?>"
+						autocapitalize="none" autocomplete="username" spellcheck="false">
 					<?php print_icon( 'fa-user', 'ace-icon' ); ?>
 				</span>
+				<span class="help-block"><?php echo lang_get( 'signup_username_hint' ) ?></span>
 			</label>
 
 			<label for="email-field" class="block clearfix">
 				<span class="block input-icon input-icon-right">
 					<input id="email-field" name="email" type="text" placeholder="<?php echo lang_get( 'email_label' ) ?>"
-						size="32" maxlength="64" class="form-control">
+						size="32" maxlength="64" class="form-control"
+						value="<?php echo string_attribute( $t_signup_email ) ?>"
+						autocapitalize="none" autocomplete="email" spellcheck="false">
 					<?php print_icon( 'fa-envelope', 'ace-icon' ); ?>
 				</span>
 			</label>
@@ -111,6 +150,8 @@ $t_public_key = crypto_generate_uri_safe_nonce( 64 );
 ?>
 				<script src="<?php echo $t_securimage_path . '/securimage.js'; ?>"></script>
 
+				<?php # Doctis: signup.js hides this block for approved staff email domains ?>
+				<div id="signup-captcha">
 				<label for="captcha-field" class="block clearfix">
 					<strong><?php echo lang_get( 'signup_captcha_request_label' ); ?></strong>
 				</label>
@@ -146,6 +187,7 @@ $t_public_key = crypto_generate_uri_safe_nonce( 64 );
 					>
 						<?php print_icon( 'refresh', 'ace-icon bigger-250' ); ?>
 					</a>
+				</div>
 				</div>
 <?php
 			} // endif use captcha

@@ -48,6 +48,12 @@ $g_crypto_master_salt = '';	#  Random string of at least 16 chars, unique to the
 $g_allow_signup				= ON;
 $g_allow_anonymous_login	= OFF;
 $g_anonymous_account		= '';
+# Doctis: on an internet-facing server, accept only approved email domains
+# (this also limits who Doctis sends email to), and let staff domains sign up
+# without the captcha. Username rules: $g_user_name_policy_regex and
+# $g_user_reserved_names in config_defaults_inc.php.
+# $g_limit_email_domains = array( 'example.com', 'example.org' );
+# $g_signup_captcha_exempt_domains = array( 'example.com' );
 
 # --- Email Configuration ---
 $g_phpMailer_method		= PHPMAILER_METHOD_MAIL; # or PHPMAILER_METHOD_SMTP, PHPMAILER_METHOD_SENDMAIL
