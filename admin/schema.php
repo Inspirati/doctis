@@ -1310,8 +1310,51 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
+# ── Step 76: topic_snapshot ─────────────────────────────────────────────────
+# Documentation Topics phase 3: frozen record of a project's Topic coverage
+# at a milestone, for a technical review or baseline decision. data is JSON
+# captured in one consistent read (applicability, tags, expectations, states,
+# evidence versions, assessments, profile revision); data_hash is its
+# SHA-256. Rows are never updated. Rendering re-applies current permissions.
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'topic_snapshot' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `project_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `title` varchar(128) NOT NULL DEFAULT '',
+	  `milestone_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `milestone_name` varchar(64) NOT NULL DEFAULT '',
+	  `readiness` varchar(32) NOT NULL DEFAULT '',
+	  `profile_revision` int(10) unsigned NOT NULL DEFAULT 0,
+	  `catalogue_label` varchar(170) NOT NULL DEFAULT '',
+	  `data` longtext NOT NULL,
+	  `data_hash` varchar(64) NOT NULL DEFAULT '',
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `date_created` int(10) unsigned NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`id`),
+	  KEY `idx_topic_snapshot_project` (`project_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 77: topic_event ────────────────────────────────────────────────────
+# Project-level activity log of Documentation Topics actions (enablement,
+# decisions, milestones, expectations, evidence, assessments, profile
+# authorisations, snapshots, catalogue migration, shared documents).
+# Append-only. Document-level tag changes are also in {dwg_history}.
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'topic_event' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `project_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `action` varchar(32) NOT NULL DEFAULT '',
+	  `detail` varchar(1024) NOT NULL DEFAULT '',
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `date_event` int(10) unsigned NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`id`),
+	  KEY `idx_topic_event_project` (`project_id`, `id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
 # ── End of schema definition ─────────────────────────────────────────────────
-# $t_idx = 76 → database_version = 75 on a fresh install.
+# $t_idx = 78 → database_version = 77 on a fresh install.
 #
 # To add a new table: append a new step here and run the schema upgrade.
 # Label it "Step N" with its real index, which is the database_version the

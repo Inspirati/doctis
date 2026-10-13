@@ -150,7 +150,9 @@ function topic_milestone_create( int $p_project_id, string $p_name, string $p_de
 	db_query( 'INSERT INTO {topic_milestone} ( project_id, name, description, sort_order, date_achieved, user_id, date_updated )
 		VALUES ( ' . db_param() . ', ' . db_param() . ', ' . db_param() . ', ' . db_param() . ', 0, ' . db_param() . ', ' . db_param() . ' )',
 		array( $p_project_id, $t_name, $t_description, $p_sort_order, auth_get_current_user_id(), db_now() ) );
-	return (int)db_insert_id( db_get_table( 'topic_milestone' ) );
+	$t_id = (int)db_insert_id( db_get_table( 'topic_milestone' ) );
+	topic_event_log( $p_project_id, 'milestone_add', $t_name );
+	return $t_id;
 }
 
 /**
@@ -182,7 +184,7 @@ function topic_milestone_load_defaults( int $p_project_id ): void {
  * @throws ClientException
  */
 function topic_milestone_update( int $p_milestone_id, string $p_name, string $p_description, int $p_sort_order ): void {
-	topic_milestone_get( $p_milestone_id );
+	$t_old = topic_milestone_get( $p_milestone_id );
 	$t_name = trim( $p_name );
 	$t_description = trim( $p_description );
 	topic_milestone_validate( $t_name, $t_description );
@@ -190,6 +192,10 @@ function topic_milestone_update( int $p_milestone_id, string $p_name, string $p_
 	db_query( 'UPDATE {topic_milestone} SET name=' . db_param() . ', description=' . db_param() . ', sort_order=' . db_param()
 		. ', user_id=' . db_param() . ', date_updated=' . db_param() . ' WHERE id=' . db_param(),
 		array( $t_name, $t_description, $p_sort_order, auth_get_current_user_id(), db_now(), $p_milestone_id ) );
+	if( $t_old['name'] !== $t_name || (int)$t_old['sort_order'] != $p_sort_order || $t_old['description'] !== $t_description ) {
+		topic_event_log( (int)$t_old['project_id'], 'milestone_change', $t_old['name']
+			. ( $t_old['name'] !== $t_name ? ' → ' . $t_name : '' ) . ' (' . $p_sort_order . ')' );
+	}
 }
 
 /**
@@ -201,11 +207,12 @@ function topic_milestone_update( int $p_milestone_id, string $p_name, string $p_
  * @throws ClientException
  */
 function topic_milestone_set_achieved( int $p_milestone_id, bool $p_achieved ): void {
-	topic_milestone_get( $p_milestone_id );
+	$t_milestone = topic_milestone_get( $p_milestone_id );
 	db_param_push();
 	db_query( 'UPDATE {topic_milestone} SET date_achieved=' . db_param() . ', user_id=' . db_param()
 		. ', date_updated=' . db_param() . ' WHERE id=' . db_param(),
 		array( $p_achieved ? db_now() : 0, auth_get_current_user_id(), db_now(), $p_milestone_id ) );
+	topic_event_log( (int)$t_milestone['project_id'], $p_achieved ? 'milestone_achieved' : 'milestone_reopened', $t_milestone['name'] );
 }
 
 /**
@@ -226,6 +233,7 @@ function topic_milestone_delete( int $p_milestone_id ): void {
 	}
 	db_param_push();
 	db_query( 'DELETE FROM {topic_milestone} WHERE id=' . db_param(), array( $p_milestone_id ) );
+	topic_event_log( (int)$t_milestone['project_id'], 'milestone_delete', $t_milestone['name'] );
 }
 
 /**
@@ -387,6 +395,7 @@ function topic_expectation_create( int $p_project_id, int $p_topic_id, string $p
 			auth_get_current_user_id(), db_now(), db_now() ) );
 	$t_id = (int)db_insert_id( db_get_table( 'topic_expectation' ) );
 	topic_expectation_record_revision( $t_id );
+	topic_event_log( $p_project_id, 'expectation_add', topic_get( $p_topic_id )['code'] . ' E' . $t_id . ': ' . $t_statement );
 	return $t_id;
 }
 
@@ -399,11 +408,16 @@ function topic_expectation_create( int $p_project_id, int $p_topic_id, string $p
  * @param integer $p_owner_id       Owner, 0 = none yet.
  * @param integer $p_milestone_id   First milestone it is due at.
  * @param integer $p_maturity       Required maturity.
+ * @param integer|null $p_expected_revision Revision the form was based on; a
+ *                 different current revision is a conflict. Null skips the check.
  * @return boolean True when something changed.
  * @throws ClientException
  */
-function topic_expectation_update( int $p_expectation_id, string $p_statement, int $p_owner_id, int $p_milestone_id, int $p_maturity ): bool {
+function topic_expectation_update( int $p_expectation_id, string $p_statement, int $p_owner_id, int $p_milestone_id, int $p_maturity, ?int $p_expected_revision = null ): bool {
 	$t_row = topic_expectation_get( $p_expectation_id );
+	if( $p_expected_revision !== null && $p_expected_revision != (int)$t_row['revision'] ) {
+		topic_conflict( 'The expectation' );
+	}
 	$t_statement = trim( $p_statement );
 	topic_expectation_validate( (int)$t_row['project_id'], $t_statement, $p_owner_id, $p_milestone_id, $p_maturity );
 	if( $t_row['statement'] === $t_statement && (int)$t_row['owner_id'] == $p_owner_id
@@ -416,6 +430,7 @@ function topic_expectation_update( int $p_expectation_id, string $p_statement, i
 		. ' WHERE id=' . db_param(),
 		array( $t_statement, $p_owner_id, $p_milestone_id, $p_maturity, auth_get_current_user_id(), db_now(), $p_expectation_id ) );
 	topic_expectation_record_revision( $p_expectation_id );
+	topic_event_log( (int)$t_row['project_id'], 'expectation_change', 'E' . $p_expectation_id . ' rev ' . ( (int)$t_row['revision'] + 1 ) . ': ' . $t_statement );
 	return true;
 }
 
@@ -424,11 +439,16 @@ function topic_expectation_update( int $p_expectation_id, string $p_statement, i
  *
  * @param integer $p_expectation_id Expectation.
  * @param boolean $p_enabled        False to retire, true to restore.
+ * @param integer|null $p_expected_revision Revision the form was based on
+ *                 (conflict check); null skips the check.
  * @return void
  * @throws ClientException
  */
-function topic_expectation_set_enabled( int $p_expectation_id, bool $p_enabled ): void {
+function topic_expectation_set_enabled( int $p_expectation_id, bool $p_enabled, ?int $p_expected_revision = null ): void {
 	$t_row = topic_expectation_get( $p_expectation_id );
+	if( $p_expected_revision !== null && $p_expected_revision != (int)$t_row['revision'] ) {
+		topic_conflict( 'The expectation' );
+	}
 	if( (int)$t_row['enabled'] == ( $p_enabled ? 1 : 0 ) ) {
 		return;
 	}
@@ -437,6 +457,7 @@ function topic_expectation_set_enabled( int $p_expectation_id, bool $p_enabled )
 		. ', date_updated=' . db_param() . ' WHERE id=' . db_param(),
 		array( $p_enabled ? 1 : 0, auth_get_current_user_id(), db_now(), $p_expectation_id ) );
 	topic_expectation_record_revision( $p_expectation_id );
+	topic_event_log( (int)$t_row['project_id'], $p_enabled ? 'expectation_restore' : 'expectation_retire', 'E' . $p_expectation_id );
 }
 
 /**
@@ -481,6 +502,21 @@ function topic_evidence_version( int $p_dwg_id ): string {
 		return 'sha:' . $t_primary['git_sha'];
 	}
 	return 'rev:' . dwg_get_field( $p_dwg_id, 'edition' ) . '/' . dwg_get_field( $p_dwg_id, 'revision' );
+}
+
+/**
+ * Whether a version token identifies a version: a commit, or a non-empty
+ * edition/revision. Without one, evidence cannot satisfy an expectation or be
+ * frozen as decision evidence (TOP-FR-011).
+ *
+ * @param string $p_version Version token.
+ * @return boolean
+ */
+function topic_evidence_version_is_identifiable( string $p_version ): bool {
+	if( strncmp( $p_version, 'sha:', 4 ) === 0 ) {
+		return strlen( $p_version ) > 4;
+	}
+	return trim( substr( $p_version, 4 ), '/ ' ) !== '';
 }
 
 /**
@@ -600,6 +636,8 @@ function topic_evidence_add( int $p_expectation_id, int $p_dwg_id, string $p_loc
 		array( $p_expectation_id, $p_dwg_id, $t_locator, auth_get_current_user_id(), db_now() ) );
 	$t_id = (int)db_insert_id( db_get_table( 'topic_evidence' ) );
 	history_dwg_log_event_special( $p_dwg_id, DWG_TOPIC_EVIDENCE_ADDED, '', topic_evidence_history_value( $t_expectation, $t_locator ) );
+	topic_event_log( (int)$t_expectation['project_id'], 'evidence_add', 'E' . $p_expectation_id . ': ' . topic_event_document( $p_dwg_id )
+		. ( $t_locator !== '' ? ' ' . $t_locator : '' ) );
 	return $t_id;
 }
 
@@ -617,6 +655,8 @@ function topic_evidence_remove( int $p_evidence_id ): void {
 	db_query( 'DELETE FROM {topic_evidence} WHERE id=' . db_param(), array( $p_evidence_id ) );
 	history_dwg_log_event_special( (int)$t_evidence['dwg_id'], DWG_TOPIC_EVIDENCE_REMOVED,
 		topic_evidence_history_value( $t_expectation, $t_evidence['locator'] ), '' );
+	topic_event_log( (int)$t_expectation['project_id'], 'evidence_remove', 'E' . (int)$t_expectation['id'] . ': '
+		. topic_event_document( (int)$t_evidence['dwg_id'] ) );
 }
 
 /**
@@ -714,17 +754,38 @@ function topic_assessment_evidence_set( int $p_expectation_id ): array {
 }
 
 /**
+ * What an assessor sees and judges: the expectation revision and the evidence
+ * set (documents, versions, sections). A form carries it, and recording
+ * refuses a changed basis (TOP-FR-028).
+ *
+ * @param integer $p_expectation_id Expectation.
+ * @return string SHA-1 hex.
+ */
+function topic_assessment_basis( int $p_expectation_id ): string {
+	$t_set = topic_assessment_evidence_set( $p_expectation_id );
+	foreach( $t_set as &$t_item ) {
+		unset( $t_item['status'] );
+	}
+	return sha1( json_encode( array( (int)topic_expectation_get( $p_expectation_id )['revision'], array_values( $t_set ) ) ) );
+}
+
+/**
  * Record an adequacy assessment of an expectation's current evidence set.
  *
  * @param integer $p_expectation_id Expectation (enabled, with evidence).
  * @param integer $p_finding        TOPIC_FINDING_ADEQUATE or _GAP.
  * @param string  $p_rationale      Reason; required.
  * @param integer $p_milestone_id   Milestone the assessment is for, 0 = the project's current one.
+ * @param string|null $p_expected_basis topic_assessment_basis() when the form
+ *                 was shown; a different one is a conflict. Null skips the check.
  * @return integer New assessment id.
  * @throws ClientException
  */
-function topic_assessment_record( int $p_expectation_id, int $p_finding, string $p_rationale, int $p_milestone_id = 0 ): int {
+function topic_assessment_record( int $p_expectation_id, int $p_finding, string $p_rationale, int $p_milestone_id = 0, ?string $p_expected_basis = null ): int {
 	$t_expectation = topic_expectation_get( $p_expectation_id );
+	if( $p_expected_basis !== null && $p_expected_basis !== topic_assessment_basis( $p_expectation_id ) ) {
+		topic_conflict( 'The expectation or its evidence' );
+	}
 	if( (int)$t_expectation['enabled'] != 1 ) {
 		topic_error( 'the expectation is retired.' );
 	}
@@ -752,7 +813,9 @@ function topic_assessment_record( int $p_expectation_id, int $p_finding, string 
 		. db_param() . ', ' . db_param() . ', ' . db_param() . ' )',
 		array( $p_expectation_id, (int)$t_expectation['revision'], $p_milestone_id, $p_finding, $t_rationale,
 			json_encode( array_values( $t_set ) ), auth_get_current_user_id(), db_now() ) );
-	return (int)db_insert_id( db_get_table( 'topic_assessment' ) );
+	$t_id = (int)db_insert_id( db_get_table( 'topic_assessment' ) );
+	topic_event_log( $t_project_id, 'assessment', 'E' . $p_expectation_id . ': ' . topic_finding_label( $p_finding ) . ' — ' . $t_rationale );
+	return $t_id;
 }
 
 /**
@@ -885,6 +948,9 @@ function topic_expectation_state( array $p_expectation, array $p_milestones, int
 		if( in_array( $t_status, $t_inactive, true ) ) {
 			$t_reasons[] = sprintf( lang_get( 'topic_reason_inactive' ), $t_label );
 			continue;
+		}
+		if( !topic_evidence_version_is_identifiable( (string)$t_evidence['version'] ) ) {
+			$t_reasons[] = sprintf( lang_get( 'topic_reason_unversioned' ), $t_label );
 		}
 		$t_maturity = topic_status_maturity( $t_status, $t_project_id );
 		if( $t_maturity === null ) {
@@ -1020,10 +1086,16 @@ function topic_profile_blockers( int $p_project_id ): array {
  *
  * @param integer $p_project_id Project.
  * @param string  $p_note       Optional note.
+ * @param string|null $p_expected_fingerprint topic_profile_fingerprint() when
+ *                 the form was shown; a different one is a conflict, so the
+ *                 authoriser approves what they saw. Null skips the check.
  * @return integer The new revision number.
  * @throws ClientException
  */
-function topic_profile_authorise( int $p_project_id, string $p_note = '' ): int {
+function topic_profile_authorise( int $p_project_id, string $p_note = '', ?string $p_expected_fingerprint = null ): int {
+	if( $p_expected_fingerprint !== null && $p_expected_fingerprint !== topic_profile_fingerprint( $p_project_id ) ) {
+		topic_conflict( 'The profile' );
+	}
 	$t_blockers = topic_profile_blockers( $p_project_id );
 	if( $t_blockers ) {
 		topic_error( 'the profile cannot be authorised: ' . implode( ' ', $t_blockers ) );
@@ -1038,6 +1110,7 @@ function topic_profile_authorise( int $p_project_id, string $p_note = '' ): int 
 	db_query( 'INSERT INTO {topic_profile} ( project_id, revision, note, fingerprint, user_id, date_authorised )
 		VALUES ( ' . db_param() . ', ' . db_param() . ', ' . db_param() . ', ' . db_param() . ', ' . db_param() . ', ' . db_param() . ' )',
 		array( $p_project_id, $t_revision, $t_note, topic_profile_fingerprint( $p_project_id ), auth_get_current_user_id(), db_now() ) );
+	topic_event_log( $p_project_id, 'profile_authorise', 'rev ' . $t_revision . ( $t_note !== '' ? ': ' . $t_note : '' ) );
 	return $t_revision;
 }
 

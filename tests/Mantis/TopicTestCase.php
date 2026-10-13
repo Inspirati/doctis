@@ -54,8 +54,9 @@ abstract class TopicTestCase extends MantisCoreBase {
 
 	/** A document row in a project (no primary file). */
 	protected function makeDocument( int $p_project_id, int $p_status = PENDING, string $p_number = '' ): int {
-		db_query( 'INSERT INTO {documents} ( title, number ) VALUES ( ' . db_param() . ', ' . db_param() . ' )',
-			array( 'Topic test document ' . rand(), $p_number ) );
+		# Revision "A": without a primary file, evidence needs an edition or revision.
+		db_query( 'INSERT INTO {documents} ( title, number, revision ) VALUES ( ' . db_param() . ', ' . db_param() . ', ' . db_param() . ' )',
+			array( 'Topic test document ' . rand(), $p_number, 'A' ) );
 		$t_document_id = db_insert_id( db_get_table( 'documents' ) );
 		$this->document_ids[] = $t_document_id;
 		db_query( 'INSERT INTO {dwg} ( project_id, document_id, status, date_submitted, last_updated )

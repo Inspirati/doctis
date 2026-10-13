@@ -165,6 +165,7 @@ if( $f_project_id == ALL_PROJECTS ) {
 	if( $t_can_manage || $t_view['milestones'] ) {
 		echo ' &middot; <a class="small" href="topic_milestone_page.php?project_id=' . (int)$f_project_id . '">' . lang_get( 'topic_milestones' ) . '</a>';
 	}
+	echo ' &middot; <a class="small" href="topic_activity_page.php?project_id=' . (int)$f_project_id . '">' . lang_get( 'topic_activity' ) . '</a>';
 	echo '<br /><span class="small grey">' . lang_get( 'topic_readiness_notice' ) . '</span>';
 	echo '</div>';
 
@@ -349,6 +350,7 @@ if( $t_enabled ) {
 		<form method="post" action="topic_profile_authorise.php" class="form-inline">
 			<?php echo form_security_field( 'topic_profile_authorise' ) ?>
 			<input type="hidden" name="project_id" value="<?php echo (int)$f_project_id ?>" />
+			<input type="hidden" name="fingerprint" value="<?php echo string_attribute( topic_profile_fingerprint( $f_project_id ) ) ?>" />
 			<label for="topic-profile-note"><?php echo lang_get( 'topic_note' ) ?></label>
 			<input type="text" id="topic-profile-note" name="note" class="input-sm" size="50" maxlength="255" />
 			<button type="submit" class="btn btn-primary btn-sm btn-white btn-round"><?php echo lang_get( 'topic_profile_authorise' ) ?></button>

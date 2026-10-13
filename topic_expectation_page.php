@@ -103,6 +103,7 @@ layout_page_begin( 'topic_page.php' );
 				<?php echo form_security_field( 'topic_expectation_action' ) ?>
 				<input type="hidden" name="action" value="update" />
 				<input type="hidden" name="id" value="<?php echo $f_expectation_id ?>" />
+				<input type="hidden" name="expected_revision" value="<?php echo (int)$t_expectation['revision'] ?>" />
 				<input type="hidden" name="milestone_view" value="<?php echo (int)$f_milestone_id ?>" />
 				<div class="form-group">
 					<textarea name="statement" class="form-control" rows="2" maxlength="1024" required
@@ -125,7 +126,8 @@ layout_page_begin( 'topic_page.php' );
 				<p class="small grey"><?php echo lang_get( 'topic_edit_expectation_hint' ) ?></p>
 			</form>
 			<?php print_form_button( 'topic_expectation_action.php', lang_get( $t_enabled ? 'topic_retire' : 'topic_restore' ),
-				array( 'action' => $t_enabled ? 'retire' : 'restore', 'id' => $f_expectation_id, 'milestone_view' => $f_milestone_id ) ); ?>
+				array( 'action' => $t_enabled ? 'retire' : 'restore', 'id' => $f_expectation_id, 'milestone_view' => $f_milestone_id,
+					'expected_revision' => (int)$t_expectation['revision'] ) ); ?>
 		</details>
 		<?php } ?>
 	</div>
@@ -235,6 +237,7 @@ layout_page_begin( 'topic_page.php' );
 		<form method="post" action="topic_assessment_add.php">
 			<?php echo form_security_field( 'topic_assessment_add' ) ?>
 			<input type="hidden" name="expectation_id" value="<?php echo $f_expectation_id ?>" />
+			<input type="hidden" name="basis" value="<?php echo string_attribute( topic_assessment_basis( $f_expectation_id ) ) ?>" />
 			<div class="form-inline">
 				<?php foreach( array( TOPIC_FINDING_ADEQUATE, TOPIC_FINDING_GAP ) as $t_finding ) { ?>
 				<label class="inline" style="margin-right:16px;">

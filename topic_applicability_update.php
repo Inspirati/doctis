@@ -17,7 +17,8 @@ if( !topic_can_manage_project( $f_project_id ) ) {
 	access_denied();
 }
 
-topic_applicability_set( $f_project_id, $f_topic_id, gpc_get_int( 'applicability' ), gpc_get_string( 'rationale', '' ) );
+topic_applicability_set( $f_project_id, $f_topic_id, gpc_get_int( 'applicability' ), gpc_get_string( 'rationale', '' ),
+	gpc_isset( 'expected_decision_id' ) ? gpc_get_int( 'expected_decision_id' ) : null );
 
 form_security_purge( 'topic_applicability_update' );
 print_header_redirect( 'topic_detail_page.php?project_id=' . $f_project_id . '&topic_id=' . $f_topic_id );

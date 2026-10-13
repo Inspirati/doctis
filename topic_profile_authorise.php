@@ -17,7 +17,7 @@ if( !topic_can_manage_project( $f_project_id ) ) {
 	access_denied();
 }
 
-topic_profile_authorise( $f_project_id, gpc_get_string( 'note', '' ) );
+topic_profile_authorise( $f_project_id, gpc_get_string( 'note', '' ), gpc_isset( 'fingerprint' ) ? gpc_get_string( 'fingerprint' ) : null );
 
 form_security_purge( 'topic_profile_authorise' );
 print_header_redirect( 'topic_page.php?project_id=' . $f_project_id . '#profile' );

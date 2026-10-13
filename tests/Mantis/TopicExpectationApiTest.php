@@ -304,6 +304,97 @@ class TopicExpectationApiTest extends TopicTestCase {
 		$this->assertContains( DWG_TOPIC_EVIDENCE_ADDED, $this->historyTypes( $t_dwg ) );
 	}
 
+	# ── Phase 3: conflicts, activity, versioned evidence ─────────────────────
+
+	public function testStaleWritesAreRefused() {
+		$t_cat = $this->makeProjectWithMilestones();
+		$t_project_id = $t_cat['project_id'];
+		$t_user_id = auth_get_current_user_id();
+
+		# Applicability: the form saw "no decision"; someone decided meanwhile.
+		topic_applicability_set( $t_project_id, $t_cat['10'], TOPIC_APPLICABLE, '' );
+		$this->expectTopicError( function() use ( $t_project_id, $t_cat ) {
+			topic_applicability_set( $t_project_id, $t_cat['10'], TOPIC_NOT_APPLICABLE, 'x', 0 );
+		}, 'changed by someone else' );
+		$t_current = (int)topic_applicability_current( $t_project_id )[$t_cat['10']]['id'];
+		$this->assertTrue( topic_applicability_set( $t_project_id, $t_cat['10'], TOPIC_NOT_APPLICABLE, 'x', $t_current ) );
+
+		# Expectation edit based on revision 1 after it reached revision 2.
+		$t_id = topic_expectation_create( $t_project_id, $t_cat['20'], 'Design', $t_user_id, $t_cat['milestones'][0], TOPIC_MATURITY_DRAFT );
+		topic_expectation_update( $t_id, 'Design v2', $t_user_id, $t_cat['milestones'][0], TOPIC_MATURITY_DRAFT, 1 );
+		$this->expectTopicError( function() use ( $t_id, $t_user_id, $t_cat ) {
+			topic_expectation_update( $t_id, 'Design v3', $t_user_id, $t_cat['milestones'][0], TOPIC_MATURITY_DRAFT, 1 );
+		}, 'changed by someone else' );
+		$this->expectTopicError( function() use ( $t_id ) { topic_expectation_set_enabled( $t_id, false, 1 ); }, 'changed by someone else' );
+
+		# Assessment: the assessor saw one evidence set; another document was added.
+		$t_a = $this->makeDocument( $t_project_id );
+		$t_b = $this->makeDocument( $t_project_id );
+		topic_dwg_add( $t_a, $t_cat['20'], TOPIC_EXTENT_PART, '' );
+		topic_dwg_add( $t_b, $t_cat['20'], TOPIC_EXTENT_PART, '' );
+		topic_evidence_add( $t_id, $t_a, '' );
+		$t_basis = topic_assessment_basis( $t_id );
+		topic_evidence_add( $t_id, $t_b, '' );
+		$this->expectTopicError( function() use ( $t_id, $t_basis ) {
+			topic_assessment_record( $t_id, TOPIC_FINDING_ADEQUATE, 'OK', 0, $t_basis );
+		}, 'changed by someone else' );
+		topic_assessment_record( $t_id, TOPIC_FINDING_ADEQUATE, 'OK', 0, topic_assessment_basis( $t_id ) );
+
+		# Profile: authorise exactly what was shown.
+		foreach( array( '21' ) as $t_code ) {
+			topic_applicability_set( $t_project_id, $t_cat[$t_code], TOPIC_NOT_APPLICABLE, 'n/a' );
+		}
+		topic_applicability_set( $t_project_id, $t_cat['20'], TOPIC_APPLICABLE, '' );
+		$t_print = topic_profile_fingerprint( $t_project_id );
+		topic_expectation_create( $t_project_id, $t_cat['20'], 'Interfaces', $t_user_id, $t_cat['milestones'][1], TOPIC_MATURITY_DRAFT );
+		$this->expectTopicError( function() use ( $t_project_id, $t_print ) {
+			topic_profile_authorise( $t_project_id, '', $t_print );
+		}, 'changed by someone else' );
+		$this->assertSame( 1, topic_profile_authorise( $t_project_id, '', topic_profile_fingerprint( $t_project_id ) ) );
+	}
+
+	public function testActivityLogRecordsActions() {
+		$t_cat = $this->makeProjectWithMilestones();
+		$t_project_id = $t_cat['project_id'];
+		$t_id = topic_expectation_create( $t_project_id, $t_cat['10'], 'Requirements', 0, $t_cat['milestones'][0], TOPIC_MATURITY_DRAFT );
+		$t_dwg = $this->makeDocument( $t_project_id, PENDING, 'ACT-1' );
+		topic_dwg_add( $t_dwg, $t_cat['10'], TOPIC_EXTENT_WHOLE, '' );
+		topic_evidence_add( $t_id, $t_dwg, '' );
+		topic_assessment_record( $t_id, TOPIC_FINDING_GAP, 'Thin.' );
+		topic_applicability_set( $t_project_id, $t_cat['10'], TOPIC_APPLICABLE, '' );
+
+		$t_actions = array_column( topic_event_get( $t_project_id ), 'action' );
+		foreach( array( 'enable', 'milestone_add', 'expectation_add', 'tag_add', 'evidence_add', 'assessment', 'applicability' ) as $t_action ) {
+			$this->assertContains( $t_action, $t_actions );
+		}
+		$this->assertSame( 'applicability', $t_actions[0] );
+		$this->assertGreaterThan( 0, topic_event_count( $t_project_id ) );
+	}
+
+	public function testUnversionedEvidenceStaysPending() {
+		$t_cat = $this->makeProjectWithMilestones();
+		$t_project_id = $t_cat['project_id'];
+		$t_id = topic_expectation_create( $t_project_id, $t_cat['10'], 'Standard reference', 0, $t_cat['milestones'][0], TOPIC_MATURITY_DRAFT );
+		$t_dwg = $this->makeDocument( $t_project_id, PENDING, 'EXT-STD' );
+		$this->setRevision( $t_dwg, '' );
+		topic_dwg_add( $t_dwg, $t_cat['10'], TOPIC_EXTENT_PART, '' );
+		topic_evidence_add( $t_id, $t_dwg, '' );
+		topic_assessment_record( $t_id, TOPIC_FINDING_ADEQUATE, 'Right standard.' );
+
+		$t_state = $this->state( $t_id, $t_cat['milestones'][0] );
+		$this->assertSame( TOPIC_EXP_PENDING, $t_state['state'] );
+		$this->assertStringContainsString( 'no identifiable version', $t_state['reasons'][0] );
+		$this->assertFalse( topic_evidence_version_is_identifiable( 'rev:/' ) );
+		$this->assertTrue( topic_evidence_version_is_identifiable( 'rev:/B' ) );
+		$this->assertTrue( topic_evidence_version_is_identifiable( 'sha:0123abcd' ) );
+
+		# Citing a revision makes it identifiable (and the version change calls for reassessment).
+		$this->setRevision( $t_dwg, '2024' );
+		$this->assertSame( TOPIC_EXP_REASSESS, $this->state( $t_id, $t_cat['milestones'][0] )['state'] );
+		topic_assessment_record( $t_id, TOPIC_FINDING_ADEQUATE, 'Right standard, 2024 edition.' );
+		$this->assertSame( TOPIC_EXP_SATISFIED, $this->state( $t_id, $t_cat['milestones'][0] )['state'] );
+	}
+
 	public function testProjectDeletionRemovesPhase2Records() {
 		$t_cat = $this->makeProjectWithMilestones();
 		$t_project_id = $t_cat['project_id'];
@@ -314,7 +405,7 @@ class TopicExpectationApiTest extends TopicTestCase {
 		topic_assessment_record( $t_id, TOPIC_FINDING_GAP, 'Thin.' );
 
 		topic_project_delete( $t_project_id );
-		foreach( array( '{topic_milestone}', '{topic_expectation}', '{topic_profile}' ) as $t_table ) {
+		foreach( array( '{topic_milestone}', '{topic_expectation}', '{topic_profile}', '{topic_event}', '{topic_snapshot}' ) as $t_table ) {
 			$this->assertEquals( 0, (int)db_result( db_query( 'SELECT COUNT(*) FROM ' . $t_table . ' WHERE project_id=' . db_param(), array( $t_project_id ) ) ) );
 		}
 		foreach( array( '{topic_evidence}', '{topic_assessment}', '{topic_expectation_revision}' ) as $t_table ) {

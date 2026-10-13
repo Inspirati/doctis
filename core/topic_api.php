@@ -769,6 +769,7 @@ function topic_project_enable( int $p_project_id, int $p_catalogue_id ): void {
 			. ', date_updated=' . db_param() . ' WHERE project_id=' . db_param(),
 			array( $p_catalogue_id, auth_get_current_user_id(), db_now(), $p_project_id ) );
 	}
+	topic_event_log( $p_project_id, 'enable', topic_catalogue_label( $t_catalogue ) );
 }
 
 /**
@@ -781,6 +782,7 @@ function topic_project_disable( int $p_project_id ): void {
 	db_param_push();
 	db_query( 'UPDATE {topic_project} SET enabled=0, user_id=' . db_param() . ', date_updated=' . db_param()
 		. ' WHERE project_id=' . db_param(), array( auth_get_current_user_id(), db_now(), $p_project_id ) );
+	topic_event_log( $p_project_id, 'disable' );
 }
 
 /**
@@ -799,7 +801,8 @@ function topic_project_delete( int $p_project_id ): void {
 			db_query( 'DELETE FROM ' . $t_table . ' WHERE expectation_id=' . db_param(), array( (int)$t_row['id'] ) );
 		}
 	}
-	foreach( array( '{dwg_topic}', '{topic_applicability}', '{topic_expectation}', '{topic_milestone}', '{topic_profile}', '{topic_project}' ) as $t_table ) {
+	foreach( array( '{dwg_topic}', '{topic_applicability}', '{topic_expectation}', '{topic_milestone}', '{topic_profile}',
+		'{topic_snapshot}', '{topic_event}', '{topic_project}' ) as $t_table ) {
 		db_param_push();
 		db_query( 'DELETE FROM ' . $t_table . ' WHERE project_id=' . db_param(), array( $p_project_id ) );
 	}
@@ -887,10 +890,13 @@ function topic_applicability_history( int $p_project_id, int $p_topic_id ): arra
  * @param integer $p_topic_id      Topic of the project's catalogue.
  * @param integer $p_applicability TOPIC_UNDECIDED, _APPLICABLE or _NOT_APPLICABLE.
  * @param string  $p_rationale     Reason; required for Not applicable.
+ * @param integer|null $p_expected_decision_id Id of the current decision the
+ *                 form was based on (0 = none); a different one is a conflict.
+ *                 Null skips the check.
  * @return boolean True when a new decision was recorded.
  * @throws ClientException
  */
-function topic_applicability_set( int $p_project_id, int $p_topic_id, int $p_applicability, string $p_rationale ): bool {
+function topic_applicability_set( int $p_project_id, int $p_topic_id, int $p_applicability, string $p_rationale, ?int $p_expected_decision_id = null ): bool {
 	topic_project_catalogue( $p_project_id, $p_topic_id );
 	if( !in_array( $p_applicability, array( TOPIC_UNDECIDED, TOPIC_APPLICABLE, TOPIC_NOT_APPLICABLE ), true ) ) {
 		topic_error( 'unknown applicability value ' . $p_applicability . '.' );
@@ -904,6 +910,9 @@ function topic_applicability_set( int $p_project_id, int $p_topic_id, int $p_app
 	}
 
 	$t_current = topic_applicability_current( $p_project_id )[$p_topic_id] ?? null;
+	if( $p_expected_decision_id !== null && $p_expected_decision_id != ( $t_current === null ? 0 : (int)$t_current['id'] ) ) {
+		topic_conflict( 'The applicability decision' );
+	}
 	$t_current_value = $t_current === null ? TOPIC_UNDECIDED : (int)$t_current['applicability'];
 	$t_current_rationale = $t_current === null ? '' : $t_current['rationale'];
 	if( $t_current_value == $p_applicability && $t_current_rationale === $t_rationale ) {
@@ -914,6 +923,8 @@ function topic_applicability_set( int $p_project_id, int $p_topic_id, int $p_app
 	db_query( 'INSERT INTO {topic_applicability} ( project_id, topic_id, applicability, rationale, user_id, date_decided )
 		VALUES ( ' . db_param() . ', ' . db_param() . ', ' . db_param() . ', ' . db_param() . ', ' . db_param() . ', ' . db_param() . ' )',
 		array( $p_project_id, $p_topic_id, $p_applicability, $t_rationale, auth_get_current_user_id(), db_now() ) );
+	topic_event_log( $p_project_id, 'applicability', topic_get( $p_topic_id )['code'] . ': '
+		. topic_applicability_label( $p_applicability ) . ( $t_rationale !== '' ? ' — ' . $t_rationale : '' ) );
 	return true;
 }
 
@@ -1064,6 +1075,8 @@ function topic_dwg_add( int $p_dwg_id, int $p_topic_id, int $p_extent, string $p
 
 	history_dwg_log_event_special( $p_dwg_id, DWG_TOPIC_ATTACHED, '',
 		topic_dwg_history_value( $t_topic['code'], $p_extent, $t_locator ) );
+	topic_event_log( $t_project_id, 'tag_add', topic_event_document( $p_dwg_id ) . ': '
+		. topic_dwg_history_describe( topic_dwg_history_value( $t_topic['code'], $p_extent, $t_locator ) ) );
 	return $t_tag_id;
 }
 
@@ -1088,6 +1101,8 @@ function topic_dwg_update( int $p_tag_id, int $p_extent, string $p_locator ): bo
 	history_dwg_log_event_special( (int)$t_tag['dwg_id'], DWG_TOPIC_UPDATED,
 		topic_dwg_history_value( $t_tag['code'], (int)$t_tag['extent'], $t_tag['locator'] ),
 		topic_dwg_history_value( $t_tag['code'], $p_extent, $t_locator ) );
+	topic_event_log( (int)$t_tag['project_id'], 'tag_change', topic_event_document( (int)$t_tag['dwg_id'] ) . ': '
+		. topic_dwg_history_describe( topic_dwg_history_value( $t_tag['code'], $p_extent, $t_locator ) ) );
 	return true;
 }
 
@@ -1107,6 +1122,7 @@ function topic_dwg_remove( int $p_tag_id ): void {
 	db_query( 'DELETE FROM {dwg_topic} WHERE id=' . db_param(), array( $p_tag_id ) );
 	history_dwg_log_event_special( (int)$t_tag['dwg_id'], DWG_TOPIC_DETACHED,
 		topic_dwg_history_value( $t_tag['code'], (int)$t_tag['extent'], $t_tag['locator'] ), '' );
+	topic_event_log( (int)$t_tag['project_id'], 'tag_remove', topic_event_document( (int)$t_tag['dwg_id'] ) . ': ' . $t_tag['code'] );
 }
 
 /**
@@ -1155,10 +1171,13 @@ function topic_dwg_move( int $p_dwg_id, int $p_old_project_id, int $p_new_projec
 			db_param_push();
 			db_query( 'UPDATE {dwg_topic} SET project_id=' . db_param() . ' WHERE id=' . db_param(),
 				array( $p_new_project_id, (int)$t_tag['id'] ) );
+			topic_event_log( $p_old_project_id, 'tag_moved_out', topic_event_document( $p_dwg_id ) . ': ' . $t_tag['code'] );
+			topic_event_log( $p_new_project_id, 'tag_moved_in', topic_event_document( $p_dwg_id ) . ': ' . topic_dwg_history_describe( $t_value ) );
 		} else {
 			db_param_push();
 			db_query( 'DELETE FROM {dwg_topic} WHERE id=' . db_param(), array( (int)$t_tag['id'] ) );
 			history_dwg_log_event_special( $p_dwg_id, DWG_TOPIC_DETACHED, $t_value, '' );
+			topic_event_log( $p_old_project_id, 'tag_moved_out', topic_event_document( $p_dwg_id ) . ': ' . $t_tag['code'] );
 		}
 	}
 }
@@ -1653,4 +1672,84 @@ function topic_export_rows( array $p_view ): array {
 		}
 	}
 	return $t_rows;
+}
+
+# ── Activity log ─────────────────────────────────────────────────────────────
+
+/**
+ * Record a project-level Topics action ({topic_event}).
+ *
+ * @param integer $p_project_id Project.
+ * @param string  $p_action     Action key (topic_event_<action> is its label).
+ * @param string  $p_detail     What it concerned: codes, references, text.
+ * @return void
+ */
+function topic_event_log( int $p_project_id, string $p_action, string $p_detail = '' ): void {
+	db_param_push();
+	db_query( 'INSERT INTO {topic_event} ( project_id, action, detail, user_id, date_event )
+		VALUES ( ' . db_param() . ', ' . db_param() . ', ' . db_param() . ', ' . db_param() . ', ' . db_param() . ' )',
+		array( $p_project_id, $p_action, mb_substr( $p_detail, 0, 1024 ), auth_get_current_user_id(), db_now() ) );
+}
+
+/**
+ * A project's Topics activity, newest first.
+ *
+ * @param integer $p_project_id Project.
+ * @param integer $p_limit      Rows.
+ * @param integer $p_offset     Rows to skip.
+ * @return array Rows of {topic_event}.
+ */
+function topic_event_get( int $p_project_id, int $p_limit = 100, int $p_offset = 0 ): array {
+	db_param_push();
+	$t_result = db_query( 'SELECT * FROM {topic_event} WHERE project_id=' . db_param() . ' ORDER BY id DESC',
+		array( $p_project_id ), $p_limit, $p_offset );
+	$t_rows = array();
+	while( $t_row = db_fetch_array( $t_result ) ) {
+		$t_rows[] = $t_row;
+	}
+	return $t_rows;
+}
+
+/**
+ * Number of a project's Topics activity rows.
+ *
+ * @param integer $p_project_id Project.
+ * @return integer
+ */
+function topic_event_count( int $p_project_id ): int {
+	db_param_push();
+	return (int)db_result( db_query( 'SELECT COUNT(*) FROM {topic_event} WHERE project_id=' . db_param(), array( $p_project_id ) ) );
+}
+
+/**
+ * Localised name of an activity action.
+ *
+ * @param string $p_action Action key.
+ * @return string
+ */
+function topic_event_label( string $p_action ): string {
+	return lang_get_defaulted( 'topic_event_' . $p_action, $p_action );
+}
+
+/**
+ * Short text identifying a tagged document in the activity log.
+ *
+ * @param integer $p_dwg_id Document.
+ * @return string
+ */
+function topic_event_document( int $p_dwg_id ): string {
+	$t_number = (string)dwg_get_field( $p_dwg_id, 'number' );
+	return ( $t_number !== '' ? $t_number : dwg_format_id( $p_dwg_id ) ) . ' (#' . $p_dwg_id . ')';
+}
+
+/**
+ * Stop with a conflict error: someone changed the record after the page was
+ * opened (TOP-FR-028).
+ *
+ * @param string $p_what What changed.
+ * @return never
+ * @throws ClientException
+ */
+function topic_conflict( string $p_what ) {
+	topic_error( $p_what . ' was changed by someone else after you opened this page. Reload the page, check the change and try again.' );
 }

@@ -12,6 +12,7 @@ form_security_validate( 'topic_expectation_action' );
 
 $f_action = gpc_get_string( 'action' );
 $f_milestone_view = gpc_get_int( 'milestone_view', 0 );
+$f_expected_revision = gpc_isset( 'expected_revision' ) ? gpc_get_int( 'expected_revision' ) : null;
 if( $f_action == 'create' ) {
 	$t_project_id = gpc_get_int( 'project_id' );
 	project_ensure_exists( $t_project_id );
@@ -30,11 +31,11 @@ switch( $f_action ) {
 		break;
 	case 'update':
 		topic_expectation_update( $f_expectation_id, gpc_get_string( 'statement' ), gpc_get_int( 'owner_id', 0 ),
-			gpc_get_int( 'milestone_id' ), gpc_get_int( 'maturity' ) );
+			gpc_get_int( 'milestone_id' ), gpc_get_int( 'maturity' ), $f_expected_revision );
 		break;
 	case 'retire':
 	case 'restore':
-		topic_expectation_set_enabled( $f_expectation_id, $f_action == 'restore' );
+		topic_expectation_set_enabled( $f_expectation_id, $f_action == 'restore', $f_expected_revision );
 		break;
 	default:
 		error_parameters( 'action' );

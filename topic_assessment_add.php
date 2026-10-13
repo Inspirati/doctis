@@ -20,7 +20,8 @@ if( !topic_can_assess( $t_project_id, topic_get( (int)$t_expectation['topic_id']
 	access_denied();
 }
 
-topic_assessment_record( $f_expectation_id, gpc_get_int( 'finding' ), gpc_get_string( 'rationale' ), $f_milestone_id );
+topic_assessment_record( $f_expectation_id, gpc_get_int( 'finding' ), gpc_get_string( 'rationale' ), $f_milestone_id,
+	gpc_isset( 'basis' ) ? gpc_get_string( 'basis' ) : null );
 
 form_security_purge( 'topic_assessment_add' );
 print_header_redirect( 'topic_expectation_page.php?id=' . $f_expectation_id . '&milestone_id=' . $f_milestone_id . '#assessments' );

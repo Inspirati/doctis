@@ -94,6 +94,7 @@ layout_page_begin( 'topic_page.php' );
 			<?php echo form_security_field( 'topic_applicability_update' ) ?>
 			<input type="hidden" name="project_id" value="<?php echo (int)$f_project_id ?>" />
 			<input type="hidden" name="topic_id" value="<?php echo (int)$f_topic_id ?>" />
+			<input type="hidden" name="expected_decision_id" value="<?php echo $t_topic['decision'] === null ? 0 : (int)$t_topic['decision']['id'] ?>" />
 			<div class="form-group">
 			<?php foreach( array( TOPIC_APPLICABLE, TOPIC_NOT_APPLICABLE, TOPIC_UNDECIDED ) as $t_value ) { ?>
 				<label class="inline" style="margin-right:16px;">
