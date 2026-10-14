@@ -66,9 +66,12 @@ $t_options = "[client]\n"
 	. ( $t_port !== '' ? 'port=' . $t_port . "\n" : '' );
 file_put_contents( $t_option_file, $t_options );
 
-# --defaults-extra-file must be the first option.
+# --defaults-extra-file must be the first option.  --skip-ssl matches the
+# application's own connection, which does not use TLS: MariaDB 11.4+ clients
+# otherwise require it and fail against a server without TLS.
 $t_cmd = escapeshellarg( $t_dump_bin )
 	. ' --defaults-extra-file=' . escapeshellarg( $t_option_file )
+	. ' --skip-ssl'
 	. ' --single-transaction --routines --triggers --add-drop-table '
 	. escapeshellarg( (string)config_get_global( 'database_name' ) )
 	. ' > ' . escapeshellarg( $t_dump_file )
