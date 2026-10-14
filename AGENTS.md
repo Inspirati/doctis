@@ -22,10 +22,10 @@ deploy, and test cycle, and the Development Environment section of
 
 **Use `dev` for all new development and installation work**; `nginx` and
 `ai-meeting` are merged into `dev` and deprecated. Feature work may run on a
-local branch: Documentation Topics is on `topics`, unpushed until complete.
-The running clone tracks `origin/dev` but can be checked out on a local
-branch fetched from the working clone to test unpushed work. On 2026-10-13 it
-was on `topics`.
+local branch: Documentation Topics was developed on `topics` and merged into
+`dev` on 2026-10-14. The running clone tracks `origin/dev` but can be checked
+out on a local branch fetched from the working clone to test unpushed work.
+On 2026-10-14 it was on the local `dev` merge, ahead of `origin/dev`.
 
 The native VM has persistent data, not a fresh installation. It was rebuilt
 on 2026-10-13 (schema 77) and reloaded with users, the HCRQMS and LiDAR

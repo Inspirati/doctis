@@ -11,14 +11,14 @@ AGENTS.md describes earlier VM snapshots; use the current checks below.
 
 - **Working clone:** `/home/robert/Documents/doctis` (this directory), owned by
   `robert`. Develop and commit here: on `dev`, the main development branch, or
-  on a feature branch (currently `topics`, Documentation Topics, unpushed until
-  the feature is complete). The former `nginx` and `ai-meeting` feature
+  on a feature branch. Documentation Topics was developed on `topics` and
+  merged into `dev` on 2026-10-14. The former `nginx` and `ai-meeting` feature
   branches were merged into `dev` with their full history and are deprecated.
 - **Running application:** `/var/www/html/doctis`, a separate Git clone owned
   by `robert` (group `www-data`), served at `http://10.0.0.94/doctis/`. Its
-  `origin` is GitHub and it tracks `origin/dev`; on 2026-10-13 it was checked
-  out on a local `topics` branch fetched from the working clone, to test
-  unpushed work.
+  `origin` is GitHub and it tracks `origin/dev`; on 2026-10-14 it was on
+  local `dev` at the `topics` merge, fetched from the working clone before
+  that merge was pushed.
 - **Other source:** `/home/robert/html/doctis` is the former development
   checkout on vaio (`10.0.0.10`), NFS-mounted here and last updated at
   `8939aea32`. vaio is no longer the development host. Do not alter that

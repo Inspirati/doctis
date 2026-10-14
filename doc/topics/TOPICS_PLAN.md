@@ -1,6 +1,7 @@
 # Document Topics — Implementation Plan
 
-Status: Phases 1, 1b, 2 and 3 implemented on branch `topics` (2026-10-13);
+Status: Phases 1, 1b, 2 and 3 implemented on branch `topics` (2026-10-13)
+and merged into `dev` (2026-10-14);
 see [Phase 1](#phase-1-as-built), [1b](#phase-1b-as-built),
 [2](#phase-2-as-built) and [3](#phase-3-as-built) as built. The work remaining
 before the feature is complete (assessed 2026-10-14) is in
@@ -57,8 +58,9 @@ Owner decisions, 2026-10-08:
   HCRQMS. HCRQMS is the standalone QMS site-content project.
 - **Pilot and test projects** will be created to scope and develop the feature
   (section 6).
-- **Development stays on branch `topics`** until the feature is fully
-  developed (2026-10-13); it is merged into `dev` after that.
+- **Development stayed on branch `topics`** (decided 2026-10-13). At the
+  owner's request it was merged into `dev` on 2026-10-14, before the remaining
+  work in section 12.
 - **Parent Topics do not depend on their children.** Topics 21–23 are grouped
   under 20 for display and filtering only. A child's state never affects the
   parent's state, and the parent's applicability does not constrain the
@@ -669,12 +671,9 @@ release, plus a little code.
 
 ### 12.4 Merge and release
 
-- **Merge `topics` into `dev`.** On 2026-10-14 `topics` was 14 commits ahead.
-  `dev` had moved on: the `signup-rules` merge (pushed) and local, unpushed
-  copies of three documentation commits from `topics`. A trial merge (no
-  files touched) conflicted only in `CLAUDE.md` and `doc/TESTING.md`; the code
-  merged cleanly, and `dev` has no schema changes. Re-run the full test suite
-  after merging.
+- **Merge `topics` into `dev`: done 2026-10-14** (33acdb0e9). Only
+  `CLAUDE.md` and `doc/TESTING.md` conflicted, as expected; the code merged
+  cleanly. The full `mantis` suite passed on the VM afterwards (295 tests).
 - **Push** to GitHub: needs the owner's approval.
 - **Live version:**
   - check its configuration for `$g_dwg_status_enum_string` or
