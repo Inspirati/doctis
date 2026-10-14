@@ -6,9 +6,10 @@
 # Gateway (Remote Clone)"): clone a project's document repository using a
 # Doctis API token, edit a tracked file, commit, and push the change back.
 #
-# This is a CLIENT-side script — run it here, on a workstation, NOT via ssh
-# on the Doctis server. It talks to the server only over HTTP(S), exactly as
-# a real remote contributor would. It exercises:
+# This is a CLIENT-side script: it talks to the server only over HTTP(S),
+# exactly as a real remote contributor would. Run it from any machine that
+# can reach the server, including the native development VM itself.
+# Point it at a scratch repository: it commits and pushes a real edit. It exercises:
 #   - API token authentication (git_http_extract_token / api_token_get_user)
 #   - read access at $g_git_http_read_threshold (clone)
 #   - write access at $g_git_http_write_threshold (push)
@@ -19,12 +20,12 @@
 #   - $g_git_http_enabled = ON on the target Doctis instance
 #   - A personal API token, created under My Account -> API Tokens in the
 #     Doctis UI, or scripted on the server (prints the token once):
-#       ssh hcr@vaio "sudo -u www-data php -r '
-#         require \"/var/www/html/doctis/core.php\";
-#         require_api(\"api_token_api.php\"); require_api(\"authentication_api.php\");
-#         auth_attempt_script_login(\"manager\");
-#         echo api_token_create(\"remote-test\", auth_get_current_user_id());
-#       '"
+#       sudo -u www-data php -r '
+#         require "/var/www/html/doctis/core.php";
+#         require_api("api_token_api.php"); require_api("authentication_api.php");
+#         auth_attempt_script_login("manager");
+#         echo api_token_create("remote-test", auth_get_current_user_id());
+#       '
 #   - The repository basename (e.g. "example-r1") — visible in Doctis on
 #     the document's "Advanced: Direct Git Repository Access" page
 #     (dwg_primary_head_warn.php), or via: ls /var/git/doctis/ on the server
@@ -35,17 +36,19 @@
 #       [--https] [--keep] [--workdir DIR]
 #
 # Examples:
-#   ./doctis-remote-clone-edit-push.sh --host 10.0.0.10/doctis \
-#       --repo hcrqms-r5 --user manager
+#   ./doctis-remote-clone-edit-push.sh --host 10.0.0.94 \
+#       --repo scratch-r9 --user manager
 #   # (prompts for the API token; picks the first *.md file and appends a
 #   #  timestamped marker line, commits, and pushes)
 #
-#   ./doctis-remote-clone-edit-push.sh --host 10.0.0.10/doctis --repo example-r1 \
+#   ./doctis-remote-clone-edit-push.sh --host 10.0.0.94 --repo example-r1 \
 #       --user manager --token "$DOCTIS_TOKEN" \
 #       --path 1/report.md --message "Remote test edit" --keep
 #
 # Options:
-#   --host HOST        Doctis base URL host[:port][/path], e.g. 10.0.0.10/doctis
+#   --host HOST        Server host[:port][/path] under which /git/ is served,
+#                       e.g. 10.0.0.94 on the native VM. The gateway sits at the
+#                       server root, not under the /doctis app path.
 #                       (no scheme; use --https to select https instead of http)
 #   --repo REPO         Repository basename without ".git", e.g. "example-r1"
 #   --user USER         Doctis username to authenticate as

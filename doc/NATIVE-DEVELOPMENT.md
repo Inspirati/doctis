@@ -1,5 +1,16 @@
 # Native nginx development installation
 
+**The native Debian 13 VM at `10.0.0.94` is the primary development and test
+environment.** It was installed with this profile. Its nginx serves the
+running clone at `/var/www/html/doctis` as `http://10.0.0.94/doctis/`, and
+development happens in the working clone `/home/robert/Documents/doctis` on
+the same VM. Day-to-day procedure: [DEV-SETUP.md](../DEV-SETUP.md) and the
+Development Environment section of [CLAUDE.md](../CLAUDE.md). The former
+development host, vaio (`10.0.0.10`, Apache with an NFS-mounted checkout), is
+no longer used for development. It remains a LAN file server, and its old
+checkout is still mounted on the VM at `/home/robert/html/doctis`; leave that
+checkout alone.
+
 The `dev` branch includes a Doctis-only native nginx profile, originally
 developed on the now-deprecated `nginx` feature branch. Apache remains the
 default legacy profile. This profile omits DokuWiki, reference MantisBT,
@@ -58,7 +69,11 @@ curl -fsS http://10.0.0.10/doctis/admin/tools/install-option.sh | grep -q 'DOCTI
 The vaio HTTP-served checkout must have the matching `dev` installer scripts.
 Fetching `dev` over SSH does not update files served by the HTTP checkout.
 Use a separate served worktree if that checkout must stay on another branch.
-Once both checks pass, run the LAN bootstrap in a fresh staging directory:
+As of 2026-10-13 that checkout is still at `8939aea32` (2026-09-26): it serves
+`install-lan.sh`, but its `install-option.sh` has no nginx support, so the
+second check fails until the checkout is updated. The GitHub bootstrap above
+does not depend on vaio. Once both checks pass, run the LAN bootstrap in a
+fresh staging directory:
 
 ```bash
 mkdir -p ~/doctis-dev-lan-install
@@ -80,6 +95,8 @@ DOCTIS_BRANCH=dev DOCTIS_WEB_SERVER=nginx bash install-lan.sh
 - Sessions: `/var/lib/doctis/sessions`.
 - Cron flushes mail each minute as `www-data`. External notifications are
   disabled initially; configure test SMTP deliberately before testing delivery.
+  On the current VM SMTP is configured (Gmail), so its email is live: see
+  DEV-SETUP.md before running anything that queues mail.
 
 Only an empty database is initialized automatically. An existing database's
 schema version is displayed, not automatically upgraded. Partially initialized
@@ -191,8 +208,18 @@ its checkout is not writable by `www-data`, so switching there needs a wider
 sudoers rule. The Docker image allows `/usr/bin/git` with any arguments.
 
 The working clone is `/home/robert/Documents/doctis`. Update the deployed
-checkout deliberately with `git -C /var/www/html/doctis pull --ff-only`; rerunning
-the installer intentionally does not pull or migrate an existing schema.
+checkout deliberately, as `robert`: `git -C /var/www/html/doctis pull --ff-only`
+for a pushed branch, or fetch straight from the working clone to test an
+unpushed one:
+
+```bash
+cd /var/www/html/doctis
+git fetch /home/robert/Documents/doctis <branch> && git reset --hard FETCH_HEAD
+php admin/upgrade_unattended.php   # when admin/schema.php gained steps
+```
+
+Rerunning the installer intentionally does not pull or migrate an existing
+schema.
 
 ## Application settings
 

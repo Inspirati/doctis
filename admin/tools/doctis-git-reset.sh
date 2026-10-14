@@ -16,11 +16,11 @@
 # of sync: the database will reference content that no longer exists in git,
 # or git will contain content that is no longer indexed by the database.
 #
-# Usage (run directly on the server, or via SSH from a dev machine):
+# Usage (run on the server, e.g. the native development VM):
 #
 #   sudo bash /var/www/html/doctis/admin/tools/doctis-git-reset.sh
 #
-#   ssh hcr@vaio "sudo bash /var/www/html/doctis/admin/tools/doctis-git-reset.sh"
+#   sudo bash /var/www/html/doctis/admin/tools/doctis-git-reset.sh <<< yes   # no prompt
 #
 
 # ---------------------------------------------------------------------------

@@ -9,7 +9,7 @@
  *
  * Complements admin/test-git-php.php (pure git mechanics, no core).
  * Creates its own projects/documents/repositories and tears everything
- * down.  Run on vaio as www-data:
+ * down.  Run on the server (the native development VM) as www-data:
  *
  *   sudo -u www-data php /var/www/html/doctis/admin/test-git-doctis.php
  */

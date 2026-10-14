@@ -207,8 +207,8 @@ admin/tools/doctis-git-import.sh   thin wrapper: sudo -u www-data php … with a
 ```
 
 ```bash
-ssh hcr@vaio "sudo -u www-data php /var/www/html/doctis/admin/import-git-repo.php \
-    --source /path/to/repo --user manager [--dry-run] [--update]"
+sudo -u www-data php /var/www/html/doctis/admin/import-git-repo.php \
+    --source /path/to/repo --user manager [--dry-run] [--update]
 ```
 
 Runs as `www-data` so the bare repo, worktree and hook land with correct
@@ -431,8 +431,8 @@ the operator can verify the mapping before the real run.
 ## 7. Use Case Walkthrough — HCRQMS
 
 ```bash
-ssh hcr@vaio "sudo -u www-data php /var/www/html/doctis/admin/import-git-repo.php \
-    --source /path/on/vaio/HCRQMS --user manager --dry-run"
+sudo -u www-data php /var/www/html/doctis/admin/import-git-repo.php \
+    --source /path/on/server/HCRQMS --user manager --dry-run
 ```
 
 1. Manifest: project *HCRQMS*, `directories = content, system`,
@@ -451,7 +451,8 @@ ssh hcr@vaio "sudo -u www-data php /var/www/html/doctis/admin/import-git-repo.ph
    `owner:` names listed.
 
 Repo remains a working QMS/publishing tree; contributors re-point origin to
-`http://<user>@vaio/git/hcrqms-7.git` and continue as before — pushes advance
+`http://<user>@<server>/git/hcrqms-r7.git` (e.g. `10.0.0.94` on the native
+development VM) and continue as before — pushes advance
 Drafts, promotion happens in Doctis.
 
 ## 8. Use Case Walkthrough — HCR-Hardware-Designs
