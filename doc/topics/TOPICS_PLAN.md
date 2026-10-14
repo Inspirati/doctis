@@ -2,8 +2,10 @@
 
 Status: Phases 1, 1b, 2 and 3 implemented on branch `topics` (2026-10-13);
 see [Phase 1](#phase-1-as-built), [1b](#phase-1b-as-built),
-[2](#phase-2-as-built) and [3](#phase-3-as-built) as built. Remaining work is
-listed under [Not yet done](#not-yet-done).
+[2](#phase-2-as-built) and [3](#phase-3-as-built) as built. The work remaining
+before the feature is complete (assessed 2026-10-14) is in
+[section 12](#12-outstanding-work); the decisions it waits on are in
+[section 11](#11-open-questions-and-decisions).
 
 This plan describes how Doctis can support the Engineering Project Document
 Topic System. The QMS sources are in the HCRQMS repository:
@@ -30,7 +32,8 @@ or the whole of, a Topic's required documentation.
 8. [Phase 3 — Evidence records](#8-phase-3--evidence-records)
 9. [Requirement mapping](#9-requirement-mapping)
 10. [Changes proposed to the QMS documents](#10-changes-proposed-to-the-qms-documents)
-11. [Open questions](#11-open-questions)
+11. [Open questions and decisions](#11-open-questions-and-decisions)
+12. [Outstanding work](#12-outstanding-work)
 
 ## 1. Decisions recorded
 
@@ -60,6 +63,17 @@ Owner decisions, 2026-10-08:
   under 20 for display and filtering only. A child's state never affects the
   parent's state, and the parent's applicability does not constrain the
   children's.
+
+Owner decisions, 2026-10-14:
+
+- **HCRQMS does not use Topics.** It is not an engineering project. It is the
+  example Doctis project that does not use the feature, and so the reference
+  for TOP-FR-001 (a project without Topics keeps ordinary document operations
+  and shows no completeness claim).
+- **The Topics write API comes later.** REST/SOAP endpoints for tagging,
+  decisions, expectations and assessments wait until the feature set is fully
+  determined, implemented and tested. The read-only REST endpoints and the
+  `topics` field of `DwgData` stay.
 
 ## 2. Review of the QMS documents
 
@@ -373,7 +387,9 @@ to; the Topics page export covers that need.
 ## 6. Pilot projects
 
 Pilot and test projects are standalone top-level projects with their own
-repositories. They are never sub-projects of HCRQMS.
+repositories. They are never sub-projects of HCRQMS. HCRQMS itself does not
+use Topics: it is the example project without the feature (decision of
+2026-10-14, section 1).
 
 - **HCR571.** Register the PRD, ICD and TP as new documents in HCR571 by
   upload. Do not move them from HCRQMS (see the `dwg_move()` issue in section
@@ -477,7 +493,8 @@ edits are not detected (Phase 3, TOP-FR-028).
   referenced items before they can enter a snapshot (TOP-FR-011).
 - **Conflict detection**: a version counter on profiles and assessments
   rejects stale writes (TOP-FR-028).
-- **API**: SOAP and REST endpoints.
+- **API**: SOAP and REST endpoints. Read-only REST was built in Phase 3; the
+  write API is deferred (decision of 2026-10-14, section 1).
 
 Not planned, as STD-IT-001 §1 already excludes them: automatic content
 assessment, percentage scores, notifications, and roll-up across projects.
@@ -500,16 +517,9 @@ Implemented on branch `topics`, 2026-10-13 (schema steps 76–77,
 
 ### Not yet done
 
-- **Configuration context** (TOP-FR-020): assessments apply to the evidence
-  versions they record; there is no separate configuration/variant
-  dimension.
-- **Write API**: REST/SOAP endpoints for tagging, decisions, expectations
-  and assessments.
-- **Backup/restore demonstration** (TOP-FR-029): the Topic tables are
-  ordinary tables in the database backup; restoring has not been rehearsed.
-- **Performance measurement** with 100 documents and 50 expectations
-  (STD-IT-001 §8).
-- ~~Status label rename~~ — done 2026-10-13.
+Superseded by [section 12](#12-outstanding-work), which assesses the remaining
+work against STD-IT-001 (2026-10-14). The status label rename listed here
+before is done (2026-10-13).
 
 ## 9. Requirement mapping
 
@@ -519,6 +529,7 @@ Implemented on branch `topics`, 2026-10-13 (schema steps 76–77,
 | 1b (done) | The rest of 013 (filter); 023 (live export) |
 | 2 (done) | The rest of 005, 010 and 016; 006 (without the parent/child rule), 007, 014, 015, 017, 018, 019; 020 only as evidence versions (no configuration context) |
 | 3 (done) | The rest of 003, 009, 011, 023 and 024; 022, 028 |
+| Outstanding (section 12) | 020 (configuration context, and the configuration parts of 005, 014, 016 and 018); 018 (applicability changes as a reassessment dependency); 011 (registered repositories as evidence); 029 (restore rehearsal). Acceptance tests TOP-AT-001 to 015 still need a recorded run (section 12.2) |
 
 ## 10. Changes proposed to the QMS documents
 
@@ -565,13 +576,126 @@ workflow and stored data use the values.
 New documents start at `$g_dwg_submit_status` (110, `pending`); whether they
 should start at Draft belongs to the wider reduction of the status set.
 
-## 11. Open questions
+## 11. Open questions and decisions
 
-1. Should Topics be enabled on HCRQMS itself? The QMS content is not an
-   engineering project, so this plan assumes not.
+Most of section 12 waits on these.
+
+1. ~~Should Topics be enabled on HCRQMS itself?~~ Decided 2026-10-14: no.
+   HCRQMS is the example project that does not use Topics (section 1).
 2. Should HCRQMS keep the HCR571 exemplars once the pilot project holds them?
 3. Who owns the catalogue: is `ADMINISTRATOR` right for the Engineering Lead,
    or should it be a global `MANAGER`?
 4. ~~Should a Draft catalogue be adoptable by any project, or only by projects
    flagged as pilots?~~ Decided 2026-10-13: any project may adopt one (as
    built). The Topics page shows a Draft warning.
+5. **Configuration context (TOP-FR-020): build it, or formally defer it?** It
+   is the only large requirement not built, and FR-005, 014, 016 and 018 refer
+   to it. Building it adds a configuration dimension to expectations,
+   assessments and snapshots: a schema change and a rebuild. Decide this
+   first.
+6. **Revise STD-ENG-004 and STD-IT-001** as proposed in section 10. Both are
+   still Draft Rev A (checked 2026-10-14) and still require the parent/child
+   rule (FR-006, §6.2) and "Unassessed". As written, TOP-AT-003 and TOP-AT-008
+   cannot pass, because Doctis follows the section 1 decision instead.
+7. **Approve STD-ENG-004 in Doctis and publish the catalogue.** The catalogue
+   stays Draft until its source document is registered and approved.
+   Neither standard is in the VM's HCRQMS project: the ZIP it was imported
+   from predates them.
+8. **The HCR571 profile:** milestones, expectations with owners and required
+   maturity, and decisions for the seven Topics still Undecided. These are
+   engineering decisions, and the pilot demonstration (section 12.2) needs
+   them.
+9. **The reduced production status set.** `$g_topic_maturity_map` is set for
+   the current statuses and must be revised when the set changes; so must the
+   importer's Draft → 165 mapping and `$g_dwg_submit_status`.
+10. ~~Write API~~ Decided 2026-10-14: later, once the feature set is fully
+    determined, implemented and tested (section 1).
+
+## 12. Outstanding work
+
+Assessed 2026-10-14 against STD-IT-001 §8–9. The feature is complete when the
+acceptance scenarios pass, the owner accepts the QMS mapping, and each
+remaining limitation is explicitly dispositioned (accepted, deferred or
+fixed). Phases 1–3 are built and tested (276 PHPUnit tests, 32 of them Topic
+tests). What remains is mostly decisions (section 11), verification and
+release, plus a little code.
+
+### 12.1 Code
+
+| Item | Requirement | Size | Notes |
+|------|-------------|------|-------|
+| Applicability changes force reassessment | TOP-FR-018 | Small | A Topic set to Not applicable and back keeps its old assessments Satisfied: the assessment basis (`topic_assessment_basis()`) covers the expectation revision and evidence set only. Add the applicability decision to the basis and a test |
+| Configuration context | TOP-FR-020 | Large | Only if section 11, item 5 decides to build it. Schema change |
+| Registered repositories as evidence | TOP-FR-011 | Medium | Only registered documents can be tagged. Build, or disposition |
+| Cross-repository document move | Section 3 | Medium | Separate task: `dwg_move()` to a project with another repository leaves the primary file unreachable. Matters once tagged documents move between engineering projects |
+
+### 12.2 Verification and completion evidence
+
+- **HCR571 pilot demonstration** (TOP-AT-015, STD-IT-001 §9 deliverable 5),
+  once section 11, item 8 is decided. Show that Approved expectations stay
+  Pending against the Draft exemplars, that results are Missing when due, and
+  that Undecided Topics stay visible. Review whether the workflow avoids
+  duplicate indexing. Do not change the exemplars' approval status.
+- **HCRQMS as the Topics-off reference** (TOP-FR-001, TOP-FR-027): show, as
+  part of TOP-AT-001, that a project without Topics keeps its ordinary
+  document operations and shows no Topics page, panel, column or claim.
+- **Acceptance record** (deliverable 3): a table mapping TOP-AT-001 to 015
+  and each TOP-FR to its test, result and known limitation. Today the
+  evidence is split between PHPUnit and `doc/TESTING.md` §7b. Not yet run or
+  recorded as written:
+  - TOP-AT-001: upgrade an existing database and re-apply the migration
+    (exercised informally during development);
+  - TOP-AT-012: two users editing at once (stale-write protection has unit
+    tests only);
+  - TOP-AT-013: disable and re-enable, with backup and restore;
+  - the §8 extras: linked and referenced evidence, a future Topic excluded
+    everywhere, and a Topic with no current expectations.
+- **Backup and restore rehearsal** (TOP-FR-029, TOP-AT-013): the Topic tables
+  are ordinary tables in the database backup; restoring has not been
+  rehearsed.
+- **Performance measurement** (§8): a project view with at least 100
+  documents and 50 expectations, with the environment and timings recorded.
+- **A second pilot** (section 6): a software-only or prototype project, for
+  Not applicable decisions and combined documents.
+
+### 12.3 Documentation
+
+- **Deployment and rollback notes** (deliverable 6): upgrading an existing
+  database to schema 77, enabling per project, and disabling the feature
+  rather than dropping its tables if it must be rolled back.
+- **`doc/MANUAL.md` §12** covers enabling, tagging, decisions, assessment,
+  snapshots, catalogue migration and disabling, but not backing up and
+  restoring Topic records (deliverable 4).
+
+### 12.4 Merge and release
+
+- **Merge `topics` into `dev`.** On 2026-10-14 `topics` was 14 commits ahead.
+  `dev` had moved on: the `signup-rules` merge (pushed) and local, unpushed
+  copies of three documentation commits from `topics`. A trial merge (no
+  files touched) conflicted only in `CLAUDE.md` and `doc/TESTING.md`; the code
+  merged cleanly, and `dev` has no schema changes. Re-run the full test suite
+  after merging.
+- **Push** to GitHub: needs the owner's approval.
+- **Live version:**
+  - check its configuration for `$g_dwg_status_enum_string` or
+    `$g_status_colors` overrides first, because this branch renames `rework`
+    to `draft` and `accepted` to `approved`;
+  - Git Pull, then upgrade the schema to version 77, which adds the Topics
+    tables;
+  - leave `$g_topics_enabled` OFF until a project is to use Topics.
+
+### 12.5 Deferred
+
+- **Write API** (REST/SOAP for tagging, decisions, expectations and
+  assessments): after the feature set is fully determined, implemented and
+  tested (owner decision, 2026-10-14).
+
+### 12.6 Suggested order
+
+1. Decide section 11, starting with item 5 (configuration context), the only
+   decision that changes the schema.
+2. Code: applicability reassessment; configuration context if built.
+3. Set up the HCR571 profile, then run and record the acceptance tests, the
+   backup/restore rehearsal and the performance measurement.
+4. Write the deployment and rollback notes and the manual addition.
+5. Merge into `dev`, push, and update the live version.
