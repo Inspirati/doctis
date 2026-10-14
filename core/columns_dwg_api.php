@@ -129,6 +129,12 @@ function columns_dwg_filter_disabled( array $p_columns ) {
 				}
 				break;
 
+			case 'topics':
+				if( config_get( 'topics_enabled' ) == OFF ) {
+					continue 2;
+				}
+				break;
+
 				default:
 				# don't filter
 				break;
@@ -152,6 +158,9 @@ function columns_dwg_get_standard( $p_enabled_columns_only = true ) {
 	$t_columns['edit'] = null;
 	$t_columns['notes'] = null;
 	$t_columns['tags'] = null;
+
+	# Documentation Topics (Doctis)
+	$t_columns['topics'] = null;
 
 	# Overdue icon column (icons appears if an issue is beyond due_date)
 	$t_columns['overdue'] = null;
@@ -341,6 +350,7 @@ function column_dwg_is_sortable( $p_column ) {
 		case 'dwgnotes_count':
 		case 'attachment_count':
 		case 'tags':
+		case 'topics':
 		case 'additional_information':
 		case 'description':
 		case 'notes':
@@ -726,6 +736,19 @@ function print_dwg_column_title_fixed_in_version( $p_sort, $p_dir, $p_columns_ta
  */
 function print_dwg_column_title_tags( $p_sort, $p_dir, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	echo '<th class="column-tags">' . lang_get('tags') . '</th>';
+}
+
+/**
+ * Print table header for column topics (Documentation Topics)
+ *
+ * @param string  $p_sort           Sort.
+ * @param string  $p_dir            Direction.
+ * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
+ * @return void
+ * @access public
+ */
+function print_dwg_column_title_topics( $p_sort, $p_dir, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+	echo '<th class="column-topics">' . lang_get( 'topics' ) . '</th>';
 }
 
 /**
@@ -1754,6 +1777,20 @@ function print_dwg_column_tags( DwgData $p_bug, $p_columns_target = COLUMNS_TARG
 	}
 
 	echo '</td>';
+}
+
+/**
+ * Print column content for column topics: the document's Documentation Topic
+ * codes, whole-Topic tags in bold.
+ *
+ * @param DwgData $p_bug            DwgData object.
+ * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
+ * @return void
+ * @access public
+ */
+function print_dwg_column_topics( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+	require_api( 'topic_api.php' );
+	echo '<td class="column-topics">' . topic_dwg_codes_html( (int)$p_bug->id, (int)$p_bug->project_id ) . '</td>';
 }
 
 /**

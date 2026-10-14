@@ -965,6 +965,9 @@ $t_form_encoding = 'enctype="multipart/form-data"';
 </div>
 </div>
 
+<?php # Documentation Topics (Doctis)
+include( __DIR__ . '/dwg_create_topics_inc.php' ); ?>
+
 <?php # ── Primary Document Upload ──────────────────────────────────────────────── ?>
 <div class="space-10"></div>
 <div class="widget-box widget-color-blue2">

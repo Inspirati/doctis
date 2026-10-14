@@ -11,8 +11,8 @@ The project is actively developed (beta) and maintained on the `dev` branch, tra
 ```
 /                           PHP page entry-points (bug_*, dwg_*, manage_*, login_*, etc.)
 core/                       API library functions (*_api.php, classes/, commands/, exceptions/)
-api/rest/restcore/          Slim-framework REST endpoints: MantisBT's, plus Doctis documents_rest.php
-                            and licenses_rest.php
+api/rest/restcore/          Slim-framework REST endpoints: MantisBT's, plus Doctis documents_rest.php,
+                            licenses_rest.php and topics_rest.php (read-only)
 api/soap/                   SOAP API (mantisconnect), including the Doctis mc_dwg_* operations
 config/                     Local config (config_inc.php, not committed)
 config_defaults_inc.php     All defaults including Doctis-specific $g_dwg_* settings
@@ -101,6 +101,34 @@ more licenses before access is granted. This is entirely unrelated to software
 licensing; the term is Doctis-specific.
 
 API: [core/license_api.php](core/license_api.php). Command layer: [core/commands/License*Command.php](core/commands/).
+
+## Documentation Topics
+
+Projects can classify their documents by the numbered Topics of a managed
+catalogue (e.g. STD-ENG-004: 00–60, with 21–23 grouped under 20) and record
+which Topics they need. A tag marks a document as part of, or the whole of, a
+Topic's documentation, with optional sections. Tags are declarations, not
+assessments. Each Topic's coverage comes from its own tags only: parent and
+child Topics never affect each other. Off unless `$g_topics_enabled = ON`.
+
+API: [core/topic_api.php](core/topic_api.php) (tables `{topic_catalogue}`,
+`{topic}`, `{topic_project}`, `{topic_applicability}`, `{dwg_topic}`). Pages:
+`manage_topic_*.php` (catalogues), `topic_page.php`, `topic_detail_page.php`
+and `topic_export.php` (project view, CSV/print), `dwg_view_topics_inc.php`,
+`dwg_topic_*.php` and `dwg_create_topics_inc.php` (document tags),
+`dwg_actiongroup_add_topic_inc.php` (bulk tagging), the document list's
+`topics` column and `core/classes/TopicFilter.class.php` (list filter;
+registered in `filter_dwg_get_plugin_filters()`). SOAP/REST `DwgData` has
+`topics`. Phase 2 (milestones, expectations, evidence, adequacy assessments,
+coverage states, profile authorisation):
+[core/topic_expectation_api.php](core/topic_expectation_api.php),
+`topic_milestone_*.php`, `topic_expectation_*.php`, `topic_evidence_action.php`,
+`topic_assessment_add.php`, `topic_profile_authorise.php`. Phase 3:
+[core/topic_snapshot_api.php](core/topic_snapshot_api.php) (frozen review
+snapshots), `topic_snapshot_*.php`, `topic_activity_page.php`,
+`topic_catalogue_migrate*.php`, read-only REST in
+`api/rest/restcore/topics_rest.php`. Plan, phases and as-built notes:
+[doc/topics/TOPICS_PLAN.md](doc/topics/TOPICS_PLAN.md).
 
 ## Development Environment
 
@@ -263,8 +291,9 @@ cd /var/www/html/doctis
 sudo -u www-data vendor/bin/phpunit --testsuite mantis
 ```
 
-The Doctis PHPUnit tests live in `tests/Mantis/` (e.g. `MeetingApiTest.php`
-and `UserNamePolicyTest.php`), alongside MantisBT's own.
+The Doctis PHPUnit tests live in `tests/Mantis/` (e.g. the `Topic*Test.php`
+files, `MeetingApiTest.php` and `UserNamePolicyTest.php`), alongside
+MantisBT's own.
 
 ## Database Schema Changes
 
@@ -936,7 +965,7 @@ stored in it — follow
 
 1. **Filter hacks** — [core/filter_api.php](core/filter_api.php) lines 101, 1156, 1192 contain admitted "quick'n'dirty" hacks to route document queries through the bug filter pipeline without changing all call sites.
 2. **`document_api.php`** — currently a thin wrapper; some category-style logic was copied from `category_api.php` and has a stale file header.
-3. **REST API** — `api/rest/restcore/documents_rest.php` and `licenses_rest.php` provide CRUD for documents and licenses. Document file operations (primary file, attachments) are SOAP-only (`mc_dwg_*`). See [doc/api/REST-AND-SOAP-API.md](doc/api/REST-AND-SOAP-API.md).
+3. **REST API** — `api/rest/restcore/documents_rest.php` and `licenses_rest.php` provide CRUD for documents and licenses, and `topics_rest.php` is read-only. Document file operations (primary file, attachments) are SOAP-only (`mc_dwg_*`). See [doc/api/REST-AND-SOAP-API.md](doc/api/REST-AND-SOAP-API.md).
 4. **Bulk import** — documents can be imported only from files: Manage → **Import Data** (a ZIP upload becomes a new project and repository; file patterns default to `*.md`) or `admin/import-git-repo.php` (adopt an existing git repository). Neither imports document metadata from a spreadsheet or other structured source.
 5. **Two attachment config keys; primaries are git-only** — bug/issue attachments use `$g_file_upload_method`; document attachments use `$g_dwg_upload_method` (*separate* keys, attachments only). A `GIT` value in either falls back to DATABASE for attachments. The **primary registered document** ignores both — it is always stored in git (no configuration). This is intentional — attachments are "assisting metadata", not revision-controlled. See `doc/git/GIT_ARCHITECTURE.md`.
 6. **`file_api.php` switch statements** — MantisBT's original bug attachment code has multiple `switch($file_upload_method)` blocks. Each new storage method requires a case in all of them. Discovered locations: upload (around line 1007), MIME detection (around line 1317), content output (`file_download.php`, which remaps `GIT` around line 324). Search for `file_upload_method` and `dwg_upload_method` when adding future methods.

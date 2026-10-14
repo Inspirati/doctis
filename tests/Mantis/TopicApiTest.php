@@ -1,0 +1,350 @@
+<?php
+# Doctis Documentation Topics API tests (doc/topics/TOPICS_PLAN.md Phases 1
+# and 1b). Helpers and cleanup: TopicTestCase.
+
+namespace Mantis\tests\Mantis;
+
+use Mantis\Exceptions\ClientException;
+
+require_api( 'topic_api.php' );
+
+class TopicApiTest extends TopicTestCase {
+	# ── Catalogue ────────────────────────────────────────────────────────────
+
+	public function testBundledCatalogueLoadsAsDraftWithStringCodes() {
+		$t_seed = null;
+		foreach( topic_catalogue_seeds() as $t_candidate ) {
+			if( $t_candidate['file'] == 'std-eng-004-rev-a.json' ) {
+				$t_seed = $t_candidate;
+			}
+		}
+		$this->assertNotNull( $t_seed );
+		if( $t_seed['loaded'] ) {
+			# Already loaded here (e.g. a pilot uses it): check that copy instead.
+			$t_id = (int)db_result( db_query( 'SELECT id FROM {topic_catalogue} WHERE name=' . db_param()
+				. ' AND revision=' . db_param(), array( 'STD-ENG-004', 'A' ) ) );
+		} else {
+			$t_id = topic_catalogue_load_seed( 'std-eng-004-rev-a.json' );
+			$this->catalogue_ids[] = $t_id;
+			$this->assertEquals( TOPIC_CATALOGUE_DRAFT, (int)topic_catalogue_get( $t_id )['status'] );
+		}
+
+		$t_topics = topic_get_all( $t_id );
+		$t_codes = array_column( $t_topics, 'code' );
+		$this->assertSame( array( '00', '10', '20', '21', '22', '23', '30', '40', '50', '60' ), $t_codes );
+		$t_by_code = array_column( $t_topics, null, 'code' );
+		foreach( array( '21', '22', '23' ) as $t_code ) {
+			$this->assertEquals( $t_by_code['20']['id'], $t_by_code[$t_code]['parent_id'] );
+			$this->assertEquals( 1, $t_by_code[$t_code]['level'] );
+		}
+
+		$this->expectTopicError( function() { topic_catalogue_load_seed( 'std-eng-004-rev-a.json' ); }, 'already exists' );
+	}
+
+	public function testTopicValidation() {
+		$t_cat = $this->makeCatalogue();
+		$this->expectTopicError( function() use ( $t_cat ) { topic_create( $t_cat['id'], '10', 0, 'Again', '' ); }, 'already has a Topic 10' );
+		$this->expectTopicError( function() use ( $t_cat ) { topic_create( $t_cat['id'], '1 0', 0, 'Bad', '' ); }, 'not valid' );
+		$this->expectTopicError( function() use ( $t_cat ) { topic_create( $t_cat['id'], '211', $t_cat['21'], 'Grandchild', '' ); }, 'one level only' );
+		$this->expectTopicError( function() use ( $t_cat ) {
+			topic_update( $t_cat['20'], '20', $t_cat['10'], 'Design', '', 20 );
+		}, 'with children' );
+		$this->expectTopicError( function() use ( $t_cat ) { topic_create( $t_cat['id'], '30', 0, '', '' ); }, 'title' );
+	}
+
+	public function testPublishNeedsApprovedSourceAndFreezesCatalogue() {
+		$t_cat = $this->makeCatalogue();
+		$this->expectTopicError( function() use ( $t_cat ) {
+			topic_catalogue_set_status( $t_cat['id'], TOPIC_CATALOGUE_PUBLISHED );
+		}, 'no source document' );
+
+		$t_source = $this->makeDocument( $this->makeProject(), PENDING );
+		$t_catalogue = topic_catalogue_get( $t_cat['id'] );
+		topic_catalogue_update( $t_cat['id'], $t_catalogue['name'], 'A', $t_source );
+		$this->expectTopicError( function() use ( $t_cat ) {
+			topic_catalogue_set_status( $t_cat['id'], TOPIC_CATALOGUE_PUBLISHED );
+		}, 'not approved' );
+
+		$this->setStatus( $t_source, ACCEPTED );
+		topic_catalogue_set_status( $t_cat['id'], TOPIC_CATALOGUE_PUBLISHED );
+		$this->assertEquals( TOPIC_CATALOGUE_PUBLISHED, (int)topic_catalogue_get( $t_cat['id'] )['status'] );
+
+		# Frozen: no edits, additions or deletion; retiring a Topic is allowed.
+		$this->expectTopicError( function() use ( $t_cat ) { topic_update( $t_cat['10'], '10', 0, 'Renamed', '', 10 ); }, 'only a Draft' );
+		$this->expectTopicError( function() use ( $t_cat ) { topic_create( $t_cat['id'], '30', 0, 'New', '' ); }, 'only a Draft' );
+		$this->expectTopicError( function() use ( $t_cat ) { topic_catalogue_delete( $t_cat['id'] ); }, 'only a Draft' );
+		topic_set_enabled( $t_cat['10'], false );
+		$this->assertEquals( 0, (int)topic_get( $t_cat['10'] )['enabled'] );
+
+		topic_catalogue_set_status( $t_cat['id'], TOPIC_CATALOGUE_RETIRED );
+		$this->expectTopicError( function() use ( $t_cat ) {
+			topic_project_enable( $this->makeProject(), $t_cat['id'] );
+		}, 'retired' );
+	}
+
+	public function testCatalogueInUseCannotBeDeleted() {
+		$t_cat = $this->makeTopicProject();
+		$this->expectTopicError( function() use ( $t_cat ) { topic_catalogue_delete( $t_cat['id'] ); }, 'used by a project' );
+	}
+
+	# ── Applicability ────────────────────────────────────────────────────────
+
+	public function testApplicabilityStartsUndecidedAndKeepsHistory() {
+		$t_cat = $this->makeTopicProject();
+		$t_project_id = $t_cat['project_id'];
+
+		$t_view = topic_project_view( $t_project_id );
+		foreach( $t_view['topics'] as $t_topic ) {
+			$this->assertEquals( TOPIC_UNDECIDED, $t_topic['applicability'] );
+		}
+		$this->assertEquals( 3, $t_view['applicability_counts'][TOPIC_UNDECIDED] );
+
+		$this->expectTopicError( function() use ( $t_cat ) {
+			topic_applicability_set( $t_cat['project_id'], $t_cat['21'], TOPIC_NOT_APPLICABLE, '  ' );
+		}, 'needs a rationale' );
+
+		$this->assertTrue( topic_applicability_set( $t_project_id, $t_cat['21'], TOPIC_NOT_APPLICABLE, 'No hardware is designed.' ) );
+		$this->assertFalse( topic_applicability_set( $t_project_id, $t_cat['21'], TOPIC_NOT_APPLICABLE, 'No hardware is designed.' ) );
+		$this->assertTrue( topic_applicability_set( $t_project_id, $t_cat['21'], TOPIC_APPLICABLE, '' ) );
+		$this->assertCount( 2, topic_applicability_history( $t_project_id, $t_cat['21'] ) );
+		$this->assertEquals( TOPIC_APPLICABLE, (int)topic_applicability_current( $t_project_id )[$t_cat['21']]['applicability'] );
+
+		# A parent may be Not applicable while its child is Applicable: no dependency.
+		$this->assertTrue( topic_applicability_set( $t_project_id, $t_cat['20'], TOPIC_NOT_APPLICABLE, 'Grouping only.' ) );
+
+		# A Topic of another catalogue is refused.
+		$t_other = $this->makeCatalogue();
+		$this->expectTopicError( function() use ( $t_cat, $t_other ) {
+			topic_applicability_set( $t_cat['project_id'], $t_other['10'], TOPIC_APPLICABLE, '' );
+		}, 'not in the project' );
+
+		# Topic id 0 is refused before anything is written.
+		$this->expectTopicError( function() use ( $t_cat ) {
+			topic_applicability_set( $t_cat['project_id'], 0, TOPIC_APPLICABLE, '' );
+		}, 'does not exist' );
+		$this->assertArrayNotHasKey( 0, topic_applicability_current( $t_project_id ) );
+	}
+
+	# ── Tags and coverage ────────────────────────────────────────────────────
+
+	public function testTagsDriveDeclaredCoverageWithoutParentChildRollUp() {
+		$t_cat = $this->makeTopicProject();
+		$t_project_id = $t_cat['project_id'];
+		$t_prd = $this->makeDocument( $t_project_id, PENDING, 'PRD-TEST' );
+		$t_icd = $this->makeDocument( $t_project_id, PENDING, 'ICD-TEST' );
+		$t_old = $this->makeDocument( $t_project_id, ARCHIVED, 'OLD-TEST' );
+		$this->makeDocument( $t_project_id, PENDING, 'UNTAGGED-TEST' );
+
+		topic_dwg_add( $t_prd, $t_cat['10'], TOPIC_EXTENT_WHOLE, '' );
+		topic_dwg_add( $t_icd, $t_cat['21'], TOPIC_EXTENT_WHOLE, '§2' );
+		topic_dwg_add( $t_icd, $t_cat['20'], TOPIC_EXTENT_PART, '§3-5' );
+		topic_dwg_add( $t_old, $t_cat['10'], TOPIC_EXTENT_PART, '' );
+
+		$this->expectTopicError( function() use ( $t_prd, $t_cat ) {
+			topic_dwg_add( $t_prd, $t_cat['10'], TOPIC_EXTENT_PART, '' );
+		}, 'already has Topic 10' );
+
+		$t_view = topic_project_view( $t_project_id );
+		$this->assertEquals( TOPIC_STATE_COMPLETE, $t_view['topics'][$t_cat['10']]['state'] );
+		$this->assertEquals( TOPIC_STATE_COMPLETE, $t_view['topics'][$t_cat['21']]['state'] );
+		# The child's whole tag does not complete the parent.
+		$this->assertEquals( TOPIC_STATE_PARTIAL, $t_view['topics'][$t_cat['20']]['state'] );
+		# The archived document is listed but not counted.
+		$this->assertCount( 2, $t_view['topics'][$t_cat['10']]['tags'] );
+		$this->assertSame( array( TOPIC_EXTENT_WHOLE ), $t_view['topics'][$t_cat['10']]['extents'] );
+		$this->assertCount( 1, $t_view['untagged'] );
+
+		# Not applicable overrides tags for coverage.
+		topic_applicability_set( $t_project_id, $t_cat['20'], TOPIC_NOT_APPLICABLE, 'Test.' );
+		$t_view = topic_project_view( $t_project_id );
+		$this->assertEquals( TOPIC_STATE_NOT_APPLICABLE, $t_view['topics'][$t_cat['20']]['state'] );
+		$this->assertEquals( TOPIC_STATE_COMPLETE, $t_view['topics'][$t_cat['21']]['state'] );
+	}
+
+	public function testTagChangesAreRecordedInDocumentHistory() {
+		$t_cat = $this->makeTopicProject();
+		$t_dwg = $this->makeDocument( $t_cat['project_id'] );
+
+		$t_tag = topic_dwg_add( $t_dwg, $t_cat['10'], TOPIC_EXTENT_PART, '§1' );
+		$this->assertFalse( topic_dwg_update( $t_tag, TOPIC_EXTENT_PART, ' §1 ' ) );
+		$this->assertTrue( topic_dwg_update( $t_tag, TOPIC_EXTENT_WHOLE, '' ) );
+		topic_dwg_remove( $t_tag );
+
+		$this->assertSame( array( DWG_TOPIC_ATTACHED, DWG_TOPIC_UPDATED, DWG_TOPIC_DETACHED ), $this->historyTypes( $t_dwg ) );
+		$this->assertSame( array(), topic_dwg_get_for_dwg( $t_dwg ) );
+		$this->assertEquals( '10, ' . lang_get( 'topic_extent_part' ) . ': §1',
+			topic_dwg_history_describe( topic_dwg_history_value( '10', TOPIC_EXTENT_PART, '§1' ) ) );
+	}
+
+	public function testRetiredTopicAndDisabledProjectRefuseTags() {
+		$t_cat = $this->makeTopicProject();
+		$t_dwg = $this->makeDocument( $t_cat['project_id'] );
+
+		topic_set_enabled( $t_cat['10'], false );
+		$this->expectTopicError( function() use ( $t_dwg, $t_cat ) {
+			topic_dwg_add( $t_dwg, $t_cat['10'], TOPIC_EXTENT_PART, '' );
+		}, 'retired' );
+
+		topic_dwg_add( $t_dwg, $t_cat['20'], TOPIC_EXTENT_PART, '' );
+		topic_project_disable( $t_cat['project_id'] );
+		$this->assertFalse( topic_project_is_enabled( $t_cat['project_id'] ) );
+		$this->expectTopicError( function() use ( $t_dwg, $t_cat ) {
+			topic_dwg_add( $t_dwg, $t_cat['21'], TOPIC_EXTENT_PART, '' );
+		}, 'not enabled' );
+
+		# Re-enabling restores the kept records.
+		topic_project_enable( $t_cat['project_id'], $t_cat['id'] );
+		$this->assertCount( 1, topic_dwg_get_for_dwg( $t_dwg ) );
+
+		# Switching catalogue is refused once records exist.
+		$t_other = $this->makeCatalogue();
+		$this->expectTopicError( function() use ( $t_cat, $t_other ) {
+			topic_project_enable( $t_cat['project_id'], $t_other['id'] );
+		}, 'catalogue revision preview' );
+	}
+
+	public function testFeatureSwitchOffHidesTopics() {
+		$t_cat = $this->makeTopicProject();
+		config_set_global( 'topics_enabled', OFF );
+		$this->assertFalse( topic_project_is_enabled( $t_cat['project_id'] ) );
+		$this->assertFalse( topic_sidebar_visible( $t_cat['project_id'] ) );
+		config_set_global( 'topics_enabled', ON );
+		$this->assertTrue( topic_project_is_enabled( $t_cat['project_id'] ) );
+	}
+
+	public function testMovedDocumentKeepsTagsOnlyWithSameCatalogue() {
+		$t_cat = $this->makeTopicProject();
+		$t_same = $this->makeProject();
+		topic_project_enable( $t_same, $t_cat['id'] );
+		$t_other_cat = $this->makeCatalogue();
+		$t_other = $this->makeProject();
+		topic_project_enable( $t_other, $t_other_cat['id'] );
+
+		$t_dwg = $this->makeDocument( $t_cat['project_id'] );
+		topic_dwg_add( $t_dwg, $t_cat['10'], TOPIC_EXTENT_WHOLE, '' );
+
+		topic_dwg_move( $t_dwg, $t_cat['project_id'], $t_same );
+		db_query( 'UPDATE {dwg} SET project_id=' . db_param() . ' WHERE id=' . db_param(), array( $t_same, $t_dwg ) );
+		dwg_clear_cache_all( $t_dwg );
+		$this->assertCount( 1, topic_dwg_get_for_dwg( $t_dwg ) );
+
+		topic_dwg_move( $t_dwg, $t_same, $t_other );
+		db_query( 'UPDATE {dwg} SET project_id=' . db_param() . ' WHERE id=' . db_param(), array( $t_other, $t_dwg ) );
+		dwg_clear_cache_all( $t_dwg );
+		$this->assertCount( 0, topic_dwg_get_for_dwg( $t_dwg ) );
+		$this->assertContains( DWG_TOPIC_DETACHED, $this->historyTypes( $t_dwg ) );
+	}
+
+	# ── Phase 1b: list column, filter, bulk/create helpers, export ──────────
+
+	/** Ids of a project's documents matched by the Topic filter for $p_values. */
+	private function filterMatches( int $p_project_id, array $p_values ): array {
+		$t_query = ( new \TopicFilter() )->query( $p_values );
+		$t_where = preg_replace_callback( '/\?/', function() { return db_param(); }, $t_query['where'] );
+		$t_result = db_query( 'SELECT id FROM {dwg} WHERE project_id=' . db_param() . ' AND ' . $t_where . ' ORDER BY id',
+			array_merge( array( $p_project_id ), $t_query['params'] ) );
+		$t_ids = array();
+		while( $t_row = db_fetch_array( $t_result ) ) {
+			$t_ids[] = (int)$t_row['id'];
+		}
+		return $t_ids;
+	}
+
+	public function testTopicFilterMatchesCodesChildrenAndUntagged() {
+		$t_cat = $this->makeTopicProject();
+		$t_project_id = $t_cat['project_id'];
+		$t_a = $this->makeDocument( $t_project_id );
+		$t_b = $this->makeDocument( $t_project_id );
+		$t_untagged = $this->makeDocument( $t_project_id );
+		topic_dwg_add( $t_a, $t_cat['10'], TOPIC_EXTENT_WHOLE, '' );
+		topic_dwg_add( $t_b, $t_cat['21'], TOPIC_EXTENT_PART, '' );
+
+		$this->assertSame( array( $t_a ), $this->filterMatches( $t_project_id, array( 'T10' ) ) );
+		# A principal Topic also matches its children's tags.
+		$this->assertSame( array( $t_b ), $this->filterMatches( $t_project_id, array( 'T20' ) ) );
+		$this->assertSame( array( $t_b ), $this->filterMatches( $t_project_id, array( 'T21' ) ) );
+		$this->assertSame( array( $t_untagged ), $this->filterMatches( $t_project_id, array( (string)META_FILTER_NONE ) ) );
+		$this->assertSame( array( $t_a, $t_untagged ), $this->filterMatches( $t_project_id, array( 'T10', (string)META_FILTER_NONE ) ) );
+
+		# "00" must not be mistaken for META_FILTER_ANY: values carry a prefix.
+		$this->assertFalse( filter_dwg_field_is_any( array( \TopicFilter::value( '00' ) ) ) );
+		$this->assertTrue( ( new \TopicFilter() )->validate( array( 'T00', '-2', '0' ) ) );
+		$this->assertFalse( ( new \TopicFilter() )->validate( array( "T10' OR 1=1" ) ) );
+	}
+
+	public function testCodeOptionsAndLookupByCode() {
+		$t_cat = $this->makeTopicProject();
+		$t_options = topic_code_options( $t_cat['project_id'] );
+		$this->assertSame( array( '10', '20', '21' ), array_map( 'strval', array_keys( $t_options ) ) );
+		$this->assertSame( array( '21' ), $t_options['20']['children'] );
+		$this->assertEquals( $t_cat['21'], (int)topic_get_by_code( $t_cat['project_id'], '21' )['id'] );
+		$this->assertNull( topic_get_by_code( $t_cat['project_id'], '99' ) );
+		topic_set_enabled( $t_cat['21'], false );
+		$this->assertNull( topic_get_by_code( $t_cat['project_id'], '21' ) );
+	}
+
+	public function testCreateFormTagsAreValidatedBeforeCreation() {
+		$t_cat = $this->makeTopicProject();
+		$t_other = $this->makeCatalogue();
+		try {
+			$_POST['topic_ids'] = array( (string)$t_cat['10'], (string)$t_cat['21'] );
+			$_POST['topic_extent'] = array( $t_cat['10'] => (string)TOPIC_EXTENT_WHOLE );
+			$_POST['topic_locator'] = array( $t_cat['21'] => ' §4 ' );
+			$t_tags = topic_create_form_tags( $t_cat['project_id'] );
+			$this->assertEquals( array(
+				array( 'topic_id' => $t_cat['10'], 'extent' => TOPIC_EXTENT_WHOLE, 'locator' => '' ),
+				array( 'topic_id' => $t_cat['21'], 'extent' => TOPIC_EXTENT_PART, 'locator' => '§4' ),
+			), $t_tags );
+
+			$_POST['topic_ids'] = array( (string)$t_other['10'] );
+			$this->expectTopicError( function() use ( $t_cat ) { topic_create_form_tags( $t_cat['project_id'] ); }, 'not in the project' );
+
+			unset( $_POST['topic_ids'] );
+			$this->assertSame( array(), topic_create_form_tags( $t_cat['project_id'] ) );
+		} finally {
+			unset( $_POST['topic_ids'], $_POST['topic_extent'], $_POST['topic_locator'] );
+		}
+	}
+
+	public function testListCodesAndExportRows() {
+		$t_cat = $this->makeTopicProject();
+		$t_dwg = $this->makeDocument( $t_cat['project_id'], PENDING, 'EXP-1' );
+		topic_dwg_add( $t_dwg, $t_cat['10'], TOPIC_EXTENT_WHOLE, '' );
+		topic_dwg_add( $t_dwg, $t_cat['21'], TOPIC_EXTENT_PART, '§2' );
+
+		$t_html = topic_dwg_codes_html( $t_dwg, $t_cat['project_id'] );
+		$this->assertStringContainsString( '<strong>10</strong>', $t_html );
+		$this->assertStringContainsString( '>21</span>', $t_html );
+		$this->assertStringNotContainsString( '<strong>21', $t_html );
+
+		$t_rows = topic_export_rows( topic_project_view( $t_cat['project_id'] ) );
+		# 10 with its document, 20 without documents, 21 with its document.
+		$this->assertSame( array( '10', '20', '21' ), array_column( $t_rows, 'code' ) );
+		$this->assertSame( array( 'EXP-1', '', 'EXP-1' ), array_column( $t_rows, 'document' ) );
+		$this->assertSame( '20', $t_rows[2]['parent'] );
+		$this->assertSame( '§2', $t_rows[2]['sections'] );
+	}
+
+	public function testDocumentDeletionRemovesItsTags() {
+		$t_cat = $this->makeTopicProject();
+		$t_dwg = $this->makeDocument( $t_cat['project_id'] );
+		topic_dwg_add( $t_dwg, $t_cat['10'], TOPIC_EXTENT_WHOLE, '' );
+
+		dwg_delete( $t_dwg );
+		$t_count = (int)db_result( db_query( 'SELECT COUNT(*) FROM {dwg_topic} WHERE dwg_id=' . db_param(), array( $t_dwg ) ) );
+		$this->assertEquals( 0, $t_count );
+		$this->assertEquals( TOPIC_STATE_NONE, topic_project_view( $t_cat['project_id'] )['topics'][$t_cat['10']]['state'] );
+	}
+
+	public function testProjectDeletionRemovesTopicRecords() {
+		$t_cat = $this->makeTopicProject();
+		$t_project_id = $t_cat['project_id'];
+		$t_dwg = $this->makeDocument( $t_project_id );
+		topic_dwg_add( $t_dwg, $t_cat['10'], TOPIC_EXTENT_PART, '' );
+		topic_applicability_set( $t_project_id, $t_cat['10'], TOPIC_APPLICABLE, '' );
+
+		topic_project_delete( $t_project_id );
+		$this->assertNull( topic_project_get( $t_project_id ) );
+		$this->assertFalse( topic_project_has_records( $t_project_id ) );
+	}
+}

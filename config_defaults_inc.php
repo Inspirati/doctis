@@ -1436,6 +1436,7 @@ $g_view_dwg_page_columns = array(
 	'dwgnotes_count', 'attachment_count',
 	'issue_count',
 	'category_id', 'status', 'last_updated', 'title', 'number', 'revision', 'reference',
+	'topics', // Documentation Topics; hidden unless the project uses them
 	'date', // @TODO RobD - for some reason 'date' needs to be here to avoid error on bug_update_page.php 'Undefined array key "updated_at"' in '/var/www/html/doctis/core/commands/DwgViewPageCommand.php' line 184
 );
 
@@ -1452,7 +1453,7 @@ $g_print_issues_page_columns = array(
 );
 $g_print_dwg_page_columns = array(
 	'selection', 'priority', 'id', 'title', 'dwgnotes_count', 'attachment_count',
-	'category_id', 'severity', 'status', 'number', 'revision', 'reference', 'date', 'release_date',
+	'category_id', 'severity', 'status', 'number', 'revision', 'reference', 'topics', 'date', 'release_date',
 );
 
 /**
@@ -3858,6 +3859,116 @@ $g_manage_license_threshold = MANAGER;
 $g_manage_import_threshold = ADMINISTRATOR;
 
 /**
+ * Document Topics (doc/topics/TOPICS_PLAN.md).
+ *
+ * Projects can classify their documents by the Topics of a managed catalogue
+ * (e.g. STD-ENG-004) and record which Topics they need. OFF hides every Topic
+ * page, block and menu entry; Topic records are kept.
+ *
+ * @global int $g_topics_enabled
+ */
+$g_topics_enabled = OFF;
+
+/**
+ * Threshold (global) to manage Topic catalogues: Manage > Topics.
+ *
+ * @global int $g_manage_topic_threshold
+ */
+$g_manage_topic_threshold = ADMINISTRATOR;
+
+/**
+ * Threshold (project) to enable Topics on a project, choose its catalogue and
+ * decide whether each Topic applies.
+ *
+ * @global int $g_topic_profile_threshold
+ */
+$g_topic_profile_threshold = MANAGER;
+
+/**
+ * Threshold (document) to add, change and remove a document's Topic tags.
+ *
+ * @global int $g_topic_tag_threshold
+ */
+$g_topic_tag_threshold = DEVELOPER;
+
+/**
+ * Threshold (project) to view a project's Topics page and documents' Topics.
+ *
+ * @global int $g_topic_view_threshold
+ */
+$g_topic_view_threshold = REPORTER;
+
+/**
+ * Document statuses whose Topic tags are shown but not counted towards
+ * coverage, e.g. archived documents. The status set is provisional, so this
+ * is configuration rather than code.
+ *
+ * @global array $g_topic_inactive_status
+ */
+$g_topic_inactive_status = array( ARCHIVED );
+
+/**
+ * Document statuses that count as approved for publishing a Topic catalogue:
+ * a catalogue can be published only when its source document has one of
+ * these statuses.
+ *
+ * @global array $g_topic_catalogue_publish_status
+ */
+$g_topic_catalogue_publish_status = array( ACCEPTED, INCORPORATED );
+
+/**
+ * Lifecycle maturity of each document status, for expectations that require
+ * Draft, Under Review or Approved evidence. Approved satisfies an Under
+ * Review or Draft requirement, and Under Review satisfies Draft. A status
+ * missing here fails closed (the expectation stays Pending, with the reason).
+ * Owner decision 2026-10-13: Draft = 165 (draft), Under Review = 160
+ * (review), Approved = 180 (approved); the other statuses are placed until
+ * the status set is reduced. Statuses in
+ * $g_topic_inactive_status never count.
+ *
+ * @global array $g_topic_maturity_map
+ */
+$g_topic_maturity_map = array(
+	PENDING => TOPIC_MATURITY_DRAFT,
+	RECEIVED => TOPIC_MATURITY_DRAFT,
+	TRIAGE => TOPIC_MATURITY_DRAFT,
+	JOS => TOPIC_MATURITY_DRAFT,
+	150 => TOPIC_MATURITY_DRAFT,        # assigned to
+	REWORK => TOPIC_MATURITY_DRAFT,     # 165 draft
+	REVIEW => TOPIC_MATURITY_UNDER_REVIEW,
+	INDEPENDENT_REVIEW => TOPIC_MATURITY_UNDER_REVIEW,
+	ACCEPTED => TOPIC_MATURITY_APPROVED, # 180 approved
+	INCORPORATED => TOPIC_MATURITY_APPROVED,
+);
+
+/**
+ * Threshold (project) to record adequacy assessments of expectations.
+ *
+ * @global int $g_topic_assess_threshold
+ */
+$g_topic_assess_threshold = MANAGER;
+
+/**
+ * Licenses an assessor must also hold (status granted), by Topic code; '*'
+ * applies to every Topic without its own entry. Example:
+ * array( '*' => 'Topic Assessor', '23' => 'Safety Assessor' ). Empty: the
+ * threshold alone decides. A license is held by named people, so unlike
+ * an access level it does not pass automatically to administrators.
+ * Licenses are granted on Manage > Licenses ($g_licenses_enabled = ON).
+ *
+ * @global array $g_topic_assessor_licenses
+ */
+$g_topic_assessor_licenses = array();
+
+/**
+ * Threshold (project) to take snapshots of a project's Topic coverage for a
+ * technical review or baseline decision. Snapshots are never changed.
+ *
+ * @global int $g_topic_snapshot_threshold
+ */
+$g_topic_snapshot_threshold = MANAGER;
+
+/**
  * Threshold needed to add/delete/modify news.
  *
  * @global int $g_manage_news_threshold
@@ -4414,8 +4525,8 @@ $g_status_colors = array(
 	'triage'              => '#d9b3e6', # soft lavender
 	'JoS'                 => '#f7e49b', # warm pastel yellow
 	'review'              => '#f9c97a', # mellow apricot
-	'rework'              => '#b5e7a0', # pale green
-	'accepted'            => '#a2b9bc', # muted teal-grey
+	'draft'               => '#b5e7a0', # pale green (165, formerly rework)
+	'approved'            => '#a2b9bc', # muted teal-grey (180, formerly accepted)
 	'archived'            => '#d0d0d0', # soft neutral grey
 	'incorporated'        => '#b8d8ba', # gentle sage
 	'independent review'  => '#b0e0e6', # powder blue
@@ -4437,8 +4548,8 @@ $g_status_colors = array(
     'triage'              => '#ab47bc', // material purple 400
     'JoS'                 => '#fdd835', // material yellow 500
     'review'              => '#ffb74d', // material orange 300
-    'rework'              => '#66bb6a', // material green 400
-    'accepted'            => '#26c6da', // material cyan 400
+    'draft'               => '#66bb6a', // material green 400
+    'approved'            => '#26c6da', // material cyan 400
     'archived'            => '#bdbdbd', // material grey 400
     'incorporated'        => '#9ccc65', // material light green 400
     'independent review'  => '#29b6f6', // material light blue 400
@@ -4461,8 +4572,8 @@ $g_status_colors = array(
     'triage'              => '#c9a0f5', // soft neon violet
     'JoS'                 => '#f4f18b', // soft neon yellow
     'review'              => '#ffbd75', // soft neon orange
-    'rework'              => '#9df5a0', // soft neon green
-    'accepted'            => '#7fc1c4', // muted neon teal
+    'draft'               => '#9df5a0', // soft neon green
+    'approved'            => '#7fc1c4', // muted neon teal
     'archived'            => '#bdbdbd', // gentle grey
     'incorporated'        => '#a8d4a4', // soft mint
     'independent review'  => '#90e0f0', // powder neon blue
@@ -4760,7 +4871,7 @@ $g_projection_enum_string = '10:none,30:tweak,50:minor fix,70:major rework,90:re
  * @global string $g_dwg_status_enum_string
  */
 // $g_dwg_status_enum_string = '10:pending,20:received,30:triage,40:JoS,50:assigned,60:review,65:rework,70:independent review,80:accepted,90:incorporated,95:archived';
-$g_dwg_status_enum_string = '110:pending,120:received,130:triage,140:JoS,150:assigned to,160:review,165:rework,170:independent review,180:accepted,190:incorporated,195:archived';
+$g_dwg_status_enum_string = '110:pending,120:received,130:triage,140:JoS,150:assigned to,160:review,165:draft,170:independent review,180:approved,190:incorporated,195:archived';
 
 /**
  * Change Class enumeration.

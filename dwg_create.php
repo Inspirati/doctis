@@ -293,9 +293,17 @@ if( $f_master_bug_id > 0 ) {
 	$t_data['options'] = array( 'clone_info' => $t_clone_info );
 }
 
+# Documentation Topics chosen on the form, validated before creating (Doctis)
+require_api( 'topic_api.php' );
+$t_topic_tags = topic_create_form_tags( (int)$t_project_id );
+
 $t_command = new DwgAddCommand( $t_data );
 $t_result = $t_command->execute();
 $t_issue_id = (int)$t_result['issue_id'];
+
+foreach( $t_topic_tags as $t_topic_tag ) {
+	topic_dwg_add( $t_issue_id, $t_topic_tag['topic_id'], $t_topic_tag['extent'], $t_topic_tag['locator'] );
+}
 
 # Handle optional primary document file upload
 $t_primary_file = gpc_get_file( 'primary_document_file', null );

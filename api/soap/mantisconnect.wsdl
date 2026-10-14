@@ -483,6 +483,7 @@
    <xsd:element name="revision_date" type="xsd:dateTime" minOccurs="0"/>
    <xsd:element name="release_date" type="xsd:dateTime" minOccurs="0"/>
    <xsd:element name="creator" type="tns:AccountData" minOccurs="0"/>
+   <xsd:element name="topics" type="tns:TopicTagDataArray" minOccurs="0"/>
   </xsd:all>
  </xsd:complexType>
  <xsd:complexType name="DwgDataArray">
@@ -514,6 +515,21 @@
   <xsd:complexContent>
    <xsd:restriction base="SOAP-ENC:Array">
     <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:DwgHeaderData[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+ <xsd:complexType name="TopicTagData">
+  <xsd:all>
+   <xsd:element name="code" type="xsd:string" minOccurs="0"/>
+   <xsd:element name="title" type="xsd:string" minOccurs="0"/>
+   <xsd:element name="extent" type="tns:ObjectRef" minOccurs="0"/>
+   <xsd:element name="sections" type="xsd:string" minOccurs="0"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="TopicTagDataArray">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:TopicTagData[]"/>
    </xsd:restriction>
   </xsd:complexContent>
  </xsd:complexType>

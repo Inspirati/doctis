@@ -233,7 +233,7 @@ $g_dwg_git_status_tag_format = 'doctis/%d/%s';
 
 ```php
 $g_dwg_git_auto_tag_statuses = array( 180, 190, 195 );
-// accepted=180, incorporated=190, archived=195
+// approved=180, incorporated=190, archived=195
 // Empty array disables auto-tagging entirely.
 ```
 
@@ -270,22 +270,22 @@ to revert to lightweight.  `GIT_COMMITTER_*` env vars are already set by
 ### Status-Aware Label in the Primary Document Panel
 
 **Intent:** The "On Record" label on the recorded-SHA row should upgrade to
-"**Approved**" when the document status is at or above `accepted` (180) and
+"**Approved**" when the document status is at or above `approved` (180) and
 below `archived` (195).
 
 **Status boundary:**
 
 | Document status | Label |
 |---|---|
-| < 180 (pending … rework … independent review) | On Record |
-| 180 — accepted | **Approved** |
+| < 180 (pending … draft … independent review) | On Record |
+| 180 — approved | **Approved** |
 | 190 — incorporated | **Approved** |
 | 195 — archived | On Record (superseded, not current-approved) |
 
 **Config keys** (defaults):
 
 ```php
-$g_dwg_primary_approved_threshold = 180;  // accepted
+$g_dwg_primary_approved_threshold = 180;  // approved
 $g_dwg_primary_archived_status    = 195;  // archived — above this, revert to 'On Record'
 ```
 

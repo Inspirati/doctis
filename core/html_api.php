@@ -789,6 +789,9 @@ function print_manage_menu( $p_page = '' ) {
 	if( ON == config_get( 'licenses_enabled', OFF ) && access_has_project_level( config_get( 'manage_license_threshold' ) ) ) {
 		$t_pages['manage_license_page.php'] = array( 'url'   => 'manage_license_page.php', 'label' => 'manage_licenses_link' );
 	}
+	if( ON == config_get( 'topics_enabled' ) && access_has_global_level( config_get( 'manage_topic_threshold' ) ) ) {
+		$t_pages['manage_topic_page.php'] = array( 'url'   => 'manage_topic_page.php', 'label' => 'manage_topics_link' );
+	}
 	if( access_has_global_level( ADMINISTRATOR ) ) {
 		$t_pages['manage_import_data_page.php'] = array( 'url'   => 'manage_import_data_page.php', 'label' => 'manage_import_link' );
 		$t_pages['manage_git_store_page.php'] = array( 'url'   => 'manage_git_store_page.php', 'label' => 'manage_git_store_link' );

@@ -1,6 +1,11 @@
 # Document Topics — Implementation Plan
 
-Status: proposal, 2026-10-08. Nothing is implemented yet.
+Status: Phases 1, 1b, 2 and 3 implemented on branch `topics` (2026-10-13);
+see [Phase 1](#phase-1-as-built), [1b](#phase-1b-as-built),
+[2](#phase-2-as-built) and [3](#phase-3-as-built) as built. The work remaining
+before the feature is complete (assessed 2026-10-14) is in
+[section 12](#12-outstanding-work); the decisions it waits on are in
+[section 11](#11-open-questions-and-decisions).
 
 This plan describes how Doctis can support the Engineering Project Document
 Topic System. The QMS sources are in the HCRQMS repository:
@@ -27,7 +32,8 @@ or the whole of, a Topic's required documentation.
 8. [Phase 3 — Evidence records](#8-phase-3--evidence-records)
 9. [Requirement mapping](#9-requirement-mapping)
 10. [Changes proposed to the QMS documents](#10-changes-proposed-to-the-qms-documents)
-11. [Open questions](#11-open-questions)
+11. [Open questions and decisions](#11-open-questions-and-decisions)
+12. [Outstanding work](#12-outstanding-work)
 
 ## 1. Decisions recorded
 
@@ -42,15 +48,32 @@ Owner decisions, 2026-10-08:
   Production will use a smaller set aligned with the QMS and engineering
   approval workflow, which is not yet defined. Topic code must not hard-code
   status values: any status-to-maturity rule is configuration (Phase 2).
+- **Lifecycle maturity (2026-10-13).** Draft = status 165 (`draft`, formerly
+  `rework`), Under Review = 160 (`review`), Approved = 180 (`approved`,
+  formerly `accepted`). The labels were renamed on 2026-10-13; the status
+  values did not change. See [Status label rename](#status-label-rename).
 - **Engineering projects are standalone.** HCR571 and every other product
   development project are top-level Doctis projects, not sub-projects of
   HCRQMS. HCRQMS is the standalone QMS site-content project.
 - **Pilot and test projects** will be created to scope and develop the feature
   (section 6).
+- **Development stays on branch `topics`** until the feature is fully
+  developed (2026-10-13); it is merged into `dev` after that.
 - **Parent Topics do not depend on their children.** Topics 21–23 are grouped
   under 20 for display and filtering only. A child's state never affects the
   parent's state, and the parent's applicability does not constrain the
   children's.
+
+Owner decisions, 2026-10-14:
+
+- **HCRQMS does not use Topics.** It is not an engineering project. It is the
+  example Doctis project that does not use the feature, and so the reference
+  for TOP-FR-001 (a project without Topics keeps ordinary document operations
+  and shows no completeness claim).
+- **The Topics write API comes later.** REST/SOAP endpoints for tagging,
+  decisions, expectations and assessments wait until the feature set is fully
+  determined, implemented and tested. The read-only REST endpoints and the
+  `topics` field of `DwgData` stay.
 
 ## 2. Review of the QMS documents
 
@@ -110,7 +133,7 @@ parent/child dependency and need the same revision as STD-ENG-004.
 | Document history (`dwg_history`, `core/history_dwg_api.php`) | Records Topic tag changes on each document |
 | `dwg_primary_file.git_sha`: the On Record commit of each document; `dwg_primary_draft`: a staged replacement awaiting promotion | Phase 2 evidence version identity; "evidence changed" detection; a new draft visible beside the baseline |
 | Licenses held by named users | Phase 2 assessor competence. Access levels are hierarchical, so an administrator passes every threshold; a license does not have that problem. This meets STD-IT-001's rule that administrator access alone must not confer assessment |
-| `access_has_dwg_level()` | Per-document visibility on Topic views, including license restrictions |
+| `access_has_dwg_level()` | Per-document visibility on Topic views, by the same rules as the document list (private documents, limited view). Licenses are enforced elsewhere (document content), not by this check |
 
 The existing free-form document tags (`tag` / `dwg_tag`) are not suitable.
 They are global and uncontrolled, and have no extent. Their display on the
@@ -165,8 +188,8 @@ Pages `manage_topic_*.php`, modelled on `manage_license_*.php`:
   approved in Doctis. A **Published** catalogue is frozen: Topics can be
   retired but not edited or deleted, and codes are never reassigned. Revising
   it means a new catalogue (Phase 3 adds migration).
-- A project using a Draft catalogue shows the Draft label prominently on its
-  Topics page. Which projects may adopt a Draft catalogue is open question 4.
+- Any project may adopt a Draft catalogue (decided 2026-10-13); its Topics
+  page then shows the Draft label prominently.
 
 ### 4.3 Project Documentation Topics page
 
@@ -255,12 +278,19 @@ All checks run on the server, including for direct requests to action pages
 
 ### 4.7 Code layout
 
+As built (the planned names changed slightly):
+
 | New | Purpose |
 |-----|---------|
-| `core/topic_api.php` | Catalogue, project enablement, applicability, tags, coverage calculation |
-| `manage_topic_page.php`, `manage_topic_edit_page.php`, `manage_topic_update.php`, `manage_topic_catalogue_*.php` | Catalogue administration |
-| `topic_page.php`, `topic_project_enable.php`, `topic_applicability_update.php` | Project Topics page and its actions |
-| `dwg_topic_add.php`, `dwg_topic_update.php`, `dwg_topic_delete.php`, `dwg_view_topics_inc.php` | Document block and its actions (named like `dwg_license_*`) |
+| `core/topic_api.php` | Catalogue, project enablement, applicability, tags, coverage calculation, display helpers |
+| `core/topic_catalogues/std-eng-004-rev-a.json` | Bundled catalogue, transcribed from STD-ENG-004 Rev A §4 |
+| `manage_topic_page.php`, `manage_topic_catalogue_page.php`, `manage_topic_edit_page.php`, `manage_topic_form_inc.php` | Catalogue administration pages |
+| `manage_topic_catalogue_action.php`, `manage_topic_action.php` | Catalogue and Topic actions (create, update, publish, retire, delete, load) |
+| `topic_page.php`, `topic_detail_page.php` | Project Topics page; one Topic's decision history and documents |
+| `topic_project_action.php`, `topic_applicability_update.php` | Enable/disable Topics; record a decision |
+| `dwg_view_topics_inc.php`, `dwg_topic_edit_inc.php` | Document view block; inline tag controls |
+| `dwg_topic_add.php`, `dwg_topic_update.php`, `dwg_topic_delete.php` | Tag actions (named like `dwg_license_*`) |
+| `tests/Mantis/TopicApiTest.php` | API tests |
 
 Small hooks in existing files:
 
@@ -274,7 +304,8 @@ Small hooks in existing files:
 | `core/layout_api.php` | Sidebar entry |
 | `dwg_view_inc.php` | Include |
 | `lang/strings_english.txt` | Strings |
-| `core/dwg_api.php` | `dwg_delete()` removes tags. `dwg_move()` retargets tags when the destination uses the same catalogue and drops them otherwise, with history in both cases |
+| `core/dwg_api.php` | `dwg_delete()` removes tags. `dwg_move()` retargets tags when the destination uses the same catalogue and drops them otherwise, recording removals in the history |
+| `core/project_api.php` | `project_delete()` removes the project's Topic records |
 
 ### 4.8 Tests and documentation
 
@@ -292,6 +323,32 @@ Small hooks in existing files:
 - Phase 1 acceptance subset of STD-IT-001: TOP-AT-001, 002 (no versioning),
   003 (applicability part), 004, 011, 013, and 015 (tag part).
 
+### Phase 1 as built
+
+Implemented on branch `topics`, 2026-10-13. Differences from the plan above:
+
+- **Schema:** the five tables were appended as steps 65–69
+  (`database_version` 69), so existing databases upgrade with
+  `admin/install.php` or `admin/upgrade_unattended.php` without a rebuild.
+- **Topic page per Topic:** `topic_detail_page.php` holds the applicability
+  form, the decision history and tagging from the Topic's side. The Topics
+  table links to it, and managers' **Decide** links open its form.
+- **Restricted documents:** coverage counts every tag, including documents the
+  reader cannot see, so all readers see the same state. Hidden documents are
+  not listed; a generic note says they exist, and a banner says the view is
+  limited.
+- **Draft catalogues:** any project may adopt one (owner decision,
+  2026-10-13). The Topics page shows a Draft warning.
+- **Codes:** 1–8 letters or digits, also `.`, `_` and `-`. History types
+  `DWG_TOPIC_ATTACHED/UPDATED/DETACHED` (80–82) store `code|extent|locator`.
+  Validation errors use `ERROR_TOPIC` (1250).
+- **Sample data** does not load a catalogue. Use Manage → Topics → Load, or
+  a Data Snapshot script.
+
+Verified on the native VM: `TopicApiTest` (12 tests) and the full `mantis`
+suite (256 tests) pass, and page, role and restricted-document checks pass
+over HTTP (`doc/TESTING.md` §7b).
+
 ## 5. Phase 1b — Conveniences
 
 Any order, after Phase 1:
@@ -305,16 +362,48 @@ Any order, after Phase 1:
 - CSV and print versions of the Topics page (TOP-FR-023, live view).
 - Topics included in SOAP `mc_dwg_get`.
 
+### Phase 1b as built
+
+Implemented on branch `topics`, 2026-10-13.
+
+| Item | Implementation |
+|------|----------------|
+| Topics column | `topics` column in `core/columns_dwg_api.php`, filled from one query per page (`topic_dwg_cache_tags()` via `dwg_cache_columns_data()`). It is in the default list and print columns, and `helper_get_dwg_columns_to_view()` removes it unless the current project uses Topics (kept for All Projects). Whole-Topic codes are bold; tooltips give Topic, extent and sections |
+| Topic filter | `core/classes/TopicFilter.class.php`, a `MantisFilter` registered in `filter_dwg_get_plugin_filters()` (the document filter's plugin hook, otherwise unused). It is offered for All Projects and for projects that use Topics. Values are codes prefixed `T` (a bare `00` would equal `META_FILTER_ANY`), so the filter works across catalogues; `[no Topic]` (`META_FILTER_NONE`) finds untagged documents of Topics projects. A principal Topic also matches its children's tags (TOP-FR-013) |
+| Bulk Add Topic | Group action `EXT_ADD_TOPIC`, `dwg_actiongroup_add_topic_inc.php`, registered in `core/dwg_group_action_api.php`. Chooses a code, so a selection may span projects; documents already tagged, or whose catalogue lacks the code, are reported as failed |
+| Create form | `dwg_create_topics_inc.php` on `dwg_create_page.php`: one row per Topic (tick, part/whole, sections). `dwg_create.php` validates the choice with `topic_create_form_tags()` before creating the document, then tags it |
+| Export | `topic_export.php?format=csv\|print`: rows from `topic_export_rows()` over `topic_project_view()`, so permissions and hidden documents match the Topics page. Labelled with project, catalogue, generation time and user, and "live view, not a snapshot" (TOP-FR-023, live part) |
+| SOAP/REST | `topics` (`TopicTagData[]`: code, title, extent ObjectRef, sections) in `DwgData` (`mantisconnect.wsdl`, `mci_dwg_get_topics()`). The REST `/api/rest/documents` endpoint shares `mci_dwg_data_as_array()` and returns it too |
+
+Fixed on the way: `mc_dwg_get` faulted for every document on PHP 8.2+,
+because the row query's aliased columns (`doc_classification`,
+`doc_link_url`) became dynamic properties of `DwgData` after its
+`#[AllowDynamicProperties]` attribute had been commented out. The attribute
+is restored, as on `BugData`.
+
+Not done: there is no document CSV/Excel export in Doctis to add the column
+to; the Topics page export covers that need.
+
 ## 6. Pilot projects
 
 Pilot and test projects are standalone top-level projects with their own
-repositories. They are never sub-projects of HCRQMS.
+repositories. They are never sub-projects of HCRQMS. HCRQMS itself does not
+use Topics: it is the example project without the feature (decision of
+2026-10-14, section 1).
 
 - **HCR571.** Register the PRD, ICD and TP as new documents in HCR571 by
   upload. Do not move them from HCRQMS (see the `dwg_move()` issue in section
   3). Enable Topics, tag 10 / 20 / 30, decide applicability for every Topic,
   and record what is missing. Whether HCRQMS keeps its exemplar copies is a
   QMS content decision.
+
+  Started on the native VM, 2026-10-13, and set up again after that day's
+  database rebuild: project HCR571 (id 5, top-level) holds PRD-, ICD- and
+  TP-HCR571 (documents 128–130, uploaded from HCRQMS
+  `content/engineering/designs/`). It uses the Draft STD-ENG-004 Rev A
+  catalogue, with PRD → 10 (whole), ICD → 20 (part, §2–4) and TP → 30
+  (part). 10, 20 and 30 are Applicable; the other Topics are Undecided,
+  awaiting the Project Engineering Lead.
 - **A second, smaller pilot** with a different shape, for example a
   software-only or prototype project, to exercise Not applicable decisions
   and combined documents.
@@ -353,9 +442,13 @@ repositories. They are never sub-projects of HCRQMS.
   - A staged draft (`dwg_primary_draft`) does not trigger reassessment;
     promoting it does (TOP-FR-019).
 - **Maturity mapping** in configuration: an array mapping each document status
-  to Draft, Under Review, Approved or Inactive. It is defined once the
-  production status set exists. Unmapped statuses fail closed as Pending, with
-  the reason shown.
+  to Draft, Under Review, Approved or Inactive. Owner decision (2026-10-13):
+  165 → Draft, 160 → Under Review, 180 → Approved. Defaults (agreed
+  2026-10-13) for the statuses the reduced production set will drop: 110–150
+  (pending to assigned) → Draft, 170 (independent review) → Under Review, 190
+  (incorporated) → Approved, 195 (archived) → Inactive. Approved satisfies an
+  Under Review or Draft requirement, and Under Review satisfies Draft.
+  Unmapped statuses fail closed as Pending, with the reason shown.
 - **Profile authorisation** checks that:
   - every Topic is decided;
   - each applicable Topic has at least one expectation.
@@ -363,6 +456,29 @@ repositories. They are never sub-projects of HCRQMS.
   It then records who authorised it and when, and increments the profile
   revision. Later edits show as changes awaiting authorisation (TOP-FR-007).
   There is no parent/child consistency rule (section 1).
+
+### Phase 2 as built
+
+Implemented on branch `topics`, 2026-10-13, in `core/topic_expectation_api.php`
+(schema steps 70–75, `database_version` 75).
+
+| Item | Implementation |
+|------|----------------|
+| Milestones | `{topic_milestone}`: ordered, editable, `date_achieved`; the current milestone is the first not achieved. `topic_milestone_page.php`, `topic_milestone_action.php`; "Load the STD-ENG-004 milestones" |
+| Expectations | `{topic_expectation}` with `revision`, plus the append-only `{topic_expectation_revision}`. They are added on the Topic page and shown and edited on `topic_expectation_page.php` (`topic_expectation_action.php`). Referenced as `E<id>` |
+| Evidence | `{topic_evidence}`: documents of the project tagged with the Topic, with sections (`topic_evidence_action.php`). Removing the tag, moving or deleting the document removes the link. Changes appear in the document history (types 83/84) |
+| Assessments | Append-only `{topic_assessment}`: Adequate/Gap, rationale, milestone, expectation revision, and a JSON evidence set with each document's version (`sha:<On Record commit>`, or `rev:<edition>/<revision>` without a primary file) and sections (`topic_assessment_add.php`) |
+| Assessor | `$g_topic_assess_threshold` (MANAGER) plus, when configured, a granted license from `$g_topic_assessor_licenses` (by code, `'*'` default). Administrators get no automatic right when a license is configured |
+| States | `topic_expectation_state()`: Not due, Reassessment required (expectation revision, or the evidence set, version or sections changed), Missing, Gap, Pending (not assessed, inactive, unmapped status, or below maturity), Satisfied. Document status is a maturity condition, not an assessment dependency, so approving the assessed version completes it |
+| Maturity | `$g_topic_maturity_map` (owner decision: 165 Draft, 160 Under Review, 180 Approved; agreed defaults for the rest) |
+| Topic and project | Topic: Satisfied, Incomplete, Not due, No expectations or Not applicable, never from parent/child. Project readiness at the milestone: Ready, Not ready, No expectations due, Profile unresolved |
+| Profile | `{topic_profile}`: numbered authorisations with note and a content fingerprint (decisions, expectation revisions, milestone names/order). "Changed since authorisation" compares fingerprints, so it is exact rather than time-based; achieving milestones, evidence and assessments are not profile changes. Blockers: no milestones, Undecided Topics, applicable Topics without expectations, expectations without owners (TOP-FR-006 without the parent/child rule) |
+| Pages | The Topics page has the milestone selector, readiness, expectation counts, an Expectations column and the profile section. The Topic page has its expectations; the expectation page has its state and reasons, evidence, assessment form and history, and revisions |
+| Export | CSV/print add the milestone, readiness, profile and an expectations table |
+
+Configuration context (TOP-FR-020) is not modelled: an assessment applies to
+the evidence versions it records, whatever the configuration. Concurrent
+edits are not detected (Phase 3, TOP-FR-028).
 
 ## 8. Phase 3 — Evidence records
 
@@ -377,19 +493,43 @@ repositories. They are never sub-projects of HCRQMS.
   referenced items before they can enter a snapshot (TOP-FR-011).
 - **Conflict detection**: a version counter on profiles and assessments
   rejects stale writes (TOP-FR-028).
-- **API**: SOAP and REST endpoints.
+- **API**: SOAP and REST endpoints. Read-only REST was built in Phase 3; the
+  write API is deferred (decision of 2026-10-14, section 1).
 
 Not planned, as STD-IT-001 §1 already excludes them: automatic content
 assessment, percentage scores, notifications, and roll-up across projects.
+
+### Phase 3 as built
+
+Implemented on branch `topics`, 2026-10-13 (schema steps 76–77,
+`database_version` 77).
+
+| Item | Implementation |
+|------|----------------|
+| Activity log | `{topic_event}`, written by every state-changing Topics function; `topic_activity_page.php` (TOP-FR-024 for project-level actions; tags are also in `{dwg_history}`) |
+| Conflicts | Applicability decisions, expectation edits and retirement, assessments and profile authorisation carry what the form showed (decision id, expectation revision, `topic_assessment_basis()`, profile fingerprint) and are refused when it changed (TOP-FR-028) |
+| Versioned evidence | Evidence without a commit, edition or revision keeps an expectation Pending (TOP-FR-011) |
+| Snapshots | `core/topic_snapshot_api.php`, `{topic_snapshot}`: captured in one `START TRANSACTION WITH CONSISTENT SNAPSHOT` read, unfiltered, as JSON with SHA-256; never updated. `topic_snapshot_page.php` and `topic_export.php?snapshot_id=` re-apply the reader's permissions (hidden documents unnamed, reasons naming them redacted) and flag a failed integrity check. `$g_topic_snapshot_threshold` (TOP-FR-022/023) |
+| Reason redaction | Live views also replace state reasons that name evidence the reader cannot see (TOP-FR-026) |
+| Catalogue revisions | `topic_catalogue_new_revision()` (Manage → Topics → New revision); `topic_catalogue_migrate_page.php` preview by code and `topic_catalogue_migrate()` in one transaction; changed Topics bump their expectations' revisions; blocked when a removed code has records (TOP-FR-003/007) |
+| Shared documents | `{dwg_topic}.project_id` is the consuming project; `topic_can_tag_dwg_in_project()`; Topics page "Documents from other projects"; the document page lists other projects using it; evidence may come from shared documents (TOP-FR-009) |
+| REST | `api/rest/restcore/topics_rest.php`: read-only catalogues, live coverage, snapshot list and snapshot, with stable state keys and the pages' permissions |
+
+### Not yet done
+
+Superseded by [section 12](#12-outstanding-work), which assesses the remaining
+work against STD-IT-001 (2026-10-14). The status label rename listed here
+before is done (2026-10-13).
 
 ## 9. Requirement mapping
 
 | Phase | TOP-FR covered |
 |-------|----------------|
 | 1 | All of 001, 002, 004, 008, 012, 021, 025, 026, 027, 029. Part of: 003 (frozen Published catalogue), 005 (applicability and rationale), 009 (table ready, same-project only), 010 (locator), 011 (any registered document type can be tagged), 013 (untagged list), 016 (declared view), 024 (tag and applicability history) |
-| 1b | The rest of 013 (filter); 023 (live export) |
-| 2 | The rest of 005, 010 and 016; 006 (without the parent/child rule), 007, 014, 015, 017, 018, 019, 020 |
-| 3 | The rest of 003, 009, 011, 023 and 024; 022, 028 |
+| 1b (done) | The rest of 013 (filter); 023 (live export) |
+| 2 (done) | The rest of 005, 010 and 016; 006 (without the parent/child rule), 007, 014, 015, 017, 018, 019; 020 only as evidence versions (no configuration context) |
+| 3 (done) | The rest of 003, 009, 011, 023 and 024; 022, 028 |
+| Outstanding (section 12) | 020 (configuration context, and the configuration parts of 005, 014, 016 and 018); 018 (applicability changes as a reassessment dependency); 011 (registered repositories as evidence); 029 (restore rehearsal). Acceptance tests TOP-AT-001 to 015 still need a recorded run (section 12.2) |
 
 ## 10. Changes proposed to the QMS documents
 
@@ -411,12 +551,151 @@ STD-IT-001:
 - Rename Unassessed to Undecided throughout.
 - §6.1 maturity: refer to a configured mapping rather than fixed statuses.
 
-## 11. Open questions
+## Status label rename
 
-1. Should Topics be enabled on HCRQMS itself? The QMS content is not an
-   engineering project, so this plan assumes not.
+Owner decision, 2026-10-13: rename `rework` (165) to `draft` and `accepted`
+(180) to `approved`, before the next database rebuild. **Done 2026-10-13** on
+branch `topics`. The values stay the same, so stored documents, filters and
+workflow settings were unaffected. The labels are used as keys in several
+places; the rename touched:
+
+| Where | What |
+|-------|------|
+| `config_defaults_inc.php` `$g_dwg_status_enum_string` | `165:draft`, `180:approved` |
+| `lang/strings_english.txt` `$s_dwg_status_enum_string` (and `$s_status_enum_string`, which carries the same values) | The displayed labels |
+| `config_defaults_inc.php` `$g_status_colors` | The `rework` and `accepted` colour keys |
+| `lang/strings_english.txt` `$s_rework_dwg_button`, `$s_rework_dwg_title`, `$s_accepted_dwg_button`, `$s_accepted_dwg_title` | Renamed to `draft_…` / `approved_…`; `dwg_change_status_page.php` looks them up by label |
+| `ai_assist_help_api.php` | The lifecycle sentence in the Help prompt |
+| `doc/MANUAL.md` §6 | Document status workflow |
+| `admin/import-git-repo.php` `status_map()` | Frontmatter `Draft` now maps to 165 (`draft`) instead of 110 (`pending`), following the owner's decision that 165 is Draft. Revert to 110 if imports should start at intake |
+| Deployed `config_inc.php` files | Checked on the native VM: no overrides in `config_inc.php` or `{config}`. The live version's configuration is not visible from here: check it for a local `$g_dwg_status_enum_string` or `$g_status_colors` before it pulls this change |
+| Also | `$s_my_view_title_accepted` ("Approved by Me"; the My View box key `accepted` is kept because it is stored in user preferences), `$s_dwg_time_stats`, `doc/FEATURES.md`, `doc/git/GIT_IMPORTER.md`, the `REWORK`/`ACCEPTED` constant comments |
+
+The constants `REWORK` and `ACCEPTED` keep their names, with comments; filters,
+workflow and stored data use the values.
+New documents start at `$g_dwg_submit_status` (110, `pending`); whether they
+should start at Draft belongs to the wider reduction of the status set.
+
+## 11. Open questions and decisions
+
+Most of section 12 waits on these.
+
+1. ~~Should Topics be enabled on HCRQMS itself?~~ Decided 2026-10-14: no.
+   HCRQMS is the example project that does not use Topics (section 1).
 2. Should HCRQMS keep the HCR571 exemplars once the pilot project holds them?
 3. Who owns the catalogue: is `ADMINISTRATOR` right for the Engineering Lead,
    or should it be a global `MANAGER`?
-4. Should a Draft catalogue be adoptable by any project, or only by projects
-   flagged as pilots?
+4. ~~Should a Draft catalogue be adoptable by any project, or only by projects
+   flagged as pilots?~~ Decided 2026-10-13: any project may adopt one (as
+   built). The Topics page shows a Draft warning.
+5. **Configuration context (TOP-FR-020): build it, or formally defer it?** It
+   is the only large requirement not built, and FR-005, 014, 016 and 018 refer
+   to it. Building it adds a configuration dimension to expectations,
+   assessments and snapshots: a schema change and a rebuild. Decide this
+   first.
+6. **Revise STD-ENG-004 and STD-IT-001** as proposed in section 10. Both are
+   still Draft Rev A (checked 2026-10-14) and still require the parent/child
+   rule (FR-006, §6.2) and "Unassessed". As written, TOP-AT-003 and TOP-AT-008
+   cannot pass, because Doctis follows the section 1 decision instead.
+7. **Approve STD-ENG-004 in Doctis and publish the catalogue.** The catalogue
+   stays Draft until its source document is registered and approved.
+   Neither standard is in the VM's HCRQMS project: the ZIP it was imported
+   from predates them.
+8. **The HCR571 profile:** milestones, expectations with owners and required
+   maturity, and decisions for the seven Topics still Undecided. These are
+   engineering decisions, and the pilot demonstration (section 12.2) needs
+   them.
+9. **The reduced production status set.** `$g_topic_maturity_map` is set for
+   the current statuses and must be revised when the set changes; so must the
+   importer's Draft → 165 mapping and `$g_dwg_submit_status`.
+10. ~~Write API~~ Decided 2026-10-14: later, once the feature set is fully
+    determined, implemented and tested (section 1).
+
+## 12. Outstanding work
+
+Assessed 2026-10-14 against STD-IT-001 §8–9. The feature is complete when the
+acceptance scenarios pass, the owner accepts the QMS mapping, and each
+remaining limitation is explicitly dispositioned (accepted, deferred or
+fixed). Phases 1–3 are built and tested (276 PHPUnit tests, 32 of them Topic
+tests). What remains is mostly decisions (section 11), verification and
+release, plus a little code.
+
+### 12.1 Code
+
+| Item | Requirement | Size | Notes |
+|------|-------------|------|-------|
+| Applicability changes force reassessment | TOP-FR-018 | Small | A Topic set to Not applicable and back keeps its old assessments Satisfied: the assessment basis (`topic_assessment_basis()`) covers the expectation revision and evidence set only. Add the applicability decision to the basis and a test |
+| Configuration context | TOP-FR-020 | Large | Only if section 11, item 5 decides to build it. Schema change |
+| Registered repositories as evidence | TOP-FR-011 | Medium | Only registered documents can be tagged. Build, or disposition |
+| Cross-repository document move | Section 3 | Medium | Separate task: `dwg_move()` to a project with another repository leaves the primary file unreachable. Matters once tagged documents move between engineering projects |
+
+### 12.2 Verification and completion evidence
+
+- **HCR571 pilot demonstration** (TOP-AT-015, STD-IT-001 §9 deliverable 5),
+  once section 11, item 8 is decided. Show that Approved expectations stay
+  Pending against the Draft exemplars, that results are Missing when due, and
+  that Undecided Topics stay visible. Review whether the workflow avoids
+  duplicate indexing. Do not change the exemplars' approval status.
+- **HCRQMS as the Topics-off reference** (TOP-FR-001, TOP-FR-027): show, as
+  part of TOP-AT-001, that a project without Topics keeps its ordinary
+  document operations and shows no Topics page, panel, column or claim.
+- **Acceptance record** (deliverable 3): a table mapping TOP-AT-001 to 015
+  and each TOP-FR to its test, result and known limitation. Today the
+  evidence is split between PHPUnit and `doc/TESTING.md` §7b. Not yet run or
+  recorded as written:
+  - TOP-AT-001: upgrade an existing database and re-apply the migration
+    (exercised informally during development);
+  - TOP-AT-012: two users editing at once (stale-write protection has unit
+    tests only);
+  - TOP-AT-013: disable and re-enable, with backup and restore;
+  - the §8 extras: linked and referenced evidence, a future Topic excluded
+    everywhere, and a Topic with no current expectations.
+- **Backup and restore rehearsal** (TOP-FR-029, TOP-AT-013): the Topic tables
+  are ordinary tables in the database backup; restoring has not been
+  rehearsed.
+- **Performance measurement** (§8): a project view with at least 100
+  documents and 50 expectations, with the environment and timings recorded.
+- **A second pilot** (section 6): a software-only or prototype project, for
+  Not applicable decisions and combined documents.
+
+### 12.3 Documentation
+
+- **Deployment and rollback notes** (deliverable 6): upgrading an existing
+  database to schema 77, enabling per project, and disabling the feature
+  rather than dropping its tables if it must be rolled back.
+- **`doc/MANUAL.md` §12** covers enabling, tagging, decisions, assessment,
+  snapshots, catalogue migration and disabling, but not backing up and
+  restoring Topic records (deliverable 4).
+
+### 12.4 Merge and release
+
+- **Merge `topics` into `dev`.** On 2026-10-14 `topics` was 14 commits ahead.
+  `dev` had moved on: the `signup-rules` merge (pushed) and local, unpushed
+  copies of three documentation commits from `topics`. A trial merge (no
+  files touched) conflicted only in `CLAUDE.md` and `doc/TESTING.md`; the code
+  merged cleanly, and `dev` has no schema changes. Re-run the full test suite
+  after merging.
+- **Push** to GitHub: needs the owner's approval.
+- **Live version:**
+  - check its configuration for `$g_dwg_status_enum_string` or
+    `$g_status_colors` overrides first, because this branch renames `rework`
+    to `draft` and `accepted` to `approved`;
+  - Git Pull, then upgrade the schema to version 77, which adds the Topics
+    tables;
+  - leave `$g_topics_enabled` OFF until a project is to use Topics.
+
+### 12.5 Deferred
+
+- **Write API** (REST/SOAP for tagging, decisions, expectations and
+  assessments): after the feature set is fully determined, implemented and
+  tested (owner decision, 2026-10-14).
+
+### 12.6 Suggested order
+
+1. Decide section 11, starting with item 5 (configuration context), the only
+   decision that changes the schema.
+2. Code: applicability reassessment; configuration context if built.
+3. Set up the HCR571 profile, then run and record the acceptance tests, the
+   backup/restore rehearsal and the performance measurement.
+4. Write the deployment and rollback notes and the manual addition.
+5. Merge into `dev`, push, and update the live version.

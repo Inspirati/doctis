@@ -29,6 +29,7 @@ turn email notifications off before tests that queue mail in bulk.
 | Smart HTTP gateway (clone/push, auth, hook enforcement) | §6 remote clone/push script, or §4's hook-enforcement steps |
 | A page, form, or workflow with no good headless test | §7 curl-based testing |
 | AI Meeting Assistant, meetings, My Meetings, minutes approval | §7a meeting end-to-end |
+| Documentation Topics (catalogues, tags, applicability, Topics page) | §2 `TopicApiTest` + §7b |
 | Anything touching schema | §8: upgrade (new table) or rebuild (changed table) first, then re-run the relevant suite above |
 | You aren't sure what else broke | §9 full regression sweep |
 
@@ -37,7 +38,7 @@ turn email notifications off before tests that queue mail in bulk.
 ## 2. PHPUnit (`tests/`)
 
 **What it covers:** MantisBT core API unit tests and the Doctis tests in
-`tests/Mantis/` (`MeetingApiTest`, `AiKnowledgeTest`, `UserNamePolicyTest` and
+`tests/Mantis/` (`Topic*Test`, `MeetingApiTest`, `AiKnowledgeTest`, `UserNamePolicyTest` and
 others), plus SOAP integration tests (`tests/soap/`) via PHP's SoapClient.
 New document-domain unit tests belong in `tests/Mantis/`.
 
@@ -50,14 +51,14 @@ and set `MANTIS_TESTSUITE_SOAP_HOST`, `USERNAME` and `PASSWORD`. The VM's
 **Run** in the running clone, after deploying the change:
 ```bash
 cd /var/www/html/doctis
-sudo -u www-data vendor/bin/phpunit --testsuite mantis
-vendor/bin/phpunit --testsuite mantis --filter UserNamePolicyTest   # a filtered run also works as robert
+sudo -u www-data vendor/bin/phpunit --testsuite mantis     # 295 tests, 2026-10-14
+vendor/bin/phpunit --testsuite mantis --filter Topic       # a filtered run also works as robert
 ```
 
 Config: [phpunit.xml](../phpunit.xml) — three suites (`mantis`, `soap`,
 `mantis core formatting`). A `rest` suite exists but is commented out: its
 tests target stock MantisBT REST (`MANTIS_TESTSUITE_REST_HOST`), not the
-Doctis `documents` and `licenses` routes.
+Doctis `documents`, `licenses` and `topics` routes.
 
 ---
 
@@ -438,6 +439,95 @@ under My meetings, everything under All meetings, and only Calendar on a
 meeting page. A reporter who is not a participant is refused the meeting page.
 
 Run 2026-10-02: series 27 scheduled MIN-QA-20261103 as of 31 Oct; all checks passed.
+
+### 7b. Documentation Topics
+
+Design and scope: [doc/topics/TOPICS_PLAN.md](topics/TOPICS_PLAN.md).
+
+**API rules** (`tests/Mantis/TopicApiTest.php`; throwaway projects, document
+rows and catalogues, removed afterwards; no git, no email):
+
+```bash
+cd /var/www/html/doctis
+vendor/bin/phpunit --testsuite mantis --filter Topic --testdox
+```
+
+`TopicApiTest` (phases 1 and 1b), `TopicExpectationApiTest` (phases 2 and
+3: stale writes, activity, unversioned evidence, catalogue migration, shared
+documents) and `TopicSnapshotApiTest` (phase 3 snapshots) share
+`TopicTestCase` (throwaway records; project deletion removes every Topic
+record of the project).
+
+Covers: the bundled STD-ENG-004 Rev A catalogue (codes as strings, 21–23
+under 20); code, title and one-level parent validation; publish needs an
+approved source document and freezes the catalogue; applicability starts
+Undecided, needs a rationale for Not applicable and keeps history; declared
+coverage with no parent/child roll-up and archived documents not counted; tag
+history types; retired Topics, disabled projects and catalogue switches
+refused; the feature switch; moves, document deletion and project deletion.
+
+**Pages** (needs `$g_topics_enabled = ON`): log in with curl as in §7, then
+- Manage → Topics: load the bundled catalogue, create a scratch catalogue,
+  add a principal and a child Topic, edit, retire, delete, delete the
+  catalogue. Duplicate codes and deleting a parent with children are refused.
+- With a project selected, `topic_page.php`: enable Topics, tag documents
+  from Untagged documents and from `dwg_view.php` (the Documentation Topics
+  panel), record decisions on `topic_detail_page.php` (Not applicable without
+  a rationale is refused), and check the document History lists "Topic
+  added/changed/removed".
+- Roles (sample users, blank passwords): viewer is refused the Topics page and
+  sees no panel; reporter sees but cannot tag; developer tags; manager also
+  decides; only administrators reach Manage → Topics.
+- Make a tagged document private: a reporter sees "Restricted documents are
+  also tagged" instead of it, and the coverage is unchanged.
+- Phase 1b. Document list of a Topics project: Topics column (whole tags in
+  bold) and Topics filter; `dwg_search.php?project_id=<P>&topic[]=T20` lists
+  documents tagged 20 or 21–23, `topic[]=-2` the untagged ones (log in at the
+  server's own address so the redirect keeps the session). A project without
+  Topics shows neither. Bulk **Add Topic** tags the selection and reports
+  documents already tagged. The create form's Topics block tags the new
+  document; an unknown Topic id is refused before anything is created.
+  `topic_export.php?format=csv|print&project_id=<P>` (viewer refused).
+  SOAP `mc_dwg_get` and REST `/api/rest/documents/<id>` return `topics`.
+- Phase 2, in a throwaway project (not a pilot: expectations and assessments
+  are engineering decisions): load the default milestones; add an
+  expectation (due SRR/PDR, Approved); its page shows Not due at Planning
+  and Missing at SRR/PDR; link a tagged document (Pending: assessment
+  required, Draft but Approved required); assess Adequate (Pending: maturity);
+  set the document to approved (Satisfied); change its revision
+  (Reassessment required, "has a new version"); reassess (Satisfied).
+  Decide every Topic and authorise the profile; the Topics page shows
+  readiness No expectations due at Planning and Ready at SRR/PDR. Roles:
+  viewer refused; reporter reads; developer links and removes evidence;
+  manager edits, assesses and manages milestones. Delete the project via
+  Manage → Projects: every Topic record of it goes.
+- Phase 3, in throwaway projects (create and delete them from the PHP
+  command line; a document needs a `{dwg_text}` row to show):
+  - Snapshot: with one public and one private evidence document, take a
+    snapshot from the Topics page. The administrator sees both; a reporter
+    sees the public one, "not visible to you now", and the reason naming the
+    private one redacted, on the snapshot page, its CSV
+    (`topic_export.php?format=csv&snapshot_id=`), the live Topic page and
+    REST.
+  - Catalogue revision: Create Revision on a catalogue, change a Topic in the
+    copy, open "Review the change" from the project's Topics page, confirm
+    the move; the project and its decisions use the new revision and
+    Activity records it.
+  - Shared document: share another project's document from the Topics page;
+    it shows "from <project>", and its own page lists "Also used by" even
+    when its project has no Topics. Remove the history rows it adds to the
+    shared document afterwards.
+  - REST, logged in: `api/rest/topics/catalogues`, `topics/<P>`,
+    `topics/<P>/snapshots`, `topics/snapshots/<id>`; a project without Topics
+    and a missing snapshot give 404.
+
+Run 2026-10-13 on the native VM (HCR571 pilot, project 29): 256 `mantis` tests
+passed, including 12 `TopicApiTest`; all page and role checks passed. Phase 1b,
+same day: 260 tests (16 `TopicApiTest`) and the checks above passed. Phase 2,
+same day: 268 tests (16 + 8 `TopicExpectationApiTest`) and the phase 2 walk
+through above passed. Phase 3, same day: 276 tests (32 Topic tests: 16 + 13 + 3)
+and the phase 3 checks above passed. After the same day's database rebuild,
+the pilot is project 5 and the full `mantis` suite passed again.
 
 ### 7c. Self sign-up — naming policy, approved domains, captcha exemption
 

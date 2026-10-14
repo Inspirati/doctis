@@ -607,6 +607,16 @@ function helper_get_dwg_columns_to_view( $p_columns_target = COLUMNS_TARGET_VIEW
 		$t_keys_to_remove[] = 'target_version';
 	}
 
+	# Documentation Topics column: only where Topics are in use.
+	if( config_get( 'topics_enabled' ) == OFF ) {
+		$t_keys_to_remove[] = 'topics';
+	} else if( $t_current_project_id != ALL_PROJECTS ) {
+		require_api( 'topic_api.php' );
+		if( !topic_project_is_enabled( $t_current_project_id ) || !topic_can_view_project( $t_current_project_id ) ) {
+			$t_keys_to_remove[] = 'topics';
+		}
+	}
+
 	foreach( $t_keys_to_remove as $t_key_to_remove ) {
 		$t_keys = array_keys( $t_columns, $t_key_to_remove );
 

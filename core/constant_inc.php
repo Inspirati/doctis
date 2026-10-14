@@ -115,9 +115,9 @@ define( 'JOS', 140 );
 //define( 'ASSIGNED', 50 );  // BEWARE: this is the same identifier as defined earlier, and hence must keep the same value as the previous definition
 define( 'ASSIGNED_TO', 150 );
 define( 'REVIEW', 160 );
-define( 'REWORK', 165 );
+define( 'REWORK', 165 );   # labelled 'draft' since 2026-10-13; the constant name is kept
 define( 'INDEPENDENT_REVIEW', 170 );
-define( 'ACCEPTED', 180 );
+define( 'ACCEPTED', 180 ); # labelled 'approved' since 2026-10-13; the constant name is kept
 define( 'REJECTED', 185 );
 define( 'INCORPORATED', 190 );
 define( 'ARCHIVED', 195 );
@@ -270,6 +270,11 @@ define( 'DWG_PAID_SPONSORSHIP', 74 );
 
 define( 'DWG_REVISION_DROPPED', 78 );
 define( 'DWGNOTE_REVISION_DROPPED', 79 );
+define( 'DWG_TOPIC_ATTACHED', 80 );
+define( 'DWG_TOPIC_UPDATED', 81 );
+define( 'DWG_TOPIC_DETACHED', 82 );
+define( 'DWG_TOPIC_EVIDENCE_ADDED', 83 );
+define( 'DWG_TOPIC_EVIDENCE_REMOVED', 84 );
 
 
 # bug revisions
@@ -278,6 +283,21 @@ define( 'REV_DESCRIPTION', 1 );
 define( 'REV_STEPS_TO_REPRODUCE', 2 );
 define( 'REV_ADDITIONAL_INFO', 3 );
 define( 'REV_BUGNOTE', 4 );
+
+# Document Topics: catalogue status, project applicability, tag extent
+define( 'TOPIC_CATALOGUE_DRAFT', 10 );
+define( 'TOPIC_CATALOGUE_PUBLISHED', 30 );
+define( 'TOPIC_CATALOGUE_RETIRED', 90 );
+define( 'TOPIC_UNDECIDED', 0 );
+define( 'TOPIC_APPLICABLE', 10 );
+define( 'TOPIC_NOT_APPLICABLE', 20 );
+define( 'TOPIC_EXTENT_PART', 10 );
+define( 'TOPIC_EXTENT_WHOLE', 20 );
+define( 'TOPIC_MATURITY_DRAFT', 10 );
+define( 'TOPIC_MATURITY_UNDER_REVIEW', 20 );
+define( 'TOPIC_MATURITY_APPROVED', 30 );
+define( 'TOPIC_FINDING_ADEQUATE', 10 );
+define( 'TOPIC_FINDING_GAP', 20 );
 
 # dwg revisions
 // define( 'REV_ANY', 0 );
@@ -451,6 +471,9 @@ define( 'ERROR_DWG_REVISION_NOT_FOUND', 1190 );
 # ERROR_EMAIL_*
 define( 'ERROR_EMAIL_INVALID', 1200 );
 define( 'ERROR_EMAIL_DISPOSABLE', 1201 );
+
+# ERROR_TOPIC_* (Document Topics)
+define( 'ERROR_TOPIC', 1250 );
 
 # ERROR_CUSTOM_FIELD_*
 define( 'ERROR_CUSTOM_FIELD_NOT_FOUND', 1300 );

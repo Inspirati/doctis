@@ -134,7 +134,10 @@ function dwg_link_url_is_valid( $p_url ) {
  * @property string $steps_to_reproduce
  * @property string $additional_information
  */
-// #[AllowDynamicProperties]
+# The row query adds aliased columns (doc_classification, doc_link_url) as
+# dynamic properties; without this PHP 8.2+ deprecates them, which SOAP turns
+# into a fault for every mc_dwg_get.
+#[AllowDynamicProperties]
 class DwgData {
 	protected $id;
 	protected $document_id;
@@ -1424,6 +1427,10 @@ function dwg_move( $p_bug_id, $p_target_project_id ) {
 	# Attempt to move disk based document attachments to the new project directory.
 	file_dwg_move_dwg_attachments( $p_bug_id, $p_target_project_id );
 
+	# Documentation Topic tags follow the document when they can.
+	require_api( 'topic_api.php' );
+	topic_dwg_move( (int)$p_bug_id, (int)dwg_get_field( $p_bug_id, 'project_id' ), (int)$p_target_project_id );
+
 	# Move the document to the new project.
 	dwg_set_field( $p_bug_id, 'project_id', $p_target_project_id );
 
@@ -1507,6 +1514,10 @@ function dwg_delete( $p_bug_id ) {
 
 	# Detach tags
 	tag_dwg_detach_all( $p_bug_id, false );
+
+	# Remove Documentation Topic tags
+	require_api( 'topic_api.php' );
+	topic_dwg_delete_all( $c_bug_id );
 
 	# Delete the bug history
 	history_dwg_delete( $p_bug_id );
@@ -2500,6 +2511,10 @@ function dwg_cache_columns_data( array $p_bugs, array $p_selected_columns ) {
 				break;
 			case 'tags':
 				tag_dwg_cache_bug_tag_rows( $t_bug_ids );
+				break;
+			case 'topics':
+				require_api( 'topic_api.php' );
+				topic_dwg_cache_tags( $t_bug_ids );
 				break;
 		}
 	}
