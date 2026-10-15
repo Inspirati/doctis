@@ -2571,6 +2571,36 @@ $g_dwg_publish_logo = '';
 $g_dwg_publish_threshold = MANAGER;
 
 /**
+ * Document publishing: also publish a PDF of each document, next to its page
+ * (same path, .pdf).  The PDF has the HCRQMS build-pdf.sh layout: DejaVu
+ * fonts and a footer with the document number, revision and Doctis status,
+ * "Page X of Y" and "UNCONTROLLED COPY WHEN PRINTED OR TRANSMITTED".
+ *
+ * Set per project on the project's Manage page (Publishing).  Needs the TeX
+ * packages listed in doc/publish/PUBLISHING.md §9.
+ *
+ * @global integer $g_dwg_publish_pdf
+ */
+$g_dwg_publish_pdf = OFF;
+
+/**
+ * Document publishing: the PDF engine (xelatex).
+ *
+ * Set in config_inc.php only; the database cannot override it.
+ *
+ * @global string $g_dwg_publish_pdf_engine
+ */
+$g_dwg_publish_pdf_engine = '/usr/bin/xelatex';
+
+/**
+ * Document publishing: PDF paper size, 'letter' (as HCRQMS build-pdf.sh),
+ * 'a4', 'a5' or 'legal'.
+ *
+ * @global string $g_dwg_publish_pdf_papersize
+ */
+$g_dwg_publish_pdf_papersize = 'letter';
+
+/**
  * Remote Git access (Smart HTTP): master enable flag.
  *
  * When OFF, the git_http.php gateway refuses all requests (404).  When ON, it
@@ -6265,6 +6295,7 @@ $g_global_settings = array(
 	'bug_list_cookie',
 	'dwg_list_cookie',
 	'dwg_publish_pandoc',
+	'dwg_publish_pdf_engine',
 	'dwg_publish_roots',
 	'cdn_enabled',
 	'class_path',

@@ -102,6 +102,21 @@ if( dwg_publish_enabled() ) {
 						<br /><span class="small"><?php echo lang_get( 'dwg_publish_logo_help' ) ?></span>
 					</td>
 				</tr>
+				<tr>
+					<td class="category">
+						<label for="dwg-publish-pdf"><?php echo lang_get( 'dwg_publish_pdf' ) ?></label>
+					</td>
+					<td>
+						<label>
+							<input type="checkbox" id="dwg-publish-pdf" name="dwg_publish_pdf" class="ace"
+								<?php check_checked( $t_publish_own && (int)config_get( 'dwg_publish_pdf', OFF, ALL_USERS, $f_project_id ) === ON ) ?> />
+							<span class="lbl"> <?php echo lang_get( 'dwg_publish_pdf_label' ) ?></span>
+						</label>
+<?php	if( dwg_publish_pdf_problem() !== '' ): ?>
+						<br /><span class="label label-warning"><?php echo string_display_line( dwg_publish_pdf_problem() ) ?></span>
+<?php	endif; ?>
+					</td>
+				</tr>
 			</table>
 			</div>
 			</div>

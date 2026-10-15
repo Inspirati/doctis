@@ -4,7 +4,8 @@ $-- the banner and navigation (include-before) and these values:
 $--   pagetitle, doctis-id, doctis-title, doctis-number, doctis-revision,
 $--   doctis-status (e.g. APPROVED), doctis-status-key (e.g. approved),
 $--   doctis-status-color, doctis-project, doctis-commit, doctis-published,
-$--   doctis-url.  The index page has only pagetitle and doctis-project.
+$--   doctis-url, doctis-pdf (PDF file name, when the project publishes PDFs).
+$--   The index page has only pagetitle and doctis-project.
 $-- See doc/publish/PUBLISHING.md.  Pandoc partials are not allowed.
 <!DOCTYPE html>
 <html lang="en">
@@ -520,7 +521,7 @@ $endif$
 $body$
 $if(doctis-id)$
 <footer class="doctis-footer">
-$if(doctis-number)$$doctis-number$ · $endif$$if(doctis-revision)$Revision $doctis-revision$ · $endif$$doctis-status$ · Published $doctis-published$ from commit $doctis-commit$ · <a href="$doctis-url$">View in Doctis</a>
+$if(doctis-number)$$doctis-number$ · $endif$$if(doctis-revision)$Revision $doctis-revision$ · $endif$$doctis-status$ · Published $doctis-published$ from commit $doctis-commit$ · <a href="$doctis-url$">View in Doctis</a>$if(doctis-pdf)$ · <a href="$doctis-pdf$">PDF</a>$endif$
 </footer>
 $endif$
 </main>

@@ -202,6 +202,40 @@ class DwgPublishTest extends MantisCoreBase {
 		dwg_publish_settings_save( 1, '/etc', '', '', '' );
 	}
 
+	public function testPdfHelpers() {
+		$this->assertSame( 'a/b.pdf', dwg_publish_pdf_path( 'a/b.html' ) );
+		$this->assertSame( '\{x\}\_\%\&\#\$ \textbackslash{}y', dwg_publish_latex_escape( "{x}_%&#\$\n\\y" ) );
+		$t_header = dwg_publish_pdf_header( array( 'metadata' => array(
+			'doctis-number' => 'PROC_1', 'doctis-revision' => 'A}', 'doctis-status' => 'APPROVED', 'doctis-title' => 'T' ) ) );
+		$this->assertStringContainsString( '{PROC\_1 Rev A\} --- APPROVED}', $t_header );
+		$this->assertStringContainsString( 'UNCONTROLLED COPY WHEN PRINTED OR TRANSMITTED', $t_header );
+	}
+
+	public function testPdfBuildRefusesRawLatex() {
+		if( dwg_publish_pdf_problem() !== '' ) {
+			$this->markTestSkipped( 'No PDF engine: ' . dwg_publish_pdf_problem() );
+		}
+		$t_secret = $this->root . '/secret.txt';
+		file_put_contents( $t_secret, 'SECRET-VALUE' );
+		$t_work = dwg_publish_work_dir();
+		try {
+			file_put_contents( $t_work . '/source.md', "Before \\input{" . $t_secret . "} after\n\n```{=latex}\n\\input{" . $t_secret . "}\n```\n\n~~struck — dash~~\n" );
+			$t_pdf = dwg_publish_build_pdf( $t_work, array( 'metadata' => array(
+				'pagetitle' => 'T', 'doctis-number' => 'N-1', 'doctis-revision' => 'A', 'doctis-status' => 'DRAFT' ), 'variables' => array() ) );
+			$this->assertStringStartsWith( '%PDF', $t_pdf );
+			if( !is_executable( '/usr/bin/pdftotext' ) ) {
+				$this->markTestIncomplete( 'pdftotext (poppler-utils) is needed to read the PDF text.' );
+			}
+			file_put_contents( $this->root . '/out.pdf', $t_pdf );
+			$t_text = (string)shell_exec( '/usr/bin/pdftotext ' . escapeshellarg( $this->root . '/out.pdf' ) . ' -' );
+			$this->assertStringNotContainsString( 'SECRET-VALUE', $t_text );
+			$this->assertStringContainsString( 'input{', $t_text, 'raw LaTeX is printed as text' );
+			$this->assertStringContainsString( 'struck — dash', $t_text, 'em dash kept in strikethrough' );
+		} finally {
+			dwg_publish_work_dir_delete( $t_work );
+		}
+	}
+
 	public function testPublishAndWithdraw() {
 		$t_dwg_id = (int)getenv( 'DOCTIS_PUBLISH_TEST_DWG' );
 		if( $t_dwg_id <= 0 ) {
@@ -212,6 +246,8 @@ class DwgPublishTest extends MantisCoreBase {
 		$t_target = $this->root . '/site';
 		config_set( 'dwg_publish_target', $t_target, ALL_USERS, $t_project_id );
 		config_set( 'dwg_publish_url', '/test-site/', ALL_USERS, $t_project_id );
+		$t_with_pdf = dwg_publish_pdf_problem() === '';
+		config_set( 'dwg_publish_pdf', $t_with_pdf ? ON : OFF, ALL_USERS, $t_project_id );
 		try {
 			$this->assertSame( '', dwg_publish_refusal( $t_dwg_id ) );
 			$t_result = dwg_publish( $t_dwg_id, auth_get_current_user_id() );
@@ -226,14 +262,21 @@ class DwgPublishTest extends MantisCoreBase {
 			$this->assertSame( file_dwg_primary_get( $t_dwg_id )['git_sha'], $t_published['sha'] );
 			$this->assertFalse( dwg_publish_is_stale( $t_published, $t_dwg_id ) );
 			$this->assertNotNull( dwg_publish_read_marker( $t_target . '/index.html' ) );
+			if( $t_with_pdf ) {
+				$this->assertSame( dwg_publish_pdf_path( $t_result['page'] ), $t_result['pdf'] );
+				$this->assertStringStartsWith( '%PDF', file_get_contents( $t_target . '/' . $t_result['pdf'] ) );
+				$this->assertStringContainsString( 'href="' . rawurlencode( basename( $t_result['pdf'] ) ) . '">PDF</a>', $t_html );
+			}
 
 			$this->assertSame( 1, dwg_publish_withdraw( $t_dwg_id, auth_get_current_user_id() ) );
 			$this->assertFileDoesNotExist( $t_file );
+			$this->assertFileDoesNotExist( $t_target . '/' . dwg_publish_pdf_path( $t_result['page'] ) );
 			$this->assertFileDoesNotExist( $t_target . '/index.html', 'the index goes with the last page' );
 			$this->assertNull( dwg_publish_get( $t_dwg_id ) );
 		} finally {
 			config_delete( 'dwg_publish_target', ALL_USERS, $t_project_id );
 			config_delete( 'dwg_publish_url', ALL_USERS, $t_project_id );
+			config_delete( 'dwg_publish_pdf', ALL_USERS, $t_project_id );
 		}
 	}
 }

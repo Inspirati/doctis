@@ -26,6 +26,9 @@ if( $t_published !== null ) {
 <?php	else: ?>
 						<?php echo string_display_line( $t_published['page'] ) ?>
 <?php	endif; ?>
+<?php	if( isset( $t_published['pdf'] ) ): ?>
+						&nbsp;<?php if( $t_published['pdf_url'] !== '' ): ?><a href="<?php echo string_attribute( $t_published['pdf_url'] ) ?>" target="_blank" rel="noopener">PDF</a><?php else: ?>+ PDF<?php endif; ?>
+<?php	endif; ?>
 						&nbsp;<span class="small">(<?php echo string_display_line( (string)( $t_published['status_label'] ?? '' ) ) ?>)</span>
 					</td>
 					<td><?php echo date( config_get( 'normal_date_format' ), (int)( $t_published['published'] ?? 0 ) ) ?></td>

@@ -228,7 +228,8 @@ function dwg_publish_project_sets_target( int $p_project_id ): bool {
  * @param integer $p_project_id
  * @return array project_id (the project the settings come from, or
  *               ALL_PROJECTS), target ('' when the project does not
- *               publish), configured_target, problem, url, template, logo.
+ *               publish), configured_target, problem, url, template, logo,
+ *               pdf (true when a PDF is published with each page).
  */
 function dwg_publish_site( int $p_project_id ): array {
 	$t_source = ALL_PROJECTS;
@@ -262,6 +263,7 @@ function dwg_publish_site( int $p_project_id ): array {
 		'url'               => dwg_publish_url_problem( $t_url ) === '' ? $t_url : '',
 		'template'          => trim( (string)config_get( 'dwg_publish_template', '', ALL_USERS, $t_source ) ),
 		'logo'              => trim( (string)config_get( 'dwg_publish_logo', '', ALL_USERS, $t_source ) ),
+		'pdf'               => (int)config_get( 'dwg_publish_pdf', OFF, ALL_USERS, $t_source ) === ON,
 	);
 }
 
@@ -274,11 +276,12 @@ function dwg_publish_site( int $p_project_id ): array {
  * @param string  $p_url      Website URL, or ''.
  * @param string  $p_template Repository path, or '' for the Doctis default.
  * @param string  $p_logo     Repository path, or '' for the project name.
+ * @param boolean $p_pdf      Also publish a PDF of each document.
  * @return void
  */
-function dwg_publish_settings_save( int $p_project_id, string $p_target, string $p_url, string $p_template, string $p_logo ): void {
-	static $s_options = array( 'dwg_publish_target', 'dwg_publish_url', 'dwg_publish_template', 'dwg_publish_logo' );
-	$t_values = array( trim( $p_target ), trim( $p_url ), trim( $p_template ), trim( $p_logo ) );
+function dwg_publish_settings_save( int $p_project_id, string $p_target, string $p_url, string $p_template, string $p_logo, bool $p_pdf = false ): void {
+	static $s_options = array( 'dwg_publish_target', 'dwg_publish_url', 'dwg_publish_template', 'dwg_publish_logo', 'dwg_publish_pdf' );
+	$t_values = array( trim( $p_target ), trim( $p_url ), trim( $p_template ), trim( $p_logo ), $p_pdf ? ON : '' );
 
 	if( $t_values[0] === '' ) {
 		foreach( $s_options as $t_option ) {
@@ -306,6 +309,9 @@ function dwg_publish_settings_save( int $p_project_id, string $p_target, string 
 			$t_problem = 'the logo must be an SVG, PNG or JPEG image.';
 		}
 		$t_values[$t_index] = (string)$t_path;
+	}
+	if( $t_problem === '' && $p_pdf ) {
+		$t_problem = dwg_publish_pdf_problem();
 	}
 	if( $t_problem !== '' ) {
 		dwg_publish_error( $t_problem );
@@ -472,6 +478,7 @@ function dwg_publish_get( int $p_dwg_id ): ?array {
 	$t_marker['page'] = $t_page;
 	$t_marker['file'] = $t_file;
 	$t_marker['url']  = dwg_publish_page_url( $t_site, $t_page );
+	$t_marker['pdf_url'] = isset( $t_marker['pdf'] ) ? dwg_publish_page_url( $t_site, (string)$t_marker['pdf'] ) : '';
 	return $t_marker;
 }
 
@@ -845,9 +852,10 @@ function dwg_publish_work_dir_delete( string $p_dir ): void {
  *
  * @param array  $p_args
  * @param string $p_work_dir
+ * @param array  $p_env      Extra environment variables.
  * @return void
  */
-function dwg_publish_pandoc( array $p_args, string $p_work_dir ): void {
+function dwg_publish_pandoc( array $p_args, string $p_work_dir, array $p_env = array() ): void {
 	$t_pandoc = (string)config_get_global( 'dwg_publish_pandoc' );
 	if( $t_pandoc === '' || !is_executable( $t_pandoc ) ) {
 		dwg_publish_error( 'pandoc was not found at "' . $t_pandoc . '" ($g_dwg_publish_pandoc).' );
@@ -861,7 +869,7 @@ function dwg_publish_pandoc( array $p_args, string $p_work_dir ): void {
 			2 => array( 'file', $t_errors, 'w' ),
 		),
 		$t_pipes, $p_work_dir,
-		array( 'HOME' => $p_work_dir, 'PATH' => '/usr/local/bin:/usr/bin:/bin', 'LANG' => 'C.UTF-8' ) );
+		array( 'HOME' => $p_work_dir, 'PATH' => '/usr/local/bin:/usr/bin:/bin', 'LANG' => 'C.UTF-8' ) + $p_env );
 	if( !is_resource( $t_process ) ) {
 		dwg_publish_error( 'pandoc could not be started.' );
 	}
@@ -870,6 +878,129 @@ function dwg_publish_pandoc( array $p_args, string $p_work_dir ): void {
 		$t_message = trim( (string)@file_get_contents( $t_errors ) );
 		dwg_publish_error( 'pandoc failed: ' . ( $t_message !== '' ? mb_substr( $t_message, 0, 500 ) : 'exit status ' . $t_status ) );
 	}
+}
+
+# ── PDF ──────────────────────────────────────────────────────────────────────
+
+/**
+ * The site-relative PDF path for a page: .html becomes .pdf.
+ *
+ * @param string $p_page
+ * @return string
+ */
+function dwg_publish_pdf_path( string $p_page ): string {
+	return preg_replace( '/\.html$/', '', $p_page ) . '.pdf';
+}
+
+/**
+ * Explain why PDFs cannot be produced on this server.
+ *
+ * @return string '' when they can.
+ */
+function dwg_publish_pdf_problem(): string {
+	$t_engine = (string)config_get_global( 'dwg_publish_pdf_engine' );
+	if( $t_engine === '' || !is_executable( $t_engine ) ) {
+		return 'the PDF engine was not found at "' . $t_engine . '" ($g_dwg_publish_pdf_engine); see doc/publish/PUBLISHING.md §9 for the packages.';
+	}
+	return '';
+}
+
+/**
+ * Escape text for LaTeX.
+ *
+ * @param string $p_text
+ * @return string
+ */
+function dwg_publish_latex_escape( string $p_text ): string {
+	static $s_map = array(
+		'\\' => '\\textbackslash{}', '{' => '\\{', '}' => '\\}', '$' => '\\$', '&' => '\\&',
+		'#' => '\\#', '%' => '\\%', '_' => '\\_', '^' => '\\textasciicircum{}', '~' => '\\textasciitilde{}',
+	);
+	return strtr( str_replace( array( "\r", "\n" ), ' ', $p_text ), $s_map );
+}
+
+/**
+ * The LaTeX header of a published PDF: the HCRQMS build-pdf.sh footer
+ * (reference, revision and status; page X of Y; uncontrolled copy notice),
+ * with the values from Doctis, escaped.
+ *
+ * @param array $p_values As returned by dwg_publish_template_values().
+ * @return string
+ */
+function dwg_publish_pdf_header( array $p_values ): string {
+	$t_meta = $p_values['metadata'];
+	$t_reference = trim( ( $t_meta['doctis-number'] ?? '' ) !== '' ? $t_meta['doctis-number'] : ( $t_meta['doctis-title'] ?? '' ) );
+	if( ( $t_meta['doctis-revision'] ?? '' ) !== '' ) {
+		$t_reference .= ' Rev ' . $t_meta['doctis-revision'];
+	}
+	$t_left = dwg_publish_latex_escape( $t_reference ) . ' --- ' . dwg_publish_latex_escape( $t_meta['doctis-status'] ?? '' );
+	return "\\usepackage{fancyhdr}\n"
+		. "\\usepackage{lastpage}\n"
+		. "\\usepackage{xcolor}\n"
+		# soul's \st, used for strikethrough, loses characters such as the em dash under xelatex.
+		. "\\usepackage[normalem]{ulem}\n"
+		. "\\providecommand{\\st}{}\\renewcommand{\\st}[1]{\\sout{#1}}\n"
+		. "\\pagestyle{fancy}\n"
+		. "\\fancyhf{}\n"
+		. "\\renewcommand{\\headrulewidth}{0pt}\n"
+		. "\\renewcommand{\\footrulewidth}{0.4pt}\n"
+		. "\\fancyfoot[C]{%\n"
+		. "  \\begin{minipage}{\\textwidth}\n"
+		. "    \\small\\itshape\n"
+		. "    \\makebox[0.5\\textwidth][l]{" . $t_left . "}%\n"
+		. "    \\makebox[0.5\\textwidth][r]{Page \\thepage\\ of \\pageref{LastPage}}\\\\[2pt]\n"
+		. "    \\begin{center}\\color{red}UNCONTROLLED COPY WHEN PRINTED OR TRANSMITTED\\end{center}\n"
+		. "  \\end{minipage}%\n"
+		. "}\n"
+		. "\\renewcommand{\\maketitle}{}\n";
+}
+
+/**
+ * Build the PDF of a document in a working directory that holds source.md.
+ * Raw LaTeX is turned off and TeX may not open files outside the working
+ * directory: with raw LaTeX, a document could copy any file the web server
+ * can read (such as config_inc.php) into the PDF.
+ *
+ * @param string $p_work_dir
+ * @param array  $p_values   As returned by dwg_publish_template_values().
+ * @return string The PDF.
+ */
+function dwg_publish_build_pdf( string $p_work_dir, array $p_values ): string {
+	$t_problem = dwg_publish_pdf_problem();
+	if( $t_problem !== '' ) {
+		dwg_publish_error( $t_problem );
+	}
+	$t_papersize = (string)config_get( 'dwg_publish_pdf_papersize' );
+	file_put_contents( $p_work_dir . '/header.tex', dwg_publish_pdf_header( $p_values ) );
+	$t_args = array(
+		'source.md', '--from=markdown-raw_tex-raw_attribute', '--standalone',
+		'--pdf-engine=' . config_get_global( 'dwg_publish_pdf_engine' ),
+		'--variable=mainfont:DejaVu Sans', '--variable=monofont:DejaVu Sans Mono',
+		'--variable=geometry:margin=1in,footskip=0.6in',
+		'--include-in-header=header.tex',
+		'--metadata=title:' . str_replace( array( "\r", "\n" ), ' ', $p_values['metadata']['pagetitle'] ),
+		'--output=page.pdf',
+	);
+	if( preg_match( '/^(a4|a5|letter|legal)$/', $t_papersize ) ) {
+		$t_args[] = '--variable=papersize:' . $t_papersize;
+	}
+	dwg_publish_pandoc( $t_args, $p_work_dir, array( 'openin_any' => 'p' ) );
+	return (string)file_get_contents( $p_work_dir . '/page.pdf' );
+}
+
+/**
+ * Remove a page and its PDF, if the page marker records one.
+ *
+ * @param string $p_target
+ * @param string $p_page
+ * @param array  $p_marker
+ * @return void
+ */
+function dwg_publish_remove_page( string $p_target, string $p_page, array $p_marker ): void {
+	if( ( $p_marker['pdf'] ?? '' ) === dwg_publish_pdf_path( $p_page ) ) {
+		dwg_publish_remove( $p_target, $p_marker['pdf'] );
+	}
+	dwg_publish_remove( $p_target, $p_page );
 }
 
 # ── Publishing ───────────────────────────────────────────────────────────────
@@ -1047,12 +1178,14 @@ function dwg_publish_write_index( array $p_site, array $p_pages, array $p_tree, 
 		return;
 	}
 
+	$t_has_pdf = count( array_filter( array_column( $p_pages, 'pdf' ) ) ) > 0;
 	$t_body = '<h1>' . htmlspecialchars( lang_get( 'dwg_publish_index_title' ) ) . "</h1>\n<table>\n<thead><tr>"
 		. '<th>' . htmlspecialchars( lang_get( 'dwg_title' ) ) . '</th>'
 		. '<th>' . htmlspecialchars( lang_get( 'dwg_number' ) ) . '</th>'
 		. '<th>' . htmlspecialchars( lang_get( 'dwg_revision' ) ) . '</th>'
 		. '<th>' . htmlspecialchars( lang_get( 'status' ) ) . '</th>'
-		. '<th>' . htmlspecialchars( lang_get( 'dwg_publish_published' ) ) . "</th></tr></thead>\n<tbody>\n";
+		. '<th>' . htmlspecialchars( lang_get( 'dwg_publish_published' ) ) . '</th>'
+		. ( $t_has_pdf ? '<th>PDF</th>' : '' ) . "</tr></thead>\n<tbody>\n";
 	foreach( $p_pages as $t_page => $t_marker ) {
 		$t_title = trim( (string)( $t_marker['title'] ?? '' ) );
 		$t_body .= '<tr><td><a href="' . htmlspecialchars( dwg_publish_href( $t_page ) ) . '">'
@@ -1060,7 +1193,9 @@ function dwg_publish_write_index( array $p_site, array $p_pages, array $p_tree, 
 			. '<td>' . htmlspecialchars( (string)( $t_marker['number'] ?? '' ) ) . '</td>'
 			. '<td>' . htmlspecialchars( (string)( $t_marker['revision'] ?? '' ) ) . '</td>'
 			. '<td>' . htmlspecialchars( (string)( $t_marker['status_label'] ?? '' ) ) . '</td>'
-			. '<td>' . htmlspecialchars( isset( $t_marker['published'] ) ? date( config_get( 'short_date_format' ), (int)$t_marker['published'] ) : '' ) . "</td></tr>\n";
+			. '<td>' . htmlspecialchars( isset( $t_marker['published'] ) ? date( config_get( 'short_date_format' ), (int)$t_marker['published'] ) : '' ) . '</td>'
+			. ( $t_has_pdf ? '<td>' . ( isset( $t_marker['pdf'] ) ? '<a href="' . htmlspecialchars( dwg_publish_href( (string)$t_marker['pdf'] ) ) . '">PDF</a>' : '' ) . '</td>' : '' )
+			. "</tr>\n";
 	}
 	$t_body .= "</tbody>\n</table>\n";
 
@@ -1094,7 +1229,8 @@ function dwg_publish_write_index( array $p_site, array $p_pages, array $p_tree, 
  *
  * @param integer $p_dwg_id
  * @param integer $p_user_id
- * @return array page (site-relative path) and url ('' when the site has no URL).
+ * @return array page (site-relative path), url ('' when the site has no URL),
+ *               pdf (site-relative path, '' when no PDF) and pdf_url.
  */
 function dwg_publish( int $p_dwg_id, int $p_user_id ): array {
 	$t_problem = dwg_publish_refusal( $p_dwg_id );
@@ -1130,6 +1266,14 @@ function dwg_publish( int $p_dwg_id, int $p_user_id ): array {
 		}
 		$t_previous = $t_pages[$t_page] ?? null;
 
+		$t_pdf = $t_site['pdf'] ? dwg_publish_pdf_path( $t_page ) : '';
+		if( $t_pdf !== '' && file_exists( $t_target . '/' . $t_pdf ) && ( $t_previous['pdf'] ?? '' ) !== $t_pdf ) {
+			dwg_publish_error( $t_pdf . ' already exists in the target directory and was not published from this document.' );
+		}
+		if( $t_pdf !== '' ) {
+			$t_values['variables']['doctis-pdf'] = rawurlencode( basename( $t_pdf ) );
+		}
+
 		$t_marker = array(
 			'dwg_id'       => $p_dwg_id,
 			'project_id'   => (int)$t_dwg->project_id,
@@ -1143,13 +1287,16 @@ function dwg_publish( int $p_dwg_id, int $p_user_id ): array {
 			'published'    => time(),
 			'user_id'      => $p_user_id,
 		);
+		if( $t_pdf !== '' ) {
+			$t_marker['pdf'] = $t_pdf;
+		}
 		$t_pages[$t_page] = $t_marker + array( 'page' => $t_page );
 
 		# A page of this document at an earlier path (the file was renamed) is replaced.
 		$t_moved = array();
 		foreach( $t_pages as $t_other => $t_other_marker ) {
 			if( $t_other !== $t_page && (int)$t_other_marker['dwg_id'] === $p_dwg_id ) {
-				$t_moved[] = $t_other;
+				$t_moved[$t_other] = $t_other_marker;
 				unset( $t_pages[$t_other] );
 			}
 		}
@@ -1171,13 +1318,20 @@ function dwg_publish( int $p_dwg_id, int $p_user_id ): array {
 				'--output=page.html',
 			), dwg_publish_template_args( $t_values ) ), $t_work );
 			$t_html = (string)file_get_contents( $t_work . '/page.html' );
+			$t_pdf_content = $t_pdf !== '' ? dwg_publish_build_pdf( $t_work, $t_values ) : '';
 		} finally {
 			dwg_publish_work_dir_delete( $t_work );
 		}
 
+		if( $t_pdf !== '' ) {
+			dwg_publish_write( $t_target, $t_pdf, $t_pdf_content );
+		} else if( $t_previous && isset( $t_previous['pdf'] ) && $t_previous['pdf'] === dwg_publish_pdf_path( $t_page ) ) {
+			# PDFs were turned off since the last publish.
+			dwg_publish_remove( $t_target, $t_previous['pdf'] );
+		}
 		dwg_publish_write( $t_target, $t_page, $t_html . dwg_publish_marker_line( $t_marker ) );
-		foreach( $t_moved as $t_other ) {
-			dwg_publish_remove( $t_target, $t_other );
+		foreach( $t_moved as $t_other => $t_other_marker ) {
+			dwg_publish_remove_page( $t_target, $t_other, $t_other_marker );
 		}
 		dwg_publish_refresh_site( $t_site, $t_pages, $t_page, $t_template, $t_logo );
 	} finally {
@@ -1188,7 +1342,12 @@ function dwg_publish( int $p_dwg_id, int $p_user_id ): array {
 		$t_previous ? dwg_publish_history_value( $t_previous ) : '',
 		dwg_publish_history_value( $t_marker + array( 'page' => $t_page ) ), $p_user_id );
 
-	return array( 'page' => $t_page, 'url' => dwg_publish_page_url( $t_site, $t_page ) );
+	return array(
+		'page'    => $t_page,
+		'url'     => dwg_publish_page_url( $t_site, $t_page ),
+		'pdf'     => $t_pdf,
+		'pdf_url' => $t_pdf !== '' ? dwg_publish_page_url( $t_site, $t_pdf ) : '',
+	);
 }
 
 /**
@@ -1212,7 +1371,7 @@ function dwg_publish_withdraw( int $p_dwg_id, int $p_user_id, bool $p_log = true
 		$t_removed = array();
 		foreach( $t_pages as $t_page => $t_marker ) {
 			if( (int)$t_marker['dwg_id'] === $p_dwg_id ) {
-				dwg_publish_remove( $t_target, $t_page );
+				dwg_publish_remove_page( $t_target, $t_page, $t_marker );
 				$t_removed[] = $t_marker;
 				unset( $t_pages[$t_page] );
 			}
