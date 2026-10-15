@@ -71,16 +71,40 @@ class MeetingApiTest extends MantisCoreBase {
 
 	# ── Pure helpers ─────────────────────────────────────────────────────────
 
-	public function testMarkApprovedStampsFrontmatterAndStatusLine() {
-		$t_draft = "---\ndoc_id:         MIN-SYS-1\nstatus:         Draft Minutes   # c\neffective_date:\n---\n\n"
-			. "# Title\n\n**Status:** Draft Minutes  \nkept line  \n";
-		$t_approved = meeting_record_mark_approved( $t_draft, '2026-10-02' );
+	public function testDocumentStatusIsSetInDoctisNotTheRecord() {
+		$t_project = project_create( 'MeetingTestProject' . rand(), '', 10, VS_PRIVATE );
+		try {
+			$t_dwg_id = meeting_document_create( array(
+				'title' => 'Status test', 'doc_ref' => 'MIN-TEST-' . rand(), 'chair_id' => auth_get_current_user_id(),
+			), $t_project );
+			$t_statuses = config_get( 'meeting_document_status' );
 
-		$this->assertStringContainsString( "status:         Approved Minutes\n", $t_approved );
-		$this->assertStringContainsString( "effective_date: 2026-10-02\n", $t_approved );
-		$this->assertStringContainsString( "**Status:** Approved Minutes\n", $t_approved );
-		$this->assertStringContainsString( "kept line  \n", $t_approved );   # hard break preserved
-		$this->assertSame( "no frontmatter\n", meeting_record_mark_approved( "no frontmatter\n", '2026-10-02' ) );
+			meeting_document_set_status( $t_dwg_id, 'minutes' );
+			$this->assertSame( (int)$t_statuses['minutes'], (int)dwg_get_field( $t_dwg_id, 'status' ) );
+
+			$t_when = mktime( 9, 0, 0, 10, 2, 2026 );
+			meeting_document_set_status( $t_dwg_id, 'approved', $t_when );
+			$this->assertSame( (int)$t_statuses['approved'], (int)dwg_get_field( $t_dwg_id, 'status' ) );
+			$this->assertSame( $t_when, (int)dwg_get_field( $t_dwg_id, 'release_date' ) );
+
+			db_param_push();
+			$t_result = db_query( "SELECT COUNT(*) FROM {dwg_history} WHERE dwg_id=" . db_param()
+				. " AND field_name IN ('status', 'release_date')", array( $t_dwg_id ) );
+			$this->assertSame( 3, (int)db_result( $t_result ), 'two status changes and the release date are in the history' );
+
+			meeting_document_set_status( $t_dwg_id, 'no-such-stage' );
+			$this->assertSame( (int)$t_statuses['approved'], (int)dwg_get_field( $t_dwg_id, 'status' ) );
+			dwg_delete( $t_dwg_id );
+		} finally {
+			project_delete( $t_project );
+		}
+	}
+
+	public function testStoredRecordsDropLifecycleMetadata() {
+		$t_removed = array();
+		$t_record = dwg_metadata_strip( "---\ndoc_id: MIN-1\nstatus: Draft Minutes\nrevision: B\nchair: Ann\n---\n\n"
+			. "# Minutes\n\n**Date:** 1 May\n**Status:** Draft Minutes\n\nText\n", $t_removed );
+		$this->assertSame( "---\ndoc_id: MIN-1\nchair: Ann\n---\n\n# Minutes\n\n**Date:** 1 May\n\nText\n", $t_record );
 	}
 
 	public function testRecordBodyStripsOnlyFrontmatter() {

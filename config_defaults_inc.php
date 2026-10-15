@@ -5351,6 +5351,21 @@ $g_meeting_template_path = 'system/templates/Meeting-Agenda-and-Minutes.md';
 $g_meeting_category = 'Meetings';
 
 /**
+ * Doctis status of a meeting's document at each stage of the meeting.
+ * Lifecycle metadata lives in Doctis, not in the record: the Meeting
+ * Assistant sets these statuses (and the release date on approval) instead
+ * of writing "status:" into the document.
+ *
+ * @global array $g_meeting_document_status
+ */
+$g_meeting_document_status = array(
+	'agenda'    => REWORK,     # draft
+	'minutes'   => REVIEW,     # draft minutes, awaiting the chair
+	'approved'  => ACCEPTED,   # approved
+	'cancelled' => ARCHIVED,
+);
+
+/**
  * Global access level at which a user sees every meeting (My Meetings "All
  * meetings", and any meeting page), not only those they take part in.
  * Seeing does not grant approving or managing.

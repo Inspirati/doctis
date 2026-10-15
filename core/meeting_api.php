@@ -26,6 +26,7 @@ require_api( 'category_api.php' );
 require_api( 'config_api.php' );
 require_api( 'database_api.php' );
 require_api( 'dwg_api.php' );
+require_api( 'dwg_metadata_api.php' );
 require_api( 'file_dwg_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'project_api.php' );
@@ -638,6 +639,11 @@ function meeting_store_record( array $p_meeting, string $p_content, int $p_user_
 		$t_git_path = '';
 	}
 
+	# Lifecycle metadata (status, revision, owner, ...) lives in Doctis: keep it
+	# out of the record even if the assistant or a template writes it.
+	$t_removed = array();
+	$p_content = dwg_metadata_strip( $p_content, $t_removed );
+
 	$t_tmp = tempnam( sys_get_temp_dir(), 'doctis-meeting-' );
 	file_put_contents( $t_tmp, $p_content );
 	try {
@@ -687,13 +693,11 @@ function meeting_minutes_approve( array $p_meeting, int $p_user_id, string $p_ex
 			throw new ClientException( 'The draft minutes changed while approval was pending',
 				ERROR_INVALID_FIELD_VALUE, array( 'draft' ) );
 		}
-		# Stamp the record itself (TMPL-SYS-001 lifecycle), then promote it.
-		$t_draft = meeting_record_content( $p_meeting );
-		$t_approved = meeting_record_mark_approved( $t_draft, date( 'Y-m-d' ) );
-		if( $t_draft !== '' && $t_approved !== $t_draft ) {
-			meeting_store_record( $p_meeting, $t_approved, $p_user_id, 'Minutes approved', false );
-		}
 		file_dwg_primary_sync_head( $t_dwg_id, $p_user_id );
+	}
+	# The approval is recorded in Doctis (status and release date), not in the record.
+	if( $t_dwg_id > 0 ) {
+		meeting_document_set_status( $t_dwg_id, 'approved', time() );
 	}
 	meeting_update( (int)$p_meeting['id'], array( 'status' => MEETING_APPROVED ) );
 	$t_meeting = meeting_get( (int)$p_meeting['id'] );
@@ -703,20 +707,30 @@ function meeting_minutes_approve( array $p_meeting, int $p_user_id, string $p_ex
 }
 
 /**
- * Mark a minutes record approved: frontmatter status → Approved Minutes,
- * effective_date → the approval date, and the body's **Status:** line.
+ * Set the Doctis status of a meeting's document for a meeting stage
+ * ($g_meeting_document_status) and, on approval, its release (effective)
+ * date.  Both are logged in the document history.  Lifecycle metadata lives
+ * in Doctis; the record itself is not stamped.
  *
- * @param string $p_content Markdown record.
- * @param string $p_date    YYYY-MM-DD.
- * @return string
+ * @param int    $p_dwg_id
+ * @param string $p_stage    agenda, minutes, approved or cancelled.
+ * @param int    $p_released Release date to set, 0 for none.
+ * @return void
  */
-function meeting_record_mark_approved( string $p_content, string $p_date ): string {
-	if( !preg_match( '/\A---\n/', $p_content ) ) {
-		return $p_content;
+function meeting_document_set_status( int $p_dwg_id, string $p_stage, int $p_released = 0 ): void {
+	$t_statuses = config_get( 'meeting_document_status' );
+	if( $p_dwg_id < 1 || !isset( $t_statuses[$p_stage] ) || !dwg_exists( $p_dwg_id ) ) {
+		return;
 	}
-	return meeting_record_set( $p_content,
-		array( 'status' => 'Approved Minutes', 'effective_date' => $p_date ),
-		array( 'Status' => 'Approved Minutes' ) );
+	dwg_set_field( $p_dwg_id, 'status', (int)$t_statuses[$p_stage] );
+	if( $p_released > 0 ) {
+		# dwg_set_field() does not take release_date: update and log it here.
+		$t_old = dwg_get_field( $p_dwg_id, 'release_date' );
+		db_param_push();
+		db_query( 'UPDATE {dwg} SET release_date=' . db_param() . ' WHERE id=' . db_param(), array( $p_released, $p_dwg_id ) );
+		history_dwg_log_event_direct( $p_dwg_id, 'release_date', $t_old, $p_released );
+		dwg_clear_cache( $p_dwg_id );
+	}
 }
 
 /**
@@ -990,12 +1004,8 @@ function meeting_cancel( array $p_meeting, int $p_user_id, string $p_reason = ''
 	meeting_update( $t_id, array( 'status' => MEETING_CANCELLED, 'sequence' => (int)$p_meeting['sequence'] + 1 ) );
 	$t_meeting = meeting_get( $t_id );
 
-	$t_content = meeting_record_content( $t_meeting );
-	if( $t_content !== '' ) {
-		meeting_record_revise( $t_meeting, meeting_record_set( $t_content,
-			array( 'status' => 'Cancelled' ), array( 'Status' => 'Cancelled' ) ),
-			$p_user_id, 'Meeting cancelled' );
-	}
+	# The cancellation is recorded in Doctis (document status), not in the record.
+	meeting_document_set_status( (int)$t_meeting['dwg_id'], 'cancelled' );
 
 	$t_ids = array();
 	foreach( meeting_invitees_get( $t_id ) as $t_invitee ) {
