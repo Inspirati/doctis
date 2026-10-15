@@ -13,6 +13,7 @@
  *   --dry-run            Report what would change; write nothing
  *   --diff               With --dry-run, print a unified diff of each document
  *   --no-promote         Commit only; leave each change as the document's Draft
+ *   --no-republish       Do not republish changed documents that were published
  *   --include-drafts     Also process documents that already have a Draft
  *                        (their Draft would be promoted with the change)
  *   --keys <list>        Frontmatter keys to remove (comma-separated)
@@ -31,7 +32,7 @@
  */
 
 $t_options = getopt( '', array(
-	'project:', 'user:', 'dry-run', 'diff', 'no-promote', 'include-drafts', 'keys:', 'labels:', 'help',
+	'project:', 'user:', 'dry-run', 'diff', 'no-promote', 'no-republish', 'include-drafts', 'keys:', 'labels:', 'help',
 ) );
 
 if( isset( $t_options['help'] ) || !isset( $t_options['project'] ) || !isset( $t_options['user'] ) ) {
@@ -49,6 +50,7 @@ $t_mantis_dir = dirname( __DIR__ ) . '/';
 require_once( $t_mantis_dir . 'core.php' );
 require_api( 'authentication_api.php' );
 require_api( 'dwg_metadata_api.php' );
+require_api( 'dwg_publish_api.php' );
 require_api( 'file_dwg_api.php' );
 require_api( 'project_api.php' );
 require_api( 'project_hierarchy_api.php' );
@@ -79,6 +81,7 @@ function git( string $p_worktree, array $p_args ): string {
 $g_dry     = isset( $t_options['dry-run'] );
 $t_diff    = isset( $t_options['diff'] );
 $t_promote = !isset( $t_options['no-promote'] );
+$t_republish = $t_promote && !isset( $t_options['no-republish'] );
 $t_drafts  = isset( $t_options['include-drafts'] );
 $t_keys    = isset( $t_options['keys'] ) ? array_filter( array_map( 'trim', explode( ',', $t_options['keys'] ) ) ) : DWG_METADATA_KEYS;
 $t_labels  = isset( $t_options['labels'] ) ? array_filter( array_map( 'trim', explode( ',', $t_options['labels'] ) ) ) : DWG_METADATA_LABELS;
@@ -208,14 +211,21 @@ try {
 # ── Promote ──────────────────────────────────────────────────────────────────
 
 $t_promoted = 0;
+$t_republished = 0;
 $t_failed = 0;
 if( !$g_dry && $t_promote ) {
 	foreach( $t_changed as $t_doc ) {
 		try {
+			$t_was_published = dwg_publish_enabled() && dwg_publish_get( $t_doc['dwg_id'] ) !== null;
 			file_dwg_primary_sync_head( $t_doc['dwg_id'], $t_user_id );
 			$t_promoted++;
+			# A published page now shows an outdated version: publish the new one.
+			if( $t_republish && $t_was_published ) {
+				dwg_publish( $t_doc['dwg_id'], $t_user_id );
+				$t_republished++;
+			}
 		} catch( Exception $e ) {
-			say( sprintf( '  promote failed #%d %s: %s', $t_doc['dwg_id'], $t_doc['path'], $e->getMessage() ) );
+			say( sprintf( '  promote/republish failed #%d %s: %s', $t_doc['dwg_id'], $t_doc['path'], $e->getMessage() ) );
 			$t_failed++;
 		}
 	}
@@ -223,5 +233,6 @@ if( !$g_dry && $t_promote ) {
 
 say( sprintf( '%s: %d documents, %d %s, %d skipped%s.', $g_dry ? 'Dry run' : 'Done', count( $t_documents ),
 	count( $t_changed ), $g_dry ? 'would change' : 'changed', $t_skipped,
-	$g_dry || !$t_promote ? '' : ', ' . $t_promoted . ' promoted to On Record' . ( $t_failed ? ', ' . $t_failed . ' failed' : '' ) ) );
+	$g_dry || !$t_promote ? '' : ', ' . $t_promoted . ' promoted to On Record, ' . $t_republished . ' republished'
+		. ( $t_failed ? ', ' . $t_failed . ' failed' : '' ) ) );
 exit( $t_failed ? 1 : 0 );
