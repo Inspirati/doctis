@@ -121,6 +121,7 @@ each page, so it can be replaced without running pandoc again.
 | Website URL | `/site/` | Where the site is served. Used for the links on the view page. Must start with `/`, `http://` or `https://`. |
 | Template | `engine/pandoc/html-template.html` | Repository path on the default branch. Blank: the Doctis default template. |
 | Banner logo | `engine/pandoc/logo.svg` | SVG/PNG/JPEG repository path, embedded in each page. Blank: the project name. |
+| PDF | ticked | Also publish a PDF of each document (§9). Needs the PDF packages. |
 
 The settings are ordinary per-project config values (`dwg_publish_target`,
 `dwg_publish_url`, `dwg_publish_template`, `dwg_publish_logo`). A sub-project
@@ -257,7 +258,7 @@ publish time, commit and a link to the document in Doctis.
 | `dwg_view_inc.php` | Publish button (`dwg_view_action_buttons()`), row include |
 | `manage_proj_edit_page.php` | Settings include |
 | `core/dwg_api.php` | `dwg_delete()` unpublishes |
-| `config_defaults_inc.php` | `$g_dwg_publish_*`; roots and pandoc in `$g_global_settings` |
+| `config_defaults_inc.php` | `$g_dwg_publish_*`; roots, pandoc and PDF engine in `$g_global_settings` |
 | `tests/Mantis/DwgPublishTest.php` | Unit and filesystem tests; opt-in end-to-end test |
 
 ---
@@ -274,7 +275,7 @@ publish time, commit and a link to the document in Doctis.
 - **Status gate.** Any status can be published, and the badge shows it. A
   per-project setting such as "publish only Approved" may be wanted.
 - **Images and other assets** referenced from Markdown are not copied. Only
-  Markdown documents can be published.
+  Markdown documents can be published. The PDF has no logo yet.
 - **Moving a document to a project with another site** leaves its old page
   behind. Unpublish it first.
 - **Raw HTML** passes through (see §5). A `$g_dwg_publish_raw_html` option
@@ -302,6 +303,14 @@ Page checks (curl as `manager`, or a browser):
 4. change the status: the row says out of date; Republish clears it;
 5. Unpublish one document: the other page's sidebar and the index drop it.
 
+**PDF, 2026-10-15:** `DwgPublishTest` grew to 19 tests. They include a PDF
+build that must print raw `\input{...}` as text without reading the file,
+and must keep an em dash in strikethrough. The end-to-end test now also
+checks the PDF and its removal. All passed, and the full suite passed (314
+tests). With PDF ticked for HCRQMS, republishing documents 93 and 2 wrote
+both PDFs, served as `application/pdf`. The footer read `PLAN-ENG-001 Rev A
+— DRAFT`, with links on the page, the index and the view page.
+
 **Run 2026-10-15 on the native VM** (running clone on `publish`):
 - `DwgPublishTest`: 17 tests passed, including the end-to-end test on document
   2. The full `mantis` suite passed: 312 tests, 1 pre-existing skip.
@@ -327,10 +336,24 @@ Page checks (curl as `manager`, or a browser):
 
 ---
 
-## 9. PDF output (tested, not yet built into Doctis)
+## 9. PDF output
 
-Doctis does not produce PDFs yet. The tool chain for a future **Publish PDF**
-was installed and tested on the native VM on 2026-10-15. It is the LaTeX route
+**Built 2026-10-15.** When a project ticks **PDF** in its Publishing
+settings, each Publish also writes a PDF next to the page: same path, `.pdf`.
+- The HTML page footer, the index (a PDF column) and the Published row on the
+  view page link to it.
+- Unpublish and document deletion remove it. Republishing with PDF turned off
+  removes it too.
+- It is built from the same On Record version
+  (`dwg_publish_build_pdf()`), with the settings below.
+- The footer's number, revision and status come from Doctis and are
+  LaTeX-escaped.
+- `$g_dwg_publish_pdf_engine` (default `/usr/bin/xelatex`; config_inc.php only)
+  and `$g_dwg_publish_pdf_papersize` (default `letter`, like `build-pdf.sh`;
+  or `a4`) control the build.
+- The PDF engine adds about 2 s to each Publish.
+
+The tool chain was installed and tested on the native VM on 2026-10-15. It is the LaTeX route
 of HCRQMS `engine/scripts/build-pdf.sh`: xelatex, DejaVu Sans/Mono, and a
 footer with the document reference, "Page X of Y" and "UNCONTROLLED COPY WHEN
 PRINTED OR TRANSMITTED".

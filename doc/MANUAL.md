@@ -235,6 +235,11 @@ the status changes. Click **Republish** to update the page. **Unpublish**
 removes the page from the website; deleting the document also removes it.
 Each publish and unpublish appears in the document history.
 
+If the project also publishes PDFs, a PDF of the document is written next
+to the page. Its footer carries the document number, revision and status,
+"Page X of Y" and "UNCONTROLLED COPY WHEN PRINTED OR TRANSMITTED". The page,
+the website index and the Published row link to it.
+
 Private documents and documents restricted by a license cannot be published.
 Only Markdown documents can be published, and only their On Record version,
 never a Draft.
@@ -772,6 +777,9 @@ Publishing**:
 - **Website URL**: e.g. `/site/`.
 - Optionally, a **Template** and a **Banner logo**, given as repository paths
   on the default branch.
+- **PDF**: also publish a PDF of each document. This needs the TeX packages
+  listed in `doc/publish/PUBLISHING.md` §9. `$g_dwg_publish_pdf_papersize`
+  sets `letter` or `a4`.
 
 A sub-project without its own target publishes into its parent's site.
 `$g_dwg_publish_threshold` (default MANAGER) controls who may publish. Details:
