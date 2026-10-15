@@ -340,6 +340,54 @@ function dwg_publish_page_url( array $p_site, string $p_page ): string {
 	return rtrim( $p_site['url'], '/' ) . '/' . dwg_publish_href( $p_page );
 }
 
+/**
+ * Make a website URL absolute, as the document URL field requires: a URL
+ * starting with "/" takes the scheme and host of Doctis's own address
+ * ($g_path).
+ *
+ * @param string $p_url
+ * @return string '' when no valid absolute http(s) URL results.
+ */
+function dwg_publish_absolute_url( string $p_url ): string {
+	if( $p_url !== '' && $p_url[0] === '/' ) {
+		$t_base = parse_url( (string)config_get_global( 'path' ) );
+		if( empty( $t_base['scheme'] ) || empty( $t_base['host'] ) ) {
+			return '';
+		}
+		$t_url = $t_base['scheme'] . ':';
+		if( substr( $p_url, 0, 2 ) !== '//' ) {
+			$t_url .= '//' . $t_base['host'] . ( isset( $t_base['port'] ) ? ':' . $t_base['port'] : '' );
+		}
+		$p_url = $t_url . $p_url;
+	}
+	return dwg_link_url_is_valid( $p_url ) ? $p_url : '';
+}
+
+/**
+ * Set a document's URL field (link_url).  Both copies of the field ({dwg}
+ * and {documents}) are updated and the change is logged in the history, as
+ * DwgData::update() does, without its notification email.
+ *
+ * @param integer $p_dwg_id
+ * @param string  $p_url     '' clears the field.
+ * @param integer $p_user_id
+ * @return void
+ */
+function dwg_publish_set_link_url( int $p_dwg_id, string $p_url, int $p_user_id ): void {
+	$t_old = (string)dwg_get_field( $p_dwg_id, 'link_url' );
+	if( $t_old === $p_url ) {
+		return;
+	}
+	db_param_push();
+	db_query( 'UPDATE {dwg} SET link_url=' . db_param() . ' WHERE id=' . db_param(), array( $p_url, $p_dwg_id ) );
+	db_param_push();
+	db_query( 'UPDATE {documents} SET link_url=' . db_param() . ' WHERE id=' . db_param(),
+		array( $p_url, (int)dwg_get_field( $p_dwg_id, 'document_id' ) ) );
+	dwg_update_date( $p_dwg_id );
+	history_dwg_log_event_direct( $p_dwg_id, 'link_url', $t_old, $p_url, $p_user_id );
+	dwg_clear_cache( $p_dwg_id );
+}
+
 # ── Pages ────────────────────────────────────────────────────────────────────
 
 /**
@@ -1409,6 +1457,12 @@ function dwg_publish( int $p_dwg_id, int $p_user_id ): array {
 		$t_previous ? dwg_publish_history_value( $t_previous ) : '',
 		dwg_publish_history_value( $t_marker + array( 'page' => $t_page ) ), $p_user_id );
 
+	# The document URL field points at the published page.
+	$t_link = dwg_publish_absolute_url( dwg_publish_page_url( $t_site, $t_page ) );
+	if( $t_link !== '' && ON == config_get( 'dwg_publish_set_link_url', null, null, (int)$t_dwg->project_id ) ) {
+		dwg_publish_set_link_url( $p_dwg_id, $t_link, $p_user_id );
+	}
+
 	return array(
 		'page'    => $t_page,
 		'url'     => dwg_publish_page_url( $t_site, $t_page ),
@@ -1460,6 +1514,11 @@ function dwg_publish_withdraw( int $p_dwg_id, int $p_user_id, bool $p_log = true
 	if( $p_log ) {
 		foreach( $t_removed as $t_marker ) {
 			history_dwg_log_event_direct( $p_dwg_id, 'dwg_published', dwg_publish_history_value( $t_marker ), '', $p_user_id );
+			# Clear the document URL only if it still points at the removed page.
+			$t_link = dwg_publish_absolute_url( dwg_publish_page_url( $t_site, (string)$t_marker['page'] ) );
+			if( $t_link !== '' && (string)dwg_get_field( $p_dwg_id, 'link_url' ) === $t_link ) {
+				dwg_publish_set_link_url( $p_dwg_id, '', $p_user_id );
+			}
 		}
 	}
 	return count( $t_removed );

@@ -2613,6 +2613,16 @@ $g_dwg_publish_pdf_papersize = 'letter';
 $g_dwg_publish_control_block = ON;
 
 /**
+ * Document publishing: set the document's URL field to its published page
+ * (absolute; a relative website URL such as '/site/' takes the scheme and
+ * host of $g_path).  Unpublishing clears the field if it still holds that
+ * URL.  The field is left alone when the site has no website URL.
+ *
+ * @global integer $g_dwg_publish_set_link_url
+ */
+$g_dwg_publish_set_link_url = ON;
+
+/**
  * Document publishing: statuses that count as approved.  While a document has
  * one, the control block shows who set it and when (from the document
  * history).

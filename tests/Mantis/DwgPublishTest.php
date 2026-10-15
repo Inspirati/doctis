@@ -202,6 +202,21 @@ class DwgPublishTest extends MantisCoreBase {
 		dwg_publish_settings_save( 1, '/etc', '', '', '' );
 	}
 
+	public function testAbsoluteUrls() {
+		$t_saved = config_get_global( 'path' );
+		try {
+			config_set_global( 'path', 'https://qms.example.com:8443/doctis/' );
+			$this->assertSame( 'https://qms.example.com:8443/site/a%20b.html', dwg_publish_absolute_url( '/site/a%20b.html' ) );
+			$this->assertSame( 'https://other.example/x.html', dwg_publish_absolute_url( '//other.example/x.html' ) );
+			$this->assertSame( 'http://host/site/x.html', dwg_publish_absolute_url( 'http://host/site/x.html' ) );
+			$this->assertSame( '', dwg_publish_absolute_url( '' ) );
+			config_set_global( 'path', '' );
+			$this->assertSame( '', dwg_publish_absolute_url( '/site/x.html' ), 'no Doctis address to complete it' );
+		} finally {
+			config_set_global( 'path', $t_saved );
+		}
+	}
+
 	public function testPdfHelpers() {
 		$this->assertSame( 'a/b.pdf', dwg_publish_pdf_path( 'a/b.html' ) );
 		$this->assertSame( '\{x\}\_\%\&\#\$ \textbackslash{}y', dwg_publish_latex_escape( "{x}_%&#\$\n\\y" ) );
@@ -250,6 +265,7 @@ class DwgPublishTest extends MantisCoreBase {
 		config_set( 'dwg_publish_url', '/test-site/', ALL_USERS, $t_project_id );
 		$t_with_pdf = dwg_publish_pdf_problem() === '';
 		config_set( 'dwg_publish_pdf', $t_with_pdf ? ON : OFF, ALL_USERS, $t_project_id );
+		$t_link_before = (string)dwg_get_field( $t_dwg_id, 'link_url' );
 		try {
 			$this->assertSame( '', dwg_publish_refusal( $t_dwg_id ) );
 			$t_result = dwg_publish( $t_dwg_id, auth_get_current_user_id() );
@@ -264,6 +280,7 @@ class DwgPublishTest extends MantisCoreBase {
 			$t_published = dwg_publish_get( $t_dwg_id );
 			$this->assertSame( file_dwg_primary_get( $t_dwg_id )['git_sha'], $t_published['sha'] );
 			$this->assertFalse( dwg_publish_is_stale( $t_published, $t_dwg_id ) );
+			$this->assertSame( dwg_publish_absolute_url( $t_result['url'] ), dwg_get_field( $t_dwg_id, 'link_url' ), 'URL field set' );
 			$this->assertNotNull( dwg_publish_read_marker( $t_target . '/index.html' ) );
 			if( $t_with_pdf ) {
 				$this->assertSame( dwg_publish_pdf_path( $t_result['page'] ), $t_result['pdf'] );
@@ -276,10 +293,12 @@ class DwgPublishTest extends MantisCoreBase {
 			$this->assertFileDoesNotExist( $t_target . '/' . dwg_publish_pdf_path( $t_result['page'] ) );
 			$this->assertFileDoesNotExist( $t_target . '/index.html', 'the index goes with the last page' );
 			$this->assertNull( dwg_publish_get( $t_dwg_id ) );
+			$this->assertSame( '', dwg_get_field( $t_dwg_id, 'link_url' ), 'URL field cleared' );
 		} finally {
 			config_delete( 'dwg_publish_target', ALL_USERS, $t_project_id );
 			config_delete( 'dwg_publish_url', ALL_USERS, $t_project_id );
 			config_delete( 'dwg_publish_pdf', ALL_USERS, $t_project_id );
+			dwg_publish_set_link_url( $t_dwg_id, $t_link_before, auth_get_current_user_id() );
 		}
 	}
 }
