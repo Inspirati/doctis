@@ -949,9 +949,9 @@ function dwg_publish_pdf_header( array $p_values ): string {
 		. "\\fancyfoot[C]{%\n"
 		. "  \\begin{minipage}{\\textwidth}\n"
 		. "    \\small\\itshape\n"
-		. "    \\makebox[0.5\\textwidth][l]{" . $t_left . "}%\n"
-		. "    \\makebox[0.5\\textwidth][r]{Page \\thepage\\ of \\pageref{LastPage}}\\\\[2pt]\n"
-		. ( $t_classification !== '' ? "    \\begin{center}\\upshape\\bfseries " . $t_classification . "\\end{center}\\vspace{-8pt}\n" : '' )
+		. "    \\makebox[0.4\\textwidth][l]{" . $t_left . "}%\n"
+		. "    \\makebox[0.2\\textwidth][c]{\\upshape\\bfseries " . $t_classification . "}%\n"
+		. "    \\makebox[0.4\\textwidth][r]{Page \\thepage\\ of \\pageref{LastPage}}\\\\[2pt]\n"
 		. "    \\begin{center}\\color{red}UNCONTROLLED COPY WHEN PRINTED OR TRANSMITTED\\end{center}\n"
 		. "  \\end{minipage}%\n"
 		. "}\n"
