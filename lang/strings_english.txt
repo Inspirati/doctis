@@ -2294,6 +2294,11 @@ $s_dwg_publish_page_count      = 'Published pages in this site: %1$d.';
 $s_dwg_publish_view_site       = 'View site';
 $s_dwg_publish_update_button   = 'Update Publishing';
 $s_dwg_publish_pdf             = 'PDF';
+$s_dwg_publish_owner           = 'Owner';
+$s_dwg_publish_approved        = 'Approved';
+$s_dwg_publish_approved_value  = '%1$s by %2$s';
+$s_dwg_publish_effective       = 'Effective';
+$s_dwg_publish_review          = 'Next review';
 $s_dwg_publish_pdf_label       = 'Also publish a PDF of each document (same path, .pdf), with the document number, revision and status in its footer.';
 
 # My Profile — user-editable fields on my_view_cnf_page.php

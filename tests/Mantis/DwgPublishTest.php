@@ -206,7 +206,9 @@ class DwgPublishTest extends MantisCoreBase {
 		$this->assertSame( 'a/b.pdf', dwg_publish_pdf_path( 'a/b.html' ) );
 		$this->assertSame( '\{x\}\_\%\&\#\$ \textbackslash{}y', dwg_publish_latex_escape( "{x}_%&#\$\n\\y" ) );
 		$t_header = dwg_publish_pdf_header( array( 'metadata' => array(
-			'doctis-number' => 'PROC_1', 'doctis-revision' => 'A}', 'doctis-status' => 'APPROVED', 'doctis-title' => 'T' ) ) );
+			'doctis-number' => 'PROC_1', 'doctis-revision' => 'A}', 'doctis-status' => 'APPROVED', 'doctis-title' => 'T',
+			'doctis-classification' => 'Internal & co' ) ) );
+		$this->assertStringContainsString( '\fancyhead[C]{\small\bfseries INTERNAL \& CO}', $t_header );
 		$this->assertStringContainsString( '{PROC\_1 Rev A\} --- APPROVED}', $t_header );
 		$this->assertStringContainsString( 'UNCONTROLLED COPY WHEN PRINTED OR TRANSMITTED', $t_header );
 	}
@@ -258,6 +260,7 @@ class DwgPublishTest extends MantisCoreBase {
 			$t_html = file_get_contents( $t_file );
 			$this->assertStringContainsString( 'class="doctis-status"', $t_html );
 			$this->assertStringContainsString( DWG_PUBLISH_NAV_BEGIN, $t_html );
+			$this->assertStringContainsString( '<div class="doctis-control">', $t_html );
 			$t_published = dwg_publish_get( $t_dwg_id );
 			$this->assertSame( file_dwg_primary_get( $t_dwg_id )['git_sha'], $t_published['sha'] );
 			$this->assertFalse( dwg_publish_is_stale( $t_published, $t_dwg_id ) );

@@ -934,6 +934,7 @@ function dwg_publish_pdf_header( array $p_values ): string {
 		$t_reference .= ' Rev ' . $t_meta['doctis-revision'];
 	}
 	$t_left = dwg_publish_latex_escape( $t_reference ) . ' --- ' . dwg_publish_latex_escape( $t_meta['doctis-status'] ?? '' );
+	$t_classification = dwg_publish_latex_escape( mb_strtoupper( trim( $t_meta['doctis-classification'] ?? '' ) ) );
 	return "\\usepackage{fancyhdr}\n"
 		. "\\usepackage{lastpage}\n"
 		. "\\usepackage{xcolor}\n"
@@ -942,6 +943,7 @@ function dwg_publish_pdf_header( array $p_values ): string {
 		. "\\providecommand{\\st}{}\\renewcommand{\\st}[1]{\\sout{#1}}\n"
 		. "\\pagestyle{fancy}\n"
 		. "\\fancyhf{}\n"
+		. ( $t_classification !== '' ? "\\fancyhead[C]{\\small\\bfseries " . $t_classification . "}\n" : '' )
 		. "\\renewcommand{\\headrulewidth}{0pt}\n"
 		. "\\renewcommand{\\footrulewidth}{0.4pt}\n"
 		. "\\fancyfoot[C]{%\n"
@@ -949,6 +951,7 @@ function dwg_publish_pdf_header( array $p_values ): string {
 		. "    \\small\\itshape\n"
 		. "    \\makebox[0.5\\textwidth][l]{" . $t_left . "}%\n"
 		. "    \\makebox[0.5\\textwidth][r]{Page \\thepage\\ of \\pageref{LastPage}}\\\\[2pt]\n"
+		. ( $t_classification !== '' ? "    \\begin{center}\\upshape\\bfseries " . $t_classification . "\\end{center}\\vspace{-8pt}\n" : '' )
 		. "    \\begin{center}\\color{red}UNCONTROLLED COPY WHEN PRINTED OR TRANSMITTED\\end{center}\n"
 		. "  \\end{minipage}%\n"
 		. "}\n"
@@ -978,9 +981,12 @@ function dwg_publish_build_pdf( string $p_work_dir, array $p_values ): string {
 		'--variable=mainfont:DejaVu Sans', '--variable=monofont:DejaVu Sans Mono',
 		'--variable=geometry:margin=1in,footskip=0.6in',
 		'--include-in-header=header.tex',
-		'--metadata=title:' . str_replace( array( "\r", "\n" ), ' ', $p_values['metadata']['pagetitle'] ),
+		'--lua-filter=' . __DIR__ . '/publish/control-block.lua',
 		'--output=page.pdf',
 	);
+	# The Doctis values (title, control block) as metadata, escaped by pandoc.
+	$t_args = array_merge( $t_args, dwg_publish_template_args( array( 'metadata' => $p_values['metadata'], 'variables' => array() ) ) );
+	$t_args[] = '--metadata=title:' . str_replace( array( "\r", "\n" ), ' ', $p_values['metadata']['pagetitle'] );
 	if( preg_match( '/^(a4|a5|letter|legal)$/', $t_papersize ) ) {
 		$t_args[] = '--variable=papersize:' . $t_papersize;
 	}
@@ -1082,6 +1088,14 @@ function dwg_publish_template_values( DwgData $p_dwg, array $p_row ): array {
 	$t_key        = MantisEnum::getLabel( config_get( 'dwg_status_enum_string', null, null, $t_project_id ), $t_status );
 	$t_color      = get_dwg_status_color( $t_status, null, $t_project_id, '#d0d7de' );
 
+	$t_date_format = config_get( 'short_date_format' );
+	$t_record = substr( $p_row['git_sha'], 0, 8 );
+	$t_commit = file_dwg_git_commit_metadata( dwg_project_bare_repo_path( $t_project_id ), $p_row['git_sha'] );
+	if( $t_commit !== null ) {
+		$t_record .= ', ' . date( $t_date_format, $t_commit['date'] );
+	}
+	$t_approval = dwg_publish_approval( $p_dwg );
+
 	$t_metadata = array(
 		'pagetitle'          => $p_dwg->title !== '' ? $p_dwg->title : basename( $p_row['git_path'] ),
 		'doctis-id'          => (string)$p_dwg->id,
@@ -1093,12 +1107,63 @@ function dwg_publish_template_values( DwgData $p_dwg, array $p_row ): array {
 		'doctis-commit'      => substr( $p_row['git_sha'], 0, 8 ),
 		'doctis-published'   => date( config_get( 'normal_date_format' ) ),
 		'doctis-url'         => config_get_global( 'path' ) . 'dwg_view.php?id=' . (int)$p_dwg->id,
+		'doctis-classification' => $p_dwg->classification,
+		'doctis-owner'       => (int)$p_dwg->handler_id > 0 ? user_get_name( (int)$p_dwg->handler_id ) : '',
+		'doctis-approved'    => $t_approval !== null
+			? sprintf( lang_get( 'dwg_publish_approved_value' ), date( $t_date_format, $t_approval['date'] ), user_get_name( $t_approval['user_id'] ) )
+			: '',
+		'doctis-effective'   => dwg_publish_date( $p_dwg->release_date, $t_date_format ),
+		'doctis-review'      => dwg_publish_date( $p_dwg->due_date, $t_date_format ),
+		'doctis-record'      => $t_record,
 	);
+	if( ON == config_get( 'dwg_publish_control_block', null, null, $t_project_id ) ) {
+		$t_metadata['doctis-control'] = '1';
+		$t_labels = array(
+			'number' => 'dwg_number', 'title' => 'dwg_title', 'revision' => 'dwg_revision', 'status' => 'status',
+			'classification' => 'dwg_classification', 'owner' => 'dwg_publish_owner', 'approved' => 'dwg_publish_approved',
+			'effective' => 'dwg_publish_effective', 'review' => 'dwg_publish_review', 'record' => 'primary_document_approved',
+			'published' => 'dwg_publish_published',
+		);
+		foreach( $t_labels as $t_key => $t_string ) {
+			$t_metadata['doctis-label-' . $t_key] = lang_get( $t_string );
+		}
+	}
 	$t_variables = array(
 		'doctis-status-key'   => trim( preg_replace( '/[^a-z0-9]+/', '-', strtolower( $t_key ) ), '-' ),
 		'doctis-status-color' => preg_match( '/^#[0-9a-fA-F]{3,8}$/', $t_color ) ? $t_color : '#d0d7de',
 	);
 	return array( 'metadata' => array_filter( $t_metadata, 'strlen' ), 'variables' => $t_variables );
+}
+
+/**
+ * The latest approval of a document still in an approved status
+ * ($g_dwg_publish_approved_statuses): the history entry that set it.
+ *
+ * @param DwgData $p_dwg
+ * @return array|null user_id and date, or null when not approved.
+ */
+function dwg_publish_approval( DwgData $p_dwg ): ?array {
+	$t_statuses = array_map( 'intval', (array)config_get( 'dwg_publish_approved_statuses', null, null, (int)$p_dwg->project_id ) );
+	if( !$t_statuses || !in_array( (int)$p_dwg->status, $t_statuses, true ) ) {
+		return null;
+	}
+	db_param_push();
+	$t_result = db_query( 'SELECT user_id, date_modified FROM {dwg_history} WHERE dwg_id=' . db_param()
+		. " AND field_name='status' AND new_value IN (" . implode( ',', $t_statuses ) . ')'
+		. ' ORDER BY date_modified DESC, id DESC', array( (int)$p_dwg->id ), 1 );
+	$t_row = db_fetch_array( $t_result );
+	return $t_row ? array( 'user_id' => (int)$t_row['user_id'], 'date' => (int)$t_row['date_modified'] ) : null;
+}
+
+/**
+ * Format a document date field, or '' when it is not set.
+ *
+ * @param mixed  $p_value Timestamp.
+ * @param string $p_format
+ * @return string
+ */
+function dwg_publish_date( $p_value, string $p_format ): string {
+	return is_numeric( $p_value ) && (int)$p_value > 1 && !date_is_null( (int)$p_value ) ? date( $p_format, (int)$p_value ) : '';
 }
 
 /**
@@ -1284,6 +1349,7 @@ function dwg_publish( int $p_dwg_id, int $p_user_id ): array {
 			'revision'     => $t_dwg->revision,
 			'status'       => (int)$t_dwg->status,
 			'status_label' => $t_values['metadata']['doctis-status'],
+			'classification' => $t_dwg->classification,
 			'published'    => time(),
 			'user_id'      => $p_user_id,
 		);
@@ -1314,6 +1380,7 @@ function dwg_publish( int $p_dwg_id, int $p_user_id ): array {
 				'source.md', '--from=markdown-raw_tex', '--to=html5',
 				'--template=template.html',
 				'--lua-filter=' . __DIR__ . '/publish/rewrite-links.lua',
+				'--lua-filter=' . __DIR__ . '/publish/control-block.lua',
 				'--include-before-body=before.html',
 				'--output=page.html',
 			), dwg_publish_template_args( $t_values ) ), $t_work );

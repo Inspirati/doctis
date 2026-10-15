@@ -2601,6 +2601,27 @@ $g_dwg_publish_pdf_engine = '/usr/bin/xelatex';
 $g_dwg_publish_pdf_papersize = 'letter';
 
 /**
+ * Document publishing: insert a document-control block at the top of each
+ * published page and PDF (after the first heading).  Its values all come from
+ * Doctis: number, title, revision, status, classification, owner (assigned
+ * user), approval, effective date (release date), next review (due date),
+ * the On Record commit and the publish date.  The git store holds content;
+ * Doctis holds status; publishing combines them.
+ *
+ * @global integer $g_dwg_publish_control_block
+ */
+$g_dwg_publish_control_block = ON;
+
+/**
+ * Document publishing: statuses that count as approved.  While a document has
+ * one, the control block shows who set it and when (from the document
+ * history).
+ *
+ * @global array $g_dwg_publish_approved_statuses
+ */
+$g_dwg_publish_approved_statuses = array( ACCEPTED, INCORPORATED );
+
+/**
  * Remote Git access (Smart HTTP): master enable flag.
  *
  * When OFF, the git_http.php gateway refuses all requests (404).  When ON, it

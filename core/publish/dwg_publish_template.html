@@ -4,7 +4,10 @@ $-- the banner and navigation (include-before) and these values:
 $--   pagetitle, doctis-id, doctis-title, doctis-number, doctis-revision,
 $--   doctis-status (e.g. APPROVED), doctis-status-key (e.g. approved),
 $--   doctis-status-color, doctis-project, doctis-commit, doctis-published,
-$--   doctis-url, doctis-pdf (PDF file name, when the project publishes PDFs).
+$--   doctis-url, doctis-pdf (PDF file name, when the project publishes PDFs),
+$--   doctis-classification, doctis-owner, doctis-approved, doctis-effective,
+$--   doctis-review, doctis-record.  The document-control block is inserted
+$--   into $body$ by core/publish/control-block.lua (div.doctis-control).
 $--   The index page has only pagetitle and doctis-project.
 $-- See doc/publish/PUBLISHING.md.  Pandoc partials are not allowed.
 <!DOCTYPE html>
@@ -490,6 +493,25 @@ body.sidebar-resizing {
   white-space: nowrap;
 }
 
+.doctis-status .doctis-classification {
+  margin-right: 8px;
+  background: transparent;
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+}
+
+.page-content .doctis-control table {
+  display: table;
+  width: 100%;
+  margin-bottom: 24px;
+  font-size: 13px;
+}
+
+.page-content .doctis-control td { padding: 4px 10px; }
+.page-content .doctis-control tr:nth-child(even) { background-color: #ffffff; }
+.page-content .doctis-control td:first-child { width: 30%; background: #f6f8fa; }
+
 .doctis-footer {
   margin-top: 48px;
   padding-top: 12px;
@@ -514,14 +536,14 @@ $for(include-before)$
 $include-before$
 $endfor$
 $if(doctis-status)$
-<div class="doctis-status" title="Document status in Doctis"><span style="--doctis-status-color: $doctis-status-color$">$doctis-status$</span></div>
+<div class="doctis-status" title="Document classification and status in Doctis">$if(doctis-classification)$<span class="doctis-classification">$doctis-classification$</span>$endif$<span style="--doctis-status-color: $doctis-status-color$">$doctis-status$</span></div>
 $endif$
 
 <main class="page-content">
 $body$
 $if(doctis-id)$
 <footer class="doctis-footer">
-$if(doctis-number)$$doctis-number$ · $endif$$if(doctis-revision)$Revision $doctis-revision$ · $endif$$doctis-status$ · Published $doctis-published$ from commit $doctis-commit$ · <a href="$doctis-url$">View in Doctis</a>$if(doctis-pdf)$ · <a href="$doctis-pdf$">PDF</a>$endif$
+$if(doctis-number)$$doctis-number$ · $endif$$if(doctis-revision)$Revision $doctis-revision$ · $endif$$doctis-status$ · $if(doctis-classification)$$doctis-classification$ · $endif$Published $doctis-published$ from commit $doctis-commit$ · <a href="$doctis-url$">View in Doctis</a>$if(doctis-pdf)$ · <a href="$doctis-pdf$">PDF</a>$endif$
 </footer>
 $endif$
 </main>
