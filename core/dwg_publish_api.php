@@ -1163,7 +1163,8 @@ function dwg_publish( int $p_dwg_id, int $p_user_id ): array {
 			file_put_contents( $t_work . '/template.html', $t_template );
 			file_put_contents( $t_work . '/before.html', dwg_publish_before_body( $t_prefix, dwg_publish_nav_html( $t_tree, $t_prefix ), $t_logo ) );
 			dwg_publish_pandoc( array_merge( array(
-				'source.md', '--from=markdown', '--to=html5',
+				# Without raw_tex, pandoc drops text such as "CzProject\GitPhp" as LaTeX.
+				'source.md', '--from=markdown-raw_tex', '--to=html5',
 				'--template=template.html',
 				'--lua-filter=' . __DIR__ . '/publish/rewrite-links.lua',
 				'--include-before-body=before.html',

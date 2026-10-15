@@ -34,7 +34,8 @@ No schema change.
 2. Reads the On Record file (`{dwg_primary_file}.git_sha` at its `git_path`)
    from the project repository. A Draft is never published.
 3. Runs pandoc with the same options as `build-html.sh`:
-   - `--from=markdown --to=html5`
+   - `--from=markdown-raw_tex --to=html5`. Raw TeX is off, so text such as
+     `CzProject\GitPhp` is kept rather than dropped as a LaTeX command.
    - the site template
    - [core/publish/rewrite-links.lua](../../core/publish/rewrite-links.lua)
    - a generated banner and sidebar (`--include-before-body`)
@@ -102,9 +103,13 @@ each page, so it can be replaced without running pandoc again.
    sudo chmod 2775 /var/www/html/site     # group www-data, setgid keeps the group
    ```
 
-4. **Serve it.** The VM's nginx already serves `/var/www/html/site/` as static
-   files. Doctis writes only `.html` files there. Note that this nginx runs
-   any `.php` file under `/var/www/html` (for example `site/phpinfo.php`).
+4. **Serve it.** The site is plain static files. The web server must use
+   `index.html` as a directory index, so that `/site/` serves the generated
+   index. The native nginx profile had only `index index.php;`, so `/site/`
+   returned 403. Its template (`admin/tools/templates/nginx-doctis.conf`) and
+   the VM now use `index index.php index.html;` (2026-10-15). Doctis writes
+   only `.html` files there. Note that this nginx runs any `.php` file under
+   `/var/www/html` (for example `site/phpinfo.php`).
 
 ### Project (manager)
 
@@ -137,7 +142,8 @@ The image has no pandoc, and only uploads, config, the git store, worktrees,
 logs and sessions are bind-mounted. Before enabling publishing there, the
 administrator needs to:
 
-- add `pandoc` to the Dockerfile packages;
+- add `pandoc` (version 3 or later) to the Dockerfile packages, plus the PDF
+  packages in §9 if PDFs are wanted;
 - create the site directory as a bind mount, so pages survive a container
   rebuild;
 - set `$g_dwg_publish_roots`;
@@ -318,3 +324,71 @@ Page checks (curl as `manager`, or a browser):
 - HCRQMS (project 1) publishes to `/var/www/html/site` at `/site/`.
 - Documents 93 and 2 are published (DRAFT) as a demonstration; unpublish them
   from their view pages if they are not wanted.
+
+---
+
+## 9. PDF output (tested, not yet built into Doctis)
+
+Doctis does not produce PDFs yet. The tool chain for a future **Publish PDF**
+was installed and tested on the native VM on 2026-10-15. It is the LaTeX route
+of HCRQMS `engine/scripts/build-pdf.sh`: xelatex, DejaVu Sans/Mono, and a
+footer with the document reference, "Page X of Y" and "UNCONTROLLED COPY WHEN
+PRINTED OR TRANSMITTED".
+
+**Packages** (Debian 13, `--no-install-recommends`, as in the Docker image).
+They add about 460 MB on the VM:
+
+```
+pandoc texlive-xetex texlive-latex-recommended texlive-latex-extra
+texlive-plain-generic texlive-fonts-recommended lmodern fonts-dejavu-core
+librsvg2-bin
+```
+
+- `texlive-plain-generic` provides `soul.sty`, which pandoc's template loads
+  for ~~strikethrough~~. Without it, 2 of the 101 HCRQMS documents failed.
+  `texlive-latex-extra` only recommends it, so `--no-install-recommends` leaves
+  it out.
+- `librsvg2-bin` (`rsvg-convert`) is needed for SVG images, such as the
+  HCRQMS logo.
+- `graphviz` is not used by publishing; it is already in the image for
+  MantisBT.
+- No diagram tools (Mermaid, PlantUML) are needed. The HCRQMS documents have
+  no images or diagrams, and their symbols (✓ ⚠ ✗, box drawing) are all in
+  DejaVu.
+- WeasyPrint (HTML/CSS to PDF, about 190 MB) is the lighter alternative. It
+  was not chosen because the LaTeX route reproduces the existing
+  `build-pdf.sh` design.
+
+**Results.**
+- `build-pdf.sh`, unchanged, built Document-Control-Procedure.md: 18 pages,
+  1.6 s, no warnings.
+- Run as `www-data` the way Doctis would run it, the build also worked:
+  `--sandbox`, an empty environment, `HOME` set to a private temporary
+  directory, and the footer status supplied by Doctis.
+- All 101 HCRQMS documents (`content/` and `system/`) built with the final
+  settings below: 656 pages, 1.2–2.7 s each (median 1.9 s), about 50 s for all
+  of them four at a time.
+
+**Settings a Doctis PDF build must use**:
+- `--from=markdown-raw_tex-raw_attribute`, and `openin_any=p` in pandoc's
+  environment. Debian's TeX lets a document read any file (`openin_any = a`).
+  With plain `markdown`, `\input{/path}` or a ```` ```{=latex} ```` block
+  copied a server file (`/etc/hostname` in the test) into the PDF.
+  `config_inc.php` could be read the same way. Turning off both raw-LaTeX
+  syntaxes stopped it. `openin_any=p` alone makes the build fail instead of
+  leaking, so it works as a second safeguard. Pandoc's `--sandbox` does not
+  restrict the TeX engine.
+- Footer values (number, revision, status) must reach LaTeX escaped. Pass them
+  as pandoc metadata in a Doctis LaTeX template. Never interpolate them into
+  the header file the way `build-pdf.sh` does with frontmatter.
+- `\usepackage[normalem]{ulem}` with `\renewcommand{\st}[1]{\sout{#1}}` in
+  the header. `soul`'s `\st` loses the em dash under xelatex (one HCRQMS
+  document had 4 missing glyphs); `ulem` keeps it.
+- Paper size: `build-pdf.sh` produces US Letter. Set `papersize: a4` if A4 is
+  the company standard.
+
+**Content found while testing.** `system/guidance/Doctis-Git-Storage-Backend.md`
+has `CzProject\GitPhp` in a heading. Pandoc's default Markdown reads `\GitPhp`
+as LaTeX: `build-html.sh` drops it from the HTML, and `build-pdf.sh` fails.
+Write it as `` `CzProject\GitPhp` `` in the source. Doctis now reads documents
+with `markdown-raw_tex` (§1), so its own pages keep the text.
