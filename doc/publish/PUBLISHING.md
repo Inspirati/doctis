@@ -49,6 +49,16 @@ No schema change.
    status and publish date.
 6. Logs a **Published** entry in the document history: commit, status and
    page.
+7. Sets the document's **URL** field (`link_url`) to the page's address, and
+   logs that in the history too. The field only accepts absolute http(s)
+   URLs, so a relative website URL such as `/site/` takes the scheme and host
+   of `$g_path`. On the command line (the cut-over script), `$g_path` must be
+   set in `config_inc.php` for this to produce the right host. The field is
+   left alone when the site has no website URL.
+   - Publishing overwrites any earlier value, including a hand edit; the old
+     value stays in the history.
+   - Unpublish clears the field only if it still holds the published URL.
+   - `$g_dwg_publish_set_link_url` (default ON) turns this off.
 
 **Republish** does the same again. Use it after a newer version is promoted
 to On Record or the status changes. The Published row on the view page marks

@@ -230,6 +230,12 @@ Once published, the panel shows a **Published** row with:
 - the date, and who published it;
 - the commit.
 
+Publishing also sets the document's **URL** field to the published page, so
+the address appears with the document's details, in the document list and
+through the APIs. It replaces any earlier value; the old value stays in the
+history. Unpublish clears the field, unless it has been changed to something
+else since.
+
 The row says **out of date** after a newer version is promoted to On Record or
 the status changes. Click **Republish** to update the page. **Unpublish**
 removes the page from the website; deleting the document also removes it.
