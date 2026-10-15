@@ -130,6 +130,22 @@ snapshots), `topic_snapshot_*.php`, `topic_activity_page.php`,
 `api/rest/restcore/topics_rest.php`. Plan, phases and as-built notes:
 [doc/topics/TOPICS_PLAN.md](doc/topics/TOPICS_PLAN.md).
 
+## Document Publishing
+
+**Publish** on the document view page converts a Markdown document's On Record
+version to HTML with pandoc. The page goes into the project's publication
+target directory (a static website) at its repository path, `.md` → `.html`.
+The page header shows the Doctis status. This is a one-document port of HCRQMS
+`engine/scripts/build-html.sh`, with the same layout and sidebar. Each page
+ends with a `doctis-publish` marker comment; the sidebar and `index.html` are
+rebuilt from these markers, and files without one are never touched. Off
+unless `$g_dwg_publish_roots` (config_inc.php only) is set. Per-project
+settings (target, URL, template and logo repository paths) are on Manage
+Project → Publishing and inherit down the project tree. Templates using pandoc
+partials are refused. API: [core/dwg_publish_api.php](core/dwg_publish_api.php);
+default template and link filter in `core/publish/`. Design, setup and
+limitations: [doc/publish/PUBLISHING.md](doc/publish/PUBLISHING.md).
+
 ## Development Environment
 
 Development and testing happen on a native **Debian 13 VM** (`10.0.0.94`),

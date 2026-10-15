@@ -2489,6 +2489,88 @@ $g_git_worktree_root = '';
 $g_dwg_repo_path_template = '{dwg_id}/{filename}';
 
 /**
+ * Document publishing: directories that projects may publish websites into.
+ *
+ * Publishing renders a Markdown document's on-record version to HTML with
+ * pandoc and writes it into the project's publication target directory
+ * ($g_dwg_publish_target), which must be one of these directories or lie
+ * below one.  Empty (the default) turns publishing off everywhere.
+ *
+ * Set in config_inc.php only; the database cannot override it.  Example:
+ * $g_dwg_publish_roots = array( '/var/www/html/site' );
+ *
+ * See doc/publish/PUBLISHING.md.
+ *
+ * @global array $g_dwg_publish_roots
+ */
+$g_dwg_publish_roots = array();
+
+/**
+ * Document publishing: the pandoc executable (pandoc 3.x).
+ *
+ * Set in config_inc.php only; the database cannot override it.
+ *
+ * @global string $g_dwg_publish_pandoc
+ */
+$g_dwg_publish_pandoc = '/usr/bin/pandoc';
+
+/**
+ * Document publishing: the project's publication target directory.
+ *
+ * An absolute path at or below one of $g_dwg_publish_roots.  Each published
+ * document is written at its repository path with .md replaced by .html,
+ * together with a generated index.html.  Blank: the project does not publish.
+ *
+ * Set per project on the project's Manage page (Publishing).
+ *
+ * @global string $g_dwg_publish_target
+ */
+$g_dwg_publish_target = '';
+
+/**
+ * Document publishing: the URL at which the website serves the target
+ * directory, e.g. '/site/' or 'https://qms.example.com/'.  Used for links to
+ * published pages.  Blank: Doctis shows the page path without a link.
+ *
+ * Set per project on the project's Manage page (Publishing).
+ *
+ * @global string $g_dwg_publish_url
+ */
+$g_dwg_publish_url = '';
+
+/**
+ * Document publishing: repository path of the pandoc HTML template, read
+ * from the project repository's default branch, e.g.
+ * 'engine/pandoc/html-template.html'.  Blank: the Doctis default template
+ * (core/publish/dwg_publish_template.html).  Templates that use pandoc
+ * partials are refused.
+ *
+ * Set per project on the project's Manage page (Publishing).
+ *
+ * @global string $g_dwg_publish_template
+ */
+$g_dwg_publish_template = '';
+
+/**
+ * Document publishing: repository path of the banner logo (SVG, PNG or JPEG),
+ * read from the project repository's default branch and embedded in every
+ * page.  Blank: the banner shows the project name.
+ *
+ * Set per project on the project's Manage page (Publishing).
+ *
+ * @global string $g_dwg_publish_logo
+ */
+$g_dwg_publish_logo = '';
+
+/**
+ * Document publishing: access level needed to publish and withdraw a
+ * project's documents.
+ *
+ * @global integer $g_dwg_publish_threshold
+ */
+$g_dwg_publish_threshold = MANAGER;
+
+/**
  * Remote Git access (Smart HTTP): master enable flag.
  *
  * When OFF, the git_http.php gateway refuses all requests (404).  When ON, it
@@ -6182,6 +6264,8 @@ $g_global_settings = array(
 	'bottom_include_page',
 	'bug_list_cookie',
 	'dwg_list_cookie',
+	'dwg_publish_pandoc',
+	'dwg_publish_roots',
 	'cdn_enabled',
 	'class_path',
 	'collapse_settings_cookie',

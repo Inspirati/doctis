@@ -2096,6 +2096,7 @@ $MANTIS_ERROR[ERROR_DWG_DUPLICATE_SELF] = 'You cannot set a document as a duplic
 $MANTIS_ERROR[ERROR_BUG_REVISION_NOT_FOUND] = 'Issue revision not found.';
 $MANTIS_ERROR[ERROR_DWG_REVISION_NOT_FOUND] = 'Document revision not found.';
 $MANTIS_ERROR[ERROR_TOPIC] = 'Documentation Topics: %1$s';
+$MANTIS_ERROR[ERROR_DWG_PUBLISH] = 'Publishing: %1$s';
 $MANTIS_ERROR[ERROR_CUSTOM_FIELD_NOT_FOUND] = 'Custom field not found.';
 $MANTIS_ERROR[ERROR_CUSTOM_FIELD_NAME_NOT_UNIQUE] = 'This is a duplicate name.';
 $MANTIS_ERROR[ERROR_CUSTOM_FIELD_NAME_INVALID] = 'Invalid custom field name "%1$s": commas are not allowed. See "Localizing Custom Field Names" section in the Admin Guide as a workaround.';
@@ -2268,6 +2269,30 @@ $s_primary_document_tag_invalid        = 'Invalid tag name. Use letters, digits,
 $s_primary_document_tag_exists         = 'A tag with that name already exists in this repository.';
 $s_primary_document_touch              = 'Touch';
 $s_primary_document_touch_confirm      = 'This will create an empty git commit on the project repository without modifying a document. Intended for development testing. Continue?';
+
+# Document publishing (doc/publish/PUBLISHING.md)
+$s_dwg_publish_button          = 'Publish';
+$s_dwg_republish_button        = 'Republish';
+$s_dwg_unpublish_button        = 'Unpublish';
+$s_dwg_published               = 'Published';
+$s_dwg_publish_published       = 'Published';
+$s_dwg_publish_out_of_date     = 'out of date';
+$s_dwg_publish_out_of_date_help = 'A newer version is on record, or the status has changed, since this page was published. Republish to update it.';
+$s_dwg_publish_index_title     = 'Published documents';
+$s_dwg_publish_settings        = 'Publishing';
+$s_dwg_publish_target          = 'Target directory';
+$s_dwg_publish_target_help     = 'Absolute path of the website directory, at or below %1$s. Each published Markdown document is written at its repository path as .html. Blank: the project uses its parent project\'s site, if any.';
+$s_dwg_publish_url             = 'Website URL';
+$s_dwg_publish_url_help        = 'Where the website serves the target directory, e.g. /site/ or https://qms.example.com/. Used for links to published pages.';
+$s_dwg_publish_template        = 'Template';
+$s_dwg_publish_template_help   = 'Repository path of a pandoc HTML template on the default branch, e.g. engine/pandoc/html-template.html. Blank: the Doctis default template.';
+$s_dwg_publish_logo            = 'Banner logo';
+$s_dwg_publish_logo_help       = 'Repository path of an SVG, PNG or JPEG image on the default branch. Blank: the banner shows the project name.';
+$s_dwg_publish_inherited       = 'This project publishes to the site of %1$s: %2$s. Enter a target directory to give it its own site.';
+$s_dwg_publish_target_unusable = 'Target unusable';
+$s_dwg_publish_page_count      = 'Published pages in this site: %1$d.';
+$s_dwg_publish_view_site       = 'View site';
+$s_dwg_publish_update_button   = 'Update Publishing';
 
 # My Profile — user-editable fields on my_view_cnf_page.php
 $s_my_profile_section              = 'My Profile';

@@ -30,6 +30,7 @@ turn email notifications off before tests that queue mail in bulk.
 | A page, form, or workflow with no good headless test | §7 curl-based testing |
 | AI Meeting Assistant, meetings, My Meetings, minutes approval | §7a meeting end-to-end |
 | Documentation Topics (catalogues, tags, applicability, Topics page) | §2 `TopicApiTest` + §7b |
+| Document publishing (Publish button, website, project Publishing settings) | §2 `DwgPublishTest` + §7d |
 | Anything touching schema | §8: upgrade (new table) or rebuild (changed table) first, then re-run the relevant suite above |
 | You aren't sure what else broke | §9 full regression sweep |
 
@@ -554,6 +555,32 @@ Run 2026-10-14 on the VM: every refusal returned to the form with its
 message, a staff-domain sign-up created a lowercase account without the
 captcha, and the full `mantis` suite passed (295 tests on `topics` with this
 work merged).
+
+### 7d. Document publishing — Publish button, website, project settings
+
+**Unit tests** (`tests/Mantis/DwgPublishTest.php`) cover:
+- path handling, roots and target refusals (outside a root, traversal, not a
+  directory, a symbolic link out of the root, overlap with the git store);
+- the website URL check;
+- the template partial guard;
+- markers, the sidebar and the site file handling under a temporary root.
+
+`testPublishAndWithdraw` publishes and unpublishes a real public Markdown
+document into a temporary site. It runs only when `DOCTIS_PUBLISH_TEST_DWG`
+names that document, because it adds two history entries.
+
+```bash
+sudo -u www-data vendor/bin/phpunit --testsuite mantis --filter DwgPublishTest --testdox
+sudo -u www-data DOCTIS_PUBLISH_TEST_DWG=<id> vendor/bin/phpunit --testsuite mantis --filter DwgPublishTest
+```
+
+**Browser check:** the steps are in
+[publish/PUBLISHING.md](publish/PUBLISHING.md) §8. They need
+`$g_dwg_publish_roots` in `config_inc.php` and a target directory writable by
+`www-data`.
+
+Not yet run on the VM (2026-10-15). Only isolated checks of the pure helpers
+and the pandoc rendering have run.
 
 ---
 

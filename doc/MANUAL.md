@@ -214,6 +214,31 @@ Doctis.
 | **Promote Draft** | MANAGER | Promote this document's Draft revision to On Record, including its filename, content, and Reference. If its file changed in Git after upload, re-upload before promotion. |
 | **Tag** | MANAGER | Apply a named git tag to the current On Record SHA (e.g. `approved-rev-A`). |
 
+### Publishing to the website
+
+If the project has a website set up (see *Publishing settings* in §13), a
+Markdown document (`.md`) can be published to it. Click **Publish** among the
+buttons at the top of the view page (MANAGER by default). Doctis converts the
+**On Record** version to a web page at the document's repository path, with
+`.md` replaced by `.html`. The page header shows the document's status, e.g.
+DRAFT or APPROVED. The website's navigation and its index of published
+documents update at the same time.
+
+Once published, the panel shows a **Published** row with:
+- the page, linked when the site has a URL;
+- the status it was published with;
+- the date, and who published it;
+- the commit.
+
+The row says **out of date** after a newer version is promoted to On Record or
+the status changes. Click **Republish** to update the page. **Unpublish**
+removes the page from the website; deleting the document also removes it.
+Each publish and unpublish appears in the document history.
+
+Private documents and documents restricted by a license cannot be published.
+Only Markdown documents can be published, and only their On Record version,
+never a Draft.
+
 ### File history
 
 The full version history of the primary document is preserved in the git
@@ -730,6 +755,27 @@ In `config/config_inc.php`:
 | `$g_topic_assess_threshold` | Who may record assessments (default MANAGER) |
 | `$g_topic_snapshot_threshold` | Who takes snapshots (default MANAGER) |
 | `$g_topic_assessor_licenses` | Licenses assessors must also hold, by Topic code (`'*'` for all), e.g. `array( '*' => 'Topic Assessor', '23' => 'Safety Assessor' )`; empty = threshold only. Unlike an access level, a license does not pass to administrators automatically |
+
+### Publishing settings
+
+Publishing is off until an administrator allows website directories in
+`config/config_inc.php`, and pandoc 3 is installed:
+
+```php
+$g_dwg_publish_roots = array( '/var/www/html/site' );   # empty = publishing off
+```
+
+Each project then sets its website on **Manage → Projects → (project) →
+Publishing**:
+- **Target directory**: at or below an allowed root, and writable by the web
+  server.
+- **Website URL**: e.g. `/site/`.
+- Optionally, a **Template** and a **Banner logo**, given as repository paths
+  on the default branch.
+
+A sub-project without its own target publishes into its parent's site.
+`$g_dwg_publish_threshold` (default MANAGER) controls who may publish. Details:
+`doc/publish/PUBLISHING.md`.
 
 ### AI Assistant and meeting settings
 

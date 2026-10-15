@@ -475,6 +475,9 @@ define( 'ERROR_EMAIL_DISPOSABLE', 1201 );
 # ERROR_TOPIC_* (Document Topics)
 define( 'ERROR_TOPIC', 1250 );
 
+# ERROR_DWG_PUBLISH (Document publishing)
+define( 'ERROR_DWG_PUBLISH', 1260 );
+
 # ERROR_CUSTOM_FIELD_*
 define( 'ERROR_CUSTOM_FIELD_NOT_FOUND', 1300 );
 define( 'ERROR_CUSTOM_FIELD_NAME_NOT_UNIQUE', 1301 );

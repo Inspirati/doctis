@@ -55,6 +55,7 @@ require_api( 'access_dwg_api.php' );
 require_api( 'antispam_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'dwgnote_api.php' );
+require_api( 'dwg_publish_api.php' );
 require_api( 'dwg_revision_api.php' );
 require_api( 'category_api.php' );
 
@@ -1511,6 +1512,9 @@ function dwg_delete( $p_bug_id ) {
 
 	# Delete files
 	file_dwg_delete_attachments( $p_bug_id );
+
+	# Withdraw its published page (Doctis document publishing)
+	dwg_publish_withdraw_on_delete( $c_bug_id );
 
 	# Detach tags
 	tag_dwg_detach_all( $p_bug_id, false );
