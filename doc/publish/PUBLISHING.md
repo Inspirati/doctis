@@ -39,7 +39,8 @@ No schema change.
    - the site template
    - [core/publish/rewrite-links.lua](../../core/publish/rewrite-links.lua)
    - a generated banner and sidebar (`--include-before-body`)
-   - Doctis metadata for the template (§4)
+   - Doctis metadata for the template (§4), and the document-control block
+     (`core/publish/control-block.lua`)
 4. Writes the page at `<target>/<git_path with .md replaced by .html>`, e.g.
    `system/procedures/Document-Control-Procedure.html`. Relative links between
    published documents therefore work as they do in the repository.
@@ -191,6 +192,18 @@ through `$include-before$`, using the `build-html.sh` markup: `.site-banner`,
 | `doctis-commit` | `8feccbc1` | On Record commit (short) |
 | `doctis-published` | 2026-10-15 10:00 | Publish time |
 | `doctis-url` | `http://…/dwg_view.php?id=12` | The document in Doctis |
+| `doctis-classification` | Internal | Classification; shown in the banner, footer and PDF margins |
+| `doctis-owner`, `doctis-approved`, `doctis-effective`, `doctis-review`, `doctis-record` | | Owner (assigned user); "date by name" of the approval while the status is in `$g_dwg_publish_approved_statuses`; release date; due date; On Record commit and date |
+
+**The document-control block.** `core/publish/control-block.lua` (a Doctis
+filter) inserts a table after the document's first heading, in the HTML page
+and the PDF alike. Its rows are number, title, revision, status,
+classification, owner, approved, effective, next review, On Record and
+published; empty rows are left out. Pandoc builds it from the metadata
+above, so it works with any template and every value is escaped. HTML
+templates can style `div.doctis-control`. `$g_dwg_publish_control_block`
+(default ON, per project) turns it off. This is what replaces the
+hand-written metadata lines in the documents (METADATA_CUTOVER.md).
 
 The index page gets only `pagetitle` and `doctis-project`. User-entered values
 are passed with `--metadata`, which pandoc HTML-escapes. Only the computed key

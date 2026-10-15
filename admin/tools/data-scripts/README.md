@@ -42,5 +42,16 @@ the new schema.
 5. Create the top-level project HCR571 and load the STD-ENG-004 catalogue.
    Enable Topics, upload the three exemplars with their Topic tags, and mark
    Topics 10, 20 and 30 Applicable.
+6. Move the lifecycle metadata into Doctis
+   ([doc/publish/METADATA_CUTOVER.md](../../../doc/publish/METADATA_CUTOVER.md)).
+   Run as `www-data` from the running clone, checking the dry run first:
+
+   ```bash
+   sudo -u www-data php admin/doctis-metadata-cutover.php --project HCRQMS --user administrator --dry-run
+   sudo -u www-data php admin/doctis-metadata-cutover.php --project HCRQMS --user administrator
+   ```
+
+   Repeat for LiDAR if wanted. The import reads the frontmatter, so this must
+   come after step 3. A second run changes nothing.
 
 Turn email notifications off while reloading. The VM sends real email.

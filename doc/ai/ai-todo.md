@@ -254,9 +254,13 @@ which promotes the minutes Draft to On Record and sets status 30. The chair
 can do this from the **Approve Minutes** button on My Meetings or the meeting
 page (`meeting_minutes_approve.php`) or from the document page's promote-Draft
 button. For meeting documents that button is shown to, and accepted from, the
-chair only, instead of managers. Approval stamps the record
-(`status: Approved Minutes`, `effective_date`) before promoting it, creates
-the action issues, and emails the approved minutes.
+chair only, instead of managers. Approval promotes the Draft, sets the
+document's Doctis status to approved and its release date (2026-10-15:
+lifecycle metadata lives in Doctis, not in the record; it no longer stamps
+`status: Approved Minutes`), creates the action issues, and emails the
+approved minutes. The document status follows the meeting
+(`$g_meeting_document_status`), and stored records are stripped of
+lifecycle metadata (doc/publish/METADATA_CUTOVER.md).
 
 A user's role in a meeting is chair, minute taker, organiser (creator) or
 invitee. Chair, minute taker and organiser may write minutes.
@@ -415,8 +419,8 @@ Set in `config/config_inc.php` (never committed).
 - [x] Validation of model-supplied attributes; reference built server-side; saved-document card escapes output
 - [x] Minutes flow defined; meeting focus via `?meeting_id=`; attendance recorded
 - [x] My Meetings view in the My View tabs
-- [x] Chair approval of minutes (stamp `Approved Minutes` + `effective_date`, promote Draft, status 30); approval request email to the chair
-- [x] Records carry the TMPL-SYS-001 YAML frontmatter
+- [x] Chair approval of minutes (promote Draft, document status approved + release date in Doctis, status 30); approval request email to the chair. Until 2026-10-15 it stamped `Approved Minutes` into the record
+- [x] Records carry the TMPL-SYS-001 YAML frontmatter, without lifecycle fields since 2026-10-15
 - [x] Meeting roles authorise writing minutes in a private meeting project
 - [x] End-to-end test passed; procedure and driver in [TESTING.md §7a](../TESTING.md) (`admin/tools/doctis-meeting-chat.py`)
 - [x] Email lifecycle (agenda, draft minutes for corrections, approved minutes), document link only for viewers; Minutes due indicator

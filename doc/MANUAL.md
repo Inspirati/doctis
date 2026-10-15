@@ -235,8 +235,21 @@ the status changes. Click **Republish** to update the page. **Unpublish**
 removes the page from the website; deleting the document also removes it.
 Each publish and unpublish appears in the document history.
 
+Every published page starts with a **document-control block** under the
+title. Its values all come from Doctis:
+- number, title, revision, status and classification;
+- owner (the assigned user);
+- who approved the document and when;
+- effective date and next review;
+- the On Record commit, and when it was published.
+
+The classification is also shown in the page header and footer. Documents no
+longer need these details written into their text (see
+`doc/publish/METADATA_CUTOVER.md`).
+
 If the project also publishes PDFs, a PDF of the document is written next
-to the page. Its footer carries the document number, revision and status,
+to the page. Its footer carries the document number, revision, status and
+classification (also at the top of each page),
 "Page X of Y" and "UNCONTROLLED COPY WHEN PRINTED OR TRANSMITTED". The page,
 the website index and the Published row link to it.
 
@@ -458,8 +471,10 @@ agenda item (rough notes are fine), including actions with an owner and a due
 date. The saved minutes are a **draft revision** of the meeting document, and
 are emailed to the participants for corrections within three business days.
 
-The **chair** approves them (Approve Minutes): the record is stamped *Approved
-Minutes*, becomes On Record, and is emailed to the participants. Each action
+The **chair** approves them (Approve Minutes): the minutes become On Record,
+the meeting document's status becomes approved, its release (effective) date
+is set, and it is emailed to the participants. The record itself is not
+changed: like every document, its status and dates live in Doctis. Each action
 becomes a Doctis issue linked to the meeting document, assigned to its owner
 with its due date. An owner who is not a member of the meeting project is added
 to it so the issue can be assigned. A revision uploaded by hand on the meeting

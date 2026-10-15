@@ -31,6 +31,7 @@ turn email notifications off before tests that queue mail in bulk.
 | AI Meeting Assistant, meetings, My Meetings, minutes approval | §7a meeting end-to-end |
 | Documentation Topics (catalogues, tags, applicability, Topics page) | §2 `TopicApiTest` + §7b |
 | Document publishing (Publish button, website, project Publishing settings) | §2 `DwgPublishTest` + §7d |
+| Metadata cut-over (`admin/doctis-metadata-cutover.php`) | §2 `DwgMetadataStripTest` + a `--dry-run --diff` on the VM |
 | Anything touching schema | §8: upgrade (new table) or rebuild (changed table) first, then re-run the relevant suite above |
 | You aren't sure what else broke | §9 full regression sweep |
 
