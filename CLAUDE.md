@@ -146,6 +146,16 @@ partials are refused. API: [core/dwg_publish_api.php](core/dwg_publish_api.php);
 default template and link filter in `core/publish/`. Design, setup and
 limitations: [doc/publish/PUBLISHING.md](doc/publish/PUBLISHING.md).
 
+**Lifecycle metadata lives only in Doctis** (owner decision, 2026-10-15). The
+git store holds content, Doctis holds status, and publishing combines them.
+It prints a document-control block (`core/publish/control-block.lua`) and the
+classification in headers and footers. `admin/doctis-metadata-cutover.php`
+removes status, revision, owner, classification etc. from document
+frontmatter and header lines in one commit, and promotes the changes.
+Meeting records get their status in Doctis (`$g_meeting_document_status`),
+never stamped into the file. See
+[doc/publish/METADATA_CUTOVER.md](doc/publish/METADATA_CUTOVER.md).
+
 ## Development Environment
 
 Development and testing happen on a native **Debian 13 VM** (`10.0.0.94`),
