@@ -1,8 +1,7 @@
 # Document Publishing
 
-Status: **built on branch `publish`, not yet run on a server** (2026-10-15).
-The pure helpers and the pandoc rendering were checked in isolation; the
-PHPUnit test and the end-to-end checks in §8 still have to be run on the VM.
+Status: **built on branch `publish` and tested on the native VM**
+(2026-10-15). Not merged into `dev`; not on the live version. Test record: §8.
 
 Doctis can publish a Markdown document to a static website. **Publish** on
 the document view page converts the document's **On Record** version to HTML
@@ -282,14 +281,6 @@ publish time, commit and a link to the document in Doctis.
 
 ## 8. Testing
 
-Isolated checks run 2026-10-15 on the VM (no Doctis bootstrap):
-- the pure helpers (paths, roots, labels, URLs, partial guard, markers,
-  sidebar) passed;
-- a real HCRQMS document rendered correctly with both templates, with the
-  badge in the banner, escaped metadata and rewritten links.
-
-Still to run on the VM, after deploying the branch to the running clone:
-
 ```bash
 cd /var/www/html/doctis
 sudo -u www-data vendor/bin/phpunit --testsuite mantis --filter DwgPublishTest --testdox
@@ -297,10 +288,33 @@ sudo -u www-data vendor/bin/phpunit --testsuite mantis --filter DwgPublishTest -
 sudo -u www-data DOCTIS_PUBLISH_TEST_DWG=<id> vendor/bin/phpunit --testsuite mantis --filter DwgPublishTest
 ```
 
-Then, in a browser:
-1. set `$g_dwg_publish_roots` and make `/var/www/html/site` writable (§2);
+Page checks (curl as `manager`, or a browser):
+1. set `$g_dwg_publish_roots` and make the site directory writable (§2);
 2. on HCRQMS → Publishing, set target `/var/www/html/site` and URL `/site/`;
 3. publish two documents in different folders. Check the badge, the sidebar
    in both pages, `index.html`, the Published row and the history entry;
 4. change the status: the row says out of date; Republish clears it;
 5. Unpublish one document: the other page's sidebar and the index drop it.
+
+**Run 2026-10-15 on the native VM** (running clone on `publish`):
+- `DwgPublishTest`: 17 tests passed, including the end-to-end test on document
+  2. The full `mantis` suite passed: 312 tests, 1 pre-existing skip.
+- All five page checks passed over HTTP as `manager`:
+  - HCRQMS Publishing settings were saved, and Engineering showed that it
+    inherits them;
+  - documents 93 (`system/procedures/Document-Control-Procedure.md`) and 2
+    (`content/engineering/Engineering-Management-Plan.md`) published;
+  - pages, sidebars and index were served at `http://10.0.0.94/site/`;
+  - setting document 93 to approved directly in the database raised "out of
+    date", and Republish showed the APPROVED badge (status restored
+    afterwards);
+  - Unpublish/Publish of document 2 pruned and restored the folders, sidebar
+    and index;
+  - history entries were logged, with no PHP errors.
+
+**VM state after the run.**
+- `config_inc.php` sets `$g_dwg_publish_roots = array( '/var/www/html/site' )`.
+- `/var/www/html/site` is mode 2775.
+- HCRQMS (project 1) publishes to `/var/www/html/site` at `/site/`.
+- Documents 93 and 2 are published (DRAFT) as a demonstration; unpublish them
+  from their view pages if they are not wanted.

@@ -52,7 +52,7 @@ and set `MANTIS_TESTSUITE_SOAP_HOST`, `USERNAME` and `PASSWORD`. The VM's
 **Run** in the running clone, after deploying the change:
 ```bash
 cd /var/www/html/doctis
-sudo -u www-data vendor/bin/phpunit --testsuite mantis     # 295 tests, 2026-10-14
+sudo -u www-data vendor/bin/phpunit --testsuite mantis     # 312 tests, 2026-10-15
 vendor/bin/phpunit --testsuite mantis --filter Topic       # a filtered run also works as robert
 ```
 
@@ -579,8 +579,10 @@ sudo -u www-data DOCTIS_PUBLISH_TEST_DWG=<id> vendor/bin/phpunit --testsuite man
 `$g_dwg_publish_roots` in `config_inc.php` and a target directory writable by
 `www-data`.
 
-Not yet run on the VM (2026-10-15). Only isolated checks of the pure helpers
-and the pandoc rendering have run.
+Run 2026-10-15 on the VM: `DwgPublishTest` passed (17 tests, including the
+end-to-end test on document 2). The full `mantis` suite passed (312 tests, 1
+pre-existing skip). The page checks passed over HTTP as `manager`. Details
+and the resulting VM state: [publish/PUBLISHING.md](publish/PUBLISHING.md) §8.
 
 ---
 
