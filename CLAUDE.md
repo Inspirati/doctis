@@ -240,8 +240,10 @@ tested then.
    blocking a pull.
 2. Download backups.
    - **Backup Git Store** gives a `.tar.gz` of the store.
-   - **Data Snapshot** of all tables. The **Backup Database** download fails
-     until the database server offers TLS; `mariadb-dump` demands it.
+   - **Backup Database** (a full `mariadb-dump`), or a **Data Snapshot** of
+     all tables. Backup Database works on live since 7cb107677 (2026-10-14),
+     which connects without TLS (`--skip-ssl`) like the application. Earlier
+     builds failed because MariaDB 11.4+ dump clients demand TLS.
    - **Data Snapshot** of the `user` table only, in REPLACE mode. This is the
      file that restores the accounts.
 3. Note any projects other than the imported one. A rebuild deletes them, and
