@@ -141,11 +141,12 @@ foreach( array( 'AUTHOR', 'COMMITTER' ) as $t_role ) {
 	}
 }
 
+# repository_ensure_on_disk() takes the storage lock itself, so call it first.
+repository_ensure_on_disk( $t_repository_id );
 $t_lock = dwg_git_storage_lock();
 $t_changed = array();
 $t_skipped = 0;
 try {
-	repository_ensure_on_disk( $t_repository_id );
 	if( !$g_dry ) {
 		dwg_git_worktree_sync( $t_worktree );
 	}
