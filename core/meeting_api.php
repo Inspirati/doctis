@@ -724,10 +724,11 @@ function meeting_document_set_status( int $p_dwg_id, string $p_stage, int $p_rel
 	}
 	dwg_set_field( $p_dwg_id, 'status', (int)$t_statuses[$p_stage] );
 	if( $p_released > 0 ) {
-		# dwg_set_field() does not take release_date: update and log it here.
+		# dwg_set_field() does not take release_date ({documents}): update and log it here.
 		$t_old = dwg_get_field( $p_dwg_id, 'release_date' );
 		db_param_push();
-		db_query( 'UPDATE {dwg} SET release_date=' . db_param() . ' WHERE id=' . db_param(), array( $p_released, $p_dwg_id ) );
+		db_query( 'UPDATE {documents} SET release_date=' . db_param() . ' WHERE id=' . db_param(),
+			array( $p_released, (int)dwg_get_field( $p_dwg_id, 'document_id' ) ) );
 		history_dwg_log_event_direct( $p_dwg_id, 'release_date', $t_old, $p_released );
 		dwg_clear_cache( $p_dwg_id );
 	}
