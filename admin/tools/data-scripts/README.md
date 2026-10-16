@@ -28,9 +28,12 @@ the new schema.
 
 ## Native VM rebuild
 
-1. Back up the database and the git store, then reset both (CLAUDE.md,
-   "Resetting to a Clean Slate for Testing").
-2. Load `vm-users.sql` with **Load Data**.
+1. Back up the database, the git store and the `user` table (Data Snapshot,
+   REPLACE). Then run **Rebuild Database** and **Reset Git Store** in System
+   Operations. Since 2026-10-16 these pages work on the VM as on live, because
+   the VM runs them as `hcr`
+   ([NATIVE-DEVELOPMENT.md](../../../doc/NATIVE-DEVELOPMENT.md)).
+2. Load the `user` snapshot (or `vm-users.sql`) with **Load Data**.
 3. Manage → **Import Data**, as administrator. Import `HCRQMS-dev.zip` as
    HCRQMS first, so it becomes project 1, which `$g_meeting_project_id` uses.
    Use directories `content,system`. Then import the LiDAR handbook ZIP as

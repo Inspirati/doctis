@@ -209,14 +209,15 @@ its checkout is not writable by `www-data`, so switching there needs a wider
 sudoers rule. The Docker image allows `/usr/bin/git` with any arguments.
 
 The working clone is `/home/robert/Documents/doctis`. Update the deployed
-checkout deliberately, as `robert`: `git -C /var/www/html/doctis pull --ff-only`
-for a pushed branch, or fetch straight from the working clone to test an
-unpushed one:
+checkout deliberately, **as `hcr`, never as `robert`** (see "System
+Operations account" below). For a pushed branch, use System Operations → Git
+Pull. To test an unpushed branch, use a bundle:
 
 ```bash
-cd /var/www/html/doctis
-git fetch /home/robert/Documents/doctis <branch> && git reset --hard FETCH_HEAD
-php admin/upgrade_unattended.php   # when admin/schema.php gained steps
+git -C ~/Documents/doctis bundle create /tmp/doctis.bundle <branch>
+cd /tmp && sudo -u hcr -H git -C /var/www/html/doctis fetch /tmp/doctis.bundle <branch>
+cd /tmp && sudo -u hcr -H git -C /var/www/html/doctis merge --ff-only FETCH_HEAD   # or reset --hard
+sudo -u www-data php /var/www/html/doctis/admin/upgrade_unattended.php   # when admin/schema.php gained steps
 ```
 
 Rerunning the installer intentionally does not pull or migrate an existing
@@ -239,20 +240,20 @@ administrator. With only the scoped `git pull` rule, Rebuild Database,
 Load Sample Data, Write Config and the branch switcher fail on a native
 install ("sudo: a password is required").
 
-To make the VM match (2026-10-16 status in brackets):
+To make a native install match (all done on the VM, 2026-10-16):
 1. `hcr` has no sudo rights: removed from the `sudo` group and its
-   `NOPASSWD: ALL` line removed from `/etc/sudoers` [done].
+   `NOPASSWD: ALL` line removed from `/etc/sudoers`.
 2. A MariaDB login for `hcr` by socket, for the scripts' `mysql` and
-   `mysqldump` calls, with no password file [done]:
+   `mysqldump` calls, with no password file:
    `CREATE USER 'hcr'@'localhost' IDENTIFIED VIA unix_socket;
    GRANT ALL PRIVILEGES ON doctis.* TO 'hcr'@'localhost';`
    (Live uses `~/.my.cnf`, because its database is in another container.)
-3. `hcr`'s git configuration [done]:
+3. `hcr`'s git configuration:
    `safe.directory=/var/www/html/doctis`, plus a user name and email.
 4. The rule above in `/etc/sudoers.d/doctis-web`
-   (`sudo visudo -f /etc/sudoers.d/doctis-web`) [owner].
+   (`sudo visudo -f /etc/sudoers.d/doctis-web`).
 5. A checkout and `config_inc.php` that `hcr` can write, as live's
-   `chmod -R 775` gives [owner]:
+   `chmod -R 775` gives:
 
    ```bash
    chmod -R g+w /var/www/html/doctis
@@ -260,7 +261,7 @@ To make the VM match (2026-10-16 status in brackets):
    cd /tmp && sudo -u hcr -H git -C /var/www/html/doctis config core.sharedRepository group
    ```
 
-6. `$g_updater_run_as_user = 'hcr';` in `config_inc.php` [owner].
+6. `$g_updater_run_as_user = 'hcr';` in `config_inc.php`.
 
 **After step 5, never run git in `/var/www/html/doctis` as `robert`.** The
 web server can then write its `.git`, and a planted hook or `core.fsmonitor`
@@ -277,6 +278,11 @@ cd /tmp && sudo -u hcr -H git -C /var/www/html/doctis reset --hard FETCH_HEAD
 `admin/tools/doctis-drop-and-create-new-database.sh` calls `install.php` at
 `127.0.0.1` on native installs, because the nginx profile allows only
 localhost. Inside Docker it keeps the container address.
+
+Verified on the VM, 2026-10-16. The whole reload ran through the System
+Operations pages exactly as on live: Git Pull and Rebuild Database as `hcr`,
+then Reset Git Store, Load Data and Import. The imported tree was identical
+to live's.
 
 ## Application settings
 
