@@ -473,6 +473,39 @@ check( $t_changed !== null && $t_changed['has_draft'], 'edited imported document
 check( $t_unchanged !== null && !$t_unchanged['has_draft']
 	&& $t_unchanged['sha'] === $t_reg6['git_sha'], 'untouched document with same import SHA has no Draft' );
 
+# ── Step 12b: move to a project with another repository ─────────────────────
+echo "Step 12b: document move carries the primary file\n";
+$t_dwg7 = make_dwg( $t_parent, 1, 'GitTest moved document' );
+$t_cleanup['dwg_ids'][] = $t_dwg7;
+$t_tmp = write_tmp( "moved content\n" );
+file_dwg_primary_add( $t_dwg7, 1, $t_tmp, 'moved.md', 14, 'text/markdown', 'before move' );
+$t_before = file_dwg_primary_get( $t_dwg7 );
+dwg_move( $t_dwg7, $t_adopt_project );
+$t_after = file_dwg_primary_get( $t_dwg7 );
+$t_adopt_bare = $t_adopt_paths['bare'];
+check( (int)dwg_get_field( $t_dwg7, 'project_id' ) === $t_adopt_project, 'document moved to the other project' );
+check( $t_after['git_path'] === $t_before['git_path'], 'path kept when free in the target', $t_after['git_path'] );
+check( $t_after['git_sha'] !== $t_before['git_sha']
+	&& bare_git( $t_adopt_bare, 'cat-file -t ' . escapeshellarg( $t_after['git_sha'] ) ) === 'commit',
+	'On Record commit is in the target repository' );
+check( bare_git( $t_adopt_bare, 'cat-file -e ' . escapeshellarg( 'HEAD:' . $t_after['git_path'] ) . ' 2>/dev/null; echo $?' ) === '0',
+	'file present at target HEAD' );
+check( bare_git( $t_bare, 'cat-file -e ' . escapeshellarg( 'HEAD:' . $t_before['git_path'] ) . ' 2>/dev/null; echo $?' ) !== '0',
+	'file removed from source HEAD' );
+check( bare_git( $t_bare, 'cat-file -e ' . escapeshellarg( $t_before['git_sha'] . ':' . $t_before['git_path'] ) . ' 2>/dev/null; echo $?' ) === '0',
+	'source history keeps the file' );
+$t_content = file_dwg_primary_get_content( $t_dwg7 );
+check( $t_content !== false && $t_content['content'] === "moved content\n", 'moved file retrievable' );
+check( dwg_get_field( $t_dwg7, 'reference' ) === $t_after['git_sha'], 'Reference follows the new commit' );
+
+# A document with a Draft is refused and stays where it is.
+try {
+	dwg_move( $t_dwg5, $t_parent );
+	fail( 'document with a Draft refused' );
+} catch( Mantis\Exceptions\ClientException $e ) {
+	check( (int)dwg_get_field( $t_dwg5, 'project_id' ) === $t_adopt_project, 'document with a Draft refused and not moved' );
+}
+
 # ── Step 13: rename relocation ───────────────────────────────────────────────
 echo "Step 13: rename relocation\n";
 $t_old_bare = repository_bare_path( $t_repo_id );
