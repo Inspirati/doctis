@@ -45,7 +45,7 @@ $t_check = system_ops_config_check( $t_content, $t_current );
 if( $t_check['errors'] ) {
 	form_security_purge( 'manage_config_file_upload' );
 	error_parameters( 'The uploaded config_inc.php was rejected; the current one was not changed.<br>'
-		. implode( '<br>', array_map( 'htmlspecialchars', $t_check['errors'] ) ) );
+		. implode( '<br>', $t_check['errors'] ) );   # the error page escapes them
 	trigger_error( ERROR_GENERIC, ERROR );
 }
 
