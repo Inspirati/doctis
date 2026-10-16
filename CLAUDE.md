@@ -191,13 +191,11 @@ php admin/upgrade_unattended.php      # only when admin/schema.php gained steps
 ```
 
 Pushing to GitHub (`origin`, `Inspirati/doctis`) needs the owner's explicit
-approval. System Operations → **Git Pull** pulls the running clone from
-`origin` through the sudoers rule
-`www-data ALL=(robert) NOPASSWD: /usr/bin/git -C /var/www/html/doctis pull`.
-That is the VM's only System Operations sudo rule, so the web Rebuild
-Database, Load Sample Data and config upload actions fail there; use the
-`admin/tools/` scripts with `sudo` instead. Backup Database and Load Data need
-no sudo.
+approval. Since 2026-10-16 the VM runs System Operations like live does: as the
+unprivileged `hcr`, under live's sudoers rule. So Git Pull, Rebuild Database,
+Load Sample Data and config upload all work through their pages. **Never run
+git in `/var/www/html/doctis` as `robert`.** Deploy as `hcr`, with the Git Pull
+page or a bundle (doc/NATIVE-DEVELOPMENT.md, "System Operations account").
 
 ### Querying the database
 
@@ -808,6 +806,19 @@ registered PHP function for.  Work through in order:
 ## Config File
 
 Never commit `config/config_inc.php`. Use `config/config_inc.php.sample` as the template. Override defaults from [config_defaults_inc.php](config_defaults_inc.php) there.
+
+System Operations → Config File uploads are test-loaded before they are
+installed (`system_ops_config_check()`, `admin/tools/doctis-config-check.php`).
+The file runs in a separate PHP process, loaded as core.php loads it, and is
+refused if it:
+- has a syntax error, a fatal error or an exception;
+- produces output;
+- lacks the database settings or a 16-character crypto master salt;
+- has database credentials that fail to connect.
+
+Warnings, including settings the new file drops, show after the upload. Each
+upload keeps a uniquely named `config_inc.php.bak.*` (git-ignored). Never put
+`?>` in a `#` comment of a PHP file: it ends PHP mode.
 
 ## Claude Memory — Project-Local Storage
 
