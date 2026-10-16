@@ -38,6 +38,17 @@ if( strncmp( $t_content, '<?php', 5 ) !== 0 ) {
 	trigger_error( ERROR_GENERIC, ERROR );
 }
 
+# Never install a file that would stop Doctis from loading: the server may
+# have no console to repair it from (core/system_ops_api.php).
+$t_current = (string)@file_get_contents( __DIR__ . '/config/config_inc.php' );
+$t_check = system_ops_config_check( $t_content, $t_current );
+if( $t_check['errors'] ) {
+	form_security_purge( 'manage_config_file_upload' );
+	error_parameters( 'The uploaded config_inc.php was rejected; the current one was not changed.<br>'
+		. implode( '<br>', array_map( 'htmlspecialchars', $t_check['errors'] ) ) );
+	trigger_error( ERROR_GENERIC, ERROR );
+}
+
 $t_script = '/var/www/html/doctis/admin/tools/doctis-write-config.sh';
 $t_proc = proc_open(
 	system_ops_sudo_prefix() . escapeshellarg( $t_script ),
@@ -72,4 +83,5 @@ if( $t_rc !== 0 ) {
 
 error_log( 'ADMIN: ' . current_user_get_field( 'username' ) . ' uploaded config_inc.php at ' . date( 'c' ) );
 
+session_set( 'config_upload_warnings', $t_check['warnings'] );
 print_header_redirect( 'manage_config_file_page.php?uploaded=1' );

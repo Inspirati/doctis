@@ -42,6 +42,15 @@ print_manage_menu( 'manage_overview_page.php' );
 			<strong>Config file updated successfully.</strong>
 			The previous version was backed up in <code>config/</code>.
 		</div>
+		<?php
+			$t_warnings = (array)session_get( 'config_upload_warnings', array() );
+			session_delete( 'config_upload_warnings' );
+			if( $t_warnings ) { ?>
+		<div class="alert alert-warning">
+			<strong>The file loads, with these warnings:</strong>
+			<ul><?php foreach( $t_warnings as $t_warning ) { echo '<li>', htmlspecialchars( $t_warning ), '</li>'; } ?></ul>
+		</div>
+		<?php } ?>
 		<?php } ?>
 
 		<table class="table table-bordered table-condensed" style="max-width:600px;">
@@ -71,7 +80,9 @@ print_manage_menu( 'manage_overview_page.php' );
 		<h5>Upload Replacement</h5>
 		<p class="text-warning">
 			<strong>Warning:</strong> uploading an invalid config file may break the application.
-			Download a backup first.
+			Download a backup first. The file is test-loaded before it is installed;
+			one that fails to load, produces output or cannot reach the database
+			is rejected.
 		</p>
 		<form method="post" enctype="multipart/form-data" action="manage_config_file_upload.php">
 			<?php echo form_security_field( 'manage_config_file_upload' ); ?>
