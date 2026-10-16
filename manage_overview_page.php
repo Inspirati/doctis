@@ -218,6 +218,10 @@ function doctis_get_git_version_info() {
 			<?php print_icon( 'fa-random', 'ace-icon' ); ?> Git Branches
 		</a>
 		&nbsp;
+		<a href="manage_php_error_log_page.php" class="btn btn-sm btn-default">
+			<?php print_icon( 'fa-exclamation-triangle', 'ace-icon' ); ?> PHP Error Log
+		</a>
+		&nbsp;
 		<a href="manage_db_load_page.php" class="btn btn-sm btn-warning">
 			<?php print_icon( 'fa-upload', 'ace-icon' ); ?> Load Data
 		</a>

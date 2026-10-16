@@ -276,8 +276,11 @@ cd /tmp && sudo -u hcr -H git -C /var/www/html/doctis reset --hard FETCH_HEAD
 ```
 
 `admin/tools/doctis-drop-and-create-new-database.sh` calls `install.php` at
-`127.0.0.1` on native installs, because the nginx profile allows only
-localhost. Inside Docker it keeps the container address.
+`127.0.0.1`, because the nginx profile allows only localhost. Inside Docker
+it falls back to the container address. It checks that the installer answers
+before dropping the database, and stops with the database untouched if not.
+`--check` runs only that check. Run it inside the container before nginx there
+is limited to localhost, as the VM's is.
 
 Verified on the VM, 2026-10-16. The whole reload ran through the System
 Operations pages exactly as on live: Git Pull and Rebuild Database as `hcr`,

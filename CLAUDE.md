@@ -324,6 +324,11 @@ MantisBT's own logging (`$g_log_level`) is off unless `LOG_LEVEL` is set in the
 PHP-FPM pool (`env[LOG_LEVEL]`; FPM does not pass the shell environment); it
 then writes to `/var/log/doctis/mantis.log`. There is no Xdebug on the VM.
 
+Manage → System Operations → **PHP Error Log** (`manage_php_error_log_page.php`,
+administrators only) shows the newest entries of whatever file PHP logs to,
+with a text filter. It also shows whether `display_errors` is on. It is the
+only way to read PHP errors on live, which has no console.
+
 ### How MantisBT handles exceptions
 
 MantisBT catches PHP exceptions in its error handler. With

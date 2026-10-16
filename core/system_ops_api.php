@@ -128,3 +128,71 @@ function system_ops_config_check( string $p_content, string $p_current = '' ): a
 	$t_result['warnings'] = array_merge( $t_result['warnings'], (array)$t_check['warnings'] );
 	return $t_result;
 }
+
+/**
+ * The file PHP writes its error log to, as this web server runs PHP.
+ *
+ * @return string The path, or '' when PHP logs to the web server, syslog or a
+ *                stream rather than to a file a page can read.
+ */
+function system_ops_php_error_log(): string {
+	$t_log = (string)ini_get( 'error_log' );
+	if( $t_log === '' || $t_log === 'syslog' || preg_match( '#^/(proc|dev)/#', $t_log ) ) {
+		return '';
+	}
+	return $t_log;
+}
+
+/**
+ * Read the end of a log file without loading all of it.
+ *
+ * @param string  $p_path      The log file.
+ * @param integer $p_max_bytes Read at most this many bytes from the end.
+ * @return array|false Its lines, oldest first, or false if it cannot be read.
+ *                     A line cut by the byte limit is left out.
+ */
+function system_ops_log_tail( string $p_path, int $p_max_bytes ) {
+	$t_handle = @fopen( $p_path, 'rb' );
+	if( $t_handle === false ) {
+		return false;
+	}
+	$t_start = max( 0, (int)fstat( $t_handle )['size'] - $p_max_bytes );
+	if( $t_start === 0 ) {
+		$t_text = (string)stream_get_contents( $t_handle );
+	} else {
+		# Read from the byte before the limit: if it ends a line, the first
+		# line read is whole.  Otherwise drop the part line.
+		fseek( $t_handle, $t_start - 1 );
+		$t_text = (string)stream_get_contents( $t_handle );
+		$t_cut = strpos( $t_text, "\n" );
+		$t_text = $t_cut === false ? '' : substr( $t_text, $t_cut + 1 );
+	}
+	fclose( $t_handle );
+	$t_text = rtrim( str_replace( "\r\n", "\n", $t_text ), "\n" );
+	return $t_text === '' ? array() : explode( "\n", $t_text );
+}
+
+/**
+ * Group PHP error log lines into entries, newest first.
+ *
+ * An entry starts with a "[16-Oct-2026 14:31:14 UTC]" stamp.  Lines without
+ * one, such as MantisBT's stack traces, belong to the entry above them.
+ * Blank lines are dropped.
+ *
+ * @param array $p_lines Log lines, oldest first.
+ * @return array Entries, newest first, each a string of one or more lines.
+ */
+function system_ops_log_entries( array $p_lines ): array {
+	$t_entries = array();
+	foreach( $p_lines as $t_line ) {
+		if( trim( $t_line ) === '' ) {
+			continue;
+		}
+		if( $t_entries && !preg_match( '/^\[\d{2}-[A-Za-z]{3}-\d{4} \d{2}:\d{2}:\d{2}/', $t_line ) ) {
+			$t_entries[count( $t_entries ) - 1] .= "\n" . $t_line;
+		} else {
+			$t_entries[] = $t_line;
+		}
+	}
+	return array_reverse( $t_entries );
+}

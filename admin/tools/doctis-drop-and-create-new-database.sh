@@ -16,10 +16,22 @@
 #   password=mysqladminpass
 #
 # Usage:
-#   bash doctis-drop-and-create-new-database.sh [project [mysql-password [domain]]]
+#   bash doctis-drop-and-create-new-database.sh [--check] [project [mysql-password [domain]]]
+#
+# The schema installer (admin/install.php) is run over HTTP.  Without a domain
+# the script tries 127.0.0.1, because the nginx profile lets only localhost run
+# install.php, and then, inside Docker, the container's own address.  It checks
+# that the installer answers before it drops anything: if none does, it stops
+# and the database is untouched.  --check runs only that check.
 #
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+check_only=0
+if [[ "${1:-}" == "--check" ]]; then
+    check_only=1
+    shift
+fi
 
 project="doctis"
 password="password"
@@ -27,13 +39,14 @@ password="password"
 targetproject="${1:-$project}"
 mysqlpassword="${2:-$password}"
 domain_idname="${3:-}"
-if [[ -z "$domain_idname" ]]; then
+if [[ -n "$domain_idname" ]]; then
+    install_hosts=("$domain_idname")
+else
+    install_hosts=(127.0.0.1)
     if [ -f /.dockerenv ]; then
-        # Inside the container, reach its own nginx on the container address.
-        domain_idname=$(ip -4 route get 1.1.1.1 2>/dev/null | sed -n 's/.* src \([0-9.]*\).*/\1/p' || true)
+        container_addr=$(ip -4 route get 1.1.1.1 2>/dev/null | sed -n 's/.* src \([0-9.]*\).*/\1/p' || true)
+        [[ -n "$container_addr" ]] && install_hosts+=("$container_addr")
     fi
-    # Native installs: the nginx profile only lets localhost run install.php.
-    domain_idname="${domain_idname:-127.0.0.1}"
 fi
 
 database="mariadb"
@@ -51,7 +64,7 @@ FAIL="\033[31m"
 
 show_parameters() {
     echo -e "${INFO}Configuration parameters:${OFF}"
-    echo -e "${INFO}  domain id name:${OFF}" "$domain_idname"
+    echo -e "${INFO}  installer host(s):${OFF}" "${install_hosts[*]}"
     echo -e "${INFO}  database auth:${OFF} mysql client defaults / local socket"
 }
 
@@ -102,20 +115,47 @@ EOF
     echo -e "${INFO}Database configured for ${target}.${OFF}" >&2
 }
 
+installer_url() {
+    local target="$1"
+    local host="$2"
+    # Resolve the webroot check relative to the script's own location, not the
+    # caller's working directory.  ${SCRIPT_DIR} is admin/tools/ inside the
+    # project; three levels up lands at the webroot parent (e.g. /var/www/html).
+    if [ -d "${SCRIPT_DIR}/../../../${target}" ]; then
+        echo "http://${host}/${target}/admin/install.php"
+    else
+        echo "http://${host}/admin/install.php"
+    fi
+}
+
+# Set domain_idname to the first of install_hosts whose installer page answers.
+# A GET only shows the pre-installation check; it changes nothing.
+find_installer() {
+    local target="$1"
+    local host url page code
+    page=$(mktemp)
+    for host in "${install_hosts[@]}"; do
+        url=$(installer_url "$target" "$host")
+        code=$(curl --silent --max-time 30 -o "$page" -w '%{http_code}' "$url" || true)
+        if [ "$code" = "200" ] && grep -q 'Administration - Installation' "$page"; then
+            rm -f "$page"
+            domain_idname="$host"
+            echo -e "${INFO}Installer answers at ${url}${OFF}"
+            return 0
+        fi
+        echo -e "${WARN}No installer at ${url} (HTTP ${code:-none})${OFF}" >&2
+    done
+    rm -f "$page"
+    return 1
+}
+
 run_install() {
     local target="$1"
     local logfile
     logfile=$(mktemp /tmp/doctis-install.XXXXXX.html)
     chmod 600 "$logfile"
-
-    # Resolve the webroot check relative to the script's own location, not the
-    # caller's working directory.  ${SCRIPT_DIR} is admin/tools/ inside the
-    # project; three levels up lands at the webroot parent (e.g. /var/www/html).
-    if [ -d "${SCRIPT_DIR}/../../../${target}" ]; then
-        local install_url="http://${domain_idname}/${target}/admin/install.php"
-    else
-        local install_url="http://${domain_idname}/admin/install.php"
-    fi
+    local install_url
+    install_url=$(installer_url "$target" "$domain_idname")
 
     echo -e "${INFO}Running ${target} database install/upgrade...${OFF}"
     echo -e "${INFO}${install_url}${OFF}"
@@ -134,6 +174,10 @@ run_install() {
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 main() {
+    if ! find_installer "${targetproject}"; then
+        echo -e "${FAIL}⚠ The installer is not reachable, so the ${targetproject} database was not dropped.${OFF}" >&2
+        return 1
+    fi
     echo -e "${INFO}Attempting to delete ${targetproject} database${OFF}"
     drop_existing_database "${targetproject}" || return 1
 #    initialise_database
@@ -148,6 +192,12 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     echo -e "${INFO}This script is being invoked directly.${OFF}"
     show_parameters
     sleep 0.01
+
+    if [ "$check_only" -eq 1 ]; then
+        find_installer "${targetproject}" || exit 1
+        echo -e "${INFO}Check only: nothing was changed.${OFF}"
+        exit 0
+    fi
 
     if [ -f /.dockerenv ]; then
         echo "Running inside Docker"

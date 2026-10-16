@@ -261,9 +261,20 @@ afterward when that fixture set is needed.
 
 It runs `mysql` with the client defaults: as root (via `sudo`) that is
 MariaDB's unix-socket login, so no password is needed. It resolves the
-installer URL from its own location, so it can be run from any directory. On
-the native VM the installer is served over loopback only, so pass
-`127.0.0.1` as the domain:
+installer URL from its own location, so it can be run from any directory.
+
+The installer is run over HTTP. Without a domain the script tries
+`127.0.0.1`, because the nginx profile serves `install.php` to localhost only,
+and then, inside Docker, the container's own address. **It checks that the
+installer answers before it drops anything.** If none does, it stops and the
+database is untouched. `--check` runs only that check and changes nothing:
+
+```bash
+bash /var/www/html/doctis/admin/tools/doctis-drop-and-create-new-database.sh --check
+# Installer answers at http://127.0.0.1/doctis/admin/install.php
+```
+
+On the native VM, pass `127.0.0.1` explicitly when running it by hand:
 
 ```bash
 sudo bash /var/www/html/doctis/admin/tools/doctis-drop-and-create-new-database.sh doctis not-used 127.0.0.1 <<< yes
@@ -272,14 +283,14 @@ sudo bash /var/www/html/doctis/admin/tools/doctis-drop-and-create-new-database.s
 Accepts optional positional parameters to override defaults:
 
 ```
-doctis-drop-and-create-new-database.sh [target] [mysql_pass] [domain_ip]
+doctis-drop-and-create-new-database.sh [--check] [target] [mysql_pass] [domain_ip]
 ```
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `target` | `doctis` | Database name and URL path |
 | `mysql_pass` | `password` | Unused while the admin-user setup step stays disabled |
-| `domain_ip` | auto-detected | IP/hostname used to reach the installer URL (`127.0.0.1` on the native VM) |
+| `domain_ip` | `127.0.0.1`, then the container address in Docker | IP/hostname used to reach the installer URL |
 
 The installer's HTML output is saved to `/tmp/doctis-install.XXXXXX.html`
 (mode 600); the script prints the path.
