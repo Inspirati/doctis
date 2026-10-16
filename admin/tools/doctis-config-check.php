@@ -9,7 +9,7 @@
 # mistakes surface here instead:
 #   - fatal errors and uncaught exceptions while it runs (e.g. an undefined
 #     constant, a type error);
-#   - output, such as whitespace after a closing "?>", which corrupts downloads
+#   - output, such as whitespace after a closing PHP tag, which corrupts downloads
 #     and API responses;
 #   - missing database settings or a crypto master salt under 16 characters;
 #   - database credentials that do not connect (mysqli only).
