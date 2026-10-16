@@ -263,6 +263,20 @@ Private documents and documents restricted by a license cannot be published.
 Only Markdown documents can be published, and only their On Record version,
 never a Draft.
 
+### Moving a document
+
+**Move** (on the view page, or in the document list's action menu) can take a
+document to a project that keeps its files in another repository. The primary
+document file then moves with it:
+- Its On Record version is committed into the target project's repository,
+  at the same path unless that path is taken there.
+- It becomes On Record there, and the Reference follows.
+- The file is removed from the old repository, which keeps its history.
+
+A document with a **Draft** cannot be moved this way. Promote or discard the
+Draft first; the Move reports the reason. A published page on a different
+website is withdrawn, so republish the document in its new project.
+
 ### File history
 
 The full version history of the primary document is preserved in the git

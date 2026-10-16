@@ -138,7 +138,9 @@ replacement (directory-sticky, HEAD stays single-copy), register-by-reference
 (`file_dwg_primary_register()`), cross-project path-collision rejection,
 dangling-path detection (`file_dwg_git_head_info()` after an external
 delete), sync-to-HEAD promotion, repository adoption (`repository_adopt()`
-— full history, remotes stripped), and rename relocation. Bootstraps the
+— full history, remotes stripped), moving a document to a project with
+another repository (step 12b: the primary file follows, the source keeps its
+history, a document with a Draft is refused), and rename relocation. Bootstraps the
 full core, creates and tears down its own projects/documents/repositories.
 
 ```bash
@@ -146,7 +148,8 @@ sudo -u www-data php /var/www/html/doctis/admin/test-git-doctis.php
 ```
 
 Run 2026-10-13 on the native VM: 93 passed, 0 failed; the existing projects
-and repositories were untouched.
+and repositories were untouched. Run 2026-10-16 with step 12b: 102 passed,
+0 failed.
 
 Architecture reference: [doc/git/GIT_ARCHITECTURE.md](git/GIT_ARCHITECTURE.md).
 
