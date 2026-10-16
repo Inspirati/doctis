@@ -2171,6 +2171,8 @@ function file_dwg_set_document_reference( int $p_dwg_id, string $p_reference ): 
 		. ' SET d.reference = ' . db_param()
 		. ' WHERE w.id = ' . db_param();
 	db_query( $t_query, array( $p_reference, $p_dwg_id ) );
+	# Later reads in the same request must see the new reference.
+	dwg_clear_cache( $p_dwg_id );
 }
 
 /**
