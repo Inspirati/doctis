@@ -19,7 +19,7 @@ written for the former vaio host, `10.0.0.10`, with Apache):
 
 | Item | Value |
 |------|-------|
-| Server | native development VM (`10.0.0.94`), Debian 13 |
+| Server | native development VM (`10.0.0.109`), Debian 13 |
 | Web server | nginx + PHP-FPM 8.4 (Apache remains an install option) |
 | Web server user | `www-data` (uid 33, gid 33) |
 | www-data HOME | `/var/www` (verify: `getent passwd www-data`) |
@@ -418,7 +418,7 @@ Users create a personal API token at *My Account → API Tokens*. The token is
 used as the HTTP Basic *password*; the Basic username is the Doctis username.
 
 ```bash
-git clone http://<username>:<API_TOKEN>@10.0.0.94/git/<slug>-r<id>.git /tmp/<slug>
+git clone http://<username>:<API_TOKEN>@10.0.0.109/git/<slug>-r<id>.git /tmp/<slug>
 ```
 
 ### Verify
@@ -426,14 +426,14 @@ git clone http://<username>:<API_TOKEN>@10.0.0.94/git/<slug>-r<id>.git /tmp/<slu
 ```bash
 # 401 without credentials
 curl -s -o /dev/null -w '%{http_code}\n' \
-  "http://10.0.0.94/git/<slug>-r<id>.git/info/refs?service=git-upload-pack"
+  "http://10.0.0.109/git/<slug>-r<id>.git/info/refs?service=git-upload-pack"
 
 # 200 with a valid token (DEVELOPER+)
 curl -s -u "<user>:<API_TOKEN>" \
-  "http://10.0.0.94/git/<slug>-r<id>.git/info/refs?service=git-upload-pack" | head
+  "http://10.0.0.109/git/<slug>-r<id>.git/info/refs?service=git-upload-pack" | head
 
 # Full clone
-git clone "http://<user>:<API_TOKEN>@10.0.0.94/git/<slug>-r<id>.git" /tmp/<slug>
+git clone "http://<user>:<API_TOKEN>@10.0.0.109/git/<slug>-r<id>.git" /tmp/<slug>
 ```
 
 Expected: 401 without credentials, 200 + clone with a valid token (DEVELOPER+),

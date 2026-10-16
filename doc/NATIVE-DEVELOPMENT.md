@@ -1,8 +1,8 @@
 # Native nginx development installation
 
-**The native Debian 13 VM at `10.0.0.94` is the primary development and test
+**The native Debian 13 VM at `10.0.0.109` is the primary development and test
 environment.** It was installed with this profile. Its nginx serves the
-running clone at `/var/www/html/doctis` as `http://10.0.0.94/doctis/`, and
+running clone at `/var/www/html/doctis` as `http://10.0.0.109/doctis/`, and
 development happens in the working clone `/home/robert/Documents/doctis` on
 the same VM. Day-to-day procedure: [DEV-SETUP.md](../DEV-SETUP.md) and the
 Development Environment section of [CLAUDE.md](../CLAUDE.md). The former
@@ -115,7 +115,7 @@ The original validation used feature branch `nginx` at runtime commit
 `86170d2fa`. The feature branch was merged into `dev`; on 2026-10-02 the
 running native checkout switched to `dev` and its login page returned HTTP
 200. A new clean installation from `dev` has not been separately tested.
-Local URL: `http://10.0.0.94/doctis/`.
+Local URL: `http://10.0.0.109/doctis/`.
 
 - GitHub bootstrap fetched the selected branch and installed dependencies; PHP
   platform requirements passed on PHP 8.4.26/MariaDB 11.8.6/nginx 1.26.3.

@@ -451,7 +451,7 @@ sudo -u www-data php /var/www/html/doctis/admin/import-git-repo.php \
    `owner:` names listed.
 
 Repo remains a working QMS/publishing tree; contributors re-point origin to
-`http://<user>@<server>/git/hcrqms-r7.git` (e.g. `10.0.0.94` on the native
+`http://<user>@<server>/git/hcrqms-r7.git` (e.g. `10.0.0.109` on the native
 development VM) and continue as before — pushes advance
 Drafts, promotion happens in Doctis.
 

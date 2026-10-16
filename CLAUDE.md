@@ -158,7 +158,7 @@ never stamped into the file. See
 
 ## Development Environment
 
-Development and testing happen on a native **Debian 13 VM** (`10.0.0.94`),
+Development and testing happen on a native **Debian 13 VM** (`10.0.0.109`),
 with nginx, PHP-FPM 8.4 and MariaDB 11.8. Claude Code runs on the same VM, so
 every command below runs locally; no SSH is needed. The former `vaio` host
 (`10.0.0.10`, Apache) is no longer the development environment. Its old
@@ -167,11 +167,20 @@ alone. Day-to-day handover and current VM state:
 [DEV-SETUP.md](DEV-SETUP.md). Install profile and layout:
 [doc/NATIVE-DEVELOPMENT.md](doc/NATIVE-DEVELOPMENT.md).
 
+The VM was cloned on 2026-10-17, with its disk grown to 40 GB. The clone came
+up at `10.0.0.109`; the old VM, at `10.0.0.94`, is off. The address comes from
+the router's DHCP. If it changes again, update:
+- `$g_path` in the running clone's `config/config_inc.php`;
+- `MANTIS_TESTSUITE_SOAP_HOST` in its `tests/bootstrap.php`;
+- `server_name` in `/etc/nginx/sites-available/doctis` (then reload nginx).
+
+Then update these docs (`git grep` the old address).
+
 | Item | Detail |
 |------|--------|
 | Working clone | `/home/robert/Documents/doctis`: edit and commit here |
 | Running clone | `/var/www/html/doctis`: what nginx serves; owned `robert:www-data`, not edited directly |
-| URL | `http://10.0.0.94/doctis/` (matches `$g_path`; use this host, not 127.0.0.1, so login cookies match) |
+| URL | `http://10.0.0.109/doctis/` (matches `$g_path`; use this host, not 127.0.0.1, so login cookies match) |
 | Database | MariaDB on `127.0.0.1`, database and app account both `doctis`; Linux user `robert` has no MariaDB account |
 | nginx / PHP-FPM | site `/etc/nginx/sites-available/doctis`; pool `/etc/php/8.4/fpm/pool.d/doctis.conf` |
 | Git document store | `/var/git/doctis/` (bare repos) and `/var/www/doctis/worktrees/` |
@@ -481,7 +490,7 @@ not possible. All state lives in a cookie jar file; keep it in the scratchpad
 and delete it afterwards. The examples use:
 
 ```bash
-B=http://10.0.0.94/doctis          # the $g_path host; 127.0.0.1 breaks the login cookie
+B=http://10.0.0.109/doctis          # the $g_path host; 127.0.0.1 breaks the login cookie
 C=<scratchpad>/doctis_cookies.txt
 ```
 
@@ -619,7 +628,7 @@ endpoints without requiring a browser or a configured SoapClient.
 
 ```bash
 bash /var/www/html/doctis/admin/tools/doctis-soap-test.sh \
-  http://10.0.0.94/doctis manager '' <dwg_id>
+  http://10.0.0.109/doctis manager '' <dwg_id>
 #  host                    user    pw  test document
 ```
 
@@ -639,22 +648,22 @@ remove the scratch project and its repository afterwards
 ### SOAP endpoint and WSDL
 
 ```
-SOAP endpoint : http://10.0.0.94/doctis/api/soap/mantisconnect.php
-WSDL          : http://10.0.0.94/doctis/api/soap/mantisconnect.php?wsdl
+SOAP endpoint : http://10.0.0.109/doctis/api/soap/mantisconnect.php
+WSDL          : http://10.0.0.109/doctis/api/soap/mantisconnect.php?wsdl
 ```
 
 List all available operations (useful to confirm new endpoints appear after
 a WSDL change):
 
 ```bash
-curl -s "http://10.0.0.94/doctis/api/soap/mantisconnect.php?wsdl" \
+curl -s "http://10.0.0.109/doctis/api/soap/mantisconnect.php?wsdl" \
   | grep -oP 'operation name="\K[^"]+' | sort
 ```
 
 Look up parameter names for a specific method:
 
 ```bash
-curl -s "http://10.0.0.94/doctis/api/soap/mantisconnect.php?wsdl" \
+curl -s "http://10.0.0.109/doctis/api/soap/mantisconnect.php?wsdl" \
   | grep -A8 '"mc_dwg_primary_uploadRequest"'
 ```
 
@@ -678,7 +687,7 @@ curl -s \
     </man:OPERATION_NAME>
   </soapenv:Body>
 </soapenv:Envelope>' \
-  "http://10.0.0.94/doctis/api/soap/mantisconnect.php"
+  "http://10.0.0.109/doctis/api/soap/mantisconnect.php"
 ```
 
 ### Useful diagnostic one-liners
@@ -688,7 +697,7 @@ curl -s \
 ```bash
 curl -s -H "Content-Type: text/xml" -H 'SOAPAction: ""' \
   --data '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:man="http://futureware.biz/mantisconnect"><soapenv:Body><man:mc_version><username>manager</username><password></password></man:mc_version></soapenv:Body></soapenv:Envelope>' \
-  "http://10.0.0.94/doctis/api/soap/mantisconnect.php" | grep -oP '(?<=<return[^>]*>)[^<]+'
+  "http://10.0.0.109/doctis/api/soap/mantisconnect.php" | grep -oP '<return[^>]*>\K[^<]+'
 ```
 
 **List all document status values:**
@@ -696,7 +705,7 @@ curl -s -H "Content-Type: text/xml" -H 'SOAPAction: ""' \
 ```bash
 curl -s -H "Content-Type: text/xml" -H 'SOAPAction: ""' \
   --data '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:man="http://futureware.biz/mantisconnect"><soapenv:Body><man:mc_enum_dwg_status><username>manager</username><password></password></man:mc_enum_dwg_status></soapenv:Body></soapenv:Envelope>' \
-  "http://10.0.0.94/doctis/api/soap/mantisconnect.php" \
+  "http://10.0.0.109/doctis/api/soap/mantisconnect.php" \
   | grep -oP '(?<=<name xsi:type="xsd:string">)[^<]+'
 ```
 
@@ -705,8 +714,8 @@ curl -s -H "Content-Type: text/xml" -H 'SOAPAction: ""' \
 ```bash
 curl -s -H "Content-Type: text/xml" -H 'SOAPAction: ""' \
   --data '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:man="http://futureware.biz/mantisconnect"><soapenv:Body><man:mc_dwg_get><username>manager</username><password></password><issue_id>2</issue_id></man:mc_dwg_get></soapenv:Body></soapenv:Envelope>' \
-  "http://10.0.0.94/doctis/api/soap/mantisconnect.php" \
-  | grep -oP '(?<=<title[^>]*>)[^<]+'
+  "http://10.0.0.109/doctis/api/soap/mantisconnect.php" \
+  | grep -oP '<title[^>]*>\K[^<]+'
 ```
 
 **Check primary file metadata for a document:**
@@ -714,7 +723,7 @@ curl -s -H "Content-Type: text/xml" -H 'SOAPAction: ""' \
 ```bash
 curl -s -H "Content-Type: text/xml" -H 'SOAPAction: ""' \
   --data '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:man="http://futureware.biz/mantisconnect"><soapenv:Body><man:mc_dwg_primary_get><username>manager</username><password></password><dwg_id>2</dwg_id></man:mc_dwg_primary_get></soapenv:Body></soapenv:Envelope>' \
-  "http://10.0.0.94/doctis/api/soap/mantisconnect.php"
+  "http://10.0.0.109/doctis/api/soap/mantisconnect.php"
 # Returns empty PrimaryFileData if no file; filename/filesize/file_type/download_url if present
 ```
 

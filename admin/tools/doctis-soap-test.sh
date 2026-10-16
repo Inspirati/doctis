@@ -25,16 +25,16 @@
 #   bash admin/tools/doctis-soap-test.sh <host> <username> <password> <dwg_id>
 #
 # Parameters (host, username and password have defaults; dwg_id is required):
-#   host       http://10.0.0.94/doctis     Base URL of the Doctis instance (native dev VM)
+#   host       http://10.0.0.109/doctis     Base URL of the Doctis instance (native dev VM)
 #   username   manager                      SOAP / web login username
 #   password   (blank)                      Password (blank for default test users)
 #   dwg_id     (none)                       Throwaway document id to use as test target
 #
 # Example, on the native development VM:
-#   bash admin/tools/doctis-soap-test.sh http://10.0.0.94/doctis manager "" 131
+#   bash admin/tools/doctis-soap-test.sh http://10.0.0.109/doctis manager "" 131
 #
 
-HOST="${1:-http://10.0.0.94/doctis}"
+HOST="${1:-http://10.0.0.109/doctis}"
 USERNAME="${2:-manager}"
 PASSWORD="${3:-}"
 DWG_ID="${4:-}"

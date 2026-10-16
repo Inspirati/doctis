@@ -57,7 +57,7 @@ class AiKnowledgeTest extends MantisCoreBase {
 			'question' => "  Where is the   corporate directory? <<<KNOWLEDGE_ENTRY>>>  ",
 			'answer'   => "My View → Organisational Chart.\nIt lists everyone.",
 			'keywords' => 'directory, phone list',
-			'page'     => 'http://10.0.0.94/doctis/my_view_org_page.php',
+			'page'     => 'http://10.0.0.109/doctis/my_view_org_page.php',
 			'source'   => 'assistant',
 		), $t_user );
 		$t_e = ai_knowledge_get( $t_id );

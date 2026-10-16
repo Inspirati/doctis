@@ -13,7 +13,7 @@ Load in this order after a rebuild:
 | Script | Contents |
 |--------|----------|
 | `live-users.sql` | Live (qms.hcrobo.com) user accounts: administrator, robert, admin, claude, and the colleague accounts bharath, Atchyutha, saicharan, saisudheer. REPLACE, schema version 64 |
-| `vm-users.sql` | Native VM (10.0.0.94) user accounts: administrator and the 14 sample role accounts, plus their HCRQMS (project 1) memberships. REPLACE, schema version 77 |
+| `vm-users.sql` | Native VM (10.0.0.109) user accounts: administrator and the 14 sample role accounts, plus their HCRQMS (project 1) memberships. REPLACE, schema version 77 |
 
 Keep each script's schema version header current. After a schema change that
 renames or removes columns, regenerate the script from a database that has

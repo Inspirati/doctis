@@ -412,7 +412,7 @@ the existing `mc_dwg_*` implementation.
 The runnable smoke test covers 13 SOAP operations end-to-end:
 
 ```bash
-bash /var/www/html/doctis/admin/tools/doctis-soap-test.sh http://10.0.0.94/doctis manager '' <dwg_id>
+bash /var/www/html/doctis/admin/tools/doctis-soap-test.sh http://10.0.0.109/doctis manager '' <dwg_id>
 ```
 
 The target must be a **throwaway document**: the test deletes and replaces its
@@ -424,7 +424,7 @@ For PHPUnit SOAP tests, bootstrap with `tests/bootstrap.php` and use a
 `SoapClient` pointed at the instance's WSDL (the native development VM here):
 
 ```php
-$client = new SoapClient('http://10.0.0.94/doctis/api/soap/mantisconnect.php?wsdl');
+$client = new SoapClient('http://10.0.0.109/doctis/api/soap/mantisconnect.php?wsdl');
 $result = $client->mc_dwg_get('manager', '', $dwg_id);
 ```
 

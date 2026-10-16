@@ -5,9 +5,9 @@ what each one covers, when to reach for it, and how to run it. It is a map,
 not a tutorial — each section links to the authoritative source (script
 `--help`, source file, or a design doc) for full detail.
 
-All commands run **locally on the native development VM** (`10.0.0.94`),
+All commands run **locally on the native development VM** (`10.0.0.109`),
 whose nginx serves the running clone at `/var/www/html/doctis` as
-`http://10.0.0.94/doctis/`. See [CLAUDE.md](../CLAUDE.md)'s Development
+`http://10.0.0.109/doctis/`. See [CLAUDE.md](../CLAUDE.md)'s Development
 Environment section and [DEV-SETUP.md](../DEV-SETUP.md). Deploy a change to
 the running clone before testing it. The former vaio host is no longer the
 test environment; older run records below that mention it are history.
@@ -48,7 +48,7 @@ New document-domain unit tests belong in `tests/Mantis/`.
 `composer install`, then `cp tests/bootstrap.php.sample tests/bootstrap.php`
 and set `MANTIS_TESTSUITE_SOAP_HOST`, `USERNAME` and `PASSWORD`. The VM's
 `tests/bootstrap.php` (gitignored) points SOAP at
-`http://10.0.0.94/doctis/api/soap/mantisconnect.php?wsdl` as administrator.
+`http://10.0.0.109/doctis/api/soap/mantisconnect.php?wsdl` as administrator.
 
 **Run** in the running clone, after deploying the change:
 ```bash
@@ -86,7 +86,7 @@ real address and `$g_email_receive_own` is ON.
 **Run:**
 ```bash
 bash /var/www/html/doctis/admin/tools/doctis-soap-test.sh \
-  http://10.0.0.94/doctis manager '' <dwg_id>
+  http://10.0.0.109/doctis manager '' <dwg_id>
 #  host                    user    pw  throwaway document
 ```
 
@@ -212,7 +212,7 @@ end-to-end — this is what actually proves the registration is correct, not
 just that rows were inserted:
 ```bash
 # Compare a downloaded document against the git blob directly
-curl -s -b "$C" "http://10.0.0.94/doctis/file_download.php?type=dwg_primary&id=<dwg_id>" | md5sum
+curl -s -b "$C" "http://10.0.0.109/doctis/file_download.php?type=dwg_primary&id=<dwg_id>" | md5sum
 git --git-dir=/var/git/doctis/<repo-basename>.git show 'HEAD:<git_path>' | md5sum
 ```
 Both hashes must match. See §7 for the curl login/session pattern.
@@ -250,16 +250,16 @@ user would. Run it from any machine that can reach the VM, the VM included.
 bash doc/git/doctis-remote-clone-edit-push.sh --help
 
 bash doc/git/doctis-remote-clone-edit-push.sh \
-  --host 10.0.0.94 --repo <scratch-slug>-r<id> --user manager
+  --host 10.0.0.109 --repo <scratch-slug>-r<id> --user manager
 # prompts for the API token; edits the first *.md file found, commits, pushes
 ```
 
 > **Gateway host note:** the gateway is mounted at the **server root**, *not*
 > under the app path. On the VM's nginx, `location ~ ^/git/(.+)$` in
 > `/etc/nginx/sites-available/doctis` runs `git_http.php`; Apache used
-> `Alias /git` in `admin/tools/git-serve.conf`. So `--host` is `10.0.0.94`,
-> not `10.0.0.94/doctis`, even though the web UI itself lives at
-> `http://10.0.0.94/doctis/`.
+> `Alias /git` in `admin/tools/git-serve.conf`. So `--host` is `10.0.0.109`,
+> not `10.0.0.109/doctis`, even though the web UI itself lives at
+> `http://10.0.0.109/doctis/`.
 
 **What a successful run proves:** authentication, read access, write access,
 and — critically — that the push advanced only the repository **Draft**
@@ -291,10 +291,10 @@ that the API-level tests above don't exercise — page rendering, form
 submission, login flow, project-context redirects, file upload via
 multipart. The closest thing to a browser test without a browser.
 
-**Login (two-step, cookie jar):** use the `$g_path` host, `10.0.0.94`.
+**Login (two-step, cookie jar):** use the `$g_path` host, `10.0.0.109`.
 Logging in at `127.0.0.1` loses the session on the first redirect.
 ```bash
-B=http://10.0.0.94/doctis; C=<scratch dir>/doctis_cookies.txt
+B=http://10.0.0.109/doctis; C=<scratch dir>/doctis_cookies.txt
 curl -s -c "$C" -b "$C" -X POST "$B/login_password_page.php" \
   -d "username=manager&return=index.php" -o /dev/null
 curl -s -c "$C" -b "$C" -X POST "$B/login.php" \
@@ -337,7 +337,7 @@ Live check, which makes AI calls (procedure and results in `doc/ai/ai-knowledge.
 §Verification):
 
 ```bash
-T=admin/tools/doctis-meeting-chat.py; export DOCTIS_URL=http://10.0.0.94/doctis/
+T=admin/tools/doctis-meeting-chat.py; export DOCTIS_URL=http://10.0.0.109/doctis/
 $T sam '' --mode help --clear "Where do i find the corporate directory?"   # → My View → Organisational Chart
 $T sam '' --mode help --clear "<a question Doctis cannot know>"             # → says so, invites teaching
 $T sam '' --mode help "<the answer>"                                       # → draft entry, asks to save
@@ -353,7 +353,7 @@ request. Requests are recorded, not sent: no AI call is made. It caught the
 2026-10-02 bug where opening the page with `#tab-meeting` broke both chats.
 
 ```bash
-T=admin/tools/doctis-ai-page-check.js; U=http://10.0.0.94/doctis
+T=admin/tools/doctis-ai-page-check.js; U=http://10.0.0.109/doctis
 node $T $U administrator root '?meeting_id=<id>#tab-meeting' meeting   # Write Minutes
 node $T $U administrator root '?series_of=<id>#tab-meeting' meeting    # Plan Next Meeting
 node $T $U administrator root '#tab-meeting' meeting                   # Plan a Meeting
@@ -376,7 +376,7 @@ instance with live SMTP, delete them before the cron sender runs:
 **End to end** (frodo and sam are HCRQMS members; gandalf is a global manager):
 
 ```bash
-export DOCTIS_URL=http://10.0.0.94/doctis/
+export DOCTIS_URL=http://10.0.0.109/doctis/
 T=admin/tools/doctis-meeting-chat.py
 
 # 1. Chair plans the meeting (two turns: draft, then confirm)
@@ -647,10 +647,10 @@ sudo -u www-data php /var/www/html/doctis/admin/test-git-php.php
 sudo -u www-data php /var/www/html/doctis/admin/test-git-doctis.php
 
 # 3. SOAP lifecycle against a throwaway document (§3)
-bash /var/www/html/doctis/admin/tools/doctis-soap-test.sh http://10.0.0.94/doctis manager '' <dwg_id>
+bash /var/www/html/doctis/admin/tools/doctis-soap-test.sh http://10.0.0.109/doctis manager '' <dwg_id>
 
 # 4. Gateway, against a scratch repository (§6)
-bash doc/git/doctis-remote-clone-edit-push.sh --host 10.0.0.94 --repo <scratch-repo-basename> --user manager
+bash doc/git/doctis-remote-clone-edit-push.sh --host 10.0.0.109 --repo <scratch-repo-basename> --user manager
 
 # 5. PHPUnit (§2), if core API surface changed
 cd /var/www/html/doctis && sudo -u www-data vendor/bin/phpunit --testsuite mantis

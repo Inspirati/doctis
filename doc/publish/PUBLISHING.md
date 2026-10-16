@@ -260,7 +260,7 @@ publish time, commit and a link to the document in Doctis.
   are refused. Publishing makes a document readable by anyone who can reach
   the site. The site has no Doctis access control.
 - **Same origin.** On the VM the site is served from the same origin as
-  Doctis (`http://10.0.0.94/site/` and `/doctis/`). Pandoc passes raw HTML in
+  Doctis (`http://10.0.0.109/site/` and `/doctis/`). Pandoc passes raw HTML in
   Markdown through, so a document containing `<script>` would run with Doctis's
   origin when the page is viewed. Publishing is limited to managers for this
   reason. A separate host name for the site removes the risk. Stripping raw

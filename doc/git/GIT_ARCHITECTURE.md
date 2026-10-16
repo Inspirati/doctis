@@ -411,7 +411,7 @@ Developers with shell access to the server can clone and push to bare repos
 directly:
 
 ```bash
-git clone <user>@10.0.0.94:/var/git/doctis/<slug>-r<id>.git
+git clone <user>@10.0.0.109:/var/git/doctis/<slug>-r<id>.git
 ```
 
 (The account needs SSH access and membership of the `www-data` group, which

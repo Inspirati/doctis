@@ -171,7 +171,7 @@ Entry function: `install_target "$@"`
 
 | Position | Example | Description |
 |----------|---------|-------------|
-| 1 | `10.0.0.94` | Domain / IP address used in URLs |
+| 1 | `10.0.0.109` | Domain / IP address used in URLs |
 | 2 | `password` | MariaDB admin password |
 | 3 | `me@gmail.com` | Email address for notifications |
 | 4 | `AppPassword` | Gmail app password |
@@ -325,7 +325,7 @@ for the project. See [doc/TESTING.md](../../doc/TESTING.md) §3.
 bash admin/tools/doctis-soap-test.sh <host> <username> <password> <dwg_id>
 
 # Native VM (host, user and password shown are the defaults; dwg_id is required):
-bash /var/www/html/doctis/admin/tools/doctis-soap-test.sh http://10.0.0.94/doctis manager '' <dwg_id>
+bash /var/www/html/doctis/admin/tools/doctis-soap-test.sh http://10.0.0.109/doctis manager '' <dwg_id>
 ```
 
 **Requirements:**

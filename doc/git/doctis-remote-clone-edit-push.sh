@@ -36,18 +36,18 @@
 #       [--https] [--keep] [--workdir DIR]
 #
 # Examples:
-#   ./doctis-remote-clone-edit-push.sh --host 10.0.0.94 \
+#   ./doctis-remote-clone-edit-push.sh --host 10.0.0.109 \
 #       --repo scratch-r9 --user manager
 #   # (prompts for the API token; picks the first *.md file and appends a
 #   #  timestamped marker line, commits, and pushes)
 #
-#   ./doctis-remote-clone-edit-push.sh --host 10.0.0.94 --repo example-r1 \
+#   ./doctis-remote-clone-edit-push.sh --host 10.0.0.109 --repo example-r1 \
 #       --user manager --token "$DOCTIS_TOKEN" \
 #       --path 1/report.md --message "Remote test edit" --keep
 #
 # Options:
 #   --host HOST        Server host[:port][/path] under which /git/ is served,
-#                       e.g. 10.0.0.94 on the native VM. The gateway sits at the
+#                       e.g. 10.0.0.109 on the native VM. The gateway sits at the
 #                       server root, not under the /doctis app path.
 #                       (no scheme; use --https to select https instead of http)
 #   --repo REPO         Repository basename without ".git", e.g. "example-r1"

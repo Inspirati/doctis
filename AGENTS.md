@@ -10,9 +10,9 @@ establish the company's actual running configuration.
 
 ## Current operating status — 2026-10-13
 
-**The native Debian 13 VM at `10.0.0.94` is the primary development and test
+**The native Debian 13 VM at `10.0.0.109` is the primary development and test
 environment.** Its nginx and PHP-FPM serve the running clone at
-`/var/www/html/doctis` as `http://10.0.0.94/doctis/`. Development happens in
+`/var/www/html/doctis` as `http://10.0.0.109/doctis/`. Development happens in
 the working clone `/home/robert/Documents/doctis` on the same VM. The former
 vaio host (`10.0.0.10`, Apache with an NFS-mounted checkout) is no longer used
 for development; its old checkout is still mounted at `/home/robert/html/doctis`

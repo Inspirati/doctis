@@ -10,7 +10,7 @@
 // Requires the jsdom package (Debian: apt install node-jsdom).
 //
 // usage: doctis-ai-page-check.js BASE_URL USER PASSWORD [QUERY_AND_HASH] [help|meeting]
-//   e.g. doctis-ai-page-check.js http://10.0.0.94/doctis administrator root '?meeting_id=45#tab-meeting' meeting
+//   e.g. doctis-ai-page-check.js http://10.0.0.109/doctis administrator root '?meeting_id=45#tab-meeting' meeting
 // Exit code 0 when every check passes.
 'use strict';
 const { JSDOM, VirtualConsole, ResourceLoader } = require('jsdom');

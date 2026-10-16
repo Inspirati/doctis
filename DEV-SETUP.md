@@ -1,6 +1,6 @@
 # Local development handover
 
-Status: 2026-10-13. This native Debian 13 VM (`10.0.0.94`) is the primary
+Status: 2026-10-13. This native Debian 13 VM (`10.0.0.109`) is the primary
 development and test environment, not the company's Docker deployment. Its
 nginx serves the running clone at `/var/www/html/doctis`. Read
 [CLAUDE.md](CLAUDE.md) and [AGENTS.md](AGENTS.md) for project guidance and
@@ -15,7 +15,7 @@ AGENTS.md describes earlier VM snapshots; use the current checks below.
   merged into `dev` on 2026-10-14. The former `nginx` and `ai-meeting` feature
   branches were merged into `dev` with their full history and are deprecated.
 - **Running application:** `/var/www/html/doctis`, a separate Git clone owned
-  by `robert` (group `www-data`), served at `http://10.0.0.94/doctis/`. Its
+  by `robert` (group `www-data`), served at `http://10.0.0.109/doctis/`. Its
   `origin` is GitHub and it tracks `origin/dev`; on 2026-10-14 it was on
   local `dev` at the `topics` merge, fetched from the working clone before
   that merge was pushed.
