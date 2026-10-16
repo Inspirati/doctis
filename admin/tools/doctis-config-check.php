@@ -20,7 +20,13 @@
 # A fatal error stops this process before that line; the caller treats a
 # missing result as a failure and shows what PHP printed.
 
-if( PHP_SAPI !== 'cli' || !isset( $argv[1] ) || !is_readable( $argv[1] ) ) {
+# Command line only.  A web server may run files under admin/tools/ (live does),
+# and STDERR is not defined there.
+if( PHP_SAPI !== 'cli' ) {
+	http_response_code( 404 );
+	exit;
+}
+if( !isset( $argv[1] ) || !is_readable( $argv[1] ) ) {
 	fwrite( STDERR, "Usage: php doctis-config-check.php <readable candidate config file>\n" );
 	exit( 2 );
 }
