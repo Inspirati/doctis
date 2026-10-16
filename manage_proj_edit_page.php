@@ -271,6 +271,9 @@ print_manage_menu( 'manage_proj_edit_page.php' );
 </div>
 </div>
 
+<!-- PUBLISHING (Doctis) -->
+<?php include( __DIR__ . '/manage_proj_publish_inc.php' ); ?>
+
 <!-- SUBPROJECTS -->
 <?php
 	if ( config_get_global( 'subprojects_enabled' ) == ON ) {

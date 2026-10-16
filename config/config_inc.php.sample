@@ -55,6 +55,12 @@ $g_anonymous_account		= '';
 # $g_limit_email_domains = array( 'example.com', 'example.org' );
 # $g_signup_captcha_exempt_domains = array( 'example.com' );
 
+# --- Document Publishing (doc/publish/PUBLISHING.md) ---
+# Directories projects may publish websites into (empty = publishing off).
+# Needs pandoc 3; each project sets its target on Manage Project -> Publishing.
+# $g_dwg_publish_roots = array( '/var/www/html/site' );
+# $g_dwg_publish_pandoc = '/usr/bin/pandoc';
+
 # --- Email Configuration ---
 $g_phpMailer_method		= PHPMAILER_METHOD_MAIL; # or PHPMAILER_METHOD_SMTP, PHPMAILER_METHOD_SENDMAIL
 $g_smtp_host			= 'localhost';			# used with PHPMAILER_METHOD_SMTP

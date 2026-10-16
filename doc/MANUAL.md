@@ -214,6 +214,55 @@ Doctis.
 | **Promote Draft** | MANAGER | Promote this document's Draft revision to On Record, including its filename, content, and Reference. If its file changed in Git after upload, re-upload before promotion. |
 | **Tag** | MANAGER | Apply a named git tag to the current On Record SHA (e.g. `approved-rev-A`). |
 
+### Publishing to the website
+
+If the project has a website set up (see *Publishing settings* in §13), a
+Markdown document (`.md`) can be published to it. Click **Publish** among the
+buttons at the top of the view page (MANAGER by default). Doctis converts the
+**On Record** version to a web page at the document's repository path, with
+`.md` replaced by `.html`. The page header shows the document's status, e.g.
+DRAFT or APPROVED. The website's navigation and its index of published
+documents update at the same time.
+
+Once published, the panel shows a **Published** row with:
+- the page, linked when the site has a URL;
+- the status it was published with;
+- the date, and who published it;
+- the commit.
+
+Publishing also sets the document's **URL** field to the published page, so
+the address appears with the document's details, in the document list and
+through the APIs. It replaces any earlier value; the old value stays in the
+history. Unpublish clears the field, unless it has been changed to something
+else since.
+
+The row says **out of date** after a newer version is promoted to On Record or
+the status changes. Click **Republish** to update the page. **Unpublish**
+removes the page from the website; deleting the document also removes it.
+Each publish and unpublish appears in the document history.
+
+Every published page starts with a **document-control block** under the
+title. Its values all come from Doctis:
+- number, title, revision, status and classification;
+- owner (the assigned user);
+- who approved the document and when;
+- effective date and next review;
+- the On Record commit, and when it was published.
+
+The classification is also shown in the page header and footer. Documents no
+longer need these details written into their text (see
+`doc/publish/METADATA_CUTOVER.md`).
+
+If the project also publishes PDFs, a PDF of the document is written next
+to the page. Its footer carries the document number, revision, status and
+classification (also at the top of each page),
+"Page X of Y" and "UNCONTROLLED COPY WHEN PRINTED OR TRANSMITTED". The page,
+the website index and the Published row link to it.
+
+Private documents and documents restricted by a license cannot be published.
+Only Markdown documents can be published, and only their On Record version,
+never a Draft.
+
 ### File history
 
 The full version history of the primary document is preserved in the git
@@ -428,8 +477,10 @@ agenda item (rough notes are fine), including actions with an owner and a due
 date. The saved minutes are a **draft revision** of the meeting document, and
 are emailed to the participants for corrections within three business days.
 
-The **chair** approves them (Approve Minutes): the record is stamped *Approved
-Minutes*, becomes On Record, and is emailed to the participants. Each action
+The **chair** approves them (Approve Minutes): the minutes become On Record,
+the meeting document's status becomes approved, its release (effective) date
+is set, and it is emailed to the participants. The record itself is not
+changed: like every document, its status and dates live in Doctis. Each action
 becomes a Doctis issue linked to the meeting document, assigned to its owner
 with its due date. An owner who is not a member of the meeting project is added
 to it so the issue can be assigned. A revision uploaded by hand on the meeting
@@ -730,6 +781,30 @@ In `config/config_inc.php`:
 | `$g_topic_assess_threshold` | Who may record assessments (default MANAGER) |
 | `$g_topic_snapshot_threshold` | Who takes snapshots (default MANAGER) |
 | `$g_topic_assessor_licenses` | Licenses assessors must also hold, by Topic code (`'*'` for all), e.g. `array( '*' => 'Topic Assessor', '23' => 'Safety Assessor' )`; empty = threshold only. Unlike an access level, a license does not pass to administrators automatically |
+
+### Publishing settings
+
+Publishing is off until an administrator allows website directories in
+`config/config_inc.php`, and pandoc 3 is installed:
+
+```php
+$g_dwg_publish_roots = array( '/var/www/html/site' );   # empty = publishing off
+```
+
+Each project then sets its website on **Manage → Projects → (project) →
+Publishing**:
+- **Target directory**: at or below an allowed root, and writable by the web
+  server.
+- **Website URL**: e.g. `/site/`.
+- Optionally, a **Template** and a **Banner logo**, given as repository paths
+  on the default branch.
+- **PDF**: also publish a PDF of each document. This needs the TeX packages
+  listed in `doc/publish/PUBLISHING.md` §9. `$g_dwg_publish_pdf_papersize`
+  sets `letter` or `a4`.
+
+A sub-project without its own target publishes into its parent's site.
+`$g_dwg_publish_threshold` (default MANAGER) controls who may publish. Details:
+`doc/publish/PUBLISHING.md`.
 
 ### AI Assistant and meeting settings
 

@@ -17,7 +17,7 @@ if [[ $mode != target ]]; then
         fail 'Apache is active. Select a separate VM or explicitly stop the conflicting service first.'
     fi
     sudo apt-get update
-    sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y nginx php-fpm php-cli php-mysql php-mbstring php-curl php-gd php-xml php-zip php-intl php-soap mariadb-server composer git graphviz curl unzip cron python3
+    sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y nginx php-fpm php-cli php-mysql php-mbstring php-curl php-gd php-xml php-zip php-intl php-soap mariadb-server composer git graphviz pandoc curl unzip cron python3
     sudo systemctl enable --now mariadb cron
 fi
 git check-ref-format --branch "$DOCTIS_BRANCH" >/dev/null

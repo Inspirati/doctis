@@ -241,10 +241,15 @@ function ai_assist_meeting_system_prompt( int $p_user_id, ?array $p_focus = null
 			$t_frontmatter = $t_m[1];
 		}
 	}
+	# Lifecycle fields (status, revision, owner, ...) live in Doctis, not in the record.
+	if( !is_blank( $t_frontmatter ) ) {
+		$t_frontmatter = dwg_metadata_strip_frontmatter( $t_frontmatter . "\n", DWG_METADATA_KEYS );
+		$t_frontmatter = preg_match( '/\A---\n/', $t_frontmatter ) ? rtrim( $t_frontmatter ) : '';
+	}
 	$t_frontmatter_text = !is_blank( $t_frontmatter )
 		? "Every record MUST begin with this YAML frontmatter, filled in for the meeting\n"
-		  . "(remove the # comments). status is Agenda for an agenda and Draft Minutes for minutes;\n"
-		  . "owner and approver are the chair; leave effective_date blank — Doctis sets it on approval.\n\n"
+		  . "(remove the # comments). Do not add status, revision, owner, approver,\n"
+		  . "effective_date or classification, in the frontmatter or the body: Doctis records them.\n\n"
 		  . $t_frontmatter . "\n\nThen the body:\n\n"
 		: '';
 	$t_template_section = !is_blank( $t_template_text )
@@ -361,7 +366,7 @@ if it is ambiguous); if none matches, say so.
    Review the open actions from earlier meetings: note which were completed.
 3. Present a concise summary of the minutes and ask: "Ready to save the minutes? Or let me know what to change."
 4. On confirmation, generate the minutes document: the full record following the template,
-   with `status: Draft Minutes` in the frontmatter and the revision advanced by one letter.
+   without status or revision fields (Doctis records the document's status and versions).
    Immediately after it, give the new actions as a MEETING_ACTIONS list (below); each
    becomes a tracked Doctis issue when the chair approves the minutes.
 
@@ -704,6 +709,7 @@ function ai_assist_meeting_store( array $p_meeting, string $p_content, int $p_us
 	# minute taker or organiser for minutes), which authorises the write.
 	# Creating the agenda document still needs create_dwg_threshold.
 	$t_stored = meeting_store_record( $p_meeting, $p_content, $p_user_id, $p_description, false );
+	meeting_document_set_status( (int)$t_stored['dwg_id'], $p_description === 'Minutes' ? 'minutes' : 'agenda' );
 	$p_result['stored']     = true;
 	$p_result['staged']     = $t_stored['staged'];
 	$p_result['dwg_id']     = $t_stored['dwg_id'];

@@ -1,0 +1,649 @@
+$-- Doctis default publishing template (core/publish/dwg_publish_template.html).
+$-- Derived from the HCRQMS engine/pandoc/html-template.html.  Doctis supplies
+$-- the banner and navigation (include-before) and these values:
+$--   pagetitle, doctis-id, doctis-title, doctis-number, doctis-revision,
+$--   doctis-status (e.g. APPROVED), doctis-status-key (e.g. approved),
+$--   doctis-status-color, doctis-project, doctis-commit, doctis-published,
+$--   doctis-url, doctis-pdf (PDF file name, when the project publishes PDFs),
+$--   doctis-classification, doctis-owner, doctis-approved, doctis-effective,
+$--   doctis-review, doctis-record.  The document-control block is inserted
+$--   into $body$ by core/publish/control-block.lua (div.doctis-control).
+$--   The index page has only pagetitle and doctis-project.
+$-- See doc/publish/PUBLISHING.md.  Pandoc partials are not allowed.
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="generator" content="Doctis">
+  <title>$pagetitle$$if(doctis-project)$ — $doctis-project$$endif$</title>
+  <style>
+/* ==========================================================================
+   Layout
+   ========================================================================== */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  --sidebar-width: 268px;
+  --banner-height: 56px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica,
+               Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  font-size: 15px;
+  color: #24292f;
+  background: #ffffff;
+
+  display: grid;
+  grid-template-areas:
+    "banner  banner"
+    "sidebar main";
+  grid-template-rows: var(--banner-height) 1fr;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  height: 100vh;
+  overflow: hidden;
+}
+
+body.sidebar-collapsed {
+  grid-template-columns: 0 minmax(0, 1fr);
+}
+
+/* ==========================================================================
+   Banner
+   ========================================================================== */
+
+.site-banner {
+  grid-area: banner;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  background: #0f2d4e;
+  border-bottom: 1px solid #1a4a7a;
+  flex-shrink: 0;
+  text-decoration: none;
+  color: inherit;
+}
+
+.nav-toggle {
+  width: 38px;
+  height: 38px;
+  margin: 0 12px 0 -8px;
+  padding: 9px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.nav-toggle:hover { background: #1a4a7a; }
+
+.nav-toggle:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.nav-toggle span,
+.nav-toggle span::before,
+.nav-toggle span::after {
+  display: block;
+  width: 18px;
+  height: 2px;
+  border-radius: 1px;
+  background: currentColor;
+}
+
+.nav-toggle span { position: relative; }
+.nav-toggle span::before,
+.nav-toggle span::after { content: ""; position: absolute; left: 0; }
+.nav-toggle span::before { top: -6px; }
+.nav-toggle span::after { top: 6px; }
+
+.site-banner a.banner-home {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.banner-logo {
+  height: 36px;
+  width: auto;
+  display: block;
+  flex-shrink: 0;
+}
+
+.banner-logo-text {
+  font-size: 17px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.3px;
+}
+
+/* ==========================================================================
+   Sidebar / navigation
+   ========================================================================== */
+
+.sidebar {
+  grid-area: sidebar;
+  min-width: 0;
+  overflow-y: auto;
+  background: #f4f6f8;
+  border-right: 1px solid #d0d7de;
+  padding: 12px 0 24px;
+  font-size: 13px;
+}
+
+.sidebar-resizer {
+  position: fixed;
+  z-index: 10;
+  top: var(--banner-height);
+  bottom: 0;
+  left: calc(var(--sidebar-width) - 4px);
+  width: 8px;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.sidebar-resizer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 3px;
+  width: 2px;
+  background: transparent;
+}
+
+.sidebar-resizer:hover::after,
+.sidebar-resizer:focus-visible::after,
+body.sidebar-resizing .sidebar-resizer::after {
+  background: #0969da;
+}
+
+.sidebar-resizer:focus-visible { outline: none; }
+
+body.sidebar-collapsed .sidebar,
+body.sidebar-collapsed .sidebar-resizer {
+  visibility: hidden;
+}
+
+body.sidebar-resizing {
+  cursor: col-resize;
+  user-select: none;
+}
+
+.nav-tree,
+.nav-tree ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Top-level list — slight left indent */
+.nav-tree {
+  padding-left: 8px;
+}
+
+/* Each nested <ul> indented under its details block */
+.nav-tree ul {
+  padding-left: 12px;
+}
+
+/* Directory rows */
+.nav-dir > details > summary {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px 4px 6px;
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  color: #57606a;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.6px;
+  border-radius: 4px;
+  list-style: none;           /* remove default disclosure triangle */
+}
+
+.nav-dir > details > summary::-webkit-details-marker { display: none; }
+
+.nav-dir > details > summary::before {
+  content: "▶";
+  font-size: 9px;
+  color: #8c959f;
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+}
+
+.nav-dir > details[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.nav-dir > details > summary:hover {
+  background: #e8ecf0;
+  color: #24292f;
+}
+
+/* File rows */
+.nav-file a {
+  display: block;
+  padding: 4px 12px 4px 20px;
+  color: #24292f;
+  text-decoration: none;
+  border-radius: 4px;
+  line-height: 1.45;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-file a:hover {
+  background: #e8ecf0;
+  color: #0969da;
+}
+
+.nav-file a.active {
+  background: #dbeafe;
+  color: #0550ae;
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   Main content area
+   ========================================================================== */
+
+.page-content {
+  grid-area: main;
+  overflow-y: auto;
+  padding: 36px 52px 80px;
+}
+
+/* Inner container — caps line length for readability */
+.page-content > * {
+  max-width: 860px;
+}
+
+/* ==========================================================================
+   Markdown content styles  (GitHub Markdown approximation)
+   ========================================================================== */
+
+.page-content h1,
+.page-content h2,
+.page-content h3,
+.page-content h4,
+.page-content h5,
+.page-content h6 {
+  margin-top: 24px;
+  margin-bottom: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.page-content h1 { font-size: 2em;     border-bottom: 1px solid #d0d7de; padding-bottom: 0.3em; }
+.page-content h2 { font-size: 1.5em;   border-bottom: 1px solid #d0d7de; padding-bottom: 0.3em; }
+.page-content h3 { font-size: 1.25em;  }
+.page-content h4 { font-size: 1em;     }
+.page-content h5 { font-size: 0.875em; }
+.page-content h6 { font-size: 0.85em; color: #57606a; }
+
+.page-content p {
+  margin-top: 0;
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+
+.page-content a { color: #0969da; text-decoration: none; }
+.page-content a:hover { text-decoration: underline; }
+
+.page-content ul,
+.page-content ol {
+  margin-top: 0;
+  margin-bottom: 16px;
+  padding-left: 2em;
+  line-height: 1.6;
+}
+
+.page-content li + li { margin-top: 0.25em; }
+
+.page-content ul ul,
+.page-content ul ol,
+.page-content ol ol,
+.page-content ol ul {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.page-content hr {
+  height: 0.25em;
+  padding: 0;
+  margin: 24px 0;
+  background-color: #d0d7de;
+  border: 0;
+}
+
+.page-content blockquote {
+  margin: 0 0 16px;
+  padding: 0 1em;
+  color: #57606a;
+  border-left: 0.25em solid #d0d7de;
+}
+
+.page-content blockquote > :first-child { margin-top: 0; }
+.page-content blockquote > :last-child  { margin-bottom: 0; }
+
+/* Code — inline */
+.page-content code {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+               "Liberation Mono", monospace;
+  font-size: 85%;
+  padding: 0.2em 0.4em;
+  background-color: #f6f8fa;
+  border-radius: 6px;
+  white-space: break-spaces;
+}
+
+/* Code — fenced blocks */
+.page-content pre {
+  margin-top: 0;
+  margin-bottom: 16px;
+  padding: 16px;
+  overflow: auto;
+  font-size: 85%;
+  line-height: 1.45;
+  background-color: #f6f8fa;
+  border-radius: 6px;
+  word-wrap: normal;
+}
+
+.page-content pre code {
+  font-size: 100%;
+  padding: 0;
+  background-color: transparent;
+  border: 0;
+  white-space: pre;
+}
+
+/* Tables */
+.page-content table {
+  border-spacing: 0;
+  border-collapse: collapse;
+  margin-top: 0;
+  margin-bottom: 16px;
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow: auto;
+}
+
+.page-content th { font-weight: 600; }
+
+.page-content th,
+.page-content td {
+  padding: 6px 13px;
+  border: 1px solid #d0d7de;
+}
+
+.page-content tr {
+  background-color: #ffffff;
+  border-top: 1px solid #d0d7de;
+}
+
+.page-content tr:nth-child(even) { background-color: #f6f8fa; }
+
+.page-content img { max-width: 100%; }
+
+/* Task-list checkboxes */
+.page-content input[type="checkbox"] {
+  margin: 0 0.2em 0.25em -1.4em;
+  vertical-align: middle;
+}
+
+/* Suppress pandoc-generated title/date header above the H1 */
+.page-content header { display: none; }
+
+/* Definition lists */
+.page-content dl { margin-top: 0; margin-bottom: 16px; padding: 0; }
+.page-content dt { padding: 0; margin-top: 16px; font-style: italic; font-weight: 600; }
+.page-content dd { padding: 0 16px; margin-bottom: 16px; }
+
+/* Mobile navigation becomes an off-canvas panel over full-width content. */
+@media (max-width: 760px) {
+  body,
+  body.sidebar-collapsed {
+    display: block;
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  .site-banner {
+    position: sticky;
+    z-index: 30;
+    top: 0;
+    height: var(--banner-height);
+    padding: 0 12px;
+  }
+
+  .sidebar {
+    position: fixed;
+    z-index: 20;
+    top: var(--banner-height);
+    bottom: 0;
+    left: 0;
+    width: min(86vw, var(--sidebar-width));
+    min-width: 220px;
+    border-right: 1px solid #8c959f;
+    box-shadow: 8px 0 20px rgba(31, 35, 40, 0.18);
+    transform: translateX(0);
+    transition: transform 0.2s ease, visibility 0.2s ease;
+  }
+
+  body.sidebar-collapsed .sidebar {
+    visibility: hidden;
+    transform: translateX(-100%);
+  }
+
+  .sidebar-resizer { display: none; }
+
+  .page-content {
+    overflow: visible;
+    padding: 22px 18px 60px;
+  }
+
+  .page-content h1 { font-size: 1.7em; }
+  .page-content h2 { font-size: 1.35em; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar { transition: none; }
+}
+
+/* ==========================================================================
+   Doctis document status (doctis-status), shown at the right of the banner
+   ========================================================================== */
+
+.doctis-status {
+  position: fixed;
+  z-index: 40;
+  top: 0;
+  right: 20px;
+  height: var(--banner-height);
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.doctis-status span {
+  padding: 5px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 4px;
+  background: var(--doctis-status-color, #d0d7de);
+  color: #0f2d4e;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.doctis-status .doctis-classification {
+  margin-right: 8px;
+  background: transparent;
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+}
+
+.page-content .doctis-control table {
+  display: table;
+  width: 100%;
+  margin-bottom: 24px;
+  font-size: 13px;
+}
+
+.page-content .doctis-control td { padding: 4px 10px; }
+.page-content .doctis-control tr:nth-child(even) { background-color: #ffffff; }
+.page-content .doctis-control td:first-child { width: 30%; background: #f6f8fa; }
+
+.doctis-footer {
+  margin-top: 48px;
+  padding-top: 12px;
+  border-top: 1px solid #d0d7de;
+  color: #57606a;
+  font-size: 12px;
+}
+
+@media (max-width: 760px) {
+  .doctis-status { right: 12px; }
+}
+
+@media print {
+  .doctis-status { position: absolute; }
+}
+
+  </style>
+</head>
+<body>
+
+$for(include-before)$
+$include-before$
+$endfor$
+$if(doctis-status)$
+<div class="doctis-status" title="Document classification and status in Doctis">$if(doctis-classification)$<span class="doctis-classification">$doctis-classification$</span>$endif$<span style="--doctis-status-color: $doctis-status-color$">$doctis-status$</span></div>
+$endif$
+
+<main class="page-content">
+$body$
+$if(doctis-id)$
+<footer class="doctis-footer">
+$if(doctis-number)$$doctis-number$ · $endif$$if(doctis-revision)$Revision $doctis-revision$ · $endif$$doctis-status$ · $if(doctis-classification)$$doctis-classification$ · $endif$Published $doctis-published$ from commit $doctis-commit$ · <a href="$doctis-url$">View in Doctis</a>$if(doctis-pdf)$ · <a href="$doctis-pdf$">PDF</a>$endif$
+</footer>
+$endif$
+</main>
+
+<script>
+// Highlight the nav link that matches the current page.
+// Compares each nav href (resolved to an absolute path) against
+// window.location.pathname. Falls back silently if JS is unavailable.
+(function () {
+  var body = document.body;
+  var toggle = document.querySelector('.nav-toggle');
+  var sidebar = document.querySelector('.sidebar');
+  var resizer = document.querySelector('.sidebar-resizer');
+  var mobileQuery = window.matchMedia('(max-width: 760px)');
+  var minimumWidth = 220;
+  var maximumWidth = 520;
+
+  function savedWidth() {
+    try { return Number(window.localStorage.getItem('doctis-sidebar-width')); }
+    catch (e) { return 0; }
+  }
+
+  function setWidth(width, save) {
+    width = Math.max(minimumWidth, Math.min(maximumWidth, width));
+    body.style.setProperty('--sidebar-width', width + 'px');
+    if (save) {
+      try { window.localStorage.setItem('doctis-sidebar-width', String(width)); }
+      catch (e) {}
+    }
+  }
+
+  function setCollapsed(collapsed) {
+    body.classList.toggle('sidebar-collapsed', collapsed);
+    toggle.setAttribute('aria-expanded', String(!collapsed));
+    toggle.setAttribute('aria-label', collapsed ? 'Show navigation' : 'Hide navigation');
+  }
+
+  setWidth(savedWidth() || 268, false);
+  setCollapsed(mobileQuery.matches);
+
+  toggle.addEventListener('click', function () {
+    setCollapsed(!body.classList.contains('sidebar-collapsed'));
+  });
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape' && mobileQuery.matches) setCollapsed(true);
+  });
+
+  mobileQuery.addEventListener('change', function (event) {
+    setCollapsed(event.matches);
+  });
+
+  resizer.addEventListener('pointerdown', function (event) {
+    if (mobileQuery.matches) return;
+    body.classList.add('sidebar-resizing');
+    resizer.setPointerCapture(event.pointerId);
+  });
+
+  resizer.addEventListener('pointermove', function (event) {
+    if (!body.classList.contains('sidebar-resizing')) return;
+    setWidth(event.clientX, false);
+  });
+
+  function finishResize(event) {
+    if (!body.classList.contains('sidebar-resizing')) return;
+    body.classList.remove('sidebar-resizing');
+    setWidth(event.clientX, true);
+  }
+
+  resizer.addEventListener('pointerup', finishResize);
+  resizer.addEventListener('pointercancel', finishResize);
+
+  resizer.addEventListener('keydown', function (event) {
+    var step = event.shiftKey ? 40 : 10;
+    var width = parseInt(getComputedStyle(body).getPropertyValue('--sidebar-width'), 10);
+    if (event.key === 'ArrowLeft') setWidth(width - step, true);
+    else if (event.key === 'ArrowRight') setWidth(width + step, true);
+    else if (event.key === 'Home') setWidth(minimumWidth, true);
+    else if (event.key === 'End') setWidth(maximumWidth, true);
+    else return;
+    event.preventDefault();
+  });
+
+  var current = window.location.pathname;
+  document.querySelectorAll('.nav-file a').forEach(function (a) {
+    try {
+      var linkPath = new URL(a.href).pathname;
+      if (linkPath === current) {
+        a.classList.add('active');
+        // Ensure parent <details> nodes are open so the active item is visible
+        var el = a.parentElement;
+        while (el) {
+          if (el.tagName === 'DETAILS') el.open = true;
+          el = el.parentElement;
+        }
+      }
+    } catch (e) {}
+  });
+}());
+</script>
+
+</body>
+</html>

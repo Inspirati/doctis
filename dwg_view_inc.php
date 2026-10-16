@@ -66,6 +66,7 @@ require_api( 'access_dwg_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'dwg_api.php' );
 require_api( 'dwg_activity_api.php' );
+require_api( 'dwg_publish_api.php' );
 require_api( 'category_api.php' );
 require_api( 'columns_api.php' );
 require_api( 'compress_api.php' );
@@ -1180,6 +1181,7 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 					</td>
 				</tr>
 <?php	endif; ?>
+<?php	include( $t_mantis_dir . 'dwg_view_publish_inc.php' ); # Published page (Doctis) ?>
 <?php	if( !is_blank( $t_primary_file['description'] ) ): ?>
 				<tr>
 					<th class="category"><?php echo lang_get( 'description' ) ?></th>
@@ -2102,6 +2104,15 @@ function dwg_view_action_buttons( $p_bug_id, $p_flags ) {
 	if( $p_flags['can_clone'] ) {
 		echo '<div class="pull-left padding-right-2">';
 		html_button( string_get_dwg_create_url(), lang_get( 'create_child_dwg_button' ), array( 'm_dwg_id' => $p_bug_id ) );
+		echo '</div>';
+	}
+
+	# PUBLISH button (Doctis document publishing)
+	if( dwg_publish_can_publish( $p_bug_id ) ) {
+		echo '<div class="pull-left padding-right-2">';
+		html_button( 'dwg_publish.php',
+			lang_get( dwg_publish_get( $p_bug_id ) ? 'dwg_republish_button' : 'dwg_publish_button' ),
+			array( 'dwg_id' => $p_bug_id, 'action' => 'publish' ) );
 		echo '</div>';
 	}
 

@@ -2489,6 +2489,149 @@ $g_git_worktree_root = '';
 $g_dwg_repo_path_template = '{dwg_id}/{filename}';
 
 /**
+ * Document publishing: directories that projects may publish websites into.
+ *
+ * Publishing renders a Markdown document's on-record version to HTML with
+ * pandoc and writes it into the project's publication target directory
+ * ($g_dwg_publish_target), which must be one of these directories or lie
+ * below one.  Empty (the default) turns publishing off everywhere.
+ *
+ * Set in config_inc.php only; the database cannot override it.  Example:
+ * $g_dwg_publish_roots = array( '/var/www/html/site' );
+ *
+ * See doc/publish/PUBLISHING.md.
+ *
+ * @global array $g_dwg_publish_roots
+ */
+$g_dwg_publish_roots = array();
+
+/**
+ * Document publishing: the pandoc executable (pandoc 3.x).
+ *
+ * Set in config_inc.php only; the database cannot override it.
+ *
+ * @global string $g_dwg_publish_pandoc
+ */
+$g_dwg_publish_pandoc = '/usr/bin/pandoc';
+
+/**
+ * Document publishing: the project's publication target directory.
+ *
+ * An absolute path at or below one of $g_dwg_publish_roots.  Each published
+ * document is written at its repository path with .md replaced by .html,
+ * together with a generated index.html.  Blank: the project does not publish.
+ *
+ * Set per project on the project's Manage page (Publishing).
+ *
+ * @global string $g_dwg_publish_target
+ */
+$g_dwg_publish_target = '';
+
+/**
+ * Document publishing: the URL at which the website serves the target
+ * directory, e.g. '/site/' or 'https://qms.example.com/'.  Used for links to
+ * published pages.  Blank: Doctis shows the page path without a link.
+ *
+ * Set per project on the project's Manage page (Publishing).
+ *
+ * @global string $g_dwg_publish_url
+ */
+$g_dwg_publish_url = '';
+
+/**
+ * Document publishing: repository path of the pandoc HTML template, read
+ * from the project repository's default branch, e.g.
+ * 'engine/pandoc/html-template.html'.  Blank: the Doctis default template
+ * (core/publish/dwg_publish_template.html).  Templates that use pandoc
+ * partials are refused.
+ *
+ * Set per project on the project's Manage page (Publishing).
+ *
+ * @global string $g_dwg_publish_template
+ */
+$g_dwg_publish_template = '';
+
+/**
+ * Document publishing: repository path of the banner logo (SVG, PNG or JPEG),
+ * read from the project repository's default branch and embedded in every
+ * page.  Blank: the banner shows the project name.
+ *
+ * Set per project on the project's Manage page (Publishing).
+ *
+ * @global string $g_dwg_publish_logo
+ */
+$g_dwg_publish_logo = '';
+
+/**
+ * Document publishing: access level needed to publish and withdraw a
+ * project's documents.
+ *
+ * @global integer $g_dwg_publish_threshold
+ */
+$g_dwg_publish_threshold = MANAGER;
+
+/**
+ * Document publishing: also publish a PDF of each document, next to its page
+ * (same path, .pdf).  The PDF has the HCRQMS build-pdf.sh layout: DejaVu
+ * fonts and a footer with the document number, revision and Doctis status,
+ * "Page X of Y" and "UNCONTROLLED COPY WHEN PRINTED OR TRANSMITTED".
+ *
+ * Set per project on the project's Manage page (Publishing).  Needs the TeX
+ * packages listed in doc/publish/PUBLISHING.md §9.
+ *
+ * @global integer $g_dwg_publish_pdf
+ */
+$g_dwg_publish_pdf = OFF;
+
+/**
+ * Document publishing: the PDF engine (xelatex).
+ *
+ * Set in config_inc.php only; the database cannot override it.
+ *
+ * @global string $g_dwg_publish_pdf_engine
+ */
+$g_dwg_publish_pdf_engine = '/usr/bin/xelatex';
+
+/**
+ * Document publishing: PDF paper size, 'letter' (as HCRQMS build-pdf.sh),
+ * 'a4', 'a5' or 'legal'.
+ *
+ * @global string $g_dwg_publish_pdf_papersize
+ */
+$g_dwg_publish_pdf_papersize = 'letter';
+
+/**
+ * Document publishing: insert a document-control block at the top of each
+ * published page and PDF (after the first heading).  Its values all come from
+ * Doctis: number, title, revision, status, classification, owner (assigned
+ * user), approval, effective date (release date), next review (due date),
+ * the On Record commit and the publish date.  The git store holds content;
+ * Doctis holds status; publishing combines them.
+ *
+ * @global integer $g_dwg_publish_control_block
+ */
+$g_dwg_publish_control_block = ON;
+
+/**
+ * Document publishing: set the document's URL field to its published page
+ * (absolute; a relative website URL such as '/site/' takes the scheme and
+ * host of $g_path).  Unpublishing clears the field if it still holds that
+ * URL.  The field is left alone when the site has no website URL.
+ *
+ * @global integer $g_dwg_publish_set_link_url
+ */
+$g_dwg_publish_set_link_url = ON;
+
+/**
+ * Document publishing: statuses that count as approved.  While a document has
+ * one, the control block shows who set it and when (from the document
+ * history).
+ *
+ * @global array $g_dwg_publish_approved_statuses
+ */
+$g_dwg_publish_approved_statuses = array( ACCEPTED, INCORPORATED );
+
+/**
  * Remote Git access (Smart HTTP): master enable flag.
  *
  * When OFF, the git_http.php gateway refuses all requests (404).  When ON, it
@@ -5218,6 +5361,21 @@ $g_meeting_template_path = 'system/templates/Meeting-Agenda-and-Minutes.md';
 $g_meeting_category = 'Meetings';
 
 /**
+ * Doctis status of a meeting's document at each stage of the meeting.
+ * Lifecycle metadata lives in Doctis, not in the record: the Meeting
+ * Assistant sets these statuses (and the release date on approval) instead
+ * of writing "status:" into the document.
+ *
+ * @global array $g_meeting_document_status
+ */
+$g_meeting_document_status = array(
+	'agenda'    => REWORK,     # draft
+	'minutes'   => REVIEW,     # draft minutes, awaiting the chair
+	'approved'  => ACCEPTED,   # approved
+	'cancelled' => ARCHIVED,
+);
+
+/**
  * Global access level at which a user sees every meeting (My Meetings "All
  * meetings", and any meeting page), not only those they take part in.
  * Seeing does not grant approving or managing.
@@ -6182,6 +6340,9 @@ $g_global_settings = array(
 	'bottom_include_page',
 	'bug_list_cookie',
 	'dwg_list_cookie',
+	'dwg_publish_pandoc',
+	'dwg_publish_pdf_engine',
+	'dwg_publish_roots',
 	'cdn_enabled',
 	'class_path',
 	'collapse_settings_cookie',

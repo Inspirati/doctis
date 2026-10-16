@@ -124,6 +124,7 @@ xdebuginfo();
 EOF
     # Get and install the libraries and tools needed for mantis extended features:
     sudo apt-get install -y graphviz
+    sudo apt-get install -y pandoc     # document publishing (doc/publish/PUBLISHING.md)
     echo -e "${INFO}Extras installed.${OFF}" >&2
 }
 

@@ -95,16 +95,6 @@ $t_profile_updated = gpc_get_bool( 'updated', false );
 $t_profile_users = user_get_enabled_rows();
 
 
-?>
-<div class="space-10"></div>
-<div class="col-md-12 col-xs-12">
-	<div class="alert alert-warning center">
-	<?php
-		echo 'This page is a Work In Progress (WIP)';
-	?>
-	</div>
-</div>
-<?php
 
 
 $f_page_number = gpc_get_int( 'page_number', 1 );
@@ -224,77 +214,6 @@ echo '</div>';
 	</div>
 </div>
 
-<div class="col-md-12 col-xs-12">
-	<div class="space-10"></div>
-	<div class="widget-box widget-color-blue2">
-	<div class="widget-header widget-header-small">
-		<h4 class="widget-title lighter">
-			<?php print_icon( 'fa-info', 'ace-icon' ); ?>
-			<?php echo lang_get('user_configuration') ?>
-		</h4>
-	</div>
-	<div class="widget-body">
-	<div class="widget-main no-padding">
-	<div class="table-responsive">
-	<table id="manage-overview-table" class="table table-hover table-bordered table-condensed">
-<?php /* ...
-		<tr>
-			<th class="category"><?php echo lang_get( 'mantis_version' ) ?></th>
-			<td><?php echo MANTIS_VERSION . config_get_global( 'version_suffix' ) ?></td>
-		</tr>
-		<tr>
-			<th class="category"><?php echo lang_get( 'schema_version' ) ?></th>
-			<td><?php echo config_get( 'database_version', 0, ALL_USERS, ALL_PROJECTS ) ?></td>
-		</tr>
- */ ?>
- TODO:<br>
-   add timelines for only events pertinent to the user, both Issues and Documents<br>
-   add projects list which allows user to enable/disable participation in each project<br>
-   add checkbox to enable dark theme (after implementing a dark theme)<br>
-	<?php
-	print_table_spacer( 2 );
-	$t_is_admin = !current_user_is_anonymous();
-	if( $t_is_admin ) {
-	?>
-<?php /* ...
-		<tr>
-			<th class="category"><?php echo lang_get( 'php_version' ) ?></th>
-			<td><?php echo phpversion() ?></td>
-		</tr>
- */ ?>
-	<?php
-		print_table_spacer( 2 );
-	}
-
-	// event_signal( 'EVENT_MANAGE_OVERVIEW_INFO', array( $t_is_admin ) )
-	?>
-	</table>
-	</div>
-	</div>
-	</div>
-	</div>
-</div>
-
-<?php
-define( 'MY_VIEW_CNF_INC_ALLOW', true );
-
-# Determine the box number where column 2 should start
-# Use shift-right bitwise operator to divide by 2 as integer
-$t_column2_start = ( count( $t_boxes ) + 1 ) >> 1;
-
-$t_counter = 0;
-foreach( $t_boxes as $t_box_title => $t_box_display ) {
-    # If timeline is OFF, display boxes on 2 columns
-    if( !$t_timeline_view_threshold_access && $t_counter++ == $t_column2_start ) {
-        # End of 1st column
-        echo '</div>';
-        echo '<div class="col-xs-12 col-md-6">';
-    }
-    // include( __DIR__ . '/my_view_cnf_inc.php' );
-    echo '<div class="space-10"></div>';
-}
-?>
-</div>
 
 <?php /*
 <?php if( $t_timeline_view_threshold_access ) { ?>
