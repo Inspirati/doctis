@@ -214,26 +214,6 @@ echo '</div>';
 	</div>
 </div>
 
-<?php
-define( 'MY_VIEW_CNF_INC_ALLOW', true );
-
-# Determine the box number where column 2 should start
-# Use shift-right bitwise operator to divide by 2 as integer
-$t_column2_start = ( count( $t_boxes ) + 1 ) >> 1;
-
-$t_counter = 0;
-foreach( $t_boxes as $t_box_title => $t_box_display ) {
-    # If timeline is OFF, display boxes on 2 columns
-    if( !$t_timeline_view_threshold_access && $t_counter++ == $t_column2_start ) {
-        # End of 1st column
-        echo '</div>';
-        echo '<div class="col-xs-12 col-md-6">';
-    }
-    // include( __DIR__ . '/my_view_cnf_inc.php' );
-    echo '<div class="space-10"></div>';
-}
-?>
-</div>
 
 <?php /*
 <?php if( $t_timeline_view_threshold_access ) { ?>
