@@ -28,7 +28,11 @@ targetproject="${1:-$project}"
 mysqlpassword="${2:-$password}"
 domain_idname="${3:-}"
 if [[ -z "$domain_idname" ]]; then
-    domain_idname=$(ip -4 route get 1.1.1.1 2>/dev/null | sed -n 's/.* src \([0-9.]*\).*/\1/p' || true)
+    if [ -f /.dockerenv ]; then
+        # Inside the container, reach its own nginx on the container address.
+        domain_idname=$(ip -4 route get 1.1.1.1 2>/dev/null | sed -n 's/.* src \([0-9.]*\).*/\1/p' || true)
+    fi
+    # Native installs: the nginx profile only lets localhost run install.php.
     domain_idname="${domain_idname:-127.0.0.1}"
 fi
 

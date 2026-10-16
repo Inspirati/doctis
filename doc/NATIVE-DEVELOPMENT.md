@@ -135,8 +135,9 @@ Local URL: `http://10.0.0.94/doctis/`.
 Still to validate: snapshot-restored clean installation, reboot recovery, LAN
 source installation, authenticated REST/SOAP workflows, Git HTTP push, captured
 SMTP delivery, coordinated backup/restore, and the Docker reference comparison.
-Database backup/rebuild/config-edit admin pages need separate portability review;
-the Git setup helper grants only its existing scoped application-pull command.
+Database backup/rebuild/config-edit admin pages need the System Operations
+account described below; the Git setup helper grants only its existing scoped
+application-pull command.
 
 ### Administrative Git pull
 
@@ -220,6 +221,62 @@ php admin/upgrade_unattended.php   # when admin/schema.php gained steps
 
 Rerunning the installer intentionally does not pull or migrate an existing
 schema.
+
+### System Operations account: matching the live Docker image
+
+On live, System Operations run as an **unprivileged** operator account,
+`hcr`, through this rule (live's `sudo -n -l`, 2026-10-16):
+
+```
+Defaults>hcr always_set_home
+www-data ALL=(hcr) NOPASSWD: /var/www/html/doctis/admin/tools/doctis-drop-and-create-new-database.sh, /var/www/html/doctis/admin/tools/doctis-load-sample-data.sh, /var/www/html/doctis/admin/tools/doctis-write-config.sh, /var/www/html/doctis/admin/tools/doctis-backup-database.sh, /var/www/html/doctis/admin/tools/doctis-generate-stress-data.py, /usr/bin/git
+```
+
+Git with any arguments, and scripts in a checkout the web server can write,
+let the web server run anything as that account. The account must therefore
+have **no sudo rights**: never point the rule at `robert` or another
+administrator. With only the scoped `git pull` rule, Rebuild Database,
+Load Sample Data, Write Config and the branch switcher fail on a native
+install ("sudo: a password is required").
+
+To make the VM match (2026-10-16 status in brackets):
+1. `hcr` has no sudo rights: removed from the `sudo` group and its
+   `NOPASSWD: ALL` line removed from `/etc/sudoers` [done].
+2. A MariaDB login for `hcr` by socket, for the scripts' `mysql` and
+   `mysqldump` calls, with no password file [done]:
+   `CREATE USER 'hcr'@'localhost' IDENTIFIED VIA unix_socket;
+   GRANT ALL PRIVILEGES ON doctis.* TO 'hcr'@'localhost';`
+   (Live uses `~/.my.cnf`, because its database is in another container.)
+3. `hcr`'s git configuration [done]:
+   `safe.directory=/var/www/html/doctis`, plus a user name and email.
+4. The rule above in `/etc/sudoers.d/doctis-web`
+   (`sudo visudo -f /etc/sudoers.d/doctis-web`) [owner].
+5. A checkout and `config_inc.php` that `hcr` can write, as live's
+   `chmod -R 775` gives [owner]:
+
+   ```bash
+   chmod -R g+w /var/www/html/doctis
+   chmod 660 /var/www/html/doctis/config/config_inc.php
+   cd /tmp && sudo -u hcr -H git -C /var/www/html/doctis config core.sharedRepository group
+   ```
+
+6. `$g_updater_run_as_user = 'hcr';` in `config_inc.php` [owner].
+
+**After step 5, never run git in `/var/www/html/doctis` as `robert`.** The
+web server can then write its `.git`, and a planted hook or `core.fsmonitor`
+setting would run as `robert`, who has root-equivalent sudo. Deploy as `hcr`
+instead, from a directory `hcr` can enter. Use System Operations → Git Pull
+for a pushed branch, or a bundle for an unpushed one:
+
+```bash
+git -C ~/Documents/doctis bundle create /tmp/doctis.bundle <branch>
+cd /tmp && sudo -u hcr -H git -C /var/www/html/doctis fetch /tmp/doctis.bundle <branch>
+cd /tmp && sudo -u hcr -H git -C /var/www/html/doctis reset --hard FETCH_HEAD
+```
+
+`admin/tools/doctis-drop-and-create-new-database.sh` calls `install.php` at
+`127.0.0.1` on native installs, because the nginx profile allows only
+localhost. Inside Docker it keeps the container address.
 
 ## Application settings
 
