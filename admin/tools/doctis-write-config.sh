@@ -13,6 +13,12 @@
 
 CONFIG=/var/www/html/doctis/config/config_inc.php
 BACKUP="${CONFIG}.bak.$(date +%Y%m%d_%H%M%S)"
+# Two uploads in one second must not overwrite the first backup.
+n=1
+while [ -e "$BACKUP" ]; do
+	BACKUP="${CONFIG}.bak.$(date +%Y%m%d_%H%M%S)_${n}"
+	n=$((n + 1))
+done
 
 if [ ! -f "$CONFIG" ]; then
 	echo "ERROR: config file not found: $CONFIG" >&2

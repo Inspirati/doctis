@@ -87,3 +87,5 @@ lang/*
 # README is tracked.
 admin/tools/data-scripts/*
 !admin/tools/data-scripts/README.md
+# Backups made by System Operations config uploads (doctis-write-config.sh)
+config/config_inc.php.bak.*
