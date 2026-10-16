@@ -1787,8 +1787,8 @@ function file_dwg_git_path_sanitize( string $p_path ) {
  * @return string  Sanitised repo-relative path.
  * @throws ClientException when the template produces an invalid path.
  */
-function file_dwg_primary_build_path( int $p_dwg_id, string $p_filename ): string {
-	$t_project_id = (int)dwg_get_field( $p_dwg_id, 'project_id' );
+function file_dwg_primary_build_path( int $p_dwg_id, string $p_filename, int $p_project_id = 0 ): string {
+	$t_project_id = $p_project_id > 0 ? $p_project_id : (int)dwg_get_field( $p_dwg_id, 'project_id' );
 	$t_template   = (string)config_get( 'dwg_repo_path_template', '{dwg_id}/{filename}', null, $t_project_id );
 
 	$t_category = '';
@@ -2206,6 +2206,131 @@ function file_dwg_primary_delete( $p_dwg_id ) {
 	db_query( 'DELETE FROM {dwg_primary_draft} WHERE dwg_id=' . db_param(), array( (int)$p_dwg_id ) );
 	db_param_push();
 	db_query( 'DELETE FROM {dwg_primary_file} WHERE dwg_id=' . db_param(), array( (int)$p_dwg_id ) );
+}
+
+/**
+ * First half of moving a document's primary file with the document
+ * (dwg_move()), run before the project changes.  When the target project
+ * resolves to a different repository, the On Record file is committed into
+ * that repository, so a failure leaves the document where it was.
+ *
+ * The file keeps its repository path unless that path is registered to
+ * another document in the target repository or already exists at its HEAD;
+ * then the target project's path template is used.  Only the On Record
+ * version is carried: its earlier history stays in the source repository.
+ * A document with a Draft (a staged upload or an unpromoted Git edit) is
+ * refused; promote or discard the Draft first.
+ *
+ * @param int $p_dwg_id
+ * @param int $p_target_project_id
+ * @param int $p_user_id           Acting user (git author).
+ * @return array|null What file_dwg_primary_move_complete() needs, or null
+ *                    when nothing has to move.
+ * @throws ClientException when the document cannot be moved.
+ */
+function file_dwg_primary_move_prepare( int $p_dwg_id, int $p_target_project_id, int $p_user_id ): ?array {
+	$t_row = file_dwg_primary_get( $p_dwg_id );
+	if( !$t_row || $t_row['git_path'] === '' ) {
+		return null;
+	}
+	$t_source_project_id = (int)dwg_get_field( $p_dwg_id, 'project_id' );
+	$t_source_repo = repository_id_for_project( $t_source_project_id );
+	$t_target_repo = repository_id_for_project( $p_target_project_id );
+	if( $t_source_repo === 0 || $t_source_repo === $t_target_repo ) {
+		return null;   # same repository (or none to move from): the path stays valid
+	}
+
+	$t_head = file_dwg_git_head_info( $p_dwg_id );
+	if( file_dwg_primary_draft_get( $p_dwg_id ) || ( $t_head && $t_head['has_draft'] ) ) {
+		throw new ClientException(
+			'Document ' . $p_dwg_id . ' has a Draft; promote or discard it before moving the document to another repository',
+			ERROR_INVALID_FIELD_VALUE, array( 'draft' )
+		);
+	}
+
+	$t_backend = file_dwg_get_storage_backend();
+	$t_content = $t_backend->retrieve( $t_row, $t_source_project_id );
+	if( $t_content === false ) {
+		throw new ClientException(
+			'The On Record file of document ' . $p_dwg_id . ' could not be read from its repository',
+			ERROR_INVALID_FIELD_VALUE, array( 'git_path' )
+		);
+	}
+
+	# Keep the path when it is free in the target repository.
+	$t_target_bare = $t_target_repo > 0 ? repository_bare_path( $t_target_repo ) : '';
+	$t_path_free = function( string $p_path ) use ( $p_dwg_id, $p_target_project_id, $t_target_bare ): bool {
+		if( file_dwg_primary_path_in_use( $p_dwg_id, $p_target_project_id, $p_path ) !== 0 ) {
+			return false;
+		}
+		return $t_target_bare === '' || !is_dir( $t_target_bare )
+			|| file_dwg_git_object_sha( $t_target_bare, 'HEAD', $p_path ) === null;
+	};
+	$t_git_path = $t_row['git_path'];
+	if( !$t_path_free( $t_git_path ) ) {
+		$t_git_path = file_dwg_primary_build_path( $p_dwg_id, $t_row['filename'], $p_target_project_id );
+		if( !$t_path_free( $t_git_path ) ) {
+			throw new ClientException(
+				'Neither "' . $t_row['git_path'] . '" nor "' . $t_git_path . '" is free in the target repository',
+				ERROR_INVALID_FIELD_VALUE, array( 'git_path' )
+			);
+		}
+	}
+
+	$t_tmp = tempnam( sys_get_temp_dir(), 'doctis-move-' );
+	file_put_contents( $t_tmp, $t_content['content'] );
+	try {
+		# store() resolves (or creates) the repository from the metadata project.
+		$t_stored = $t_backend->store( $t_tmp, strlen( $t_content['content'] ), $t_row['filename'], $t_git_path, false, array(
+			'dwg_id'     => $p_dwg_id,
+			'project_id' => $p_target_project_id,
+			'filename'   => basename( $t_git_path ),
+			'git_path'   => $t_git_path,
+			'user_id'    => $p_user_id,
+		) );
+	} finally {
+		@unlink( $t_tmp );
+	}
+
+	return array(
+		'source_project_id' => $t_source_project_id,
+		'previous'          => $t_row,
+		'git_path'          => $t_git_path,
+		'git_sha'           => (string)$t_stored['diskfile'],
+	);
+}
+
+/**
+ * Second half of moving a document's primary file, run after dwg_move()
+ * changed the project: register the carried file On Record in the target
+ * repository (history, Reference and approved pin follow), then remove it
+ * from the source repository's HEAD.  The source keeps its history.
+ *
+ * @param int   $p_dwg_id
+ * @param array $p_prepared From file_dwg_primary_move_prepare().
+ * @param int   $p_user_id
+ * @return void
+ */
+function file_dwg_primary_move_complete( int $p_dwg_id, array $p_prepared, int $p_user_id ): void {
+	$t_previous = $p_prepared['previous'];
+	file_dwg_primary_register( $p_dwg_id, $p_user_id, $p_prepared['git_path'], $p_prepared['git_sha'],
+		(string)$t_previous['description'], /* pin */ true, (string)$t_previous['file_type'] );
+
+	# Soft-delete the old copy, unless another document in the source
+	# repository has registered that path since.
+	$t_source_project_id = (int)$p_prepared['source_project_id'];
+	$t_source_bare = dwg_project_bare_repo_path( $t_source_project_id );
+	if( $t_source_bare !== '' && is_dir( $t_source_bare )
+	 && file_dwg_git_object_sha( $t_source_bare, 'HEAD', $t_previous['git_path'] ) !== null
+	 && file_dwg_primary_path_in_use( $p_dwg_id, $t_source_project_id, $t_previous['git_path'] ) === 0 ) {
+		file_dwg_get_storage_backend()->delete( $t_previous['git_sha'], $t_source_project_id, array(
+			'dwg_id'     => $p_dwg_id,
+			'project_id' => $t_source_project_id,
+			'filename'   => $t_previous['filename'],
+			'git_path'   => $t_previous['git_path'],
+			'user_id'    => $p_user_id,
+		) );
+	}
 }
 
 /**

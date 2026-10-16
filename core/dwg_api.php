@@ -1425,6 +1425,17 @@ function dwg_copy( $p_bug_id, $p_target_project_id = null, $p_copy_custom_fields
  * @access public
  */
 function dwg_move( $p_bug_id, $p_target_project_id ) {
+	# The primary file follows the document into the target project's
+	# repository (Doctis).  This runs first: a failure leaves the document unmoved.
+	$t_user_id = auth_get_current_user_id();
+	$t_primary_move = file_dwg_primary_move_prepare( (int)$p_bug_id, (int)$p_target_project_id, $t_user_id );
+
+	# A published page on a different site is withdrawn (Doctis publishing).
+	if( dwg_publish_enabled() && dwg_publish_get( (int)$p_bug_id ) !== null
+	 && dwg_publish_site( (int)dwg_get_field( $p_bug_id, 'project_id' ) )['target'] !== dwg_publish_site( (int)$p_target_project_id )['target'] ) {
+		dwg_publish_withdraw( (int)$p_bug_id, $t_user_id );
+	}
+
 	# Attempt to move disk based document attachments to the new project directory.
 	file_dwg_move_dwg_attachments( $p_bug_id, $p_target_project_id );
 
@@ -1434,6 +1445,10 @@ function dwg_move( $p_bug_id, $p_target_project_id ) {
 
 	# Move the document to the new project.
 	dwg_set_field( $p_bug_id, 'project_id', $p_target_project_id );
+
+	if( $t_primary_move !== null ) {
+		file_dwg_primary_move_complete( (int)$p_bug_id, $t_primary_move, $t_user_id );
+	}
 
 	# Update the category if needed
 	$t_category_id = dwg_get_field( $p_bug_id, 'category_id' );

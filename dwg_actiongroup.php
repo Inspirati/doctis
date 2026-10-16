@@ -144,8 +144,13 @@ foreach( $f_bug_arr as $t_bug_id ) {
 					$t_bugnote_id = dwgnote_add( $t_bug_id, $f_bug_notetext, null, $f_bug_noteprivate );
 					dwgnote_process_mentions( $t_bug_id, $t_bugnote_id, $f_bug_notetext );
 				}
-				dwg_move( $t_bug_id, $f_project_id );
-				helper_call_custom_function( 'document_update_notify', array( $t_bug_id ) );
+				try {
+					dwg_move( $t_bug_id, $f_project_id );
+					helper_call_custom_function( 'document_update_notify', array( $t_bug_id ) );
+				} catch( Mantis\Exceptions\ClientException $e ) {
+					# e.g. a Draft that must be promoted before the file can follow the document
+					$t_failed_ids[$t_bug_id] = $e->getMessage();
+				}
 			} else {
 				$t_failed_ids[$t_bug_id] = lang_get( 'dwg_actiongroup_access' );
 			}
