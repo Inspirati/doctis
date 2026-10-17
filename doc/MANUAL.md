@@ -286,6 +286,50 @@ New uploads and Draft promotions also appear in the Document History
 panel with their registered commit SHA and filename. Earlier Git revisions
 remain in Git even if they predate this history logging.
 
+### Cloning the project repository to your workstation
+
+You can copy a project's whole document repository to your own computer with
+ordinary git. No server login is needed. The warning page that opens when a
+document's file was changed in Git (Draft differs from HEAD) shows the exact
+command for your project.
+
+1. Under **My Account → API Tokens**, create a personal token. It is shown
+   only once, so copy it straight away.
+2. Run the clone command, using the same scheme (`http` or `https`) as the
+   address you use for Doctis in your browser:
+   ```
+   git clone https://<your-username>@<server>/git/<project>-r<N>.git
+   ```
+   Git asks for a password. Paste the **API token**. Your account password
+   does not work.
+
+To avoid the prompt, put the token in the URL
+(`https://<your-username>:<token>@<server>/git/…`). That works, but the token
+is then kept in your shell history and in the clone's `.git/config`. Treat it
+as a password, and revoke it under API Tokens if it is ever exposed (pasted
+into a chat or ticket, for example).
+
+**If the clone fails**
+
+| Symptom | Cause and remedy |
+|---------|------------------|
+| `Failed to connect to <server> port 80 … Couldn't connect to server` after a long wait | The server accepts only HTTPS, so nothing answers on port 80. Use `https://`. Git never reached Doctis, so it could not ask for a password. This is the usual cause of "git never asked for my token". |
+| `HTTP 401`, or `Authentication failed` | Wrong username, or you gave the account password. Use your Doctis username and an API token. Check the token has not been revoked. |
+| `HTTP 403` | Your account lacks the access level needed on the project that owns the repository (reading and pushing have separate thresholds). Ask a project manager. |
+| `HTTP 404 Repository not found` | The repository name is wrong. It is `<project>-r<N>`, shown on the warning page and on Manage → Git Store. |
+| `404` on every repository | Direct git access is switched off on the server (`$g_git_http_enabled`), or the front proxy does not pass `/git/` to Doctis. Ask an administrator. |
+| Git does not prompt, and fails with `could not read Password` | Prompting is disabled on your computer: `GIT_TERMINAL_PROMPT=0` is set, there is no terminal, or a credential helper or `GIT_ASKPASS`/`SSH_ASKPASS` program is answering for you. Unset it, or put the token in the URL as above. |
+
+To check the address without credentials, run
+`curl -sI "https://<server>/git/<project>-r<N>.git/info/refs?service=git-upload-pack"`.
+A `401` with `WWW-Authenticate: Basic realm="Doctis Git"` means the address is
+right and git will ask for credentials. A timeout means the server is not
+reachable on that scheme and port.
+
+Pushing needs a higher access level than cloning. A push that changes a
+registered document's file moves that document's **Draft** only, and a manager
+promotes it as described above.
+
 ---
 
 ## 6. Document status workflow

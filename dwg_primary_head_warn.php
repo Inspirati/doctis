@@ -89,7 +89,11 @@ $t_cmd_clone     = 'git clone ' . $t_bare_shell . ' /tmp/' . htmlspecialchars( $
 
 # Remote (workstation) clone over Smart HTTP — the recommended method.
 $t_git_http_on   = ( ON == config_get_global( 'git_http_enabled' ) );
-$t_scheme        = ( !empty( $_SERVER['HTTPS'] ) && $_SERVER['HTTPS'] !== 'off' ) ? 'https' : 'http';
+# Take the scheme from $g_path: behind a TLS-terminating proxy $_SERVER['HTTPS'] is empty.
+$t_scheme        = parse_url( config_get_global( 'path' ), PHP_URL_SCHEME );
+if( !in_array( $t_scheme, array( 'http', 'https' ), true ) ) {
+	$t_scheme = ( !empty( $_SERVER['HTTPS'] ) && $_SERVER['HTTPS'] !== 'off' ) ? 'https' : 'http';
+}
 $t_host_raw      = $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? 'vaio';
 $t_current_user  = user_get_username( auth_get_current_user_id() );
 $t_clone_url     = $t_scheme . '://' . $t_host_raw . '/git/' . $t_repo_base . '.git';
