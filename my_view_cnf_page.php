@@ -408,6 +408,10 @@ $t_meeting_invite_options = [
 			<?php print_icon( 'fa-lock', 'ace-icon' ); ?>
 			To change your username, primary email, or password visit
 			<a href="account_page.php">Account Settings</a>.
+			<?php if( api_token_can_create() ) { ?>
+			To use git or the API from your own computer, create a personal token under
+			<a href="api_tokens_page.php">API Tokens</a>.
+			<?php } ?>
 		</span>
 	</div>
 	</div>
