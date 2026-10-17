@@ -115,8 +115,8 @@ function summary_dwg_helper_get_developer_label( $p_user_id, array $p_filter = [
  * @return void
  */
 function summary_helper_build_dwgcount( &$p_cache, $p_key, $p_status, $p_dwgcount ) {
-	$t_resolved_val = config_get( 'bug_resolved_status_threshold' );
-	$t_closed_val = config_get( 'bug_closed_status_threshold' );
+	$t_resolved_val = config_get( 'dwg_resolved_status_threshold' );
+	$t_closed_val = config_get( 'dwg_closed_status_threshold' );
 
 	if( $t_closed_val <= $p_status ) {
 		if( isset( $p_cache[$p_key]['closed'] ) ) {
@@ -150,8 +150,8 @@ function summary_helper_build_dwgcount( &$p_cache, $p_key, $p_status, $p_dwgcoun
  * @return void 
  */
 function summary_helper_build_dwglinks( $p_bug_link, &$p_bugs_open, &$p_bugs_resolved, &$p_bugs_closed, &$p_bugs_total) {
-	$t_resolved_val = config_get( 'bug_resolved_status_threshold' );
-	$t_closed_val = config_get( 'bug_closed_status_threshold' );
+	$t_resolved_val = config_get( 'dwg_resolved_status_threshold' );
+	$t_closed_val = config_get( 'dwg_closed_status_threshold' );
 
 	if( 0 < $p_bugs_open ) {
 		$p_bugs_open = '<a class="subtle" href="' . $p_bug_link . '&amp;' . FILTER_PROPERTY_HIDE_STATUS . '=' . $t_resolved_val . '">' . $p_bugs_open . '</a>';
@@ -257,8 +257,8 @@ function summary_dwg_print_by_enum( $p_enum, array $p_filter = [] ) {
 		$t_bug_link = $t_link_prefix . '&amp;' . $t_filter_property . '=' . $t_enum;
 
 		if( !is_blank( $t_bug_link ) ) {
-			$t_resolved_val = config_get( 'bug_resolved_status_threshold' );
-			$t_closed_val = config_get( 'bug_closed_status_threshold' );
+			$t_resolved_val = config_get( 'dwg_resolved_status_threshold' );
+			$t_closed_val = config_get( 'dwg_closed_status_threshold' );
 			
 			if( 0 < $t_bugs_open ) {
 				$t_bugs_open = '<a class="subtle" href="' . $t_bug_link
@@ -318,7 +318,7 @@ function summary_dwg_print_by_enum( $p_enum, array $p_filter = [] ) {
  */
 function summary_dwg_print_by_activity( array $p_filter = [] ) {
 	$t_project_id = helper_get_current_project();
-	$t_resolved = config_get( 'bug_resolved_status_threshold' );
+	$t_resolved = config_get( 'dwg_resolved_status_threshold' );
 	$t_specific_where = helper_project_specific_where( $t_project_id );
 	if( ' 1<>1' == $t_specific_where ) {
 		return;
@@ -338,7 +338,7 @@ function summary_dwg_print_by_activity( array $p_filter = [] ) {
 	$t_query->sql( $t_sql );
 
 	$t_count = 0;
-	$t_private_bug_threshold = config_get( 'private_bug_threshold' );
+	$t_private_bug_threshold = config_get( 'private_dwg_threshold' );
 	$t_summarydata = array();
 	$t_summarybugs = array();
 	while( $t_row = $t_query->fetch() ) {
@@ -382,7 +382,7 @@ function summary_dwg_print_by_activity( array $p_filter = [] ) {
  */
 function summary_dwg_print_by_age( array $p_filter = [] ) {
 	$t_project_id = helper_get_current_project();
-	$t_resolved = config_get( 'bug_resolved_status_threshold' );
+	$t_resolved = config_get( 'dwg_resolved_status_threshold' );
 
 	$t_specific_where = helper_project_specific_where( $t_project_id );
 	if( ' 1<>1' == $t_specific_where ) {
@@ -400,7 +400,7 @@ function summary_dwg_print_by_age( array $p_filter = [] ) {
 	$t_query->sql( $t_sql );
 
 	$t_count = 0;
-	$t_private_bug_threshold = config_get( 'private_bug_threshold' );
+	$t_private_bug_threshold = config_get( 'private_dwg_threshold' );
 
 	while( $t_row = $t_query->fetch() ) {
 		# as we select all from dwg table, inject into the cache.
@@ -540,8 +540,8 @@ function summary_dwg_print_by_creator( array $p_filter = [] ) {
 	$t_sql .= ' GROUP BY creator_id, status ORDER BY creator_id, status';
 	$t_query->sql( $t_sql );
 
-	$t_resolved_status = config_get( 'bug_resolved_status_threshold' );
-	$t_closed_status = config_get( 'bug_closed_status_threshold' );
+	$t_resolved_status = config_get( 'dwg_resolved_status_threshold' );
+	$t_closed_status = config_get( 'dwg_closed_status_threshold' );
 	$t_reporter_stats = array();
 	while( $t_row = $t_query->fetch() ) {
 		$t_creator_id = (int)$t_row['creator_id'];
@@ -813,8 +813,8 @@ function summary_dwg_print_developer_resolution( $p_resolution_enum_string, arra
 		}
 	);
 
-	$t_threshold_fixed = config_get( 'bug_resolution_fixed_threshold' );
-	$t_threshold_notfixed = config_get( 'bug_resolution_not_fixed_threshold' );
+	$t_threshold_fixed = config_get( 'dwg_resolution_fixed_threshold' );
+	$t_threshold_notfixed = config_get( 'dwg_resolution_not_fixed_threshold' );
 
 	$t_link_prefix = summary_dwg_get_link_prefix( $p_filter );
 
@@ -947,8 +947,8 @@ function summary_dwg_print_reporter_resolution( $p_resolution_enum_string, array
 	# Sort our total bug count array so that the reporters with the highest number of bugs are listed first,
 	arsort( $t_reporter_dwgcount_arr );
 
-	$t_threshold_fixed = config_get( 'bug_resolution_fixed_threshold' );
-	$t_threshold_notfixed = config_get( 'bug_resolution_not_fixed_threshold' );
+	$t_threshold_fixed = config_get( 'dwg_resolution_fixed_threshold' );
+	$t_threshold_notfixed = config_get( 'dwg_resolution_not_fixed_threshold' );
 
 	$t_link_prefix = summary_dwg_get_link_prefix( $p_filter );
 
@@ -1164,7 +1164,7 @@ function summary_dwg_print_reporter_resolution( $p_resolution_enum_string, array
  */
 function summary_dwg_helper_get_time_stats( $p_project_id, array $p_filter = [] ) {
 	$t_specific_where = helper_project_specific_where( $p_project_id );
-	$t_resolved = config_get( 'bug_resolved_status_threshold' );
+	$t_resolved = config_get( 'dwg_resolved_status_threshold' );
 
 	# The issue may have passed through the status we consider resolved
 	# (e.g. bug is CLOSED, not RESOLVED). The linkage to the history field
@@ -1224,11 +1224,11 @@ function summary_dwg_helper_get_time_stats( $p_project_id, array $p_filter = [] 
 			. ' GROUP BY b.id, b.status, b.date_submitted, b.last_updated ORDER BY b.id ASC';
 		$t_query = new DbQuery( $t_sql, $t_params );
 
-		$t_bug_count = 0;
+		$t_dwg_count = 0;
 		$t_largest_diff = 0;
 		$t_total_time = 0;
 		while( $t_row = $t_query->fetch() ) {
-			$t_bug_count++;
+			$t_dwg_count++;
 			$t_date_submitted = $t_row['date_submitted'];
 			$t_last_updated = $t_row['hist_update'] !== null ? $t_row['hist_update'] : $t_row['last_updated'];
 
@@ -1245,8 +1245,8 @@ function summary_dwg_helper_get_time_stats( $p_project_id, array $p_filter = [] 
 			}
 		}
 
-		if( $t_bug_count > 0 ) {
-			$t_average_time = $t_total_time / $t_bug_count;
+		if( $t_dwg_count > 0 ) {
+			$t_average_time = $t_total_time / $t_dwg_count;
 		} else {
 			$t_average_time = 0;
 			$t_dwg_id = 0;
@@ -1292,7 +1292,7 @@ function summary_dwg_get_filter() {
 /**
  * Print filter related information for summary page.
  *
- * If a filter has been applied, display a notice, bug count, link to view issues.
+ * If a filter has been applied, display a notice, dwg count, link to view documents.
  *
  * @param array $p_filter Filter array.
  *
@@ -1310,16 +1310,16 @@ function summary_dwg_print_filter_info( array $p_filter = [] ) {
 		return;
 	}
 	$t_filter_query = filter_dwg_cache_subquery( $p_filter );
-	$t_bug_count = $t_filter_query->get_dwg_count();
+	$t_dwg_count = $t_filter_query->get_dwg_count();
 	$t_view_issues_link = helper_url_combine( 'view_dwg_page.php', filter_dwg_get_temporary_key_param( $p_filter ) );
 	?>
 	<div class="space-10"></div>
 	<div class="col-md-12 col-xs-12">
 		<div class="alert alert-warning center">
 		<?php
-		echo '<a href="', $t_view_issues_link, '" title="', lang_get( 'view_bugs_link' ), '">';
+		echo '<a href="', $t_view_issues_link, '" title="', lang_get( 'view_dwgs_link' ), '">';
 		echo lang_get( 'summary_notice_filter_is_applied' ), '&nbsp;',
-			'(', $t_bug_count, ' ', lang_get( 'bugs' ) , ')';
+			'(', $t_dwg_count, ' ', lang_get( 'dwgs' ) , ')';
 		echo '</a>';
 		?>
 		</div>
@@ -1340,7 +1340,7 @@ function summary_dwg_print_filter_info( array $p_filter = [] ) {
 function summary_by_dates_dwg_count( array $p_date_array, array $p_filter = [] ) {
 	$t_project_id = helper_get_current_project();
 	$t_specific_where = helper_project_specific_where( $t_project_id );
-	$t_resolved = config_get( 'bug_resolved_status_threshold' );
+	$t_resolved = config_get( 'dwg_resolved_status_threshold' );
 	$t_date_array = array_values( $p_date_array );
 	sort( $t_date_array );
 
