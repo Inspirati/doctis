@@ -259,6 +259,34 @@ $s_dwg_actiongroup_status = 'This issue cannot be changed to the requested statu
 $s_dwg_actiongroup_category = 'This issue cannot be changed to the requested category';
 $s_dwg_actiongroup_handler = 'The requested user is not allowed to handle this document';
 $s_dwg_actiongroup_owner = 'The requested user is not allowed to own this document';
+
+# manage_user_transfer_page.php — hand on what a disabled user still holds.
+# See doc/dwg/USER_LIFECYCLE.md.
+$s_user_transfer_title = 'Transfer Responsibilities';
+$s_user_transfer_intro = '<strong>%s</strong> is still responsible for the items below. Choose who takes them over.';
+$s_user_transfer_nothing = '<strong>%s</strong> holds nothing that needs handing on.';
+$s_user_transfer_is_disabled = 'This account is disabled, so these items have nobody active responsible for them.';
+$s_user_transfer_still_enabled = 'This account is still enabled. Transferring now is allowed, but disabling it is the step that removes the person.';
+$s_user_transfer_holding = 'Responsibility';
+$s_user_transfer_count = 'Items';
+$s_user_transfer_include = 'Transfer';
+$s_user_transfer_to = 'Transfer to';
+$s_user_transfer_suggested = 'Suggested: %s, from the Reports To chain. Change it if someone else should take over.';
+$s_user_transfer_no_suggestion = 'No Reports To manager is recorded for this user, so no successor could be suggested.';
+$s_user_transfer_button = 'Transfer';
+$s_user_transfer_back = 'Back to User';
+$s_user_transfer_result = '%d item(s) transferred.';
+$s_user_transfer_skipped = '%d item(s) were left unchanged, because the new holder is not permitted to take them on — they may lack the access level, or a license the document requires.';
+$s_user_transfer_dwg_owner = 'Documents owned';
+$s_user_transfer_dwg_handler = 'Documents assigned';
+$s_user_transfer_bug_handler = 'Issues assigned';
+$s_user_transfer_meeting_chair = 'Meetings to chair';
+$s_user_transfer_meeting_minutes = 'Meetings to minute';
+$s_user_transfer_meeting_action = 'Open meeting actions';
+$s_user_transfer_topic_expectation = 'Topic expectations owned';
+$s_user_transfer_category_default = 'Categories assigned by default';
+$s_user_transfer_pending = 'This user is still responsible for %d item(s).';
+$s_user_transfer_link = 'Transfer responsibilities';
 $s_dwg_actiongroup_version = 'The requested version does not exist in this document\'s project';
 $s_close_dwgs_conf_msg = 'Are you sure you wish to close these documents?';
 $s_delete_dwgs_conf_msg = 'Are you sure you wish to delete these documents?';

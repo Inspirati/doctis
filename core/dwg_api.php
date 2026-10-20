@@ -493,7 +493,10 @@ class DwgData {
 			$t_result = db_query( $t_query, array( $this->category_id ) );
 			$t_handler = db_result( $t_result );
 
-			if( $t_handler !== false && user_exists( $t_handler ) ) {
+			# user_is_enabled() as well as user_exists(): a category whose
+			# default assignee has been disabled must not keep collecting new
+			# documents for them. See doc/dwg/USER_LIFECYCLE.md §5.
+			if( $t_handler !== false && user_exists( $t_handler ) && user_is_enabled( $t_handler ) ) {
 				$this->handler_id = $t_handler;
 			}
 		}

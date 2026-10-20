@@ -36,6 +36,8 @@ require_api( 'form_api.php' );
 require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'html_api.php' );
+require_api( 'user_api.php' );
+require_api( 'user_transfer_api.php' );
 
 form_security_validate( 'manage_user_update' );
 
@@ -69,10 +71,23 @@ $t_data = array(
 	)
 );
 
+# Was the account enabled before this update? Needed below to tell a
+# disable apart from an edit to an already-disabled account.
+$t_was_enabled = user_is_enabled( $f_user_id );
+
 $t_command = new UserUpdateCommand( $t_data );
 $t_command->execute();
 
 form_security_purge( 'manage_user_update' );
+
+# Disabling an account stops the person, but does not hand on what they were
+# responsible for: documents they own or hold, issues, meetings they are due to
+# chair, open meeting actions, Topic expectations, category defaults. Land the
+# administrator on the transfer page rather than letting it be forgotten.
+# See doc/dwg/USER_LIFECYCLE.md.
+if( $t_was_enabled && !$f_enabled && user_transfer_has_holdings( $f_user_id ) ) {
+	print_header_redirect( 'manage_user_transfer_page.php?user_id=' . (int)$f_user_id );
+}
 
 $t_redirect_url = 'manage_user_edit_page.php?user_id=' . (int)$f_user_id;
 print_header_redirect( $t_redirect_url );
