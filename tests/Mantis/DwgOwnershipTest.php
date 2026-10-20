@@ -16,6 +16,7 @@ namespace Mantis\tests\Mantis;
 require_api( 'access_dwg_api.php' );
 require_api( 'dwg_api.php' );
 require_api( 'filter_dwg_api.php' );
+require_api( 'license_api.php' );
 require_api( 'project_api.php' );
 
 class DwgOwnershipTest extends MantisCoreBase {
