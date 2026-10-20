@@ -890,11 +890,21 @@ an account that has been used.
 **Prune Accounts** (on the Unused filter) is the safe bulk form: it only
 removes accounts that have never been logged into.
 
-> **Still to do when disabling someone:** disabling stops the account but does
-> not hand on what the person was responsible for. Check what they still own
-> or are assigned before you disable them, and use **Set Owner** on the
-> document list to move it. See
-> [doc/dwg/USER_LIFECYCLE.md](dwg/USER_LIFECYCLE.md) §5.
+**Handing on their work.** Disabling stops the account but does not pass on
+what the person was responsible for. When you disable someone who still holds
+anything, Doctis takes you straight to **Transfer Responsibilities**, which
+lists what they hold — documents they own or are assigned, issues, meetings
+they were due to chair, open meeting actions, Topic expectations, and
+categories that assign to them by default — and asks who takes it over. The
+picker suggests their manager from **Reports To** where one is recorded; change
+it if someone else should take over.
+
+Items the new holder is not permitted to take on are left alone and reported,
+so check the count afterwards. You can reach the same page at any time from the
+user's page, so an account disabled earlier can still be tidied up.
+
+A transfer never changes who *created* a document, or any note or history
+entry. Those keep the original person's name.
 
 ### Documentation Topics settings
 

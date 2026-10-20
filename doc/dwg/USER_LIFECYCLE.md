@@ -95,60 +95,125 @@ nor one with a higher access level than the actor, nor the last enabled
 administrator, and the command refuses to delete the acting user's own
 account.
 
-## 5. Open: transferring what a disabled user still holds
+## 5. Transferring what a disabled user holds
 
-Disabling preserves the *name*. It does **not** release the *holdings*, and
-this is not yet solved.
+Disabling preserves the *name*; it does not hand on the *responsibilities*.
+**Transfer Responsibilities** does that.
 
-A disabled user remains the Owner and Assignee of their documents, the handler
-of their issues, the chair of future meetings, the owner of open meeting
-actions and Topic expectations, and a holder of licences. Because they have
-dropped out of every picker, there is also no easy way to see what they still
-hold.
+A disabled user otherwise remains the Owner and Assignee of their documents,
+the handler of their issues, the chair of meetings yet to be held, the owner of
+open meeting actions and Topic expectations, and a category's default
+assignee — and because they have dropped out of every picker, there is no easy
+way to see what they still hold.
 
-Two consequences are worth fixing regardless of which transfer mechanism is
-chosen:
+### How it works
 
-- **A disabled Topic expectation owner passes readiness silently.**
-  `topic_expectation_readiness_blockers()`
-  ([core/topic_expectation_api.php:1073-1081](../../core/topic_expectation_api.php#L1073-L1081))
-  only raises `topic_blocker_no_owner` when `owner_id == 0`, so an expectation
-  owned by a disabled user looks owned.
-- **A disabled category default assignee still gets new documents.**
-  `DwgData::create()` ([core/dwg_api.php:487-499](../../core/dwg_api.php#L487-L499))
-  checks `user_exists()` on the category's `user_id` but not
-  `user_is_enabled()`.
+Disabling an account that still holds something redirects the administrator to
+the transfer page instead of back to the user list, so the step cannot be
+quietly skipped. The page is also linked from Manage → Users whenever a user
+holds anything, so an account disabled before this existed can still be dealt
+with.
 
-### The `reports_to` escalation idea
+The page lists the holdings by category with a tick box each, and a successor
+picker. **The successor is chosen by an administrator, not derived.**
 
-The owner's suggested approach is to escalate everything a disabled user holds
-up their chain of command, using `{user}.reports_to`.
+| Category | Field | Scope |
+|----------|-------|-------|
+| Documents owned | `{dwg}.owner_id` | all |
+| Documents assigned | `{dwg}.handler_id` | all |
+| Issues assigned | `{bug}.handler_id` | all |
+| Meetings to chair | `{meeting}.chair_id` | agenda or minutes stage only |
+| Meetings to minute | `{meeting}.minute_taker_id` | agenda or minutes stage only |
+| Open meeting actions | `{meeting_action}.owner_id` | not cancelled, and not already an issue |
+| Topic expectations owned | `{topic_expectation}.owner_id` | enabled only |
+| Categories assigned by default | `{category}.user_id` | all |
 
-The field is a sound foundation in one respect: `user_ensure_valid_reports_to()`
-([core/user_api.php:938](../../core/user_api.php#L938)) already rejects
-self-reference, a manager who does not exist or is disabled, and reporting
-cycles, by walking the chain.
+Approved and cancelled meetings are historical records and are left alone. An
+action that has already become an issue is counted under *Issues assigned*
+rather than twice.
 
-Three problems have to be answered before it can carry ownership transfer:
+**Historical attribution is never transferred.** `creator_id`, `{dwg_history}`,
+notes, tags, revisions, primary-file rows and the git commit trail all keep the
+original person's name. Every transferred change is written through the normal
+set-field path, so it lands in the history attributed to the administrator who
+performed it — "administrator changed Owner from frodo to gandalf" — which
+audits correctly, where a silent automatic move would not.
 
-1. **It is sparsely populated.** On the VM only 3 of 17 enabled accounts have
-   a manager set. The column is `NOT NULL DEFAULT 0` and nothing requires it,
-   so for most users escalation would have nowhere to go and the documents
-   would stay orphaned — the problem the mechanism is meant to solve.
-2. **It is self-declared.** `reports_to` is editable by the user on My
-   Configuration View ([my_view_cnf_update.php:37](../../my_view_cnf_update.php#L37)),
-   not only by an administrator. Using it as the authority for who inherits a
-   document means a departing staff member effectively chooses their
-   successor.
-3. **The chain can contain disabled links.** Validation runs at write time
-   only, so a manager disabled later still has reports pointing at them. An
-   escalation walk must skip disabled links and keep climbing, not take
-   `reports_to` once.
+### `reports_to` is the default, not the authority
 
-There is also an eligibility question: the inherited owner must satisfy
-`$g_own_dwg_threshold` and hold any licence the document requires
-(`access_dwg_can_be_owner()`), and an inherited assignee must satisfy
-`$g_handle_dwg_threshold`. A manager one step up may meet neither.
+The successor picker is pre-filled with the first **enabled** account up the
+user's `reports_to` chain. Disabled links are skipped and the walk continues,
+because `user_ensure_valid_reports_to()`
+([core/user_api.php:938](../../core/user_api.php#L938)) only validates at write
+time: a manager disabled later still has reports pointing at them. Cycles
+terminate the walk.
 
-See [OWNERSHIP.md](OWNERSHIP.md) §9.3 for the originally scoped Transfer
-Ownership action, which remains unbuilt.
+It is only a suggestion, deliberately (owner decision 2026-10-20). `reports_to`
+is optional — most accounts have none, so there is often nothing to suggest and
+the administrator simply picks — and it is editable by the user themselves on
+My Configuration View, so it carries no authority over who inherits a
+controlled document. The owner chose to leave it that way rather than make it
+mandatory and administrator-only.
+
+### Eligibility is checked per row
+
+A successor one step up the chain may not be allowed to hold a given item. The
+requirement is per category: `access_dwg_can_be_owner()` for document
+ownership (which covers `$g_own_dwg_threshold` **and** any licence the document
+requires), `$g_handle_dwg_threshold` for document assignment and category
+defaults, `$g_handle_bug_threshold` for issues.
+
+Rows the successor may not take on are **left where they are and reported as
+skipped**, so a partial transfer is honest rather than failing the whole
+operation or, worse, recording an ineligible holder.
+
+### Code
+
+| File | Role |
+|------|------|
+| [core/user_transfer_api.php](../../core/user_transfer_api.php) | `user_transfer_categories()`, `_holdings()`, `_summary()`, `_has_holdings()`, `_suggest_successor()`, `_eligibility()`, `_row_allowed()`, `_perform()` |
+| [manage_user_transfer_page.php](../../manage_user_transfer_page.php) | the holdings list and successor picker |
+| [manage_user_transfer.php](../../manage_user_transfer.php) | the POST handler |
+| [manage_user_update.php](../../manage_user_update.php) | redirects to the page when an update disables an account that still holds something |
+| [manage_user_edit_page.php](../../manage_user_edit_page.php) | the standing **Transfer responsibilities** link |
+| [tests/Mantis/UserTransferTest.php](../../tests/Mantis/UserTransferTest.php) | 13 tests |
+
+Access is `$g_manage_user_threshold` (MANAGER) — transferring is part of
+managing an account, not deleting one, so it does not need
+`$g_delete_user_threshold`.
+
+### Two defects fixed with it
+
+Both were the same question — *is this user still valid?* — asked in places
+that only checked whether the account existed:
+
+- `topic_expectation_readiness_blockers()` raised `topic_blocker_no_owner`
+  only when `owner_id == 0`, so an expectation owned by a disabled account
+  looked owned and passed readiness. It now also blocks on a missing or
+  disabled owner.
+- `DwgData::create()` checked `user_exists()` but not `user_is_enabled()` on
+  the category's default assignee, so a disabled user kept collecting
+  auto-assigned documents.
+
+### Test record
+
+2026-10-20 on the VM: `UserTransferTest` 13 tests / 59 assertions pass, and
+the full `mantis` suite passes (370 tests, 1 pre-existing skip). Through the
+browser interface as `administrator`:
+
+- the transfer page lists holdings by category and suggests the user's manager
+  from `reports_to`;
+- disabling a user who still owns a document redirected to
+  `manage_user_transfer_page.php?user_id=9` rather than back to the edit page,
+  with the account disabled;
+- the transfer moved the document's owner and left `creator_id` alone, writing
+  one history row attributed to the administrator who performed it;
+- transferring two owned documents to a REPORTER returned
+  `moved=0&skipped=2` and both documents kept their existing owner, confirming
+  the per-row eligibility guard.
+
+**Not exercised:** the issue, meeting, meeting-action and Topic-expectation
+categories have unit coverage of the category definitions but were not run
+against real rows, because the rebuilt VM has none.
+
+See [OWNERSHIP.md](OWNERSHIP.md) §9.3 for how this was originally scoped.

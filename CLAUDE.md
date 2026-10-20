@@ -146,12 +146,17 @@ at `$g_delete_user_threshold` (ADMINISTRATOR, above
 never been logged into. Anonymisation is explicitly not required: user records
 are company property, not personal data.
 
-**Open:** disabling does not hand on what the person held — documents they own
-or are assigned, issues, meeting chairs, open meeting actions, Topic
-expectations. See [doc/dwg/USER_LIFECYCLE.md](doc/dwg/USER_LIFECYCLE.md) §5 for
-the `reports_to` escalation idea and the three problems it has to answer, plus
-two related bugs (a disabled Topic expectation owner passes readiness; a
-disabled category default assignee still gets new documents).
+Disabling does not hand on what the person held, so **Transfer
+Responsibilities** does: documents owned and assigned, issues, meetings yet to
+be held, open meeting actions, Topic expectations and category defaults.
+Disabling an account that still holds something redirects to it, and Manage →
+Users carries a standing link. `{user}.reports_to` supplies the *default*
+successor only — it is optional and self-editable, so it is never treated as
+authority — and eligibility is checked per row (`$g_own_dwg_threshold` plus any
+required licence, `$g_handle_dwg_threshold`, `$g_handle_bug_threshold`), with
+ineligible rows skipped and reported. Historical attribution is never moved.
+API: [core/user_transfer_api.php](core/user_transfer_api.php); design and test
+record: [doc/dwg/USER_LIFECYCLE.md](doc/dwg/USER_LIFECYCLE.md) §5.
 
 ## License Entity
 

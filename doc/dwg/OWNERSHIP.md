@@ -449,16 +449,18 @@ there (§3.3).
 ## 11. As built
 
 Everything in §§2-8 is implemented, plus the importer (§9.6) and the
-publishing re-point (§8). One item from §9 is **not** built and is the main
-outstanding gap:
+publishing re-point (§8).
 
-- **Transfer Ownership on Manage → Users (§9.3).** Bulk Set Owner covers the
-  manual path, but there is still no single action to move every document from
-  a departing owner to their replacement, and no warning when an account that
-  still owns documents is disabled or deleted. `user_delete()` continues to
-  leave `{dwg}.owner_id` pointing at the removed account.
+**Transfer Ownership (§9.3) is now built**, and went further than this note
+scoped it: it moves issues, meetings, open meeting actions, Topic expectations
+and category defaults as well as document ownership and assignment. See
+[USER_LIFECYCLE.md](USER_LIFECYCLE.md) §5. The related decision is that a
+departing staff member is **disabled, never deleted**, so `user_delete()`
+leaving `{dwg}.owner_id` dangling stopped being the case that matters —
+deleting is now administrator-only and reserved for fake or mistaken
+registrations.
 
-Also not done, as decided: the Topics docs are not yet updated to note that
+Still not done, as decided: the Topics docs are not yet updated to note that
 "owner" now means two things (§2.2), and there is no republish-on-ownership-
 change (§8) — a published page keeps its old Owner line until someone
 republishes.

@@ -41,7 +41,7 @@ turn email notifications off before tests that queue mail in bulk.
 
 **What it covers:** MantisBT core API unit tests and the Doctis tests in
 `tests/Mantis/` (`Topic*Test`, `MeetingApiTest`, `AiKnowledgeTest`, `UserNamePolicyTest`,
-`DwgOwnershipTest` and
+`DwgOwnershipTest`, `UserTransferTest` and
 others), plus SOAP integration tests (`tests/soap/`) via PHP's SoapClient.
 New document-domain unit tests belong in `tests/Mantis/`.
 
@@ -623,6 +623,39 @@ Run 2026-10-20 on the VM after a database rebuild: 14 `DwgOwnershipTest` tests
 and the full `mantis` suite (357 tests, 1 pre-existing skip) passed, and all
 the page checks above passed. Full record:
 [dwg/OWNERSHIP.md](dwg/OWNERSHIP.md) §12.
+
+### 7f. User lifecycle — disable, delete, and transferring responsibilities
+
+**Unit tests** (`tests/Mantis/UserTransferTest.php`, 13 tests): holdings
+counting per category, that the creator is never a holding, selective
+transfer, per-row eligibility and the skip-not-fail behaviour, the `reports_to`
+suggestion including climbing past disabled managers and surviving a cycle, and
+that a disabled category default assignee stops auto-assigning.
+
+```bash
+vendor/bin/phpunit --testsuite mantis --filter UserTransferTest --testdox
+```
+
+**Delete threshold** (CLI, as `www-data`): call `UserDeleteCommand` after
+`auth_attempt_script_login()` as `manager` and then as `administrator` on a
+throwaway account — the first must raise "Access denied to delete users", the
+second must succeed. Forcing the POST to `manage_user_delete.php` as a manager
+only proves the CSRF check, because the button is hidden, so test the command
+directly.
+
+**Page flow** (curl, as `administrator`): disable a user who still owns a
+document through `manage_user_update.php` — omit `enabled` entirely, as an
+unticked checkbox does — and confirm the redirect goes to
+`manage_user_transfer_page.php?user_id=N` rather than back to the edit page.
+Then POST `manage_user_transfer.php` with `to_user_id` and `categories[]`, and
+check the `moved` / `skipped` counts on the redirect, that `creator_id` is
+untouched, and that the history row is attributed to the administrator. Repeat
+with a successor below `$g_own_dwg_threshold` to confirm `moved=0` and that the
+documents keep their existing owner.
+
+Run 2026-10-20 on the VM: all of the above passed, and the full `mantis` suite
+passed (370 tests, 1 pre-existing skip). Full record:
+[dwg/USER_LIFECYCLE.md](dwg/USER_LIFECYCLE.md) §5.
 
 ---
 
