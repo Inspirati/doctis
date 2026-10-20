@@ -1,6 +1,9 @@
 # Document Creator, Owner and Assignee
 
-Status: **design approved 2026-10-20; implementation on branch `dwg-ownership`.**
+Status: **built and tested on the native VM, 2026-10-20**, on branch
+`dwg-ownership`. Not merged into `dev`; not on the live version. As-built
+notes are in §11 and the test record in §12.
+
 Owner decision of 2026-10-20: a document has **three distinct person fields**,
 not two. All decisions in §10 are settled; §10 records the two that were
 amended from the original recommendation.
@@ -443,44 +446,134 @@ there (§3.3).
 
 ---
 
-## 11. Suggested phasing
+## 11. As built
 
-**Phase 0 — fixes, independent of the new field.** Worth doing first and
-separately, because they are live bugs: the dropped `handler_id` and false
-history row in `create()` (§3.2a), and the out-of-enum
-`$g_dwg_assigned_status` writes (§3.2b). Relabel `$s_dwg_creator` to
-"Created by". Un-hide the assignee on the create and edit forms. Add
-`handler_id` to the list column defaults. No schema change; no rebuild.
+Everything in §§2-8 is implemented, plus the importer (§9.6) and the
+publishing re-point (§8). One item from §9 is **not** built and is the main
+outstanding gap:
 
-**Phase 1 — the owner field.** Schema (§4) and rebuild; `DwgData`; view,
-create, edit and update pages; `dwg_claim.php` with both claim buttons; the
-five thresholds; history; list column and filter; My View box; bulk Set Owner;
-exports.
+- **Transfer Ownership on Manage → Users (§9.3).** Bulk Set Owner covers the
+  manual path, but there is still no single action to move every document from
+  a departing owner to their replacement, and no warning when an account that
+  still owns documents is disabled or deleted. `user_delete()` continues to
+  leave `{dwg}.owner_id` pointing at the removed account.
 
-**Phase 2 — the surrounding work.** Publishing re-point and the Owner-row
-consequence (§8); importer mapping (§9.6); Transfer Ownership on Manage →
-Users plus the disable/delete warning (§9.3); REST/SOAP `owner`; manual and
-MANUAL.md updates; PHPUnit coverage in `tests/Mantis/`.
+Also not done, as decided: the Topics docs are not yet updated to note that
+"owner" now means two things (§2.2), and there is no republish-on-ownership-
+change (§8) — a published page keeps its old Owner line until someone
+republishes.
 
-Phase 0 is small and can land on `dev` on its own. Phases 1 and 2 want a
-feature branch, given the rebuild.
+### Files
+
+| Area | Files |
+|------|-------|
+| Schema | [admin/schema.php](../../admin/schema.php) step 18: `owner_id` + `idx_dwg_owner` |
+| Data object | [core/dwg_api.php](../../core/dwg_api.php): `$owner_id`, `create()`, `update()`, `dwg_set_field()`, `dwg_copy()`, `dwg_cache_columns_data()`, `dwg_get_status_for_assign()` |
+| Access | [core/access_dwg_api.php](../../core/access_dwg_api.php): `access_dwg_user_holds_licenses()`, `_can_be_owner()`, `_can_set_owner()`, `_can_claim_owner()`, `_can_release_owner()`, `_can_claim_handler()` |
+| Claim / release | [dwg_claim.php](../../dwg_claim.php) (new) |
+| Pages | [dwg_view_inc.php](../../dwg_view_inc.php), [DwgViewPageCommand.php](../../core/commands/DwgViewPageCommand.php), [dwg_update_page.php](../../dwg_update_page.php), [dwg_update.php](../../dwg_update.php), [dwg_create_page.php](../../dwg_create_page.php), [dwg_edit_page.php](../../dwg_edit_page.php), [dwg_create.php](../../dwg_create.php) |
+| Bulk | [core/dwg_group_action_api.php](../../core/dwg_group_action_api.php), [dwg_actiongroup_page.php](../../dwg_actiongroup_page.php), [dwg_actiongroup.php](../../dwg_actiongroup.php) |
+| List / filter | [core/columns_dwg_api.php](../../core/columns_dwg_api.php), [core/filter_constants_inc.php](../../core/filter_constants_inc.php), [core/filter_dwg_api.php](../../core/filter_dwg_api.php), [core/filter_dwg_form_api.php](../../core/filter_dwg_form_api.php), [core/classes/DwgFilterQuery.class.php](../../core/classes/DwgFilterQuery.class.php) |
+| My View | [my_view_dwg_inc.php](../../my_view_dwg_inc.php), [my_view_cnf_inc.php](../../my_view_cnf_inc.php), [my_view_dwg_page.php](../../my_view_dwg_page.php) |
+| History / email | [core/history_dwg_api.php](../../core/history_dwg_api.php), [core/email_dwg_api.php](../../core/email_dwg_api.php) |
+| API | [core/commands/DwgAddCommand.php](../../core/commands/DwgAddCommand.php), [api/soap/mc_dwg_api.php](../../api/soap/mc_dwg_api.php), [api/soap/mantisconnect.wsdl](../../api/soap/mantisconnect.wsdl) |
+| Publishing | [core/dwg_publish_api.php](../../core/dwg_publish_api.php) |
+| Importer | [admin/import-git-repo.php](../../admin/import-git-repo.php) |
+| Tests | [tests/Mantis/DwgOwnershipTest.php](../../tests/Mantis/DwgOwnershipTest.php) |
+
+### Two things worth knowing when extending this
+
+- **`dwg_set_field()` already writes the `{dwg_history}` row and touches
+  `last_updated`.** Calling `history_dwg_log_event_direct()` beside it
+  duplicates the audit entry. This was caught in testing and fixed in
+  30d508058; do not reintroduce it in new ownership code paths.
+- **`$g_dwg_update_page_fields` carries MantisBT's `'reporter'`, never
+  `'creator'`**, and the create page tests `'creator_id'` while the report
+  field list supplies `'creator'`. Both mismatches predate this work. An
+  optional field that "does not exist" may simply be spelled differently in
+  the page and the config.
+
+### Deploying it elsewhere
+
+`owner_id` is a change to an existing table, so the live version needs a
+**database rebuild**, not an upgrade step — follow the runbook in CLAUDE.md,
+*Updating the live version with a database rebuild*. After the rebuild and
+re-import, every document's owner comes from frontmatter where it matched an
+account; the rest are unowned and need Bulk Set Owner. Turn email
+notification off before any bulk back-fill (§9.5).
 
 ---
 
-## 12. Verification record
+## 12. Test record
 
-Findings in §3 were established on the native VM on 2026-10-20 against the
-running clone at `5596d5098`, read-only except as noted:
+PHPUnit, in the running clone as `www-data`, after the rebuild:
 
-- "Assign To:" renders with `[Myself]` pre-selected for `manager`; absent for
-  `viewer`, `reporter` and `updater`; present for `developer`.
-- `POST dwg_update.php action_type=assign` set `handler_id` on a document and
-  logged it; the status did not move from 110, confirming §3.2b.
-- A document created by POST with `handler_id=7` stored `handler_id = 0` while
-  its history recorded "Assigned To => manager", confirming §3.2a.
-  (Scratch document 226, "Ownership probe", project HCRQMS — left in place; the
-  VM is a scratchpad.)
-- All pre-existing documents had `handler_id = 0`.
+- `DwgOwnershipTest`: **14 tests, 47 assertions, all pass.** Covers the three
+  fields, the five thresholds, the takeover rule, the licence requirement, the
+  owner filter and list column, the history label, and regressions for both
+  bugs in §3.2.
+- Full `mantis` suite: **357 tests, 1140 assertions, 1 skipped, no failures**
+  (343 before this work).
 
-Email notification was disabled for the duration of each write test and
-`config/config_inc.php` restored byte-for-byte afterwards.
+Through the browser interface, by curl, on the rebuilt VM (project `example`,
+sample accounts):
+
+- **Create form** offers Owner and Assigned To. The Owner picker lists only
+  DEVELOPER and above; the Assignee picker lists UPDATER and above; `viewer`,
+  `user` and `reporter` appear in neither. The Owner picker preselects the
+  creator (D6).
+- **Create persists all three fields.** A document posted with
+  `owner_id=frodo, handler_id=updater` stored creator=manager, owner=frodo,
+  handler=updater, with one history row each, and its status stayed at 110 —
+  no auto-promotion (D2). Before the fix the handler was silently dropped.
+- **An unspecified owner falls back to the creator**: two documents created
+  without an `owner_id` came out owned by `manager`.
+- **View page** shows `Owner | Assigned To | Created by` in one row.
+- **Controls by access level** on a document owned by somebody else:
+
+  | | Claim Ownership | Release Ownership | Set Owner | Claim | Release | Assign To |
+  |---|---|---|---|---|---|---|
+  | viewer | . | . | . | . | . | . |
+  | reporter | . | . | . | . | . | . |
+  | updater | . | . | . | . | Y (is the assignee) | . |
+  | developer | . | . | . | Y | . | Y |
+  | manager | Y | Y | Y | Y | . | Y |
+
+- **Takeover is refused server-side.** `developer` has no Claim Ownership
+  button on an owned document, and a forged POST to `dwg_claim.php` returned
+  **HTTP 403** with `owner_id` unchanged. On the same document once unowned,
+  the button appeared and the claim succeeded.
+- **Release** by the owner worked and logged `owner_id 9 → 0`.
+- **Bulk Set Owner** moved two documents to `gandalf`, one history row each,
+  attributed to the acting user.
+- **Document list** shows the Owner and Assigned To columns with values; the
+  filter box has an Owner field, and filtering by `frodo` narrowed three rows
+  to one.
+- **My View** shows "Documents I Own", and it listed exactly the two documents
+  `gandalf` owns.
+- **Update page**: Owner carries the `[Edit]` link and picker (eligible users
+  only, current owner preselected); Created by is plain text and no
+  `creator_id` input is emitted at all.
+- **SOAP** `mc_dwg_get` returned `creator=manager, owner=frodo,
+  handler=updater`; the WSDL publishes the `owner` element. The WSDL cache was
+  cleared first.
+- **Publishing**: a Markdown document owned by `gandalf` with no assignee
+  published a control block reading **Owner: gandalf**. Under the old code
+  that row came from `handler_id` and would have been dropped as empty — this
+  is the §8 consequence closed.
+
+Email notification is **permanently off** on the VM (owner decision
+2026-10-20), so none of the above sent mail. The database and git store were
+backed up to `admin/tools/data-scripts/vm-doctis-full-20261020.sql.gz` and
+`vm-git-store-20261020.tar.gz` before the rebuild.
+
+### Not exercised
+
+- `email_dwg_ownership_changed()` only reached its logging path, because email
+  is off; the recipient set and subject line are untested.
+- The importer's new owner resolution (realname and email fallbacks, the
+  collected unmatched-owner report) is not covered by a test and was not run
+  against a real repository after the change.
+- `$g_dwg_reassign_on_feedback` is OFF, so the note-add path that used to
+  write an out-of-enum status is now unreachable; the fix is proven by the
+  constant test, not by exercising that path.
