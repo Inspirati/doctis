@@ -334,6 +334,7 @@ define( 'BUG_UPDATE_TYPE_CHANGE_STATUS', 'change_status' );
 # dwg update types
 define( 'DWG_UPDATE_TYPE_NORMAL', 'update' );
 define( 'DWG_UPDATE_TYPE_ASSIGN', 'assign' );
+define( 'DWG_UPDATE_TYPE_SET_OWNER', 'set_owner' );  # Doctis: change the document owner
 define( 'DWG_UPDATE_TYPE_CLOSE', 'close' );
 define( 'DWG_UPDATE_TYPE_REOPEN', 'reopen' );
 define( 'DWG_UPDATE_TYPE_CHANGE_STATUS', 'change_status' );

@@ -557,6 +557,7 @@ $g_email_notifications_verbose = OFF;
 $g_default_notify_flags = array(
 	'reporter'      => ON,
 	'creator'       => ON,
+	'document_owner' => ON,
 	'handler'       => ON,
 	'monitor'       => ON,
 	'bugnotes'      => ON,
@@ -1435,7 +1436,8 @@ $g_view_dwg_page_columns = array(
 	'id',
 	'dwgnotes_count', 'attachment_count',
 	'issue_count',
-	'category_id', 'status', 'last_updated', 'title', 'number', 'revision', 'reference',
+	'category_id', 'status', 'owner_id', 'handler_id',
+	'last_updated', 'title', 'number', 'revision', 'reference',
 	'topics', // Documentation Topics; hidden unless the project uses them
 	'date', // @TODO RobD - for some reason 'date' needs to be here to avoid error on bug_update_page.php 'Undefined array key "updated_at"' in '/var/www/html/doctis/core/commands/DwgViewPageCommand.php' line 184
 );
@@ -1453,7 +1455,7 @@ $g_print_issues_page_columns = array(
 );
 $g_print_dwg_page_columns = array(
 	'selection', 'priority', 'id', 'title', 'dwgnotes_count', 'attachment_count',
-	'category_id', 'severity', 'status', 'number', 'revision', 'reference', 'topics', 'date', 'release_date',
+	'category_id', 'severity', 'status', 'owner_id', 'handler_id', 'number', 'revision', 'reference', 'topics', 'date', 'release_date',
 );
 
 /**
@@ -1470,7 +1472,7 @@ $g_csv_columns = array(
 	'last_updated', 'summary', 'status', 'resolution', 'fixed_in_version'
 );
 $g_csv_dwg_columns = array(
-	'id', 'project_id', 'creator_id', 'handler_id', 'priority',
+	'id', 'project_id', 'creator_id', 'owner_id', 'handler_id', 'priority',
 	'severity', 'reproducibility', 'version', 'projection', 'category_id',
 	'date_submitted', 'eta', 'os', 'os_build', 'platform', 'view_state',
 	'last_updated', 'summary', 'status', 'resolution', 'fixed_in_version',
@@ -1491,7 +1493,7 @@ $g_excel_columns = array(
 	'last_updated', 'summary', 'status', 'resolution', 'fixed_in_version'
 );
 $g_excel_dwg_columns = array(
-	'id', 'project_id', 'creator_id', 'handler_id', 'priority', 'severity',
+	'id', 'project_id', 'creator_id', 'owner_id', 'handler_id', 'priority', 'severity',
 	'reproducibility', 'version', 'projection', 'category_id',
 	'date_submitted', 'eta', 'os', 'os_build', 'platform', 'view_state',
 	'last_updated', 'summary', 'status', 'resolution', 'fixed_in_version'
@@ -3049,7 +3051,10 @@ $g_dwg_submit_status = PENDING;
  * @global int $g_bug_assigned_status
  */
 $g_bug_assigned_status = ASSIGNED;
-$g_dwg_assigned_status = ASSIGNED;
+# ASSIGNED (50) is MantisBT's bug status and is not in
+# $g_dwg_status_enum_string; ASSIGNED_TO (150) is the document one.
+# See doc/dwg/OWNERSHIP.md §3.2.
+$g_dwg_assigned_status = ASSIGNED_TO;
 
 /**
  * Status to assign to the bug when reopened.
@@ -3083,6 +3088,17 @@ $g_dwg_feedback_status = REWORK;
  * @global boolean $g_reassign_on_feedback
  */
 $g_reassign_on_feedback = ON;
+
+/**
+ * Automatically move a document out of the feedback status when its creator
+ * adds a note.
+ *
+ * OFF for documents, deliberately, for the same reason as
+ * $g_dwg_auto_set_status_to_assigned: a note is not a lifecycle transition.
+ *
+ * @global int $g_dwg_reassign_on_feedback
+ */
+$g_dwg_reassign_on_feedback = OFF;
 
 /**
  * Resolution to assign to the bug when reopened.
@@ -3168,6 +3184,18 @@ $g_dwg_closed_status_threshold = INCORPORATED;
  * @global int $g_auto_set_status_to_assigned
  */
 $g_auto_set_status_to_assigned = ON;
+
+/**
+ * Automatically set a document's status to "assigned to" when it is assigned.
+ *
+ * OFF for documents, deliberately: a document status is a lifecycle state
+ * (draft, under review, approved), not a queue state, so a document passed to
+ * a second reviewer must not fall back to "assigned to".  Separate from the
+ * bug key above so issue behaviour is unchanged (owner decision 2026-10-20).
+ *
+ * @global int $g_dwg_auto_set_status_to_assigned
+ */
+$g_dwg_auto_set_status_to_assigned = OFF;
 
 /**
  * Automatically assign new issues to the current document handler, if set.
@@ -3421,7 +3449,7 @@ $g_bug_report_page_fields = array(
 
 $g_dwg_report_page_fields = array(
 	'author',
-	'creator',
+	'owner',
 	'version',
 	'revision',
 	'reference',
@@ -3585,6 +3613,7 @@ $g_dwg_view_page_fields = array(
 	'eta',
 	'fixed_in_version',
 	'creator',
+	'owner',
 	'handler',
 	'number',
 //	'edition',
@@ -3687,6 +3716,7 @@ $g_bug_update_page_fields = array(
 
 $g_dwg_update_page_fields = array(
 	'additional_info',
+	'owner',
 	'category_id',
 	'date_submitted',
 	'description',
@@ -3833,7 +3863,9 @@ $g_private_dwg_threshold = DEVELOPER;
  * @global int $g_handle_bug_threshold
  */
 $g_handle_bug_threshold = VIEWER;
-$g_handle_dwg_threshold = VIEWER;
+# Raised from VIEWER: you should not be able to hold a task step on a document
+# you cannot act on (doc/dwg/OWNERSHIP.md §9.4).
+$g_handle_dwg_threshold = UPDATER;
 
 /**
  * Access level needed to assign issues.
@@ -3849,6 +3881,35 @@ $g_handle_dwg_threshold = VIEWER;
  */
 $g_update_bug_assign_threshold = DEVELOPER;
 $g_update_dwg_assign_threshold = DEVELOPER;
+
+/**
+ * Document ownership thresholds (Doctis).  See doc/dwg/OWNERSHIP.md §5.
+ *
+ * A document has three person fields: the creator (who registered it,
+ * read-only), the owner (who is responsible for it) and the assignee
+ * ({dwg}.handler_id, "Assigned To" — who holds the current task step).
+ *
+ * own_dwg_threshold           who may appear in the Owner picker.
+ * dwg_claim_owner_threshold   who may claim an *unowned* document.
+ * dwg_assign_owner_threshold  who may set the owner to somebody else, take
+ *                             over an already-owned document, or use bulk
+ *                             Set Owner.
+ * dwg_claim_threshold         who may make themselves the assignee.
+ *
+ * Managers own most high-level QMS content, but on engineering projects a
+ * developer may legitimately own a document, so eligibility is DEVELOPER and
+ * who should own what is left to user training rather than enforced here
+ * (owner decision 2026-10-20).
+ *
+ * @global int $g_own_dwg_threshold
+ * @global int $g_dwg_claim_owner_threshold
+ * @global int $g_dwg_assign_owner_threshold
+ * @global int $g_dwg_claim_threshold
+ */
+$g_own_dwg_threshold = DEVELOPER;
+$g_dwg_claim_owner_threshold = DEVELOPER;
+$g_dwg_assign_owner_threshold = MANAGER;
+$g_dwg_claim_threshold = UPDATER;
 
 /**
  * Access level needed to view private bugnotes.
@@ -5586,10 +5647,11 @@ $g_my_view_boxes = array(
 );
 
 $g_my_view_dwg_boxes = array(
-	'assigned'      => '1',
-	'unassigned'    => '2',
-	// 'reported'      => '3',  // @TODO RobD - change to 'created'?
-	'created'       => '3',  // @TODO RobD - change to 'created'?
+	'owned'         => '1',
+	'assigned'      => '2',
+	'unassigned'    => '3',
+	'created'       => '4',
+	'unowned'       => '0',  // off by default; useful while back-filling owners
 	'resolved'      => '0',  // not a valid document status
 	'recent_mod'    => '5',
 	'monitored'     => '6',
@@ -6499,6 +6561,7 @@ $g_public_config_names = array(
 	'attachments_to_new_tab',
 	'auto_assign_issue_to_document_handler',
 	'auto_set_status_to_assigned',
+	'dwg_auto_set_status_to_assigned',
 	'backward_year_count',
 	'bottom_include_page',
 	'bug_assigned_status',
@@ -6789,6 +6852,7 @@ $g_public_config_names = array(
 	'license_view_state_enum_string',
 	'projection_enum_string',
 	'reassign_on_feedback',
+	'dwg_reassign_on_feedback',
 	'reauthentication_expiry',
 	'reauthentication',
 	'recently_visited_count',
@@ -6893,6 +6957,10 @@ $g_public_config_names = array(
 	'top_include_page',
 	'update_bug_assign_threshold',
 	'update_dwg_assign_threshold',
+	'dwg_assign_owner_threshold',
+	'dwg_claim_owner_threshold',
+	'dwg_claim_threshold',
+	'own_dwg_threshold',
 	'update_bug_status_threshold',
 	'update_dwg_status_threshold',
 	'update_bug_threshold',

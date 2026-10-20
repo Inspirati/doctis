@@ -366,6 +366,79 @@ function print_filter_dwg_values_handler_id( array $p_filter ) {
  * @return void
  * @global array     $g_dwg_filter
  */
+function print_filter_dwg_owner_id( ?array $p_filter = null ) {
+	global $g_dwg_filter;
+	if( null === $p_filter ) {
+		$p_filter = $g_dwg_filter;
+	}
+	?>
+		<!-- Owner (Doctis) -->
+		<select class="input-xs" <?php echo filter_dwg_select_modifier( $p_filter ) ?> name="<?php echo FILTER_PROPERTY_OWNER_ID;?>[]">
+			<option value="<?php echo META_FILTER_ANY?>"<?php check_selected( $p_filter[FILTER_PROPERTY_OWNER_ID], META_FILTER_ANY );?>>[<?php echo lang_get( 'any' )?>]</option>
+			<option value="<?php echo META_FILTER_NONE?>"<?php check_selected( $p_filter[FILTER_PROPERTY_OWNER_ID], META_FILTER_NONE );?>>[<?php echo lang_get( 'none' )?>]</option>
+			<?php
+				if( access_has_project_level( config_get( 'own_dwg_threshold' ) ) ) {
+					echo '<option value="' . META_FILTER_MYSELF . '" ';
+					check_selected( $p_filter[FILTER_PROPERTY_OWNER_ID], META_FILTER_MYSELF );
+					echo '>[' . lang_get( 'myself' ) . ']</option>';
+				}
+
+				print_dwg_owner_option_list( $p_filter[FILTER_PROPERTY_OWNER_ID] );
+			?>
+		</select>
+		<?php
+}
+
+/**
+ * Print the Owner filter field's current value as a visible string and hidden
+ * form inputs.
+ *
+ * @param array $p_filter Filter array
+ *
+ * @return void
+ */
+function print_filter_dwg_values_owner_id( array $p_filter ) {
+	$t_filter = $p_filter;
+	$t_any_found = false;
+
+	if( count( $t_filter[FILTER_PROPERTY_OWNER_ID] ) == 0 ) {
+		echo lang_get( 'any' );
+		return;
+	}
+
+	$t_first_flag = true;
+	foreach( $t_filter[FILTER_PROPERTY_OWNER_ID] as $t_current ) {
+		echo '<input type="hidden" name="', FILTER_PROPERTY_OWNER_ID, '[]" value="', string_attribute( $t_current ), '" />';
+		$t_this_name = '';
+		if( filter_dwg_field_is_none( $t_current ) ) {
+			$t_this_name = lang_get( 'none' );
+		} else if( filter_dwg_field_is_any( $t_current ) ) {
+			$t_any_found = true;
+		} else if( filter_dwg_field_is_myself( $t_current ) ) {
+			$t_this_name = '[' . lang_get( 'myself' ) . ']';
+		} else {
+			$t_this_name = user_get_name( $t_current );
+		}
+
+		if( $t_this_name !== '' ) {
+			echo ( $t_first_flag ? '' : '<br />' ), string_display_line( $t_this_name );
+			$t_first_flag = false;
+		}
+	}
+
+	if( $t_any_found ) {
+		echo ( $t_first_flag ? '' : '<br />' ), lang_get( 'any' );
+	}
+}
+
+/**
+ * Print the Assigned To filter field.
+ *
+ * @param array|null $p_filter Filter array
+ *
+ * @return void
+ * @global array     $g_dwg_filter
+ */
 function print_filter_dwg_handler_id( ?array $p_filter = null ) {
 	global $g_dwg_filter;
 	if( null === $p_filter ) {
@@ -2665,11 +2738,18 @@ function filter_dwg_form_draw_inputs( $p_filter, $p_for_screen = true, $p_static
 	$t_row1 = new FilterDwgBoxGridLayout( $t_filter_cols , TableGridLayout::ORIENTATION_VERTICAL );
 
 	$t_row1->add_item( new TableFieldsItem(
-			$get_field_header( 'creator_id_filter', lang_get( 'creator' ) ),
+			$get_field_header( 'creator_id_filter', lang_get( 'dwg_creator' ) ),
 			filter_dwg_form_get_input( $t_filter, 'creator_id', $t_show_inputs ),
 			1 /* colspan */,
 			null /* class */,
 			'creator_id_filter_target' /* content id */
+			));
+	$t_row1->add_item( new TableFieldsItem(
+			$get_field_header( 'owner_id_filter', lang_get( 'dwg_owner' ) ),
+			filter_dwg_form_get_input( $t_filter, 'owner_id', $t_show_inputs ),
+			1 /* colspan */,
+			null /* class */,
+			'owner_id_filter_target' /* content id */
 			));
 	$t_row1->add_item( new TableFieldsItem(
 			$get_field_header( 'handler_id_filter', lang_get( 'assigned_to' ) ),

@@ -52,7 +52,8 @@ require_api( 'category_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
 require_api( 'custom_field_api.php' );
-//require_api( 'email_dwg_api.php' );
+require_api( 'email_dwg_api.php' );
+require_api( 'history_dwg_api.php' );
 require_api( 'event_api.php' );
 require_api( 'form_api.php' );
 require_api( 'gpc_api.php' );
@@ -183,6 +184,29 @@ foreach( $f_bug_arr as $t_bug_id ) {
 					}
 				} else {
 					$t_failed_ids[$t_bug_id] = lang_get( 'dwg_actiongroup_handler' );
+				}
+			} else {
+				$t_failed_ids[$t_bug_id] = lang_get( 'dwg_actiongroup_access' );
+			}
+			break;
+		case 'SET_OWNER':
+			# Bulk Set Owner (Doctis).  Unlike ASSIGN this never touches the
+			# status, and it is not blocked by a read-only status: a departing
+			# owner must still be replaceable on archived documents.
+			# See doc/dwg/OWNERSHIP.md §9.2.
+			$f_set_owner = gpc_get_int( 'set_owner' );
+			if( access_dwg_can_set_owner( $t_bug_id ) ) {
+				if( access_dwg_can_be_owner( $t_bug_id, $f_set_owner ) ) {
+					$t_old_owner_id = (int)$t_bug->owner_id;
+					if( $t_old_owner_id != $f_set_owner ) {
+						dwg_set_field( $t_bug_id, 'owner_id', $f_set_owner );
+						history_dwg_log_event_direct( $t_bug_id, 'owner_id', $t_old_owner_id, $f_set_owner );
+						dwg_update_date( $t_bug_id );
+						email_dwg_ownership_changed( $t_bug_id, $t_old_owner_id, $f_set_owner );
+						helper_call_custom_function( 'document_update_notify', array( $t_bug_id ) );
+					}
+				} else {
+					$t_failed_ids[$t_bug_id] = lang_get( 'dwg_actiongroup_owner' );
 				}
 			} else {
 				$t_failed_ids[$t_bug_id] = lang_get( 'dwg_actiongroup_access' );

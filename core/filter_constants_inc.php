@@ -67,6 +67,8 @@ define( 'FILTER_PROPERTY_PRIORITY', 'priority' ); #show_priority
 define( 'FILTER_PROPERTY_REPORTER_ID', 'reporter_id' );
 define( 'FILTER_PROPERTY_DOCUMENT_ID', 'document_id' );
 define( 'FILTER_PROPERTY_HANDLER_ID', 'handler_id' );
+# Doctis: the document owner, as distinct from the handler (its assignee).
+define( 'FILTER_PROPERTY_OWNER_ID', 'owner_id' );
 define( 'FILTER_PROPERTY_PROJECT_ID', 'project_id' );
 define( 'FILTER_PROPERTY_PROJECTION', 'projection' );
 define( 'FILTER_PROPERTY_RESOLUTION', 'resolution' ); #show_resolution

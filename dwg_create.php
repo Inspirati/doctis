@@ -180,6 +180,14 @@ if( $t_handler_id != NO_USER ) {
 	$t_issue['handler'] = array( 'id' => $t_handler_id );
 }
 
+# Owner: left to DwgAddCommand when not posted, which defaults it to the
+# creator so a document is never registered with nobody responsible for it
+# (owner decision 2026-10-20, D6).
+$t_owner_id = gpc_get_int( 'owner_id', NO_USER );
+if( $t_owner_id != NO_USER ) {
+	$t_issue['owner'] = array( 'id' => $t_owner_id );
+}
+
 $t_monitors = gpc_get_int_array( 'monitors', array() );
 if( $t_monitors ) {
 	# The API expects a list of arrays with 'id' as key

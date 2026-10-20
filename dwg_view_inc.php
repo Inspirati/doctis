@@ -626,13 +626,32 @@ $t_date_format = 'Y-m-d';
 }
 
 #
-# Creator, Handler, Due Date
+# Owner, Assigned To, Created by
+#
+# The three person fields are shown together, in order of how often they
+# change: the owner is responsible for the document, the assignee holds the
+# current task step, and the creator registered it.  See doc/dwg/OWNERSHIP.md.
+# The table is six columns wide, so Classification moved to its own row below.
 #
 
-if( $t_flags['creator_show'] || $t_flags['handler_show'] || $t_flags['classification_show'] ) {
+if( $t_flags['owner_show'] || $t_flags['creator_show'] || $t_flags['handler_show'] ) {
 	echo '<tr>';
 
 	$t_spacer = 0;
+
+	# Owner
+	if( $t_flags['owner_show'] ) {
+		echo '<th class="dwg-owner category">', lang_get( 'dwg_owner' ), '</th>';
+		echo '<td class="dwg-owner">';
+		if( isset( $t_issue['owner'] ) ) {
+			print_dwg_user_with_subject( $t_issue['owner']['id'], $f_dwg_id );
+		} else {
+			echo '<span class="small">', lang_get( 'dwg_owner_none' ), '</span>';
+		}
+		echo '</td>';
+	} else {
+		$t_spacer += 2;
+	}
 
 	# Handler
 	if( $t_flags['handler_show'] ) {
@@ -656,15 +675,22 @@ if( $t_flags['creator_show'] || $t_flags['handler_show'] || $t_flags['classifica
 		$t_spacer += 2;
 	}
 
-	# Classification
-	if( $t_flags['classification_show'] ) {
-		echo '<th class="bug-classification category">', lang_get( 'dwg_classification' ), '</th>';
-		// echo '<td class="bug-classificatin">', string_display_line( $t_issue['classification']['label'] ), '</td>';
-		echo '<td class="bug-classification">', isset( $t_issue['classification'] ) ? string_display_line( $t_issue['classification'] ) : '', '</td>';
-	} else {
-		$t_spacer += 2;
+	if( $t_spacer > 0 ) {
+		echo '<td colspan="', $t_spacer, '"></td>';
 	}
 
+	echo '</tr>';
+}
+
+#
+# Classification
+#
+
+if( $t_flags['classification_show'] ) {
+	echo '<tr>';
+	echo '<th class="bug-classification category">', lang_get( 'dwg_classification' ), '</th>';
+	echo '<td class="bug-classification">', isset( $t_issue['classification'] ) ? string_display_line( $t_issue['classification'] ) : '', '</td>';
+	echo '<td colspan="4"></td>';
 	echo '</tr>';
 }
 
@@ -2038,6 +2064,56 @@ function dwg_view_button_dwg_assign_to( DwgData $p_bug ) {
 }
 
 /**
+ * Print a claim or release button for one of the document's person fields.
+ *
+ * Posts to dwg_claim.php, which only ever writes the current user's id.  See
+ * doc/dwg/OWNERSHIP.md §6.1.
+ *
+ * @param DwgData $p_bug   Document object.
+ * @param string  $p_role   'owner' or 'assignee'.
+ * @param string  $p_action 'claim' or 'release'.
+ * @param string  $p_label  Language string name for the button.
+ *
+ * @return void
+ */
+function dwg_view_button_dwg_claim( DwgData $p_bug, $p_role, $p_action, $p_label ) {
+	echo '<form method="post" action="dwg_claim.php" class="form-inline">';
+	echo form_security_field( 'dwg_claim' );
+	echo '<input type="hidden" name="dwg_id" value="', (int)$p_bug->id, '" />';
+	echo '<input type="hidden" name="role" value="', string_attribute( $p_role ), '" />';
+	echo '<input type="hidden" name="action" value="', string_attribute( $p_action ), '" />';
+	echo '<input type="submit" class="btn btn-primary btn-sm btn-white btn-round" value="',
+		string_attribute( lang_get( $p_label ) ), '" />';
+	echo '</form>' . "\n";
+}
+
+/**
+ * Print Set Owner: combo box of users eligible to own the document.
+ *
+ * Only shown to users who may set the owner to somebody else
+ * ($g_dwg_assign_owner_threshold); claiming for yourself is the separate
+ * Claim Ownership button.
+ *
+ * @param DwgData $p_bug Document object.
+ *
+ * @return void
+ */
+function dwg_view_button_dwg_set_owner( DwgData $p_bug ) {
+	echo '<form method="post" action="dwg_update.php" class="form-inline">';
+	echo form_security_field( 'dwg_update' );
+	echo '<input type="hidden" name="last_updated" value="', (int)$p_bug->last_updated, '" />';
+	echo '<input type="hidden" name="action_type" value="', DWG_UPDATE_TYPE_SET_OWNER, '" />';
+	echo '<input type="submit" class="btn btn-primary btn-sm btn-white btn-round" value="',
+		string_attribute( lang_get( 'dwg_set_owner_button' ) ), '" />';
+	echo ' <select class="input-sm" name="owner_id">';
+	echo '<option value="0">&nbsp;</option>';
+	print_dwg_owner_option_list( $p_bug->owner_id, $p_bug->project_id );
+	echo '</select>';
+	echo '<input type="hidden" name="bug_id" value="', (int)$p_bug->id, '" />' . "\n";
+	echo '</form>' . "\n";
+}
+
+/**
  * Print all buttons for view pages.
  *
  * @param integer $p_bug_id A valid bug identifier.
@@ -2055,6 +2131,38 @@ function dwg_view_action_buttons( $p_bug_id, $p_flags ) {
 	if( $p_flags['can_update'] ) {
 		echo '<div class="pull-left padding-right-8">';
 		html_button( string_get_dwg_update_page(), lang_get( 'edit' ), array( 'bug_id' => $p_bug_id ) );
+		echo '</div>';
+	}
+
+	# Ownership: claim, release, and the privileged Set Owner picker.
+	if( !empty( $p_flags['can_claim_owner'] ) ) {
+		echo '<div class="pull-left padding-right-2">';
+		dwg_view_button_dwg_claim( $t_dwg, 'owner', 'claim', 'dwg_claim_owner_button' );
+		echo '</div>';
+	}
+
+	if( !empty( $p_flags['can_release_owner'] ) ) {
+		echo '<div class="pull-left padding-right-2">';
+		dwg_view_button_dwg_claim( $t_dwg, 'owner', 'release', 'dwg_release_owner_button' );
+		echo '</div>';
+	}
+
+	if( !empty( $p_flags['can_set_owner'] ) ) {
+		echo '<div class="pull-left padding-right-8">';
+		dwg_view_button_dwg_set_owner( $t_dwg );
+		echo '</div>';
+	}
+
+	# Assignee: claim and release the current task step.
+	if( !empty( $p_flags['can_claim_handler'] ) ) {
+		echo '<div class="pull-left padding-right-2">';
+		dwg_view_button_dwg_claim( $t_dwg, 'assignee', 'claim', 'dwg_claim_button' );
+		echo '</div>';
+	}
+
+	if( !empty( $p_flags['can_release_handler'] ) ) {
+		echo '<div class="pull-left padding-right-2">';
+		dwg_view_button_dwg_claim( $t_dwg, 'assignee', 'release', 'dwg_release_button' );
 		echo '</div>';
 	}
 

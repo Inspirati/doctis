@@ -118,6 +118,18 @@ foreach( $t_boxes as $t_box_title => $t_box_display ) {
 		   || !access_has_any_project_level('handle_dwg_threshold', $t_project_ids_to_check, $t_current_user_id )
 		   )
 		) ||
+		# Remove "Documents I Own" box for users who cannot own documents
+		(  $t_box_title == 'owned'
+		&& (  $t_anonymous_user
+		   || !access_has_any_project_level( 'own_dwg_threshold', $t_project_ids_to_check, $t_current_user_id )
+		   )
+		) ||
+		# Remove "Unowned Documents" box for users who cannot set an owner
+		(  $t_box_title == 'unowned'
+		&& (  $t_anonymous_user
+		   || !access_has_any_project_level( 'dwg_claim_owner_threshold', $t_project_ids_to_check, $t_current_user_id )
+		   )
+		) ||
 		# Remove "Monitored by Me" box for users that can't monitor issues
 		(  $t_box_title == 'monitored'
 		&& (  $t_anonymous_user

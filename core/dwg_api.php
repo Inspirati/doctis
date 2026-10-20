@@ -105,6 +105,7 @@ function dwg_link_url_is_valid( $p_url ) {
  * @property int $id
  * @property int $project_id
  * @property int $creator_id
+ * @property int $owner_id
  * @property int $handler_id
  * @property int $duplicate_id
  * @property int $priority
@@ -168,6 +169,10 @@ class DwgData {
 	protected $discipline = '';
 
 	protected $creator_id = 0;
+	# Document owner: the person responsible for the document.  Distinct from
+	# creator_id (who registered it) and handler_id (who holds the current task
+	# step, labelled "Assigned To").  See doc/dwg/OWNERSHIP.md.
+	protected $owner_id = 0;
 	protected $handler_id = 0;
 	protected $category_id = 1;
 	protected $duplicate_id = 0;  // deprecated by the introduction of bug relationships managment, so it should be removed from here
@@ -244,6 +249,7 @@ class DwgData {
 			case 'document_id':
 			case 'project_id':
 			case 'creator_id':
+			case 'owner_id':
 			case 'handler_id':
 			case 'duplicate_id':
 			case 'priority':
@@ -492,8 +498,22 @@ class DwgData {
 			}
 		}
 
-		# Check if bug was pre-assigned or auto-assigned.
-		$t_status = dwg_get_status_for_assign( NO_USER, $this->handler_id, $this->status);
+		# Owner defaults to the creator, so that a document is never recorded
+		# with nobody responsible for it (owner decision 2026-10-20, D6).
+		if( 0 == $this->owner_id ) {
+			$this->owner_id = $this->creator_id;
+		}
+
+		# Check if the document was pre-assigned or auto-assigned.
+		#
+		# Documents do not auto-promote their status when they gain an assignee:
+		# a document status is a lifecycle state (draft, under review, approved),
+		# not a queue state, so a document passed to a second reviewer must not
+		# fall back to "assigned to".  dwg_get_status_for_assign() is governed by
+		# $g_dwg_auto_set_status_to_assigned, OFF by default (owner decision
+		# 2026-10-20, D2).  See doc/dwg/OWNERSHIP.md §9.1.
+		$t_status = dwg_get_status_for_assign( NO_USER, $this->handler_id, $this->status );
+		$this->status = $t_status;
 
 $this->classification = isset($this->classification) ? $this->classification : '';
 $this->link_url = isset($this->link_url) ? $this->link_url : '';
@@ -523,7 +543,8 @@ $this->edition = isset($this->edition) ? $this->edition : '';
 		# Insert the document metadata
 		db_param_push();
 		$t_query = 'INSERT INTO {dwg}
-						( project_id, creator_id, category_id, document_id,
+						( project_id, creator_id, owner_id, handler_id,
+						  category_id, document_id,
 						  status, enabled, version,
 						  discipline, link_url,
 						  classification, date_submitted, due_date,
@@ -531,12 +552,14 @@ $this->edition = isset($this->edition) ? $this->edition : '';
 						)
 					  VALUES
 						( ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
+						  ' . db_param() . ',' . db_param() . ',
 						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',
 						  ' . db_param() . ',' . db_param() . ',
 						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',
 						  ' . db_param() . ',' . db_param() . ')';
 		db_query( $t_query, array(
-		  $this->project_id, $this->creator_id, $this->category_id, $this->document_id,
+		  $this->project_id, $this->creator_id, $this->owner_id, $this->handler_id,
+		  $this->category_id, $this->document_id,
 		  $this->status, $this->enabled, $this->version,
 		  $this->discipline, $this->link_url,
 		  $this->classification, $this->date_submitted, $this->due_date,
@@ -549,6 +572,7 @@ $this->edition = isset($this->edition) ? $this->edition : '';
 
 		# log changes, if any (compare happens in history_log_event_direct)
 		history_dwg_log_event_direct( $this->id, 'status', $t_original_status, $t_status );
+		history_dwg_log_event_direct( $this->id, 'owner_id', 0, $this->owner_id );
 		history_dwg_log_event_direct( $this->id, 'handler_id', 0, $this->handler_id );
 
 		return $this->id;
@@ -639,6 +663,7 @@ $this->edition = isset($this->edition) ? $this->edition : '';
 		$t_query = 'UPDATE {dwg} SET 
 			project_id=' . db_param() . ',
 			creator_id=' . db_param() . ',
+			owner_id=' . db_param() . ',
 			handler_id=' . db_param() . ',
 			duplicate_id=' . db_param() . ',
 			status=' . db_param() . ',
@@ -653,6 +678,7 @@ $this->edition = isset($this->edition) ? $this->edition : '';
 		$t_fields = array(
 			$this->project_id,
 			$this->creator_id,
+			$this->owner_id,
 			$this->handler_id,
 			$this->duplicate_id,
 			$this->status,
@@ -679,6 +705,7 @@ $this->edition = isset($this->edition) ? $this->edition : '';
 		# log changes
 		history_dwg_log_event_direct( $c_bug_id, 'project_id', $t_old_data->project_id, $this->project_id );
 		history_dwg_log_event_direct( $c_bug_id, 'creator_id', $t_old_data->creator_id, $this->creator_id );
+		history_dwg_log_event_direct( $c_bug_id, 'owner_id', $t_old_data->owner_id, $this->owner_id );
 		history_dwg_log_event_direct( $c_bug_id, 'handler_id', $t_old_data->handler_id, $this->handler_id );
 		history_dwg_log_event_direct( $c_bug_id, 'priority', $t_old_data->priority, $this->priority );
 		history_dwg_log_event_direct( $c_bug_id, 'severity', $t_old_data->severity, $this->severity );
@@ -1298,6 +1325,7 @@ function dwg_copy( $p_bug_id, $p_target_project_id = null, $p_copy_custom_fields
 	# @todo VB: Shouldn't we check if the handler in the source project is also a
 	#   handler in the destination project?
 	dwg_set_field( $t_new_bug_id, 'handler_id', $t_bug_data->handler_id );
+	dwg_set_field( $t_new_bug_id, 'owner_id', $t_bug_data->owner_id );
 
 	dwg_set_field( $t_new_bug_id, 'duplicate_id', $t_bug_data->duplicate_id );
 	dwg_set_field( $t_new_bug_id, 'status', $t_bug_data->status );
@@ -1936,6 +1964,7 @@ function dwg_set_field( $p_bug_id, $p_field_name, $p_value ) {
 		# integer
 		case 'project_id':
 		case 'creator_id':
+		case 'owner_id':
 		case 'handler_id':
 		case 'duplicate_id':
 		case 'priority':
@@ -2429,7 +2458,11 @@ function dwg_get_status_for_assign( $p_current_handler, $p_new_handler, $p_curre
 	if( null === $p_new_status ) {
 		$p_new_status = $p_current_status;
 	}
-	if( config_get( 'auto_set_status_to_assigned' ) ) {
+	# Documents have their own switch, OFF by default, rather than inheriting the
+	# shared bug key $g_auto_set_status_to_assigned: a document status is a
+	# lifecycle state, not a queue state (owner decision 2026-10-20, D2).
+	# See doc/dwg/OWNERSHIP.md §9.1.
+	if( config_get( 'dwg_auto_set_status_to_assigned' ) ) {
 		$t_assigned_status = config_get( 'dwg_assigned_status' );
 
 		if(		$p_current_handler == NO_USER &&
@@ -2483,6 +2516,7 @@ function dwg_cache_columns_data( array $p_bugs, array $p_selected_columns ) {
 	foreach( $p_bugs as $t_bug ) {
 		$t_bug_ids[] = (int)$t_bug->id;
 		$t_user_ids[] = (int)$t_bug->handler_id;
+		$t_user_ids[] = (int)$t_bug->owner_id;
 		$t_user_ids[] = (int)$t_bug->creator_id;
 		$t_project_ids[] = (int)$t_bug->project_id;
 		$t_category_ids[] = (int)$t_bug->category_id;
@@ -2515,6 +2549,7 @@ function dwg_cache_columns_data( array $p_bugs, array $p_selected_columns ) {
 				file_dwg_attachment_count_cache( $t_bug_ids );
 				break;
 			case 'handler_id':
+			case 'owner_id':
 			case 'creator_id':
 			case 'status':
 				if( !$t_users_cached ) {

@@ -142,6 +142,9 @@ function mci_dwg_get_history( $p_issue_id, $p_user_id, $p_lang ) {
 				case 'handler_id':
 					$t_field = 'handler';
 					break;
+				case 'owner_id':
+					$t_field = 'owner';
+					break;
 				case 'sponsorship_total':
 					# Skip sponsorship fields
 					$t_skip = true;
@@ -288,6 +291,7 @@ function mci_dwg_get_history( $p_issue_id, $p_user_id, $p_lang ) {
 					break;
 				case 'creator':
 				case 'handler':
+				case 'owner':
 					$t_value = mci_account_get_array_by_id( (int)$p_value );
 					break;
 				default:
@@ -1774,6 +1778,16 @@ function mci_dwg_data_as_array( DwgData $p_issue_data, $p_user_id, $p_lang, $p_f
 		if( !empty( $p_issue_data->handler_id ) &&
 			access_has_dwg_level( config_get( 'view_handler_threshold', null, null, $t_project_id ), $t_id, $p_user_id ) ) {
 			$t_issue['handler'] = mci_account_get_array_by_id($p_issue_data->handler_id);
+		}
+	}
+
+	# Document owner (Doctis): the person responsible for the document, as
+	# distinct from the handler above, who holds the current task step.  No
+	# access check: the owner is visible to anyone who can see the document
+	# (owner decision 2026-10-20, D3).  See doc/dwg/OWNERSHIP.md.
+	if( $t_fields === null || isset( $t_fields['owner'] ) ) {
+		if( !empty( $p_issue_data->owner_id ) ) {
+			$t_issue['owner'] = mci_account_get_array_by_id( $p_issue_data->owner_id );
 		}
 	}
 

@@ -191,6 +191,20 @@ $t_url_link_parameters['accepted'] = [
 
 
 
+# Documents I own (Doctis): ownership is not a workflow state, so this box is
+# not limited to unresolved documents.  See doc/dwg/OWNERSHIP.md.
+$c_filter['owned'] = filter_dwg_create_owned_by( helper_get_current_project(), $t_current_user_id );
+$t_url_link_parameters['owned'] = [
+	FILTER_PROPERTY_OWNER_ID => $t_current_user_id,
+	FILTER_PROPERTY_HIDE_STATUS => 'none',
+];
+
+$c_filter['unowned'] = filter_dwg_create_owned_by( helper_get_current_project(), 0 );
+$t_url_link_parameters['unowned'] = [
+	FILTER_PROPERTY_OWNER_ID => '[none]',
+	FILTER_PROPERTY_HIDE_STATUS => 'none',
+];
+
 $c_filter['unassigned'] = filter_dwg_create_assigned_to_unresolved( helper_get_current_project(), 0 );
 $t_url_link_parameters['unassigned'] = [
 	FILTER_PROPERTY_HANDLER_ID => '[none]',

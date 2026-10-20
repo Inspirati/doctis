@@ -71,6 +71,7 @@ $s_directionality = 'ltr';
 # Group commands menuitems
 $s_actiongroup_menu_copy = 'Copy';
 $s_actiongroup_menu_assign = 'Assign';
+$s_actiongroup_menu_set_owner = 'Set Owner';
 $s_actiongroup_menu_resolve = 'Resolve';
 $s_actiongroup_menu_update_priority = 'Update Priority';
 $s_actiongroup_menu_update_status = 'Update Status';
@@ -257,12 +258,14 @@ $s_dwg_actiongroup_access = 'You did not have appropriate permissions to perform
 $s_dwg_actiongroup_status = 'This issue cannot be changed to the requested status';
 $s_dwg_actiongroup_category = 'This issue cannot be changed to the requested category';
 $s_dwg_actiongroup_handler = 'The requested user is not allowed to handle this document';
+$s_dwg_actiongroup_owner = 'The requested user is not allowed to own this document';
 $s_dwg_actiongroup_version = 'The requested version does not exist in this document\'s project';
 $s_close_dwgs_conf_msg = 'Are you sure you wish to close these documents?';
 $s_delete_dwgs_conf_msg = 'Are you sure you wish to delete these documents?';
 $s_move_dwgs_conf_msg = 'Move documents to';
 $s_copy_dwgs_conf_msg = 'Copy documents to';
 $s_assign_dwgs_conf_msg = 'Assign documents to';
+$s_set_owner_dwgs_conf_msg = 'Set the owner of these documents to';
 $s_resolve_dwgs_conf_msg = 'Choose documents resolution';
 $s_priority_dwgs_conf_msg = 'Choose documents priority';
 $s_status_dwgs_conf_msg = 'Choose documents status';
@@ -278,6 +281,7 @@ $s_delete_group_dwgs_button = 'Delete Documents';
 $s_move_group_dwgs_button = 'Move Documents';
 $s_copy_group_dwgs_button = 'Copy Document';
 $s_assign_group_dwgs_button = 'Assign Document';
+$s_set_owner_group_dwgs_button = 'Set Owner';
 $s_resolve_group_dwgs_button = 'Resolve Document';
 $s_priority_group_dwgs_button = 'Update Priority';
 $s_status_group_dwgs_button = 'Update Status';
@@ -386,6 +390,8 @@ $s_email_notification_title_for_status_dwg_closed = 'The following document has 
 $s_email_notification_title_for_action_dwg_submitted = 'The following document has been SUBMITTED.';
 $s_email_notification_title_for_action_dwg_assigned = 'The following document has been ASSIGNED.';
 $s_email_notification_title_for_action_dwg_unassigned = 'The following document has been UNASSIGNED.';
+$s_email_notification_title_for_action_dwg_owner_set = 'The ownership of the following document has CHANGED.';
+$s_email_notification_title_for_action_dwg_owner_cleared = 'The following document no longer has an OWNER.';
 $s_email_notification_title_for_action_dwg_reopened = 'The following document has been REOPENED.';
 $s_email_notification_title_for_action_dwg_deleted = 'The following document has been DELETED.';
 $s_email_notification_title_for_action_dwg_updated = 'The following document has been UPDATED.';
@@ -813,7 +819,14 @@ $s_dwg_classification = 'Classification';
 
 $s_confirm_dwg_revision_drop = 'Are you sure you want to drop this document revision?';
 
-$s_dwg_creator = 'Owned by';
+$s_dwg_creator = 'Created by';
+
+# Document ownership (Doctis).  Three distinct roles, see doc/dwg/OWNERSHIP.md:
+#   creator  = who registered the document (read-only provenance)
+#   owner    = who is responsible for it     ({dwg}.owner_id)
+#   assignee = who holds the current task step ({dwg}.handler_id, "Assigned To")
+$s_dwg_owner = 'Owner';
+$s_dwg_owner_none = 'none';
 
 # @TODO RobD - these are still needed by the listview on view_dwg_page.php (and since some were inherited, probably someplace else too)
 $s_reference = 'Reference';
@@ -1334,7 +1347,11 @@ $s_my_view_title_verify = 'Awaiting Confirmation of Resolution from Me';
 $s_my_view_title_my_comments = 'Issues I Have Commented On';
 
 # my_view_dwg_page.php
-$s_my_view_title_created = 'Owned by Me';
+# "created" is the box for documents this user registered; it was titled
+# "Owned by Me", which is now a different field.  See doc/dwg/OWNERSHIP.md.
+$s_my_view_title_created = 'Created by Me';
+$s_my_view_title_owned = 'Documents I Own';
+$s_my_view_title_unowned = 'Unowned Documents';
 $s_my_view_title_accepted = 'Approved by Me';
 
 # news_add.php
@@ -1626,6 +1643,11 @@ $s_browser_does_not_support_video = 'Your browser does not support video tag.';
 
 # dwg_view_advanced_page.php
 $s_dwg_assign_to_button = 'Assign To:';
+$s_dwg_set_owner_button = 'Set Owner:';
+$s_dwg_claim_owner_button = 'Claim Ownership';
+$s_dwg_release_owner_button = 'Release Ownership';
+$s_dwg_claim_button = 'Claim';
+$s_dwg_release_button = 'Release';
 $s_dwg_status_to_button = 'Change Status To:';
 $s_reopen_dwg_button = 'Reopen';
 

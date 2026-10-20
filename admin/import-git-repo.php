@@ -413,6 +413,9 @@ $t_created  = 0;
 $t_skipped  = 0;
 $t_failed   = 0;
 $t_warnings = array();
+# Frontmatter owners that match no Doctis account, counted per name so the
+# report names each one once rather than once per document.
+$t_unmatched_owners = array();
 
 foreach( $t_candidates as $t_path => $t_root ) {
 	$t_project_id = $g_roots[$t_root];
@@ -484,12 +487,27 @@ foreach( $t_candidates as $t_path => $t_root ) {
 		$t_git_email    = $t_last[2] ?? '';
 		$t_creator_id   = $t_git_email !== '' ? (int)user_get_id_by_email( $t_git_email, false ) : 0;
 
-		# Handler: only when the frontmatter owner matches a real account.
+		# Owner: the frontmatter 'owner' is the person responsible for the
+		# document, so it maps to owner_id, not to the assignee.  An import is
+		# not a task step, so imported documents land unassigned.
+		# See doc/dwg/OWNERSHIP.md §9.6.
+		#
+		# Resolved by username, then realname, then email, because QMS
+		# frontmatter tends to name a person rather than an account.  Owners
+		# that match nothing are collected and reported once at the end rather
+		# than warned about per file.
 		$t_handler_id = 0;
+		$t_owner_id = 0;
 		if( $t_meta['owner'] !== '' ) {
-			$t_handler_id = (int)user_get_id_by_name( $t_meta['owner'], false );
-			if( $t_handler_id === 0 ) {
-				$t_warnings[] = "$t_path: owner '" . $t_meta['owner'] . "' matches no Doctis account";
+			$t_owner_id = (int)user_get_id_by_name( $t_meta['owner'], false );
+			if( $t_owner_id === 0 ) {
+				$t_owner_id = (int)user_get_id_by_realname( $t_meta['owner'], false );
+			}
+			if( $t_owner_id === 0 && strpos( $t_meta['owner'], '@' ) !== false ) {
+				$t_owner_id = (int)user_get_id_by_email( $t_meta['owner'], false );
+			}
+			if( $t_owner_id === 0 ) {
+				$t_unmatched_owners[$t_meta['owner']] = ( $t_unmatched_owners[$t_meta['owner']] ?? 0 ) + 1;
 			}
 		}
 
@@ -545,6 +563,9 @@ foreach( $t_candidates as $t_path => $t_root ) {
 		}
 		if( $t_handler_id > 0 ) {
 			$t_issue['handler'] = array( 'id' => $t_handler_id );
+		}
+		if( $t_owner_id > 0 ) {
+			$t_issue['owner'] = array( 'id' => $t_owner_id );
 		}
 
 		$t_command = new DwgAddCommand( array( 'payload' => array( 'issue' => $t_issue ) ) );
@@ -606,6 +627,14 @@ foreach( $t_report as $t_row ) {
 	say( sprintf( '  %-22s %-55s %s', $t_row[0], $t_row[1],
 		trim( $t_row[2] . ( $t_row[3] !== '' ? '  (' . $t_row[3] . ')' : '' ) ) ) );
 }
+if( $t_unmatched_owners ) {
+	arsort( $t_unmatched_owners );
+	foreach( $t_unmatched_owners as $t_name => $t_count ) {
+		$t_warnings[] = sprintf( "owner '%s' matches no Doctis account (%d document%s left unowned)",
+			$t_name, $t_count, $t_count == 1 ? '' : 's' );
+	}
+}
+
 foreach( $t_warnings as $t_warning ) {
 	say( '  WARNING: ' . $t_warning );
 }

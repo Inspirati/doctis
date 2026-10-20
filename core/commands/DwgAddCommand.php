@@ -183,6 +183,7 @@ class DwgAddCommand extends Command {
 		}
 
 		$t_handler_id = isset( $t_issue['handler'] ) ? mci_get_user_id( $t_issue['handler'] ) : NO_USER;
+		$t_owner_id = isset( $t_issue['owner'] ) ? mci_get_user_id( $t_issue['owner'] ) : NO_USER;
 		$t_priority_id = isset( $t_issue['priority'] ) ? mci_get_priority_id( $t_issue['priority'] ) : config_get( 'default_dwg_priority' );
 		$t_severity_id = isset( $t_issue['severity'] ) ? mci_get_severity_id( $t_issue['severity'] ) : config_get( 'default_dwg_severity' );
 		$t_status_id = isset( $t_issue['status'] ) ? mci_get_status_id( $t_issue['status'] ) : config_get( 'dwg_submit_status' );
@@ -211,7 +212,7 @@ class DwgAddCommand extends Command {
 
 		# Prevent unauthorized users setting handler when reporting issue
 		if( $t_handler_id > 0 ) {
-			if ( !access_has_project_level( config_get( 'update_bug_assign_threshold' ) ) ) {
+			if ( !access_has_project_level( config_get( 'update_dwg_assign_threshold' ) ) ) {
 				throw new ClientException(
 					'User not allowed to assign documents',
 					ERROR_ACCESS_DENIED );
@@ -220,6 +221,37 @@ class DwgAddCommand extends Command {
 			# Ensure that resolved bugs have a handler
 			if( $t_handler_id == NO_USER && $t_status_id >= config_get( 'dwg_resolved_status_threshold' ) ) {
 				$t_handler_id = $this->user_id;
+			}
+		}
+
+		# Owner (Doctis): the person responsible for the document, as distinct
+		# from the handler, who holds the current task step.  A document is
+		# never registered with nobody responsible for it, so an unspecified
+		# owner falls back to the creator (owner decision 2026-10-20, D6).
+		# Naming somebody else needs the authority to set another user's
+		# ownership.  See doc/dwg/OWNERSHIP.md §5.
+		if( $t_owner_id == NO_USER ) {
+			$t_owner_id = $t_creator_id;
+		} else if( $t_owner_id != $this->user_id ) {
+			if( !access_has_project_level( config_get( 'dwg_assign_owner_threshold' ), $t_project_id, $this->user_id ) ) {
+				throw new ClientException(
+					'User not allowed to set the owner of a document',
+					ERROR_ACCESS_DENIED );
+			}
+		}
+
+		if( $t_owner_id != NO_USER ) {
+			if( !user_exists( $t_owner_id ) ) {
+				throw new ClientException(
+					sprintf( "User '%d' not found.", $t_owner_id ),
+					ERROR_USER_BY_ID_NOT_FOUND,
+					array( $t_owner_id ) );
+			}
+
+			if( !access_has_project_level( config_get( 'own_dwg_threshold' ), $t_project_id, $t_owner_id ) ) {
+				throw new ClientException(
+					sprintf( "User '%d' can't own documents.", $t_owner_id ),
+					ERROR_ACCESS_DENIED );
 			}
 		}
 
@@ -281,6 +313,7 @@ class DwgAddCommand extends Command {
 		$this->issue->steps_to_reproduce = $t_issue['steps_to_reproduce'] ?? '';
 		$this->issue->additional_information = $t_issue['additional_information'] ?? '';
 		$this->issue->handler_id = $t_handler_id;
+		$this->issue->owner_id = $t_owner_id;
 		$this->issue->priority = $t_priority_id;
 		$this->issue->severity = $t_severity_id;
 		$this->issue->reproducibility = $t_reproducibility_id;

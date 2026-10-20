@@ -285,6 +285,7 @@ class DwgViewPageCommand extends Command {
 		$t_flags['category_show'] = in_array( 'category_id', $t_fields );
 		$t_flags['eta_show'] = in_array( 'eta', $t_fields );
 		$t_flags['handler_show'] = in_array( 'handler', $t_fields );
+		$t_flags['owner_show'] = in_array( 'owner', $t_fields );
 		$t_flags['priority_show'] = in_array( 'priority', $t_fields ) && isset( $t_issue['priority'] );
 		$t_flags['project_show'] = in_array( 'project', $t_fields ) && isset( $t_issue['project'] );
 
@@ -306,6 +307,24 @@ class DwgViewPageCommand extends Command {
 		$t_flags['can_update'] = !$t_issue_readonly && access_has_dwg_level( config_get( 'update_dwg_threshold' ), $t_issue_id );
 		$t_flags['can_assign'] = !$t_issue_readonly &&
 			access_has_dwg_level( config_get( 'update_dwg_assign_threshold', config_get( 'update_dwg_threshold' ) ), $t_issue_id );
+
+		# Document ownership (Doctis).  See doc/dwg/OWNERSHIP.md §5.
+		#
+		# Ownership is deliberately NOT gated on $t_issue_readonly: a departing
+		# owner must still be replaceable on an archived document (§9.2).  The
+		# assignee claim is, because it is a workflow action.
+		$t_flags['can_claim_owner'] = !$t_anonymous_user
+			&& access_dwg_can_claim_owner( $t_issue_id, $t_user_id )
+			&& (int)$t_issue_data->owner_id != $t_user_id;
+		$t_flags['can_release_owner'] = !$t_anonymous_user
+			&& access_dwg_can_release_owner( $t_issue_id, $t_user_id );
+		$t_flags['can_set_owner'] = !$t_anonymous_user
+			&& access_dwg_can_set_owner( $t_issue_id, $t_user_id );
+		$t_flags['can_claim_handler'] = !$t_issue_readonly && !$t_anonymous_user
+			&& access_dwg_can_claim_handler( $t_issue_id, $t_user_id )
+			&& (int)$t_issue_data->handler_id != $t_user_id;
+		$t_flags['can_release_handler'] = !$t_issue_readonly && !$t_anonymous_user
+			&& (int)$t_issue_data->handler_id == $t_user_id;
 		$t_flags['can_change_status'] = !$t_issue_readonly && access_has_dwg_level( config_get( 'update_dwg_status_threshold' ), $t_issue_id );
 
 		$t_flags['can_clone'] = !$t_issue_readonly && access_has_dwg_level( config_get( 'create_dwg_threshold' ), $t_issue_id );

@@ -131,6 +131,7 @@ if( $f_master_bug_id > 0 ) {
 	$f_target_version		= $t_bug->target_version;
 	$f_profile_id			= 0;
 	$f_handler_id			= $t_bug->handler_id;
+	$f_owner_id				= $t_bug->owner_id;
 
 	$f_category_id			= $t_bug->category_id;
 	$f_reproducibility		= $t_bug->reproducibility;
@@ -189,6 +190,8 @@ if( $f_master_bug_id > 0 ) {
 	$f_target_version		= gpc_get_string( 'target_version', '' );
 	$f_profile_id			= gpc_get_int( 'profile_id', 0 );
 	$f_handler_id			= gpc_get_int( 'handler_id', 0 );
+	# Default the owner to whoever is registering the document (D6).
+	$f_owner_id				= gpc_get_int( 'owner_id', auth_get_current_user_id() );
 
 	$f_category_id			= gpc_get_int( 'category_id', 0 );
 	$f_reproducibility		= gpc_get_int( 'reproducibility', (int)config_get( 'default_dwg_reproducibility' ) );
@@ -262,6 +265,12 @@ $t_show_priority = in_array( 'priority', $t_fields );
 $t_show_steps_to_reproduce = in_array( 'steps_to_reproduce', $t_fields );
 $t_show_handler = in_array( 'handler', $t_fields )
 	&& access_has_project_level( config_get( 'update_dwg_assign_threshold' ) );
+# Owner: a document should never be registered with nobody responsible for it,
+# so the picker defaults to the creator (owner decision 2026-10-20, D6).
+# See doc/dwg/OWNERSHIP.md.
+$t_show_owner = in_array( 'owner', $t_fields )
+	&& ( access_has_project_level( config_get( 'dwg_assign_owner_threshold' ) )
+		|| access_has_project_level( config_get( 'dwg_claim_owner_threshold' ) ) );
 $t_show_monitors = in_array( 'monitors', $t_fields )
 	&& access_has_project_level( config_get( 'monitor_add_others_dwg_threshold' ) );
 $t_show_profiles = config_get( 'enable_profiles' );
@@ -291,7 +300,6 @@ $t_show_view_state = in_array( 'view_state', $t_fields ) && access_has_project_l
 $t_show_severity = false;
 $t_show_priority = false;
 // $t_show_steps_to_reproduce = false;
-$t_show_handler = false;
 // $t_show_monitors = false;
 // $t_show_profiles = false;
 // $t_show_platform = false;
@@ -569,6 +577,20 @@ $t_form_encoding = 'enctype="multipart/form-data"';
 	</tr>
 <?php } ?>
  */ ?>
+<?php if( $t_show_owner ) { ?>
+	<tr>
+		<th class="category">
+			<label for="owner_id"><?php echo lang_get( 'dwg_owner' ) ?></label>
+		</th>
+		<td>
+			<select <?php echo helper_get_tab_index() ?> id="owner_id" name="owner_id" class="input-sm">
+				<option value="0">&nbsp;</option>
+				<?php print_dwg_owner_option_list( $f_owner_id ) ?>
+			</select>
+		</td>
+	</tr>
+<?php } ?>
+
 <?php if( $t_show_handler ) { ?>
 	<tr>
 		<th class="category">
@@ -577,7 +599,7 @@ $t_form_encoding = 'enctype="multipart/form-data"';
 		<td>
 			<select <?php echo helper_get_tab_index() ?> id="handler_id" name="handler_id" class="input-sm">
 				<option value="0" selected="selected">&nbsp;</option>
-				<?php print_assign_to_option_list( $f_handler_id ) ?>
+				<?php print_dwg_assign_to_option_list( $f_handler_id ) ?>
 			</select>
 		</td>
 	</tr>

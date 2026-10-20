@@ -72,7 +72,7 @@ require_api( 'version_api.php' );
 require_css( 'status_config.php' );
 
 $f_bug_id = gpc_get_int( 'bug_id' );
-$f_creator_edit = gpc_get_bool( 'creator_edit' );
+$f_owner_edit = gpc_get_bool( 'owner_edit' );
 
 $t_bug = dwg_get( $f_bug_id, true );
 
@@ -102,6 +102,7 @@ $t_bottom_buttons_enabled = $t_action_button_position == POSITION_BOTTOM || $t_a
 $t_show_author = in_array( 'author', $t_fields );
 $t_show_publisher = in_array( 'publisher', $t_fields );
 $t_show_creator = in_array( 'creator', $t_fields );
+$t_show_owner = in_array( 'owner', $t_fields );
 $t_show_edition = in_array( 'edition', $t_fields );
 $t_show_revision = in_array( 'revision', $t_fields );
 $t_show_reference = in_array( 'reference', $t_fields );
@@ -148,6 +149,12 @@ if( NO_USER == $t_bug->handler_id ) {
 }
 
 $t_can_change_view_state = $t_show_view_state && access_has_project_level( config_get( 'change_view_status_threshold' ) );
+
+# Who may change the owner from this form: anyone who may set it to another
+# user, and anyone who may claim or release it themselves.
+$t_can_change_owner = access_dwg_can_set_owner( $t_bug_id )
+	|| access_dwg_can_claim_owner( $t_bug_id )
+	|| access_dwg_can_release_owner( $t_bug_id );
 
 if( $t_show_product_version ) {
 	$t_product_version_released_mask = VERSION_RELEASED;
@@ -292,35 +299,44 @@ echo '<td colspan="5"><input ', helper_get_tab_index(),
 echo '</tr>';
 
 #
-# Creator, Assigned To, Due Date
+# Owner, Assigned To, Created by
+#
+# The three person fields together.  The Owner carries the [edit]-link-and-
+# picker control that used to sit on Creator: the owner is the field that
+# legitimately changes, while the creator is read-only provenance, as a
+# MantisBT reporter is (owner decision 2026-10-20, D4).
+# See doc/dwg/OWNERSHIP.md §3.3.
 #
 
-if( $t_show_creator || $t_show_handler || $t_show_due_date ) {
+if( $t_show_owner || $t_show_creator || $t_show_handler ) {
 	echo '<tr>';
 
 	$t_spacer = 0;
 
-	if( $t_show_creator ) {
-		# Creator
+	if( $t_show_owner ) {
+		# Owner
 		echo '<th class="category">';
-		if( $f_creator_edit ) echo '<label for="creator_id">';
-		echo lang_get( 'creator' );
-		if( $f_creator_edit ) echo '</label>';
+		if( $f_owner_edit ) echo '<label for="owner_id">';
+		echo lang_get( 'dwg_owner' );
+		if( $f_owner_edit ) echo '</label>';
 		echo '</th><td>';
 
-		# Do not allow the document's creator to edit the Creator field
-		# when limit_creators is ON
-		if( access_has_limited_view_dwg( $t_bug->project_id ) ) {
-			echo string_attribute( user_get_name( $t_bug->creator_id ) );
-		} else {
-			if( $f_creator_edit ) {
-				echo '<select ' . helper_get_tab_index() . ' id="creator_id" name="creator_id">';
-				print_dwg_creator_option_list( $t_bug->creator_id, $t_bug->project_id );
+		$t_owner_name = $t_bug->owner_id == NO_USER
+			? lang_get( 'dwg_owner_none' )
+			: string_attribute( user_get_name( $t_bug->owner_id ) );
+
+		if( $t_can_change_owner ) {
+			if( $f_owner_edit ) {
+				echo '<select ' . helper_get_tab_index() . ' id="owner_id" name="owner_id" class="input-sm">';
+				echo '<option value="0">&nbsp;</option>';
+				print_dwg_owner_option_list( $t_bug->owner_id, $t_bug->project_id );
 				echo '</select>';
 			} else {
-				echo string_attribute( user_get_name( $t_bug->creator_id ) );
-				echo ' [<a href="#creator_edit" class="click-url" data-url="' . string_get_dwg_update_url( $f_bug_id ) . '&amp;creator_edit=true">' . lang_get( 'edit' ) . '</a>]';
+				echo $t_owner_name;
+				echo ' [<a href="#owner_edit" class="click-url" data-url="' . string_get_dwg_update_url( $f_bug_id ) . '&amp;owner_edit=true">' . lang_get( 'edit' ) . '</a>]';
 			}
+		} else {
+			echo $t_owner_name;
 		}
 		echo '</td>';
 	} else {
@@ -346,7 +362,32 @@ if( $t_show_creator || $t_show_handler || $t_show_due_date ) {
 		$t_spacer += 2;
 	}
 
-	if( $t_show_due_date ) {
+	if( $t_show_creator ) {
+		# Created by — read-only.  Whoever registered the document is always
+		# that person, as with a MantisBT reporter.
+		echo '<th class="category">' . lang_get( 'dwg_creator' ) . '</th><td>';
+		echo string_attribute( user_get_name( $t_bug->creator_id ) );
+		echo '</td>';
+	} else {
+		$t_spacer += 2;
+	}
+
+	# spacer
+	if( $t_spacer > 0 ) {
+		echo '<td colspan="', $t_spacer, '">&#160;</td>';
+	}
+	echo '</tr>';
+}
+
+#
+# Due Date
+#
+
+if( $t_show_due_date ) {
+	echo '<tr>';
+	$t_spacer = 4;
+
+	{
 		# Due Date
 		echo '<th class="category"><label for="due_date">' . lang_get( 'due_date' ) . '</label></th>';
 
@@ -374,8 +415,6 @@ if( $t_show_creator || $t_show_handler || $t_show_due_date ) {
 		}
 
 		echo '</td>';
-	} else {
-		$t_spacer += 2;
 	}
 
 	# spacer
