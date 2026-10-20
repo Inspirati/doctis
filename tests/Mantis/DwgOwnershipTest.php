@@ -87,6 +87,11 @@ class DwgOwnershipTest extends MantisCoreBase {
 		$t_dwg->title = 'ownership test';
 		$t_dwg->description = 'ownership test';
 		$t_dwg->status = config_get( 'dwg_submit_status' );
+		# {documents} stores these as INT UNSIGNED NOT NULL; DwgData defaults
+		# them to '', which a strict-mode INSERT rejects.
+		$t_dwg->revision_date = 1;
+		$t_dwg->release_date = 1;
+		$t_dwg->due_date = 1;
 
 		$t_id = (int)$t_dwg->create();
 		$this->dwg_ids[] = $t_id;
