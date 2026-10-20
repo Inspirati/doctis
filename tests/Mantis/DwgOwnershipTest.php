@@ -36,7 +36,7 @@ class DwgOwnershipTest extends MantisCoreBase {
 			$this->saved[$t_key] = config_get_global( $t_key );
 		}
 
-		$this->project_id = project_create( 'owntest' . rand(), '', VS_PUBLIC, DEVELOPER, true, true );
+		$this->project_id = (int)project_create( 'owntest' . rand(), '', 10, VS_PUBLIC );
 		global $g_project_override;
 		$g_project_override = $this->project_id;
 	}
