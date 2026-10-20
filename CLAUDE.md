@@ -93,6 +93,43 @@ Document-specific config keys (in [config_defaults_inc.php](config_defaults_inc.
 - `$g_dwg_submit_status`, `$g_dwg_assigned_status`, `$g_dwg_reopen_status`, etc.
 - `$g_dwg_report_page_fields`, `$g_dwg_view_page_fields`, `$g_dwg_update_page_fields`
 
+## Document Ownership
+
+A document names three different people, and they are not interchangeable
+(owner decision, 2026-10-20):
+
+| Role | Column | UI label | Changes |
+|------|--------|----------|---------|
+| Creator | `creator_id` | "Created by" | Never — read-only provenance, as a MantisBT reporter is |
+| Owner | `owner_id` | "Owner" | Rarely; when staff are replaced. This is the name published in the document-control block |
+| Assignee | `handler_id` | "Assigned To" | Often — the task-step workflow |
+
+**The column and variable names are deliberately unchanged**, so `dwg_*`
+modules stay diff-able against MantisBT; `handler_id` is the *assignee*, never
+the owner. Consistency lives in the lang strings, history labels, exports and
+API instead. Beware three MantisBT-inherited traps: `email_dwg_owner_changed()`
+is the **assignee** notification (the owner one is
+`email_dwg_ownership_changed()`), `{topic_expectation}.owner_id` is an
+unrelated owner, and the notify-flag key `category` means the *Category*
+owner.
+
+Self-claim is `dwg_claim.php`, which only ever writes the current user's id;
+naming somebody else goes through `dwg_update.php` at a higher threshold.
+Thresholds: `$g_own_dwg_threshold` and `$g_dwg_claim_owner_threshold`
+(DEVELOPER), `$g_dwg_assign_owner_threshold` (MANAGER, and the only way to take
+over an already-owned document), `$g_dwg_claim_threshold` (UPDATER).
+Ownership changes are exempt from the read-only-status check, so a departing
+owner can be replaced on an archived document. Ownership never changes the
+status. API: [core/access_dwg_api.php](core/access_dwg_api.php)
+(`access_dwg_can_*`). Design, decisions, as-built notes and the test record:
+[doc/dwg/OWNERSHIP.md](doc/dwg/OWNERSHIP.md).
+
+Two document statuses are deliberately inert: `$g_dwg_auto_set_status_to_assigned`
+and `$g_dwg_reassign_on_feedback` are OFF, separate from the shared bug keys,
+because a document status is a lifecycle state and not a queue state.
+`$g_dwg_assigned_status` must be `ASSIGNED_TO` (150) — MantisBT's `ASSIGNED`
+(50) is a bug status and is not in `$g_dwg_status_enum_string`.
+
 ## License Entity
 
 A Doctis license is a skill, security clearance, or professional qualification

@@ -40,7 +40,8 @@ turn email notifications off before tests that queue mail in bulk.
 ## 2. PHPUnit (`tests/`)
 
 **What it covers:** MantisBT core API unit tests and the Doctis tests in
-`tests/Mantis/` (`Topic*Test`, `MeetingApiTest`, `AiKnowledgeTest`, `UserNamePolicyTest` and
+`tests/Mantis/` (`Topic*Test`, `MeetingApiTest`, `AiKnowledgeTest`, `UserNamePolicyTest`,
+`DwgOwnershipTest` and
 others), plus SOAP integration tests (`tests/soap/`) via PHP's SoapClient.
 New document-domain unit tests belong in `tests/Mantis/`.
 
@@ -587,6 +588,41 @@ Run 2026-10-15 on the VM: `DwgPublishTest` passed (17 tests, including the
 end-to-end test on document 2). The full `mantis` suite passed (312 tests, 1
 pre-existing skip). The page checks passed over HTTP as `manager`. Details
 and the resulting VM state: [publish/PUBLISHING.md](publish/PUBLISHING.md) §8.
+
+### 7e. Document ownership — creator, owner and assignee
+
+**Unit tests** (`tests/Mantis/DwgOwnershipTest.php`, 14 tests): the three
+person fields, owner eligibility against `$g_own_dwg_threshold`, the claim and
+takeover rules, release, assignee claim, the licence requirement for owners,
+the owner filter and list column, and the history label. Two of them are
+regressions: that `DwgData::create()` persists `owner_id` and `handler_id`,
+and that `$g_dwg_assigned_status` is a status that exists in
+`$g_dwg_status_enum_string`.
+
+```bash
+vendor/bin/phpunit --testsuite mantis --filter DwgOwnershipTest --testdox
+```
+
+The tests create their own scratch project, users and documents and remove
+them in `tearDown()`. The documents never get a primary file, so nothing is
+written to git.
+
+**Page flow** (curl, as the sample accounts): create a document with
+`owner_id` and `handler_id` and check all three fields in `{dwg}`; fetch
+`dwg_view.php` as `viewer`, `reporter`, `updater`, `developer` and `manager`
+and compare the Claim Ownership / Release Ownership / Set Owner / Claim /
+Release / Assign To buttons; force a takeover POST to `dwg_claim.php` as
+`developer` on an owned document and confirm HTTP 403 with `owner_id`
+unchanged; run bulk `SET_OWNER` through `dwg_actiongroup.php` (its token is
+named `dwg_actiongroup_SET_OWNER_token`, not `dwg_actiongroup_token`); apply
+the Owner filter by POSTing `view_dwg_set.php` (a URL query parameter alone
+does not set it); and publish a Markdown document to check the
+document-control block's **Owner** row comes from `owner_id`.
+
+Run 2026-10-20 on the VM after a database rebuild: 14 `DwgOwnershipTest` tests
+and the full `mantis` suite (357 tests, 1 pre-existing skip) passed, and all
+the page checks above passed. Full record:
+[dwg/OWNERSHIP.md](dwg/OWNERSHIP.md) §12.
 
 ---
 
