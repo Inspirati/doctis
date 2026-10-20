@@ -199,9 +199,8 @@ foreach( $f_bug_arr as $t_bug_id ) {
 				if( access_dwg_can_be_owner( $t_bug_id, $f_set_owner ) ) {
 					$t_old_owner_id = (int)$t_bug->owner_id;
 					if( $t_old_owner_id != $f_set_owner ) {
+						# dwg_set_field() logs the history row and touches last_updated.
 						dwg_set_field( $t_bug_id, 'owner_id', $f_set_owner );
-						history_dwg_log_event_direct( $t_bug_id, 'owner_id', $t_old_owner_id, $f_set_owner );
-						dwg_update_date( $t_bug_id );
 						email_dwg_ownership_changed( $t_bug_id, $t_old_owner_id, $f_set_owner );
 						helper_call_custom_function( 'document_update_notify', array( $t_bug_id ) );
 					}

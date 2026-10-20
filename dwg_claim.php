@@ -98,9 +98,8 @@ if( 'owner' == $f_role ) {
 	$t_old_user_id = (int)$t_dwg->owner_id;
 
 	if( $t_old_user_id != $t_new_user_id ) {
+		# dwg_set_field() writes the {dwg_history} row and touches last_updated.
 		dwg_set_field( $f_dwg_id, 'owner_id', $t_new_user_id );
-		history_dwg_log_event_direct( $f_dwg_id, 'owner_id', $t_old_user_id, $t_new_user_id );
-		dwg_update_date( $f_dwg_id );
 		email_dwg_ownership_changed( $f_dwg_id, $t_old_user_id, $t_new_user_id );
 	}
 } else {
@@ -128,9 +127,8 @@ if( 'owner' == $f_role ) {
 	$t_old_user_id = (int)$t_dwg->handler_id;
 
 	if( $t_old_user_id != $t_new_user_id ) {
+		# dwg_set_field() writes the {dwg_history} row and touches last_updated.
 		dwg_set_field( $f_dwg_id, 'handler_id', $t_new_user_id );
-		history_dwg_log_event_direct( $f_dwg_id, 'handler_id', $t_old_user_id, $t_new_user_id );
-		dwg_update_date( $f_dwg_id );
 		email_dwg_owner_changed( $f_dwg_id, $t_old_user_id, $t_new_user_id );
 	}
 }
