@@ -4219,6 +4219,24 @@ $g_license_user_threshold = UPDATER;
 $g_manage_user_threshold = MANAGER;
 
 /**
+ * Access level needed to delete a user account.
+ *
+ * Deliberately higher than $g_manage_user_threshold (owner decision
+ * 2026-10-20): deleting an account is for mistakes — a fake sign-up, or a
+ * registration that needs reverting — and not for staff who have left. A
+ * departing staff member is **disabled**, which preserves their name on every
+ * document, note and history entry they touched, keeps their username
+ * reserved, and removes them from logins, email and every user picker. See
+ * doc/dwg/USER_LIFECYCLE.md.
+ *
+ * It governs Manage > Users > Delete User, Prune Accounts, and
+ * DELETE /api/rest/users/{id}.
+ *
+ * @global int $g_delete_user_threshold
+ */
+$g_delete_user_threshold = ADMINISTRATOR;
+
+/**
  * Threshold needed to impersonate a user or NOBODY to disable the feature.
  *
  * @global int $g_impersonate_user_threshold
@@ -6792,6 +6810,7 @@ $g_public_config_names = array(
 	'manage_import_threshold',
 	'manage_site_threshold',
 	'manage_user_threshold',
+	'delete_user_threshold',
 	'manage_users_cookie',
 	'max_dropdown_length',
 	'max_failed_login_count',

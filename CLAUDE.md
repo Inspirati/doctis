@@ -130,6 +130,29 @@ because a document status is a lifecycle state and not a queue state.
 `$g_dwg_assigned_status` must be `ASSIGNED_TO` (150) — MantisBT's `ASSIGNED`
 (50) is a bug status and is not in `$g_dwg_status_enum_string`.
 
+## User Lifecycle
+
+**A staff member who leaves is removed by disabling their account, never by
+deleting it** (owner decision 2026-10-20). Disabling already blocks login and
+email, drops the user from every picker and the org chart, and keeps their name
+on every document, note and history entry — struck through, via
+`prepare_user_name()`. Deleting cleans up only four tables and leaves 40-odd
+others dangling, replacing the name with `user<id>`, which destroys the
+`{dwg_history}` audit trail.
+
+Deleting stays available for mistakes (fake sign-ups, registrations to revert)
+at `$g_delete_user_threshold` (ADMINISTRATOR, above
+`$g_manage_user_threshold`); **Prune Accounts** only removes accounts that have
+never been logged into. Anonymisation is explicitly not required: user records
+are company property, not personal data.
+
+**Open:** disabling does not hand on what the person held — documents they own
+or are assigned, issues, meeting chairs, open meeting actions, Topic
+expectations. See [doc/dwg/USER_LIFECYCLE.md](doc/dwg/USER_LIFECYCLE.md) §5 for
+the `reports_to` escalation idea and the three problems it has to answer, plus
+two related bugs (a disabled Topic expectation owner passes readiness; a
+disabled category default assignee still gets new documents).
+
 ## License Entity
 
 A Doctis license is a skill, security clearance, or professional qualification
@@ -450,11 +473,17 @@ step's index is the `database_version` the installer records after running it.
   replace an obsolete step with `null`.
 
 **Rebuilding the VM database** replaces the imported projects and documents
-too. First back up the database (System Operations → Backup Database, or
-`mariadb-dump`) and the git store (a tar of `/var/git/doctis` and
-`/var/www/doctis/worktrees`) into `admin/tools/data-scripts/`. Then reset both
-together (next section) and reload the data. The reload order and the data
+too. **No backup is needed first** (owner decision 2026-10-20): the VM is a
+development and test scratchpad, and clean feature testing is expected to
+start from a rebuild. Reset the database and the git store together (next
+section) and reload whatever the test needs. The reload order and the data
 scripts are in [admin/tools/data-scripts/README.md](admin/tools/data-scripts/README.md).
+
+Clean up test artefacts on the VM only where they would affect later tests in
+the same session; otherwise leave them. A rebuild clears them.
+
+The **live version** is the opposite: back up before any rebuild there, and
+follow *Updating the live version with a database rebuild* above.
 
 ### Conventions
 

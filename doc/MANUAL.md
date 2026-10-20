@@ -861,6 +861,41 @@ authorising again; earlier snapshots keep the old revision.
 
 ## 13. Administration notes
 
+### Removing a user — disable, do not delete
+
+**When someone leaves, disable their account.** Manage → Users → the account →
+untick **Enabled** → **Update User**.
+
+Disabling is the correct way to remove a staff member because it keeps the
+record intact:
+
+- they can no longer log in, and receive no further email;
+- they disappear from the Owner, Assigned To and every other person picker, and
+  from the organisational chart;
+- **their name is kept** on every document, note and history entry they ever
+  touched, shown struck through — so the audit trail still reads correctly;
+- their username and email stay reserved, so a new joiner cannot take a
+  departed colleague's name and appear to inherit their history.
+
+Disabled accounts are hidden from the user list by default; tick **show
+disabled** to see them.
+
+**Deleting an account is for mistakes only** — a fake sign-up, or a
+registration that needs reverting — and is an administrator action
+(`$g_delete_user_threshold`). Deleting does **not** tidy anything up: the
+person's documents, notes and history entries keep pointing at the removed
+account and their name is replaced by a meaningless `user<id>`. Never delete
+an account that has been used.
+
+**Prune Accounts** (on the Unused filter) is the safe bulk form: it only
+removes accounts that have never been logged into.
+
+> **Still to do when disabling someone:** disabling stops the account but does
+> not hand on what the person was responsible for. Check what they still own
+> or are assigned before you disable them, and use **Set Owner** on the
+> document list to move it. See
+> [doc/dwg/USER_LIFECYCLE.md](dwg/USER_LIFECYCLE.md) §5.
+
 ### Documentation Topics settings
 
 In `config/config_inc.php`:
