@@ -148,12 +148,22 @@ because `user_ensure_valid_reports_to()`
 time: a manager disabled later still has reports pointing at them. Cycles
 terminate the walk.
 
-It is only a suggestion, deliberately (owner decision 2026-10-20). `reports_to`
-is optional — most accounts have none, so there is often nothing to suggest and
-the administrator simply picks — and it is editable by the user themselves on
-My Configuration View, so it carries no authority over who inherits a
-controlled document. The owner chose to leave it that way rather than make it
+It is only a suggestion, deliberately (owner decision 2026-10-20). It is
+editable by the user themselves on My Configuration View, so it carries no
+authority over who inherits a controlled document, and because it is only
+validated at write time the chain can contain accounts disabled afterwards. The
+owner chose to leave the field optional and self-editable rather than make it
 mandatory and administrator-only.
+
+**Correction, 2026-10-23.** The original argument for a picker over automatic
+escalation also claimed `reports_to` was too sparsely populated to rely on —
+3 of 17 accounts. That measurement came from *sample data* and was wrong about
+the real system. The live user table, loaded onto the VM on 2026-10-23, has
+**13 of 14 enabled accounts with a manager recorded**, and the one without is
+the CEO at the top of the chain. So the suggestion will almost always find
+somebody, and the distance between suggesting and automating is smaller than
+this note first implied. The other two objections stand, and they are the ones
+that justify a person confirming the change.
 
 ### Eligibility is checked per row
 
