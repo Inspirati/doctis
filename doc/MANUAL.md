@@ -103,6 +103,48 @@ Reference or the Doctis-managed primary file.
 The reference field is optional — a document can be registered as a placeholder
 before its reference is known.
 
+### Names that must be unique
+
+Several things in Doctis share a single, system-wide pool of names, so a name
+already used elsewhere will be refused even when it looks unrelated to what you
+are working on. Others are only unique within their project. Knowing which is
+which saves a confusing rejection.
+
+| What you are naming | Must be unique across | Case matters? |
+|---------------------|-----------------------|---------------|
+| **Project** (including sub-projects) | the **whole system** | No — `Finance` and `finance` collide |
+| **License** | the **whole system**, ignoring case *and* punctuation | No — see below |
+| **Tag** | the **whole system** | No |
+| **User name** | the **whole system** | No — names are stored in lowercase |
+| **Custom field** | the **whole system** | No |
+| **Category** | its own **project** only | No, within that project |
+| **Version** | its own **project** only | No, within that project |
+
+**Projects share one pool with sub-projects.** A sub-project is an ordinary
+project with a parent, so it competes for the same names. In particular **a
+sub-project cannot have the same name as its parent** — a `Finance` department
+project cannot contain a `Finance` sub-project. Give one of them a more specific
+name, such as `Finance Operations`.
+
+**Licenses are matched more loosely than anything else**, so near-duplicates are
+refused. Doctis compares the name you type *and* a reduced form of it with
+capitals folded and every space, hyphen and punctuation mark removed. So all of
+these count as the same license:
+
+```
+Security Clearance    security clearance    SECURITY-CLEARANCE
+SecurityClearance     Security  Clearance
+```
+
+This is deliberate: a license controls access to documents, and two licenses
+whose names differ only in punctuation would be an accident waiting to happen.
+If a license name is refused and you cannot see the clash, look for an existing
+license with the same letters and digits in the same order.
+
+**Categories and versions are per project**, so two projects can each have a
+`Drawings` category without conflict, and renaming one does not affect the
+other.
+
 ### Access levels
 
 Doctis uses the same access level hierarchy as MantisBT:
@@ -860,6 +902,18 @@ authorising again; earlier snapshots keep the old revision.
 ---
 
 ## 13. Administration notes
+
+### Project naming
+
+Project names are unique across the **whole system**, case-insensitively, and
+sub-projects share that same pool — so a sub-project cannot carry its parent's
+name. See [Names that must be unique](#names-that-must-be-unique) for the full
+set of rules, including licenses, which are matched more loosely still.
+
+Punctuation in a project name is safe. A name is only ever used for display;
+the git repository directory behind a project is derived from it through a
+strict letters-and-digits filter and an immutable id, so characters such as
+`/`, `&`, `<` and `(` cannot affect where files are stored.
 
 ### Project owner
 
