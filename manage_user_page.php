@@ -304,7 +304,7 @@ $t_user_count = count( $t_users );
 				'btn-sm' )
 			?>
 		</div>
-		<?php if( $f_filter === 'UNUSED' ) { ?>
+		<?php if( $f_filter === 'UNUSED' && access_has_global_level( config_get( 'delete_user_threshold' ) ) ) { ?>
 		<div class="pull-left">
 			<?php print_form_button('manage_user_prune.php',
 				lang_get('prune_accounts'),

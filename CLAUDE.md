@@ -93,6 +93,71 @@ Document-specific config keys (in [config_defaults_inc.php](config_defaults_inc.
 - `$g_dwg_submit_status`, `$g_dwg_assigned_status`, `$g_dwg_reopen_status`, etc.
 - `$g_dwg_report_page_fields`, `$g_dwg_view_page_fields`, `$g_dwg_update_page_fields`
 
+## Document Ownership
+
+A document names three different people, and they are not interchangeable
+(owner decision, 2026-10-20):
+
+| Role | Column | UI label | Changes |
+|------|--------|----------|---------|
+| Creator | `creator_id` | "Created by" | Never — read-only provenance, as a MantisBT reporter is |
+| Owner | `owner_id` | "Owner" | Rarely; when staff are replaced. This is the name published in the document-control block |
+| Assignee | `handler_id` | "Assigned To" | Often — the task-step workflow |
+
+**The column and variable names are deliberately unchanged**, so `dwg_*`
+modules stay diff-able against MantisBT; `handler_id` is the *assignee*, never
+the owner. Consistency lives in the lang strings, history labels, exports and
+API instead. Beware three MantisBT-inherited traps: `email_dwg_owner_changed()`
+is the **assignee** notification (the owner one is
+`email_dwg_ownership_changed()`), `{topic_expectation}.owner_id` is an
+unrelated owner, and the notify-flag key `category` means the *Category*
+owner.
+
+Self-claim is `dwg_claim.php`, which only ever writes the current user's id;
+naming somebody else goes through `dwg_update.php` at a higher threshold.
+Thresholds: `$g_own_dwg_threshold` and `$g_dwg_claim_owner_threshold`
+(DEVELOPER), `$g_dwg_assign_owner_threshold` (MANAGER, and the only way to take
+over an already-owned document), `$g_dwg_claim_threshold` (UPDATER).
+Ownership changes are exempt from the read-only-status check, so a departing
+owner can be replaced on an archived document. Ownership never changes the
+status. API: [core/access_dwg_api.php](core/access_dwg_api.php)
+(`access_dwg_can_*`). Design, decisions, as-built notes and the test record:
+[doc/dwg/OWNERSHIP.md](doc/dwg/OWNERSHIP.md).
+
+Two document statuses are deliberately inert: `$g_dwg_auto_set_status_to_assigned`
+and `$g_dwg_reassign_on_feedback` are OFF, separate from the shared bug keys,
+because a document status is a lifecycle state and not a queue state.
+`$g_dwg_assigned_status` must be `ASSIGNED_TO` (150) — MantisBT's `ASSIGNED`
+(50) is a bug status and is not in `$g_dwg_status_enum_string`.
+
+## User Lifecycle
+
+**A staff member who leaves is removed by disabling their account, never by
+deleting it** (owner decision 2026-10-20). Disabling already blocks login and
+email, drops the user from every picker and the org chart, and keeps their name
+on every document, note and history entry — struck through, via
+`prepare_user_name()`. Deleting cleans up only four tables and leaves 40-odd
+others dangling, replacing the name with `user<id>`, which destroys the
+`{dwg_history}` audit trail.
+
+Deleting stays available for mistakes (fake sign-ups, registrations to revert)
+at `$g_delete_user_threshold` (ADMINISTRATOR, above
+`$g_manage_user_threshold`); **Prune Accounts** only removes accounts that have
+never been logged into. Anonymisation is explicitly not required: user records
+are company property, not personal data.
+
+Disabling does not hand on what the person held, so **Transfer
+Responsibilities** does: documents owned and assigned, issues, meetings yet to
+be held, open meeting actions, Topic expectations and category defaults.
+Disabling an account that still holds something redirects to it, and Manage →
+Users carries a standing link. `{user}.reports_to` supplies the *default*
+successor only — it is optional and self-editable, so it is never treated as
+authority — and eligibility is checked per row (`$g_own_dwg_threshold` plus any
+required licence, `$g_handle_dwg_threshold`, `$g_handle_bug_threshold`), with
+ineligible rows skipped and reported. Historical attribution is never moved.
+API: [core/user_transfer_api.php](core/user_transfer_api.php); design and test
+record: [doc/dwg/USER_LIFECYCLE.md](doc/dwg/USER_LIFECYCLE.md) §5.
+
 ## License Entity
 
 A Doctis license is a skill, security clearance, or professional qualification
@@ -413,11 +478,17 @@ step's index is the `database_version` the installer records after running it.
   replace an obsolete step with `null`.
 
 **Rebuilding the VM database** replaces the imported projects and documents
-too. First back up the database (System Operations → Backup Database, or
-`mariadb-dump`) and the git store (a tar of `/var/git/doctis` and
-`/var/www/doctis/worktrees`) into `admin/tools/data-scripts/`. Then reset both
-together (next section) and reload the data. The reload order and the data
+too. **No backup is needed first** (owner decision 2026-10-20): the VM is a
+development and test scratchpad, and clean feature testing is expected to
+start from a rebuild. Reset the database and the git store together (next
+section) and reload whatever the test needs. The reload order and the data
 scripts are in [admin/tools/data-scripts/README.md](admin/tools/data-scripts/README.md).
+
+Clean up test artefacts on the VM only where they would affect later tests in
+the same session; otherwise leave them. A rebuild clears them.
+
+The **live version** is the opposite: back up before any rebuild there, and
+follow *Updating the live version with a database rebuild* above.
 
 ### Conventions
 

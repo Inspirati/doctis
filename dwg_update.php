@@ -107,6 +107,7 @@ if( $t_due_date !== null ) {
 $t_updated_bug->duplicate_id = gpc_get_int( 'duplicate_id', 0 );
 $t_updated_bug->eta = gpc_get_int( 'eta', $t_existing_bug->eta );
 $t_updated_bug->handler_id = gpc_get_int( 'handler_id', $t_existing_bug->handler_id );
+$t_updated_bug->owner_id = gpc_get_int( 'owner_id', $t_existing_bug->owner_id );
 $t_updated_bug->last_updated = gpc_get_string( 'last_updated' );
 $t_updated_bug->link_url = gpc_get_string( 'dwg_link_url', $t_existing_bug->link_url );
 $t_updated_bug->os = gpc_get_string( 'os', $t_existing_bug->os );
@@ -115,27 +116,13 @@ $t_updated_bug->platform = gpc_get_string( 'platform', $t_existing_bug->platform
 $t_updated_bug->priority = gpc_get_int( 'priority', $t_existing_bug->priority );
 $t_updated_bug->projection = gpc_get_int( 'projection', $t_existing_bug->projection );
 
-$t_creator_id = gpc_get_int( 'creator_id', $t_existing_bug->creator_id );
-# Only validate the creator if different from the recorded one; this avoids
-# blocking the update when changing another field and the original creator's
-# account no longer exists.
-if( $t_creator_id != $t_existing_bug->creator_id ) {
-	user_ensure_exists( $t_creator_id );
-	$t_report_bug_threshold = config_get( 'create_dwg_threshold',
-		null,
-		$t_creator_id,
-		$t_existing_bug->project_id
-	);
-	$t_can_report = access_has_project_level(
-		$t_report_bug_threshold,
-		$t_existing_bug->project_id,
-		$t_creator_id
-	);
-	if( !$t_can_report ) {
-		trigger_error( ERROR_USER_DOES_NOT_HAVE_REQ_ACCESS, ERROR );
-	}
-}
-$t_updated_bug->creator_id = $t_creator_id;
+# The creator is read-only: whoever registered the document is always that
+# person, whether or not they are still a current user, exactly as a MantisBT
+# reporter is (owner decision 2026-10-20, D4).  Any posted creator_id is
+# ignored rather than rejected, so an older form or a bookmarked POST cannot
+# rewrite it.  The field that legitimately changes is owner_id, above.
+# See doc/dwg/OWNERSHIP.md §3.3.
+$t_updated_bug->creator_id = $t_existing_bug->creator_id;
 
 $t_updated_bug->reproducibility = gpc_get_int( 'reproducibility', $t_existing_bug->reproducibility );
 $t_updated_bug->resolution = gpc_get_int( 'resolution', $t_existing_bug->resolution );
@@ -198,6 +185,13 @@ if ( !$t_creator_reopening && !$t_creator_closing ) {
 		case DWG_UPDATE_TYPE_ASSIGN:
 			$t_threshold = 'update_dwg_assign_threshold';
 			$t_check_readonly = true;
+			break;
+		case DWG_UPDATE_TYPE_SET_OWNER:
+			# Ownership is exempt from the read-only check: a departing owner
+			# must still be replaceable on an archived document
+			# (doc/dwg/OWNERSHIP.md §9.2).
+			$t_threshold = 'dwg_assign_owner_threshold';
+			$t_check_readonly = false;
 			break;
 		case DWG_UPDATE_TYPE_CLOSE:
 		case DWG_UPDATE_TYPE_REOPEN:
@@ -282,6 +276,33 @@ if( $t_existing_bug->handler_id != $t_updated_bug->handler_id ) {
 		if( $t_issue_is_sponsored && !access_has_dwg_level( config_get( 'assign_sponsored_dwgs_threshold' ), $f_bug_id ) ) {
 			trigger_error( ERROR_SPONSORSHIP_ASSIGNER_ACCESS_LEVEL_TOO_LOW, ERROR );
 		}
+	}
+}
+
+# Validate any change to the owner of a document (Doctis).
+#
+# Two separate rules: whether the acting user may make the change at all, and
+# whether the proposed owner is eligible to be one.  Setting the owner to
+# yourself is a claim; setting it to anybody else, or taking over a document
+# that already has an owner, needs the higher threshold.
+# See doc/dwg/OWNERSHIP.md §5.
+if( $t_existing_bug->owner_id != $t_updated_bug->owner_id ) {
+	if( $t_updated_bug->owner_id == $t_current_user_id ) {
+		if( !access_dwg_can_claim_owner( $f_bug_id, $t_current_user_id ) ) {
+			access_denied();
+		}
+	} else if( $t_updated_bug->owner_id == NO_USER ) {
+		if( !access_dwg_can_release_owner( $f_bug_id, $t_current_user_id ) ) {
+			access_denied();
+		}
+	} else {
+		if( !access_dwg_can_set_owner( $f_bug_id, $t_current_user_id ) ) {
+			access_denied();
+		}
+	}
+
+	if( !access_dwg_can_be_owner( $f_bug_id, $t_updated_bug->owner_id ) ) {
+		trigger_error( ERROR_USER_DOES_NOT_HAVE_REQ_ACCESS, ERROR );
 	}
 }
 
@@ -427,7 +448,7 @@ if( $t_bug_note->note ||
 # between 'dwg_submit_status' and 'dwg_feedback_status'. It assumes you only
 # have one feedback, assigned and submitted status.
 if( $t_bug_note->note &&
-	config_get( 'reassign_on_feedback' ) &&
+	config_get( 'dwg_reassign_on_feedback' ) &&
 	$t_existing_bug->status == config_get( 'dwg_feedback_status' ) &&
 	$t_updated_bug->status == $t_existing_bug->status &&
 	$t_updated_bug->handler_id != $t_current_user_id &&
@@ -498,6 +519,8 @@ if( $t_resolve_issue ) {
 	email_dwg_relationship_child_closed( $f_bug_id );
 } else if( $t_reopen_issue ) {
 	email_dwg_reopened( $f_bug_id );
+} else if( $t_existing_bug->owner_id != $t_updated_bug->owner_id ) {
+	email_dwg_ownership_changed( $f_bug_id, $t_existing_bug->owner_id, $t_updated_bug->owner_id );
 } else if( $t_existing_bug->handler_id != $t_updated_bug->handler_id ) {
 	email_dwg_owner_changed( $f_bug_id, $t_existing_bug->handler_id, $t_updated_bug->handler_id );
 } else if( $t_existing_bug->status != $t_updated_bug->status ) {

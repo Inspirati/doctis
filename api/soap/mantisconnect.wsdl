@@ -463,6 +463,7 @@
    <xsd:element name="summary" type="xsd:string" minOccurs="0"/>
    <xsd:element name="description" type="xsd:string" minOccurs="0"/>
    <xsd:element name="handler" type="tns:AccountData" minOccurs="0"/>
+   <xsd:element name="owner" type="tns:AccountData" minOccurs="0"/>
    <xsd:element name="due_date" type="xsd:dateTime" minOccurs="0"/>
    <xsd:element name="date_submitted" type="xsd:dateTime" minOccurs="0"/>
    <xsd:element name="monitors" type="tns:AccountDataArray" minOccurs="0"/>

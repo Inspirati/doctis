@@ -685,6 +685,27 @@ function print_dwg_assign_to_option_list( $p_user_id = '', $p_project_id = null,
 }
 
 /**
+ * Print the Owner option list: users eligible to own a document.
+ *
+ * Gated on $g_own_dwg_threshold, not on the assignment threshold: owning a
+ * document and holding its current task step are different roles.  See
+ * doc/dwg/OWNERSHIP.md.
+ *
+ * @param integer|string $p_user_id    The currently selected user, if any.
+ * @param integer|null   $p_project_id A project identifier.
+ * @param integer|null   $p_threshold  Override the eligibility threshold.
+ *
+ * @return void
+ */
+function print_dwg_owner_option_list( $p_user_id = '', $p_project_id = null, $p_threshold = null ) {
+	if( null === $p_threshold ) {
+		$p_threshold = config_get( 'own_dwg_threshold' );
+	}
+
+	print_dwg_user_option_list( $p_user_id, $p_project_id, $p_threshold );
+}
+
+/**
  * Print User option list for bugnote filter field
  * @param integer|string $p_user_id    A user identifier.
  * @param integer        $p_project_id A project identifier.

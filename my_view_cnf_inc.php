@@ -143,6 +143,19 @@ $t_url_link_parameters['resolved'] = [
 	FILTER_PROPERTY_HIDE_STATUS => $t_hide_status_default,
 ];
 
+# Documents I own (Doctis).  See doc/dwg/OWNERSHIP.md.
+$c_filter['owned'] = filter_dwg_create_owned_by( helper_get_current_project(), $t_current_user_id );
+$t_url_link_parameters['owned'] = [
+	FILTER_PROPERTY_OWNER_ID => $t_current_user_id,
+	FILTER_PROPERTY_HIDE_STATUS => 'none',
+];
+
+$c_filter['unowned'] = filter_dwg_create_owned_by( helper_get_current_project(), 0 );
+$t_url_link_parameters['unowned'] = [
+	FILTER_PROPERTY_OWNER_ID => '[none]',
+	FILTER_PROPERTY_HIDE_STATUS => 'none',
+];
+
 $c_filter['unassigned'] = filter_create_assigned_to_unresolved( helper_get_current_project(), 0 );
 $t_url_link_parameters['unassigned'] = [
 	FILTER_PROPERTY_HANDLER_ID => '[none]',

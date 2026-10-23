@@ -44,6 +44,40 @@ number, revision, reference), its own status workflow, and its own file storage.
 One or more **issues** can be raised against a document at any point during its
 lifecycle.
 
+### Who is responsible for a document
+
+Every document names three people, and they mean different things.
+
+| Field | Meaning | How often it changes |
+|-------|---------|----------------------|
+| **Created by** | Whoever registered the document in Doctis. | Never. It is a record of who put it there, like the reporter of an issue, and stays the same whether or not that person is still with the company. |
+| **Owner** | The person *responsible* for the document. | Rarely — when someone is replaced or moves to a new position. The Owner is the name printed on the published page. |
+| **Assigned To** | Whoever holds the document for the **current task step** — reviewing it, reworking it, approving it. | Often. This is how documents get passed around. |
+
+Ownership and assignment are separate on purpose. A procedure can be owned by
+a department manager for years while being passed to half a dozen reviewers
+along the way.
+
+You can take either role yourself. On the document view page:
+
+- **Claim Ownership** makes you the Owner of a document nobody owns.
+  **Release Ownership** gives it up.
+- **Claim** makes you the assignee, picking the document up from whoever had
+  it. **Release** puts it back down.
+
+Managers and administrators can also use **Set Owner** to name somebody else,
+including taking a document off its current owner — useful when that person
+has left. Every change of either field is recorded in the document's History
+with who made it and when.
+
+Who may own a document is an access-level question, not a rule about job
+titles: managers typically own quality-system documents and engineers own
+project documents, and Doctis does not try to enforce which. If a document
+requires a licence, its Owner must hold that licence.
+
+To change the owner of several documents at once, select them in the document
+list and choose **Set Owner** from the action menu at the bottom.
+
 ### The reference field
 
 Every document has a **Reference** — the canonical identifier that locates the
@@ -102,6 +136,8 @@ The main document list is at **My View → Documents** or `view_dwg_page.php`.
 | ℹ (issues) | Number of open issues raised against this document — click to filter the issue list |
 | Category | Document category within the project |
 | Status | Current workflow status |
+| Owner | The person responsible for the document |
+| Assigned To | Whoever holds the current task step |
 | Updated | Date of last change |
 | Title | Document title — click to open |
 | Number | Document number |
@@ -111,8 +147,9 @@ The main document list is at **My View → Documents** or `view_dwg_page.php`.
 ### Filtering
 
 The filter panel above the list works the same as MantisBT's issue filter.
-Doctis-specific filter fields include document status, number, revision, and
-reference.
+Doctis-specific filter fields include document status, number, revision,
+reference, **Owner** and **Created by**. Owner accepts `[myself]` and
+`[none]`, so you can list your own documents or find ones nobody owns yet.
 
 ---
 
@@ -157,7 +194,9 @@ Opening a document (`dwg_view.php?id=N`) shows several panels.
 ### View Document Details
 
 The main metadata panel.  Fields shown depend on configuration, but always
-include status, title, number, revision, reference, and author.
+include status, title, number, revision, reference, and author, together with
+the document's **Owner**, **Assigned To** and **Created by** (see
+[Who is responsible for a document](#who-is-responsible-for-a-document)).
 
 ### Primary Document
 
@@ -244,7 +283,7 @@ Each publish and unpublish appears in the document history.
 Every published page starts with a **document-control block** under the
 title. Its values all come from Doctis:
 - number, title, revision, status and classification;
-- owner (the assigned user);
+- owner (the person responsible for the document — not its current assignee);
 - who approved the document and when;
 - effective date and next review;
 - the On Record commit, and when it was published.
@@ -440,7 +479,7 @@ require it.
 | Tab | Page | What it shows |
 |-----|------|---------------|
 | My Issues View | `my_view_bug_page.php` | Issues assigned to you, reported by you, recently changed, etc. |
-| My Documents View | `my_view_dwg_page.php` | Documents assigned to you or created by you |
+| My Documents View | `my_view_dwg_page.php` | **Documents I Own**, documents assigned to you, unassigned documents, documents you created, and recent activity |
 | My Meetings | `my_view_meeting_page.php` | Your meetings (see §10) |
 | My Configuration View | `my_view_cnf_page.php` | Your profile, licences and system information |
 | Organisational Chart | `my_view_org_page.php` | Who's who in the organisation |
@@ -821,6 +860,51 @@ authorising again; earlier snapshots keep the old revision.
 ---
 
 ## 13. Administration notes
+
+### Removing a user — disable, do not delete
+
+**When someone leaves, disable their account.** Manage → Users → the account →
+untick **Enabled** → **Update User**.
+
+Disabling is the correct way to remove a staff member because it keeps the
+record intact:
+
+- they can no longer log in, and receive no further email;
+- they disappear from the Owner, Assigned To and every other person picker, and
+  from the organisational chart;
+- **their name is kept** on every document, note and history entry they ever
+  touched, shown struck through — so the audit trail still reads correctly;
+- their username and email stay reserved, so a new joiner cannot take a
+  departed colleague's name and appear to inherit their history.
+
+Disabled accounts are hidden from the user list by default; tick **show
+disabled** to see them.
+
+**Deleting an account is for mistakes only** — a fake sign-up, or a
+registration that needs reverting — and is an administrator action
+(`$g_delete_user_threshold`). Deleting does **not** tidy anything up: the
+person's documents, notes and history entries keep pointing at the removed
+account and their name is replaced by a meaningless `user<id>`. Never delete
+an account that has been used.
+
+**Prune Accounts** (on the Unused filter) is the safe bulk form: it only
+removes accounts that have never been logged into.
+
+**Handing on their work.** Disabling stops the account but does not pass on
+what the person was responsible for. When you disable someone who still holds
+anything, Doctis takes you straight to **Transfer Responsibilities**, which
+lists what they hold — documents they own or are assigned, issues, meetings
+they were due to chair, open meeting actions, Topic expectations, and
+categories that assign to them by default — and asks who takes it over. The
+picker suggests their manager from **Reports To** where one is recorded; change
+it if someone else should take over.
+
+Items the new holder is not permitted to take on are left alone and reported,
+so check the count afterwards. You can reach the same page at any time from the
+user's page, so an account disabled earlier can still be tidied up.
+
+A transfer never changes who *created* a document, or any note or history
+entry. Those keep the original person's name.
 
 ### Documentation Topics settings
 

@@ -1156,7 +1156,11 @@ function dwg_publish_template_values( DwgData $p_dwg, array $p_row ): array {
 		'doctis-published'   => date( config_get( 'normal_date_format' ) ),
 		'doctis-url'         => config_get_global( 'path' ) . 'dwg_view.php?id=' . (int)$p_dwg->id,
 		'doctis-classification' => $p_dwg->classification,
-		'doctis-owner'       => (int)$p_dwg->handler_id > 0 ? user_get_name( (int)$p_dwg->handler_id ) : '',
+		# The Owner row is the person responsible for the document, not whoever
+		# holds the current review step: a reader of a controlled document needs
+		# the former.  control-block.lua drops rows with an empty value, so an
+		# unowned document simply has no Owner row.  See doc/dwg/OWNERSHIP.md §8.
+		'doctis-owner'       => (int)$p_dwg->owner_id > 0 ? user_get_name( (int)$p_dwg->owner_id ) : '',
 		'doctis-approved'    => $t_approval !== null
 			? sprintf( lang_get( 'dwg_publish_approved_value' ), date( $t_date_format, $t_approval['date'] ), user_get_name( $t_approval['user_id'] ) )
 			: '',

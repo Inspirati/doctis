@@ -51,7 +51,9 @@ form_security_validate( 'manage_user_prune' );
 
 auth_reauthenticate();
 
-access_ensure_global_level( config_get( 'manage_user_threshold' ) );
+# Pruning deletes accounts, so it takes the delete threshold, not the
+# user-management one. See doc/dwg/USER_LIFECYCLE.md.
+access_ensure_global_level( config_get( 'delete_user_threshold' ) );
 
 
 # Delete the users who have never logged in and are older than 1 week

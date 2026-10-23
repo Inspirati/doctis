@@ -821,19 +821,20 @@ function print_manage_menu( $p_page = '' ) {
 function print_my_view_menu( $p_page = '' ) {
 	$t_pages = array();
 
-	if( access_has_global_level( config_get( 'timeline_view_threshold' ) ) ) {
+	# One gate for the whole tab strip, and the same one the sidebar button
+	# uses, so the two cannot disagree.
+	#
+	# These five were each gated on timeline_view_threshold, which is not what
+	# it means: My Configuration View and the Organisational Chart hold no
+	# timeline, and the two that do already check that threshold themselves
+	# around the widget (and reflow the layout without it). Gating the tabs on
+	# it as well meant hiding a user's own profile tab was a side effect of
+	# turning the timeline off.
+	if( access_has_global_level( config_get( 'view_my_view_threshold' ) ) ) {
 		$t_pages['my_view_bug_page.php'] = array( 'url'   => 'my_view_bug_page.php', 'label' => 'my_view_bug_link' );
-	}
-	if( access_has_global_level( config_get( 'timeline_view_threshold' ) ) ) {
 		$t_pages['my_view_dwg_page.php'] = array( 'url'   => 'my_view_dwg_page.php', 'label' => 'my_view_dwg_link' );
-	}
-	if( access_has_global_level( config_get( 'timeline_view_threshold' ) ) ) {
 		$t_pages['my_view_meeting_page.php'] = array( 'url'   => 'my_view_meeting_page.php', 'label' => 'my_view_meeting_link' );
-	}
-	if( access_has_global_level( config_get( 'timeline_view_threshold' ) ) ) {
 		$t_pages['my_view_cnf_page.php'] = array( 'url'   => 'my_view_cnf_page.php', 'label' => 'my_view_cnf_link' );
-	}
-	if( access_has_global_level( config_get( 'timeline_view_threshold' ) ) ) {
 		$t_pages['my_view_org_page.php'] = array( 'url' => 'my_view_org_page.php', 'label' => 'org_chart_link' );
 	}
 	print_menu( $t_pages, $p_page, 'EVENT_MENU_MY_VIEW' );

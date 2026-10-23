@@ -1070,9 +1070,15 @@ function topic_profile_blockers( int $p_project_id ): array {
 	if( $t_without ) {
 		$t_blockers[] = sprintf( lang_get( 'topic_blocker_no_expectations' ), implode( ', ', $t_without ) );
 	}
+	# An expectation owned by a *disabled* account has nobody active
+	# responsible for it, so it blocks readiness exactly as an unowned one
+	# does. See doc/dwg/USER_LIFECYCLE.md §5.
 	$t_no_owner = array();
 	foreach( $t_expectations as $t_expectation ) {
-		if( (int)$t_expectation['owner_id'] == 0 ) {
+		$t_owner_id = (int)$t_expectation['owner_id'];
+		if( $t_owner_id == 0
+			|| !user_exists( $t_owner_id )
+			|| !user_is_enabled( $t_owner_id ) ) {
 			$t_no_owner[] = topic_expectation_ref( $t_expectation );
 		}
 	}

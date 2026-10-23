@@ -263,7 +263,7 @@ class DwgNoteAddCommand extends Command {
 		# that may not be true. It assumes you don't have any statuses in the workflow
 		# between 'bug_submit_status' and 'bug_feedback_status'. It assumes you only
 		# have one feedback, assigned and submitted status.
-		if( config_get( 'reassign_on_feedback' ) &&
+		if( config_get( 'dwg_reassign_on_feedback' ) &&
 			$this->issue->status === config_get( 'dwg_feedback_status' ) &&
 			$this->issue->handler_id !== $this->reporterId &&
 			$this->issue->creator_id === $this->reporterId ) {

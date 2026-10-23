@@ -460,3 +460,172 @@ function access_can_view_dwgnote_revisions( $p_bugnote_id, $p_user_id = null ) {
 
 	return $t_has_access || dwgnote_is_user_creator( $p_bugnote_id, $t_user_id );
 }
+
+################################################################################
+# Document ownership (Doctis)
+#
+# A document has three person fields, each with its own access rule.  See
+# doc/dwg/OWNERSHIP.md:
+#   creator_id  who registered the document.  Read-only provenance; no rule.
+#   owner_id    who is responsible for the document.  Rarely changes.
+#   handler_id  who holds the current task step ("Assigned To").  Changes often.
+################################################################################
+
+/**
+ * Does the user hold every license the document requires?
+ *
+ * A document can require one or more licenses ({license_dwg_list}); a user
+ * holds licenses through {license_user_list}.  Ownership of a restricted
+ * document requires holding all of them (owner decision 2026-10-20, D5).
+ * Assignment does not.
+ *
+ * Always true when licenses are disabled, or when the document requires none.
+ *
+ * @param int $p_dwg_id  A document identifier.
+ * @param int $p_user_id A user identifier.
+ *
+ * @return bool
+ */
+function access_dwg_user_holds_licenses( $p_dwg_id, $p_user_id ) {
+	if( OFF == config_get( 'licenses_enabled', OFF ) ) {
+		return true;
+	}
+
+	db_param_push();
+	$t_query = 'SELECT COUNT(*) FROM {license_dwg_list} l
+		WHERE l.dwg_id=' . db_param() . '
+		  AND NOT EXISTS (
+			SELECT 1 FROM {license_user_list} u
+			 WHERE u.license_id = l.license_id
+			   AND u.user_id=' . db_param() . ' )';
+	$t_result = db_query( $t_query, array( (int)$p_dwg_id, (int)$p_user_id ) );
+
+	return 0 == db_result( $t_result );
+}
+
+/**
+ * Can the user be recorded as the owner of this document?
+ *
+ * Eligibility only — it does not say who may make the change.  Managers own
+ * most high-level QMS content, but on engineering projects a developer may
+ * legitimately own a document, so the threshold is deliberately low and who
+ * should own what is left to user training (owner decision 2026-10-20).
+ *
+ * @param int $p_dwg_id  A document identifier.
+ * @param int $p_user_id A user identifier.
+ *
+ * @return bool
+ */
+function access_dwg_can_be_owner( $p_dwg_id, $p_user_id ) {
+	if( NO_USER == $p_user_id ) {
+		# Releasing ownership is always eligible; whether the acting user may
+		# do it is decided by access_dwg_can_set_owner()/can_claim_owner().
+		return true;
+	}
+
+	if( !user_exists( $p_user_id ) ) {
+		return false;
+	}
+
+	$t_project_id = dwg_get_field( $p_dwg_id, 'project_id' );
+
+	return access_has_project_level( config_get( 'own_dwg_threshold' ), $t_project_id, $p_user_id )
+		&& access_dwg_user_holds_licenses( $p_dwg_id, $p_user_id );
+}
+
+/**
+ * May the user set this document's owner to somebody else, or take it over?
+ *
+ * This is the privileged path: it also permits a takeover of an already-owned
+ * document, and governs bulk Set Owner.  The rationale for allowing takeover
+ * is that the action is logged and a privileged user must be able to carry out
+ * a task step without the existing owner having to act for them (owner
+ * decision 2026-10-20, D1).
+ *
+ * @param int      $p_dwg_id  A document identifier.
+ * @param int|null $p_user_id A user identifier, or null for the current user.
+ *
+ * @return bool
+ */
+function access_dwg_can_set_owner( $p_dwg_id, $p_user_id = null ) {
+	$t_user_id = null === $p_user_id ? auth_get_current_user_id() : $p_user_id;
+
+	return access_has_dwg_level(
+		config_get( 'dwg_assign_owner_threshold' ), $p_dwg_id, $t_user_id );
+}
+
+/**
+ * May the user make themselves the owner of this document?
+ *
+ * An unowned document can be claimed at $g_dwg_claim_owner_threshold.  An
+ * already-owned one is a takeover and needs $g_dwg_assign_owner_threshold,
+ * except that the current owner is always allowed (a no-op, but it keeps the
+ * Release path symmetrical).
+ *
+ * @param int      $p_dwg_id  A document identifier.
+ * @param int|null $p_user_id A user identifier, or null for the current user.
+ *
+ * @return bool
+ */
+function access_dwg_can_claim_owner( $p_dwg_id, $p_user_id = null ) {
+	$t_user_id = null === $p_user_id ? auth_get_current_user_id() : $p_user_id;
+	$t_owner_id = (int)dwg_get_field( $p_dwg_id, 'owner_id' );
+
+	if( !access_dwg_can_be_owner( $p_dwg_id, $t_user_id ) ) {
+		return false;
+	}
+
+	if( $t_owner_id == $t_user_id ) {
+		return true;
+	}
+
+	if( NO_USER == $t_owner_id ) {
+		return access_has_dwg_level(
+			config_get( 'dwg_claim_owner_threshold' ), $p_dwg_id, $t_user_id );
+	}
+
+	return access_dwg_can_set_owner( $p_dwg_id, $t_user_id );
+}
+
+/**
+ * May the user give up ownership of this document?
+ *
+ * The current owner may always release.  Anyone who may set the owner may also
+ * clear it.
+ *
+ * @param int      $p_dwg_id  A document identifier.
+ * @param int|null $p_user_id A user identifier, or null for the current user.
+ *
+ * @return bool
+ */
+function access_dwg_can_release_owner( $p_dwg_id, $p_user_id = null ) {
+	$t_user_id = null === $p_user_id ? auth_get_current_user_id() : $p_user_id;
+	$t_owner_id = (int)dwg_get_field( $p_dwg_id, 'owner_id' );
+
+	if( NO_USER == $t_owner_id ) {
+		return false;
+	}
+
+	return $t_owner_id == $t_user_id || access_dwg_can_set_owner( $p_dwg_id, $t_user_id );
+}
+
+/**
+ * May the user make themselves the assignee of this document?
+ *
+ * Unlike ownership there is no takeover restriction: picking up the next task
+ * step from a colleague is the normal document workflow.  The claimant must
+ * still be eligible to hold documents ($g_handle_dwg_threshold), as a user
+ * assigned by somebody else must be.
+ *
+ * @param int      $p_dwg_id  A document identifier.
+ * @param int|null $p_user_id A user identifier, or null for the current user.
+ *
+ * @return bool
+ */
+function access_dwg_can_claim_handler( $p_dwg_id, $p_user_id = null ) {
+	$t_user_id = null === $p_user_id ? auth_get_current_user_id() : $p_user_id;
+	$t_project_id = dwg_get_field( $p_dwg_id, 'project_id' );
+
+	return access_has_dwg_level( config_get( 'dwg_claim_threshold' ), $p_dwg_id, $t_user_id )
+		&& access_has_project_level( config_get( 'handle_dwg_threshold' ), $t_project_id, $t_user_id );
+}

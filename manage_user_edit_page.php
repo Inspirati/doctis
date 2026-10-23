@@ -55,6 +55,7 @@ require_api( 'lang_api.php' );
 require_api( 'print_api.php' );
 require_api( 'string_api.php' );
 require_api( 'user_api.php' );
+require_api( 'user_transfer_api.php' );
 require_api( 'utility_api.php' );
 
 auth_reauthenticate();
@@ -99,9 +100,10 @@ $t_reset = $t_user['id'] != auth_get_current_user_id()
 	&& user_is_enabled( $t_user['id'] )
 	&& !user_is_protected( $t_user['id'] );
 $t_unlock = !user_is_login_request_allowed( $t_user['id'] );
-$t_delete = !( user_is_administrator( $t_user_id )
-	&& user_count_level( config_get_global( 'admin_site_threshold' ) ) <= 1
-);
+$t_delete = access_has_global_level( config_get( 'delete_user_threshold' ) )
+	&& !( user_is_administrator( $t_user_id )
+		&& user_count_level( config_get_global( 'admin_site_threshold' ) ) <= 1
+	);
 $t_impersonate = auth_can_impersonate( $t_user['id'] );
 $t_email_notification_enabled = ON == config_get( 'enable_email_notification' );
 $t_reports_to_users = user_get_enabled_rows();
@@ -354,6 +356,18 @@ print_manage_menu( 'manage_user_page.php' );
 						class="btn btn-primary btn-white btn-round">
 					<?php echo lang_get( 'delete_user_button' ) ?>
 				</button>
+<?php } ?>
+
+<?php
+	# Transfer Responsibilities — shown whenever this user still holds
+	# something, so an account disabled earlier can still be dealt with.
+	# See doc/dwg/USER_LIFECYCLE.md.
+	if( user_transfer_has_holdings( $t_user_id ) ) {
+?>
+				<a class="btn btn-primary btn-white btn-round"
+					href="manage_user_transfer_page.php?user_id=<?php echo (int)$t_user_id ?>">
+					<?php echo lang_get( 'user_transfer_link' ) ?>
+				</a>
 <?php } ?>
 
 			</div>

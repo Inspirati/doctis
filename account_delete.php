@@ -72,7 +72,7 @@ current_user_ensure_unprotected();
 # Only allow users to delete their own accounts if allow_account_delete = ON or
 # the user has permission to manage user accounts.
 if( OFF == config_get( 'allow_account_delete' ) &&
-	 !access_has_global_level( config_get( 'manage_user_threshold' ) ) ) {
+	 !access_has_global_level( config_get( 'delete_user_threshold' ) ) ) {
 	print_header_redirect( 'account_page.php' );
 }
 

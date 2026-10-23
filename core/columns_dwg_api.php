@@ -458,8 +458,10 @@ function column_dwg_get_title( $p_column ) {
 			return lang_get( 'os_build' );
 		case 'project_id':
 			return lang_get( 'email_project' );
+		case 'owner_id':
+			return lang_get( 'dwg_owner' );
 		case 'creator_id':
-			return lang_get( 'creator' );
+			return lang_get( 'dwg_creator' );
 		case 'selection':
 			return '';
 		case 'sponsorship_total':
@@ -624,6 +626,24 @@ function print_dwg_column_title_handler_id( $p_sort, $p_dir, $p_columns_target =
 	echo '<th class="column-assigned-to">';
 	print_view_dwg_sort_link( lang_get( 'assigned_to' ), 'handler_id', $p_sort, $p_dir, $p_columns_target );
 	print_sort_icon( $p_dir, $p_sort, 'handler_id' );
+	echo '</th>';
+}
+
+/**
+ * Print table header for column owner id
+ *
+ * The document owner (Doctis), as distinct from the assignee above.
+ *
+ * @param string  $p_sort           Sort.
+ * @param string  $p_dir            Direction.
+ * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
+ * @return void
+ * @access public
+ */
+function print_dwg_column_title_owner_id( $p_sort, $p_dir, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+	echo '<th class="column-owner">';
+	print_view_dwg_sort_link( lang_get( 'dwg_owner' ), 'owner_id', $p_sort, $p_dir, $p_columns_target );
+	print_sort_icon( $p_dir, $p_sort, 'owner_id' );
 	echo '</th>';
 }
 
@@ -1546,6 +1566,27 @@ function print_dwg_column_handler_id( DwgData $p_bug, $p_columns_target = COLUMN
 	# list of columns to view.  In case of ALL_PROJECTS, then we need to check the access per row.
 	if( $p_bug->handler_id > 0 && ( helper_get_current_project() != ALL_PROJECTS || access_has_project_level( config_get( 'view_handler_threshold' ), $p_bug->project_id ) ) ) {
 		echo prepare_user_name( $p_bug->handler_id );
+	}
+
+	echo '</td>';
+}
+
+/**
+ * Print column content for column owner id
+ *
+ * The owner is visible to anyone who can see the document (owner decision
+ * 2026-10-20, D3), so there is no access check here, unlike the assignee.
+ *
+ * @param DwgData $p_bug            DwgData object.
+ * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
+ * @return void
+ * @access public
+ */
+function print_dwg_column_owner_id( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+	echo '<td class="column-owner">';
+
+	if( $p_bug->owner_id > 0 ) {
+		echo prepare_user_name( $p_bug->owner_id );
 	}
 
 	echo '</td>';

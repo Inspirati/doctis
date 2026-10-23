@@ -237,6 +237,14 @@ function dwg_group_action_get_commands( array $p_project_ids = [] ) {
 			$t_commands['ASSIGN'] = lang_get( 'actiongroup_menu_assign' );
 		}
 
+		# Bulk Set Owner (Doctis): the privileged path, so it uses the
+		# assign-owner threshold rather than the claim one.
+		# See doc/dwg/OWNERSHIP.md §5.
+		if( !isset( $t_commands['SET_OWNER'] ) &&
+			access_has_project_level( config_get( 'dwg_assign_owner_threshold', null, $t_user_id, $t_project_id ), $t_project_id ) ) {
+			$t_commands['SET_OWNER'] = lang_get( 'actiongroup_menu_set_owner' );
+		}
+
 		if( !isset( $t_commands['CLOSE'] ) && $t_update_bug_status_allowed &&
 			( access_has_project_level( access_get_dwg_status_threshold( config_get( 'dwg_closed_status_threshold', null, $t_user_id, $t_project_id ), $t_project_id ), $t_project_id ) ||
 				access_has_project_level( config_get( 'allow_creator_close', null, $t_user_id, $t_project_id ), $t_project_id ) ) ) {

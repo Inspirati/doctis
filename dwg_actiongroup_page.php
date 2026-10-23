@@ -195,6 +195,11 @@ switch( $f_action ) {
 		$t_button_title 		= lang_get( 'assign_group_dwgs_button' );
 		$t_form 				= 'assign';
 		break;
+	case 'SET_OWNER' :
+		$t_question_title 		= lang_get( 'set_owner_dwgs_conf_msg' );
+		$t_button_title 		= lang_get( 'set_owner_group_dwgs_button' );
+		$t_form 				= 'set_owner';
+		break;
 	case 'RESOLVE' :
 		$t_question_title 		= lang_get( 'resolve_dwgs_conf_msg' );
 		$t_button_title 		= lang_get( 'resolve_group_dwgs_button' );
@@ -345,6 +350,10 @@ if( $t_multiple_projects ) {
 					break;
 				case 'ASSIGN':
 					print_dwg_assign_to_option_list( 0, $t_project_id );
+					break;
+				case 'SET_OWNER':
+					echo '<option value="0">&nbsp;</option>';
+					print_dwg_owner_option_list( 0, $t_project_id );
 					break;
 				case 'RESOLVE':
 					print_dwg_enum_string_option_list( 'resolution', config_get( 'dwg_resolution_fixed_threshold' ) );

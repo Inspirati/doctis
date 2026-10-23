@@ -434,6 +434,9 @@ class DwgFilterQuery extends DbQuery {
 				case FILTER_PROPERTY_HANDLER_ID:
 					$this->build_prop_handler();
 					break;
+				case FILTER_PROPERTY_OWNER_ID:
+					$this->build_prop_owner();
+					break;
 				case FILTER_PROPERTY_MONITOR_USER_ID:
 					$this->build_prop_monitor_by();
 					break;
@@ -871,6 +874,26 @@ class DwgFilterQuery extends DbQuery {
 		$t_user_ids = $this->helper_process_users_property( $this->filter[FILTER_PROPERTY_HANDLER_ID] );
 		$t_query = $this->sql_in( '{dwg}.handler_id', $t_user_ids ) . $t_view_condition;
 		log_event( LOG_FILTERING, 'handler query = ' . $t_query );
+		$this->add_where( $t_query );
+	}
+
+	/**
+	 * Build the query parts for the filter property "owner" (Doctis)
+	 *
+	 * Unlike the handler there is no visibility condition: the document owner
+	 * is visible to anyone who can see the document (owner decision
+	 * 2026-10-20, D3).  See doc/dwg/OWNERSHIP.md.
+	 *
+	 * @return void
+	 */
+	protected function build_prop_owner() {
+		if( filter_dwg_field_is_any( $this->filter[FILTER_PROPERTY_OWNER_ID] ) ) {
+			return;
+		}
+
+		$t_user_ids = $this->helper_process_users_property( $this->filter[FILTER_PROPERTY_OWNER_ID] );
+		$t_query = $this->sql_in( '{dwg}.owner_id', $t_user_ids );
+		log_event( LOG_FILTERING, 'owner query = ' . $t_query );
 		$this->add_where( $t_query );
 	}
 
@@ -1692,6 +1715,7 @@ class DwgFilterQuery extends DbQuery {
 				break;
 
 			case 'handler_id':
+			case 'owner_id':
 			case 'creator_id':
 				$t_table_alias = $p_prop . '_sort_table';
 				$t_join = 'LEFT JOIN {user} ' . $t_table_alias

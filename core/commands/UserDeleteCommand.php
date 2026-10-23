@@ -62,8 +62,13 @@ class UserDeleteCommand extends Command {
 			throw new ClientException( 'Deleting own account not allowed', ERROR_INVALID_FIELD_VALUE, array( 'id' ) );
 		}
 
-		# Ensure user has access level to delete users
-		if( !access_has_global_level( config_get_global( 'manage_user_threshold' ) ) ) {
+		# Ensure user has access level to delete users.
+		#
+		# Deleting is an administrator action, deliberately above
+		# manage_user_threshold: it is for mistakes (a fake sign-up, a
+		# registration to revert), never for staff who have left — those are
+		# disabled. See doc/dwg/USER_LIFECYCLE.md.
+		if( !access_has_global_level( config_get_global( 'delete_user_threshold' ) ) ) {
 			throw new ClientException( 'Access denied to delete users', ERROR_ACCESS_DENIED );
 		}
 

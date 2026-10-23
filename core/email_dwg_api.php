@@ -124,6 +124,18 @@ function email_dwg_collect_recipients( $p_bug_id, $p_notify_type, array $p_extra
 		log_event( LOG_EMAIL_RECIPIENT, 'Document = #%d, skip @U%d (creator disabled)', $p_bug_id, $t_creator_id );
 	}
 
+	# add the document Owner (Doctis): the person responsible for the document,
+	# as distinct from the Handler below, who holds the current task step.
+	$t_owner_id = dwg_get_field( $p_bug_id, 'owner_id' );
+	if( $t_owner_id > 0 ) {
+		if( ON == email_notify_flag( $p_notify_type, 'document_owner' ) ) {
+			$t_recipients[$t_owner_id] = true;
+			log_event( LOG_EMAIL_RECIPIENT, 'Document = #%d, add @U%d (document owner)', $p_bug_id, $t_owner_id );
+		} else {
+			log_event( LOG_EMAIL_RECIPIENT, 'Document = #%d, skip @U%d (document owner disabled)', $p_bug_id, $t_owner_id );
+		}
+	}
+
 	# add Handler
 	$t_handler_id = dwg_get_field( $p_bug_id, 'handler_id' );
 	if( $t_handler_id > 0 ) {
@@ -230,6 +242,12 @@ function email_dwg_collect_recipients( $p_bug_id, $p_notify_type, array $p_extra
 		case 'owner':
 			# The email_on_assigned notification type is now effectively
 			# email_on_change_of_handler.
+			$t_pref_field = 'email_on_assigned';
+			break;
+		case 'ownership':
+			# Doctis: a change of the document's *owner*, not its assignee.
+			# There is no separate per-user preference column for it, so it
+			# shares email_on_assigned; see doc/dwg/OWNERSHIP.md §9.5.
 			$t_pref_field = 'email_on_assigned';
 			break;
 		case 'deleted':
@@ -879,6 +897,53 @@ function email_dwg_owner_changed($p_bug_id, $p_prev_handler_id, $p_new_handler_i
 	}
 
 	email_dwg_generic( $p_bug_id, 'owner', $t_message_id, /* headers */ [], $t_extra_user_ids_to_email );
+}
+
+/**
+ * Send notifications when a document's owner is changed.
+ *
+ * The owner is the person responsible for the document, as distinct from its
+ * assignee; email_dwg_owner_changed() above, despite its name, is the
+ * *assignee* notification (it mirrors MantisBT's email_owner_changed).  See
+ * doc/dwg/OWNERSHIP.md §2.2.
+ *
+ * The outgoing owner is emailed explicitly, so that somebody who has just had
+ * a document taken off them is told.
+ *
+ * @param int $p_bug_id       A document identifier.
+ * @param int $p_prev_owner_id The previous owner, 0 for none.
+ * @param int $p_new_owner_id  The new owner, 0 for none.
+ *
+ * @return void
+ */
+function email_dwg_ownership_changed( $p_bug_id, $p_prev_owner_id, $p_new_owner_id ) {
+	if( $p_prev_owner_id == 0 && $p_new_owner_id != 0 ) {
+		log_event( LOG_EMAIL, sprintf( 'Document #%d is now owned by @U%d.', $p_bug_id, $p_new_owner_id ) );
+	} else if( $p_prev_owner_id != 0 && $p_new_owner_id == 0 ) {
+		log_event( LOG_EMAIL, sprintf( 'Document #%d is no longer owned by @U%d.', $p_bug_id, $p_prev_owner_id ) );
+	} else {
+		log_event(
+			LOG_EMAIL,
+			sprintf(
+				'Document #%d is now owned by @U%d instead of @U%d.',
+				$p_bug_id,
+				$p_new_owner_id,
+				$p_prev_owner_id )
+		);
+	}
+
+	$t_message_id = $p_new_owner_id == NO_USER ?
+			'email_notification_title_for_action_dwg_owner_cleared' :
+			'email_notification_title_for_action_dwg_owner_set';
+
+	$t_extra_user_ids_to_email = array();
+	if( $p_prev_owner_id !== NO_USER && $p_prev_owner_id != $p_new_owner_id ) {
+		if( ON == email_notify_flag( 'ownership', 'document_owner' ) ) {
+			$t_extra_user_ids_to_email[] = $p_prev_owner_id;
+		}
+	}
+
+	email_dwg_generic( $p_bug_id, 'ownership', $t_message_id, /* headers */ [], $t_extra_user_ids_to_email );
 }
 
 /**
