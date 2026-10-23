@@ -568,7 +568,14 @@ foreach( $t_candidates as $t_path => $t_root ) {
 			$t_issue['owner'] = array( 'id' => $t_owner_id );
 		}
 
-		$t_command = new DwgAddCommand( array( 'payload' => array( 'issue' => $t_issue ) ) );
+		# default_owner off: a document whose frontmatter owner matched no
+		# account stays unowned, rather than being attributed to whoever ran
+		# the import. The unmatched owners are reported at the end so the gap
+		# can be closed deliberately.
+		$t_command = new DwgAddCommand( array(
+			'payload' => array( 'issue' => $t_issue ),
+			'options' => array( 'default_owner' => false ),
+		) );
 		$t_result  = $t_command->execute();
 		$t_dwg_id  = (int)$t_result['issue_id'];
 

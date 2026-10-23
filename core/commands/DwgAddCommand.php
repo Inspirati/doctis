@@ -230,8 +230,15 @@ class DwgAddCommand extends Command {
 		# owner falls back to the creator (owner decision 2026-10-20, D6).
 		# Naming somebody else needs the authority to set another user's
 		# ownership.  See doc/dwg/OWNERSHIP.md §5.
+		#
+		# A bulk import opts out with the default_owner option: the person
+		# running an import of pre-existing documents is not thereby taking
+		# responsibility for all of them, and leaving them unowned is what makes
+		# the gap visible.  See doc/dwg/PROJECT_OWNERSHIP.md §5.
 		if( $t_owner_id == NO_USER ) {
-			$t_owner_id = $t_creator_id;
+			if( $this->option( 'default_owner', true ) ) {
+				$t_owner_id = $t_creator_id;
+			}
 		} else if( $t_owner_id != $this->user_id ) {
 			if( !access_has_project_level( config_get( 'dwg_assign_owner_threshold' ), $t_project_id, $this->user_id ) ) {
 				throw new ClientException(
