@@ -4326,9 +4326,20 @@ $g_view_changelog_threshold = VIEWER;
 /**
  * Threshold for viewing My View.
  *
- * @global int $g_view_changelog_threshold
+ * This controls the **My View sidebar button and its tab strip only**. None of
+ * the my_view_*_page.php pages enforce it: they require nothing beyond being
+ * logged in. So setting it above the level new accounts get hides the
+ * navigation to pages the user is already entitled to open — which is what
+ * happened at UPDATER, while $g_default_new_account_access_level is REPORTER.
+ *
+ * VIEWER is the lowest real account level, so the navigation now matches what
+ * the pages permit. Anonymous visitors are excluded explicitly in
+ * layout_api.php rather than by this threshold, because an anonymous session
+ * shares one account and has no personal view.
+ *
+ * @global int $g_view_my_view_threshold
  */
-$g_view_my_view_threshold = UPDATER;
+$g_view_my_view_threshold = VIEWER;
 
 /**
  * Threshold for viewing timeline.

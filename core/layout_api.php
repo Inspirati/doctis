@@ -735,7 +735,13 @@ function layout_print_sidebar( $p_active_sidebar_page = null ) {
 		}
 
 		# My View Page
-		if( access_has_global_level( config_get( 'view_my_view_threshold' ) ) ) {
+		#
+		# Anonymous sessions share one account and have no personal view, so
+		# they are excluded here rather than by raising the threshold: the
+		# threshold has to stay at or below the level new accounts are created
+		# with, or users cannot reach their own profile.
+		if( !current_user_is_anonymous()
+			&& access_has_global_level( config_get( 'view_my_view_threshold' ) ) ) {
 			$t_sidebar_items[] = array(
 				'url' => 'my_view_bug_page.php',
 				'title' => 'my_view_link',
