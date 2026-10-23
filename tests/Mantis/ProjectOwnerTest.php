@@ -195,18 +195,17 @@ class ProjectOwnerTest extends MantisCoreBase {
 		project_add_user( $t_project_id, $t_low_creator, REPORTER );
 		project_add_user( $t_project_id, $t_project_owner, MANAGER );
 
-		$t_dwg = new \DwgData();
-		$t_dwg->project_id = $t_project_id;
-		$t_dwg->creator_id = $t_low_creator;
-		$t_dwg->category_id = 0;
-		$t_dwg->summary = 'project owner fallback';
-		$t_dwg->title = 'project owner fallback';
-		$t_dwg->description = 'project owner fallback';
-		$t_dwg->status = config_get( 'dwg_submit_status' );
-		$t_dwg->revision_date = 1;
-		$t_dwg->release_date = 1;
-		$t_dwg->due_date = 1;
-		$t_id = (int)$t_dwg->create();
+		# Through the command, because choosing a default owner is policy and
+		# lives there; DwgData::create() persists what it is given.
+		$t_command = new \DwgAddCommand( array( 'payload' => array( 'issue' => array(
+			'project' => array( 'id' => $t_project_id ),
+			'creator' => array( 'id' => $t_low_creator ),
+			'category' => array( 'name' => 'General' ),
+			'summary' => 'project owner fallback',
+			'description' => 'project owner fallback',
+			'title' => 'project owner fallback',
+		) ) ) );
+		$t_id = (int)$t_command->execute()['issue_id'];
 
 		try {
 			$this->assertEquals( $t_project_owner, dwg_get_field( $t_id, 'owner_id' ),

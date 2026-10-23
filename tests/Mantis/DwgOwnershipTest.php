@@ -76,6 +76,29 @@ class DwgOwnershipTest extends MantisCoreBase {
 		return $t_id;
 	}
 
+	/**
+	 * Add a document through DwgAddCommand, which is where the owner policy
+	 * lives, and remember it for cleanup.
+	 */
+	private function addDwgViaCommand( int $p_creator, array $p_options = array() ): int {
+		$t_issue = array(
+			'project' => array( 'id' => $this->project_id ),
+			'creator' => array( 'id' => $p_creator ),
+			'category' => array( 'name' => 'General' ),
+			'summary' => 'ownership policy test',
+			'description' => 'ownership policy test',
+			'title' => 'ownership policy test',
+		);
+		$t_command = new \DwgAddCommand( array(
+			'payload' => array( 'issue' => $t_issue ),
+			'options' => $p_options,
+		) );
+		$t_result = $t_command->execute();
+		$t_id = (int)$t_result['issue_id'];
+		$this->dwg_ids[] = $t_id;
+		return $t_id;
+	}
+
 	/** Create a document in the scratch project and remember it for cleanup. */
 	private function makeDwg( int $p_creator, int $p_owner = 0, int $p_handler = 0 ): int {
 		$t_dwg = new \DwgData();
@@ -136,12 +159,33 @@ class DwgOwnershipTest extends MantisCoreBase {
 		$this->assertEquals( $t_handler, dwg_get_field( $t_id, 'handler_id' ) );
 	}
 
-	/** An unspecified owner falls back to the creator (D6). */
+	/**
+	 * An unspecified owner falls back to the creator (D6).
+	 *
+	 * Through DwgAddCommand, because choosing a default owner is policy and
+	 * lives there; DwgData::create() persists what it is given.
+	 */
 	public function testOwnerDefaultsToCreator() {
+		$t_creator = $this->makeUser( DEVELOPER );
+		$t_id = $this->addDwgViaCommand( $t_creator );
+
+		$this->assertEquals( $t_creator, dwg_get_field( $t_id, 'owner_id' ) );
+	}
+
+	/** create() itself does not invent an owner. */
+	public function testCreateDoesNotInventAnOwner() {
 		$t_creator = $this->makeUser( DEVELOPER );
 		$t_id = $this->makeDwg( $t_creator );
 
-		$this->assertEquals( $t_creator, dwg_get_field( $t_id, 'owner_id' ) );
+		$this->assertEquals( NO_USER, dwg_get_field( $t_id, 'owner_id' ) );
+	}
+
+	/** A bulk import opts out of the default, leaving the document unowned. */
+	public function testDefaultOwnerCanBeDisabled() {
+		$t_creator = $this->makeUser( DEVELOPER );
+		$t_id = $this->addDwgViaCommand( $t_creator, array( 'default_owner' => false ) );
+
+		$this->assertEquals( NO_USER, dwg_get_field( $t_id, 'owner_id' ) );
 	}
 
 	/** Gaining an assignee must not move the document's status (D2). */

@@ -237,7 +237,16 @@ class DwgAddCommand extends Command {
 		# the gap visible.  See doc/dwg/PROJECT_OWNERSHIP.md §5.
 		if( $t_owner_id == NO_USER ) {
 			if( $this->option( 'default_owner', true ) ) {
-				$t_owner_id = $t_creator_id;
+				# A creator who may not own documents would leave the field
+				# holding somebody ineligible, so fall back to the project's
+				# owner, inherited from the parent project where the project
+				# does not name one (owner decision 2026-10-23).
+				if( access_has_project_level( config_get( 'own_dwg_threshold' ),
+						$t_project_id, $t_creator_id ) ) {
+					$t_owner_id = $t_creator_id;
+				} else {
+					$t_owner_id = project_get_owner( $t_project_id );
+				}
 			}
 		} else if( $t_owner_id != $this->user_id ) {
 			if( !access_has_project_level( config_get( 'dwg_assign_owner_threshold' ), $t_project_id, $this->user_id ) ) {
