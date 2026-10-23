@@ -130,6 +130,35 @@ because a document status is a lifecycle state and not a queue state.
 `$g_dwg_assigned_status` must be `ASSIGNED_TO` (150) — MantisBT's `ASSIGNED`
 (50) is a bug status and is not in `$g_dwg_status_enum_string`.
 
+## Project Ownership
+
+A project has a **responsible person**, `{project}.owner_id`, and
+**sub-projects inherit it** (owner decision 2026-10-23). `0` means inherit.
+`project_get_owner()` climbs the hierarchy until a project names one, the way
+`dwg_publish_site()` and repository resolution do;
+`project_get_owner_source()` says which project supplied it, so a form can tell
+*set here* from *inherited*. Pass `$inherited = false` to read only a project's
+own field — the edit form needs that, or saving would pin an inherited value. A
+disabled owner reports as none.
+
+Wired through `project_create()` / `project_update()` (both take `$p_owner_id`
+and `$p_classification`, `null` meaning leave alone), `ProjectAddCommand` /
+`ProjectUpdateCommand`, the SOAP/REST project row (`owner` and
+`effective_owner`), the WSDL, the create and edit forms, and a sortable Owner
+column on the project list. Consumers: the successor suggestion in
+`user_transfer_suggest_successor()` and the new-document owner fallback in
+`DwgData::create()`.
+
+`{project}.classification` is wired the same way but **nothing reads it yet** —
+deliberately, as the classification scheme is unresolved; it is free text like
+the document field. `{project}.reference_url1` and `reference_url2` remain
+unwired dead columns. Design and test record:
+[doc/dwg/PROJECT_OWNERSHIP.md](doc/dwg/PROJECT_OWNERSHIP.md).
+
+**Sharp edge:** `project_hierarchy_cache()` builds once per request and
+nothing clears it, so adding a hierarchy row and resolving an owner in the same
+request would see the old parent.
+
 ## User Lifecycle
 
 **A staff member who leaves is removed by disabling their account, never by

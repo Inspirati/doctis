@@ -41,7 +41,7 @@ turn email notifications off before tests that queue mail in bulk.
 
 **What it covers:** MantisBT core API unit tests and the Doctis tests in
 `tests/Mantis/` (`Topic*Test`, `MeetingApiTest`, `AiKnowledgeTest`, `UserNamePolicyTest`,
-`DwgOwnershipTest`, `UserTransferTest` and
+`DwgOwnershipTest`, `UserTransferTest`, `ProjectOwnerTest` and
 others), plus SOAP integration tests (`tests/soap/`) via PHP's SoapClient.
 New document-domain unit tests belong in `tests/Mantis/`.
 
@@ -656,6 +656,32 @@ documents keep their existing owner.
 Run 2026-10-20 on the VM: all of the above passed, and the full `mantis` suite
 passed (370 tests, 1 pre-existing skip). Full record:
 [dwg/USER_LIFECYCLE.md](dwg/USER_LIFECYCLE.md) §5.
+
+### 7g. Project owner and inheritance
+
+**Unit tests** (`tests/Mantis/ProjectOwnerTest.php`, 10 tests): the create
+round-trip, no owner anywhere in a chain, two-level inheritance, a sub-project
+overriding it, clearing an owner to restore inheritance, a disabled owner
+reporting as none, an update that omits owner and classification leaving them
+alone, the cycle guard, and the two consumers — the document-owner fallback and
+the successor suggestion.
+
+```bash
+vendor/bin/phpunit --testsuite mantis --filter ProjectOwnerTest --testdox
+```
+
+**Note:** `project_hierarchy_cache()` builds once per process and
+`project_clear_cache()` does not clear it, so a test that adds a hierarchy row
+must null the cache globals before resolving an owner. The test class has a
+`clearHierarchyCache()` helper; without it, inheritance silently resolves to
+no owner.
+
+Adding the column is an in-place edit to `{project}`, so **the VM must be
+rebuilt** before these tests pass.
+
+Run 2026-10-23 on the VM: 10 tests / 33 assertions, and the full `mantis` suite
+(380 tests, 1 pre-existing skip). Record:
+[dwg/PROJECT_OWNERSHIP.md](dwg/PROJECT_OWNERSHIP.md) §8.
 
 ---
 

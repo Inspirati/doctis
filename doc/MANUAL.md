@@ -861,6 +861,24 @@ authorising again; earlier snapshots keep the old revision.
 
 ## 13. Administration notes
 
+### Project owner
+
+Each project names an **Owner** on Manage → Projects → the project: the person
+responsible for it. The project list shows the owner in its own column.
+
+A sub-project left on **inherit from parent project** follows its parent, so a
+project tree has one responsible person unless a sub-project names its own. The
+edit form tells you which project an inherited owner is coming from. Clearing a
+sub-project's owner makes it inherit again.
+
+The owner is used to suggest who should take over a departing user's documents
+(see Transfer Responsibilities below), and as the owner of a new document whose
+creator is not permitted to own documents. An owner whose account is disabled
+counts as no owner.
+
+The **Classification** field beside it is recorded but not yet used anywhere;
+it is free text, pending the classification scheme being settled.
+
 ### Removing a user — disable, do not delete
 
 **When someone leaves, disable their account.** Manage → Users → the account →
