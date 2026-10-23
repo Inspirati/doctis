@@ -58,6 +58,27 @@ class ProjectOwnerTest extends MantisCoreBase {
 		return $t_id;
 	}
 
+	/**
+	 * Drop the project hierarchy cache.
+	 *
+	 * project_hierarchy_cache() builds once per process and
+	 * project_clear_cache() does not touch it, so hierarchy rows added inside
+	 * one process are invisible afterwards. A web request reads it fresh, so
+	 * this only bites a long-running process such as this suite.
+	 */
+	private function clearHierarchyCache(): void {
+		global $g_cache_project_hierarchy_enabled, $g_cache_project_inheritance_enabled;
+		global $g_cache_project_hierarchy_all, $g_cache_project_inheritance_all;
+		global $g_cache_project_hierarchy, $g_cache_project_inheritance;
+		$g_cache_project_hierarchy_enabled = null;
+		$g_cache_project_inheritance_enabled = null;
+		$g_cache_project_hierarchy_all = null;
+		$g_cache_project_inheritance_all = null;
+		$g_cache_project_hierarchy = null;
+		$g_cache_project_inheritance = null;
+		project_clear_cache();
+	}
+
 	private function makeProject( int $p_owner_id = 0, string $p_classification = '' ): int {
 		$t_id = (int)project_create( 'POtest' . rand(), '', 10, VS_PUBLIC, '', true, true, 1,
 			$p_owner_id, $p_classification );
@@ -91,7 +112,7 @@ class ProjectOwnerTest extends MantisCoreBase {
 		$t_grandchild = $this->makeProject();
 		project_hierarchy_add( $t_child, $t_parent );
 		project_hierarchy_add( $t_grandchild, $t_child );
-		project_clear_cache();
+		$this->clearHierarchyCache();
 
 		$this->assertEquals( $t_owner, project_get_owner( $t_child ) );
 		$this->assertEquals( $t_owner, project_get_owner( $t_grandchild ) );
@@ -111,7 +132,7 @@ class ProjectOwnerTest extends MantisCoreBase {
 		$t_grandchild = $this->makeProject();
 		project_hierarchy_add( $t_child, $t_parent );
 		project_hierarchy_add( $t_grandchild, $t_child );
-		project_clear_cache();
+		$this->clearHierarchyCache();
 
 		$this->assertEquals( $t_top, project_get_owner( $t_parent ) );
 		$this->assertEquals( $t_mid, project_get_owner( $t_child ) );
@@ -126,12 +147,12 @@ class ProjectOwnerTest extends MantisCoreBase {
 		$t_parent = $this->makeProject( $t_top );
 		$t_child = $this->makeProject( $t_mid );
 		project_hierarchy_add( $t_child, $t_parent );
-		project_clear_cache();
+		$this->clearHierarchyCache();
 		$this->assertEquals( $t_mid, project_get_owner( $t_child ) );
 
 		project_update( $t_child, project_get_name( $t_child ), '', 10, VS_PUBLIC, '', true, true, 1,
 			/* owner */ 0, null );
-		project_clear_cache();
+		$this->clearHierarchyCache();
 
 		$this->assertEquals( $t_top, project_get_owner( $t_child ) );
 	}
@@ -169,7 +190,7 @@ class ProjectOwnerTest extends MantisCoreBase {
 		# Force the cycle directly: project_hierarchy_add() would not allow it.
 		db_query( 'UPDATE {project_hierarchy} SET parent_id=' . db_param() . ' WHERE child_id=' . db_param(),
 			array( $t_b, $t_a ) );
-		project_clear_cache();
+		$this->clearHierarchyCache();
 
 		$this->assertEquals( NO_USER, project_get_owner( $t_a ) );
 	}
