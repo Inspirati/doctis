@@ -207,9 +207,32 @@ record: [doc/dwg/USER_LIFECYCLE.md](doc/dwg/USER_LIFECYCLE.md) §5.
 ## License Entity
 
 A Doctis license is a skill, security clearance, or professional qualification
-registered against a user account. Documents can require users to hold one or
-more licenses before access is granted. This is entirely unrelated to software
-licensing; the term is Doctis-specific.
+registered against a user account. Documents can be marked as requiring one or
+more licenses. This is entirely unrelated to software licensing; the term is
+Doctis-specific.
+
+**Read [doc/dwg/LICENSES.md](doc/dwg/LICENSES.md) before touching this
+feature.** It is a **half-baked concept still under development** (owner,
+2026-10-24) and the code does not mean what it looks like it means:
+
+- A license was designed as an **indicator only**. Doctis began as a document
+  *index*, and enforcement of access to the material was to be the external
+  data store's job. A user may apply any license to their own profile; the list
+  is a self-administered record of applications and acceptances, **not a
+  security grant**.
+- That premise no longer holds now Doctis stores documents itself and may hold
+  restricted material, so the feature **may need extensive revision**. The
+  owner has deferred that; do not redesign it unprompted.
+- Names are matched loosely on purpose — `match_str` folds case and strips all
+  punctuation — to help users applying, not to police naming.
+- `{license_user_list}.status` carries applied (10) vs accepted (20), but
+  **nothing ever writes 20**, and its update path writes access levels into the
+  same column.
+- The two consumers disagree: `topic_user_holds_license()` requires status 20
+  (faithful, but therefore never true), while `access_dwg_user_holds_licenses()`
+  counts any row (so self-application satisfies it). Licenses gate document
+  **ownership**, Topic **assessment** and **publishing** — they do **not** gate
+  reading, downloading or cloning.
 
 API: [core/license_api.php](core/license_api.php). Command layer: [core/commands/License*Command.php](core/commands/).
 
