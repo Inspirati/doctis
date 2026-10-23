@@ -679,6 +679,20 @@ inheritance silently resolves to no owner.
 Adding the column is an in-place edit to `{project}`, so **the VM must be
 rebuilt** before these tests pass.
 
+**Import behaviour.** After importing `HCRQMS-dev.zip` (Manage → Import Data,
+project `HCRQMS`, directories `content,system`, patterns `*.md`, visibility
+**public** — the field takes the words `private`/`public`, not an enum id),
+expect `101 imported, 0 skipped, 0 failed, 18 warning(s)`, with **100
+documents unowned** and one owned by `robert`: the only frontmatter owner that
+names a real person, "Robert Dickenson", matched through the importer's
+realname fallback. Documents owned by the importing administrator instead
+means the `default_owner` opt-out has regressed. Check with:
+
+```sql
+SELECT CASE WHEN owner_id=0 THEN 'unowned' ELSE 'owned' END s, COUNT(*)
+  FROM dwg WHERE id>1 GROUP BY s;
+```
+
 Run 2026-10-23 on the VM: 10 tests / 33 assertions, and the full `mantis` suite
 (380 tests, 1 pre-existing skip). Record:
 [dwg/PROJECT_OWNERSHIP.md](dwg/PROJECT_OWNERSHIP.md) §8.

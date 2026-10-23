@@ -437,7 +437,7 @@ call, not a technical one. Decision D5.
 | D3 | Is the owner visible to everyone, or thresholded like the assignee? | **Visible** to anyone who can view the document. |
 | D4 | Should Creator stay editable on the Update page? | **Amended — creator becomes read-only.** As with a MantisBT reporter, the registrant is always that person. Its existing [edit] picker is repurposed as the Owner control. See §3.3. |
 | D5 | Must an owner hold a licence the document requires? | **Yes for owner, no for assignee.** |
-| D6 | Should a newly created document default to owner = creator? | **Yes**, with the field editable on the create form. |
+| D6 | Should a newly created document default to owner = creator? | **Yes**, with the field editable on the create form. Applied in `DwgAddCommand` only, and a bulk import opts out — see [PROJECT_OWNERSHIP.md](PROJECT_OWNERSHIP.md) §5. |
 | D7 | Does an owner get edit rights regardless of threshold? | **No**, not initially. Access level stays the only gate. |
 
 Also decided: **email notification is permanently OFF on the VM** until email

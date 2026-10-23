@@ -80,10 +80,28 @@ Two consumers are connected:
   the better answer rather than merely a last resort: document responsibility
   follows the programme, not the departing person's line manager. See
   [USER_LIFECYCLE.md](USER_LIFECYCLE.md) §5.
-- **New document owner.** `DwgData::create()` defaults a document's owner to
-  its creator, but a creator who does not meet `$g_own_dwg_threshold` would
-  leave the field holding somebody ineligible. It now falls back to the project
-  owner. See [OWNERSHIP.md](OWNERSHIP.md) §10, D6.
+- **New document owner.** A document's owner defaults to its creator (D6), but
+  a creator who does not meet `$g_own_dwg_threshold` would leave the field
+  holding somebody ineligible, so it falls back to the project owner. See
+  [OWNERSHIP.md](OWNERSHIP.md) §10, D6.
+
+### Where that policy lives, and why it moved
+
+The owner default is applied **only** in `DwgAddCommand`. `DwgData::create()`
+persists what it is given and invents nothing.
+
+It was briefly implemented in both, which made the import opt-out below a
+no-op: the command left the field at 0 and `create()` filled it with the
+creator regardless. Importing the real HCRQMS repository is what exposed it —
+the report said 100 documents were left unowned while all 100 were in fact
+owned by the administrator who ran the import.
+
+A bulk import opts out with the command's `default_owner` option. The person
+running an import of pre-existing documents is not thereby taking
+responsibility for all of them, and silently attributing them is the false
+accountability this field exists to prevent. Leaving them unowned makes the
+gap visible, and the importer's grouped warnings name each unmatched
+frontmatter owner with a count.
 
 Discussed and **not** connected, each a small piece of work when wanted:
 
