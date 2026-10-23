@@ -191,6 +191,30 @@ $f_parent_id = gpc_get( 'parent_id', null );
 			}
 		?>
 
+			<!-- Owner (Doctis): the person responsible for the project. -->
+			<tr>
+				<th class="category">
+					<label for="owner_id"><?php echo lang_get( 'project_owner' ) ?></label>
+				</th>
+				<td>
+					<select <?php echo helper_get_tab_index() ?> id="owner_id" name="owner_id" class="input-sm">
+						<option value="0"><?php echo lang_get( 'project_owner_inherit' ) ?></option>
+						<?php print_user_option_list( 0 ) ?>
+					</select>
+					<span class="small"><?php echo lang_get( 'project_owner_hint' ) ?></span>
+				</td>
+			</tr>
+
+			<tr>
+				<th class="category">
+					<label for="classification"><?php echo lang_get( 'project_classification' ) ?></label>
+				</th>
+				<td>
+					<input <?php echo helper_get_tab_index() ?> type="text" id="classification"
+						name="classification" class="input-sm" size="40" maxlength="255" value="" />
+				</td>
+			</tr>
+
 
 <?php
 	$g_project_override = ALL_PROJECTS;

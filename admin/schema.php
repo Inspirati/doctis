@@ -677,6 +677,7 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	  `enabled` tinyint(4) NOT NULL DEFAULT 1,
 	  `view_state` smallint(6) NOT NULL DEFAULT 10,
 	  `access_min` smallint(6) NOT NULL DEFAULT 10,
+	  `owner_id` int(10) unsigned NOT NULL DEFAULT 0,
 	  `file_path` varchar(250) NOT NULL DEFAULT '',
 	  `description` longtext NOT NULL,
 	  `category_id` int(10) unsigned NOT NULL DEFAULT 1,
@@ -687,7 +688,8 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	  `due_date` int(10) unsigned NOT NULL DEFAULT 1,
 	  PRIMARY KEY (`id`),
 	  UNIQUE KEY `idx_project_name` (`name`),
-	  KEY `idx_project_view` (`view_state`)
+	  KEY `idx_project_view` (`view_state`),
+	  KEY `idx_project_owner` (`owner_id`)
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 

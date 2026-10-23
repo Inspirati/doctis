@@ -46,6 +46,8 @@ $f_file_path 	= gpc_get_string( 'file_path', '' );
 $f_enabled	 	= gpc_get_bool( 'enabled' );
 $f_inherit_global = gpc_get_bool( 'inherit_global', 0 );
 $f_due_date		= gpc_get_string( 'due_date', null );
+$f_owner_id		= gpc_get_int( 'owner_id', 0 );
+$f_classification = gpc_get_string( 'classification', '' );
 
 $t_data = array(
 	'query' => array(
@@ -59,7 +61,9 @@ $t_data = array(
 		'file_path' => $f_file_path,
 		'enabled' => $f_enabled,
 		'inherit_global' => $f_inherit_global,
-		'due_date' => $f_due_date
+		'due_date' => $f_due_date,
+		'owner' => $f_owner_id > 0 ? array( 'id' => $f_owner_id ) : 0,
+		'classification' => $f_classification
 	)
 );
 

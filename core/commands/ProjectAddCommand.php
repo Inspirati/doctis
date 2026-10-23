@@ -75,6 +75,18 @@ class ProjectAddCommand extends Command {
 	private $due_date;
 
 	/**
+	 * The user responsible for the project, 0 to inherit from the parent
+	 * @var int
+	 */
+	private $owner_id;
+
+	/**
+	 * Project Classification
+	 * @var string
+	 */
+	private $classification;
+
+	/**
 	 * Constructor
 	 *
 	 * @param array $p_data The command data.
@@ -120,6 +132,20 @@ class ProjectAddCommand extends Command {
 		} else {
 			$this->due_date = 1;
 		}
+
+		# Owner: the person responsible for the project. Left unset, the project
+		# inherits its parent's owner; see project_get_owner().
+		$t_owner = $this->payload( 'owner' );
+		$this->owner_id = empty( $t_owner ) ? 0 : mci_get_user_id( $t_owner );
+		if( $this->owner_id != 0 && !user_exists( $this->owner_id ) ) {
+			throw new ClientException(
+				sprintf( "User '%d' not found.", $this->owner_id ),
+				ERROR_USER_BY_ID_NOT_FOUND,
+				array( $this->owner_id )
+			);
+		}
+
+		$this->classification = (string)$this->payload( 'classification', '' );
 
 		if( !project_is_name_unique( $this->name ) ) {
 			throw new ClientException(
@@ -169,7 +195,9 @@ class ProjectAddCommand extends Command {
 			$this->file_path,
 			$this->enabled,
 			$this->inherit_global,
-			$this->due_date
+			$this->due_date,
+			$this->owner_id,
+			$this->classification
 		);
 
 		# If user doesn't have management access to project, then user is not an ADMINISTRATOR.

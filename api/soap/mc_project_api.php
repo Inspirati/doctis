@@ -217,6 +217,17 @@ function mci_project_get_row( $p_project_id, $p_user_id, $p_lang ) {
 		'access_min' => mci_enum_get_array_by_id( $t_project['access_min'], 'access_levels', $p_lang ),
 		'file_path' => array_key_exists( 'file_path', $t_project ) ? $t_project['file_path'] : '',
 		'description' => array_key_exists( 'description', $t_project ) ? $t_project['description'] : '',
+		# Doctis: the person responsible for the project, and its
+		# classification. 'owner' is the project's own field; 'effective_owner'
+		# is what applies after inheriting from the parent, which is what a
+		# caller usually wants. See project_get_owner().
+		'owner' => (int)( $t_project['owner_id'] ?? 0 ) > 0
+			? mci_account_get_array_by_id( (int)$t_project['owner_id'] )
+			: null,
+		'effective_owner' => project_get_owner( $p_project_id ) > 0
+			? mci_account_get_array_by_id( project_get_owner( $p_project_id ) )
+			: null,
+		'classification' => array_key_exists( 'classification', $t_project ) ? $t_project['classification'] : '',
 		'subprojects' => mci_user_get_accessible_subprojects( $p_user_id, $p_project_id, $p_lang ),
 	);
 }

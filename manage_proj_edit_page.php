@@ -230,6 +230,46 @@ print_manage_menu( 'manage_proj_edit_page.php' );
 			}
 		?>
 
+			<!-- Owner (Doctis): the person responsible for the project. Unset
+			     means inherit from the parent project, so show what applies. -->
+<?php
+	$t_own_owner = (int)project_get_owner( $f_project_id, /* inherited */ false );
+	$t_owner_source = project_get_owner_source( $f_project_id );
+?>
+			<tr>
+				<th class="category">
+					<label for="owner_id"><?php echo lang_get( 'project_owner' ) ?></label>
+				</th>
+				<td>
+					<select <?php echo helper_get_tab_index() ?> id="owner_id" name="owner_id" class="input-sm">
+						<option value="0"><?php echo lang_get( 'project_owner_inherit' ) ?></option>
+						<?php print_user_option_list( $t_own_owner ) ?>
+					</select>
+<?php
+	if( $t_own_owner == 0 ) {
+		if( $t_owner_source != ALL_PROJECTS && $t_owner_source != $f_project_id ) {
+			echo '<span class="small">', sprintf( lang_get( 'project_owner_inherited_from' ),
+				string_display_line( user_get_name( project_get_owner( $f_project_id ) ) ),
+				string_display_line( project_get_name( $t_owner_source ) ) ), '</span>';
+		} else {
+			echo '<span class="small">', lang_get( 'project_owner_none' ), '</span>';
+		}
+	}
+?>
+				</td>
+			</tr>
+
+			<tr>
+				<th class="category">
+					<label for="classification"><?php echo lang_get( 'project_classification' ) ?></label>
+				</th>
+				<td>
+					<input <?php echo helper_get_tab_index() ?> type="text" id="classification"
+						name="classification" class="input-sm" size="40" maxlength="255"
+						value="<?php echo string_attribute( project_get_field( $f_project_id, 'classification' ) ) ?>" />
+				</td>
+			</tr>
+
 			<tr>
 				<td class="category">
 					<label for="project-description">

@@ -214,6 +214,41 @@ function user_transfer_suggest_successor( $p_user_id ) {
 		$t_id = (int)user_get_field( $t_id, 'reports_to' );
 	}
 
+	# Nothing up the chain. Fall back to the owner of the project where this
+	# user holds the most documents: document responsibility follows the
+	# programme, not the departing person's line manager, so for documents this
+	# is arguably the better answer rather than merely the last resort.
+	# See doc/dwg/USER_LIFECYCLE.md §5.
+	return user_transfer_suggest_from_projects( $p_user_id );
+}
+
+/**
+ * Suggest the owner of the project where this user holds the most documents.
+ *
+ * Only documents are considered: they are the holdings with a project owner to
+ * fall back to, and the ones that matter most if nobody takes them over.
+ *
+ * @param int $p_user_id A user identifier.
+ *
+ * @return int A user id, or 0 if none could be suggested.
+ */
+function user_transfer_suggest_from_projects( $p_user_id ) {
+	require_api( 'project_api.php' );
+
+	db_param_push();
+	$t_result = db_query(
+		'SELECT project_id, COUNT(*) AS held FROM {dwg}'
+		. ' WHERE owner_id=' . db_param() . ' OR handler_id=' . db_param()
+		. ' GROUP BY project_id ORDER BY held DESC',
+		array( (int)$p_user_id, (int)$p_user_id ) );
+
+	while( $t_row = db_fetch_array( $t_result ) ) {
+		$t_owner_id = project_get_owner( (int)$t_row['project_id'] );
+		if( $t_owner_id != NO_USER && $t_owner_id != (int)$p_user_id ) {
+			return $t_owner_id;
+		}
+	}
+
 	return 0;
 }
 

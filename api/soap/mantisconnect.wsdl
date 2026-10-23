@@ -226,6 +226,9 @@
    <xsd:element name="access_min" type="tns:ObjectRef" minOccurs="0"/>
    <xsd:element name="file_path" type="xsd:string" minOccurs="0"/>
    <xsd:element name="description" type="xsd:string" minOccurs="0"/>
+   <xsd:element name="owner" type="tns:AccountData" minOccurs="0"/>
+   <xsd:element name="effective_owner" type="tns:AccountData" minOccurs="0"/>
+   <xsd:element name="classification" type="xsd:string" minOccurs="0"/>
    <xsd:element name="subprojects" type="tns:ProjectDataArray" minOccurs="0"/>
    <xsd:element name="inherit_global" type="xsd:boolean" minOccurs="0"/>
   </xsd:all>

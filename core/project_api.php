@@ -342,7 +342,7 @@ function validate_project_file_path( $p_file_path ) {
  * @param boolean $p_inherit_global Whether the project inherits global categories.
  * @return integer
  */
-function project_create( $p_name, $p_description, $p_status, $p_view_state = VS_PUBLIC, $p_file_path = '', $p_enabled = true, $p_inherit_global = true, $p_due_date = 1 ) {
+function project_create( $p_name, $p_description, $p_status, $p_view_state = VS_PUBLIC, $p_file_path = '', $p_enabled = true, $p_inherit_global = true, $p_due_date = 1, $p_owner_id = 0, $p_classification = '' ) {
 	$c_enabled = (bool)$p_enabled;
 
 	if( is_blank( $p_name ) ) {
@@ -367,6 +367,8 @@ function project_create( $p_name, $p_description, $p_status, $p_view_state = VS_
 		'description' => $p_description,
 		'inherit_global' => $p_inherit_global,
 		'due_date' => $p_due_date,
+		'owner_id' => (int)$p_owner_id,
+		'classification' => $p_classification,
 	);
 
 	$t_query = new DbQuery( 'INSERT INTO {project}
@@ -379,6 +381,85 @@ function project_create( $p_name, $p_description, $p_status, $p_view_state = VS_
 
 	# return the id of the new project
 	return db_insert_id( db_get_table( 'project' ) );
+}
+
+/**
+ * The project that supplies this project's owner.
+ *
+ * A sub-project with no owner of its own inherits its parent's, so a project
+ * tree has one responsible person unless a sub-project names its own (owner
+ * decision 2026-10-23). The walk mirrors dwg_publish_site() and repository
+ * resolution: climb until a project sets the field, and stop on a cycle.
+ *
+ * @param integer $p_project_id A project identifier.
+ *
+ * @return integer The project id that sets the owner, or ALL_PROJECTS (0) when
+ *                 nothing in the chain does.
+ */
+function project_get_owner_source( $p_project_id ) {
+	require_api( 'project_hierarchy_api.php' );
+
+	$t_id = (int)$p_project_id;
+	$t_seen = array();
+
+	while( $t_id > 0 && !isset( $t_seen[$t_id] ) ) {
+		$t_seen[$t_id] = true;
+
+		$t_row = project_cache_row( $t_id, /* trigger_errors */ false );
+		if( $t_row === false ) {
+			return ALL_PROJECTS;
+		}
+
+		if( (int)( $t_row['owner_id'] ?? 0 ) > 0 ) {
+			return $t_id;
+		}
+
+		$t_id = (int)project_hierarchy_get_parent( $t_id, /* show_disabled */ true );
+	}
+
+	return ALL_PROJECTS;
+}
+
+/**
+ * The user responsible for a project.
+ *
+ * Inherited from the nearest ancestor that names one, unless $p_inherited is
+ * false, in which case only the project's own field is considered — which is
+ * what an edit form needs, so that "inherited" and "set here" stay distinct.
+ *
+ * A disabled or deleted account is reported as no owner: the point of the
+ * field is a person who can be held responsible.
+ *
+ * @param integer $p_project_id A project identifier.
+ * @param boolean $p_inherited  Follow the project hierarchy.
+ *
+ * @return integer A user id, or NO_USER (0) when there is none.
+ */
+function project_get_owner( $p_project_id, $p_inherited = true ) {
+	if( $p_inherited ) {
+		$t_source = project_get_owner_source( $p_project_id );
+		if( $t_source == ALL_PROJECTS ) {
+			return NO_USER;
+		}
+	} else {
+		$t_source = (int)$p_project_id;
+	}
+
+	$t_row = project_cache_row( $t_source, /* trigger_errors */ false );
+	if( $t_row === false ) {
+		return NO_USER;
+	}
+
+	$t_owner_id = (int)( $t_row['owner_id'] ?? 0 );
+	if( $t_owner_id == NO_USER ) {
+		return NO_USER;
+	}
+
+	if( !user_exists( $t_owner_id ) || !user_is_enabled( $t_owner_id ) ) {
+		return NO_USER;
+	}
+
+	return $t_owner_id;
 }
 
 /**
@@ -454,7 +535,7 @@ function project_delete( $p_project_id ) {
  * @param boolean $p_inherit_global Whether the project inherits global categories.
  * @return void
  */
-function project_update( $p_project_id, $p_name, $p_description, $p_status, $p_view_state, $p_file_path, $p_enabled, $p_inherit_global, $p_due_date ) {
+function project_update( $p_project_id, $p_name, $p_description, $p_status, $p_view_state, $p_file_path, $p_enabled, $p_inherit_global, $p_due_date, $p_owner_id = null, $p_classification = null ) {
 	$p_project_id = (int)$p_project_id;
 	$c_enabled = (bool)$p_enabled;
 	$c_inherit_global = (bool)$p_inherit_global;
@@ -495,6 +576,15 @@ function project_update( $p_project_id, $p_name, $p_description, $p_status, $p_v
 		'inherit_global' => $c_inherit_global,
 		'due_date' => $p_due_date,
 	);
+
+	# null means "leave as it is", so a caller that knows nothing about these
+	# fields cannot blank them.
+	if( $p_owner_id !== null ) {
+		$t_param['owner_id'] = (int)$p_owner_id;
+	}
+	if( $p_classification !== null ) {
+		$t_param['classification'] = $p_classification;
+	}
 
 	$t_columns = '';
 	foreach( array_keys( $t_param ) as $t_col ) {

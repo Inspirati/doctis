@@ -163,6 +163,17 @@ print_manage_menu( 'manage_proj_page.php' );
 				<th><?php
 					print_manage_project_sort_link(
 						'manage_proj_page.php',
+						lang_get( 'project_owner' ),
+						'owner_id',
+						$t_direction,
+						$f_sort
+					);
+					print_sort_icon( $t_direction, $f_sort, 'owner_id' ); ?>
+				</th>
+
+				<th><?php
+					print_manage_project_sort_link(
+						'manage_proj_page.php',
 						lang_get( 'description' ),
 						'description',
 						$t_direction,
@@ -214,6 +225,18 @@ print_manage_menu( 'manage_proj_page.php' );
 				<td class="center"><?php echo trans_bool( $t_project['enabled'] ) ?></td>
 				<td><?php echo get_enum_element( 'project_view_state', $t_project['view_state'] ) ?></td>
 				<td><?php echo string_display_line( $t_date_to_display ) ?></td>
+				<td><?php
+					# The effective owner, so an inherited one still shows. An
+					# inherited value is shown in italics to distinguish it.
+					$t_owner_id = project_get_owner( $t_project_id );
+					if( $t_owner_id == NO_USER ) {
+						echo '';
+					} else if( (int)( $t_project['owner_id'] ?? 0 ) > 0 ) {
+						echo prepare_user_name( $t_owner_id );
+					} else {
+						echo '<em>', prepare_user_name( $t_owner_id ), '</em>';
+					} ?>
+				</td>
 				<td><?php echo string_display_links( $t_project['description'] ) ?></td>
 			</tr><?php
 			}

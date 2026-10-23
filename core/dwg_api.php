@@ -74,6 +74,7 @@ require_api( 'helper_api.php' );
 require_api( 'history_dwg_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'mention_api.php' );
+require_api( 'project_api.php' );
 require_api( 'relationship_dwg_api.php' );
 require_api( 'sponsorship_api.php' );
 require_api( 'tag_dwg_api.php' );
@@ -503,8 +504,18 @@ class DwgData {
 
 		# Owner defaults to the creator, so that a document is never recorded
 		# with nobody responsible for it (owner decision 2026-10-20, D6).
+		#
+		# A creator who is not eligible to own documents would leave the field
+		# invalid, so fall back to the project's owner, inherited from the
+		# parent project where the project does not name one
+		# (owner decision 2026-10-23). See project_get_owner().
 		if( 0 == $this->owner_id ) {
-			$this->owner_id = $this->creator_id;
+			if( access_has_project_level( config_get( 'own_dwg_threshold' ),
+					$this->project_id, $this->creator_id ) ) {
+				$this->owner_id = $this->creator_id;
+			} else {
+				$this->owner_id = project_get_owner( $this->project_id );
+			}
 		}
 
 		# Check if the document was pre-assigned or auto-assigned.

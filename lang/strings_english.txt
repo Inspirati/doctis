@@ -287,6 +287,16 @@ $s_user_transfer_topic_expectation = 'Topic expectations owned';
 $s_user_transfer_category_default = 'Categories assigned by default';
 $s_user_transfer_pending = 'This user is still responsible for %d item(s).';
 $s_user_transfer_link = 'Transfer responsibilities';
+
+# Project owner and classification (Doctis). The owner is the person
+# responsible for the project; sub-projects inherit it from their parent unless
+# they name their own. See doc/dwg/PROJECT_OWNERSHIP.md.
+$s_project_owner = 'Owner';
+$s_project_owner_inherit = '[inherit from parent project]';
+$s_project_owner_hint = 'The person responsible for this project. Leave it inheriting and sub-projects follow the parent.';
+$s_project_owner_inherited_from = 'Inheriting %s from %s.';
+$s_project_owner_none = 'No owner is set on this project or any parent.';
+$s_project_classification = 'Classification';
 $s_dwg_actiongroup_version = 'The requested version does not exist in this document\'s project';
 $s_close_dwgs_conf_msg = 'Are you sure you wish to close these documents?';
 $s_delete_dwgs_conf_msg = 'Are you sure you wish to delete these documents?';

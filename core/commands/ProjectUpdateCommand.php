@@ -86,6 +86,18 @@ class ProjectUpdateCommand extends Command {
 	 */
 	private $due_date;
 
+	/**
+	 * The user responsible for the project, 0 to inherit from the parent
+	 * @var int
+	 */
+	private $owner_id;
+
+	/**
+	 * Project Classification
+	 * @var string
+	 */
+	private $classification;
+
 /**
 	 * Constructor
 	 *
@@ -167,6 +179,28 @@ class ProjectUpdateCommand extends Command {
 		$this->status = mci_get_project_status_id( $t_status_ref );
 
 		$this->due_date = $this->payload( 'due_date' );
+
+		# Owner and classification: absent from the payload means leave alone,
+		# so a client that knows nothing of them cannot blank them. An explicit
+		# owner of 0 clears it, which makes the project inherit its parent's.
+		$t_owner = $this->payload( 'owner', null );
+		if( $t_owner === null ) {
+			$this->owner_id = null;
+		} else if( empty( $t_owner ) ) {
+			$this->owner_id = 0;
+		} else {
+			$this->owner_id = mci_get_user_id( $t_owner );
+			if( !user_exists( $this->owner_id ) ) {
+				throw new ClientException(
+					sprintf( "User '%d' not found.", $this->owner_id ),
+					ERROR_USER_BY_ID_NOT_FOUND,
+					array( $this->owner_id )
+				);
+			}
+		}
+
+		$t_classification = $this->payload( 'classification', null );
+		$this->classification = $t_classification === null ? null : (string)$t_classification;
 		if( ! empty( $this->due_date ) ) {
 			$this->due_date = strtotime( $this->due_date );
 		} else {
@@ -199,7 +233,9 @@ class ProjectUpdateCommand extends Command {
 			$this->file_path,
 			$this->enabled,
 			$this->inherit_global,
-			$this->due_date
+			$this->due_date,
+			$this->owner_id,
+			$this->classification
 		);
 
 		project_clear_cache( $this->id );

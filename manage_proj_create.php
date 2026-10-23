@@ -62,6 +62,8 @@ $f_status		= gpc_get_int( 'status' );
 $f_file_path	= gpc_get_string( 'file_path', '' );
 $f_inherit_global = gpc_get_bool( 'inherit_global', 0 );
 $f_due_date		= gpc_get_string( 'due_date', null );
+$f_owner_id		= gpc_get_int( 'owner_id', 0 );
+$f_classification = gpc_get_string( 'classification', '' );
 
 $t_data = array(
 	'payload' => array(
@@ -71,7 +73,9 @@ $t_data = array(
 		'inherit_global' => $f_inherit_global,
 		'view_state' => array( 'id' => $f_view_state ),
 		'status' => array( 'id' => $f_status ),
-		'due_date' => $f_due_date
+		'due_date' => $f_due_date,
+		'owner' => $f_owner_id > 0 ? array( 'id' => $f_owner_id ) : null,
+		'classification' => $f_classification
 	),
 	'options' => array(
 		'return_project' => false
