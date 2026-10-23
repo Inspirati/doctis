@@ -119,15 +119,24 @@ turn out to be wanted.
 Before this work, `due_date` was the only wired Doctis addition to
 `{project}`.
 
-## 7. A sharp edge
+## 7. The hierarchy cache, fixed
 
-`project_hierarchy_cache()` builds once per request and
-`project_clear_cache()` does not clear it; there is no public function that
-does. Code that adds a hierarchy row and then resolves an owner **in the same
-request** would see the old parent. Nothing does today —
-`manage_proj_create.php` adds the parent and then redirects — but
-`project_get_owner()` now depends on that cache, so it is worth knowing.
-`ProjectOwnerTest` nulls the cache globals directly for this reason.
+`project_hierarchy_cache()` builds once per request and returns early
+afterwards, and nothing invalidated it. Code that added a hierarchy row and
+then resolved an owner in the same request would have seen the old tree.
+
+This was first left alone and documented as a sharp edge, on the grounds that
+it is shared MantisBT code. That was the wrong call: the owner clarified on
+2026-10-23 that shared code should be modified where justified, and a missing
+invalidation that a new feature depends on qualifies. So
+`project_hierarchy_clear_cache()` now exists and
+`project_hierarchy_add()`, `_update()`, `_remove()` and `_remove_all()` all
+call it.
+
+Fixed alongside it: `$g_cache_show_disabled_all` was declared and used
+nowhere, while `$g_cache_project_inheritance_all` was used three times and
+never declared — a typo in the original line, which worked only because PHP
+treats an undeclared global as null.
 
 ## 8. Test record
 

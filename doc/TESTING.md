@@ -670,11 +670,11 @@ the successor suggestion.
 vendor/bin/phpunit --testsuite mantis --filter ProjectOwnerTest --testdox
 ```
 
-**Note:** `project_hierarchy_cache()` builds once per process and
-`project_clear_cache()` does not clear it, so a test that adds a hierarchy row
-must null the cache globals before resolving an owner. The test class has a
-`clearHierarchyCache()` helper; without it, inheritance silently resolves to
-no owner.
+**Note:** `project_hierarchy_cache()` builds once per process and returns
+early afterwards. The hierarchy mutators now call
+`project_hierarchy_clear_cache()` themselves, so this is handled — but a test
+that writes `{project_hierarchy}` with raw SQL still has to call it, or
+inheritance silently resolves to no owner.
 
 Adding the column is an in-place edit to `{project}`, so **the VM must be
 rebuilt** before these tests pass.

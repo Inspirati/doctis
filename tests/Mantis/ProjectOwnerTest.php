@@ -59,23 +59,12 @@ class ProjectOwnerTest extends MantisCoreBase {
 	}
 
 	/**
-	 * Drop the project hierarchy cache.
-	 *
-	 * project_hierarchy_cache() builds once per process and
-	 * project_clear_cache() does not touch it, so hierarchy rows added inside
-	 * one process are invisible afterwards. A web request reads it fresh, so
-	 * this only bites a long-running process such as this suite.
+	 * The hierarchy mutators invalidate their own cache now, so this only has
+	 * to drop the project row cache. It stays as a helper because the cycle
+	 * test writes {project_hierarchy} directly.
 	 */
 	private function clearHierarchyCache(): void {
-		global $g_cache_project_hierarchy_enabled, $g_cache_project_inheritance_enabled;
-		global $g_cache_project_hierarchy_all, $g_cache_project_inheritance_all;
-		global $g_cache_project_hierarchy, $g_cache_project_inheritance;
-		$g_cache_project_hierarchy_enabled = null;
-		$g_cache_project_inheritance_enabled = null;
-		$g_cache_project_hierarchy_all = null;
-		$g_cache_project_inheritance_all = null;
-		$g_cache_project_hierarchy = null;
-		$g_cache_project_inheritance = null;
+		project_hierarchy_clear_cache();
 		project_clear_cache();
 	}
 

@@ -35,11 +35,35 @@ require_api( 'database_api.php' );
 $g_cache_project_hierarchy_enabled = null;
 $g_cache_project_hierarchy_all = null;
 $g_cache_project_inheritance_enabled = null;
-$g_cache_show_disabled_all = null;
+$g_cache_project_inheritance_all = null;
 # To make it simpler for callers of project_hierarchy_cache(), we provide
 # these two aliases for the correct pair of caches above
 $g_cache_project_hierarchy = null;
 $g_cache_project_inheritance = null;
+
+/**
+ * Discard the project hierarchy caches.
+ *
+ * project_hierarchy_cache() builds once per request and returns early
+ * afterwards, so anything that changes {project_hierarchy} has to invalidate
+ * it or later reads in the same request see the old tree. The mutators below
+ * call this; it is also useful to a long-running process such as the test
+ * suite.
+ *
+ * @return void
+ */
+function project_hierarchy_clear_cache() {
+	global $g_cache_project_hierarchy_enabled, $g_cache_project_hierarchy_all;
+	global $g_cache_project_inheritance_enabled, $g_cache_project_inheritance_all;
+	global $g_cache_project_hierarchy, $g_cache_project_inheritance;
+
+	$g_cache_project_hierarchy_enabled = null;
+	$g_cache_project_hierarchy_all = null;
+	$g_cache_project_inheritance_enabled = null;
+	$g_cache_project_inheritance_all = null;
+	$g_cache_project_hierarchy = null;
+	$g_cache_project_inheritance = null;
+}
 
 /**
  * Add project to project hierarchy
@@ -59,6 +83,8 @@ function project_hierarchy_add( $p_child_id, $p_parent_id, $p_inherit_parent = t
 						VALUES
 						( ' . db_param() . ', ' . db_param() . ', ' . db_param() . ' )';
 	db_query( $t_query, array( $p_child_id, $p_parent_id, $p_inherit_parent ) );
+
+	project_hierarchy_clear_cache();
 }
 
 /**
@@ -75,6 +101,8 @@ function project_hierarchy_update( $p_child_id, $p_parent_id, $p_inherit_parent 
 					WHERE child_id=' . db_param() . '
 						AND parent_id=' . db_param();
 	db_query( $t_query, array( $p_inherit_parent, $p_child_id, $p_parent_id ) );
+
+	project_hierarchy_clear_cache();
 }
 
 /**
@@ -89,6 +117,8 @@ function project_hierarchy_remove( $p_child_id, $p_parent_id ) {
 						AND parent_id = ' . db_param();
 
 	db_query( $t_query, array( $p_child_id, $p_parent_id ) );
+
+	project_hierarchy_clear_cache();
 }
 
 /**
@@ -102,6 +132,8 @@ function project_hierarchy_remove_all( $p_project_id ) {
 						  OR parent_id = ' . db_param();
 
 	db_query( $t_query, array( $p_project_id, $p_project_id ) );
+
+	project_hierarchy_clear_cache();
 }
 
 /**

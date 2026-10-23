@@ -34,7 +34,7 @@ right now?". Creator is a provenance record.
 The three roles should read consistently **in the UI, the history, the exports
 and the API** — not necessarily in the database or in PHP variable names.
 
-CLAUDE.md, *Primary Goal: Minimise Diff with MantisBT*, is explicit that
+CLAUDE.md, *Minimise — but do not avoid — Changes to Shared MantisBT Code*, asks that
 `dwg_*` modules keep MantisBT's internal names on purpose so that `diff`
 against the upstream original stays useful. `handler_id` is MantisBT's name
 for the assignee and it appears in **19 files** on the document side alone

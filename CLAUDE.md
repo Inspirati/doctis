@@ -45,9 +45,26 @@ Variable prefixes (inherited from MantisBT):
 
 Tabs for indentation, spaces for alignment. Files edited at 4-column tab width.
 
-## Primary Goal: Minimise Diff with MantisBT
+## Minimise — but do not avoid — Changes to Shared MantisBT Code
 
-Doctis deliberately avoids renaming MantisBT variables and follows upstream structure closely so that periodic upstream syncs (via `upstream_sync` branch) remain feasible. When adding Doctis functionality, prefer **parallel** files/functions rather than in-place edits to shared MantisBT code.
+Doctis follows upstream structure closely and avoids renaming MantisBT
+variables, so that comparing a `dwg_*` module against the file it was copied
+from stays useful. When adding Doctis functionality, **prefer** parallel
+files and functions over in-place edits to shared code.
+
+**This is a preference, not a prohibition** (owner clarification 2026-10-23).
+The fork was taken years ago and MantisBT has moved on since; keeping the
+codebase merge-compatible with upstream is no longer a credible mandate. So:
+
+- Modify shared MantisBT code when it is justified — a defect in it, a missing
+  invalidation, a gate that is wrong for documents.
+- Fix upstream defects you find rather than working around them. A helper that
+  should exist and does not is a reason to add it, not a reason to reach into
+  globals from a caller.
+- Keep such changes small, commented with why, and separable in the history.
+
+Do not treat "it is MantisBT code" as a reason to leave something broken, or
+to build an awkward parallel path around it.
 
 ### Variable and parameter names in `dwg_*` modules — intentionally unchanged
 
