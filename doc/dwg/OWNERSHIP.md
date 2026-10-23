@@ -436,9 +436,23 @@ call, not a technical one. Decision D5.
 | D2 | Should assigning a document auto-move its status to "assigned to"? | **No.** Give `$g_dwg_assigned_status` a valid document status so nothing out-of-enum can be written, then suppress both transitions for documents with `$g_dwg_auto_set_status_to_assigned = OFF` and `$g_dwg_reassign_on_feedback = OFF`, rather than inheriting the shared bug keys. Ownership changes never touch the status. |
 | D3 | Is the owner visible to everyone, or thresholded like the assignee? | **Visible** to anyone who can view the document. |
 | D4 | Should Creator stay editable on the Update page? | **Amended — creator becomes read-only.** As with a MantisBT reporter, the registrant is always that person. Its existing [edit] picker is repurposed as the Owner control. See §3.3. |
-| D5 | Must an owner hold a licence the document requires? | **Yes for owner, no for assignee.** |
+| D5 | Must an owner hold a licence the document requires? | **Yes for owner, no for assignee.** Implemented, but resting on a list that is self-administered — see the note below. |
 | D6 | Should a newly created document default to owner = creator? | **Yes**, with the field editable on the create form. Applied in `DwgAddCommand` only, and a bulk import opts out — see [PROJECT_OWNERSHIP.md](PROJECT_OWNERSHIP.md) §5. |
 | D7 | Does an owner get edit rights regardless of threshold? | **No**, not initially. Access level stays the only gate. |
+
+**D5 needs revisiting (noted 2026-10-24).** `access_dwg_user_holds_licenses()`
+treats any row in `{license_user_list}` as holding the licence. The owner has
+since explained that this list is a **self-administered application and
+acceptance record**, not an access grant: users apply for their own licences
+from their profile. `{license_user_list}.status` carries the applied/accepted
+distinction and the profile page displays it, but **nothing ever writes the
+accepted value** — `license_add_users()` inserts without setting `status`, so
+every row defaults to 10 (applied), and its update path writes an *access
+level* into the same column, so the values are ambiguous. So as built, a user
+who has merely applied for a licence satisfies a document's requirement.
+
+This is also the only licence check in the codebase: nothing gates reading or
+downloading a licensed document. See `doc/MANUAL.md` §8, corrected to say so.
 
 Also decided: **email notification is permanently OFF on the VM** until email
 is deliberately tested, and every optional document-page field is enabled

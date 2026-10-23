@@ -136,10 +136,16 @@ Security Clearance    security clearance    SECURITY-CLEARANCE
 SecurityClearance     Security  Clearance
 ```
 
-This is deliberate: a license controls access to documents, and two licenses
-whose names differ only in punctuation would be an accident waiting to happen.
-If a license name is refused and you cannot see the clash, look for an existing
-license with the same letters and digits in the same order.
+This is deliberate, and it exists to help the person typing rather than to
+police the person naming. Users apply for their own licenses from their
+profile, and people type the same qualification in every imaginable
+combination of capitals, spaces, hyphens and brackets. Reducing both sides to
+their letters and digits means an application still finds the license it was
+meant to find.
+
+The side effect is that two licenses cannot be distinguished by punctuation
+alone. If a license name is refused and you cannot see the clash, look for an
+existing license with the same letters and digits in the same order.
 
 **Categories and versions are per project**, so two projects can each have a
 `Drawings` category without conflict, and renaming one does not affect the
@@ -496,9 +502,24 @@ A **license** in Doctis is a skill, security clearance, or professional
 qualification registered against a user account.  The term is Doctis-specific
 and is unrelated to software licensing.
 
-Documents can require users to hold one or more licenses before being granted
-access.  This supports controlled-distribution documents where access depends
-on a user's certifications or clearance level.
+Documents can be marked as requiring one or more licenses. This is intended to
+support controlled-distribution documents, where who may handle a document
+depends on a person's certifications or clearance.
+
+**What the license list is, and is not.** A user's licenses are a
+**self-administered record of applications and acceptances**, not a security
+grant. Users apply for a license themselves from
+[My Configuration View](#9-my-view-and-your-profile), and the list shows which
+of their applications have been accepted. It is a statement of what somebody
+holds, maintained with them rather than against them.
+
+**What it currently affects.** Holding a document's required licenses is
+checked in one place: whether a user may be recorded as that document's
+**Owner**. Requiring a license does **not** currently stop anyone from reading
+or downloading the document — there is no license check on the document view or
+on file download. Treat license requirements as a statement of who *should*
+handle a document, and use the document's **View Status** (public or private)
+and project access levels for access that has to be enforced.
 
 ### Managing licenses on a document
 
@@ -508,9 +529,12 @@ this panel.
 
 ### Managing user licenses
 
-User license holdings are managed from the user administration pages.  A user
-who does not hold a required license will be denied access to documents that
-require it.
+A user applies for a license from their own **My Configuration View**;
+administrators manage the holdings from the license administration pages. A
+license shown in brown on the profile is applied for but not yet accepted.
+
+A user who does not hold a document's required license cannot be recorded as
+that document's Owner. As above, it does not prevent them reading it.
 
 ---
 
