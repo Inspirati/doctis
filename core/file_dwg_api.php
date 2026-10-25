@@ -2732,6 +2732,28 @@ function file_dwg_git_branch_tip( string $p_bare, string $p_branch ): string {
 	return '';
 }
 
+/**
+ * Whether a branch exists in a bare repository.
+ *
+ * A document that names a branch which has since been deleted must not fall
+ * back to HEAD: it would silently start tracking a different line, and a
+ * manager could promote one line's work on to another line's record.  Only a
+ * row with no branch at all falls back.  Deletion is refused under the
+ * document push policy, so this arises on source repositories.
+ *
+ * @param string $p_bare
+ * @param string $p_branch
+ * @return bool
+ */
+function file_dwg_git_branch_exists( string $p_bare, string $p_branch ): bool {
+	if( $p_branch === '' ) {
+		return false;
+	}
+	exec( 'git --git-dir=' . escapeshellarg( $p_bare ) . ' show-ref --verify --quiet '
+		. escapeshellarg( 'refs/heads/' . $p_branch ) . ' 2>/dev/null', $t_out, $t_rc );
+	return $t_rc === 0;
+}
+
 /** Return the Git object ID for one file at a commit, or null if absent. */
 function file_dwg_git_object_sha( string $p_bare, string $p_commit, string $p_path ): ?string {
 	$t_sha = trim( (string)shell_exec(
@@ -2774,7 +2796,27 @@ function file_dwg_git_head_info( int $p_dwg_id ): ?array {
 	if( $t_bare === '' || !is_dir( $t_bare ) ) {
 		return null;
 	}
-	$t_head_sha = file_dwg_git_branch_tip( $t_bare, (string)$t_on_record['git_branch'] );
+	# A record whose branch has been deleted tracks nothing: falling back to
+	# HEAD would quietly follow a different line.  Reported so the view page
+	# can say so, and with no Draft, which also blocks promotion.
+	$t_branch = (string)$t_on_record['git_branch'];
+	if( $t_branch !== '' && !file_dwg_git_branch_exists( $t_bare, $t_branch ) ) {
+		$t_meta = file_dwg_git_commit_metadata( $t_bare, $t_on_record['git_sha'] );
+		return array(
+			'sha'            => $t_on_record['git_sha'],
+			'head_sha'       => $t_on_record['git_sha'],
+			'date'           => $t_meta !== null ? $t_meta['date'] : 0,
+			'author'         => $t_meta !== null ? $t_meta['author'] : '',
+			'filename'       => $t_on_record['filename'],
+			'git_path'       => $t_on_record['git_path'],
+			'has_draft'      => false,
+			'missing'        => false,
+			'stale'          => false,
+			'branch_missing' => true,
+		);
+	}
+
+	$t_head_sha = file_dwg_git_branch_tip( $t_bare, $t_branch );
 	if( $t_head_sha === '' ) {
 		return null;
 	}
@@ -2832,15 +2874,16 @@ function file_dwg_git_head_info( int $p_dwg_id ): ?array {
 		return null;
 	}
 	return array(
-		'sha'       => $t_sha,
-		'head_sha'  => $t_head_sha,
-		'date'      => $t_metadata['date'],
-		'author'    => $t_metadata['author'],
-		'filename'  => $t_filename,
-		'git_path'  => $t_path,
-		'has_draft' => $t_has_draft,
-		'missing'   => $t_missing,
-		'stale'     => $t_stale,
+		'sha'            => $t_sha,
+		'head_sha'       => $t_head_sha,
+		'date'           => $t_metadata['date'],
+		'author'         => $t_metadata['author'],
+		'filename'       => $t_filename,
+		'git_path'       => $t_path,
+		'has_draft'      => $t_has_draft,
+		'missing'        => $t_missing,
+		'stale'          => $t_stale,
+		'branch_missing' => false,
 	);
 }
 

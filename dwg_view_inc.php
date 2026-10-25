@@ -1093,6 +1093,10 @@ $t_git_head_author   = $t_git_head_info ? $t_git_head_info['author']   : null;
 $t_git_head_filename = $t_git_head_info ? $t_git_head_info['filename'] : null;
 $t_has_draft         = $t_git_head_info && $t_git_head_info['has_draft'];
 $t_path_missing      = $t_git_head_info && $t_git_head_info['missing'];
+# The branch this document records has been deleted from the repository, so
+# it tracks nothing until it is re-pointed. Only reachable on a repository
+# under the source push policy, which is the one that permits deletion.
+$t_branch_missing    = $t_git_head_info && !empty( $t_git_head_info['branch_missing'] );
 $t_draft_stale       = $t_git_head_info && $t_git_head_info['stale'];
 $t_uploaded_file = $t_primary_draft ?: $t_primary_file;
 $t_primary_uploaded = $t_uploaded_file &&
@@ -1175,7 +1179,17 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 <?php	endif; ?>
 					</td>
 				</tr>
-<?php	if( $t_has_draft || $t_path_missing ): ?>
+<?php	if( $t_branch_missing ): ?>
+				<tr>
+					<th class="category">
+						<span class="label label-danger"><?php echo lang_get( 'primary_document_draft' ) ?></span>
+					</th>
+					<td colspan="5">
+						<?php echo sprintf( lang_get( 'source_release_branch_gone' ),
+							'<code>' . string_display_line( $t_primary_file['git_branch'] ) . '</code>' ) ?>
+					</td>
+				</tr>
+<?php	elseif( $t_has_draft || $t_path_missing ): ?>
 				<tr>
 					<th class="category">
 						<span class="label label-default"><?php echo lang_get( 'primary_document_draft' ) ?></span>
