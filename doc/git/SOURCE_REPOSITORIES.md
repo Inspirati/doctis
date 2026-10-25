@@ -144,6 +144,71 @@ button refuses and says so. **Decide a source sub-project's repository before
 anyone uploads a document to it.** Moving a project's worth of documents
 between repositories is not built (§11).
 
+### 1.3 What is registered, and what is not (owner, 2026-10-26)
+
+Doctis is a **document control system** that can also host source trees. It
+is not becoming a forge. The consequence is a rule worth stating plainly,
+because it decides a lot:
+
+> In a source project, **no individual source file is a registered Doctis
+> item.** The registered items are **releases and/or branches**.
+
+A repository may hold ten thousand files and three registered documents, and
+nothing objects (§4.1). Issues, approval, ownership, history and the
+documents list all operate on the release or the line — never on
+`src/main.c`.
+
+It follows that making a project a source project is an **explicit act**, not
+something inferred (§1.2), and that the trap in §1.2 — the decision must
+precede the first upload — is acceptable rather than regrettable.
+
+#### Branches are not all temporary
+
+The common git pattern is a feature branch that exists until it merges. Some
+repositories instead host **permanent branches**: a maintenance line for a
+shipped version, a per-customer line, a long-lived integration line. Those
+deserve records of their own.
+
+**A branch record works today.** A tree-rooted document carries `git_branch`
+and follows that branch's tip, so one document per line is already the
+model, verified 2026-10-26 with three lines of one repository:
+
+| document | branch | commit on `v1-maintenance` | commit on `main` |
+|---|---|---|---|
+| Firmware, main line | `main` | — | Draft |
+| Firmware, v1 maintenance line | `v1-maintenance` | Draft | — |
+| Firmware, Acme customer line | `customer-acme` | — | — |
+
+Each line's Draft moves only for its own commits.
+
+**A deleted branch strands its record**, rather than silently following
+another line — fixed 2026-10-26 after the probe caught it doing exactly
+that. `file_dwg_git_head_info()` reports `branch_missing`, offers no Draft,
+and promotion is refused; the version on record is untouched. Only reachable
+under the `source` push policy, which is the one that permits deletion.
+
+#### Open: branch record and release record are the same shape
+
+A branch record and a release record are both *(path, branch, commit)* rows.
+What should differ is whether **On Record advances**: a line goes on, a
+release is frozen. Today every tree-rooted document advances, so there is no
+way to say "this one is finished".
+
+The two-tier reading, which reconciles this with the owner's preference for
+one document per release (§8.3):
+
+- a **branch record** is the living line — permanent, owned, never frozen;
+- a **release record** is cut from it, frozen at a commit, with its own
+  status and approval cycle.
+
+A way to tell them apart is needed and **is not yet decided**. The least
+invasive candidate, which needs no schema change and no new concept: **a
+document stops tracking its branch once its status reaches a configured
+"released" threshold.** A branch record sits permanently below it and
+tracks for ever; a release freezes the moment it is approved — which also
+answers §8.3's superseded-release-shows-a-Draft problem with the same rule.
+Decide before building the *Cut release* action.
+
 ---
 
 ## 2. Environment primer (for a cold session)
@@ -659,6 +724,18 @@ person from the one before it.
   bare-repo HEAD (a clone that checks out nothing). Tests: `test-git-doctis.php`
   102 → 137, `test-git-php.php` 20/20, PHPUnit `mantis` 382/382. Trial
   projects 254 and 255 and documents 209 and 210 left on the VM.
+- **2026-10-26** — Owner framed the system rule in §1.3: Doctis is a document
+  control system that can host source trees, and in a source project **no
+  individual source file is a registered item** — the registered items are
+  releases and/or branches. Confirmed the explicit-act trap in §1.2 is
+  acceptable. Raised permanent branches. Probed with three lives lines of one
+  repository: a document per line works and each Draft moves only for its own
+  commits. The probe also caught a defect in this session's own code — a
+  record whose branch had been deleted fell back to the repository HEAD and
+  offered main's tip for promotion on to another line's record. Fixed:
+  `branch_missing`, no Draft, promotion refused. `test-git-doctis.php`
+  141 → 152. Left open in §1.3: branch record and release record are the same
+  shape, and nothing yet says which is frozen.
 - **2026-10-26** — Owner asked what a newly created project defaults to and
   how its type is changed afterwards, having found the setting only on
   Manage → Git Store. The gap was real: the push policy lived on an
@@ -740,7 +817,7 @@ In the order that would matter to a first real user:
 | `doc/MANUAL.md` section | Nothing user-facing documents this |
 | Importer mode: register a tree as one document | §8, adoption; the primitive exists, the flag does not |
 | Maintain `{repository}.default_branch` after a push | §8.1; the hook repairs HEAD, the row goes stale |
-| Per-branch release lines, exercised | §8 — unblocked, but never run with two live branches at once |
+| **Decide how a release is told from a branch record** | §1.3 — both are *(path, branch, commit)*; a line advances, a release should freeze. Blocks the *Cut release* action |
 | Moving existing documents between repositories | §1.2 — a project that already stores documents in the repository it inherits cannot be given its own until they move; `file_dwg_primary_move_prepare()` moves one document, nothing moves a project's worth |
 | Release notes that accumulate | §8.1; `description` is 255 chars and is replaced |
 | A status gate on promotion | §8.1; decide whether a release needs an approved status |
