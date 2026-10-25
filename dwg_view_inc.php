@@ -1101,6 +1101,13 @@ $t_branch_missing    = $t_git_head_info && !empty( $t_git_head_info['branch_miss
 # shows no Draft row and offers no promotion.
 $t_record_frozen     = $t_primary_file !== null && dwg_is_frozen( $f_dwg_id );
 $t_can_freeze        = !$t_force_readonly && $t_primary_file !== null && $t_can_sync_to_head;
+# Every registered primary document lives in a git repository, a source
+# record and an ordinary document alike, so both can be cloned and worked on
+# locally — a document-control repository simply refuses the pushes that
+# would rewrite an approved version. Hidden from anyone the clone page would
+# then refuse.
+$t_can_clone         = $t_primary_file !== null
+	&& repository_user_can_clone( (int)dwg_get_field( $f_dwg_id, 'project_id' ) );
 $t_draft_stale       = $t_git_head_info && $t_git_head_info['stale'];
 $t_uploaded_file = $t_primary_draft ?: $t_primary_file;
 $t_primary_uploaded = $t_uploaded_file &&
@@ -1183,7 +1190,7 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 							<?php echo lang_get( 'primary_document_tag' ) ?>
 						</a>
 <?php	endif; ?>
-<?php	if( $t_is_source_release && ON == config_get_global( 'git_http_enabled', OFF ) ): ?>
+<?php	if( $t_can_clone ): ?>
 						<a href="dwg_repo_clone_page.php?dwg_id=<?php echo $f_dwg_id ?>"
 							class="btn btn-primary btn-xs btn-white btn-round">
 							<?php echo lang_get( 'repo_clone_button' ) ?>

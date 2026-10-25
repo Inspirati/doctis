@@ -51,6 +51,7 @@ require_api( 'constant_inc.php' );
 require_api( 'database_api.php' );
 require_api( 'project_api.php' );
 require_api( 'project_hierarchy_api.php' );
+require_api( 'access_api.php' );
 require_api( 'utility_api.php' );
 
 use Mantis\Exceptions\ServiceException;
@@ -395,6 +396,42 @@ function repository_clone_url( string $p_basename, string $p_username = '', stri
 	return $t_url['scheme'] . '://' . $t_credentials . $t_url['host']
 		. ( isset( $t_url['port'] ) ? ':' . $t_url['port'] : '' )
 		. '/git/' . $p_basename . '.git';
+}
+
+/**
+ * Whether a user may clone the repository a project's documents live in.
+ *
+ * Cloning is reading the repository over the Smart HTTP gateway, so the test
+ * is the gateway's own: remote git access enabled, a repository that exists
+ * on disk, and $g_git_http_read_threshold on the repository's *owner*
+ * project — which is not necessarily the project asked about, since a tree
+ * shares one repository.
+ *
+ * Shared by everything that offers a Clone button, so a button is never
+ * shown to someone the clone page would then refuse.
+ *
+ * @param int      $p_project_id
+ * @param int|null $p_user_id  Defaults to the current user.
+ * @return bool
+ */
+function repository_user_can_clone( int $p_project_id, ?int $p_user_id = null ): bool {
+	if( OFF == config_get_global( 'git_http_enabled', OFF ) ) {
+		return false;
+	}
+	$t_repository_id = repository_id_for_project( $p_project_id );
+	if( $t_repository_id === 0 || !is_dir( repository_bare_path( $t_repository_id ) ) ) {
+		return false;
+	}
+	$t_row = repository_get_row( $t_repository_id );
+	if( !$t_row ) {
+		return false;
+	}
+	$t_user_id = $p_user_id === null ? auth_get_current_user_id() : $p_user_id;
+	$t_owner_project_id = (int)$t_row['owner_project_id'];
+
+	return access_has_project_level(
+		config_get( 'git_http_read_threshold', null, $t_user_id, $t_owner_project_id ),
+		$t_owner_project_id, $t_user_id );
 }
 
 /**

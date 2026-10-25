@@ -57,13 +57,14 @@ if( $t_repo_id === 0 || !is_dir( repository_bare_path( $t_repo_id ) ) ) {
 	trigger_error( ERROR_FILE_NOT_FOUND, ERROR );
 }
 
-# Cloning is reading the repository, so it is gated exactly as the gateway
-# gates a fetch: on the repository's owner project.
+# The same test the Clone buttons are shown by, so a button never leads here
+# to be refused: read access on the repository's owner project.
+if( !repository_user_can_clone( $f_project_id ) ) {
+	access_denied();
+}
+
 $t_repo_row   = repository_get_row( $t_repo_id );
 $t_owner_proj = (int)$t_repo_row['owner_project_id'];
-access_ensure_project_level(
-	config_get( 'git_http_read_threshold', null, auth_get_current_user_id(), $t_owner_proj ),
-	$t_owner_proj );
 
 $t_basename  = repository_basename( $t_repo_id );
 $t_policy    = repository_push_policy( $t_repo_id );
