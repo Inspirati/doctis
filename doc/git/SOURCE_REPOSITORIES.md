@@ -741,6 +741,18 @@ person from the one before it.
 
 ## 9. Log
 
+- **2026-10-26** — Owner asked what a clone of each sample project contains
+  and which git operations work on each. Demonstrated and recorded in §10.1,
+  including that a project with no repository cannot be cloned at all, that
+  the approved pins are visible (but not writable) to a clone, the full
+  allowed/refused matrix run against both policies with the verbatim
+  refusals, and a developer revising a controlled document from their clone —
+  the push is allowed, it raises a Draft, and the approved version still
+  downloads as it was. One matrix row was initially a **bad test**: rewinding
+  past the document repo's root commit failed client-side with "src refspec
+  does not match any" and never reached the hook, so it was re-run against a
+  commit that exists.
+
 - **2026-10-26** — Owner corrected the `frozen` invariant: it is a valid state
   for an ordinary document too, which lets a released document be tracked
   directly. Done, and it removed a special case rather than adding one —
@@ -864,6 +876,89 @@ Enabling it for a project, start to finish:
 Issues raised against the document carry the commit they were raised at, so
 `file_download.php?type=dwg_primary_at_sha` serves the release that was on
 record at the time.
+
+---
+
+### 10.1 What a clone contains, and what may be done to it (demonstrated 2026-10-26)
+
+Two projects on the VM: `Engineering` (89), an ordinary document project, and
+its source sub-project `Flight Controller Firmware` (90), which has a
+repository of its own under the `source` policy.
+
+**A project with no repository cannot be cloned at all.** `Engineering` had
+none until a document file was uploaded to it — `repository_id_for_project()`
+returned 0 — because a repository is created on first need and a project that
+only holds document *records* never needs one. Uploading a primary document
+created `engineering-r26`.
+
+**Each clone contains only its own project's content**, because they are
+separate repositories:
+
+```
+engineering-r26                      flight-controller-firmware-r7
+  260/quality-manual.md                README.md
+                                       src/main.c
+  main, 1 commit                       main, 2 commits
+  policy: document control             policy: source
+```
+
+No source in the document clone, no documents in the source clone, and
+neither can see the other.
+
+**The approved pins are visible to a clone.** `git ls-remote` lists
+`refs/doctis/approved/<dwg>/<n>`, so a developer can see exactly which
+commits Doctis holds on record. They are readable and not writable, under
+either policy.
+
+#### The operations matrix, run against both
+
+The same sequence of developer operations, same script, both repositories:
+
+| Operation | `document control` | `source` |
+|---|---|---|
+| clone, fetch | allowed | allowed |
+| commit + push (fast-forward) | allowed | allowed |
+| create a branch | allowed | allowed |
+| create a tag | allowed | allowed |
+| amend + force-push a branch | **refused** | allowed |
+| delete a branch | **refused** | allowed |
+| move an existing tag | **refused** | allowed |
+| delete a tag | **refused** | allowed |
+| rewind `main` (non-fast-forward) | **refused** | allowed |
+| delete `main` | **refused** | allowed |
+| push to `refs/doctis/*` | **refused** | **refused** |
+
+Verbatim, which is what a developer sees:
+
+```
+remote: doctis: non-fast-forward update of refs/heads/main rejected (force-push / history rewrite is not permitted)
+remote: doctis: deleting refs/heads/main is not permitted
+remote: doctis: refs/doctis/approved/999/1 is server-managed and cannot be pushed
+```
+
+**The `source` policy does allow rewinding `main` past an approved release,
+and the release survives it.** Demonstrated: `main` was force-rewound from
+`b2b83e1b` to `b922a0fa` and `git gc --prune=now` run, after which both
+approved commits were still present, because the pins keep them reachable.
+That is the whole reason the relaxation is safe, and it is why
+`refs/doctis/*` is the one rule neither policy relaxes.
+
+#### A developer revising a controlled document
+
+The point of the document policy is not to stop work, but to stop work
+*replacing the record*. From the clone of `engineering-r26`:
+
+```
+before   dwg 260   On Record af924fa2   Draft (none)
+         edit 260/quality-manual.md, commit, push   -> ALLOWED (fast-forward)
+after    dwg 260   On Record af924fa2   Draft a8cc88a1
+```
+
+Downloading the document still gives *Rev A. Issued for use.*; downloading
+the Draft gives *Rev B draft, edited in the clone.* The approved version did
+not move, and only a promotion inside Doctis moves it. Append-only history
+plus an unpushable pin is what makes that true, rather than any restriction
+on committing.
 
 ---
 

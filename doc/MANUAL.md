@@ -1010,8 +1010,29 @@ remote: doctis: non-fast-forward update of refs/heads/my-branch rejected
 remote: doctis: deleting refs/heads/my-branch is not permitted
 ```
 
+Here is the same set of operations against each, which is what you can
+expect:
+
+| Operation | document control | source repository |
+|---|---|---|
+| clone, fetch, pull | yes | yes |
+| commit and push | yes | yes |
+| create a branch or tag | yes | yes |
+| rebase and force-push | **no** | yes |
+| delete a branch or tag | **no** | yes |
+| move an existing tag | **no** | yes |
+| rewind or delete `main` | **no** | yes |
+
+Note what the document policy does *not* stop: you can commit and push
+freely, including to a document's own file. What it stops is **replacing**
+history. Your push becomes a **Draft** in Doctis, and the approved version
+stays exactly where it was until somebody promotes it — downloading the
+document still gives you the approved revision, and downloading the Draft
+gives you yours.
+
 Under **both** policies, the `refs/doctis/*` refs are server-managed and
-cannot be pushed. Those are the pins Doctis puts on every approved version,
+cannot be pushed. You can *read* them — `git ls-remote` will show you which
+commits Doctis holds on record, which is often useful. Those are the pins Doctis puts on every approved version,
 which is what makes the relaxed policy safe: a release you have approved
 stays intact even if someone later force-pushes the branch past it.
 
