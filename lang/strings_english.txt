@@ -2356,6 +2356,21 @@ $s_push_policy_document_help       = 'Append-only: force-push and ref deletion a
 $s_push_policy_source_help         = 'Normal software development: force-push and ref deletion are allowed on every ref. Released history stays safe because every On Record commit is pinned by refs/doctis/approved/*, which keeps it reachable.';
 $s_push_policy_apply               = 'Set Policy';
 
+# Project repository block on Manage Project (doc/git/SOURCE_REPOSITORIES.md)
+$s_project_repository_section       = 'Repository';
+$s_project_repository               = 'Documents stored in';
+$s_project_repository_none          = 'No repository yet — one is created when this project first needs it.';
+$s_project_repository_inherited     = 'inherited';
+$s_project_repository_own           = 'this project\'s own';
+$s_project_repository_from          = 'from %1$s. A project tree shares one repository by default.';
+$s_project_repository_manage        = 'Manage the repository';
+$s_project_repository_separate      = 'Separate repository';
+$s_project_repository_already_own   = 'This project already has its own repository.';
+$s_project_repository_has_documents = 'This project already stores %1$d document file(s) in the repository it inherits. Move them to another project first; relinking now would leave them pointing into a repository this project no longer uses.';
+$s_project_repository_create_button = 'Give this project its own repository';
+$s_project_repository_create_help   = 'Needed when this project must run a different push policy from its parent — a source code repository alongside a document one, for example. The push policy is per repository, so one repository cannot be append-only for documents and rewritable for development at the same time.';
+$s_project_repository_create_confirm = 'This project will stop sharing its parent\'s repository and get one of its own. Documents created in it from now on are stored there. Continue?';
+
 # Document publishing (doc/publish/PUBLISHING.md)
 $s_dwg_publish_button          = 'Publish';
 $s_dwg_republish_button        = 'Republish';
