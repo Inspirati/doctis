@@ -1097,6 +1097,9 @@ $t_path_missing      = $t_git_head_info && $t_git_head_info['missing'];
 # it tracks nothing until it is re-pointed. Only reachable on a repository
 # under the source push policy, which is the one that permits deletion.
 $t_branch_missing    = $t_git_head_info && !empty( $t_git_head_info['branch_missing'] );
+# A frozen release is pinned at its commit and tracks nothing further, so it
+# shows no Draft row and offers no promotion.
+$t_release_frozen    = $t_primary_file !== null && dwg_is_frozen( $f_dwg_id );
 $t_draft_stale       = $t_git_head_info && $t_git_head_info['stale'];
 $t_uploaded_file = $t_primary_draft ?: $t_primary_file;
 $t_primary_uploaded = $t_uploaded_file &&
@@ -1112,7 +1115,9 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 	<div class="widget-header widget-header-small">
 		<h4 class="widget-title lighter">
 			<?php print_icon( $t_is_source_release ? 'fa-code-fork' : 'fa-file', 'ace-icon' ); ?>
-			<?php echo lang_get( $t_is_source_release ? 'source_release_section' : 'primary_document_section' ) ?>
+			<?php echo lang_get( $t_is_source_release
+				? ( dwg_is_frozen( $f_dwg_id ) ? 'source_release_frozen_label' : 'source_release_section' )
+				: 'primary_document_section' ) ?>
 		</h4>
 		<div class="widget-toolbar">
 			<a data-action="collapse" href="#">
@@ -1179,7 +1184,18 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 <?php	endif; ?>
 					</td>
 				</tr>
-<?php	if( $t_branch_missing ): ?>
+<?php	if( $t_release_frozen ): ?>
+				<tr>
+					<th class="category">
+						<span class="label label-primary"><?php echo lang_get( 'source_release_frozen_label' ) ?></span>
+					</th>
+					<td colspan="5">
+						<?php echo sprintf( lang_get( 'source_release_frozen_notice' ),
+							'<code>' . htmlspecialchars( substr( $t_primary_file['git_sha'], 0, 8 ) ) . '</code>',
+							'<code>' . string_display_line( $t_primary_file['git_branch'] ) . '</code>' ) ?>
+					</td>
+				</tr>
+<?php	elseif( $t_branch_missing ): ?>
 				<tr>
 					<th class="category">
 						<span class="label label-danger"><?php echo lang_get( 'primary_document_draft' ) ?></span>

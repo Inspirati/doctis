@@ -381,8 +381,8 @@ function git_store_documents( array $p_repo, array $p_tree ): array {
 	}
 	$t_project_repo = array();
 	foreach( array( 'record' => 'dwg_primary_file', 'draft' => 'dwg_primary_draft' ) as $t_kind => $t_table ) {
-		$t_result = db_query( 'SELECT f.dwg_id, f.git_path, f.git_sha, f.filesize, f.file_type, f.date_added, d.project_id,'
-			. ' d.summary, doc.title, doc.reference FROM {' . $t_table . '} f'
+		$t_result = db_query( 'SELECT f.dwg_id, f.git_path, f.git_sha, f.filesize, f.file_type, f.date_added,'
+			. ' d.project_id, d.kind, d.frozen, d.summary, doc.title, doc.reference FROM {' . $t_table . '} f'
 			. ' JOIN {dwg} d ON d.id = f.dwg_id LEFT JOIN {documents} doc ON doc.id = d.document_id'
 			. ' ORDER BY f.git_path' );
 		while( ( $t_row = db_fetch_array( $t_result ) ) !== false ) {
@@ -405,7 +405,7 @@ function git_store_documents( array $p_repo, array $p_tree ): array {
 	$t_specs = array();
 	foreach( $t_docs as $t_path => $t_doc ) {
 		if( $t_doc['record'] && $t_doc['record']['git_sha'] !== ''
-		 && ( $t_doc['record']['file_type'] ?? '' ) !== DWG_TREE_MIME_TYPE ) {
+		 && (int)( $t_doc['record']['kind'] ?? DWG_KIND_DOCUMENT ) !== DWG_KIND_SOURCE ) {
 			$t_specs[] = $t_doc['record']['git_sha'] . ':' . $t_path;
 		}
 	}
@@ -414,7 +414,7 @@ function git_store_documents( array $p_repo, array $p_tree ): array {
 		if( !$t_doc['record'] ) {
 			continue;
 		}
-		if( ( $t_doc['record']['file_type'] ?? '' ) === DWG_TREE_MIME_TYPE ) {
+		if( (int)( $t_doc['record']['kind'] ?? DWG_KIND_DOCUMENT ) === DWG_KIND_SOURCE ) {
 			$t_doc['record']['state'] = git_store_tree_state(
 				$p_repo, $t_doc['record']['git_sha'], $t_head_sha, $t_path );
 			continue;

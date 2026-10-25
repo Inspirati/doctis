@@ -61,6 +61,7 @@ $t_default_branch = trim( (string)shell_exec(
 # ── Handle POST (register the release) ─────────────────────────────────────
 
 $t_error    = '';
+$f_frozen   = false;
 $f_path     = '';
 $f_branch   = $t_default_branch;
 $f_commit   = '';
@@ -73,6 +74,7 @@ if( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
 	$f_branch   = trim( gpc_get_string( 'branch', $t_default_branch ) );
 	$f_commit   = strtolower( trim( gpc_get_string( 'commit', '' ) ) );
 	$f_revision = trim( gpc_get_string( 'description', '' ) );
+	$f_frozen   = gpc_get_string( 'record_as', 'line' ) === 'release';
 
 	if( $t_existing !== null ) {
 		$t_error = 'This document already has a primary document registered.';
@@ -93,7 +95,7 @@ if( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
 				file_dwg_primary_register(
 					$f_dwg_id, auth_get_current_user_id(), $f_path, $t_sha,
 					$f_revision, true, '',
-					array( 'allow_tree' => true, 'branch' => $f_branch )
+					array( 'allow_tree' => true, 'branch' => $f_branch, 'frozen' => $f_frozen )
 				);
 				form_security_purge( 'dwg_source_release' );
 				print_header_redirect( 'dwg_view.php?id=' . $f_dwg_id );
@@ -179,6 +181,23 @@ layout_page_begin();
 				<form method="post" action="dwg_source_release_page.php">
 					<?php echo form_security_field( 'dwg_source_release' ) ?>
 					<input type="hidden" name="id" value="<?php echo (int)$f_dwg_id ?>" />
+
+					<div class="form-group">
+						<label><?php echo lang_get( 'source_release_record_as' ) ?></label>
+						&nbsp;
+						<label class="nopadding">
+							<input type="radio" class="ace" name="record_as" value="line"
+								<?php echo $f_frozen ? '' : 'checked="checked"' ?> />
+							<span class="lbl">&nbsp;<?php echo lang_get( 'source_release_as_line' ) ?></span>
+						</label>
+						&nbsp;&nbsp;
+						<label class="nopadding">
+							<input type="radio" class="ace" name="record_as" value="release"
+								<?php echo $f_frozen ? 'checked="checked"' : '' ?> />
+							<span class="lbl">&nbsp;<?php echo lang_get( 'source_release_as_release' ) ?></span>
+						</label>
+						<br /><span class="small"><?php echo lang_get( 'source_release_record_as_help' ) ?></span>
+					</div>
 
 					<div class="form-group">
 						<label for="branch"><?php echo lang_get( 'source_release_branch' ) ?></label>

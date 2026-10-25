@@ -1786,10 +1786,14 @@ function file_dwg_git_path_sanitize( string $p_path, bool $p_allow_root = false 
 # Draft to On Record is cutting a release.  Design and rationale:
 # doc/git/SOURCE_REPOSITORIES.md.
 #
-# Tree-rooted rows are distinguished by file_type === DWG_TREE_MIME_TYPE, which
-# file_dwg_primary_register() sets from `git cat-file -t`, so no schema change
-# is needed.  filesize is forced to 0: a tree object's own size is not the size
-# of anything a user would recognise.
+# A source record is {dwg}.kind = DWG_KIND_SOURCE, set by
+# file_dwg_primary_register() from the object it registers, so the kind can
+# never disagree with what is stored.  {dwg}.frozen then says whether it is a
+# *release*, pinned at its commit, or a *line*, which follows its branch's tip
+# and offers each new commit as a Draft.  file_type still carries
+# DWG_TREE_MIME_TYPE for display and Content-Type, but nothing branches on it.
+# filesize is forced to 0: a tree object's own size is not the size of
+# anything a user would recognise.
 
 /**
  * Whether source release records may be registered in a project.  Off unless
@@ -1804,14 +1808,17 @@ function file_dwg_source_release_enabled( int $p_project_id ): bool {
 }
 
 /**
- * Whether a {dwg_primary_file} / {dwg_primary_draft} row records a tree (a
- * source release) rather than a single file.
+ * Whether a {dwg_primary_file} / {dwg_primary_draft} row records a git tree
+ * (a source repository release or line) rather than a single file.
+ *
+ * Answered from the owning document's kind, which is the single source of
+ * truth; the row's file_type is descriptive only.
  *
  * @param array|null $p_row
  * @return bool
  */
 function file_dwg_primary_is_tree( $p_row ): bool {
-	return is_array( $p_row ) && ( $p_row['file_type'] ?? '' ) === DWG_TREE_MIME_TYPE;
+	return is_array( $p_row ) && isset( $p_row['dwg_id'] ) && dwg_is_source( (int)$p_row['dwg_id'] );
 }
 
 /**
@@ -2021,7 +2028,7 @@ function file_dwg_primary_path_in_use( int $p_dwg_id, int $p_project_id, string 
 		'SELECT f.dwg_id FROM {dwg_primary_file} f'
 		. ' INNER JOIN {dwg} d ON d.id = f.dwg_id'
 		. ' WHERE f.git_path=' . db_param() . ' AND f.dwg_id<>' . db_param()
-		. ' AND f.file_type<>\'' . DWG_TREE_MIME_TYPE . '\''
+		. ' AND d.kind<>' . DWG_KIND_SOURCE
 		. ' AND d.project_id IN (' . implode( ',', $t_in ) . ')',
 		$t_params, 1
 	);
@@ -2040,7 +2047,7 @@ function file_dwg_primary_path_in_use( int $p_dwg_id, int $p_project_id, string 
 		'SELECT f.dwg_id FROM {dwg_primary_draft} f'
 		. ' INNER JOIN {dwg} d ON d.id = f.dwg_id'
 		. ' WHERE f.git_path=' . db_param() . ' AND f.dwg_id<>' . db_param()
-		. ' AND f.file_type<>\'' . DWG_TREE_MIME_TYPE . '\''
+		. ' AND d.kind<>' . DWG_KIND_SOURCE
 		. ' AND d.project_id IN (' . implode( ',', $t_in ) . ')',
 		$t_params, 1
 	);
@@ -2067,10 +2074,12 @@ function file_dwg_primary_path_in_use( int $p_dwg_id, int $p_project_id, string 
  * @param string $p_description Optional revision note.
  * @param bool   $p_pin         Pin an approved ref; independent of the reference.
  * @param string $p_file_type   MIME type; '' derives from the file extension.
- * @param array  $p_options     'allow_tree' => bool, accept a git tree and
- *                              record a source release; 'branch' => string,
- *                              the release line to record instead of whatever
- *                              the repository's HEAD names.
+ * @param array  $p_options     'allow_tree' => bool, accept a git tree and so
+ *                              record a source repository rather than a file;
+ *                              'frozen' => bool, pin it as a *release* rather
+ *                              than a *line* that follows its branch;
+ *                              'branch' => string, the line to record instead
+ *                              of whatever the repository's HEAD names.
  * @return array{git_sha: string, git_path: string, filename: string, filesize: int}
  * @throws ClientException when the SHA/path do not exist or the path collides.
  * @throws ServiceException when the project has no repository on disk.
@@ -2204,6 +2213,13 @@ function file_dwg_primary_register( int $p_dwg_id, int $p_user_id, string $p_git
 			$t_branch,
 		)
 	);
+
+	# The kind follows the object actually registered, so the two cannot drift.
+	# Freezing is the caller's to state and only means anything for a tree.
+	dwg_set_kind( $p_dwg_id,
+		$t_object_type === 'tree' ? DWG_KIND_SOURCE : DWG_KIND_DOCUMENT,
+		$t_object_type === 'tree'
+			&& ( $p_options['frozen'] ?? ( $t_previous ? dwg_is_frozen( $p_dwg_id ) : false ) ) );
 
 	# A document registered from Git has a reference regardless of approval.
 	file_dwg_set_document_reference( $p_dwg_id, $t_sha );
@@ -2799,6 +2815,25 @@ function file_dwg_git_head_info( int $p_dwg_id ): ?array {
 	# A record whose branch has been deleted tracks nothing: falling back to
 	# HEAD would quietly follow a different line.  Reported so the view page
 	# can say so, and with no Draft, which also blocks promotion.
+	# A frozen release is pinned at its commit: later work on the line is a
+	# matter for the line's own record, or for the next release.
+	if( dwg_is_frozen( $p_dwg_id ) ) {
+		$t_meta = file_dwg_git_commit_metadata( $t_bare, $t_on_record['git_sha'] );
+		return array(
+			'sha'            => $t_on_record['git_sha'],
+			'head_sha'       => $t_on_record['git_sha'],
+			'date'           => $t_meta !== null ? $t_meta['date'] : 0,
+			'author'         => $t_meta !== null ? $t_meta['author'] : '',
+			'filename'       => $t_on_record['filename'],
+			'git_path'       => $t_on_record['git_path'],
+			'has_draft'      => false,
+			'missing'        => false,
+			'stale'          => false,
+			'branch_missing' => false,
+			'frozen'         => true,
+		);
+	}
+
 	$t_branch = (string)$t_on_record['git_branch'];
 	if( $t_branch !== '' && !file_dwg_git_branch_exists( $t_bare, $t_branch ) ) {
 		$t_meta = file_dwg_git_commit_metadata( $t_bare, $t_on_record['git_sha'] );
@@ -2813,6 +2848,7 @@ function file_dwg_git_head_info( int $p_dwg_id ): ?array {
 			'missing'        => false,
 			'stale'          => false,
 			'branch_missing' => true,
+			'frozen'         => false,
 		);
 	}
 
@@ -2884,6 +2920,7 @@ function file_dwg_git_head_info( int $p_dwg_id ): ?array {
 		'missing'        => $t_missing,
 		'stale'          => $t_stale,
 		'branch_missing' => false,
+		'frozen'         => false,
 	);
 }
 

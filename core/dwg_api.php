@@ -1959,6 +1959,56 @@ function dwg_get_attachments( $p_bug_id ) {
  *
  * @access public
  */
+/**
+ * What kind of record a document is: DWG_KIND_DOCUMENT (its primary document
+ * is a file) or DWG_KIND_SOURCE (it is a git tree — a source repository
+ * release or line).  See doc/git/SOURCE_REPOSITORIES.md.
+ *
+ * @param int $p_dwg_id
+ * @return int
+ */
+function dwg_get_kind( $p_dwg_id ) {
+	return (int)dwg_get_field( $p_dwg_id, 'kind' );
+}
+
+/** Whether a document records a source repository rather than a file. */
+function dwg_is_source( $p_dwg_id ) {
+	return dwg_get_kind( $p_dwg_id ) === DWG_KIND_SOURCE;
+}
+
+/**
+ * Whether a source record is pinned at its commit and tracks nothing further
+ * — a *release*, as opposed to a *line*, which follows its branch's tip.
+ *
+ * `frozen` is meaningful only for DWG_KIND_SOURCE, so this reports false for
+ * a document kind whatever the column happens to hold: the otherwise
+ * meaningless "frozen document" cannot reach any caller.
+ *
+ * @param int $p_dwg_id
+ * @return bool
+ */
+function dwg_is_frozen( $p_dwg_id ) {
+	return dwg_is_source( $p_dwg_id ) && (int)dwg_get_field( $p_dwg_id, 'frozen' ) === 1;
+}
+
+/**
+ * Record what kind of thing a document is, and whether it is frozen.
+ *
+ * Called from file_dwg_primary_register(), which knows what it registered, so
+ * the kind can never disagree with the object actually stored.  Freezing a
+ * document kind is refused rather than silently ignored.
+ *
+ * @param int  $p_dwg_id
+ * @param int  $p_kind    DWG_KIND_DOCUMENT or DWG_KIND_SOURCE.
+ * @param bool $p_frozen  Ignored unless the kind is DWG_KIND_SOURCE.
+ * @return void
+ */
+function dwg_set_kind( $p_dwg_id, $p_kind, $p_frozen = false ) {
+	$t_kind = (int)$p_kind === DWG_KIND_SOURCE ? DWG_KIND_SOURCE : DWG_KIND_DOCUMENT;
+	dwg_set_field( $p_dwg_id, 'kind', $t_kind );
+	dwg_set_field( $p_dwg_id, 'frozen', ( $t_kind === DWG_KIND_SOURCE && $p_frozen ) ? 1 : 0 );
+}
+
 function dwg_set_field( $p_bug_id, $p_field_name, $p_value ) {
 	$c_bug_id = (int)$p_bug_id;
 	$c_value = null;
@@ -1986,6 +2036,10 @@ function dwg_set_field( $p_bug_id, $p_field_name, $p_value ) {
 
 		# boolean
 		case 'sticky':
+		case 'frozen':
+
+		# Doctis: what kind of record this is (DWG_KIND_*)
+		case 'kind':
 
 		# string
 		case 'os':

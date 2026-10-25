@@ -192,6 +192,12 @@ define( 'DISK', 1 );
 define( 'DATABASE', 2 );
 define( 'GIT', 3 );
 
+# Doctis: what kind of thing a {dwg} record is ({dwg}.kind), and whether a
+# source record still tracks its branch ({dwg}.frozen).  See
+# doc/git/SOURCE_REPOSITORIES.md and dwg_is_source() / dwg_is_frozen().
+define( 'DWG_KIND_DOCUMENT', 0 );
+define( 'DWG_KIND_SOURCE', 1 );
+
 # Doctis: sentinel file_type marking a primary document whose git_path names a
 # git TREE rather than a blob — a source-repository release record, where the
 # document records a repository (or a subtree of one) at a commit rather than a
