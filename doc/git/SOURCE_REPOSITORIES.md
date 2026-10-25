@@ -104,6 +104,46 @@ the approved artefact would be silently incomplete. (Doctis also refuses to
 register one — a gitlink is `160000 commit`, which
 `file_dwg_git_object_type()` reports as neither blob nor tree.)
 
+#### What a new project defaults to, and how to change it
+
+Creating a project asks nothing about repositories, and should not: a project
+may legitimately never have one — a pure index of documents held elsewhere
+needs no git store, and a repository that is never used is a directory nobody
+asked for. So a new project starts with **no repository at all**.
+
+| | |
+|---|---|
+| At creation | no repository; `repository_id_for_project()` returns 0 |
+| First time a document file is stored | a repository is created **at the top-level project** of the tree (`repository_id_for_project_or_create()`, from `GitFileStorageBackend::ensure_project_repo()`) and the whole tree shares it |
+| Its push policy | **document control** — `repository_configure_bare()` seeds `doctis.pushpolicy` only when unset, so an existing repository is never silently re-imposed on |
+| Source releases | **off** — `$g_dwg_source_release_enabled` defaults OFF and is per project |
+
+So the default for everything is the document-control behaviour Doctis had
+before this feature existed, and a project becomes a source project only by
+someone saying so.
+
+**Changing it afterwards** is all on **Manage Project → Repository**:
+
+- *Give this project its own repository* — needed before the push policy can
+  differ from its parent's.
+- *Push policy* — editable on the project that **owns** the repository, and
+  by an administrator only, because it decides whether released history can
+  be rewritten. On a project that inherits, it is shown read-only and names
+  the project to change it on. A shared repository says how many projects
+  share it and warns that a change applies to all of them.
+- *Source releases* — per project, at the project-management threshold.
+
+Manage → **Git Store** keeps its own policy control for the
+repository-centric, administrator view; Manage Project is the project-centric
+one. They write the same `doctis.pushpolicy`.
+
+**The one trap.** A sub-project cannot be given its own repository once it
+already stores document files in the one it inherits — relinking would leave
+them pointing into a repository the project no longer resolves to, so the
+button refuses and says so. **Decide a source sub-project's repository before
+anyone uploads a document to it.** Moving a project's worth of documents
+between repositories is not built (§11).
+
 ---
 
 ## 2. Environment primer (for a cold session)
@@ -619,6 +659,18 @@ person from the one before it.
   bare-repo HEAD (a clone that checks out nothing). Tests: `test-git-doctis.php`
   102 → 137, `test-git-php.php` 20/20, PHPUnit `mantis` 382/382. Trial
   projects 254 and 255 and documents 209 and 210 left on the VM.
+- **2026-10-26** — Owner asked what a newly created project defaults to and
+  how its type is changed afterwards, having found the setting only on
+  Manage → Git Store. The gap was real: the push policy lived on an
+  administrator's repository-centric screen and
+  `$g_dwg_source_release_enabled` had **no UI at all** — read in three
+  places, set in none, so enabling it meant the raw Configuration Report.
+  Manage Project → *Repository* is now the one place for all three settings;
+  `manage_proj_repo_create.php` folded into `manage_proj_repo_update.php`.
+  Defaults documented in §1.2: no repository at creation, created at the
+  top-level project on first document file, `document` policy, releases off.
+  Lifecycle verified end to end on a fresh project (783): default → give it
+  its own repository → switch to source, with the policy reaching disk.
 - **2026-10-25** — Owner pointed out that the per-repository push policy and
   a mixed project are in conflict: one repository cannot run both sets of
   rules. Correct, and §8.2's "use a subtree" answer did not address it. §1.2
@@ -647,29 +699,23 @@ person from the one before it.
 
 Enabling it for a project, start to finish:
 
-1. **Create the repository.** Manage Project → **Repository** shows which
-   repository the project's documents live in and whether that is its own or
-   inherited, and offers *Give this project its own repository*. A source
-   project needs its own, because the push policy is per repository (§1.2).
-   The button is refused once the project already stores document files in
-   the repository it inherits — move those first.
-2. **Turn the feature on for that project** — `$g_dwg_source_release_enabled`,
-   per project, via Manage → Configuration → Configuration Report, or
-   `config_set( 'dwg_source_release_enabled', ON, NO_USER, $t_project_id )`.
-3. **Set the push policy** to *source repository* on Manage → **Git Store**,
-   unless the repository should stay append-only.
-4. **Push the project**, with a Doctis API token as the password:
+1. **Manage Project → Repository**, all three settings in one place:
+   *Give this project its own repository* (needed before its push policy can
+   differ from its parent's; refused once it already stores documents in the
+   inherited one), then *Push policy* → **source repository** and tick
+   *Source releases*. The policy needs an administrator.
+2. **Push the project**, with a Doctis API token as the password:
    ```bash
    git remote add origin http://<user>:<token>@<host>/git/<slug>-r<id>.git
    git push -u origin main
    ```
    Reads need `$g_git_http_read_threshold` (DEVELOPER), pushes
    `$g_git_http_write_threshold` (MANAGER), on the repository's owner project.
-5. **Create a document** for the release record and open it. The Primary
+3. **Create a document** for the release record and open it. The Primary
    Document panel offers **Register Source Release**: pick the branch, leave
    the commit blank for its tip, leave the subtree blank for the whole
    repository, and add a release note.
-6. From then on: developers push, which raises a **Draft**; a manager
+4. From then on: developers push, which raises a **Draft**; a manager
    **Promote Draft** to cut a release, which pins
    `refs/doctis/approved/<dwg_id>/<n>`. **Download archive** gives
    `git archive` of the On Record commit as a zip (`&format=tar.gz` for the
