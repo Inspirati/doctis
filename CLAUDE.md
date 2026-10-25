@@ -1049,6 +1049,16 @@ see and the only revision-controlled record; attachments are Doctis
 [doc/git/GIT_ARCHITECTURE.md](doc/git/GIT_ARCHITECTURE.md); design rationale:
 [doc/git/GIT_SOLUTION_SPACE.md](doc/git/GIT_SOLUTION_SPACE.md).
 
+**Source code repositories (planned).** An exploration is under way into
+hosting software source projects in Doctis repositories, where a document
+records a *release* of a repository rather than a single file. Approved in
+principle 2026-10-25, **spike not yet started**. If asked to work on it, read
+[doc/git/SOURCE_REPOSITORIES.md](doc/git/SOURCE_REPOSITORIES.md) first — it is
+the design-intent record, the progress tracker and a cold-start primer, and it
+already contains the verified findings (a directory *does* register today; the
+pre-receive hook forbids force-push and ref deletion, which is the main
+obstacle). Do not start building before the spike in its §7.
+
 **Interface:** [core/classes/FileStorageBackendInterface.class.php](core/classes/FileStorageBackendInterface.class.php)
 
 ```
