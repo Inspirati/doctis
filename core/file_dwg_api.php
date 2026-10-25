@@ -1986,6 +1986,15 @@ function file_dwg_primary_build_path( int $p_dwg_id, string $p_filename, int $p_
  * Whether a repo-relative path is already registered by another document in
  * any project sharing the same repository.
  *
+ * The check exists because a file document's path is a *write* target:
+ * GitFileStorageBackend::store() commits the uploaded file there, so two
+ * documents claiming one path would overwrite each other.  A source release
+ * never writes — it registers an existing commit by reference — so tree rows
+ * are excluded from the search, and registering one skips the check
+ * altogether.  Several documents may therefore record the same tree, which is
+ * what successive releases of one component are, and what two release lines
+ * of one subtree are.  See doc/git/SOURCE_REPOSITORIES.md.
+ *
  * @param int    $p_dwg_id      Document being registered (excluded from the check).
  * @param int    $p_project_id  Project the document belongs to.
  * @param string $p_git_path
@@ -2012,6 +2021,7 @@ function file_dwg_primary_path_in_use( int $p_dwg_id, int $p_project_id, string 
 		'SELECT f.dwg_id FROM {dwg_primary_file} f'
 		. ' INNER JOIN {dwg} d ON d.id = f.dwg_id'
 		. ' WHERE f.git_path=' . db_param() . ' AND f.dwg_id<>' . db_param()
+		. ' AND f.file_type<>\'' . DWG_TREE_MIME_TYPE . '\''
 		. ' AND d.project_id IN (' . implode( ',', $t_in ) . ')',
 		$t_params, 1
 	);
@@ -2030,6 +2040,7 @@ function file_dwg_primary_path_in_use( int $p_dwg_id, int $p_project_id, string 
 		'SELECT f.dwg_id FROM {dwg_primary_draft} f'
 		. ' INNER JOIN {dwg} d ON d.id = f.dwg_id'
 		. ' WHERE f.git_path=' . db_param() . ' AND f.dwg_id<>' . db_param()
+		. ' AND f.file_type<>\'' . DWG_TREE_MIME_TYPE . '\''
 		. ' AND d.project_id IN (' . implode( ',', $t_in ) . ')',
 		$t_params, 1
 	);
@@ -2122,7 +2133,8 @@ function file_dwg_primary_register( int $p_dwg_id, int $p_user_id, string $p_git
 		);
 	}
 
-	$t_holder = file_dwg_primary_path_in_use( $p_dwg_id, $t_project_id, $t_git_path );
+	$t_holder = $t_object_type === 'tree'
+		? 0 : file_dwg_primary_path_in_use( $p_dwg_id, $t_project_id, $t_git_path );
 	if( $t_holder !== 0 ) {
 		throw new ClientException(
 			'Path "' . $t_git_path . '" is already registered to document ' . $t_holder,
@@ -2230,7 +2242,7 @@ function file_dwg_primary_draft_register( int $p_dwg_id, int $p_user_id, string 
 	if( $t_git_path === false || !preg_match( '/^[0-9a-f]{40}$/', $t_sha ) ) {
 		throw new ClientException( 'Invalid draft path or commit', ERROR_INVALID_FIELD_VALUE, array( 'git_path' ) );
 	}
-	$t_holder = file_dwg_primary_path_in_use( $p_dwg_id, $t_project_id, $t_git_path );
+	$t_holder = $t_allow_tree ? 0 : file_dwg_primary_path_in_use( $p_dwg_id, $t_project_id, $t_git_path );
 	if( $t_holder !== 0 ) {
 		throw new ClientException( 'Draft path is registered to document ' . $t_holder, ERROR_INVALID_FIELD_VALUE, array( 'git_path' ) );
 	}
