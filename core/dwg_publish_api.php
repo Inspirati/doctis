@@ -1067,6 +1067,15 @@ function dwg_publish_remove_page( string $p_target, string $p_page, array $p_mar
  */
 function dwg_publish_refusal( int $p_dwg_id ): string {
 	$t_dwg  = dwg_get( $p_dwg_id );
+
+	# A source release records a repository, not a page, so it can never be
+	# published whatever the project is configured with.  Said first, because
+	# otherwise it would be refused only incidentally, by the project having
+	# no target or the path not ending in .md.
+	if( file_dwg_primary_is_tree( file_dwg_primary_get( $p_dwg_id ) ) ) {
+		return 'a source release records a repository, not a page, and cannot be published.';
+	}
+
 	$t_site = dwg_publish_site( (int)$t_dwg->project_id );
 	if( $t_site['target'] === '' ) {
 		return $t_site['problem'] !== ''
@@ -1076,11 +1085,6 @@ function dwg_publish_refusal( int $p_dwg_id ): string {
 	$t_row = file_dwg_primary_get( $p_dwg_id );
 	if( !$t_row ) {
 		return 'the document has no registered file.';
-	}
-	# A source release record would otherwise be refused only incidentally, by
-	# its path not ending in .md.  Say what it actually is.
-	if( file_dwg_primary_is_tree( $t_row ) ) {
-		return 'a source release records a repository, not a page, and cannot be published.';
 	}
 	if( !dwg_publish_is_markdown( $t_row['git_path'] ) ) {
 		return 'only Markdown documents (.md) can be published.';

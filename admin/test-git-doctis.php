@@ -20,6 +20,7 @@ require_api( 'authentication_api.php' );
 require_api( 'category_api.php' );
 require_api( 'config_api.php' );
 require_api( 'dwg_api.php' );
+require_api( 'dwg_publish_api.php' );
 require_api( 'file_dwg_api.php' );
 require_api( 'project_api.php' );
 require_api( 'project_hierarchy_api.php' );
@@ -523,6 +524,139 @@ check( strpos( basename( $t_new_bare ), 'gittest-renamed-' ) === 0, 'slug follow
 # Content still retrievable through the relocated repo (worktree is lazily re-cloned).
 $t_content = file_dwg_primary_get_content( $t_dwg1 );
 check( $t_content !== false && $t_content['content'] === "external v6\n", 'retrieve works after relocation' );
+
+# ── Step 14: source release records ─────────────────────────────────────────
+# A document whose git_path names a TREE records a release of a repository
+# rather than a single file.  See doc/git/SOURCE_REPOSITORIES.md.
+echo "Step 14: source release records\n";
+check( file_dwg_git_path_sanitize( '', true ) === '', 'repository root accepted with allow_root' );
+check( file_dwg_git_path_sanitize( '', false ) === false, 'repository root still refused by default' );
+check( file_dwg_git_path_sanitize( 'a/../b.md', true ) === false, 'allow_root does not relax traversal' );
+check( file_dwg_git_tree_ish( str_repeat( 'a', 40 ), '' ) === str_repeat( 'a', 40 ) . ':',
+	'tree-ish for the repository root is "<sha>:"' );
+
+$t_bare14 = repository_bare_path( $t_repo_id );
+$t_head14 = bare_git( $t_bare14, 'rev-parse HEAD' );
+check( file_dwg_git_object_type( $t_bare14, $t_head14, '' ) === 'tree', 'root resolves to a tree' );
+check( file_dwg_git_object_type( $t_bare14, $t_head14, 'no/such/path' ) === '', 'absent path has no type' );
+
+$t_dwg_src = make_dwg( $t_parent, 1, 'GitTest source release' );
+$t_cleanup['dwg_ids'][] = $t_dwg_src;
+
+# A tree is refused unless the caller asks for a source release.
+try {
+	file_dwg_primary_register( $t_dwg_src, 1, '', $t_head14 );
+	fail( 'tree refused without allow_tree' );
+} catch( ClientException $e ) {
+	ok( 'tree refused without allow_tree' );
+}
+
+$t_rel = file_dwg_primary_register( $t_dwg_src, 1, '', $t_head14, 'release 1', true, '',
+	array( 'allow_tree' => true ) );
+$t_src_row = file_dwg_primary_get( $t_dwg_src );
+check( $t_src_row !== null && $t_src_row['git_path'] === '', 'registered at the repository root' );
+check( file_dwg_primary_is_tree( $t_src_row ), 'row marked as a tree' );
+check( (int)$t_src_row['filesize'] === 0, 'filesize is 0, not the tree object size',
+	(string)$t_src_row['filesize'] );
+check( $t_src_row['git_sha'] === $t_head14, 'on record at the release commit' );
+check( bare_git( $t_bare14, 'for-each-ref refs/doctis/approved/' . $t_dwg_src ) !== '',
+	'approved ref pinned for the release' );
+
+# Download is an archive of the tree, not `git show` of a directory listing.
+check( file_dwg_get_storage_backend()->retrieve( $t_src_row, $t_parent ) === false,
+	'backend refuses to retrieve a tree as content' );
+$t_zip = (int)trim( (string)shell_exec( 'git --git-dir=' . escapeshellarg( $t_bare14 )
+	. ' archive --format=zip ' . escapeshellarg( $t_head14 . ':' ) . ' 2>/dev/null | wc -c' ) );
+check( $t_zip > 100, 'git archive produces a zip of the tree', $t_zip . ' bytes' );
+
+# An upload cannot overwrite a release: its content arrives by push.
+try {
+	$t_tmp14 = write_tmp( "stray\n" );
+	file_dwg_primary_add( $t_dwg_src, 1, $t_tmp14, 'stray.md', 6, 'text/markdown', '' );
+	fail( 'upload onto a source release refused' );
+} catch( ClientException $e ) {
+	ok( 'upload onto a source release refused' );
+}
+
+# A commit to the repository raises a Draft; promoting it cuts the next release.
+$t_paths14 = repository_ensure_on_disk( $t_repo_id );
+$t_wt14 = $t_paths14['worktree'];
+dwg_git_worktree_sync( $t_wt14 );
+file_put_contents( $t_wt14 . '/RELEASE-NOTES.txt', "r2\n" );
+exec( 'cd ' . escapeshellarg( $t_wt14 ) . ' && git add -A && git -c user.name=T -c user.email=t@e.invalid'
+	. ' commit -q -m "next release" && git push -q origin HEAD 2>&1' );
+$t_head14b = bare_git( $t_bare14, 'rev-parse HEAD' );
+check( $t_head14b !== $t_head14, 'repository advanced', substr( $t_head14b, 0, 8 ) );
+
+$t_info14 = file_dwg_git_head_info( $t_dwg_src );
+check( $t_info14 !== null && $t_info14['has_draft'], 'push raises a Draft on the release record' );
+check( $t_info14 !== null && $t_info14['sha'] === $t_head14b, 'Draft is the new commit' );
+check( file_dwg_primary_get( $t_dwg_src )['git_sha'] === $t_head14,
+	'On Record stays pinned until promoted' );
+
+file_dwg_primary_sync_head( $t_dwg_src, 1, $t_head14b );
+$t_src_row2 = file_dwg_primary_get( $t_dwg_src );
+check( $t_src_row2['git_sha'] === $t_head14b, 'promotion cuts the next release' );
+check( file_dwg_primary_is_tree( $t_src_row2 ), 'promoted row is still a tree' );
+check( $t_src_row2['git_path'] === '', 'promoted row is still rooted at the repository' );
+check( count( explode( "\n", bare_git( $t_bare14, 'for-each-ref refs/doctis/approved/' . $t_dwg_src ) ) ) === 2,
+	'both releases are pinned' );
+
+# A release is not a page, and is refused by publishing for that stated reason.
+check( strpos( dwg_publish_refusal( $t_dwg_src ), 'source release' ) !== false,
+	'publishing refuses a source release by name', dwg_publish_refusal( $t_dwg_src ) );
+
+# It is also excluded from the move path, which is a file operation.
+check( file_dwg_primary_move_prepare( $t_dwg_src, $t_child, 1 ) === null,
+	'source release excluded from the move path' );
+
+# ── Step 15: per-repository push policy ─────────────────────────────────────
+echo "Step 15: per-repository push policy\n";
+check( is_file( $t_bare14 . '/hooks/post-receive' ), 'post-receive hook installed' );
+check( repository_get_push_policy( $t_bare14 ) === DWG_PUSH_POLICY_DOCUMENT,
+	'repositories default to the document policy' );
+repository_set_push_policy( $t_bare14, DWG_PUSH_POLICY_SOURCE );
+check( repository_get_push_policy( $t_bare14 ) === DWG_PUSH_POLICY_SOURCE, 'policy set to source' );
+repository_configure_bare( $t_bare14 );
+check( repository_get_push_policy( $t_bare14 ) === DWG_PUSH_POLICY_SOURCE,
+	'refreshing the configuration does not re-impose document control' );
+try {
+	repository_set_push_policy( $t_bare14, 'nonsense' );
+	fail( 'unknown policy refused' );
+} catch( ClientException $e ) {
+	ok( 'unknown policy refused' );
+}
+repository_set_push_policy( $t_bare14, DWG_PUSH_POLICY_DOCUMENT );
+
+# The hook must enforce whichever policy is in force, for a real push.
+$t_hookwt = sys_get_temp_dir() . '/doctis-hooktest-' . getmypid();
+$t_cleanup['tmp'][] = $t_hookwt;
+exec( 'git clone -q ' . escapeshellarg( $t_bare14 ) . ' ' . escapeshellarg( $t_hookwt ) . ' 2>&1' );
+$t_force = 'cd ' . escapeshellarg( $t_hookwt ) . ' && git push --force origin HEAD~1:refs/heads/policytest 2>&1';
+exec( 'cd ' . escapeshellarg( $t_hookwt ) . ' && git push -q origin HEAD:refs/heads/policytest 2>&1' );
+exec( $t_force, $t_out15, $t_rc15 );
+check( $t_rc15 !== 0 && strpos( implode( ' ', $t_out15 ), 'non-fast-forward' ) !== false,
+	'document policy rejects a force-push', implode( ' ', $t_out15 ) );
+
+repository_set_push_policy( $t_bare14, DWG_PUSH_POLICY_SOURCE );
+unset( $t_out15 );
+exec( $t_force, $t_out15, $t_rc15 );
+check( $t_rc15 === 0, 'source policy permits a force-push', implode( ' ', (array)$t_out15 ) );
+unset( $t_out15 );
+exec( 'cd ' . escapeshellarg( $t_hookwt ) . ' && git push origin --delete policytest 2>&1', $t_out15, $t_rc15 );
+check( $t_rc15 === 0, 'source policy permits a branch deletion', implode( ' ', (array)$t_out15 ) );
+unset( $t_out15 );
+exec( 'cd ' . escapeshellarg( $t_hookwt ) . ' && git push origin HEAD:refs/doctis/approved/1/1 2>&1', $t_out15, $t_rc15 );
+check( $t_rc15 !== 0 && strpos( implode( ' ', $t_out15 ), 'server-managed' ) !== false,
+	'refs/doctis/* stay unpushable under the source policy', implode( ' ', (array)$t_out15 ) );
+
+# The approved pin is what makes that safe: the released commit survives a
+# force-push past it, and a prune.
+exec( 'cd ' . escapeshellarg( $t_hookwt ) . ' && git push -q --force origin '
+	. escapeshellarg( $t_head14 ) . ':' . bare_git( $t_bare14, 'symbolic-ref HEAD' ) . ' 2>&1' );
+exec( 'git --git-dir=' . escapeshellarg( $t_bare14 ) . ' gc --prune=now --quiet 2>&1' );
+check( bare_git( $t_bare14, 'cat-file -t ' . escapeshellarg( $t_head14b ) ) === 'commit',
+	'an approved release survives a force-push past it, and a prune' );
 
 } catch( Throwable $e ) {
 	fail( 'unexpected exception', get_class( $e ) . ': ' . $e->getMessage()
