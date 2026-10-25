@@ -22,6 +22,7 @@ require_api( 'config_api.php' );
 require_api( 'dwg_api.php' );
 require_api( 'dwg_publish_api.php' );
 require_api( 'file_dwg_api.php' );
+require_api( 'git_store_api.php' );
 require_api( 'project_api.php' );
 require_api( 'project_hierarchy_api.php' );
 require_api( 'repository_api.php' );
@@ -734,11 +735,33 @@ check( !dwg_is_source( $t_dwg1 ), 'a file document is not a source record' );
 check( dwg_is_source( $t_dwg_src ), 'a tree registration sets DWG_KIND_SOURCE' );
 check( !dwg_is_frozen( $t_dwg_src ), 'a source record defaults to a tracking line' );
 
-# The combination both the owner and the author flagged as meaningless is
-# prevented, not represented.
-dwg_set_kind( $t_dwg1, DWG_KIND_DOCUMENT, true );
-check( !dwg_is_frozen( $t_dwg1 ), 'a document kind cannot be frozen' );
-check( (int)dwg_get_field( $t_dwg1, 'frozen' ) === 0, 'and the column is not left set' );
+# frozen means the same for both kinds (owner, 2026-10-26): a released
+# document is pinned too, so a later edit in git offers it no Draft.
+# Edit the document's own file so it genuinely has a Draft to suppress.
+$t_doc_path = file_dwg_primary_get( $t_dwg1 )['git_path'];
+$t_paths17 = repository_ensure_on_disk( $t_repo_id );
+dwg_git_worktree_sync( $t_paths17['worktree'] );
+file_put_contents( $t_paths17['worktree'] . '/' . $t_doc_path, "frozen test v1\n" );
+exec( 'cd ' . escapeshellarg( $t_paths17['worktree'] ) . ' && git add -A'
+	. ' && git -c user.name=T -c user.email=t@e.invalid commit -q -m "edit the document"'
+	. ' && git push -q origin HEAD 2>&1' );
+$t_doc_head_before = file_dwg_git_head_info( $t_dwg1 );
+check( $t_doc_head_before !== null && $t_doc_head_before['has_draft'],
+	'the file document has a Draft to begin with' );
+dwg_set_frozen( $t_dwg1, true );
+check( dwg_is_frozen( $t_dwg1 ), 'a document can be frozen' );
+check( !dwg_is_source( $t_dwg1 ), 'freezing does not change its kind' );
+$t_doc_head_after = file_dwg_git_head_info( $t_dwg1 );
+check( $t_doc_head_after !== null && !$t_doc_head_after['has_draft'] && !empty( $t_doc_head_after['frozen'] ),
+	'a frozen document offers no Draft' );
+try {
+	file_dwg_primary_sync_head( $t_dwg1, 1 );
+	fail( 'a frozen document cannot be promoted' );
+} catch( ClientException $e ) {
+	ok( 'a frozen document cannot be promoted' );
+}
+dwg_set_frozen( $t_dwg1, false );
+check( file_dwg_git_head_info( $t_dwg1 )['has_draft'], 'unfreezing restores its Draft' );
 
 # A frozen release ignores later work on its line.
 exec( 'cd ' . escapeshellarg( $t_hookwt ) . ' && git fetch -q origin && git checkout -q -B rel-line'
@@ -777,6 +800,59 @@ try {
 file_dwg_primary_sync_head( $t_dwg_tracks, 1, $t_ti['sha'] );
 check( dwg_is_source( $t_dwg_tracks ) && !dwg_is_frozen( $t_dwg_tracks ),
 	'promoting a line keeps it a line' );
+
+# ── Step 18: several releases of one line ───────────────────────────────────
+# What a *Cut release* action produces: a document per release at one path,
+# each frozen at its own commit, with the line still tracking.
+echo "Step 18: several releases of one line\n";
+$t_rel_ids = array();
+for( $t_n = 1; $t_n <= 3; $t_n++ ) {
+	exec( 'cd ' . escapeshellarg( $t_hookwt ) . ' && echo r' . $t_n . ' > rel.txt && git add -A'
+		. ' && git -c user.name=T -c user.email=t@e.invalid commit -q -m "work ' . $t_n . '"'
+		. ' && git push -q origin rel-line 2>&1' );
+	$t_at = bare_git( $t_bare14, 'rev-parse refs/heads/rel-line' );
+	$t_r = make_dwg( $t_parent, 1, 'GitTest release v3.' . $t_n );
+	$t_cleanup['dwg_ids'][] = $t_r;
+	file_dwg_primary_register( $t_r, 1, '', $t_at, 'v3.' . $t_n, true, '',
+		array( 'allow_tree' => true, 'branch' => 'rel-line', 'frozen' => true ) );
+	$t_rel_ids[$t_r] = $t_at;
+}
+check( count( $t_rel_ids ) === 3, 'three releases of one line coexist' );
+$t_distinct = count( array_unique( array_values( $t_rel_ids ) ) );
+check( $t_distinct === 3, 'each is pinned at its own commit', (string)$t_distinct );
+$t_all_frozen = true;
+foreach( $t_rel_ids as $t_r => $t_at ) {
+	if( !dwg_is_frozen( $t_r ) || file_dwg_primary_get( $t_r )['git_sha'] !== $t_at
+	 || bare_git( $t_bare14, 'for-each-ref refs/doctis/approved/' . $t_r ) === '' ) {
+		$t_all_frozen = false;
+	}
+}
+check( $t_all_frozen, 'each stays frozen at its commit with its own pin' );
+check( file_dwg_git_head_info( $t_dwg_tracks )['has_draft'],
+	'the line still tracks after the releases' );
+
+# The Git Store Documents tab must list them all, not collapse them by path.
+$t_repos18 = git_store_repositories();
+$t_entry18 = $t_repos18[basename( $t_bare14, '.git' )] ?? null;
+if( $t_entry18 === null ) {
+	fail( 'repository visible to the Git Store' );
+} else {
+	ok( 'repository visible to the Git Store' );
+	$t_tree18 = git_store_tree( $t_entry18 );
+	$t_listed = git_store_documents_list( $t_entry18, $t_tree18 );
+	$t_mapped = git_store_documents( $t_entry18, $t_tree18 );
+	$t_root_rows = 0;
+	foreach( $t_listed as $t_l ) {
+		if( $t_l['path'] === '' ) {
+			$t_root_rows++;
+		}
+	}
+	check( $t_root_rows >= 4, 'the flat list keeps every record rooted at the repository',
+		(string)$t_root_rows );
+	check( count( $t_listed ) > count( $t_mapped ),
+		'the path-keyed map collapses them, which is why the list exists',
+		count( $t_listed ) . ' listed vs ' . count( $t_mapped ) . ' mapped' );
+}
 
 } catch( Throwable $e ) {
 	fail( 'unexpected exception', get_class( $e ) . ': ' . $e->getMessage()
