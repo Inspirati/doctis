@@ -681,6 +681,50 @@ exec( 'git --git-dir=' . escapeshellarg( $t_bare14 ) . ' gc --prune=now --quiet 
 check( bare_git( $t_bare14, 'cat-file -t ' . escapeshellarg( $t_head14b ) ) === 'commit',
 	'an approved release survives a force-push past it, and a prune' );
 
+# ── Step 16: permanent branches as release lines ────────────────────────────
+# A repository may host long-lived branches, not only feature branches
+# pending a merge; each can be a document of its own.
+echo "Step 16: permanent branches as release lines\n";
+exec( 'cd ' . escapeshellarg( $t_hookwt ) . ' && git fetch -q origin && git checkout -q -B maint-9.x'
+	. ' && git push -q origin maint-9.x 2>&1' );
+check( file_dwg_git_branch_exists( $t_bare14, 'maint-9.x' ), 'a permanent branch is created' );
+check( !file_dwg_git_branch_exists( $t_bare14, 'no-such-branch' ), 'an absent branch is reported absent' );
+
+$t_maint_sha = bare_git( $t_bare14, 'rev-parse refs/heads/maint-9.x' );
+$t_dwg_line = make_dwg( $t_parent, 1, 'GitTest maintenance line' );
+$t_cleanup['dwg_ids'][] = $t_dwg_line;
+file_dwg_primary_register( $t_dwg_line, 1, '', $t_maint_sha, 'maintenance line', true, '',
+	array( 'allow_tree' => true, 'branch' => 'maint-9.x' ) );
+check( file_dwg_primary_get( $t_dwg_line )['git_branch'] === 'maint-9.x',
+	'the document records the branch it was registered on' );
+
+# A commit on the maintenance line raises a Draft there and nowhere else.
+exec( 'cd ' . escapeshellarg( $t_hookwt ) . ' && echo maint > line.txt && git add -A'
+	. ' && git -c user.name=T -c user.email=t@e.invalid commit -q -m "maint work"'
+	. ' && git push -q origin maint-9.x 2>&1' );
+$t_line_info = file_dwg_git_head_info( $t_dwg_line );
+$t_root_info = file_dwg_git_head_info( $t_dwg_src );
+check( $t_line_info !== null && $t_line_info['has_draft'], 'a commit on the line raises its Draft' );
+check( $t_line_info !== null && $t_line_info['sha'] === bare_git( $t_bare14, 'rev-parse refs/heads/maint-9.x' ),
+	'the Draft is the line tip, not the repository HEAD' );
+check( $t_root_info === null || $t_root_info['sha'] !== $t_line_info['sha'],
+	'the other line is unaffected' );
+
+# Deleting the branch must strand the record, not silently re-point it.
+exec( 'cd ' . escapeshellarg( $t_hookwt ) . ' && git push -q origin --delete maint-9.x 2>&1' );
+check( !file_dwg_git_branch_exists( $t_bare14, 'maint-9.x' ), 'the branch is deleted' );
+$t_gone = file_dwg_git_head_info( $t_dwg_line );
+check( $t_gone !== null && !empty( $t_gone['branch_missing'] ), 'the record reports its branch gone' );
+check( $t_gone !== null && !$t_gone['has_draft'], 'a stranded record offers no Draft' );
+check( file_dwg_primary_get( $t_dwg_line )['git_sha'] === $t_maint_sha,
+	'the version on record is unaffected' );
+try {
+	file_dwg_primary_sync_head( $t_dwg_line, 1 );
+	fail( 'a stranded record cannot be promoted' );
+} catch( ClientException $e ) {
+	ok( 'a stranded record cannot be promoted' );
+}
+
 } catch( Throwable $e ) {
 	fail( 'unexpected exception', get_class( $e ) . ': ' . $e->getMessage()
 		. ' @ ' . $e->getFile() . ':' . $e->getLine() );
