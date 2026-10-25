@@ -51,6 +51,32 @@ What that earns, which "directory as document" does not:
   release comes free, in the same system as the QMS.
 - the document's `revision` field maps to successive releases naturally.
 
+### 1.2 One repository, one policy — why a source project wants its own
+
+The push policy and `$g_dwg_source_release_enabled` are both **per
+repository**. A repository therefore cannot be append-only for document
+control *and* rewritable for source development at the same time: those are
+contradictory rules over the same refs.
+
+A project tree shares one repository by default, so a source sub-project
+inside a document project would inherit the parent's policy and force a
+choice between them. What the document policy buys over the source policy is
+narrow but real: an **approved** version is pinned under both and survives
+anything, but an **unpromoted Draft** is only reachable from the branch, so
+under the source policy a force-push can destroy it.
+
+The answer is to give the source project **its own repository** — a
+first-class capability of `{project_repository}`, now reachable from Manage
+Project → *Repository* (§10). Verified 2026-10-25: parent on
+`document`, sub-project on `source`, separate bare repos, documents resolving
+to the right one, and the source release archive containing no documents.
+
+**Git submodules are not an answer.** `git archive` does not recurse into
+them: a release archive would contain the submodule's directory *empty*, so
+the approved artefact would be silently incomplete. (Doctis also refuses to
+register one — a gitlink is `160000 commit`, which
+`file_dwg_git_object_type()` reports as neither blob nor tree.)
+
 ---
 
 ## 2. Environment primer (for a cold session)
@@ -415,26 +441,20 @@ repository registers in 34 ms.
 ## 8. The open questions, answered
 
 **One document per release, or one document whose On Record advances?**
-*One document whose On Record advances* — built, and the pins give each
-release its own immutable record anyway, so the bookkeeping of a document per
-release buys little. What it does **not** give is a per-release status,
-approver and revision field. Decide that when the first real release cycle
-runs; nothing in the build forecloses either.
+*One document whose On Record advances* is what is built. **The owner is
+leaning to one document per release** (2026-10-25), so that the documents
+list shows every past release with its own approval cycle. §8.3 measures what
+that needs; the path-uniqueness obstacle has been removed, two remain.
 
-**Multiple release lines?** *Half-built — it does not work yet.* Corrected
-2026-10-25 after testing it; the claim here previously said it did.
-`file_dwg_git_branch_tip()` does make a document's Draft follow its own
-`git_branch`, and `file_dwg_primary_register()` does record the branch asked
-for, but **`file_dwg_primary_path_in_use()` keys on `git_path` alone and
-ignores `git_branch`**, so the second document is refused before it exists:
-
-```
-Path "src" is already registered to document 395
-```
-
-Two documents *at different paths* work (§8.2). A second release line is the
-same path on another branch, and that is exactly what the uniqueness check
-forbids. See §11 for what finishing it costs.
+**Multiple release lines?** *Yes, since the uniqueness exemption.* The claim
+here was wrong twice on 2026-10-25 — first "it works", then, after testing,
+"it does not" — so: `file_dwg_primary_path_in_use()` used to refuse a second
+document at a path another held, which blocked a maintenance line on the same
+subtree. That check guards *writes* (`store()` commits the upload at
+`git_path`), and a release never writes, so **tree rows are now exempt** and
+two documents may record one subtree on two branches,
+`file_dwg_git_branch_tip()` giving each its own Draft. Still untested with
+two live branches at once.
 
 **Several documents on one repository?** *Yes — see §8.2, verified.*
 
@@ -492,7 +512,8 @@ and `src/lib/util.c`.
 | One release per **component** (subtree) of a monorepo | **yes** | `src/` and `src/lib/` as two documents. Nesting behaves: a commit to `src/lib/util.c` raised a Draft on **both**, which is right — `src` contains `src/lib` |
 | A release owned by a **sub-project** | **yes** | Document 396 belongs to project 514 and records `src/lib` of the parent's repository |
 | One document per **release** | n/a | Releases are versions of one document; the `refs/doctis/approved/*` pins are the release history |
-| One document per **branch** (release line) | **no** | Refused by the path-uniqueness check — see §8 above |
+| One document per **branch** (release line) | **yes**, since the uniqueness exemption (§8); untested with two live branches |
+| One document per **release**, same path, successive commits | **yes** — see §8.3 for the two things it still needs |
 
 **Design rule for a mixed project: root the release at a subtree, never at
 the repository root.** A root-rooted release in a project that also holds
@@ -504,6 +525,54 @@ documents is wrong twice over, both measured:
 
 A repository root is the right choice only when the repository holds nothing
 but the source project, as in the `Source Trial` projects of §7.
+
+### 8.3 One document per release — what it still needs (measured 2026-10-25)
+
+Prototyped in project 516 (`Split Trial Firmware`): three documents, "Firmware
+release v1.1/1.2/1.3", each registered against subtree `src` at a different
+commit.
+
+**Works already.** All three registered, each archives its own content
+(`return 1`, `return 2`, `return 3`), and each carries its own approval
+record:
+
+```
+refs/doctis/approved/401/1 -> 8e4540c   v1.1
+refs/doctis/approved/402/1 -> 4fb20a2   v1.2
+refs/doctis/approved/403/1 -> 9908e1f   v1.3
+```
+
+Each is an ordinary document, so it already has its own status, owner,
+revision field, history and issues — which is the whole appeal of the option.
+
+**Two things to fix, both measured.**
+
+1. **A superseded release reports a Draft for ever.** v1.1 and v1.2 both show
+   a Draft at current HEAD, because `file_dwg_git_head_info()` compares their
+   recorded tree with the branch tip and the branch has moved on. Right for
+   "On Record advances", wrong for a release already cut — it invites a
+   manager to promote a historical release on to today's code. Needs a rule
+   for when a release document stops tracking: the obvious one is that only
+   the newest release document for a given (repository, path, branch) tracks
+   a Draft, and the rest are frozen; a status-based rule would do as well and
+   would make the document status mean something.
+
+2. **Manage → Git Store lists one release, not three.**
+   `git_store_documents()` keys its array by `git_path`, so the three `src`
+   rows collapse to the last. Measured: *"documents listed: 2"* for a
+   repository holding four registered documents. Re-keying it is the bulk of
+   the work, because seven places in `manage_git_store_page.php` index that
+   array by path, including the unregistered-files diff.
+
+**And one thing to build:** a *Cut release* action that creates the next
+document (copying title, category, owner and bumping `revision`) and
+registers it at the chosen commit, in place of **Promote Draft**. Without it
+each release is a hand-made document.
+
+**Against keeping "On Record advances":** less to build and less to list. But
+the release history then lives only in refs and `{dwg_history}`, which the
+documents list does not show, and a release cannot be approved by a different
+person from the one before it.
 
 ---
 
@@ -578,11 +647,14 @@ In the order that would matter to a first real user:
 
 | Item | Why |
 |------|-----|
-| A button to create a project's repository | §8.1 — today it needs a script, which blocks step 1 above. The same gap stops a **sub-project being given its own repository**: that needs a `{project_repository}` row, and outside the importer nothing creates one |
+| ~~A button to create a project's repository~~ | **Built** 2026-10-25 — Manage Project → *Repository*, which also gives a sub-project its own (`manage_proj_repo_inc.php`, `manage_proj_repo_create.php`) |
+| **Freeze a superseded release** | §8.3 — needed for one document per release; today an old release reports a Draft for ever |
+| **Re-key `git_store_documents()`** | §8.3 — it keys by `git_path`, so several releases of one path collapse to the last; seven consumers in `manage_git_store_page.php` index it that way |
+| **A *Cut release* action** | §8.3 — creates the next release document instead of promoting in place |
 | `doc/MANUAL.md` section | Nothing user-facing documents this |
 | Importer mode: register a tree as one document | §8, adoption; the primitive exists, the flag does not |
 | Maintain `{repository}.default_branch` after a push | §8.1; the hook repairs HEAD, the row goes stale |
-| **Per-branch release lines** | §8 — half-built and currently refused. `file_dwg_primary_path_in_use()` must key on (repository, `git_path`, `git_branch`) instead of `git_path` alone, and `git_store_documents()` must stop keying its array by path, which its seven consumers in `manage_git_store_page.php` rely on. The uniqueness change is small; the Git Store re-keying is the bulk of it |
+| Per-branch release lines, exercised | §8 — unblocked, but never run with two live branches at once |
 | Release notes that accumulate | §8.1; `description` is 255 chars and is replaced |
 | A status gate on promotion | §8.1; decide whether a release needs an approved status |
 | REST/SOAP exposure | §6.1 |
