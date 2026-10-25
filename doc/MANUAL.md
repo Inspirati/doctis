@@ -976,10 +976,38 @@ A web page cannot run git on your machine or pick a folder for you, which is
 why the second step is a script rather than a dialog.
 
 **You are shown the token once.** It is stored only as a hash, so Doctis
-cannot show it again — if you lose it, use the button again, which replaces
-the old token and revokes it. Treat it as a password: it is your whole
-Doctis credential, not something limited to one repository, and you can
-revoke it any time from My Account → **API Tokens**.
+cannot show it again. If you lose it, press the button again: that **adds** a
+new token rather than replacing the old one, so anything already using the
+old one keeps working. There is a tick-box if you do want the old ones
+revoked — it says what that will break. Treat a token as a password: it is
+your whole Doctis credential, not something limited to one repository, and
+you can revoke any of them from My Account → **API Tokens**.
+
+#### Already have a clone, and its token stopped working?
+
+A clone keeps the token it was made with, so if that token is revoked, `git
+fetch` and `git push` start failing with:
+
+```
+remote: Authentication required: use your Doctis username and an API token as the password.
+fatal: Authentication failed for 'http://<host>/git/<repository>.git/'
+```
+
+You do not need to clone again. Create a new token with the **Clone this
+repository** button and use the *Already have a clone?* command it gives you,
+inside the existing clone:
+
+```bash
+git remote set-url origin http://<user>:<new-token>@<host>/git/<repository>.git
+```
+
+Or, if you would rather be asked for it each time, take the credentials out
+of the address altogether and let git prompt — your Doctis username, and the
+token as the password:
+
+```bash
+git remote set-url origin http://<host>/git/<repository>.git
+```
 
 Cloning this way leaves the token in the clone's `.git/config`. If you would
 rather be prompted for it, the script tells you the one command that

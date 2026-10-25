@@ -741,6 +741,21 @@ person from the one before it.
 
 ## 9. Log
 
+- **2026-10-26** — A clean-up script of mine revoked a token the owner's
+  existing clone was authenticating with, matching on the `git: ` name prefix
+  this feature introduced; they found out through
+  `fatal: Authentication failed`. The destructive default was the design's,
+  not just the script's: the button *replaced* a repository's token. Minting
+  is now **additive** (`api_token_name_available()` picks `git: <repo> #2`
+  and so on), the page lists the tokens already held with their dates, and
+  revoking is a separate explicit tick that states what it breaks. A new
+  *Already have a clone?* section hands over
+  `git remote set-url origin <url-with-token>`, so a stale clone is recovered
+  without re-cloning. Verified by revoking a live clone's token, watching the
+  push fail, and fixing it both ways — the credentialed URL, and the
+  credential-free URL with git prompting (via `GIT_ASKPASS`, since a prompt
+  needs a terminal).
+
 - **2026-10-26** — Owner found the Clone button missing on an ordinary
   document whose repository they had already cloned by hand. It had been
   gated on the record being a *source* release, which contradicted
