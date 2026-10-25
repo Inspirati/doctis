@@ -31,6 +31,7 @@ require_api( 'gpc_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'print_api.php' );
+require_api( 'print_dwg_api.php' );
 require_api( 'project_api.php' );
 require_api( 'repository_api.php' );
 require_api( 'string_api.php' );
@@ -168,6 +169,10 @@ layout_page_begin();
 				</label>
 <?php	endif; ?>
 			</form>
+<?php	if( $t_existing ): ?>
+			<div class="space-10"></div>
+			<?php print_dwg_git_token_notice( $t_basename, 'alert-info' ); ?>
+<?php	endif; ?>
 
 			<div class="space-10"></div>
 			<p class="small"><?php echo sprintf( lang_get( 'repo_clone_no_token_url' ),

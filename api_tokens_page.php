@@ -34,6 +34,8 @@ require_api( 'authentication_api.php' );
 require_api( 'current_user_api.php' );
 require_api( 'database_api.php' );
 require_api( 'html_api.php' );
+# Doctis: the git-clone notice below the token list.
+require_api( 'print_dwg_api.php' );
 
 auth_ensure_user_authenticated();
 auth_reauthenticate();
@@ -107,6 +109,12 @@ $t_date_format = config_get( 'normal_date_format' );
 if ( count( $t_tokens ) > 0 ) {
 ?>
 	<div class="space-10"></div>
+
+	<?php
+	# Doctis: revoking a token here breaks any git clone still holding it, and
+	# nothing else on this page would say so.  See doc/git/SOURCE_REPOSITORIES.md.
+	print_dwg_git_token_notice();
+	?>
 
 	<div id="api-token-list-div" class="form-container">
 	<div class="widget-box widget-color-blue2">

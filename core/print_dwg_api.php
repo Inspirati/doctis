@@ -2529,3 +2529,42 @@ function print_dwg_table_spacer( int $p_cols ) {
 		echo '<tr class="spacer"><td colspan="', $p_cols, '"></td></tr>';
 	}
 }
+
+/**
+ * Print the notice explaining that revoking an API token stops an existing
+ * git clone fetching and pushing, and the one command that fixes it.
+ *
+ * Shown wherever a token can be revoked, because the symptom is opaque —
+ * "fatal: Authentication failed" says nothing about a token — and the
+ * natural reaction is to clone again, which is never necessary: a clone
+ * keeps its token in .git/config, so pointing the remote at a new one is
+ * the whole of the repair.
+ *
+ * Silent when remote git access is off, since then no clone exists to break.
+ *
+ * @param string $p_repository  Repository basename when it is known, so the
+ *                              command can be exact; '' for a placeholder.
+ * @param string $p_class       Bootstrap alert class.
+ * @return void
+ */
+function print_dwg_git_token_notice( string $p_repository = '', string $p_class = 'alert-warning' ) {
+	if( OFF == config_get_global( 'git_http_enabled', OFF ) ) {
+		return;
+	}
+	require_api( 'repository_api.php' );
+
+	$t_url = repository_clone_url( $p_repository !== '' ? $p_repository : '<repository>' );
+	if( $t_url === '' ) {
+		return;
+	}
+	# The address carries no token; the user pastes their own new one in.
+	$t_command = 'git remote set-url origin '
+		. str_replace( '://', '://' . user_get_username( auth_get_current_user_id() )
+			. ':<new-token>@', $t_url );
+
+	echo '<div class="alert ', string_attribute( $p_class ), '">';
+	echo '<p class="no-margin">', lang_get( 'git_token_notice' ), '</p>';
+	echo '<pre class="no-margin" style="margin-top:6px">', string_display_line( $t_command ), '</pre>';
+	echo '<p class="no-margin small">', lang_get( 'git_token_notice_where' ), '</p>';
+	echo '</div>';
+}
