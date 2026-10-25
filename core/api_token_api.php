@@ -265,6 +265,24 @@ function api_token_revoke( $p_api_token_id, $p_user_id ) {
 }
 
 /**
+ * Revoke a user's api token by name, if they have one by that name.
+ *
+ * A token's value is stored only as a hash, so it can never be shown again
+ * after it is created.  Anything that has to put a usable value on screen
+ * for a named purpose therefore replaces the old one rather than reusing it.
+ *
+ * @param string  $p_token_name The token name.
+ * @param integer $p_user_id    The user id.
+ * @return void
+ * @access public
+ */
+function api_token_revoke_by_name( $p_token_name, $p_user_id ) {
+	db_param_push();
+	$t_query = 'DELETE FROM {api_token} WHERE user_id = ' . db_param() . ' AND name = ' . db_param();
+	db_query( $t_query, array( (int)$p_user_id, (string)$p_token_name ) );
+}
+
+/**
  * Revoke all api tokens for the specified user.
  *
  * @param integer $p_user_id The user id.

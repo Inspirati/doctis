@@ -78,6 +78,13 @@ $t_repo_can_split = !$t_repo_own && $t_repo_doc_count === 0;
 						<br /><span class="small"><?php echo sprintf(
 							lang_get( 'project_repository_shared_by' ), $t_repo_sharers ) ?></span>
 <?php	endif; ?>
+<?php	if( $t_repo_on_disk && ON == config_get_global( 'git_http_enabled', OFF ) ): ?>
+						<br /><a href="dwg_repo_clone_page.php?project_id=<?php echo (int)$f_project_id ?>"
+							class="btn btn-primary btn-sm btn-white btn-round" style="margin-top:6px">
+							<?php print_icon( 'fa-download', 'ace-icon' ); ?>
+							<?php echo lang_get( 'repo_clone_button' ) ?>
+						</a>
+<?php	endif; ?>
 <?php endif; ?>
 					</td>
 				</tr>

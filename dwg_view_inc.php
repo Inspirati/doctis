@@ -1183,6 +1183,12 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 							<?php echo lang_get( 'primary_document_tag' ) ?>
 						</a>
 <?php	endif; ?>
+<?php	if( $t_is_source_release && ON == config_get_global( 'git_http_enabled', OFF ) ): ?>
+						<a href="dwg_repo_clone_page.php?dwg_id=<?php echo $f_dwg_id ?>"
+							class="btn btn-primary btn-xs btn-white btn-round">
+							<?php echo lang_get( 'repo_clone_button' ) ?>
+						</a>
+<?php	endif; ?>
 <?php	if( $t_is_source_release && !$t_record_frozen && $t_can_sync_to_head ): ?>
 						<a href="dwg_cut_release_page.php?id=<?php echo $f_dwg_id ?>"
 							class="btn btn-success btn-xs btn-white btn-round">

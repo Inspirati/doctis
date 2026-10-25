@@ -369,6 +369,35 @@ function repository_set_push_policy( string $p_bare, string $p_policy ): void {
 }
 
 /**
+ * The Smart HTTP URL a developer clones a repository from.
+ *
+ * Built from $g_path, so it follows however Doctis is reached.  The gateway
+ * is mounted at the server root, not under the Doctis directory: the route
+ * is /git/<slug>-r<id>.git (see admin/tools/templates/nginx-doctis.conf).
+ *
+ * Credentials are included only when the caller passes them — the URL on
+ * screen carries none unless a token has just been minted for it.
+ *
+ * @param string $p_basename  Repository basename, e.g. "example-r1".
+ * @param string $p_username  Optional username to embed.
+ * @param string $p_token      Optional API token to embed as the password.
+ * @return string  '' when $g_path cannot be parsed.
+ */
+function repository_clone_url( string $p_basename, string $p_username = '', string $p_token = '' ): string {
+	$t_url = parse_url( (string)config_get_global( 'path' ) );
+	if( !isset( $t_url['scheme'], $t_url['host'] ) ) {
+		return '';
+	}
+	$t_credentials = '';
+	if( $p_username !== '' && $p_token !== '' ) {
+		$t_credentials = rawurlencode( $p_username ) . ':' . rawurlencode( $p_token ) . '@';
+	}
+	return $t_url['scheme'] . '://' . $t_credentials . $t_url['host']
+		. ( isset( $t_url['port'] ) ? ':' . $t_url['port'] : '' )
+		. '/git/' . $p_basename . '.git';
+}
+
+/**
  * A repository's default branch, reconciled with the bare repo on disk.
  *
  * The row records what the branch was when the repository was created or
