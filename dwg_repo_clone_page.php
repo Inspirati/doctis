@@ -78,25 +78,29 @@ $t_username  = user_get_username( $t_user_id );
 # page explicitly hands one over.
 $t_clone_url = repository_clone_url( $t_basename );
 
-# A token minted here is named after the repository, so the user can tell on
-# My Account -> API Tokens what it is for and revoke it.
-$t_token_name = 'git: ' . $t_basename;
-
-db_param_push();
-$t_existing = db_result( db_query(
-	'SELECT date_created FROM {api_token} WHERE user_id=' . db_param() . ' AND name=' . db_param(),
-	array( $t_user_id, $t_token_name ) ) );
+# Tokens minted here are named after the repository, so the user can tell on
+# My Account -> API Tokens what each is for and revoke it.
+$t_token_base = 'git: ' . $t_basename;
+$t_existing   = api_token_get_by_prefix( $t_token_base, $t_user_id );
 
 $t_token = '';
 if( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
 	form_security_validate( 'dwg_repo_clone' );
 
-	# A token is stored as a hash, so an existing one cannot be shown again;
-	# replacing it is the only way to put a usable value on the screen. Any
-	# clone still using the old one stops working, which the page says.
-	api_token_revoke_by_name( $t_token_name, $t_user_id );
-	$t_token = api_token_create( $t_token_name, $t_user_id );
-	$t_existing = false;
+	# A new token never revokes an older one by default.  A token's value is
+	# stored only as a hash and cannot be shown again, so an older one is still
+	# in use by whatever already holds it — a clone's .git/config, most likely
+	# — and revoking it silently breaks that clone's pushes.  Clearing up is a
+	# deliberate, separate tick.
+	if( gpc_get_bool( 'revoke_existing' ) ) {
+		foreach( $t_existing as $t_old ) {
+			api_token_revoke( (int)$t_old['id'], $t_user_id );
+		}
+		$t_existing = array();
+	}
+
+	$t_token = api_token_create(
+		api_token_name_available( $t_token_base, $t_user_id ), $t_user_id );
 
 	form_security_purge( 'dwg_repo_clone' );
 }
@@ -137,20 +141,32 @@ layout_page_begin();
 
 <?php if( $t_token === '' ): ?>
 			<p><?php echo lang_get( 'repo_clone_intro' ) ?></p>
-<?php	if( $t_existing !== false ): ?>
-			<div class="alert alert-warning">
-				<?php echo sprintf( lang_get( 'repo_clone_existing' ),
-					'<code>' . string_display_line( $t_token_name ) . '</code>',
-					date( config_get( 'normal_date_format' ), (int)$t_existing ) ) ?>
+<?php	if( $t_existing ): ?>
+			<div class="alert alert-info">
+				<?php echo lang_get( 'repo_clone_existing' ) ?>
+				<ul class="no-margin">
+<?php		foreach( $t_existing as $t_old ): ?>
+					<li><code><?php echo string_display_line( $t_old['name'] ) ?></code>
+						&mdash; <?php echo sprintf( lang_get( 'repo_clone_existing_made' ),
+							date( config_get( 'normal_date_format' ), (int)$t_old['date_created'] ) ) ?></li>
+<?php		endforeach; ?>
+				</ul>
 			</div>
 <?php	endif; ?>
 			<form method="post" action="dwg_repo_clone_page.php">
 				<?php echo form_security_field( 'dwg_repo_clone' ) ?>
 				<input type="hidden" name="project_id" value="<?php echo (int)$f_project_id ?>" />
 				<button class="btn btn-primary btn-white btn-round">
-					<?php echo lang_get( $t_existing !== false
-						? 'repo_clone_replace_token' : 'repo_clone_create_token' ) ?>
+					<?php echo lang_get( 'repo_clone_create_token' ) ?>
 				</button>
+<?php	if( $t_existing ): ?>
+				<div class="space-10"></div>
+				<label class="nopadding">
+					<input type="checkbox" class="ace" name="revoke_existing" value="1" />
+					<span class="lbl">&nbsp;<?php echo sprintf(
+						lang_get( 'repo_clone_revoke_existing' ), count( $t_existing ) ) ?></span>
+				</label>
+<?php	endif; ?>
 			</form>
 
 			<div class="space-10"></div>
@@ -194,6 +210,18 @@ layout_page_begin();
 					<?php echo lang_get( 'repo_clone_download_cmd' ) ?>
 				</button>
 			</form>
+
+			<div class="space-10"></div>
+			<h5><?php echo lang_get( 'repo_clone_step_existing' ) ?></h5>
+			<p class="small"><?php echo lang_get( 'repo_clone_step_existing_help' ) ?></p>
+			<div class="input-group">
+				<input id="repoint-command" type="text" class="form-control" readonly="readonly"
+					value="<?php echo string_attribute( 'git remote set-url origin ' . $t_auth_url ) ?>" />
+				<span class="input-group-btn">
+					<button type="button" id="repoint-copy" class="btn btn-primary btn-white"
+						data-target="repoint-command"><?php echo lang_get( 'repo_clone_copy' ) ?></button>
+				</span>
+			</div>
 
 			<div class="space-10"></div>
 			<p class="small"><?php echo sprintf( lang_get( 'repo_clone_in_config' ),

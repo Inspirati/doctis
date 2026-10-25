@@ -5,7 +5,8 @@
  * an inline handler would be blocked.
  */
 document.addEventListener( 'DOMContentLoaded', function() {
-	var button = document.getElementById( 'clone-copy' );
+	[ 'clone-copy', 'repoint-copy' ].forEach( function( id ) {
+	var button = document.getElementById( id );
 	if( !button ) {
 		return;
 	}
@@ -39,5 +40,6 @@ document.addEventListener( 'DOMContentLoaded', function() {
 			try { ok = document.execCommand( 'copy' ); } catch ( e ) { ok = false; }
 			done( ok );
 		}
+	} );
 	} );
 } );

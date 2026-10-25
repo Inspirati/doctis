@@ -265,6 +265,49 @@ function api_token_revoke( $p_api_token_id, $p_user_id ) {
 }
 
 /**
+ * A token name for a purpose that is free for this user, suffixing when the
+ * plain name is taken: "git: example-r1", then " #2", " #3" and so on.
+ *
+ * Lets a second token be minted for the same purpose without revoking the
+ * first, so a credential already in use somewhere keeps working.
+ *
+ * @param string  $p_base    The preferred name.
+ * @param integer $p_user_id The user id.
+ * @return string  A name api_token_create() will accept.
+ */
+function api_token_name_available( $p_base, $p_user_id ) {
+	$t_base = mb_substr( trim( (string)$p_base ), 0, DB_FIELD_SIZE_API_TOKEN_NAME - 6 );
+	if( api_token_name_is_unique( $t_base, $p_user_id ) ) {
+		return $t_base;
+	}
+	for( $t_n = 2; $t_n < 1000; $t_n++ ) {
+		$t_name = $t_base . ' #' . $t_n;
+		if( api_token_name_is_unique( $t_name, $p_user_id ) ) {
+			return $t_name;
+		}
+	}
+	# Nothing sensible left; let create() reject it rather than loop for ever.
+	return $t_base;
+}
+
+/**
+ * A user's api tokens whose name starts with the given prefix.
+ *
+ * @param string  $p_prefix  The name prefix.
+ * @param integer $p_user_id The user id.
+ * @return array  Rows as api_token_get_all() returns them.
+ */
+function api_token_get_by_prefix( $p_prefix, $p_user_id ) {
+	$t_rows = array();
+	foreach( api_token_get_all( $p_user_id ) as $t_row ) {
+		if( strpos( (string)$t_row['name'], (string)$p_prefix ) === 0 ) {
+			$t_rows[] = $t_row;
+		}
+	}
+	return $t_rows;
+}
+
+/**
  * Revoke a user's api token by name, if they have one by that name.
  *
  * A token's value is stored only as a hash, so it can never be shown again
