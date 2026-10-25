@@ -2056,17 +2056,25 @@ function file_dwg_primary_path_in_use( int $p_dwg_id, int $p_project_id, string 
  * @param string $p_description Optional revision note.
  * @param bool   $p_pin         Pin an approved ref; independent of the reference.
  * @param string $p_file_type   MIME type; '' derives from the file extension.
+ * @param array  $p_options     'allow_tree' => bool, accept a git tree and
+ *                              record a source release; 'branch' => string,
+ *                              the release line to record instead of whatever
+ *                              the repository's HEAD names.
  * @return array{git_sha: string, git_path: string, filename: string, filesize: int}
  * @throws ClientException when the SHA/path do not exist or the path collides.
  * @throws ServiceException when the project has no repository on disk.
  */
-function file_dwg_primary_register( int $p_dwg_id, int $p_user_id, string $p_git_path, string $p_sha = '', string $p_description = '', bool $p_pin = true, string $p_file_type = '', bool $p_allow_tree = false ): array {
+function file_dwg_primary_register( int $p_dwg_id, int $p_user_id, string $p_git_path, string $p_sha = '', string $p_description = '', bool $p_pin = true, string $p_file_type = '', array $p_options = array() ): array {
 	$t_project_id = (int)dwg_get_field( $p_dwg_id, 'project_id' );
 	$t_previous = file_dwg_primary_get( $p_dwg_id );
 
 	# A re-registration of a source release (promotion, re-pin) keeps its
-	# nature without the caller having to restate it.
-	$t_allow_tree = $p_allow_tree || file_dwg_primary_is_tree( $t_previous );
+	# nature and its release line without the caller having to restate them.
+	$t_allow_tree = !empty( $p_options['allow_tree'] ) || file_dwg_primary_is_tree( $t_previous );
+	$t_want_branch = (string)( $p_options['branch'] ?? '' );
+	if( $t_want_branch === '' && $t_previous ) {
+		$t_want_branch = (string)$t_previous['git_branch'];
+	}
 
 	$t_git_path = file_dwg_git_path_sanitize( $p_git_path, $t_allow_tree );
 	if( $t_git_path === false ) {
@@ -2134,9 +2142,21 @@ function file_dwg_primary_register( int $p_dwg_id, int $p_user_id, string $p_git
 		$t_filesize = is_numeric( $t_size_str ) ? (int)$t_size_str : 0;
 	}
 
-	$t_branch = trim( (string)shell_exec(
-		'git --git-dir=' . escapeshellarg( $t_bare ) . ' symbolic-ref --short HEAD 2>/dev/null'
-	) );
+	# Record the release line the caller named, when it still exists; two
+	# documents may track two branches of one repository.
+	$t_branch = '';
+	if( $t_want_branch !== '' ) {
+		exec( 'git --git-dir=' . escapeshellarg( $t_bare ) . ' show-ref --verify --quiet '
+			. escapeshellarg( 'refs/heads/' . $t_want_branch ) . ' 2>/dev/null', $t_br_out, $t_br_rc );
+		if( $t_br_rc === 0 ) {
+			$t_branch = $t_want_branch;
+		}
+	}
+	if( $t_branch === '' ) {
+		$t_branch = trim( (string)shell_exec(
+			'git --git-dir=' . escapeshellarg( $t_bare ) . ' symbolic-ref --short HEAD 2>/dev/null'
+		) );
+	}
 	if( $t_branch === '' ) {
 		$t_branch = 'main';
 	}
@@ -2444,7 +2464,10 @@ function file_dwg_primary_delete( $p_dwg_id ) {
  */
 function file_dwg_primary_move_prepare( int $p_dwg_id, int $p_target_project_id, int $p_user_id ): ?array {
 	$t_row = file_dwg_primary_get( $p_dwg_id );
-	if( !$t_row || $t_row['git_path'] === '' ) {
+	# A source release names a tree in one specific repository; copying it into
+	# another is not a file move, and a repo-rooted path would silently resolve
+	# against the target repository's own root.
+	if( !$t_row || $t_row['git_path'] === '' || file_dwg_primary_is_tree( $t_row ) ) {
 		return null;
 	}
 	$t_source_project_id = (int)dwg_get_field( $p_dwg_id, 'project_id' );
@@ -2666,6 +2689,37 @@ function file_dwg_primary_sync_head( int $p_dwg_id, int $p_acting_user_id, strin
 	}
 }
 
+/**
+ * The tip commit of the branch a document was registered on, falling back to
+ * the repository's HEAD.
+ *
+ * A document's Draft is whatever its own release line has advanced to, not
+ * whatever the repository's HEAD happens to name.  Following git_branch is
+ * what lets two documents track two branches of one repository — a release
+ * line per maintained version — and it also keeps a document working when
+ * the bare repo's HEAD names a branch that does not exist, which is the state
+ * an empty Doctis repository is created in (see the post-receive hook).
+ *
+ * @param string $p_bare
+ * @param string $p_branch  The row's git_branch; '' falls straight back to HEAD.
+ * @return string  40-char commit SHA, or '' when neither resolves.
+ */
+function file_dwg_git_branch_tip( string $p_bare, string $p_branch ): string {
+	foreach( array( $p_branch === '' ? null : 'refs/heads/' . $p_branch, 'HEAD' ) as $t_rev ) {
+		if( $t_rev === null ) {
+			continue;
+		}
+		$t_sha = trim( (string)shell_exec(
+			'git --git-dir=' . escapeshellarg( $p_bare )
+			. ' rev-parse --verify -q ' . escapeshellarg( $t_rev ) . ' 2>/dev/null'
+		) );
+		if( preg_match( '/^[0-9a-f]{40}$/', $t_sha ) ) {
+			return $t_sha;
+		}
+	}
+	return '';
+}
+
 /** Return the Git object ID for one file at a commit, or null if absent. */
 function file_dwg_git_object_sha( string $p_bare, string $p_commit, string $p_path ): ?string {
 	$t_sha = trim( (string)shell_exec(
@@ -2708,10 +2762,8 @@ function file_dwg_git_head_info( int $p_dwg_id ): ?array {
 	if( $t_bare === '' || !is_dir( $t_bare ) ) {
 		return null;
 	}
-	$t_head_sha = trim( (string)shell_exec(
-		'git --git-dir=' . escapeshellarg( $t_bare ) . ' rev-parse HEAD 2>/dev/null'
-	) );
-	if( !preg_match( '/^[0-9a-f]{40}$/', $t_head_sha ) ) {
+	$t_head_sha = file_dwg_git_branch_tip( $t_bare, (string)$t_on_record['git_branch'] );
+	if( $t_head_sha === '' ) {
 		return null;
 	}
 

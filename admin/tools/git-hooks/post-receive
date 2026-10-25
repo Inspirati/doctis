@@ -1,0 +1,38 @@
+#!/bin/sh
+# Doctis post-receive hook — installed automatically into every bare repo by
+# repository_configure_bare().  Source of truth:
+# admin/tools/git-hooks/post-receive.  Do not edit the installed copy.
+#
+# Repairs a dangling HEAD.  Doctis creates an empty bare repository with
+# init.defaultBranch (main), so HEAD names refs/heads/main before any branch
+# exists.  A project whose default branch is called something else — Doctis
+# itself uses "dev", and so do ZIP-imported repositories — leaves HEAD
+# pointing at a ref that is never created.  The consequences are not cosmetic:
+#
+#   git clone  warns "remote HEAD refers to nonexistent ref" and checks out
+#              nothing, so the repository looks empty to a developer
+#   Doctis     resolves `rev-parse HEAD` to nothing, so registering a release
+#              fails and file_dwg_git_head_info() tracks no Draft at all
+#
+# Preference order: the single branch if there is only one, else main, else
+# master, else the first branch by name.  A HEAD that already resolves is
+# left alone, so this never overrides a deliberate choice.
+
+git rev-parse --verify -q HEAD >/dev/null 2>&1 && exit 0
+
+branches=$(git for-each-ref --format='%(refname:short)' refs/heads | sort)
+[ -n "$branches" ] || exit 0
+
+count=$(printf '%s\n' "$branches" | wc -l)
+if [ "$count" -eq 1 ]; then
+	target=$branches
+elif printf '%s\n' "$branches" | grep -qx main; then
+	target=main
+elif printf '%s\n' "$branches" | grep -qx master; then
+	target=master
+else
+	target=$(printf '%s\n' "$branches" | head -1)
+fi
+
+git symbolic-ref HEAD "refs/heads/$target"
+echo "doctis: repository HEAD set to $target" >&2

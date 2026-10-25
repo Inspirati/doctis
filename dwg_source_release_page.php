@@ -92,7 +92,8 @@ if( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
 			try {
 				file_dwg_primary_register(
 					$f_dwg_id, auth_get_current_user_id(), $f_path, $t_sha,
-					$f_revision, true, '', true
+					$f_revision, true, '',
+					array( 'allow_tree' => true, 'branch' => $f_branch )
 				);
 				form_security_purge( 'dwg_source_release' );
 				print_header_redirect( 'dwg_view.php?id=' . $f_dwg_id );

@@ -370,10 +370,10 @@ function repository_set_push_policy( string $p_bare, string $p_policy ): void {
 
 /**
  * Install/refresh the Doctis server-side configuration on a bare repo: the
- * pre-receive hook (what it enforces depends on the push policy) and
- * http.receivepack (allows authenticated push through the Smart HTTP
- * gateway).  Idempotent.  Hook source of truth:
- * admin/tools/git-hooks/pre-receive.
+ * pre-receive hook (what it enforces depends on the push policy), the
+ * post-receive hook (repairs a dangling HEAD) and http.receivepack (allows
+ * authenticated push through the Smart HTTP gateway).  Idempotent.  Hook
+ * source of truth: admin/tools/git-hooks/.
  *
  * The push policy is seeded to DOCUMENT only when it has never been set:
  * refreshing the configuration of a source repository must not silently
@@ -383,15 +383,17 @@ function repository_set_push_policy( string $p_bare, string $p_policy ): void {
  * @return void
  */
 function repository_configure_bare( string $p_bare ): void {
-	$t_hook_src = config_get_global( 'absolute_path' ) . 'admin/tools/git-hooks/pre-receive';
-	$t_hook_dst = $p_bare . '/hooks/pre-receive';
+	foreach( array( 'pre-receive', 'post-receive' ) as $t_hook ) {
+		$t_hook_src = config_get_global( 'absolute_path' ) . 'admin/tools/git-hooks/' . $t_hook;
+		$t_hook_dst = $p_bare . '/hooks/' . $t_hook;
 
-	if( is_file( $t_hook_src ) ) {
-		$t_content = file_get_contents( $t_hook_src );
-		if( $t_content !== false
-		 && ( !is_file( $t_hook_dst ) || file_get_contents( $t_hook_dst ) !== $t_content ) ) {
-			file_put_contents( $t_hook_dst, $t_content );
-			chmod( $t_hook_dst, 0755 );
+		if( is_file( $t_hook_src ) ) {
+			$t_content = file_get_contents( $t_hook_src );
+			if( $t_content !== false
+			 && ( !is_file( $t_hook_dst ) || file_get_contents( $t_hook_dst ) !== $t_content ) ) {
+				file_put_contents( $t_hook_dst, $t_content );
+				chmod( $t_hook_dst, 0755 );
+			}
 		}
 	}
 
