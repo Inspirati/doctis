@@ -725,6 +725,59 @@ try {
 	ok( 'a stranded record cannot be promoted' );
 }
 
+# ── Step 17: kind and frozen ────────────────────────────────────────────────
+# {dwg}.kind says what a record is; {dwg}.frozen distinguishes a *line*,
+# which follows its branch, from a *release*, pinned at its commit.
+echo "Step 17: kind and frozen\n";
+check( dwg_get_kind( $t_dwg1 ) === DWG_KIND_DOCUMENT, 'a file document is DWG_KIND_DOCUMENT' );
+check( !dwg_is_source( $t_dwg1 ), 'a file document is not a source record' );
+check( dwg_is_source( $t_dwg_src ), 'a tree registration sets DWG_KIND_SOURCE' );
+check( !dwg_is_frozen( $t_dwg_src ), 'a source record defaults to a tracking line' );
+
+# The combination both the owner and the author flagged as meaningless is
+# prevented, not represented.
+dwg_set_kind( $t_dwg1, DWG_KIND_DOCUMENT, true );
+check( !dwg_is_frozen( $t_dwg1 ), 'a document kind cannot be frozen' );
+check( (int)dwg_get_field( $t_dwg1, 'frozen' ) === 0, 'and the column is not left set' );
+
+# A frozen release ignores later work on its line.
+exec( 'cd ' . escapeshellarg( $t_hookwt ) . ' && git fetch -q origin && git checkout -q -B rel-line'
+	. ' && git push -q origin rel-line 2>&1' );
+$t_rel_sha = bare_git( $t_bare14, 'rev-parse refs/heads/rel-line' );
+$t_dwg_frozen = make_dwg( $t_parent, 1, 'GitTest frozen release' );
+$t_cleanup['dwg_ids'][] = $t_dwg_frozen;
+file_dwg_primary_register( $t_dwg_frozen, 1, '', $t_rel_sha, 'v2.0', true, '',
+	array( 'allow_tree' => true, 'branch' => 'rel-line', 'frozen' => true ) );
+check( dwg_is_frozen( $t_dwg_frozen ), 'a release registers frozen' );
+
+$t_dwg_tracks = make_dwg( $t_parent, 1, 'GitTest tracking line' );
+$t_cleanup['dwg_ids'][] = $t_dwg_tracks;
+file_dwg_primary_register( $t_dwg_tracks, 1, '', $t_rel_sha, 'the line', true, '',
+	array( 'allow_tree' => true, 'branch' => 'rel-line' ) );
+check( !dwg_is_frozen( $t_dwg_tracks ), 'the line registers unfrozen' );
+
+exec( 'cd ' . escapeshellarg( $t_hookwt ) . ' && echo more > after.txt && git add -A'
+	. ' && git -c user.name=T -c user.email=t@e.invalid commit -q -m "work after the release"'
+	. ' && git push -q origin rel-line 2>&1' );
+$t_fi = file_dwg_git_head_info( $t_dwg_frozen );
+$t_ti = file_dwg_git_head_info( $t_dwg_tracks );
+check( $t_fi !== null && !$t_fi['has_draft'] && !empty( $t_fi['frozen'] ),
+	'a frozen release offers no Draft after later work' );
+check( $t_ti !== null && $t_ti['has_draft'], 'the line on the same branch does offer one' );
+check( file_dwg_primary_get( $t_dwg_frozen )['git_sha'] === $t_rel_sha,
+	'the release stays pinned at its commit' );
+try {
+	file_dwg_primary_sync_head( $t_dwg_frozen, 1 );
+	fail( 'a frozen release cannot be promoted' );
+} catch( ClientException $e ) {
+	ok( 'a frozen release cannot be promoted' );
+}
+
+# Promotion must not quietly unfreeze or re-kind a record.
+file_dwg_primary_sync_head( $t_dwg_tracks, 1, $t_ti['sha'] );
+check( dwg_is_source( $t_dwg_tracks ) && !dwg_is_frozen( $t_dwg_tracks ),
+	'promoting a line keeps it a line' );
+
 } catch( Throwable $e ) {
 	fail( 'unexpected exception', get_class( $e ) . ': ' . $e->getMessage()
 		. ' @ ' . $e->getFile() . ':' . $e->getLine() );
