@@ -26,7 +26,8 @@ in the [MantisBT documentation](https://mantisbt.org/documentation.php).
 10. [Meetings](#10-meetings)
 11. [AI Assistant and knowledge base](#11-ai-assistant-and-knowledge-base)
 12. [Documentation Topics](#12-documentation-topics)
-13. [Administration notes](#13-administration-notes)
+13. [Source code repositories](#13-source-code-repositories)
+14. [Administration notes](#14-administration-notes)
 
 ---
 
@@ -925,7 +926,166 @@ authorising again; earlier snapshots keep the old revision.
 
 ---
 
-## 13. Administration notes
+## 13. Source code repositories
+
+Doctis is a document control system that can also **host source code**. A
+project can be marked as a source project, and developers then clone, commit
+and push to its repository as they would any git repository. The difference
+from an ordinary git host is what Doctis *registers*: **no individual source
+file is a document**. The documents of a source project are its **releases**
+and its **lines**.
+
+This is off unless an administrator turns it on for a project, and it is
+unrelated to ordinary documents, which continue to work exactly as sections
+1–7 describe.
+
+### 13.1 Lines and releases
+
+A source document records a repository — all of it, or one directory of it —
+at one commit. There are two sorts, and the difference is whether the record
+moves:
+
+| | What it is | Behaviour |
+|---|---|---|
+| **Source line** | A branch that goes on: `main`, a maintenance branch, a per-customer branch | Follows the branch. Every push offers the new commit as a **Draft** |
+| **Source release** | A version that has been issued | Pinned at its commit. No Draft, and it cannot be promoted |
+
+A line is the living record of a branch. A release is a snapshot of it, with
+its own revision, status, owner, approval cycle and issues — so the document
+list ends up showing every release you have ever cut, each with the commit it
+was approved at.
+
+You do not have to use both. A single line, promoted each time a version is
+approved, is a perfectly good record if you do not need a row per release.
+
+### 13.2 Working on the repository from your own machine
+
+Nothing about Doctis-hosted git is special from a developer's side. Clone it
+with your Doctis username and an **API token** as the password (My Account →
+API Tokens):
+
+```bash
+git clone http://<token-name>:<token>@<doctis-host>/git/<repository>.git
+```
+
+The repository name is shown on Manage Project → **Repository**. From then
+on `git commit`, `git push`, `git fetch`, branching and merging all behave
+normally.
+
+**Pushing moves the Draft, never the approved version.** A push updates the
+branch; the version Doctis has On Record stays where it is until somebody
+promotes it inside Doctis. That is the whole point: the repository is where
+work happens, and Doctis is where approval happens.
+
+#### Moving an existing repository into Doctis
+
+If you already have the project on your machine, you do not need to re-import
+anything. Ask an administrator to create the repository (Manage Project →
+Repository), then repoint your existing clone at it:
+
+```bash
+git remote set-url origin http://<user>:<token>@<doctis-host>/git/<repository>.git
+git push --all
+git push --tags
+```
+
+Your history, branches and tags go across unchanged.
+
+#### What a document-control repository will not let you do
+
+Every repository has a **push policy**, shown on Manage Project →
+Repository:
+
+- **document control** — append-only. Force-pushing and deleting branches or
+  tags are refused, because an approved document version must never be
+  rewritten. This is the default.
+- **source repository** — normal development. Rebasing, force-pushing and
+  deleting merged branches all work.
+
+If a push is refused you will see why:
+
+```
+remote: doctis: non-fast-forward update of refs/heads/my-branch rejected
+        (force-push / history rewrite is not permitted)
+remote: doctis: deleting refs/heads/my-branch is not permitted
+```
+
+Under **both** policies, the `refs/doctis/*` refs are server-managed and
+cannot be pushed. Those are the pins Doctis puts on every approved version,
+which is what makes the relaxed policy safe: a release you have approved
+stays intact even if someone later force-pushes the branch past it.
+
+The policy belongs to the *repository*, so one repository cannot be
+append-only for documents and rewritable for development at the same time.
+That is why a source project normally has a repository of its own — see
+§13.5.
+
+### 13.3 Registering a line, and cutting releases
+
+On a document with no file yet, in a project where source releases are
+enabled, the Primary Document panel offers **Register Source Release**:
+
+- **Record as** — *Tracking line* or *Frozen release*;
+- **Release from branch** — which branch this record follows;
+- **Commit** — blank for the tip of that branch;
+- **Subtree** — blank for the whole repository, or a directory such as
+  `firmware` to record only part of it;
+- **Release note**.
+
+Afterwards:
+
+- a **line** shows a Draft whenever someone pushes to its branch.
+  **Promote Draft** moves the version on record; **Cut Release** instead
+  creates a separate release document, frozen at that commit, and leaves the
+  line tracking;
+- a **release** shows nothing further. **Unfreeze** makes it track again, if
+  it was frozen by mistake.
+
+**Download** gives you the recorded commit as a `zip` archive — the whole
+tree as it stood, not a single file. Add `&format=tar.gz` for a tarball.
+
+### 13.4 Freezing an ordinary document
+
+**Freeze** is not only for releases. Any document whose primary file is in
+git can be frozen, which stops a later edit of the file from offering itself
+for approval. Use it when an issued revision is final. **Unfreeze** reverses
+it, and both are recorded in the document's history.
+
+The document list's **Kind** column shows which of the four states a record
+is in — document, frozen document, source line or source release — and the
+**Kind** filter narrows the list to any combination of them.
+
+### 13.5 For administrators
+
+Everything is on **Manage Project → Repository**:
+
+- which repository the project's documents are in, and whether that is the
+  project's own or **inherited** from a parent project;
+- **Give this project its own repository** — needed before its push policy
+  can differ from its parent's. Refused once the project already stores
+  documents in the inherited repository, so decide this *before* anyone
+  uploads to a source sub-project;
+- the **push policy** (administrators only, and only on the project that owns
+  the repository);
+- **Source releases** — whether documents here may record a repository.
+
+Manage → **Projects** has a Repository column showing all of this for every
+project and sub-project at a glance. Manage → **Git Store** gives the
+repository-centric view: files, every registered document with its kind,
+commits, refs and the approved-version pins.
+
+A project tree **shares one repository** by default. A sub-project given its
+own becomes the starting point for its own sub-projects in turn.
+
+**Two things a source project needs that an ordinary one does not:** remote
+git access must be enabled (`$g_git_http_enabled`), and the web server's
+request-body limit must be lifted on the `/git/` route — a push sends the
+whole packfile as one request, so the usual limit rejects any repository of
+real size with `HTTP 413`.
+
+---
+
+## 14. Administration notes
 
 ### Project naming
 

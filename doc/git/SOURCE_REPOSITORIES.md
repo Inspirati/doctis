@@ -492,11 +492,12 @@ Branch `source-repos`, off `dev` at e99b10496. No schema change.
 
 ### 6.1 Not built
 
-- No REST or SOAP exposure of a release record.
-- No "cut a release" affordance beyond the existing **Promote Draft** button, and no status gate on it: promotion is still `MANAGER` with no required document status.
-- No importer mode that registers a tree as one document (`admin/import-git-repo.php` still registers files).
-- No user documentation in `doc/MANUAL.md`.
-- Nothing reads `{repository}.default_branch` for a source repository; the post-receive hook picks HEAD by its own heuristic.
+- No endpoint that *registers* a release over REST or SOAP, though `kind` and
+  `frozen` now travel in the document object.
+- No status gate on promotion or on cutting a release: both are `MANAGER`
+  with no required document status.
+- No importer mode that registers a tree as one document
+  (`admin/import-git-repo.php` still registers files).
 
 ---
 
@@ -740,6 +741,23 @@ person from the one before it.
 
 ## 9. Log
 
+- **2026-10-26** — Owner corrected the `frozen` invariant: it is a valid state
+  for an ordinary document too, which lets a released document be tracked
+  directly. Done, and it removed a special case rather than adding one —
+  `frozen` now means the same for both kinds, with a Freeze / Unfreeze
+  control. Owner also confirmed that an external clone behaving like a normal
+  git repository, and adopting an existing local repository by repointing its
+  upstream, are already how it works; both are now in `doc/MANUAL.md` §13.
+  Then the remaining work: the `kind` column and `DwgKindFilter`, the *Cut
+  release* action, `git_store_documents_list()` (the Documents tab reported 2
+  records for a repository holding 4), `repository_default_branch()` upkeep,
+  and the manual. Verifying Cut release turned up a **pre-existing defect**:
+  `dwg_create.php` passed a hardcoded `"sample summary"` and
+  `DwgData::create()` never persisted the column, so every document created
+  through the web form or the REST API was nameless wherever
+  `dwg_format_summary()` is used — a page title of `0259: `. Both fixed.
+  `test-git-doctis.php` 165 → 176.
+
 - **2026-10-26** — Owner asked what "subtree" meant, which this document had
   used throughout without defining; §3.1 now does, with the blob/tree table.
   Owner also cleared schema changes for the development phase, which settled
@@ -851,21 +869,18 @@ record at the time.
 
 ## 11. What is left to build
 
-In the order that would matter to a first real user:
+**Done since the first pass** — a *Cut release* action, the `kind` column and
+filter, the flat Git Store document list, `{repository}.default_branch`
+upkeep, freezing, and `doc/MANUAL.md` §13. What remains, in the order that
+would matter to a first real user:
 
 | Item | Why |
 |------|-----|
-| ~~A button to create a project's repository~~ | **Built** 2026-10-25 — Manage Project → *Repository*, which also gives a sub-project its own (`manage_proj_repo_inc.php`, `manage_proj_repo_create.php`) |
-| **Re-key `git_store_documents()`** | §8.3 — it keys by `git_path`, so several releases of one path collapse to the last; seven consumers in `manage_git_store_page.php` index it that way |
-| A *Cut release* action | §8.3 — create the next release document from a line, rather than registering it by hand. The *(line, release)* distinction it needed is now `{dwg}.frozen` |
-| A documents-list column and filter for `kind` | §3.1 — the column exists and nothing shows or filters by it yet, which is most of the point of having it |
-| `doc/MANUAL.md` section | Nothing user-facing documents this |
 | Importer mode: register a tree as one document | §8, adoption; the primitive exists, the flag does not |
-| Maintain `{repository}.default_branch` after a push | §8.1; the hook repairs HEAD, the row goes stale |
 | Moving existing documents between repositories | §1.2 — a project that already stores documents in the repository it inherits cannot be given its own until they move; `file_dwg_primary_move_prepare()` moves one document, nothing moves a project's worth |
 | Release notes that accumulate | §8.1; `description` is 255 chars and is replaced |
 | A status gate on promotion | §8.1; decide whether a release needs an approved status |
-| REST/SOAP exposure | §6.1 |
+| REST/SOAP exposure of `kind`, `frozen` and release records | `DwgData` carries the two columns, so they appear in the SOAP/REST document already; nothing *acts* on them there and no endpoint registers a release |
 | Live front-proxy body limit | §7 step 2 — needed before any push to live |
 
 ---
