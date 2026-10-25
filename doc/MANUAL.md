@@ -960,17 +960,33 @@ approved, is a perfectly good record if you do not need a row per release.
 
 ### 13.2 Working on the repository from your own machine
 
-Nothing about Doctis-hosted git is special from a developer's side. Clone it
-with your Doctis username and an **API token** as the password (My Account →
-API Tokens):
+Nothing about Doctis-hosted git is special from a developer's side. The
+quickest way in is the **Clone this repository** button, on Manage Project →
+**Repository** and on the panel of any source document. It:
 
-```bash
-git clone http://<token-name>:<token>@<doctis-host>/git/<repository>.git
-```
+- creates an API token for this repository — git never uses your Doctis
+  password — and shows you a ready-made `git clone` command with it in,
+  which you can copy with one click;
+- offers a small **clone script** (`.sh` or `.cmd`). Save it wherever you
+  want to work — your browser's save dialog is how you choose the folder —
+  then run it. It asks which directory to clone into, or takes one as an
+  argument: `sh clone-myrepo.sh ~/work/myrepo`.
 
-The repository name is shown on Manage Project → **Repository**. From then
-on `git commit`, `git push`, `git fetch`, branching and merging all behave
-normally.
+A web page cannot run git on your machine or pick a folder for you, which is
+why the second step is a script rather than a dialog.
+
+**You are shown the token once.** It is stored only as a hash, so Doctis
+cannot show it again — if you lose it, use the button again, which replaces
+the old token and revokes it. Treat it as a password: it is your whole
+Doctis credential, not something limited to one repository, and you can
+revoke it any time from My Account → **API Tokens**.
+
+Cloning this way leaves the token in the clone's `.git/config`. If you would
+rather be prompted for it, the script tells you the one command that
+switches the remote to a plain address.
+
+From then on `git commit`, `git push`, `git fetch`, branching and merging all
+behave normally.
 
 **Pushing moves the Draft, never the approved version.** A push updates the
 branch; the version Doctis has On Record stays where it is until somebody

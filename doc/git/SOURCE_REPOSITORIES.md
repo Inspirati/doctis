@@ -741,6 +741,25 @@ person from the one before it.
 
 ## 9. Log
 
+- **2026-10-26** — Owner asked for one-click cloning from the UI: a button, a
+  directory picker, and token handling. Two of the three built; the directory
+  picker **cannot** be, and the page says so instead of pretending. A browser
+  cannot run git on the visitor's machine or clone into a chosen folder
+  without an installed helper, so the clone script is the answer: the save
+  dialog chooses where the *script* goes, and the script asks which directory
+  to clone into (or takes it as an argument). Token **reuse is also
+  impossible** — `api_token_create()` returns the value once and stores a
+  SHA-256 hash — so the page detects a prior `git: <repo>` token, says when it
+  was made, and offers to replace it, warning that this revokes the old one.
+  `dwg_repo_clone_page.php`, `dwg_repo_clone_script.php`,
+  `js/dwg_repo_clone.js`, `repository_clone_url()`,
+  `api_token_revoke_by_name()`. Verified end to end: the generated script
+  cloned both with an argument and by prompting, and the clone pushed. Two
+  defects found doing so — the script endpoint must set `$g_bypass_headers`,
+  because `core.php` has already emitted the CSP and `http_security_headers()`
+  raises `ERROR_GENERIC` on a second call, and `api_token_get_user()` returns
+  a string so a `!==` against an int always failed.
+
 - **2026-10-26** — Owner asked what a clone of each sample project contains
   and which git operations work on each. Demonstrated and recorded in §10.1,
   including that a project with no repository cannot be cloned at all, that
