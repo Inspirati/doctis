@@ -5,9 +5,13 @@ the design-intent record, the progress tracker, and a primer on the parts of
 the existing system the feature touches. Everything below marked *verified* was
 checked against the running code, not inferred.
 
-Status: **not started. Next step is the spike in §7.**
-Owner approved the direction on 2026-10-25 and said the open questions in §8
-can only be answered properly after the spike.
+Status: **spike done; a first implementation is on branch `source-repos`,
+trial-tested on the VM.** Not merged, not pushed. §7 records what the spike
+found, §8 the questions it answered and the ones still open, §11 what is left
+to build.
+
+The direction was approved on 2026-10-25. No schema change was needed, so the
+branch deploys to the VM or live by fetch alone — no database rebuild.
 
 ---
 
@@ -78,6 +82,11 @@ matters here.
 - Current VM data: live's 21 users, project 1 `HCRQMS` with 101 documents in
   repo `hcrqms-r1` (branch `dev`), plus 18 top-level sample projects with 67
   sub-projects. `administrator`/`root` is enabled for testing.
+- **The spike's own artefacts are still there** (see §7): projects 254
+  `Source Trial` (repo `source-trial-r2`, document 209, HCR-Hardware-Designs)
+  and 255 `Source Trial Large` (repo `source-trial-large-r3`, document 210,
+  the Doctis repository). Both have `$g_dwg_source_release_enabled` ON and the
+  `source` push policy. A rebuild clears them; §10 says how to recreate one.
 
 ### 2.1 Running a probe script
 
@@ -178,7 +187,10 @@ a deliberate act inside Doctis.
 
 ---
 
-## 4. Verified findings (2026-10-25)
+## 4. Verified findings — the state *before* the spike (2026-10-25)
+
+Kept as the baseline the implementation was measured against. **§6 and §7
+supersede every "obstacle" below**; each one says where.
 
 ### 4.1 Nothing objects to a repo full of unregistered files
 
@@ -215,6 +227,8 @@ The **repo root** (`git_path = ''`) is refused, but only by
 
 So: the **data model tolerates a tree; presentation and download do not.**
 
+*Addressed.* §7 step 3 has the same measurement after the change.
+
 ### 4.3 The pre-receive hook is the real obstacle
 
 `admin/tools/git-hooks/pre-receive`, installed into every bare repo by
@@ -232,12 +246,19 @@ it is fast-forward by definition.
 This is installed per-repository, so relaxing it for source repos means making
 the hook **policy-driven per repository** rather than editing it globally.
 
+*Addressed* — that is what was built (S4, S5). §7 step 6 has the verbatim
+refusals under each policy, and the demonstration that an approved release
+survives a force-push past it.
+
 ### 4.4 Publishing refuses these documents already
 
 `core/dwg_publish_api.php` refuses to publish any document with a license
 requirement, and the pipeline only handles `.md`/`.markdown`. So the publish
 path will decline a source document without further work — convenient, but
 make it decline for a *stated* reason rather than by accident.
+
+*Addressed.* `dwg_publish_refusal()` now answers "a source release records a
+repository, not a page" before it looks at anything else.
 
 ---
 
@@ -246,76 +267,207 @@ make it decline for a *stated* reason rather than by accident.
 | # | Decision | Date |
 |---|----------|------|
 | S1 | Build the **release-record** framing (§1.1), not "a document whose file is a directory" | 2026-10-25 |
-| S2 | Proceed by **spike first** (§7); the §8 questions are answered after it, not before | 2026-10-25 |
+| S2 | Proceed by **spike first**; the §8 questions are answered after it, not before — done, §7 | 2026-10-25 |
+| S3 | A release record is marked by `{dwg_primary_file}.file_type = 'inode/directory'` (`DWG_TREE_MIME_TYPE`), **not** by a new `kind` column — no schema change, so no rebuild | 2026-10-25 |
+| S4 | The push policy is **fully relaxed** in `source` mode: force-push and ref deletion allowed on every ref, because the approved pin protects the record (§7, step 6) | 2026-10-25, owner |
+| S5 | The policy lives in the **bare repo's own git config** (`doctis.pushpolicy`), set on Manage → Git Store, because the hook can only read its own repository | 2026-10-25 |
+| S6 | A release record is **off by default**: `$g_dwg_source_release_enabled`, per-project, so only the projects holding source repositories gain it | 2026-10-25 |
 
 ---
 
-## 6. Progress tracker
+## 6. What was built
 
-| Item | State |
-|------|-------|
-| Spike (§7) | **not started** |
-| `git_path = ''` (repo root) accepted by the sanitiser | not started |
-| Download via `git archive` | not started |
-| Suppress filesize / MIME / preview for tree-rooted documents | not started |
-| Per-repository pre-receive policy | not started |
-| Document "kind" flag | not started — see §8 |
-| Worktree cost measurement for a large repo | not started |
-| Tests in `tests/Mantis/` | not started |
-| `doc/MANUAL.md` user documentation | not started |
+Branch `source-repos`, off `dev` at e99b10496. No schema change.
 
-Update this table in place as work lands, and add a dated line to §9.
+| Area | Change |
+|------|--------|
+| Marker | `DWG_TREE_MIME_TYPE` in `core/constant_inc.php`; `file_dwg_primary_is_tree()` |
+| Root path | `file_dwg_git_path_sanitize( $path, $allow_root = false )` — `''` accepted only on request, so a file document still cannot have an empty path |
+| Registration | `file_dwg_primary_register()` reads the object type with `git cat-file -t`, refuses a tree unless asked, forces `filesize = 0`, names the row after the repository slug, and takes its new arguments as an options array (`allow_tree`, `branch`) |
+| Draft | `file_dwg_primary_draft_register()` likewise; `file_dwg_git_head_info()` compares tree objects and spells the empty pathspec `.` |
+| Release line | `file_dwg_git_branch_tip()` — a document's Draft follows its own `git_branch`, falling back to HEAD |
+| Download | `file_dwg_source_release_stream()` streams `git archive` (zip or `tar.gz`) with `passthru()`; wired into all three `file_download.php` primary routes. `GitFileStorageBackend::retrieve()` refuses tree rows |
+| Refusals | Upload onto a release, publishing, and `file_dwg_primary_move_prepare()` all decline, each for a stated reason |
+| Push policy | `admin/tools/git-hooks/pre-receive` reads `doctis.pushpolicy`; `repository_get_push_policy()` / `repository_set_push_policy()`; control on Manage → Git Store |
+| HEAD repair | New `admin/tools/git-hooks/post-receive`, installed beside `pre-receive` by `repository_configure_bare()` |
+| UI | `dwg_source_release_page.php` (branch, commit, subtree, note); the Primary Document panel becomes "Source Release" — no byte count, archive download, `whole repository` marker |
+| Git Store | A repo-rooted document's On Record state comes from `git_store_tree_state()` (tree object comparison), not from the blob listing |
+| Config | `$g_dwg_source_release_enabled` (OFF), `$g_dwg_source_release_archive_format` (`zip`) |
+| Server | `client_max_body_size 0` in the `/git/` location — see §7 step 2 |
+| Tests | Steps 14–15 of `admin/test-git-doctis.php`, 35 assertions (102 → 137) |
 
----
+### 6.1 Not built
 
-## 7. The spike
-
-Smallest thing that tells us whether the release-record framing fits how the
-owner actually works. Throwaway code is fine; the output is a judgement, not a
-feature.
-
-1. Create a scratch project with its own repository.
-2. Push a real source project into it over the Smart HTTP gateway as a
-   developer would, with an API token. Note anything that fights you.
-3. Register **one document** against the repo root at a commit — which needs
-   `file_dwg_git_path_sanitize()` to accept `''`, the one code change the spike
-   cannot avoid.
-4. Make `file_download.php?type=dwg_primary` return `git archive <sha>` as a
-   zip for that document.
-5. Push more commits; confirm Draft (HEAD) moves while On Record stays pinned.
-   Promote with `file_dwg_primary_sync_head()` and confirm
-   `refs/doctis/approved/<dwg_id>/<n>` moves to the new commit.
-6. Try the things a developer does and the hook forbids: force-push a branch,
-   delete a merged branch. Record exactly what the failure looks like to the
-   person pushing.
-7. Measure: repository size on disk, worktree size, and how long a store
-   operation takes with a real history.
-
-Then answer §8 and revise §1.1 if the framing did not survive contact.
+- No REST or SOAP exposure of a release record.
+- No "cut a release" affordance beyond the existing **Promote Draft** button, and no status gate on it: promotion is still `MANAGER` with no required document status.
+- No importer mode that registers a tree as one document (`admin/import-git-repo.php` still registers files).
+- No user documentation in `doc/MANUAL.md`.
+- Nothing reads `{repository}.default_branch` for a source repository; the post-receive hook picks HEAD by its own heuristic.
 
 ---
 
-## 8. Open questions — answer after the spike
+## 7. The spike — what it found
 
-- **One document per release, or one document whose On Record advances?** The
-  latter is less bookkeeping; the former gives each release its own record,
-  status and approval. The document `revision` field suggests the latter was
-  the original intent.
-- **Multiple release lines?** The row pins one `git_branch`, so `main` and a
-  maintenance branch would want a document each.
-- **Does the pre-receive policy relax, and how far?** Per-repository flag,
-  per-branch pattern (protect `main`, free rein on `feature/*`), or leave it
-  strict and change the workflow instead.
-- **Is a document "kind" worth it?** Attachments, preview, publishing and the
-  classification/revision fields all want different treatment for a source
-  release. A kind flag is a schema change to `{dwg}` and therefore a rebuild.
-- **Worktree cost.** Every repo gets a checked-out worktree. Acceptable for a
-  large source repo, or does the backend need a bare-only path?
-- **Do issues against a source document actually get used,** or does the team
-  keep issues elsewhere? This is most of the argument for Doctis over GitHub.
-- **What happens on repository adoption?** `admin/import-git-repo.php` registers
-  *files* as documents; a source project wants a mode that registers the tree
-  as one document. Does the importer grow a flag, or is this a separate path?
+Run on the VM on 2026-10-25 against **HCR-Hardware-Designs** (27 commits,
+22 MiB packed) and, for scale, the **Doctis repository itself** (14,781
+commits, 82 MiB packed). Scratch projects `Source Trial` (254, repo
+`source-trial-r2`, document 209) and `Source Trial Large` (255, repo
+`source-trial-large-r3`, document 210) are **still on the VM** for inspection.
+
+**1. Scratch project and repository.** Fine. A project created with no
+repository gets one from `repository_id_for_project_or_create()` +
+`repository_ensure_on_disk()`. There is no UI for that step — the repository
+is otherwise created on first upload, which a source project never does. A
+release record therefore needs the repository to exist first, and today only a
+script creates it. *Worth a button.*
+
+**2. Push over the Smart HTTP gateway.** Works, with two obstacles found.
+
+- **HTTP 413.** `client_max_body_size 64M` rejected the 82 MiB Doctis push:
+  `error: RPC failed; HTTP 413`. A git push sends the whole packfile as one
+  request body, so this is not an edge case — it is every real repository.
+  Fixed with `client_max_body_size 0` inside the `/git/` location, in the
+  running site and in `admin/tools/templates/nginx-doctis.conf`;
+  `admin/tools/git-serve.conf` carries the Apache equivalent
+  (`LimitRequestBody 0`). **Live's front proxy will need the same.**
+- **Dangling HEAD.** Doctis creates an empty bare repo with HEAD naming
+  `refs/heads/main`. Push a project whose branch is called something else —
+  Doctis's own `dev` — and HEAD never resolves. `git clone` then warns
+  "remote HEAD refers to nonexistent ref" and checks out **nothing**, and
+  Doctis cannot register a release or track a Draft at all. Fixed by the new
+  post-receive hook; the developer sees
+  `remote: doctis: repository HEAD set to dev`. This was a latent defect in
+  the repository lifecycle, not a source-repository one.
+
+The gateway's URL is `http://<host>/git/<slug>-r<id>.git` — **not** under
+`/doctis/`. Authentication is the Doctis username and an API token as the
+password.
+
+**3. Register one document against the repo root.** Works. Compare with the
+pre-spike measurement in §4.2:
+
+| | before (§4.2) | now |
+|---|---|---|
+| `filename` | `procedures` | `source-trial` (the repository slug) |
+| `filesize` | `279` (the tree object) | `0` |
+| `file_type` | `application/octet-stream` | `inode/directory` |
+| `git_path` | `system/procedures` | `''` (the repository root) |
+| download | 5 bytes reading `Array` | a 28 MB zip of 336 files |
+
+**4. Download.** `git archive` streamed through `passthru()`: 28 MB zip in
+1.2 s, `tar.gz` likewise, both unpacking to a `<slug>-<sha8>/` prefix. Nothing
+is buffered, so repository size does not meet PHP's memory limit.
+
+**5. Draft and promotion.** Exactly the existing mechanism, and it needed no
+change beyond tree comparison. A developer push moved the Draft to `ffbf4825`
+while On Record stayed at `e393897c`; **Promote Draft** cut release 2 and left
+both pins in place:
+
+```
+refs/doctis/approved/209/1 -> e393897c   release 1
+refs/doctis/approved/209/2 -> ffbf4825   release 2
+```
+
+`{dwg_history}` records each promotion. **The release history is the pins**,
+and it is already an ISO 9001 configuration record.
+
+**6. The things a developer does that the hook forbade.** Under the new
+`source` policy all four work: create a branch, rebase and force-push it,
+delete it when merged, and force-push `main`. Under `document` they fail like
+this, verbatim:
+
+```
+remote: doctis: non-fast-forward update of refs/heads/feature/trial2 rejected (force-push / history rewrite is not permitted)
+remote: doctis: deleting refs/heads/feature/trial2 is not permitted
+remote: doctis: refs/doctis/approved/209/99 is server-managed and cannot be pushed
+```
+
+The third is refused under **both** policies, and that is what makes the
+relaxation safe. Demonstrated, not argued: `main` was force-rewound past the
+On Record commit and `git gc --prune=now` run, after which the commit was
+still present and the document still downloaded its 28 MB archive intact,
+because `refs/doctis/approved/209/2` keeps it reachable.
+
+**7. Cost.** Measured on the VM.
+
+| | HCR-Hardware-Designs | Doctis (worst case) |
+|---|---|---|
+| commits | 27 | 14,781 |
+| bare repo on disk | 38 MB | 81 MB |
+| **server worktree** | **124 KB** | **124 KB** |
+| push through the gateway | 1.8 s | 3.2 s |
+| `file_dwg_primary_register()` | — | 0.034 s |
+| `file_dwg_git_head_info()` | — | 0.018 s |
+| `git archive` of the whole tree | 1.2 s (28 MB) | 0.35 s (6.1 MB) |
+
+The worktree figure is the interesting one, and it answers §8: **a source
+repository's server worktree is never populated.** It is cloned when the bare
+repo is still empty and only a Doctis-side `store()` ever syncs it — which a
+release record refuses. A source repository costs the bare repo and nothing
+else. (A repository *adopted* from a source with content is different: that
+one is cloned with a full checkout.)
+
+Every operation is proportional to the tree, not the history: a 14,781-commit
+repository registers in 34 ms.
+
+---
+
+## 8. The open questions, answered
+
+**One document per release, or one document whose On Record advances?**
+*One document whose On Record advances* — built, and the pins give each
+release its own immutable record anyway, so the bookkeeping of a document per
+release buys little. What it does **not** give is a per-release status,
+approver and revision field. Decide that when the first real release cycle
+runs; nothing in the build forecloses either.
+
+**Multiple release lines?** *Yes, one document per branch, and it works.*
+`file_dwg_git_branch_tip()` makes a document's Draft follow its own
+`git_branch`, so `main` and a maintenance branch can be two documents of one
+repository, each advancing independently. Untried with two documents on one
+repository at once — the trial used one document per repository.
+
+**Does the pre-receive policy relax, and how far?** *Fully, per repository,
+and the evidence is in §7 step 6.* `refs/doctis/*` stay unpushable, which is
+the whole safety argument, and it was verified against a force-push and a
+prune.
+
+**Is a document "kind" worth it?** *Not yet.* `file_type` carries the
+distinction with no schema change, and every consumer that needed to know —
+download, publish, upload, move, the Git Store state — reads it through
+`file_dwg_primary_is_tree()`. Revisit if a release record needs to differ in
+*fields* (its own revision scheme, no classification) rather than in
+behaviour; that is when a column earns its rebuild.
+
+**Worktree cost.** *Not a problem; no bare-only path needed.* §7 step 7.
+
+**Do issues against a source document actually get used?** **Still open** —
+the only question the spike could not answer, because it needs the team, not
+the code. Issues attach to document 209 today with no further work.
+
+**What happens on repository adoption?** **Still open.**
+`admin/import-git-repo.php` registers files as documents; a source project
+wants a mode that registers the tree as one. The pieces now exist
+(`file_dwg_primary_register()` with `allow_tree`), so it is a flag on the
+importer rather than a separate path — but it is not written.
+
+### 8.1 New questions the spike raised
+
+- **Creating the repository needs a script.** A source project's repository
+  must exist before anyone can push, and nothing in the UI creates one
+  (ordinarily it appears on first upload). Manage Project, or the Git Store
+  page, should be able to create an empty repository for a project.
+- **Should promotion require a status?** §1.1's framing is Draft → Under
+  Review → Approved, but promotion is only gated on `MANAGER`. Tying it to
+  `$g_dwg_status_enum_string` would make the status mean something for a
+  release.
+- **`{repository}.default_branch` is not maintained** for a pushed-into
+  repository: it stays `main` while the branch is `dev`. The post-receive
+  hook repairs HEAD on disk but nothing updates the row.
+- **The release note is the only per-release text.** `description` on
+  `{dwg_primary_file}` holds it, 255 characters, and it is replaced on
+  promotion rather than accumulating. A real changelog wants somewhere else
+  to live.
 
 ---
 
@@ -326,10 +478,74 @@ Then answer §8 and revise §1.1 if the framing did not survive contact.
   Probe artefacts (document 207 and its dangling
   `refs/doctis/approved/207/1`) were cleaned up; VM back to 101 documents and
   101 primary files. No feature code written.
+- **2026-10-25** — Spike run and first implementation written, on branch
+  `source-repos` (4 commits off `dev` e99b10496, unmerged, unpushed). Owner
+  chose the fully-relaxed `source` push policy (S4) and HCR-Hardware-Designs
+  as the trial payload. §6 lists what was built, §7 what the spike found, §8
+  the questions it answered. Two latent defects found and fixed on the way:
+  the gateway's request-body limit (HTTP 413 on any real push) and a dangling
+  bare-repo HEAD (a clone that checks out nothing). Tests: `test-git-doctis.php`
+  102 → 137, `test-git-php.php` 20/20, PHPUnit `mantis` 382/382. Trial
+  projects 254 and 255 and documents 209 and 210 left on the VM.
 
 ---
 
-## 10. Related reading
+## 10. Driving it (as built)
+
+Enabling it for a project, start to finish:
+
+1. **Create the repository.** No UI does this yet (§8.1); a script run as
+   `www-data` per §2.1:
+   ```php
+   $t_repo_id = repository_id_for_project_or_create( $t_project_id );
+   repository_ensure_on_disk( $t_repo_id );
+   ```
+2. **Turn the feature on for that project** — `$g_dwg_source_release_enabled`,
+   per project, via Manage → Configuration → Configuration Report, or
+   `config_set( 'dwg_source_release_enabled', ON, NO_USER, $t_project_id )`.
+3. **Set the push policy** to *source repository* on Manage → **Git Store**,
+   unless the repository should stay append-only.
+4. **Push the project**, with a Doctis API token as the password:
+   ```bash
+   git remote add origin http://<user>:<token>@<host>/git/<slug>-r<id>.git
+   git push -u origin main
+   ```
+   Reads need `$g_git_http_read_threshold` (DEVELOPER), pushes
+   `$g_git_http_write_threshold` (MANAGER), on the repository's owner project.
+5. **Create a document** for the release record and open it. The Primary
+   Document panel offers **Register Source Release**: pick the branch, leave
+   the commit blank for its tip, leave the subtree blank for the whole
+   repository, and add a release note.
+6. From then on: developers push, which raises a **Draft**; a manager
+   **Promote Draft** to cut a release, which pins
+   `refs/doctis/approved/<dwg_id>/<n>`. **Download archive** gives
+   `git archive` of the On Record commit as a zip (`&format=tar.gz` for the
+   other).
+
+Issues raised against the document carry the commit they were raised at, so
+`file_download.php?type=dwg_primary_at_sha` serves the release that was on
+record at the time.
+
+---
+
+## 11. What is left to build
+
+In the order that would matter to a first real user:
+
+| Item | Why |
+|------|-----|
+| A button to create a project's repository | §8.1 — today it needs a script, which blocks step 1 above |
+| `doc/MANUAL.md` section | Nothing user-facing documents this |
+| Importer mode: register a tree as one document | §8, adoption; the primitive exists, the flag does not |
+| Maintain `{repository}.default_branch` after a push | §8.1; the hook repairs HEAD, the row goes stale |
+| Two documents on two branches of one repository | Supported but untried (§8) |
+| Release notes that accumulate | §8.1; `description` is 255 chars and is replaced |
+| A status gate on promotion | §8.1; decide whether a release needs an approved status |
+| REST/SOAP exposure | §6.1 |
+| Live front-proxy body limit | §7 step 2 — needed before any push to live |
+
+---
+## 12. Related reading
 
 - [GIT_ARCHITECTURE.md](GIT_ARCHITECTURE.md) — the storage backend and why
   primaries are git-only

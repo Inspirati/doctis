@@ -345,8 +345,10 @@ Lets advanced users `git clone` a project's document repository from a remote
 workstation, authenticated with a Doctis API token — no Linux account required.
 Clone and fetch need `$g_git_http_read_threshold` on the project; push needs
 `$g_git_http_write_threshold` and advances the repository Draft (HEAD) only,
-never the On-Record version. The pre-receive hook rejects force-pushes, ref
-deletion and client writes to `refs/doctis/*`.
+never the On-Record version. The pre-receive hook rejects client writes to
+`refs/doctis/*` always, and force-pushes and ref deletion unless the
+repository's push policy is `source` (Manage → Git Store; see
+[SOURCE_REPOSITORIES.md](SOURCE_REPOSITORIES.md)).
 
 ### Prerequisites on the server
 
@@ -365,6 +367,7 @@ routes the gateway at the server root:
 
 ```nginx
 location ~ ^/git/(.+)$ {
+    client_max_body_size 0;
     include fastcgi_params;
     fastcgi_param SCRIPT_FILENAME /var/www/html/doctis/git_http.php;
     fastcgi_param PATH_INFO /$1;
@@ -374,6 +377,29 @@ location ~ ^/git/(.+)$ {
 ```
 
 The Apache steps below are not needed there.
+
+#### The request-body limit must be lifted (added 2026-10-25)
+
+`client_max_body_size 0` inside the `/git/` location is **required for push**,
+not an optimisation. A git push sends the whole packfile as one request body,
+so the site-wide `client_max_body_size 64M` rejects any repository of real
+size and the client sees:
+
+```
+error: RPC failed; HTTP 413 curl 22 The requested URL returned error: 413
+send-pack: unexpected disconnect while reading sideband packet
+```
+
+Measured on the VM: an 82 MiB pack (the Doctis repository) failed at 64M and
+succeeded with the limit lifted. `git_http.php` authenticates by API token and
+authorises against the repository's owner project before proxying anything, so
+the route is not an unauthenticated upload endpoint.
+
+Apache's equivalent is `LimitRequestBody 0` (see
+`admin/tools/git-serve.conf`), and **a front proxy needs the same** — on the
+Docker deployment at qms.hcrobo.com both the container's nginx and whatever
+terminates TLS in front of it. See
+[SOURCE_REPOSITORIES.md](SOURCE_REPOSITORIES.md) §7 step 2.
 
 ### Install the Apache configuration
 
