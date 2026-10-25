@@ -1099,7 +1099,8 @@ $t_path_missing      = $t_git_head_info && $t_git_head_info['missing'];
 $t_branch_missing    = $t_git_head_info && !empty( $t_git_head_info['branch_missing'] );
 # A frozen release is pinned at its commit and tracks nothing further, so it
 # shows no Draft row and offers no promotion.
-$t_release_frozen    = $t_primary_file !== null && dwg_is_frozen( $f_dwg_id );
+$t_record_frozen     = $t_primary_file !== null && dwg_is_frozen( $f_dwg_id );
+$t_can_freeze        = !$t_force_readonly && $t_primary_file !== null && $t_can_sync_to_head;
 $t_draft_stale       = $t_git_head_info && $t_git_head_info['stale'];
 $t_uploaded_file = $t_primary_draft ?: $t_primary_file;
 $t_primary_uploaded = $t_uploaded_file &&
@@ -1116,7 +1117,7 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 		<h4 class="widget-title lighter">
 			<?php print_icon( $t_is_source_release ? 'fa-code-fork' : 'fa-file', 'ace-icon' ); ?>
 			<?php echo lang_get( $t_is_source_release
-				? ( dwg_is_frozen( $f_dwg_id ) ? 'source_release_frozen_label' : 'source_release_line_label' )
+				? ( $t_record_frozen ? 'source_release_frozen_label' : 'source_release_line_label' )
 				: 'primary_document_section' ) ?>
 		</h4>
 		<div class="widget-toolbar">
@@ -1182,17 +1183,42 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 							<?php echo lang_get( 'primary_document_tag' ) ?>
 						</a>
 <?php	endif; ?>
+<?php	if( $t_is_source_release && !$t_record_frozen && $t_can_sync_to_head ): ?>
+						<a href="dwg_cut_release_page.php?id=<?php echo $f_dwg_id ?>"
+							class="btn btn-success btn-xs btn-white btn-round">
+							<?php echo lang_get( 'dwg_cut_release_button' ) ?>
+						</a>
+<?php	endif; ?>
+<?php	if( $t_can_freeze && !$t_record_frozen ): ?>
+						<form method="post" action="dwg_primary_file_freeze.php" style="display:inline">
+							<?php echo form_security_field( 'dwg_primary_file_freeze' ) ?>
+							<input type="hidden" name="dwg_id" value="<?php echo $f_dwg_id ?>" />
+							<input type="hidden" name="frozen" value="1" />
+							<input type="submit" class="btn btn-primary btn-xs btn-white btn-round"
+								value="<?php echo lang_get( 'dwg_freeze_button' ) ?>" />
+						</form>
+<?php	endif; ?>
 					</td>
 				</tr>
-<?php	if( $t_release_frozen ): ?>
+<?php	if( $t_record_frozen ): ?>
 				<tr>
 					<th class="category">
-						<span class="label label-primary"><?php echo lang_get( 'source_release_frozen_label' ) ?></span>
+						<span class="label label-primary"><?php echo lang_get( 'dwg_frozen_label' ) ?></span>
 					</th>
 					<td colspan="5">
-						<?php echo sprintf( lang_get( 'source_release_frozen_notice' ),
+						<?php echo sprintf( lang_get( $t_is_source_release
+								? 'source_release_frozen_notice' : 'dwg_document_frozen_notice' ),
 							'<code>' . htmlspecialchars( substr( $t_primary_file['git_sha'], 0, 8 ) ) . '</code>',
 							'<code>' . string_display_line( $t_primary_file['git_branch'] ) . '</code>' ) ?>
+<?php		if( $t_can_freeze ): ?>
+						<form method="post" action="dwg_primary_file_freeze.php" style="display:inline">
+							<?php echo form_security_field( 'dwg_primary_file_freeze' ) ?>
+							<input type="hidden" name="dwg_id" value="<?php echo $f_dwg_id ?>" />
+							<input type="hidden" name="frozen" value="0" />
+							<input type="submit" class="btn btn-default btn-xs btn-white btn-round"
+								value="<?php echo lang_get( 'dwg_unfreeze_button' ) ?>" />
+						</form>
+<?php		endif; ?>
 					</td>
 				</tr>
 <?php	elseif( $t_branch_missing ): ?>

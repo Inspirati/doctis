@@ -151,6 +151,8 @@ class DwgData {
 	protected $summary = 'nil';
 	protected $version = '';
 	protected $sticky = 0;
+	protected $kind = DWG_KIND_DOCUMENT;
+	protected $frozen = 0;
 // #TODO RobD - and now all the new data fields for the documents table	
 	protected $enabled = 1;
 	protected $priority = NORMAL;
@@ -1977,36 +1979,62 @@ function dwg_is_source( $p_dwg_id ) {
 }
 
 /**
- * Whether a source record is pinned at its commit and tracks nothing further
- * — a *release*, as opposed to a *line*, which follows its branch's tip.
+ * Whether a record is pinned at its commit and tracks nothing further.
  *
- * `frozen` is meaningful only for DWG_KIND_SOURCE, so this reports false for
- * a document kind whatever the column happens to hold: the otherwise
- * meaningless "frozen document" cannot reach any caller.
+ * It means the same thing for both kinds, which is why it is its own column
+ * rather than part of the kind: a change in the repository no longer offers
+ * this record a Draft, and it cannot be promoted.
+ *
+ *  - a frozen **source** record is a *release*, as opposed to a *line*,
+ *    which follows its branch's tip;
+ *  - a frozen **document** is one whose issued version is final — a later
+ *    edit of the file in git does not quietly offer itself for approval.
  *
  * @param int $p_dwg_id
  * @return bool
  */
 function dwg_is_frozen( $p_dwg_id ) {
-	return dwg_is_source( $p_dwg_id ) && (int)dwg_get_field( $p_dwg_id, 'frozen' ) === 1;
+	return (int)dwg_get_field( $p_dwg_id, 'frozen' ) === 1;
 }
 
 /**
- * Record what kind of thing a document is, and whether it is frozen.
- *
- * Called from file_dwg_primary_register(), which knows what it registered, so
- * the kind can never disagree with the object actually stored.  Freezing a
- * document kind is refused rather than silently ignored.
+ * Freeze or unfreeze a record, logging the change.
  *
  * @param int  $p_dwg_id
- * @param int  $p_kind    DWG_KIND_DOCUMENT or DWG_KIND_SOURCE.
- * @param bool $p_frozen  Ignored unless the kind is DWG_KIND_SOURCE.
+ * @param bool $p_frozen
  * @return void
  */
-function dwg_set_kind( $p_dwg_id, $p_kind, $p_frozen = false ) {
-	$t_kind = (int)$p_kind === DWG_KIND_SOURCE ? DWG_KIND_SOURCE : DWG_KIND_DOCUMENT;
-	dwg_set_field( $p_dwg_id, 'kind', $t_kind );
-	dwg_set_field( $p_dwg_id, 'frozen', ( $t_kind === DWG_KIND_SOURCE && $p_frozen ) ? 1 : 0 );
+function dwg_set_frozen( $p_dwg_id, $p_frozen ) {
+	dwg_set_field( $p_dwg_id, 'frozen', $p_frozen ? 1 : 0 );
+}
+
+/**
+ * Record what kind of thing a document is.
+ *
+ * Called from file_dwg_primary_register(), which knows what it registered, so
+ * the kind can never disagree with the object actually stored.  Whether the
+ * record is frozen is independent of its kind — see dwg_is_frozen().
+ *
+ * @param int $p_dwg_id
+ * @param int $p_kind    DWG_KIND_DOCUMENT or DWG_KIND_SOURCE.
+ * @return void
+ */
+function dwg_set_kind( $p_dwg_id, $p_kind ) {
+	dwg_set_field( $p_dwg_id, 'kind',
+		(int)$p_kind === DWG_KIND_SOURCE ? DWG_KIND_SOURCE : DWG_KIND_DOCUMENT );
+}
+
+/**
+ * A short label for a record's kind and frozen state, for a list column.
+ *
+ * @param int $p_dwg_id
+ * @return string  A lang string key.
+ */
+function dwg_kind_label( $p_dwg_id ) {
+	if( !dwg_is_source( $p_dwg_id ) ) {
+		return dwg_is_frozen( $p_dwg_id ) ? 'dwg_kind_document_frozen' : 'dwg_kind_document';
+	}
+	return dwg_is_frozen( $p_dwg_id ) ? 'dwg_kind_source_release' : 'dwg_kind_source_line';
 }
 
 function dwg_set_field( $p_bug_id, $p_field_name, $p_value ) {

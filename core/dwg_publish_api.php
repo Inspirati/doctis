@@ -693,9 +693,10 @@ function dwg_publish_repo_file( int $p_project_id, string $p_path ): ?string {
 	if( $t_path === false || $t_repository_id === 0 ) {
 		return null;
 	}
-	$t_row    = repository_get_row( $t_repository_id );
 	$t_bare   = repository_bare_path( $t_repository_id );
-	$t_branch = 'refs/heads/' . ( $t_row && $t_row['default_branch'] !== '' ? $t_row['default_branch'] : 'main' );
+	# Reconciled with the bare repo, which a client push may have renamed.
+	$t_actual = repository_default_branch( $t_repository_id );
+	$t_branch = 'refs/heads/' . ( $t_actual !== '' ? $t_actual : 'main' );
 	if( !is_dir( $t_bare ) || file_dwg_git_object_sha( $t_bare, $t_branch, $t_path ) === null ) {
 		return null;
 	}

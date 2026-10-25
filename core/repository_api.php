@@ -369,6 +369,42 @@ function repository_set_push_policy( string $p_bare, string $p_policy ): void {
 }
 
 /**
+ * A repository's default branch, reconciled with the bare repo on disk.
+ *
+ * The row records what the branch was when the repository was created or
+ * adopted, and a client may since have pushed a differently-named default —
+ * Doctis creates repositories with `main` while the project's own branch may
+ * be `dev`.  The post-receive hook repairs the bare repo's HEAD; this brings
+ * the row back into line with it, lazily, the first time anyone asks.
+ *
+ * @param int $p_repository_id
+ * @return string  The branch name, or '' when the repository has no HEAD.
+ */
+function repository_default_branch( int $p_repository_id ): string {
+	static $s_cache = array();
+	if( isset( $s_cache[$p_repository_id] ) ) {
+		return $s_cache[$p_repository_id];
+	}
+	$t_row  = repository_get_row( $p_repository_id );
+	$t_said = $t_row ? (string)$t_row['default_branch'] : '';
+	$t_bare = $p_repository_id > 0 ? repository_bare_path( $p_repository_id ) : '';
+
+	$t_actual = ( $t_bare !== '' && is_dir( $t_bare ) ) ? trim( (string)shell_exec(
+		'git --git-dir=' . escapeshellarg( $t_bare ) . ' symbolic-ref --short HEAD 2>/dev/null'
+	) ) : '';
+
+	if( $t_actual !== '' && $t_actual !== $t_said ) {
+		db_param_push();
+		db_query( 'UPDATE {repository} SET default_branch=' . db_param() . ' WHERE id=' . db_param(),
+			array( $t_actual, $p_repository_id ) );
+		unset( $GLOBALS['g_cache_repository'][$p_repository_id] );
+	}
+
+	$s_cache[$p_repository_id] = $t_actual !== '' ? $t_actual : $t_said;
+	return $s_cache[$p_repository_id];
+}
+
+/**
  * The push policy of a repository by id, cached for the request.
  *
  * Reading it shells out to `git config`, and a project list resolves many

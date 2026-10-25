@@ -2215,11 +2215,10 @@ function file_dwg_primary_register( int $p_dwg_id, int $p_user_id, string $p_git
 	);
 
 	# The kind follows the object actually registered, so the two cannot drift.
-	# Freezing is the caller's to state and only means anything for a tree.
-	dwg_set_kind( $p_dwg_id,
-		$t_object_type === 'tree' ? DWG_KIND_SOURCE : DWG_KIND_DOCUMENT,
-		$t_object_type === 'tree'
-			&& ( $p_options['frozen'] ?? ( $t_previous ? dwg_is_frozen( $p_dwg_id ) : false ) ) );
+	# Freezing is the caller's to state, and a re-registration keeps it.
+	dwg_set_kind( $p_dwg_id, $t_object_type === 'tree' ? DWG_KIND_SOURCE : DWG_KIND_DOCUMENT );
+	dwg_set_frozen( $p_dwg_id,
+		$p_options['frozen'] ?? ( $t_previous ? dwg_is_frozen( $p_dwg_id ) : false ) );
 
 	# A document registered from Git has a reference regardless of approval.
 	file_dwg_set_document_reference( $p_dwg_id, $t_sha );

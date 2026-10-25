@@ -341,11 +341,13 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 #            (doc/git/SOURCE_REPOSITORIES.md).  Set by
 #            file_dwg_primary_register() from the object it registers, so it
 #            can never disagree with what is stored.
-#   frozen — meaningful only for DWG_KIND_SOURCE.  0: a *line*, which tracks
-#            its branch's tip and offers each new commit as a Draft.  1: a
-#            *release*, pinned at its commit and tracking nothing further.
-#            dwg_is_frozen() reports false for a document kind, so the
-#            otherwise meaningless "frozen document" cannot arise in code.
+#   frozen — 0: the record follows the repository and offers each new commit
+#            as a Draft.  1: it is pinned at its commit and tracks nothing
+#            further.  It means the same for both kinds, which is why it is
+#            its own column: a frozen source record is a *release* rather
+#            than a *line*, and a frozen document is one whose issued
+#            version is final, so a later edit in git does not quietly offer
+#            itself for approval.
 	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'dwg' ) . " (
 	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
 	  `project_id` int(10) unsigned NOT NULL DEFAULT 0,

@@ -336,6 +336,59 @@ function git_store_resolve_blobs( array $p_repo, array $p_specs ): array {
 }
 
 /**
+ * Every registered document of a repository as a flat list, newest first.
+ *
+ * git_store_documents() is keyed by git_path for the Files tab, where the
+ * question is "which document holds this file".  Several source records may
+ * share one path — successive releases of a component, or two lines of one
+ * subtree — so that map silently keeps only the last of them.  The Documents
+ * tab needs them all, and uses this instead.
+ *
+ * @param array $p_repo Entry from git_store_repositories().
+ * @param array $p_tree Output of git_store_tree() for the same repository.
+ * @return array List of rows as git_store_documents() builds them, each with
+ *               'path' and, for a record, 'state'.
+ */
+function git_store_documents_list( array $p_repo, array $p_tree ): array {
+	$t_rows = array();
+	if( $p_repo['id'] <= 0 ) {
+		return $t_rows;
+	}
+	$t_head_sha = trim( git_store_run( $p_repo['bare'], true, 'rev-parse HEAD' ) );
+	$t_project_repo = array();
+
+	$t_result = db_query( 'SELECT f.dwg_id, f.git_path, f.git_sha, f.git_branch, f.filesize,'
+		. ' f.file_type, f.date_added, f.description, d.project_id, d.kind, d.frozen, d.summary,'
+		. ' doc.title, doc.reference FROM {dwg_primary_file} f'
+		. ' JOIN {dwg} d ON d.id = f.dwg_id LEFT JOIN {documents} doc ON doc.id = d.document_id'
+		. ' ORDER BY f.date_added DESC, f.dwg_id DESC' );
+	while( ( $t_row = db_fetch_array( $t_result ) ) !== false ) {
+		$t_project_id = (int)$t_row['project_id'];
+		if( !isset( $t_project_repo[$t_project_id] ) ) {
+			$t_project_repo[$t_project_id] = repository_id_for_project( $t_project_id );
+		}
+		if( $t_project_repo[$t_project_id] !== $p_repo['id'] ) {
+			continue;
+		}
+		$t_row['path'] = $t_row['git_path'];
+		if( (int)$t_row['kind'] === DWG_KIND_SOURCE ) {
+			$t_row['state'] = git_store_tree_state(
+				$p_repo, $t_row['git_sha'], $t_head_sha, $t_row['git_path'] );
+		} else if( !isset( $p_tree[$t_row['git_path']] ) ) {
+			$t_row['state'] = 'missing';
+		} else {
+			$t_blob = git_store_resolve_blobs( $p_repo,
+				array( $t_row['git_sha'] . ':' . $t_row['git_path'] ) );
+			$t_object = reset( $t_blob );
+			$t_row['state'] = $t_object === null ? 'unknown'
+				: ( $t_object === $p_tree[$t_row['git_path']]['sha'] ? 'current' : 'changed' );
+		}
+		$t_rows[] = $t_row;
+	}
+	return $t_rows;
+}
+
+/**
  * On Record state of a source release record: compare the tree object it was
  * registered at with the one at HEAD.  '' is the repository root.
  *
