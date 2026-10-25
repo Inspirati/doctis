@@ -2370,6 +2370,8 @@ $s_project_repository_has_documents = 'This project already stores %1$d document
 $s_project_repository_create_button = 'Give this project its own repository';
 $s_project_repository_create_help   = 'Needed when this project must run a different push policy from its parent — a source code repository alongside a document one, for example. The push policy is per repository, so one repository cannot be append-only for documents and rewritable for development at the same time.';
 $s_project_repository_create_confirm = 'This project will stop sharing its parent\'s repository and get one of its own. Documents created in it from now on are stored there. Continue?';
+$s_project_repository_not_yet       = 'none yet';
+$s_project_repository_releases      = 'releases';
 
 # Document publishing (doc/publish/PUBLISHING.md)
 $s_dwg_publish_button          = 'Publish';

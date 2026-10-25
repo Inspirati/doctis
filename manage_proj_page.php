@@ -48,6 +48,7 @@ require_api( 'authentication_api.php' );
 require_api( 'category_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
+require_api( 'file_dwg_api.php' );
 require_api( 'form_api.php' );
 require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
@@ -57,6 +58,7 @@ require_api( 'lang_api.php' );
 require_api( 'print_api.php' );
 require_api( 'project_api.php' );
 require_api( 'project_hierarchy_api.php' );
+require_api( 'repository_api.php' );
 require_api( 'string_api.php' );
 require_api( 'user_api.php' );
 require_api( 'utility_api.php' );
@@ -171,6 +173,8 @@ print_manage_menu( 'manage_proj_page.php' );
 					print_sort_icon( $t_direction, $f_sort, 'owner_id' ); ?>
 				</th>
 
+				<th><?php echo lang_get( 'project_repository_section' ) ?></th>
+
 				<th><?php
 					print_manage_project_sort_link(
 						'manage_proj_page.php',
@@ -235,6 +239,33 @@ print_manage_menu( 'manage_proj_page.php' );
 						echo prepare_user_name( $t_owner_id );
 					} else {
 						echo '<em>', prepare_user_name( $t_owner_id ), '</em>';
+					} ?>
+				</td>
+				<td><?php
+					# Which git repository this project's documents live in, and
+					# therefore which rules apply to it: the push policy and
+					# $g_dwg_source_release_enabled are per repository, so this is
+					# what makes a project a document-control or a source one.
+					# An inherited repository is shown in italics, as the owner is.
+					$t_repo_id   = repository_id_for_project( $t_project_id );
+					$t_repo_own  = repository_id_linked_to_project( $t_project_id ) === $t_repo_id;
+					$t_policy    = $t_repo_id > 0 ? repository_push_policy( $t_repo_id ) : '';
+					$t_releases  = file_dwg_source_release_enabled( $t_project_id );
+					if( $t_repo_id === 0 ) {
+						echo '<span class="grey small">', lang_get( 'project_repository_not_yet' ), '</span>';
+					} else {
+						echo '<span class="label label-', ( $t_policy === DWG_PUSH_POLICY_SOURCE ? 'primary' : 'default' ), '">',
+							lang_get( $t_policy === DWG_PUSH_POLICY_SOURCE ? 'push_policy_source' : 'push_policy_document' ),
+							'</span>';
+						if( $t_releases ) {
+							echo ' <span class="label label-success">', lang_get( 'project_repository_releases' ), '</span>';
+						}
+						echo '<br /><span class="small">';
+						echo $t_repo_own ? '' : '<em>';
+						echo '<a href="manage_git_store_page.php?repo=', urlencode( repository_basename( $t_repo_id ) ), '">',
+							string_display_line( repository_basename( $t_repo_id ) ), '</a>';
+						echo $t_repo_own ? '' : '</em>';
+						echo '</span>';
 					} ?>
 				</td>
 				<td><?php echo string_display_links( $t_project['description'] ) ?></td>

@@ -369,6 +369,27 @@ function repository_set_push_policy( string $p_bare, string $p_policy ): void {
 }
 
 /**
+ * The push policy of a repository by id, cached for the request.
+ *
+ * Reading it shells out to `git config`, and a project list resolves many
+ * projects to the same few repositories, so the cache is keyed on the
+ * repository rather than the project.
+ *
+ * @param int $p_repository_id
+ * @return string  DWG_PUSH_POLICY_DOCUMENT or DWG_PUSH_POLICY_SOURCE, or ''
+ *                 when the repository has no bare directory on disk.
+ */
+function repository_push_policy( int $p_repository_id ): string {
+	static $s_cache = array();
+	if( !isset( $s_cache[$p_repository_id] ) ) {
+		$t_bare = $p_repository_id > 0 ? repository_bare_path( $p_repository_id ) : '';
+		$s_cache[$p_repository_id] = ( $t_bare !== '' && is_dir( $t_bare ) )
+			? repository_get_push_policy( $t_bare ) : '';
+	}
+	return $s_cache[$p_repository_id];
+}
+
+/**
  * Install/refresh the Doctis server-side configuration on a bare repo: the
  * pre-receive hook (what it enforces depends on the push policy), the
  * post-receive hook (repairs a dangling HEAD) and http.receivepack (allows
