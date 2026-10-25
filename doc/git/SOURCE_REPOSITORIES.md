@@ -592,6 +592,19 @@ person from the one before it.
   bare-repo HEAD (a clone that checks out nothing). Tests: `test-git-doctis.php`
   102 → 137, `test-git-php.php` 20/20, PHPUnit `mantis` 382/382. Trial
   projects 254 and 255 and documents 209 and 210 left on the VM.
+- **2026-10-25** — Owner pointed out that the per-repository push policy and
+  a mixed project are in conflict: one repository cannot run both sets of
+  rules. Correct, and §8.2's "use a subtree" answer did not address it. §1.2
+  added; the separation was verified (parent `document`, sub-project
+  `source`, separate repos, correct resolution, no documents in the source
+  archive), and the missing piece — a way to give a sub-project its own
+  repository — was **built** as Manage Project → *Repository*. Submodules
+  measured and rejected: `git archive` leaves a submodule's directory empty.
+  Owner leaning to one document per release, so that was prototyped: it
+  works, and the path-uniqueness check that blocked it was removed as a
+  correctness fix (it guards writes, and a release never writes). §8.3
+  records the two things it still needs. `test-git-doctis.php` 137 → 141.
+  Probe projects 515-517 left on the VM.
 - **2026-10-25** — Owner asked what happens in a project holding both
   documents and source, whether sub-projects get their own repository, and
   what several documents on one repository would mean. Probed in project
@@ -607,12 +620,12 @@ person from the one before it.
 
 Enabling it for a project, start to finish:
 
-1. **Create the repository.** No UI does this yet (§8.1); a script run as
-   `www-data` per §2.1:
-   ```php
-   $t_repo_id = repository_id_for_project_or_create( $t_project_id );
-   repository_ensure_on_disk( $t_repo_id );
-   ```
+1. **Create the repository.** Manage Project → **Repository** shows which
+   repository the project's documents live in and whether that is its own or
+   inherited, and offers *Give this project its own repository*. A source
+   project needs its own, because the push policy is per repository (§1.2).
+   The button is refused once the project already stores document files in
+   the repository it inherits — move those first.
 2. **Turn the feature on for that project** — `$g_dwg_source_release_enabled`,
    per project, via Manage → Configuration → Configuration Report, or
    `config_set( 'dwg_source_release_enabled', ON, NO_USER, $t_project_id )`.
