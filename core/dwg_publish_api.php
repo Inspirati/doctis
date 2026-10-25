@@ -1077,6 +1077,11 @@ function dwg_publish_refusal( int $p_dwg_id ): string {
 	if( !$t_row ) {
 		return 'the document has no registered file.';
 	}
+	# A source release record would otherwise be refused only incidentally, by
+	# its path not ending in .md.  Say what it actually is.
+	if( file_dwg_primary_is_tree( $t_row ) ) {
+		return 'a source release records a repository, not a page, and cannot be published.';
+	}
 	if( !dwg_publish_is_markdown( $t_row['git_path'] ) ) {
 		return 'only Markdown documents (.md) can be published.';
 	}

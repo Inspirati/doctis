@@ -100,6 +100,19 @@ if( $f_type === 'dwg_primary' ) {
 	http_security_headers();
 	http_caching_headers( false );
 
+	# A source release record names a tree, not a file: stream the recorded
+	# commit as a git archive instead.  See doc/git/SOURCE_REPOSITORIES.md.
+	if( file_dwg_primary_is_tree( $t_row ) ) {
+		if( !file_dwg_source_release_stream(
+				$t_row,
+				(int)dwg_get_field( $f_dwg_id, 'project_id' ),
+				$t_row['git_sha'],
+				gpc_get_string( 'format', config_get( 'dwg_source_release_archive_format' ) ) ) ) {
+			trigger_error( ERROR_FILE_NOT_FOUND, ERROR );
+		}
+		exit;
+	}
+
 	$t_result = file_dwg_primary_get_content( $f_dwg_id );
 	if( $t_result === false ) {
 		trigger_error( ERROR_FILE_NOT_FOUND, ERROR );
@@ -158,6 +171,18 @@ if( $f_type === 'dwg_primary_head' ) {
 	http_security_headers();
 	http_caching_headers( false );
 
+	# The Draft of a source release is the repository at a later commit.
+	if( file_dwg_primary_is_tree( $t_row ) ) {
+		if( !file_dwg_source_release_stream(
+				$t_row,
+				(int)dwg_get_field( $f_dwg_id, 'project_id' ),
+				$t_head['sha'],
+				gpc_get_string( 'format', config_get( 'dwg_source_release_archive_format' ) ) ) ) {
+			trigger_error( ERROR_FILE_NOT_FOUND, ERROR );
+		}
+		exit;
+	}
+
 	$t_result = file_dwg_primary_get_head_content( $f_dwg_id, $t_head['sha'] );
 	if( $t_result === false ) {
 		trigger_error( ERROR_FILE_NOT_FOUND, ERROR );
@@ -209,6 +234,19 @@ if( $f_type === 'dwg_primary_at_sha' ) {
 
 	http_security_headers();
 	http_caching_headers( false );
+
+	# Historical retrieval of a source release: the repository as it stood at
+	# the commit recorded when the issue was raised.
+	if( file_dwg_primary_is_tree( $t_row ) ) {
+		if( !file_dwg_source_release_stream(
+				$t_row,
+				(int)dwg_get_field( $f_dwg_id, 'project_id' ),
+				strtolower( $f_sha ),
+				gpc_get_string( 'format', config_get( 'dwg_source_release_archive_format' ) ) ) ) {
+			trigger_error( ERROR_FILE_NOT_FOUND, ERROR );
+		}
+		exit;
+	}
 
 	$t_result = file_dwg_primary_get_content_at_sha( $f_dwg_id, $f_sha );
 	if( $t_result === false ) {

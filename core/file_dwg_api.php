@@ -1746,17 +1746,25 @@ function file_dwg_primary_draft_get( $p_dwg_id ) {
  * collapses duplicate slashes, and rejects traversal segments, control
  * characters, and empty/oversized results.
  *
+ * $p_allow_root permits the empty path, which denotes the repository root.
+ * It is opt-in because every document path is a file path: only a source
+ * release record (doc/git/SOURCE_REPOSITORIES.md) may be rooted at the repo.
+ *
  * @param string $p_path
+ * @param bool   $p_allow_root  Accept '' as the repository root.
  * @return string|false  Canonical path, or false when invalid.
  */
-function file_dwg_git_path_sanitize( string $p_path ) {
+function file_dwg_git_path_sanitize( string $p_path, bool $p_allow_root = false ) {
 	$t_path = str_replace( '\\', '/', trim( $p_path ) );
 	$t_path = preg_replace( '#/+#', '/', $t_path );
 	$t_path = ltrim( $t_path, '/' );
 	while( strpos( $t_path, './' ) === 0 ) {
 		$t_path = substr( $t_path, 2 );
 	}
-	if( $t_path === '' || substr( $t_path, -1 ) === '/' || strlen( $t_path ) > 1024 ) {
+	if( $t_path === '' ) {
+		return $p_allow_root ? '' : false;
+	}
+	if( substr( $t_path, -1 ) === '/' || strlen( $t_path ) > 1024 ) {
 		return false;
 	}
 	if( preg_match( '/[\x00-\x1f\x7f]/', $t_path ) ) {
@@ -1768,6 +1776,164 @@ function file_dwg_git_path_sanitize( string $p_path ) {
 		}
 	}
 	return $t_path;
+}
+
+# ── Source repository release records ────────────────────────────────────────
+# A primary document whose git_path names a TREE rather than a blob records a
+# *release of a repository* — the repository (git_path '') or one subtree of it
+# (git_path 'firmware/esc') at a commit — instead of a single file.  The
+# document's status workflow is then the release approval, and promoting the
+# Draft to On Record is cutting a release.  Design and rationale:
+# doc/git/SOURCE_REPOSITORIES.md.
+#
+# Tree-rooted rows are distinguished by file_type === DWG_TREE_MIME_TYPE, which
+# file_dwg_primary_register() sets from `git cat-file -t`, so no schema change
+# is needed.  filesize is forced to 0: a tree object's own size is not the size
+# of anything a user would recognise.
+
+/**
+ * Whether source release records may be registered in a project.  Off unless
+ * $g_dwg_source_release_enabled is ON, and per-project overridable so that
+ * only the projects holding source repositories gain the capability.
+ *
+ * @param int $p_project_id
+ * @return bool
+ */
+function file_dwg_source_release_enabled( int $p_project_id ): bool {
+	return ON == config_get( 'dwg_source_release_enabled', OFF, null, $p_project_id );
+}
+
+/**
+ * Whether a {dwg_primary_file} / {dwg_primary_draft} row records a tree (a
+ * source release) rather than a single file.
+ *
+ * @param array|null $p_row
+ * @return bool
+ */
+function file_dwg_primary_is_tree( $p_row ): bool {
+	return is_array( $p_row ) && ( $p_row['file_type'] ?? '' ) === DWG_TREE_MIME_TYPE;
+}
+
+/**
+ * The git tree-ish naming a document's content at a commit.  The repository
+ * root is "<sha>:", which git resolves to the root tree; anything else is
+ * "<sha>:<path>".
+ *
+ * @param string $p_sha
+ * @param string $p_git_path
+ * @return string
+ */
+function file_dwg_git_tree_ish( string $p_sha, string $p_git_path ): string {
+	return $p_sha . ':' . $p_git_path;
+}
+
+/**
+ * Git's object type at <sha>:<path> — 'blob', 'tree', or '' when absent.
+ *
+ * @param string $p_bare
+ * @param string $p_sha
+ * @param string $p_git_path  '' for the repository root.
+ * @return string
+ */
+function file_dwg_git_object_type( string $p_bare, string $p_sha, string $p_git_path ): string {
+	$t_type = trim( (string)shell_exec(
+		'git --git-dir=' . escapeshellarg( $p_bare ) . ' cat-file -t '
+		. escapeshellarg( file_dwg_git_tree_ish( $p_sha, $p_git_path ) ) . ' 2>/dev/null'
+	) );
+	return ( $t_type === 'blob' || $t_type === 'tree' ) ? $t_type : '';
+}
+
+/**
+ * The display name of a tree-rooted document: the subtree's basename, or the
+ * repository's slug when the document is rooted at the repository itself.
+ * Used for the panel label and as the archive's filename stem.
+ *
+ * @param int    $p_project_id
+ * @param string $p_git_path
+ * @return string
+ */
+function file_dwg_tree_display_name( int $p_project_id, string $p_git_path ): string {
+	if( $p_git_path !== '' ) {
+		return basename( $p_git_path );
+	}
+	$t_repo_id = repository_id_for_project( $p_project_id );
+	$t_repo    = $t_repo_id > 0 ? repository_get_row( $t_repo_id ) : null;
+	$t_slug    = $t_repo ? (string)$t_repo['slug'] : '';
+	return $t_slug !== '' ? $t_slug : 'repository';
+}
+
+/**
+ * The archive formats a source release may be downloaded in, mapped to the
+ * `git archive --format` name, the filename extension and the MIME type.
+ *
+ * @return array<string, array{format: string, extension: string, mime: string}>
+ */
+function file_dwg_source_release_formats(): array {
+	return array(
+		'zip' => array(
+			'format'    => 'zip',
+			'extension' => 'zip',
+			'mime'      => 'application/zip',
+		),
+		'tar.gz' => array(
+			'format'    => 'tar.gz',
+			'extension' => 'tar.gz',
+			'mime'      => 'application/gzip',
+		),
+	);
+}
+
+/**
+ * Stream a source release to the browser as a git archive of the recorded
+ * tree, generated on the fly — nothing is written to disk and nothing is
+ * buffered in PHP memory, so a repository of any size downloads in constant
+ * memory.  Headers are emitted here; the caller must have cleared output
+ * buffering already and must exit afterwards.
+ *
+ * Content-Length is deliberately absent: git produces the archive as it
+ * streams, so the length is not known until it is finished.
+ *
+ * @param array  $p_row     The {dwg_primary_file}/{dwg_primary_draft} row.
+ * @param int    $p_project_id
+ * @param string $p_sha     Commit to archive (the row's SHA, or a Draft's).
+ * @param string $p_format  Key of file_dwg_source_release_formats().
+ * @return bool  false when the repository or commit cannot be read.
+ */
+function file_dwg_source_release_stream( array $p_row, int $p_project_id, string $p_sha, string $p_format = 'zip' ): bool {
+	$t_formats = file_dwg_source_release_formats();
+	if( !isset( $t_formats[$p_format] ) ) {
+		$p_format = 'zip';
+	}
+	$t_format = $t_formats[$p_format];
+
+	$t_bare = dwg_project_bare_repo_path( $p_project_id );
+	if( $t_bare === '' || !is_dir( $t_bare ) ) {
+		return false;
+	}
+	if( !preg_match( '/^[0-9a-f]{40}$/', $p_sha ) ) {
+		return false;
+	}
+	$t_git_path = (string)$p_row['git_path'];
+	if( file_dwg_git_object_type( $t_bare, $p_sha, $t_git_path ) !== 'tree' ) {
+		return false;
+	}
+
+	# Both the archive's top-level directory and its filename carry the short
+	# SHA, so an unpacked release is self-identifying on disk.
+	$t_stem   = file_dwg_tree_display_name( $p_project_id, $t_git_path ) . '-' . substr( $p_sha, 0, 8 );
+	$t_prefix = $t_stem . '/';
+
+	header( 'Content-Type: ' . $t_format['mime'] );
+	http_content_disposition_header( $t_stem . '.' . $t_format['extension'] );
+	header( 'X-Content-Type-Options: nosniff' );
+
+	$t_command = 'git --git-dir=' . escapeshellarg( $t_bare )
+		. ' archive --format=' . escapeshellarg( $t_format['format'] )
+		. ' --prefix=' . escapeshellarg( $t_prefix )
+		. ' ' . escapeshellarg( file_dwg_git_tree_ish( $p_sha, $t_git_path ) );
+
+	passthru( $t_command . ' 2>/dev/null' );
+	return true;
 }
 
 /**
@@ -1894,11 +2060,15 @@ function file_dwg_primary_path_in_use( int $p_dwg_id, int $p_project_id, string 
  * @throws ClientException when the SHA/path do not exist or the path collides.
  * @throws ServiceException when the project has no repository on disk.
  */
-function file_dwg_primary_register( int $p_dwg_id, int $p_user_id, string $p_git_path, string $p_sha = '', string $p_description = '', bool $p_pin = true, string $p_file_type = '' ): array {
+function file_dwg_primary_register( int $p_dwg_id, int $p_user_id, string $p_git_path, string $p_sha = '', string $p_description = '', bool $p_pin = true, string $p_file_type = '', bool $p_allow_tree = false ): array {
 	$t_project_id = (int)dwg_get_field( $p_dwg_id, 'project_id' );
 	$t_previous = file_dwg_primary_get( $p_dwg_id );
 
-	$t_git_path = file_dwg_git_path_sanitize( $p_git_path );
+	# A re-registration of a source release (promotion, re-pin) keeps its
+	# nature without the caller having to restate it.
+	$t_allow_tree = $p_allow_tree || file_dwg_primary_is_tree( $t_previous );
+
+	$t_git_path = file_dwg_git_path_sanitize( $p_git_path, $t_allow_tree );
 	if( $t_git_path === false ) {
 		throw new ClientException(
 			'Invalid document path: ' . $p_git_path,
@@ -1927,14 +2097,19 @@ function file_dwg_primary_register( int $p_dwg_id, int $p_user_id, string $p_git
 		);
 	}
 
-	exec(
-		'git --git-dir=' . escapeshellarg( $t_bare ) .
-		' cat-file -e ' . escapeshellarg( $t_sha . ':' . $t_git_path ) . ' 2>/dev/null',
-		$t_out, $t_rc
-	);
-	if( $t_rc !== 0 ) {
+	# cat-file succeeds for trees as well as blobs, so the type decides what
+	# kind of record this is rather than being assumed from the path.
+	$t_object_type = file_dwg_git_object_type( $t_bare, $t_sha, $t_git_path );
+	if( $t_object_type === '' ) {
 		throw new ClientException(
 			'Path "' . $t_git_path . '" does not exist at commit ' . substr( $t_sha, 0, 8 ),
+			ERROR_INVALID_FIELD_VALUE, array( 'git_path' )
+		);
+	}
+	if( $t_object_type === 'tree' && !$t_allow_tree ) {
+		throw new ClientException(
+			'Path "' . $t_git_path . '" is a directory; only a source release record may be '
+				. 'rooted at one (see doc/git/SOURCE_REPOSITORIES.md)',
 			ERROR_INVALID_FIELD_VALUE, array( 'git_path' )
 		);
 	}
@@ -1947,11 +2122,17 @@ function file_dwg_primary_register( int $p_dwg_id, int $p_user_id, string $p_git
 		);
 	}
 
-	$t_size_str = trim( (string)shell_exec(
-		'git --git-dir=' . escapeshellarg( $t_bare ) .
-		' cat-file -s ' . escapeshellarg( $t_sha . ':' . $t_git_path ) . ' 2>/dev/null'
-	) );
-	$t_filesize = is_numeric( $t_size_str ) ? (int)$t_size_str : 0;
+	if( $t_object_type === 'tree' ) {
+		# A tree object's own size describes the directory listing, not the
+		# content, and there is no MIME type for "a repository at a commit".
+		$t_filesize = 0;
+	} else {
+		$t_size_str = trim( (string)shell_exec(
+			'git --git-dir=' . escapeshellarg( $t_bare ) .
+			' cat-file -s ' . escapeshellarg( $t_sha . ':' . $t_git_path ) . ' 2>/dev/null'
+		) );
+		$t_filesize = is_numeric( $t_size_str ) ? (int)$t_size_str : 0;
+	}
 
 	$t_branch = trim( (string)shell_exec(
 		'git --git-dir=' . escapeshellarg( $t_bare ) . ' symbolic-ref --short HEAD 2>/dev/null'
@@ -1960,9 +2141,14 @@ function file_dwg_primary_register( int $p_dwg_id, int $p_user_id, string $p_git
 		$t_branch = 'main';
 	}
 
-	$t_filename  = basename( $t_git_path );
-	$t_file_type = $p_file_type !== '' ? $p_file_type
-		: ( file_dwg_get_content_type_override( $t_filename ) ?: 'application/octet-stream' );
+	if( $t_object_type === 'tree' ) {
+		$t_filename  = file_dwg_tree_display_name( $t_project_id, $t_git_path );
+		$t_file_type = DWG_TREE_MIME_TYPE;
+	} else {
+		$t_filename  = basename( $t_git_path );
+		$t_file_type = $p_file_type !== '' ? $p_file_type
+			: ( file_dwg_get_content_type_override( $t_filename ) ?: 'application/octet-stream' );
+	}
 
 	db_param_push();
 	db_query( 'DELETE FROM {dwg_primary_file} WHERE dwg_id=' . db_param(), array( $p_dwg_id ) );
@@ -2013,7 +2199,10 @@ function file_dwg_primary_draft_register( int $p_dwg_id, int $p_user_id, string 
 	$t_previous = file_dwg_primary_draft_get( $p_dwg_id );
 	$t_project_id = (int)dwg_get_field( $p_dwg_id, 'project_id' );
 	$t_bare = dwg_project_bare_repo_path( $t_project_id );
-	$t_git_path = file_dwg_git_path_sanitize( $p_git_path );
+	# A source release's Draft is a tree like its On Record version.
+	$t_allow_tree = file_dwg_primary_is_tree( $t_previous )
+		|| file_dwg_primary_is_tree( file_dwg_primary_get( $p_dwg_id ) );
+	$t_git_path = file_dwg_git_path_sanitize( $p_git_path, $t_allow_tree );
 	$t_sha = strtolower( trim( $p_sha ) );
 	if( $t_sha === '' ) {
 		$t_sha = trim( (string)shell_exec( 'git --git-dir=' . escapeshellarg( $t_bare ) . ' rev-parse HEAD 2>/dev/null' ) );
@@ -2025,15 +2214,28 @@ function file_dwg_primary_draft_register( int $p_dwg_id, int $p_user_id, string 
 	if( $t_holder !== 0 ) {
 		throw new ClientException( 'Draft path is registered to document ' . $t_holder, ERROR_INVALID_FIELD_VALUE, array( 'git_path' ) );
 	}
-	$t_size_str = trim( (string)shell_exec( 'git --git-dir=' . escapeshellarg( $t_bare )
-		. ' cat-file -s ' . escapeshellarg( $t_sha . ':' . $t_git_path ) . ' 2>/dev/null' ) );
-	if( !ctype_digit( $t_size_str ) ) {
+	$t_object_type = file_dwg_git_object_type( $t_bare, $t_sha, $t_git_path );
+	if( $t_object_type === '' || ( $t_object_type === 'tree' && !$t_allow_tree ) ) {
 		throw new ClientException( 'Draft file is absent at commit', ERROR_INVALID_FIELD_VALUE, array( 'git_path' ) );
+	}
+	if( $t_object_type === 'tree' ) {
+		$t_size_str = '0';
+	} else {
+		$t_size_str = trim( (string)shell_exec( 'git --git-dir=' . escapeshellarg( $t_bare )
+			. ' cat-file -s ' . escapeshellarg( $t_sha . ':' . $t_git_path ) . ' 2>/dev/null' ) );
+		if( !ctype_digit( $t_size_str ) ) {
+			throw new ClientException( 'Draft file is absent at commit', ERROR_INVALID_FIELD_VALUE, array( 'git_path' ) );
+		}
 	}
 	$t_branch = trim( (string)shell_exec( 'git --git-dir=' . escapeshellarg( $t_bare ) . ' symbolic-ref --short HEAD 2>/dev/null' ) );
 	$t_branch = $t_branch !== '' ? $t_branch : 'main';
-	$t_filename = basename( $t_git_path );
-	$t_file_type = $p_file_type !== '' ? $p_file_type : ( file_dwg_get_content_type_override( $t_filename ) ?: 'application/octet-stream' );
+	if( $t_object_type === 'tree' ) {
+		$t_filename  = file_dwg_tree_display_name( $t_project_id, $t_git_path );
+		$t_file_type = DWG_TREE_MIME_TYPE;
+	} else {
+		$t_filename = basename( $t_git_path );
+		$t_file_type = $p_file_type !== '' ? $p_file_type : ( file_dwg_get_content_type_override( $t_filename ) ?: 'application/octet-stream' );
+	}
 	db_param_push();
 	db_query( 'DELETE FROM {dwg_primary_draft} WHERE dwg_id=' . db_param(), array( $p_dwg_id ) );
 	db_param_push();
@@ -2080,6 +2282,16 @@ function file_dwg_primary_add( $p_dwg_id, $p_user_id, $p_tmp_file, $p_filename, 
 
 	$t_on_record = file_dwg_primary_get( $p_dwg_id );
 	$t_existing = file_dwg_primary_draft_get( $p_dwg_id ) ?: $t_on_record;
+
+	# A source release records a repository at a commit; its content arrives by
+	# git push, never by a browser upload that would commit one stray file.
+	if( file_dwg_primary_is_tree( $t_existing ) ) {
+		throw new ClientException(
+			'Document ' . (int)$p_dwg_id . ' is a source release record; its content is '
+				. 'changed by pushing to the repository, not by uploading a file',
+			ERROR_INVALID_FIELD_VALUE, array( 'primary_document_file' )
+		);
+	}
 
 	if( $t_existing && $t_existing['git_path'] !== '' ) {
 		# Replacement: keep the registered directory, adopt the new basename.
@@ -2505,11 +2717,13 @@ function file_dwg_git_head_info( int $p_dwg_id ): ?array {
 
 	$t_staged = file_dwg_primary_draft_get( $p_dwg_id );
 	$t_path = $t_staged ? $t_staged['git_path'] : $t_on_record['git_path'];
+	$t_is_tree = file_dwg_primary_is_tree( $t_staged ?: $t_on_record );
 	$t_current_object = file_dwg_git_object_sha( $t_bare, $t_head_sha, $t_path );
 	$t_missing = $t_current_object === null;
 	$t_stale = false;
 	$t_has_draft = false;
-	$t_filename = $t_missing ? null : basename( $t_path );
+	$t_filename = $t_missing ? null
+		: ( $t_is_tree ? file_dwg_tree_display_name( (int)$t_project_id, $t_path ) : basename( $t_path ) );
 
 	if( $t_staged ) {
 		$t_staged_object = file_dwg_git_object_sha( $t_bare, $t_staged['git_sha'], $t_path );
@@ -2535,10 +2749,12 @@ function file_dwg_git_head_info( int $p_dwg_id ): ?array {
 		} else {
 			# Use the most recent commit for this path, not the repository HEAD
 			# after unrelated documents have been edited.
+			# git refuses an empty pathspec; "." is how it spells "every path",
+			# which is what a repository-rooted source release records.
 			$t_sha = trim( (string)shell_exec(
 				'git --git-dir=' . escapeshellarg( $t_bare )
 				. ' log -1 --format=%H ' . escapeshellarg( $t_head_sha )
-				. ' -- ' . escapeshellarg( $t_path ) . ' 2>/dev/null'
+				. ' -- ' . escapeshellarg( $t_path === '' ? '.' : $t_path ) . ' 2>/dev/null'
 			) );
 			if( !preg_match( '/^[0-9a-f]{40}$/', $t_sha ) ) {
 				return null;

@@ -2491,6 +2491,40 @@ $g_git_worktree_root = '';
 $g_dwg_repo_path_template = '{dwg_id}/{filename}';
 
 /**
+ * Source repository release records.
+ *
+ * A primary document normally names one file in the project repository.  With
+ * this ON, a document may instead be registered against a *directory* — the
+ * repository root, or one subtree of it — so that the document records a
+ * **release of a repository** at a commit rather than a single file.  The
+ * document's status workflow is then the release approval, promoting the
+ * Draft to On Record is cutting a release, and the approved-version pin
+ * (refs/doctis/approved/<dwg_id>/<n>) is the immutable release tag.
+ *
+ * The content of such a document arrives by git push over the Smart HTTP
+ * gateway, never by a browser upload, and it downloads as a git archive of
+ * the recorded tree rather than as a file.
+ *
+ * OFF everywhere by default.  Override it per project so that only the
+ * projects actually holding source repositories gain the capability.
+ *
+ * See doc/git/SOURCE_REPOSITORIES.md.
+ *
+ * @global int $g_dwg_source_release_enabled
+ */
+$g_dwg_source_release_enabled = OFF;
+
+/**
+ * Archive format offered for downloading a source release: 'zip' or 'tar.gz'.
+ *
+ * Both are always available from the download link; this chooses which one
+ * the Primary Document panel's button uses.
+ *
+ * @global string $g_dwg_source_release_archive_format
+ */
+$g_dwg_source_release_archive_format = 'zip';
+
+/**
  * Document publishing: directories that projects may publish websites into.
  *
  * Publishing renders a Markdown document's on-record version to HTML with

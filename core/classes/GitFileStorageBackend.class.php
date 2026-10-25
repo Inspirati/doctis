@@ -241,7 +241,11 @@ class GitFileStorageBackend implements FileStorageBackendInterface {
 		}
 		$t_sha      = $p_row['git_sha'] ?? $p_row['diskfile'];
 		$t_rel_path = $p_row['git_path'] ?? '';
-		if( $t_rel_path === '' ) {
+
+		# A source release record names a tree, not a blob: `git show` would
+		# emit a directory listing rather than content.  Those documents are
+		# downloaded as an archive instead (file_dwg_source_release_stream()).
+		if( $t_rel_path === '' || file_dwg_primary_is_tree( $p_row ) ) {
 			return false;
 		}
 

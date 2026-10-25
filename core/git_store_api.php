@@ -336,6 +336,33 @@ function git_store_resolve_blobs( array $p_repo, array $p_specs ): array {
 }
 
 /**
+ * On Record state of a source release record: compare the tree object it was
+ * registered at with the one at HEAD.  '' is the repository root.
+ *
+ * @param array  $p_repo
+ * @param string $p_record_sha  Commit the release is on record at.
+ * @param string $p_head_sha    Current repository HEAD.
+ * @param string $p_path        Subtree path, '' for the repository root.
+ * @return string  'current', 'changed', 'missing' or 'unknown'.
+ */
+function git_store_tree_state( array $p_repo, string $p_record_sha, string $p_head_sha, string $p_path ): string {
+	if( $p_record_sha === '' || $p_head_sha === '' ) {
+		return 'unknown';
+	}
+	$t_record = trim( git_store_run( $p_repo['bare'], true,
+		'rev-parse --verify ' . escapeshellarg( $p_record_sha . ':' . $p_path ), $t_rc_record ) );
+	if( $t_rc_record !== 0 || $t_record === '' ) {
+		return 'unknown';
+	}
+	$t_head = trim( git_store_run( $p_repo['bare'], true,
+		'rev-parse --verify ' . escapeshellarg( $p_head_sha . ':' . $p_path ), $t_rc_head ) );
+	if( $t_rc_head !== 0 || $t_head === '' ) {
+		return 'missing';
+	}
+	return $t_record === $t_head ? 'current' : 'changed';
+}
+
+/**
  * Documents whose project resolves to a repository, keyed by git_path:
  * array( 'record' => row|null, 'draft' => row|null ).  Rows carry dwg_id,
  * git_path, git_sha, filesize, date_added, project_id, summary, title,
@@ -354,7 +381,7 @@ function git_store_documents( array $p_repo, array $p_tree ): array {
 	}
 	$t_project_repo = array();
 	foreach( array( 'record' => 'dwg_primary_file', 'draft' => 'dwg_primary_draft' ) as $t_kind => $t_table ) {
-		$t_result = db_query( 'SELECT f.dwg_id, f.git_path, f.git_sha, f.filesize, f.date_added, d.project_id,'
+		$t_result = db_query( 'SELECT f.dwg_id, f.git_path, f.git_sha, f.filesize, f.file_type, f.date_added, d.project_id,'
 			. ' d.summary, doc.title, doc.reference FROM {' . $t_table . '} f'
 			. ' JOIN {dwg} d ON d.id = f.dwg_id LEFT JOIN {documents} doc ON doc.id = d.document_id'
 			. ' ORDER BY f.git_path' );
@@ -371,15 +398,25 @@ function git_store_documents( array $p_repo, array $p_tree ): array {
 		}
 	}
 
+	# A source release record names a tree, so it is absent from the blob tree
+	# listing and must be compared tree-object to tree-object instead.
+	$t_head_sha = trim( git_store_run( $p_repo['bare'], true, 'rev-parse HEAD' ) );
+
 	$t_specs = array();
 	foreach( $t_docs as $t_path => $t_doc ) {
-		if( $t_doc['record'] && $t_doc['record']['git_sha'] !== '' ) {
+		if( $t_doc['record'] && $t_doc['record']['git_sha'] !== ''
+		 && ( $t_doc['record']['file_type'] ?? '' ) !== DWG_TREE_MIME_TYPE ) {
 			$t_specs[] = $t_doc['record']['git_sha'] . ':' . $t_path;
 		}
 	}
 	$t_blobs = git_store_resolve_blobs( $p_repo, $t_specs );
 	foreach( $t_docs as $t_path => &$t_doc ) {
 		if( !$t_doc['record'] ) {
+			continue;
+		}
+		if( ( $t_doc['record']['file_type'] ?? '' ) === DWG_TREE_MIME_TYPE ) {
+			$t_doc['record']['state'] = git_store_tree_state(
+				$p_repo, $t_doc['record']['git_sha'], $t_head_sha, $t_path );
 			continue;
 		}
 		$t_blob = $t_blobs[$t_doc['record']['git_sha'] . ':' . $t_path] ?? null;

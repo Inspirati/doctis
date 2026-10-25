@@ -1074,10 +1074,18 @@ $t_dwg_meeting = meeting_get_by_dwg( $f_dwg_id );
 # A hand upload to a meeting record counts as draft minutes (chair, minute
 # taker or organiser only, before approval).
 $t_can_upload_primary = $t_can_upload_primary
-	&& meeting_primary_upload_refusal( $f_dwg_id, auth_get_current_user_id() ) === null;
+	&& meeting_primary_upload_refusal( $f_dwg_id, auth_get_current_user_id() ) === null
+	&& !file_dwg_primary_is_tree( $t_primary_draft ?: $t_primary_file );
 $t_can_promote_draft = $t_dwg_meeting === null
 	? $t_can_sync_to_head
 	: !$t_force_readonly && meeting_user_can_approve_minutes( $t_dwg_meeting, auth_get_current_user_id() );
+# A source release record holds a git tree, not a file: its content changes by
+# push, it downloads as an archive, and it has no size or MIME type worth
+# printing.  See doc/git/SOURCE_REPOSITORIES.md.
+$t_is_source_release = file_dwg_primary_is_tree( $t_primary_file );
+$t_can_register_source_release = !$t_force_readonly && $t_primary_file === null
+	&& file_dwg_source_release_enabled( (int)dwg_get_field( $f_dwg_id, 'project_id' ) )
+	&& access_has_dwg_level( config_get( 'update_dwg_threshold' ), $f_dwg_id );
 $t_git_head_info     = file_dwg_git_head_info( $f_dwg_id );
 $t_git_head_sha      = $t_git_head_info ? $t_git_head_info['sha']      : null;
 $t_git_head_date     = $t_git_head_info ? $t_git_head_info['date']     : null;
@@ -1099,8 +1107,8 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 <div id="primary_document" class="widget-box widget-color-blue2 <?php echo $t_block_css ?>">
 	<div class="widget-header widget-header-small">
 		<h4 class="widget-title lighter">
-			<?php print_icon( 'fa-file', 'ace-icon' ); ?>
-			<?php echo lang_get( 'primary_document_section' ) ?>
+			<?php print_icon( $t_is_source_release ? 'fa-code-fork' : 'fa-file', 'ace-icon' ); ?>
+			<?php echo lang_get( $t_is_source_release ? 'source_release_section' : 'primary_document_section' ) ?>
 		</h4>
 		<div class="widget-toolbar">
 			<a data-action="collapse" href="#">
@@ -1146,7 +1154,14 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 						<a href="file_download.php?type=dwg_primary&amp;id=<?php echo $f_dwg_id ?>&amp;sha=<?php echo string_attribute( $t_primary_file['git_sha'] ) ?>"><?php
 							echo string_display_line( $t_primary_file['filename'] )
 						?></a>
+<?php	if( $t_is_source_release ): ?>
+						&nbsp;<span class="small">(<?php echo $t_primary_file['git_path'] === ''
+							? lang_get( 'source_release_whole_repository' )
+							: string_display_line( $t_primary_file['git_path'] ) ?>,
+							<?php echo string_display_line( $t_primary_file['git_branch'] ) ?>)</span>
+<?php	else: ?>
 						&nbsp;<span class="small">(<?php echo number_format( $t_primary_file['filesize'] ) ?> <?php echo lang_get( 'bytes' ) ?>)</span>
+<?php	endif; ?>
 					</td>
 					<td><?php echo date( config_get( 'normal_date_format' ), $t_primary_file['date_added'] ) ?></td>
 					<td><code title="<?php echo htmlspecialchars( $t_primary_file['git_sha'] ) ?>"><?php echo htmlspecialchars( substr( $t_primary_file['git_sha'], 0, 8 ) ) ?></code></td>
@@ -1232,6 +1247,17 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 				</tr>
 <?php	endif; ?>
 <?php else: ?>
+<?php	if( $t_can_register_source_release ): ?>
+				<tr>
+					<th class="category width-15"><?php echo lang_get( 'source_release_section' ) ?></th>
+					<td colspan="5">
+						<a href="dwg_source_release_page.php?id=<?php echo $f_dwg_id ?>"
+							class="btn btn-primary btn-sm btn-white btn-round">
+							<?php echo lang_get( 'source_release_button' ) ?>
+						</a>
+					</td>
+				</tr>
+<?php	endif; ?>
 				<tr>
 					<td colspan="6"<?php echo $t_can_upload_primary ? '' : ' class="center"' ?>>
 <?php	if( $t_can_upload_primary ): ?>

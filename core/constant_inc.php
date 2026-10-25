@@ -192,6 +192,21 @@ define( 'DISK', 1 );
 define( 'DATABASE', 2 );
 define( 'GIT', 3 );
 
+# Doctis: sentinel file_type marking a primary document whose git_path names a
+# git TREE rather than a blob — a source-repository release record, where the
+# document records a repository (or a subtree of one) at a commit rather than a
+# single file.  Stored in {dwg_primary_file}.file_type so that no schema change
+# is needed to tell the two apart; see doc/git/SOURCE_REPOSITORIES.md.
+define( 'DWG_TREE_MIME_TYPE', 'inode/directory' );
+
+# Doctis: per-repository push policy, held in the bare repo's own git config as
+# doctis.pushpolicy and enforced by admin/tools/git-hooks/pre-receive.
+#   DOCUMENT — append-only: no force-push, no ref deletion (document control).
+#   SOURCE   — normal software development: force-push and ref deletion are
+#              allowed on every ref except the server-managed refs/doctis/*.
+define( 'DWG_PUSH_POLICY_DOCUMENT', 'document' );
+define( 'DWG_PUSH_POLICY_SOURCE', 'source' );
+
 # show variable values
 define( 'BOTH', 0 );
 define( 'SIMPLE_ONLY', 1 );

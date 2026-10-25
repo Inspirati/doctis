@@ -2330,6 +2330,32 @@ $s_primary_document_tag_exists         = 'A tag with that name already exists in
 $s_primary_document_touch              = 'Touch';
 $s_primary_document_touch_confirm      = 'This will create an empty git commit on the project repository without modifying a document. Intended for development testing. Continue?';
 
+# Source repository release records (doc/git/SOURCE_REPOSITORIES.md)
+$s_source_release_section          = 'Source Release';
+$s_source_release_page_title       = 'Register Source Release';
+$s_source_release_intro            = 'This document will record a <strong>release of the project repository</strong> rather than a single file: the repository at one commit. Developers push to the repository as usual, which moves the Draft; a manager promoting the Draft to On Record is what cuts a release, pinned permanently by an approved-version ref.';
+$s_source_release_repository       = 'Repository';
+$s_source_release_push_url         = 'Push URL';
+$s_source_release_push_policy      = 'Push policy';
+$s_source_release_policy_hint      = 'Force-push and branch deletion are refused. An administrator can switch this repository to the source policy on Manage &rarr; Git Store.';
+$s_source_release_branch           = 'Release from branch';
+$s_source_release_commit           = 'Commit';
+$s_source_release_commit_hint      = 'blank = tip of the branch';
+$s_source_release_subtree          = 'Subtree';
+$s_source_release_subtree_hint     = 'blank = whole repository';
+$s_source_release_note             = 'Release note';
+$s_source_release_register         = 'Register Release';
+$s_source_release_already_registered = 'This document already has a primary document registered. Remove it first, or use a new document for the release record.';
+$s_source_release_button           = 'Register Source Release';
+$s_source_release_whole_repository = 'whole repository';
+$s_source_release_download         = 'Download archive';
+$s_push_policy_document            = 'document control';
+$s_push_policy_source              = 'source repository';
+$s_push_policy_label               = 'Push policy';
+$s_push_policy_document_help       = 'Append-only: force-push and ref deletion are refused, so an approved document version can never be rewritten.';
+$s_push_policy_source_help         = 'Normal software development: force-push and ref deletion are allowed on every ref. Released history stays safe because every On Record commit is pinned by refs/doctis/approved/*, which keeps it reachable.';
+$s_push_policy_apply               = 'Set Policy';
+
 # Document publishing (doc/publish/PUBLISHING.md)
 $s_dwg_publish_button          = 'Publish';
 $s_dwg_republish_button        = 'Republish';

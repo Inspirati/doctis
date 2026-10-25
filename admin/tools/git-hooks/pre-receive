@@ -1,16 +1,32 @@
 #!/bin/sh
 # Doctis pre-receive hook — installed automatically into every bare repo by
-# GitFileStorageBackend::configure_bare_repo().  Source of truth:
+# repository_configure_bare().  Source of truth:
 # admin/tools/git-hooks/pre-receive.  Do not edit the installed copy.
 #
-# Approved document versions are pinned by SHA (DB git_sha column and
-# refs/doctis/approved/* refs), so history must never be rewritten:
-#   - ref deletions are rejected
-#   - non-fast-forward (forced) updates are rejected
-#   - refs/doctis/* are server-managed and cannot be pushed by clients
+# What the hook enforces depends on the repository's push policy, held in the
+# bare repo's own git config as doctis.pushpolicy and set by Doctis:
+#
+#   document (default) — a document-control store.  Approved document versions
+#     are pinned by SHA (the git_sha column and refs/doctis/approved/*), so
+#     history must never be rewritten:
+#       - ref deletions are rejected
+#       - non-fast-forward (forced) updates are rejected
+#
+#   source — a software source repository (doc/git/SOURCE_REPOSITORIES.md).
+#     Normal development needs rebase, force-push and the deletion of merged
+#     branches, so both are allowed on every ref.  Released history is still
+#     safe: every On Record commit is pinned by refs/doctis/approved/<dwg>/<n>,
+#     which keeps it reachable and therefore never garbage-collected, whatever
+#     the branches do.
+#
+# Under BOTH policies refs/doctis/* are server-managed and cannot be pushed by
+# clients — that is the pin itself, and it is what makes "source" safe.
 
 zero=0000000000000000000000000000000000000000
 status=0
+
+policy=$(git config --get doctis.pushpolicy 2>/dev/null)
+[ -n "$policy" ] || policy=document
 
 while read old new ref; do
 	case "$ref" in
@@ -20,6 +36,12 @@ while read old new ref; do
 			continue
 			;;
 	esac
+
+	# A source repository permits history rewriting; the approved-version pins
+	# are what protects the record, not the branch layout.
+	if [ "$policy" = "source" ]; then
+		continue
+	fi
 
 	if [ "$new" = "$zero" ]; then
 		echo "doctis: deleting $ref is not permitted" >&2

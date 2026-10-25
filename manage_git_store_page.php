@@ -14,6 +14,8 @@ require_api( 'git_store_api.php' );
 require_api( 'gpc_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
+require_api( 'form_api.php' );
+require_api( 'print_api.php' );
 require_api( 'project_api.php' );
 require_api( 'repository_api.php' );
 
@@ -37,6 +39,18 @@ if( !isset( $t_repos[$f_repo] ) ) {
 	}
 }
 $t_repo = $f_repo !== '' ? $t_repos[$f_repo] : null;
+
+# ── Push policy (the one write this page performs) ──────────────────────────
+# Which rewrites the pre-receive hook permits on this repository.  Held in the
+# bare repo's own config; see doc/git/SOURCE_REPOSITORIES.md.
+if( $_SERVER['REQUEST_METHOD'] === 'POST' && gpc_get_string( 'action', '' ) === 'push_policy' ) {
+	form_security_validate( 'manage_git_store_policy' );
+	if( $t_repo !== null && $t_repo['bare_exists'] ) {
+		repository_set_push_policy( $t_repo['bare'], gpc_get_string( 'push_policy', DWG_PUSH_POLICY_DOCUMENT ) );
+	}
+	form_security_purge( 'manage_git_store_policy' );
+	print_header_redirect( 'manage_git_store_page.php?repo=' . urlencode( $f_repo ) );
+}
 
 $f_view = gpc_get_string( 'view', 'files' );
 if( !in_array( $f_view, array( 'files', 'documents', 'commits', 'refs', 'worktree' ), true ) ) {
@@ -338,6 +352,33 @@ print_manage_menu( 'manage_git_store_page.php' );
 				?></td>
 			</tr>
 			<tr>
+				<th class="category"><?php echo lang_get( 'push_policy_label' ); ?></th>
+				<td colspan="3"><?php
+					if( !$t_repo['bare_exists'] ) {
+						echo '<span class="grey">no bare repository</span>';
+					} else {
+						$t_policy = repository_get_push_policy( $t_repo['bare'] );
+				?>
+					<form method="post" action="manage_git_store_page.php" class="form-inline" style="display:inline">
+						<?php echo form_security_field( 'manage_git_store_policy' ); ?>
+						<input type="hidden" name="repo" value="<?php echo htmlspecialchars( $f_repo ); ?>" />
+						<input type="hidden" name="action" value="push_policy" />
+						<select name="push_policy" class="input-sm">
+							<option value="<?php echo DWG_PUSH_POLICY_DOCUMENT; ?>"<?php
+								echo $t_policy === DWG_PUSH_POLICY_DOCUMENT ? ' selected="selected"' : ''; ?>><?php
+								echo lang_get( 'push_policy_document' ); ?></option>
+							<option value="<?php echo DWG_PUSH_POLICY_SOURCE; ?>"<?php
+								echo $t_policy === DWG_PUSH_POLICY_SOURCE ? ' selected="selected"' : ''; ?>><?php
+								echo lang_get( 'push_policy_source' ); ?></option>
+						</select>
+						<button type="submit" class="btn btn-xs btn-primary btn-white btn-round"><?php
+							echo lang_get( 'push_policy_apply' ); ?></button>
+					</form>
+					<small>&nbsp;<?php echo lang_get( $t_policy === DWG_PUSH_POLICY_SOURCE
+						? 'push_policy_source_help' : 'push_policy_document_help' ); ?></small>
+				<?php } ?></td>
+			</tr>
+			<tr>
 				<th class="category">Paths</th>
 				<td colspan="3"><small>
 					bare <code><?php echo htmlspecialchars( $t_repo['bare'] ); ?></code>
@@ -581,6 +622,8 @@ print_manage_menu( 'manage_git_store_page.php' );
 					<td class="small"><?php print_git_store_document( $t_doc ); ?></td>
 					<td class="small"><?php if( isset( $t_tree[$t_path] ) ) { ?>
 						<a href="<?php echo git_store_page_url( array( 'file' => $t_path ) ); ?>"><?php echo htmlspecialchars( $t_path ); ?></a>
+						<?php } else if( $t_path === '' ) { ?>
+						<span class="label label-primary"><?php echo lang_get( 'source_release_whole_repository' ); ?></span>
 						<?php } else { echo htmlspecialchars( $t_path ); } ?></td>
 					<td class="small"><?php if( $t_doc['record'] ) { ?>
 						<code><?php echo htmlspecialchars( substr( $t_doc['record']['git_sha'], 0, 9 ) ); ?></code><br />

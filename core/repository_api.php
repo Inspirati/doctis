@@ -54,6 +54,7 @@ require_api( 'project_hierarchy_api.php' );
 require_api( 'utility_api.php' );
 
 use Mantis\Exceptions\ServiceException;
+use Mantis\Exceptions\ClientException;
 
 $g_cache_repository = array();
 
@@ -329,11 +330,54 @@ function repository_worktree_path( int $p_repository_id ): string {
 }
 
 /**
+ * The push policy in force on a bare repository, read from its own git config
+ * (doctis.pushpolicy).  An unset or unrecognised value means DOCUMENT, so a
+ * repository created before the setting existed keeps the strict behaviour.
+ *
+ * The policy lives on disk rather than in {repository} because the hook can
+ * only read its own repository; it sits beside http.receivepack, which Doctis
+ * already manages there.  See doc/git/SOURCE_REPOSITORIES.md.
+ *
+ * @param string $p_bare  Absolute path to the bare repository.
+ * @return string  DWG_PUSH_POLICY_DOCUMENT or DWG_PUSH_POLICY_SOURCE.
+ */
+function repository_get_push_policy( string $p_bare ): string {
+	$t_policy = trim( (string)shell_exec(
+		'git --git-dir=' . escapeshellarg( $p_bare ) . ' config --get doctis.pushpolicy 2>/dev/null'
+	) );
+	return $t_policy === DWG_PUSH_POLICY_SOURCE
+		? DWG_PUSH_POLICY_SOURCE
+		: DWG_PUSH_POLICY_DOCUMENT;
+}
+
+/**
+ * Set the push policy on a bare repository.  The hook reads it on every push,
+ * so the change takes effect immediately and no hook reinstall is needed.
+ *
+ * @param string $p_bare    Absolute path to the bare repository.
+ * @param string $p_policy  DWG_PUSH_POLICY_DOCUMENT or DWG_PUSH_POLICY_SOURCE.
+ * @return void
+ * @throws ClientException on an unrecognised policy.
+ */
+function repository_set_push_policy( string $p_bare, string $p_policy ): void {
+	if( $p_policy !== DWG_PUSH_POLICY_DOCUMENT && $p_policy !== DWG_PUSH_POLICY_SOURCE ) {
+		throw new ClientException( 'Unknown push policy: ' . $p_policy,
+			ERROR_INVALID_FIELD_VALUE, array( 'push_policy' ) );
+	}
+	exec( 'git --git-dir=' . escapeshellarg( $p_bare )
+		. ' config doctis.pushpolicy ' . escapeshellarg( $p_policy ) . ' 2>&1' );
+}
+
+/**
  * Install/refresh the Doctis server-side configuration on a bare repo: the
- * pre-receive hook (rejects force-pushes, ref deletions, and client writes
- * to refs/doctis/*) and http.receivepack (allows authenticated push through
- * the Smart HTTP gateway).  Idempotent.  Hook source of truth:
+ * pre-receive hook (what it enforces depends on the push policy) and
+ * http.receivepack (allows authenticated push through the Smart HTTP
+ * gateway).  Idempotent.  Hook source of truth:
  * admin/tools/git-hooks/pre-receive.
+ *
+ * The push policy is seeded to DOCUMENT only when it has never been set:
+ * refreshing the configuration of a source repository must not silently
+ * re-impose document control on it.
  *
  * @param string $p_bare  Absolute path to the bare repository.
  * @return void
@@ -352,6 +396,13 @@ function repository_configure_bare( string $p_bare ): void {
 	}
 
 	exec( 'git --git-dir=' . escapeshellarg( $p_bare ) . ' config http.receivepack true 2>&1' );
+
+	$t_existing = trim( (string)shell_exec(
+		'git --git-dir=' . escapeshellarg( $p_bare ) . ' config --get doctis.pushpolicy 2>/dev/null'
+	) );
+	if( $t_existing === '' ) {
+		repository_set_push_policy( $p_bare, DWG_PUSH_POLICY_DOCUMENT );
+	}
 }
 
 /**
