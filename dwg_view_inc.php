@@ -1116,7 +1116,7 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 		<h4 class="widget-title lighter">
 			<?php print_icon( $t_is_source_release ? 'fa-code-fork' : 'fa-file', 'ace-icon' ); ?>
 			<?php echo lang_get( $t_is_source_release
-				? ( dwg_is_frozen( $f_dwg_id ) ? 'source_release_frozen_label' : 'source_release_section' )
+				? ( dwg_is_frozen( $f_dwg_id ) ? 'source_release_frozen_label' : 'source_release_line_label' )
 				: 'primary_document_section' ) ?>
 		</h4>
 		<div class="widget-toolbar">

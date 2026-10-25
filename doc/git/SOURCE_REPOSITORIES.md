@@ -201,13 +201,18 @@ one document per release (§8.3):
 - a **release record** is cut from it, frozen at a commit, with its own
   status and approval cycle.
 
-A way to tell them apart is needed and **is not yet decided**. The least
-invasive candidate, which needs no schema change and no new concept: **a
-document stops tracking its branch once its status reaches a configured
-"released" threshold.** A branch record sits permanently below it and
-tracks for ever; a release freezes the moment it is approved — which also
-answers §8.3's superseded-release-shows-a-Draft problem with the same rule.
-Decide before building the *Cut release* action.
+**Settled 2026-10-26** by the owner, who cleared a schema change for it:
+`{dwg}.kind` says which of the two it is and `{dwg}.frozen` says whether it
+tracks, as §3.1 tabulates. Not the status-threshold alternative floated
+first — `status` would then have meant both *where in the approval workflow*
+and *is this frozen*, which is the same overloading that CLAUDE.md records as
+a defect in `{license_user_list}.status`.
+
+The registration page offers the choice directly — **Tracking line** or
+**Frozen release** — so the two-tier model is usable without waiting for a
+*Cut release* action. Verified: after a commit following a release, the line
+offered the new commit as a Draft while the release offered nothing, showed
+no promote button, and refused promotion.
 
 ---
 
@@ -289,6 +294,37 @@ Echo as you go.
 
 There is **no `project_id`** — always derive it via
 `dwg_get_field( $dwg_id, 'project_id' )`.
+
+**What `git_path` names decides everything.** It is a repo-relative path, and
+git resolves it to either a blob or a tree. For one repository at one commit:
+
+| `git_path` | git object | a download gives you |
+|---|---|---|
+| `docs/handbook.md` | blob | that one file |
+| empty | tree - the repository root | an archive of every file |
+| `src` | tree - a **subtree** | an archive of everything under `src/` |
+| `src/lib` | tree - a deeper subtree | an archive of everything under `src/lib/` |
+
+"**Rooted at a subtree**" throughout this document means the third or fourth
+row: the record covers *part* of the repository. It earns its keep in two
+cases - a mixed repository, where rooting at `src/` keeps document commits
+from moving the release and keeps the documents out of the archive (§8.2),
+and a monorepo whose `firmware/`, `tools/` and `docs-site/` are released
+independently. **For a source project with its own repository the root is
+the right choice**, and a subtree is the exception.
+
+`{dwg}.kind` and `{dwg}.frozen` say what the record *is*:
+
+| | `kind` | `frozen` | behaviour |
+|---|---|---|---|
+| Document | `DWG_KIND_DOCUMENT` | - | primary is a blob; the original behaviour |
+| Source **line** | `DWG_KIND_SOURCE` | `0` | follows its branch's tip; every push offers a Draft |
+| Source **release** | `DWG_KIND_SOURCE` | `1` | pinned at its commit; no Draft, cannot be promoted |
+
+`kind` is written by `file_dwg_primary_register()` from the object it actually
+registered, so it cannot disagree with what is stored. `frozen` means nothing
+for a document kind, and `dwg_is_frozen()` reports false for one whatever the
+column holds, so a "frozen document" cannot reach a caller.
 
 `{dwg_primary_draft}` has the same shape and holds the *Draft* (HEAD) version
 when it is ahead of On Record.
@@ -595,12 +631,11 @@ and the evidence is in §7 step 6.* `refs/doctis/*` stay unpushable, which is
 the whole safety argument, and it was verified against a force-push and a
 prune.
 
-**Is a document "kind" worth it?** *Not yet.* `file_type` carries the
-distinction with no schema change, and every consumer that needed to know —
-download, publish, upload, move, the Git Store state — reads it through
-`file_dwg_primary_is_tree()`. Revisit if a release record needs to differ in
-*fields* (its own revision scheme, no classification) rather than in
-behaviour; that is when a column earns its rebuild.
+**Is a document "kind" worth it?** *Yes - built 2026-10-26*, once the owner
+cleared a schema change. `{dwg}.kind` and `{dwg}.frozen` replace the
+`file_type = 'inode/directory'` sentinel as the thing behaviour reads;
+`file_type` keeps the value for display and Content-Type but nothing branches
+on it. §3.1 and §1.3.
 
 **Worktree cost.** *Not a problem; no bare-only path needed.* §7 step 7.
 
@@ -679,15 +714,10 @@ revision field, history and issues — which is the whole appeal of the option.
 
 **Two things to fix, both measured.**
 
-1. **A superseded release reports a Draft for ever.** v1.1 and v1.2 both show
-   a Draft at current HEAD, because `file_dwg_git_head_info()` compares their
-   recorded tree with the branch tip and the branch has moved on. Right for
-   "On Record advances", wrong for a release already cut — it invites a
-   manager to promote a historical release on to today's code. Needs a rule
-   for when a release document stops tracking: the obvious one is that only
-   the newest release document for a given (repository, path, branch) tracks
-   a Draft, and the rest are frozen; a status-based rule would do as well and
-   would make the document status mean something.
+1. ~~**A superseded release reports a Draft for ever.**~~ **Fixed 2026-10-26**
+   by `{dwg}.frozen`: a release registered as frozen offers no Draft, shows
+   no promote button and refuses promotion, however far its branch moves on
+   (§1.3).
 
 2. **Manage → Git Store lists one release, not three.**
    `git_store_documents()` keys its array by `git_path`, so the three `src`
@@ -709,6 +739,21 @@ person from the one before it.
 ---
 
 ## 9. Log
+
+- **2026-10-26** — Owner asked what "subtree" meant, which this document had
+  used throughout without defining; §3.1 now does, with the blob/tree table.
+  Owner also cleared schema changes for the development phase, which settled
+  §1.3: `{dwg}.kind` and `{dwg}.frozen`, two columns as the owner chose, in
+  place of the `file_type` sentinel and in place of the status-threshold
+  alternative — `status` would otherwise have carried two meanings, the
+  mistake CLAUDE.md records in `{license_user_list}.status`. The meaningless
+  "frozen document" is prevented rather than represented. Registration now
+  offers **Tracking line** or **Frozen release**, so the two-tier model works
+  without a *Cut release* action. Database rebuilt (schema version 77);
+  HCRQMS deliberately not reloaded, and the earlier trial projects are gone.
+  Replaced with `Engineering` / `Flight Controller Firmware`, which holds a
+  frozen v1.0 release and a tracking main line. `test-git-doctis.php`
+  152 → 165, `test-git-php.php` 20/20, PHPUnit 382/382.
 
 - **2026-10-25** — Idea raised and explored. §4 findings verified against the
   running VM. Owner approved the §1.1 framing and the spike-first approach.
@@ -811,13 +856,12 @@ In the order that would matter to a first real user:
 | Item | Why |
 |------|-----|
 | ~~A button to create a project's repository~~ | **Built** 2026-10-25 — Manage Project → *Repository*, which also gives a sub-project its own (`manage_proj_repo_inc.php`, `manage_proj_repo_create.php`) |
-| **Freeze a superseded release** | §8.3 — needed for one document per release; today an old release reports a Draft for ever |
 | **Re-key `git_store_documents()`** | §8.3 — it keys by `git_path`, so several releases of one path collapse to the last; seven consumers in `manage_git_store_page.php` index it that way |
-| **A *Cut release* action** | §8.3 — creates the next release document instead of promoting in place |
+| A *Cut release* action | §8.3 — create the next release document from a line, rather than registering it by hand. The *(line, release)* distinction it needed is now `{dwg}.frozen` |
+| A documents-list column and filter for `kind` | §3.1 — the column exists and nothing shows or filters by it yet, which is most of the point of having it |
 | `doc/MANUAL.md` section | Nothing user-facing documents this |
 | Importer mode: register a tree as one document | §8, adoption; the primitive exists, the flag does not |
 | Maintain `{repository}.default_branch` after a push | §8.1; the hook repairs HEAD, the row goes stale |
-| **Decide how a release is told from a branch record** | §1.3 — both are *(path, branch, commit)*; a line advances, a release should freeze. Blocks the *Cut release* action |
 | Moving existing documents between repositories | §1.2 — a project that already stores documents in the repository it inherits cannot be given its own until they move; `file_dwg_primary_move_prepare()` moves one document, nothing moves a project's worth |
 | Release notes that accumulate | §8.1; `description` is 255 chars and is replaced |
 | A status gate on promotion | §8.1; decide whether a release needs an approved status |
