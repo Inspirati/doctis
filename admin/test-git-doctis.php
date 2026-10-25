@@ -602,6 +602,29 @@ check( $t_src_row2['git_path'] === '', 'promoted row is still rooted at the repo
 check( count( explode( "\n", bare_git( $t_bare14, 'for-each-ref refs/doctis/approved/' . $t_dwg_src ) ) ) === 2,
 	'both releases are pinned' );
 
+# Path uniqueness guards writes, so it does not apply to releases: several
+# documents may record the same tree (successive releases of one component,
+# or two release lines of one subtree).  A file document is still protected.
+$t_dwg_rel2 = make_dwg( $t_parent, 1, 'GitTest second release of the same tree' );
+$t_cleanup['dwg_ids'][] = $t_dwg_rel2;
+file_dwg_primary_register( $t_dwg_rel2, 1, '', $t_head14b, 'release 2 as its own document',
+	true, '', array( 'allow_tree' => true ) );
+check( file_dwg_primary_get( $t_dwg_rel2 ) !== null,
+	'a second document may record the same tree' );
+check( file_dwg_primary_get( $t_dwg_src )['git_path'] === ''
+	&& file_dwg_primary_get( $t_dwg_rel2 )['git_path'] === '',
+	'both releases keep the same path' );
+check( bare_git( $t_bare14, 'for-each-ref refs/doctis/approved/' . $t_dwg_rel2 ) !== '',
+	'the second release gets its own pin' );
+try {
+	$t_dwg_clash = make_dwg( $t_parent, 1, 'GitTest file path clash' );
+	$t_cleanup['dwg_ids'][] = $t_dwg_clash;
+	file_dwg_primary_register( $t_dwg_clash, 1, $t_dwg1 . '/spec.md' );
+	fail( 'a file path is still protected from a second document' );
+} catch( ClientException $e ) {
+	ok( 'a file path is still protected from a second document' );
+}
+
 # A release is not a page, and is refused by publishing for that stated reason.
 check( strpos( dwg_publish_refusal( $t_dwg_src ), 'source release' ) !== false,
 	'publishing refuses a source release by name', dwg_publish_refusal( $t_dwg_src ) );
