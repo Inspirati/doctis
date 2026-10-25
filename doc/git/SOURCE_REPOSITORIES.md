@@ -71,6 +71,33 @@ Project → *Repository* (§10). Verified 2026-10-25: parent on
 `document`, sub-project on `source`, separate bare repos, documents resolving
 to the right one, and the source release archive containing no documents.
 
+#### Which repository a project uses: default, and override
+
+Both are possible, and the distinction caused real confusion, so plainly:
+
+- **By default a project tree shares one repository.** A project with no
+  `{project_repository}` row inherits by walking up to the nearest ancestor
+  that has one; with none anywhere, one is created at the **top-level**
+  project. So a sub-project is *not* separate unless it is made separate.
+- **An explicit link overrides that**, and a sub-project with its own
+  repository then becomes the inheritance root for *its own* descendants.
+
+Measured three levels deep:
+
+| project | own link | resolves to |
+|---|---|---|
+| Split Trial | 15 | `split-trial-r15` |
+| → Split Trial Firmware | 16 | `split-trial-firmware-r16` |
+| → Split Trial Tools | 17 | `split-trial-tools-r17` |
+| → → Split Trial Firmware Bootloader | — | `split-trial-firmware-r16` *(its parent's, not the grandparent's)* |
+
+Before 2026-10-25 nothing outside the repository importer created that link,
+so in practice it was always "inherit". **Manage Projects** now carries a
+*Repository* column showing, for every project and sub-project, the policy of
+the repository it resolves to, a *releases* marker when
+`$g_dwg_source_release_enabled` is on for it, and the repository's name,
+italicised when inherited.
+
 **Git submodules are not an answer.** `git archive` does not recurse into
 them: a release archive would contain the submodule's directory *empty*, so
 the approved artefact would be silently incomplete. (Doctis also refuses to
@@ -668,6 +695,7 @@ In the order that would matter to a first real user:
 | Importer mode: register a tree as one document | §8, adoption; the primitive exists, the flag does not |
 | Maintain `{repository}.default_branch` after a push | §8.1; the hook repairs HEAD, the row goes stale |
 | Per-branch release lines, exercised | §8 — unblocked, but never run with two live branches at once |
+| Moving existing documents between repositories | §1.2 — a project that already stores documents in the repository it inherits cannot be given its own until they move; `file_dwg_primary_move_prepare()` moves one document, nothing moves a project's worth |
 | Release notes that accumulate | §8.1; `description` is 255 chars and is replaced |
 | A status gate on promotion | §8.1; decide whether a release needs an approved status |
 | REST/SOAP exposure | §6.1 |
