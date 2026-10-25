@@ -741,6 +741,17 @@ person from the one before it.
 
 ## 9. Log
 
+- **2026-10-26** — Owner: put the recovery instruction on the pages that warn
+  about revoked tokens, not only on the clone page. `print_dwg_git_token_notice()`
+  in `core/print_dwg_api.php` is the one renderer, used on
+  `api_tokens_page.php` (above the list, where a revoke starts),
+  `api_token_revoke.php` (after it, which is when the clone starts failing —
+  it reads the repository out of a `git: <repo>` token name, so the command
+  is exact rather than a template) and beside the clone page's revoke tick.
+  Silent when `$g_git_http_enabled` is OFF. Two are shared MantisBT pages,
+  changed deliberately and commented. Verified on all three, with and
+  without remote git access enabled.
+
 - **2026-10-26** — A clean-up script of mine revoked a token the owner's
   existing clone was authenticating with, matching on the `git: ` name prefix
   this feature introduced; they found out through
