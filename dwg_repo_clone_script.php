@@ -10,6 +10,16 @@
 # The token arrives in the POST body rather than a URL, so it stays out of
 # server logs, browser history and Referer headers.
 
+# Serve the script as a plain file, never an HTML error page inside it.
+define( 'DISABLE_INLINE_ERROR_REPORTING', true );
+define( 'COMPRESSION_DISABLED', true );
+
+# core.php emits the response headers for a normal page load, including the
+# CSP, and http_security_headers() cannot be called twice — the second call
+# raises ERROR_GENERIC.  A page that serves a file sends its own headers, so
+# it suppresses core's, as file_download.php does.
+$g_bypass_headers = true;
+
 require_once( 'core.php' );
 require_api( 'access_api.php' );
 require_api( 'api_token_api.php' );
@@ -47,7 +57,7 @@ access_ensure_project_level(
 
 # Only a token this user actually holds may be embedded, so the script cannot
 # be used to smuggle an arbitrary string out of the form.
-if( $f_token === '' || api_token_get_user( $f_token ) !== auth_get_current_user_id() ) {
+if( $f_token === '' || (int)api_token_get_user( $f_token ) !== (int)auth_get_current_user_id() ) {
 	trigger_error( ERROR_ACCESS_DENIED, ERROR );
 }
 
