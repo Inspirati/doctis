@@ -85,8 +85,10 @@ if( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
 		$t_release->date_submitted = db_now();
 		$t_release->last_updated   = db_now();
 		$t_release->revision       = $f_revision;
+		$t_line_name              = $t_line_doc->summary !== ''
+			? $t_line_doc->summary : (string)$t_line_doc->title;
 		$t_release->summary        = $f_title !== '' ? $f_title
-			: $t_line_doc->summary . ' ' . $f_revision;
+			: trim( $t_line_name . ' ' . $f_revision );
 		$t_release->title          = $t_release->summary;
 		$t_release->sticky         = 0;
 

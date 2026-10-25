@@ -547,9 +547,16 @@ $this->edition = isset($this->edition) ? $this->edition : '';
 
 		# Insert the document metadata
 		db_param_push();
+		# summary is what dwg_format_summary() reads for the page title, email
+		# subjects and list captions.  It was absent from this INSERT, so every
+		# document created through DwgData::create() — which is every one from
+		# the web form, the REST API and now Cut release — was left nameless
+		# there while {documents}.title held the name.  The repository importer
+		# writes the column directly, which is why imported documents looked
+		# right and created ones did not.
 		$t_query = 'INSERT INTO {dwg}
 						( project_id, creator_id, owner_id, handler_id,
-						  category_id, document_id,
+						  category_id, document_id, summary,
 						  status, enabled, version,
 						  discipline, link_url,
 						  classification, date_submitted, due_date,
@@ -557,7 +564,7 @@ $this->edition = isset($this->edition) ? $this->edition : '';
 						)
 					  VALUES
 						( ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
-						  ' . db_param() . ',' . db_param() . ',
+						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',
 						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',
 						  ' . db_param() . ',' . db_param() . ',
 						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',
@@ -565,6 +572,8 @@ $this->edition = isset($this->edition) ? $this->edition : '';
 		db_query( $t_query, array(
 		  $this->project_id, $this->creator_id, $this->owner_id, $this->handler_id,
 		  $this->category_id, $this->document_id,
+		  # A caller that names only one of the two gets both.
+		  is_blank( $this->summary ) ? (string)$this->title : $this->summary,
 		  $this->status, $this->enabled, $this->version,
 		  $this->discipline, $this->link_url,
 		  $this->classification, $this->date_submitted, $this->due_date,
