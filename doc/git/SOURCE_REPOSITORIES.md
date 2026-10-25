@@ -741,6 +741,17 @@ person from the one before it.
 
 ## 9. Log
 
+- **2026-10-26** — Owner found the Clone button missing on an ordinary
+  document whose repository they had already cloned by hand. It had been
+  gated on the record being a *source* release, which contradicted
+  `doc/MANUAL.md` and the point of the feature: every registered primary
+  document lives in git, and the document policy does not stop cloning, only
+  pushes that would rewrite an approved version. It now shows for any
+  document with a registered primary file. The gate moved into
+  `repository_user_can_clone()`, shared by both buttons and the clone page,
+  so a button is never offered to someone the page would refuse — the Manage
+  Project button had previously checked only that remote git access was on.
+
 - **2026-10-26** — Owner asked for one-click cloning from the UI: a button, a
   directory picker, and token handling. Two of the three built; the directory
   picker **cannot** be, and the page says so instead of pretending. A browser
