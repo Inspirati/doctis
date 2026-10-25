@@ -2372,6 +2372,15 @@ $s_project_repository_create_help   = 'Needed when this project must run a diffe
 $s_project_repository_create_confirm = 'This project will stop sharing its parent\'s repository and get one of its own. Documents created in it from now on are stored there. Continue?';
 $s_project_repository_not_yet       = 'none yet';
 $s_project_repository_releases      = 'releases';
+$s_project_repository_update_button = 'Update Repository Settings';
+$s_project_repository_shared_by     = 'Shared by %1$d projects: whatever is set on it applies to all of them.';
+$s_project_repository_policy_later  = 'The repository does not exist yet, so there is nothing to set. It is created the first time a document file is stored in this project, or by the button below.';
+$s_project_repository_policy_admin_only = 'Only an administrator may change the push policy, because it decides whether released history can be rewritten.';
+$s_project_repository_policy_on_owner = 'Set on %1$s, which owns this repository.';
+$s_project_repository_policy_shared_warning = 'This repository is shared by %1$d projects. Changing the policy changes it for every one of them.';
+$s_project_repository_releases_label = 'Source releases';
+$s_project_repository_releases_enable = 'Allow documents in this project to record a repository release';
+$s_project_repository_releases_help = 'A document then records a release of the repository — the whole thing, or one subtree — at a commit, instead of a single file. Its content arrives by git push and it downloads as an archive. Leave this off for an ordinary document project.';
 
 # Document publishing (doc/publish/PUBLISHING.md)
 $s_dwg_publish_button          = 'Publish';
