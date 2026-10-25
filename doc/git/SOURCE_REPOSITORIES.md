@@ -421,11 +421,22 @@ release buys little. What it does **not** give is a per-release status,
 approver and revision field. Decide that when the first real release cycle
 runs; nothing in the build forecloses either.
 
-**Multiple release lines?** *Yes, one document per branch, and it works.*
-`file_dwg_git_branch_tip()` makes a document's Draft follow its own
-`git_branch`, so `main` and a maintenance branch can be two documents of one
-repository, each advancing independently. Untried with two documents on one
-repository at once — the trial used one document per repository.
+**Multiple release lines?** *Half-built — it does not work yet.* Corrected
+2026-10-25 after testing it; the claim here previously said it did.
+`file_dwg_git_branch_tip()` does make a document's Draft follow its own
+`git_branch`, and `file_dwg_primary_register()` does record the branch asked
+for, but **`file_dwg_primary_path_in_use()` keys on `git_path` alone and
+ignores `git_branch`**, so the second document is refused before it exists:
+
+```
+Path "src" is already registered to document 395
+```
+
+Two documents *at different paths* work (§8.2). A second release line is the
+same path on another branch, and that is exactly what the uniqueness check
+forbids. See §11 for what finishing it costs.
+
+**Several documents on one repository?** *Yes — see §8.2, verified.*
 
 **Does the pre-receive policy relax, and how far?** *Fully, per repository,
 and the evidence is in §7 step 6.* `refs/doctis/*` stay unpushable, which is
@@ -469,6 +480,31 @@ importer rather than a separate path — but it is not written.
   promotion rather than accumulating. A real changelog wants somewhere else
   to live.
 
+### 8.2 What several documents on one repository mean (verified 2026-10-25)
+
+Probed in project `Mix Trial` (513) with sub-project `Mix Trial Firmware`
+(514), sharing repository 14, holding `docs/handbook.md`, `src/app/main.c`
+and `src/lib/util.c`.
+
+| Pattern | Works | Notes |
+|---|---|---|
+| A file document **and** a source release, in one project | **yes** | Drafts are independent: a commit to `docs/handbook.md` raised a Draft on the handbook document only; a commit to `src/app/main.c` on the `src/` release only |
+| One release per **component** (subtree) of a monorepo | **yes** | `src/` and `src/lib/` as two documents. Nesting behaves: a commit to `src/lib/util.c` raised a Draft on **both**, which is right — `src` contains `src/lib` |
+| A release owned by a **sub-project** | **yes** | Document 396 belongs to project 514 and records `src/lib` of the parent's repository |
+| One document per **release** | n/a | Releases are versions of one document; the `refs/doctis/approved/*` pins are the release history |
+| One document per **branch** (release line) | **no** | Refused by the path-uniqueness check — see §8 above |
+
+**Design rule for a mixed project: root the release at a subtree, never at
+the repository root.** A root-rooted release in a project that also holds
+documents is wrong twice over, both measured:
+
+- its Draft moves on **every** commit, including one that touches only a
+  Doctis-managed document file — because the root tree changes;
+- its archive **contains those documents** (`docs/handbook.md` was in the zip).
+
+A repository root is the right choice only when the repository holds nothing
+but the source project, as in the `Source Trial` projects of §7.
+
 ---
 
 ## 9. Log
@@ -487,6 +523,14 @@ importer rather than a separate path — but it is not written.
   bare-repo HEAD (a clone that checks out nothing). Tests: `test-git-doctis.php`
   102 → 137, `test-git-php.php` 20/20, PHPUnit `mantis` 382/382. Trial
   projects 254 and 255 and documents 209 and 210 left on the VM.
+- **2026-10-25** — Owner asked what happens in a project holding both
+  documents and source, whether sub-projects get their own repository, and
+  what several documents on one repository would mean. Probed in project
+  `Mix Trial` (513/514, repository 14), also left on the VM; results in §8.2,
+  which adds the design rule *in a mixed project, root the release at a
+  subtree, never at the repository root*. The probe disproved this document's
+  own claim that per-branch release lines work: they are refused by the
+  path-uniqueness check. §8 and §11 corrected.
 
 ---
 
@@ -534,11 +578,11 @@ In the order that would matter to a first real user:
 
 | Item | Why |
 |------|-----|
-| A button to create a project's repository | §8.1 — today it needs a script, which blocks step 1 above |
+| A button to create a project's repository | §8.1 — today it needs a script, which blocks step 1 above. The same gap stops a **sub-project being given its own repository**: that needs a `{project_repository}` row, and outside the importer nothing creates one |
 | `doc/MANUAL.md` section | Nothing user-facing documents this |
 | Importer mode: register a tree as one document | §8, adoption; the primitive exists, the flag does not |
 | Maintain `{repository}.default_branch` after a push | §8.1; the hook repairs HEAD, the row goes stale |
-| Two documents on two branches of one repository | Supported but untried (§8) |
+| **Per-branch release lines** | §8 — half-built and currently refused. `file_dwg_primary_path_in_use()` must key on (repository, `git_path`, `git_branch`) instead of `git_path` alone, and `git_store_documents()` must stop keying its array by path, which its seven consumers in `manage_git_store_page.php` rely on. The uniqueness change is small; the Git Store re-keying is the bulk of it |
 | Release notes that accumulate | §8.1; `description` is 255 chars and is replaced |
 | A status gate on promotion | §8.1; decide whether a release needs an approved status |
 | REST/SOAP exposure | §6.1 |
