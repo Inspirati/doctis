@@ -284,7 +284,8 @@ function git_lfs_require_access( int $p_project_id, int $p_user_id, bool $p_writ
  * This is the only call a client must make.  The transfer itself goes to the
  * hrefs returned here; because they are on the same host as the endpoint, the
  * client reuses the credentials it has just authenticated with, so no token is
- * echoed back into a response body.
+ * echoed back into a response body.  That reuse depends on *not* claiming the
+ * hrefs are pre-authenticated -- see the note on the flag below.
  *
  * @param int $p_repository_id
  * @param int $p_project_id
@@ -338,10 +339,16 @@ function git_lfs_handle_batch( int $p_repository_id, int $p_project_id, int $p_u
 		}
 
 		$t_have = git_lfs_object_size( $p_repository_id, $t_oid );
+		# No "authenticated" flag.  It does not mean "the caller is
+		# authenticated"; it means "this href needs no credentials", and a
+		# client that sees it true deliberately withholds the Authorization
+		# header from the transfer that follows.  Our transfer hrefs are on
+		# this same gateway and are authorised exactly as the batch call was,
+		# so the client must keep sending what it has just sent.  Setting it
+		# true produces an endless 401 retry loop on every upload.
 		$t_entry = array(
-			'oid'           => $t_oid,
-			'size'          => $t_size,
-			'authenticated' => true,
+			'oid'  => $t_oid,
+			'size' => $t_size,
 		);
 
 		if( $t_upload ) {

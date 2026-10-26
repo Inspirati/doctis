@@ -47,6 +47,7 @@ require_api( 'category_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
 require_api( 'database_api.php' );
+require_api( 'git_lfs_api.php' );
 require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'history_dwg_api.php' );
@@ -2161,6 +2162,21 @@ function file_dwg_primary_register( int $p_dwg_id, int $p_user_id, string $p_git
 			' cat-file -s ' . escapeshellarg( $t_sha . ':' . $t_git_path ) . ' 2>/dev/null'
 		) );
 		$t_filesize = is_numeric( $t_size_str ) ? (int)$t_size_str : 0;
+
+		# A git-LFS pointer's own size is a couple of hundred bytes of text
+		# describing the file.  The size that means anything to a reader --
+		# shown in the document panel, in Git Store and in the API -- is the
+		# file's, which the pointer states.  Small enough to read whole,
+		# because the pointer check rejects anything that is not.
+		if( $t_filesize > 0 && $t_filesize <= 1024 ) {
+			$t_pointer = git_lfs_parse_pointer( (string)shell_exec(
+				'git --git-dir=' . escapeshellarg( $t_bare ) .
+				' cat-file blob ' . escapeshellarg( $t_sha . ':' . $t_git_path ) . ' 2>/dev/null'
+			) );
+			if( $t_pointer !== null ) {
+				$t_filesize = $t_pointer['size'];
+			}
+		}
 	}
 
 	# Record the release line the caller named, when it still exists; two
@@ -2614,6 +2630,37 @@ function file_dwg_primary_get_content( $p_dwg_id ) {
 	$t_backend    = file_dwg_get_storage_backend();
 
 	return $t_backend->retrieve( $t_row, $t_project_id );
+}
+
+/**
+ * Send a retrieved primary-document body to the client.
+ *
+ * Shared by every file_download.php route that serves a registered document,
+ * because what a retrieve() returns is not always bytes: a git-LFS-backed
+ * document comes back as a path to its object in the LFS store, and must be
+ * streamed rather than held in memory -- being too large for a repository is
+ * the reason it is in LFS at all.  Emits Content-Length and the sniffing
+ * guard; the caller has already sent the type and disposition headers.
+ *
+ * @param array $p_result  A retrieve() result: 'content', or 'file'.
+ * @return void
+ */
+function file_dwg_send_content( array $p_result ): void {
+	if( isset( $p_result['file'] ) ) {
+		header( 'Content-Length: ' . filesize( $p_result['file'] ) );
+		header( 'X-Content-Type-Options: nosniff' );
+		# Nothing may stand between readfile() and the socket, or the whole
+		# object is buffered after all.
+		while( ob_get_level() > 0 ) {
+			ob_end_clean();
+		}
+		readfile( $p_result['file'] );
+		return;
+	}
+
+	header( 'Content-Length: ' . strlen( $p_result['content'] ) );
+	header( 'X-Content-Type-Options: nosniff' );
+	echo $p_result['content'];
 }
 
 /**

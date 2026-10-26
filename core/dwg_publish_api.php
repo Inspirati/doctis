@@ -1374,6 +1374,13 @@ function dwg_publish( int $p_dwg_id, int $p_user_id ): array {
 	if( $t_source === false ) {
 		dwg_publish_error( 'the on-record version could not be read from the repository.' );
 	}
+	if( isset( $t_source['file'] ) ) {
+		# A git-LFS-backed document is a large binary, by definition of why it
+		# is in LFS.  Publishing converts Markdown to a web page, so there is
+		# nothing sensible to do with one -- and silently publishing the
+		# pointer text would produce a page of metadata.
+		dwg_publish_error( 'the on-record version is stored with git-LFS, which publishing does not handle.' );
+	}
 	$t_template = dwg_publish_template_text( $t_site );
 	$t_logo     = dwg_publish_logo_html( $t_site );
 	$t_values   = dwg_publish_template_values( $t_dwg, $t_row );

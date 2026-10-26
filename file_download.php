@@ -118,7 +118,6 @@ if( $f_type === 'dwg_primary' ) {
 		trigger_error( ERROR_FILE_NOT_FOUND, ERROR );
 	}
 
-	$t_content      = $t_result['content'];
 	$t_filename     = file_get_display_name( $t_row['filename'] );
 	$t_content_type = $t_row['file_type'];
 
@@ -131,10 +130,7 @@ if( $f_type === 'dwg_primary' ) {
 	header( 'Last-Modified: ' . gmdate( 'D, d M Y H:i:s \G\M\T', (int)$t_row['date_added'] ) );
 	http_content_disposition_header( $t_filename, $f_show_inline );
 	header( 'Content-Type: ' . $t_content_type );
-	header( 'Content-Length: ' . strlen( $t_content ) );
-	header( 'X-Content-Type-Options: nosniff' );
-
-	echo $t_content;
+	file_dwg_send_content( $t_result );
 	exit;
 }
 
@@ -188,7 +184,6 @@ if( $f_type === 'dwg_primary_head' ) {
 		trigger_error( ERROR_FILE_NOT_FOUND, ERROR );
 	}
 
-	$t_content      = $t_result['content'];
 	$t_filename     = file_get_display_name( $t_head['filename'] );
 	$t_content_type = $t_row['file_type'];
 
@@ -201,10 +196,7 @@ if( $f_type === 'dwg_primary_head' ) {
 	header( 'Last-Modified: ' . gmdate( 'D, d M Y H:i:s \G\M\T', $t_head['date'] ) );
 	http_content_disposition_header( $t_filename, $f_show_inline );
 	header( 'Content-Type: ' . $t_content_type );
-	header( 'Content-Length: ' . strlen( $t_content ) );
-	header( 'X-Content-Type-Options: nosniff' );
-
-	echo $t_content;
+	file_dwg_send_content( $t_result );
 	exit;
 }
 
@@ -253,7 +245,6 @@ if( $f_type === 'dwg_primary_at_sha' ) {
 		trigger_error( ERROR_FILE_NOT_FOUND, ERROR );
 	}
 
-	$t_content      = $t_result['content'];
 	$t_filename     = file_get_display_name( $t_result['filename'] );
 	$t_content_type = $t_row['file_type'];
 
@@ -266,10 +257,7 @@ if( $f_type === 'dwg_primary_at_sha' ) {
 	header( 'Last-Modified: ' . gmdate( 'D, d M Y H:i:s \G\M\T', (int)$t_row['date_added'] ) );
 	http_content_disposition_header( $t_filename, $f_show_inline );
 	header( 'Content-Type: ' . $t_content_type );
-	header( 'Content-Length: ' . strlen( $t_content ) );
-	header( 'X-Content-Type-Options: nosniff' );
-
-	echo $t_content;
+	file_dwg_send_content( $t_result );
 	exit;
 }
 
