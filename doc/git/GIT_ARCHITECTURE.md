@@ -145,7 +145,8 @@ For each repository owned by the project, under the advisory storage lock
 | `repository_basename()` / `repository_bare_path()` / `repository_worktree_path()` | Naming/paths from the stored slug + id |
 | `repository_ensure_on_disk()` | Init bare + configure (hook, receivepack) + clone worktree |
 | `repository_adopt()` | `git clone --bare` an existing repo into the store; strip remotes; record default branch |
-| `repository_configure_bare()` | Install/refresh pre-receive hook + `http.receivepack` |
+| `repository_configure_bare()` | Install/refresh the pre-receive and post-receive hooks + `http.receivepack`; seed the push policy |
+| `repository_get_push_policy()` / `repository_set_push_policy()` | Per-repository `doctis.pushpolicy` (`document` / `source`) |
 | `repository_rename_for_owner_project()` | Slug refresh + on-disk relocation |
 | `dwg_git_storage_lock()` / `_unlock()` | Advisory lock serialising relocation against creation/adoption |
 
@@ -337,7 +338,10 @@ refs/doctis/approved/<dwg_id>/<sequence>  →  <sha>
 This keeps every approved commit reachable regardless of later branch history
 (immune to GC), and forms an out-of-band approval record that does not depend
 on the Doctis DB. The pre-receive hook rejects any client push touching
-`refs/doctis/*`; only the server writes them (`git update-ref` bypasses hooks).
+`refs/doctis/*` **under either push policy**; only the server writes them
+(`git update-ref` bypasses hooks).  That is deliberately the one rule a
+`source` repository does not relax: it is what makes a released commit
+survive a force-push past it, verified against `git gc --prune=now`.
 The importer can register without approval, and replacement uploads are staged
 without an approved ref.
 
@@ -376,10 +380,24 @@ git clone http://<user>:<API_TOKEN>@<server>/git/<slug>-r<id>.git
         CGI response headers parsed; body streamed back to git client
                ↓ (push only)
         pre-receive hook in the bare repo rejects:
-          - non-fast-forward (forced) updates
-          - ref deletions
-          - client writes to refs/doctis/*
+          - client writes to refs/doctis/*            (both policies)
+          - non-fast-forward (forced) updates         (document policy only)
+          - ref deletions                             (document policy only)
+               ↓ (push only)
+        post-receive hook repairs a dangling bare-repo HEAD
 ```
+
+The hook's behaviour depends on the repository's **push policy**, held in the
+bare repo's own git config as `doctis.pushpolicy` and set on Manage → Git
+Store: `document` (the default, append-only) or `source` (a software source
+repository, where force-push and ref deletion are permitted). `refs/doctis/*`
+stay unpushable under both, which is what keeps an approved commit reachable
+however the branches are rewritten. See
+[SOURCE_REPOSITORIES.md](SOURCE_REPOSITORIES.md).
+
+**`client_max_body_size 0` on the `/git/` route is required for push** — a
+packfile is one request body, and the default limit rejects any real
+repository with HTTP 413. See [GIT_SERVER_SETUP.md](GIT_SERVER_SETUP.md).
 
 ### Access model
 
@@ -474,7 +492,8 @@ only legitimate git-facing operations are:
 | `core/git_http_api.php` | Smart HTTP gateway: auth, authz (owner project), CGI proxy |
 | `git_http.php` | Smart HTTP entry point |
 | `config_defaults_inc.php` | `$g_git_storage_root`, `$g_git_worktree_root`, `$g_dwg_repo_path_template`, `$g_git_http_*` defaults |
-| `admin/tools/git-hooks/pre-receive` | Pre-receive hook source of truth (installed into every bare repo) |
+| `admin/tools/git-hooks/pre-receive` | Pre-receive hook source of truth (installed into every bare repo); policy-driven |
+| `admin/tools/git-hooks/post-receive` | Post-receive hook source of truth; repairs a dangling bare-repo HEAD |
 | `admin/test-git-php.php` | 20-step git-mechanics test (no core bootstrap) |
 | `admin/test-git-doctis.php` | Mapping-layer integration test: entity, resolution, templates, register, collisions, dangling paths, adoption, relocation |
 | `admin/tools/git-serve.conf` | Apache config for Smart HTTP routing (nginx installs use the `/git/` location in their site file) |

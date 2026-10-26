@@ -26,7 +26,8 @@ in the [MantisBT documentation](https://mantisbt.org/documentation.php).
 10. [Meetings](#10-meetings)
 11. [AI Assistant and knowledge base](#11-ai-assistant-and-knowledge-base)
 12. [Documentation Topics](#12-documentation-topics)
-13. [Administration notes](#13-administration-notes)
+13. [Source code repositories](#13-source-code-repositories)
+14. [Administration notes](#14-administration-notes)
 
 ---
 
@@ -925,7 +926,277 @@ authorising again; earlier snapshots keep the old revision.
 
 ---
 
-## 13. Administration notes
+## 13. Source code repositories
+
+Doctis is a document control system that can also **host source code**. A
+project can be marked as a source project, and developers then clone, commit
+and push to its repository as they would any git repository. The difference
+from an ordinary git host is what Doctis *registers*: **no individual source
+file is a document**. The documents of a source project are its **releases**
+and its **lines**.
+
+This is off unless an administrator turns it on for a project, and it is
+unrelated to ordinary documents, which continue to work exactly as sections
+1–7 describe.
+
+### 13.1 Lines and releases
+
+A source document records a repository — all of it, or one directory of it —
+at one commit. There are two sorts, and the difference is whether the record
+moves:
+
+| | What it is | Behaviour |
+|---|---|---|
+| **Source line** | A branch that goes on: `main`, a maintenance branch, a per-customer branch | Follows the branch. Every push offers the new commit as a **Draft** |
+| **Source release** | A version that has been issued | Pinned at its commit. No Draft, and it cannot be promoted |
+
+A line is the living record of a branch. A release is a snapshot of it, with
+its own revision, status, owner, approval cycle and issues — so the document
+list ends up showing every release you have ever cut, each with the commit it
+was approved at.
+
+You do not have to use both. A single line, promoted each time a version is
+approved, is a perfectly good record if you do not need a row per release.
+
+### 13.2 Working on the repository from your own machine
+
+Nothing about Doctis-hosted git is special from a developer's side. The
+quickest way in is the **Clone this repository** button, on Manage Project →
+**Repository** and on the panel of any source document. It:
+
+- creates an API token for this repository — git never uses your Doctis
+  password — and shows you a ready-made `git clone` command with it in,
+  which you can copy with one click;
+- offers a small **clone script** (`.sh` or `.cmd`). Save it wherever you
+  want to work — your browser's save dialog is how you choose the folder —
+  then run it. It asks which directory to clone into, or takes one as an
+  argument: `sh clone-myrepo.sh ~/work/myrepo`.
+
+A web page cannot run git on your machine or pick a folder for you, which is
+why the second step is a script rather than a dialog.
+
+**You are shown the token once.** It is stored only as a hash, so Doctis
+cannot show it again. If you lose it, press the button again: that **adds** a
+new token rather than replacing the old one, so anything already using the
+old one keeps working. There is a tick-box if you do want the old ones
+revoked — it says what that will break. Treat a token as a password: it is
+your whole Doctis credential, not something limited to one repository, and
+you can revoke any of them from My Account → **API Tokens**.
+
+#### Already have a clone, and its token stopped working?
+
+A clone keeps the token it was made with, so if that token is revoked, `git
+fetch` and `git push` start failing with:
+
+```
+remote: Authentication required: use your Doctis username and an API token as the password.
+fatal: Authentication failed for 'http://<host>/git/<repository>.git/'
+```
+
+You do not need to clone again. Create a new token with the **Clone this
+repository** button and use the *Already have a clone?* command it gives you,
+inside the existing clone:
+
+```bash
+git remote set-url origin http://<user>:<new-token>@<host>/git/<repository>.git
+```
+
+Or, if you would rather be asked for it each time, take the credentials out
+of the address altogether and let git prompt — your Doctis username, and the
+token as the password:
+
+```bash
+git remote set-url origin http://<host>/git/<repository>.git
+```
+
+Cloning this way leaves the token in the clone's `.git/config`. If you would
+rather be prompted for it, the script tells you the one command that
+switches the remote to a plain address.
+
+From then on `git commit`, `git push`, `git fetch`, branching and merging all
+behave normally.
+
+**Pushing moves the Draft, never the approved version.** A push updates the
+branch; the version Doctis has On Record stays where it is until somebody
+promotes it inside Doctis. That is the whole point: the repository is where
+work happens, and Doctis is where approval happens.
+
+#### Moving an existing repository into Doctis
+
+If you already have the project on your machine, you do not need to re-import
+anything. Ask an administrator to create the repository (Manage Project →
+Repository), then repoint your existing clone at it:
+
+```bash
+git remote set-url origin http://<user>:<token>@<doctis-host>/git/<repository>.git
+git push --all
+git push --tags
+```
+
+Your history, branches and tags go across unchanged.
+
+#### What a document-control repository will not let you do
+
+Every repository has a **push policy**, shown on Manage Project →
+Repository:
+
+- **document control** — append-only. Force-pushing and deleting branches or
+  tags are refused, because an approved document version must never be
+  rewritten. This is the default.
+- **source repository** — normal development. Rebasing, force-pushing and
+  deleting merged branches all work.
+
+If a push is refused you will see why:
+
+```
+remote: doctis: non-fast-forward update of refs/heads/my-branch rejected
+        (force-push / history rewrite is not permitted)
+remote: doctis: deleting refs/heads/my-branch is not permitted
+```
+
+Here is the same set of operations against each, which is what you can
+expect:
+
+| Operation | document control | source repository |
+|---|---|---|
+| clone, fetch, pull | yes | yes |
+| commit and push | yes | yes |
+| create a branch or tag | yes | yes |
+| rebase and force-push | **no** | yes |
+| delete a branch or tag | **no** | yes |
+| move an existing tag | **no** | yes |
+| rewind or delete `main` | **no** | yes |
+
+Note what the document policy does *not* stop: you can commit and push
+freely, including to a document's own file. What it stops is **replacing**
+history. Your push becomes a **Draft** in Doctis, and the approved version
+stays exactly where it was until somebody promotes it — downloading the
+document still gives you the approved revision, and downloading the Draft
+gives you yours.
+
+Under **both** policies, the `refs/doctis/*` refs are server-managed and
+cannot be pushed. You can *read* them — `git ls-remote` will show you which
+commits Doctis holds on record, which is often useful. Those are the pins Doctis puts on every approved version,
+which is what makes the relaxed policy safe: a release you have approved
+stays intact even if someone later force-pushes the branch past it.
+
+The policy belongs to the *repository*, so one repository cannot be
+append-only for documents and rewritable for development at the same time.
+That is why a source project normally has a repository of its own — see
+§13.5.
+
+### 13.3 Registering a line, and cutting releases
+
+On a document with no file yet, in a project where source releases are
+enabled, the Primary Document panel offers **Register Source Release**:
+
+- **Record as** — *Tracking line* or *Frozen release*;
+- **Release from branch** — which branch this record follows;
+- **Commit** — blank for the tip of that branch;
+- **Subtree** — blank for the whole repository, or a directory such as
+  `firmware` to record only part of it;
+- **Release note**.
+
+Afterwards:
+
+- a **line** shows a Draft whenever someone pushes to its branch.
+  **Promote Draft** moves the version on record; **Cut Release** instead
+  creates a separate release document, frozen at that commit, and leaves the
+  line tracking;
+- a **release** shows nothing further. **Unfreeze** makes it track again, if
+  it was frozen by mistake.
+
+**Download** gives you the recorded commit as a `zip` archive — the whole
+tree as it stood, not a single file. Add `&format=tar.gz` for a tarball.
+
+### 13.4 Freezing an ordinary document
+
+**Freeze** is not only for releases. Any document whose primary file is in
+git can be frozen, which stops a later edit of the file from offering itself
+for approval. Use it when an issued revision is final. **Unfreeze** reverses
+it, and both are recorded in the document's history.
+
+The document list's **Kind** column shows which of the four states a record
+is in — document, frozen document, source line or source release — and the
+**Kind** filter narrows the list to any combination of them.
+
+### 13.5 For administrators
+
+Everything is on **Manage Project → Repository**:
+
+- which repository the project's documents are in, and whether that is the
+  project's own or **inherited** from a parent project;
+- **Give this project its own repository** — needed before its push policy
+  can differ from its parent's. Refused once the project already stores
+  documents in the inherited repository, so decide this *before* anyone
+  uploads to a source sub-project;
+- the **push policy** (administrators only, and only on the project that owns
+  the repository);
+- **Source releases** — whether documents here may record a repository.
+
+Manage → **Projects** has a Repository column showing all of this for every
+project and sub-project at a glance. Manage → **Git Store** gives the
+repository-centric view: files, every registered document with its kind,
+commits, refs and the approved-version pins.
+
+A project tree **shares one repository** by default. A sub-project given its
+own becomes the starting point for its own sub-projects in turn.
+
+**Two things a source project needs that an ordinary one does not:** remote
+git access must be enabled (`$g_git_http_enabled`), and the web server's
+request-body limit must be lifted on the `/git/` route — a push sends the
+whole packfile as one request, so the usual limit rejects any repository of
+real size with `HTTP 413`.
+
+### 13.6 Large binary files (git LFS)
+
+Some repositories are mostly large binaries — CAD drawings, firmware images,
+manufacturing output. Plain git keeps every version of every file in the
+repository forever, and every clone downloads all of it. **Git LFS** solves
+that: the commit holds a short pointer, and the bytes live in a separate
+store that is fetched only for the versions you actually check out.
+
+Doctis can act as the LFS server for the repositories it hosts, so this works
+with no extra service and no second password. To use it, in a clone:
+
+```bash
+git lfs install
+git lfs track "*.step" "*.bin"      # whatever your large types are
+git add .gitattributes
+git commit -m "Track large files with LFS"
+git push
+```
+
+From then on those files transfer through Doctis automatically, authenticated
+with the same API token as your clone. Documents registered against them
+behave normally: the document panel shows the real file size, and downloading
+gives you the file, not the pointer.
+
+**Two limits to know:**
+
+- **Publishing is refused** for an LFS-backed document. Publishing renders
+  Markdown to a web page, and there is nothing useful to render.
+- **A source release archive contains pointers, not files.** Downloading a
+  release of an LFS repository as a zip or tarball gives you the pointer text
+  for the LFS-tracked files. Clone the repository instead if you need the
+  content.
+
+**For administrators:** LFS is off until `$g_git_lfs_enabled = ON` and
+`$g_git_lfs_root` names a writable directory (the installer sets both, with
+the store at `/var/git/doctis-lfs`). Leaving it off is the right choice for a
+server holding no LFS content — the endpoints then refuse clearly rather than
+accepting pointers whose files go nowhere.
+
+**Backups must include the object store.** Backup Git Store does this
+automatically, and says so on the page: when LFS content is present the
+archive holds `repositories/` and `lfs/` rather than the repositories at the
+top level, and its filename is marked `_lfs`. A backup of the repositories
+alone would restore every commit and lose every large file those commits
+refer to.
+
+---
+
+## 14. Administration notes
 
 ### Project naming
 

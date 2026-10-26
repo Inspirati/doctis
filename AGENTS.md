@@ -226,6 +226,13 @@ also depend on application and proxy configuration. The supplied nginx site
 sets `client_max_body_size 64M`, while the application template sets
 `$g_max_file_size` to 2 MiB; these are distinct limits.
 
+**This blocks git push of any real repository.** A push sends the whole
+packfile as one request body, so 64M fails with `error: RPC failed; HTTP 413`
+— measured on the VM against an 82 MiB pack. The `/git/` route needs
+`client_max_body_size 0`, in the container's nginx site *and* in whatever
+front proxy terminates TLS for qms.hcrobo.com. See
+`doc/git/SOURCE_REPOSITORIES.md` §7 step 2.
+
 ### Newly verified configuration and remaining unknowns
 
 Static inspection now covers `docker/nginx.conf`, `docker/config_inc.php`,

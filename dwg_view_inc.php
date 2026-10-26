@@ -1074,10 +1074,18 @@ $t_dwg_meeting = meeting_get_by_dwg( $f_dwg_id );
 # A hand upload to a meeting record counts as draft minutes (chair, minute
 # taker or organiser only, before approval).
 $t_can_upload_primary = $t_can_upload_primary
-	&& meeting_primary_upload_refusal( $f_dwg_id, auth_get_current_user_id() ) === null;
+	&& meeting_primary_upload_refusal( $f_dwg_id, auth_get_current_user_id() ) === null
+	&& !file_dwg_primary_is_tree( $t_primary_draft ?: $t_primary_file );
 $t_can_promote_draft = $t_dwg_meeting === null
 	? $t_can_sync_to_head
 	: !$t_force_readonly && meeting_user_can_approve_minutes( $t_dwg_meeting, auth_get_current_user_id() );
+# A source release record holds a git tree, not a file: its content changes by
+# push, it downloads as an archive, and it has no size or MIME type worth
+# printing.  See doc/git/SOURCE_REPOSITORIES.md.
+$t_is_source_release = file_dwg_primary_is_tree( $t_primary_file );
+$t_can_register_source_release = !$t_force_readonly && $t_primary_file === null
+	&& file_dwg_source_release_enabled( (int)dwg_get_field( $f_dwg_id, 'project_id' ) )
+	&& access_has_dwg_level( config_get( 'update_dwg_threshold' ), $f_dwg_id );
 $t_git_head_info     = file_dwg_git_head_info( $f_dwg_id );
 $t_git_head_sha      = $t_git_head_info ? $t_git_head_info['sha']      : null;
 $t_git_head_date     = $t_git_head_info ? $t_git_head_info['date']     : null;
@@ -1085,6 +1093,21 @@ $t_git_head_author   = $t_git_head_info ? $t_git_head_info['author']   : null;
 $t_git_head_filename = $t_git_head_info ? $t_git_head_info['filename'] : null;
 $t_has_draft         = $t_git_head_info && $t_git_head_info['has_draft'];
 $t_path_missing      = $t_git_head_info && $t_git_head_info['missing'];
+# The branch this document records has been deleted from the repository, so
+# it tracks nothing until it is re-pointed. Only reachable on a repository
+# under the source push policy, which is the one that permits deletion.
+$t_branch_missing    = $t_git_head_info && !empty( $t_git_head_info['branch_missing'] );
+# A frozen release is pinned at its commit and tracks nothing further, so it
+# shows no Draft row and offers no promotion.
+$t_record_frozen     = $t_primary_file !== null && dwg_is_frozen( $f_dwg_id );
+$t_can_freeze        = !$t_force_readonly && $t_primary_file !== null && $t_can_sync_to_head;
+# Every registered primary document lives in a git repository, a source
+# record and an ordinary document alike, so both can be cloned and worked on
+# locally — a document-control repository simply refuses the pushes that
+# would rewrite an approved version. Hidden from anyone the clone page would
+# then refuse.
+$t_can_clone         = $t_primary_file !== null
+	&& repository_user_can_clone( (int)dwg_get_field( $f_dwg_id, 'project_id' ) );
 $t_draft_stale       = $t_git_head_info && $t_git_head_info['stale'];
 $t_uploaded_file = $t_primary_draft ?: $t_primary_file;
 $t_primary_uploaded = $t_uploaded_file &&
@@ -1099,8 +1122,10 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 <div id="primary_document" class="widget-box widget-color-blue2 <?php echo $t_block_css ?>">
 	<div class="widget-header widget-header-small">
 		<h4 class="widget-title lighter">
-			<?php print_icon( 'fa-file', 'ace-icon' ); ?>
-			<?php echo lang_get( 'primary_document_section' ) ?>
+			<?php print_icon( $t_is_source_release ? 'fa-code-fork' : 'fa-file', 'ace-icon' ); ?>
+			<?php echo lang_get( $t_is_source_release
+				? ( $t_record_frozen ? 'source_release_frozen_label' : 'source_release_line_label' )
+				: 'primary_document_section' ) ?>
 		</h4>
 		<div class="widget-toolbar">
 			<a data-action="collapse" href="#">
@@ -1146,7 +1171,14 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 						<a href="file_download.php?type=dwg_primary&amp;id=<?php echo $f_dwg_id ?>&amp;sha=<?php echo string_attribute( $t_primary_file['git_sha'] ) ?>"><?php
 							echo string_display_line( $t_primary_file['filename'] )
 						?></a>
+<?php	if( $t_is_source_release ): ?>
+						&nbsp;<span class="small">(<?php echo $t_primary_file['git_path'] === ''
+							? lang_get( 'source_release_whole_repository' )
+							: string_display_line( $t_primary_file['git_path'] ) ?>,
+							<?php echo string_display_line( $t_primary_file['git_branch'] ) ?>)</span>
+<?php	else: ?>
 						&nbsp;<span class="small">(<?php echo number_format( $t_primary_file['filesize'] ) ?> <?php echo lang_get( 'bytes' ) ?>)</span>
+<?php	endif; ?>
 					</td>
 					<td><?php echo date( config_get( 'normal_date_format' ), $t_primary_file['date_added'] ) ?></td>
 					<td><code title="<?php echo htmlspecialchars( $t_primary_file['git_sha'] ) ?>"><?php echo htmlspecialchars( substr( $t_primary_file['git_sha'], 0, 8 ) ) ?></code></td>
@@ -1158,9 +1190,61 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 							<?php echo lang_get( 'primary_document_tag' ) ?>
 						</a>
 <?php	endif; ?>
+<?php	if( $t_can_clone ): ?>
+						<a href="dwg_repo_clone_page.php?dwg_id=<?php echo $f_dwg_id ?>"
+							class="btn btn-primary btn-xs btn-white btn-round">
+							<?php echo lang_get( 'repo_clone_button' ) ?>
+						</a>
+<?php	endif; ?>
+<?php	if( $t_is_source_release && !$t_record_frozen && $t_can_sync_to_head ): ?>
+						<a href="dwg_cut_release_page.php?id=<?php echo $f_dwg_id ?>"
+							class="btn btn-success btn-xs btn-white btn-round">
+							<?php echo lang_get( 'dwg_cut_release_button' ) ?>
+						</a>
+<?php	endif; ?>
+<?php	if( $t_can_freeze && !$t_record_frozen ): ?>
+						<form method="post" action="dwg_primary_file_freeze.php" style="display:inline">
+							<?php echo form_security_field( 'dwg_primary_file_freeze' ) ?>
+							<input type="hidden" name="dwg_id" value="<?php echo $f_dwg_id ?>" />
+							<input type="hidden" name="frozen" value="1" />
+							<input type="submit" class="btn btn-primary btn-xs btn-white btn-round"
+								value="<?php echo lang_get( 'dwg_freeze_button' ) ?>" />
+						</form>
+<?php	endif; ?>
 					</td>
 				</tr>
-<?php	if( $t_has_draft || $t_path_missing ): ?>
+<?php	if( $t_record_frozen ): ?>
+				<tr>
+					<th class="category">
+						<span class="label label-primary"><?php echo lang_get( 'dwg_frozen_label' ) ?></span>
+					</th>
+					<td colspan="5">
+						<?php echo sprintf( lang_get( $t_is_source_release
+								? 'source_release_frozen_notice' : 'dwg_document_frozen_notice' ),
+							'<code>' . htmlspecialchars( substr( $t_primary_file['git_sha'], 0, 8 ) ) . '</code>',
+							'<code>' . string_display_line( $t_primary_file['git_branch'] ) . '</code>' ) ?>
+<?php		if( $t_can_freeze ): ?>
+						<form method="post" action="dwg_primary_file_freeze.php" style="display:inline">
+							<?php echo form_security_field( 'dwg_primary_file_freeze' ) ?>
+							<input type="hidden" name="dwg_id" value="<?php echo $f_dwg_id ?>" />
+							<input type="hidden" name="frozen" value="0" />
+							<input type="submit" class="btn btn-default btn-xs btn-white btn-round"
+								value="<?php echo lang_get( 'dwg_unfreeze_button' ) ?>" />
+						</form>
+<?php		endif; ?>
+					</td>
+				</tr>
+<?php	elseif( $t_branch_missing ): ?>
+				<tr>
+					<th class="category">
+						<span class="label label-danger"><?php echo lang_get( 'primary_document_draft' ) ?></span>
+					</th>
+					<td colspan="5">
+						<?php echo sprintf( lang_get( 'source_release_branch_gone' ),
+							'<code>' . string_display_line( $t_primary_file['git_branch'] ) . '</code>' ) ?>
+					</td>
+				</tr>
+<?php	elseif( $t_has_draft || $t_path_missing ): ?>
 				<tr>
 					<th class="category">
 						<span class="label label-default"><?php echo lang_get( 'primary_document_draft' ) ?></span>
@@ -1232,6 +1316,17 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 				</tr>
 <?php	endif; ?>
 <?php else: ?>
+<?php	if( $t_can_register_source_release ): ?>
+				<tr>
+					<th class="category width-15"><?php echo lang_get( 'source_release_section' ) ?></th>
+					<td colspan="5">
+						<a href="dwg_source_release_page.php?id=<?php echo $f_dwg_id ?>"
+							class="btn btn-primary btn-sm btn-white btn-round">
+							<?php echo lang_get( 'source_release_button' ) ?>
+						</a>
+					</td>
+				</tr>
+<?php	endif; ?>
 				<tr>
 					<td colspan="6"<?php echo $t_can_upload_primary ? '' : ' class="center"' ?>>
 <?php	if( $t_can_upload_primary ): ?>

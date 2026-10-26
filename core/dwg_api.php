@@ -151,6 +151,8 @@ class DwgData {
 	protected $summary = 'nil';
 	protected $version = '';
 	protected $sticky = 0;
+	protected $kind = DWG_KIND_DOCUMENT;
+	protected $frozen = 0;
 // #TODO RobD - and now all the new data fields for the documents table	
 	protected $enabled = 1;
 	protected $priority = NORMAL;
@@ -545,9 +547,16 @@ $this->edition = isset($this->edition) ? $this->edition : '';
 
 		# Insert the document metadata
 		db_param_push();
+		# summary is what dwg_format_summary() reads for the page title, email
+		# subjects and list captions.  It was absent from this INSERT, so every
+		# document created through DwgData::create() — which is every one from
+		# the web form, the REST API and now Cut release — was left nameless
+		# there while {documents}.title held the name.  The repository importer
+		# writes the column directly, which is why imported documents looked
+		# right and created ones did not.
 		$t_query = 'INSERT INTO {dwg}
 						( project_id, creator_id, owner_id, handler_id,
-						  category_id, document_id,
+						  category_id, document_id, summary,
 						  status, enabled, version,
 						  discipline, link_url,
 						  classification, date_submitted, due_date,
@@ -555,7 +564,7 @@ $this->edition = isset($this->edition) ? $this->edition : '';
 						)
 					  VALUES
 						( ' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',
-						  ' . db_param() . ',' . db_param() . ',
+						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',
 						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',
 						  ' . db_param() . ',' . db_param() . ',
 						  ' . db_param() . ',' . db_param() . ',' . db_param() . ',
@@ -563,6 +572,8 @@ $this->edition = isset($this->edition) ? $this->edition : '';
 		db_query( $t_query, array(
 		  $this->project_id, $this->creator_id, $this->owner_id, $this->handler_id,
 		  $this->category_id, $this->document_id,
+		  # A caller that names only one of the two gets both.
+		  is_blank( $this->summary ) ? (string)$this->title : $this->summary,
 		  $this->status, $this->enabled, $this->version,
 		  $this->discipline, $this->link_url,
 		  $this->classification, $this->date_submitted, $this->due_date,
@@ -1959,6 +1970,82 @@ function dwg_get_attachments( $p_bug_id ) {
  *
  * @access public
  */
+/**
+ * What kind of record a document is: DWG_KIND_DOCUMENT (its primary document
+ * is a file) or DWG_KIND_SOURCE (it is a git tree — a source repository
+ * release or line).  See doc/git/SOURCE_REPOSITORIES.md.
+ *
+ * @param int $p_dwg_id
+ * @return int
+ */
+function dwg_get_kind( $p_dwg_id ) {
+	return (int)dwg_get_field( $p_dwg_id, 'kind' );
+}
+
+/** Whether a document records a source repository rather than a file. */
+function dwg_is_source( $p_dwg_id ) {
+	return dwg_get_kind( $p_dwg_id ) === DWG_KIND_SOURCE;
+}
+
+/**
+ * Whether a record is pinned at its commit and tracks nothing further.
+ *
+ * It means the same thing for both kinds, which is why it is its own column
+ * rather than part of the kind: a change in the repository no longer offers
+ * this record a Draft, and it cannot be promoted.
+ *
+ *  - a frozen **source** record is a *release*, as opposed to a *line*,
+ *    which follows its branch's tip;
+ *  - a frozen **document** is one whose issued version is final — a later
+ *    edit of the file in git does not quietly offer itself for approval.
+ *
+ * @param int $p_dwg_id
+ * @return bool
+ */
+function dwg_is_frozen( $p_dwg_id ) {
+	return (int)dwg_get_field( $p_dwg_id, 'frozen' ) === 1;
+}
+
+/**
+ * Freeze or unfreeze a record, logging the change.
+ *
+ * @param int  $p_dwg_id
+ * @param bool $p_frozen
+ * @return void
+ */
+function dwg_set_frozen( $p_dwg_id, $p_frozen ) {
+	dwg_set_field( $p_dwg_id, 'frozen', $p_frozen ? 1 : 0 );
+}
+
+/**
+ * Record what kind of thing a document is.
+ *
+ * Called from file_dwg_primary_register(), which knows what it registered, so
+ * the kind can never disagree with the object actually stored.  Whether the
+ * record is frozen is independent of its kind — see dwg_is_frozen().
+ *
+ * @param int $p_dwg_id
+ * @param int $p_kind    DWG_KIND_DOCUMENT or DWG_KIND_SOURCE.
+ * @return void
+ */
+function dwg_set_kind( $p_dwg_id, $p_kind ) {
+	dwg_set_field( $p_dwg_id, 'kind',
+		(int)$p_kind === DWG_KIND_SOURCE ? DWG_KIND_SOURCE : DWG_KIND_DOCUMENT );
+}
+
+/**
+ * A short label for a record's kind and frozen state, for a list column.
+ *
+ * @param int $p_dwg_id
+ * @return string  A lang string key.
+ */
+function dwg_kind_label( $p_dwg_id ) {
+	if( !dwg_is_source( $p_dwg_id ) ) {
+		return dwg_is_frozen( $p_dwg_id ) ? 'dwg_kind_document_frozen' : 'dwg_kind_document';
+	}
+	return dwg_is_frozen( $p_dwg_id ) ? 'dwg_kind_source_release' : 'dwg_kind_source_line';
+}
+
 function dwg_set_field( $p_bug_id, $p_field_name, $p_value ) {
 	$c_bug_id = (int)$p_bug_id;
 	$c_value = null;
@@ -1986,6 +2073,10 @@ function dwg_set_field( $p_bug_id, $p_field_name, $p_value ) {
 
 		# boolean
 		case 'sticky':
+		case 'frozen':
+
+		# Doctis: what kind of record this is (DWG_KIND_*)
+		case 'kind':
 
 		# string
 		case 'os':

@@ -171,6 +171,9 @@ function columns_dwg_get_standard( $p_enabled_columns_only = true ) {
 	unset( $t_columns['sticky'] );
 	unset( $t_columns['loading'] );
 
+	# Doctis: shown through the "kind" column, which combines the two.
+	unset( $t_columns['frozen'] );
+
 	# legacy field
 	unset( $t_columns['duplicate_id'] );
 
@@ -756,6 +759,22 @@ function print_dwg_column_title_fixed_in_version( $p_sort, $p_dir, $p_columns_ta
  */
 function print_dwg_column_title_tags( $p_sort, $p_dir, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
 	echo '<th class="column-tags">' . lang_get('tags') . '</th>';
+}
+
+/**
+ * Print table header for column kind (Doctis record kind)
+ *
+ * @param string  $p_sort           Sort.
+ * @param string  $p_dir            Direction.
+ * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
+ * @return void
+ * @access public
+ */
+function print_dwg_column_title_kind( $p_sort, $p_dir, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+	echo '<th class="column-kind">';
+	print_view_dwg_sort_link( lang_get( 'dwg_kind' ), 'kind', $p_sort, $p_dir, $p_columns_target );
+	print_sort_icon( $p_dir, $p_sort, 'kind' );
+	echo '</th>';
 }
 
 /**
@@ -1817,6 +1836,37 @@ function print_dwg_column_tags( DwgData $p_bug, $p_columns_target = COLUMNS_TARG
 		echo string_display_line( tag_dwg_get_all( $p_bug->id ) );
 	}
 
+	echo '</td>';
+}
+
+/**
+ * Print column content for column kind: what sort of record this is —
+ * a document, a frozen document, a source line or a source release.
+ * See doc/git/SOURCE_REPOSITORIES.md.
+ *
+ * @param DwgData $p_bug            DwgData object.
+ * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
+ * @return void
+ * @access public
+ */
+function print_dwg_column_kind( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
+	$t_source = (int)$p_bug->kind === DWG_KIND_SOURCE;
+	$t_frozen = (int)$p_bug->frozen === 1;
+	$t_label  = lang_get( 'dwg_kind_'
+		. ( $t_source ? ( $t_frozen ? 'source_release' : 'source_line' )
+		              : ( $t_frozen ? 'document_frozen' : 'document' ) ) );
+
+	echo '<td class="column-kind">';
+	if( $p_columns_target != COLUMNS_TARGET_VIEW_PAGE ) {
+		echo string_display_line( $t_label );
+	} else if( !$t_source && !$t_frozen ) {
+		# The ordinary case is the overwhelming majority; a label on every row
+		# would be noise, so only the exceptions are called out.
+		echo '<span class="small grey">' . string_display_line( $t_label ) . '</span>';
+	} else {
+		echo '<span class="label label-' . ( $t_source ? 'primary' : 'default' ) . '">'
+			. string_display_line( $t_label ) . '</span>';
+	}
 	echo '</td>';
 }
 

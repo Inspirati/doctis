@@ -693,9 +693,10 @@ function dwg_publish_repo_file( int $p_project_id, string $p_path ): ?string {
 	if( $t_path === false || $t_repository_id === 0 ) {
 		return null;
 	}
-	$t_row    = repository_get_row( $t_repository_id );
 	$t_bare   = repository_bare_path( $t_repository_id );
-	$t_branch = 'refs/heads/' . ( $t_row && $t_row['default_branch'] !== '' ? $t_row['default_branch'] : 'main' );
+	# Reconciled with the bare repo, which a client push may have renamed.
+	$t_actual = repository_default_branch( $t_repository_id );
+	$t_branch = 'refs/heads/' . ( $t_actual !== '' ? $t_actual : 'main' );
 	if( !is_dir( $t_bare ) || file_dwg_git_object_sha( $t_bare, $t_branch, $t_path ) === null ) {
 		return null;
 	}
@@ -1067,6 +1068,15 @@ function dwg_publish_remove_page( string $p_target, string $p_page, array $p_mar
  */
 function dwg_publish_refusal( int $p_dwg_id ): string {
 	$t_dwg  = dwg_get( $p_dwg_id );
+
+	# A source release records a repository, not a page, so it can never be
+	# published whatever the project is configured with.  Said first, because
+	# otherwise it would be refused only incidentally, by the project having
+	# no target or the path not ending in .md.
+	if( file_dwg_primary_is_tree( file_dwg_primary_get( $p_dwg_id ) ) ) {
+		return 'a source release records a repository, not a page, and cannot be published.';
+	}
+
 	$t_site = dwg_publish_site( (int)$t_dwg->project_id );
 	if( $t_site['target'] === '' ) {
 		return $t_site['problem'] !== ''
@@ -1363,6 +1373,13 @@ function dwg_publish( int $p_dwg_id, int $p_user_id ): array {
 	$t_source = file_dwg_get_storage_backend()->retrieve( $t_row, (int)$t_dwg->project_id );
 	if( $t_source === false ) {
 		dwg_publish_error( 'the on-record version could not be read from the repository.' );
+	}
+	if( isset( $t_source['file'] ) ) {
+		# A git-LFS-backed document is a large binary, by definition of why it
+		# is in LFS.  Publishing converts Markdown to a web page, so there is
+		# nothing sensible to do with one -- and silently publishing the
+		# pointer text would produce a page of metadata.
+		dwg_publish_error( 'the on-record version is stored with git-LFS, which publishing does not handle.' );
 	}
 	$t_template = dwg_publish_template_text( $t_site );
 	$t_logo     = dwg_publish_logo_html( $t_site );

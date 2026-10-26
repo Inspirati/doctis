@@ -20,7 +20,9 @@ require_api( 'authentication_api.php' );
 require_api( 'category_api.php' );
 require_api( 'config_api.php' );
 require_api( 'dwg_api.php' );
+require_api( 'dwg_publish_api.php' );
 require_api( 'file_dwg_api.php' );
+require_api( 'git_store_api.php' );
 require_api( 'project_api.php' );
 require_api( 'project_hierarchy_api.php' );
 require_api( 'repository_api.php' );
@@ -524,6 +526,415 @@ check( strpos( basename( $t_new_bare ), 'gittest-renamed-' ) === 0, 'slug follow
 $t_content = file_dwg_primary_get_content( $t_dwg1 );
 check( $t_content !== false && $t_content['content'] === "external v6\n", 'retrieve works after relocation' );
 
+# ── Step 14: source release records ─────────────────────────────────────────
+# A document whose git_path names a TREE records a release of a repository
+# rather than a single file.  See doc/git/SOURCE_REPOSITORIES.md.
+echo "Step 14: source release records\n";
+check( file_dwg_git_path_sanitize( '', true ) === '', 'repository root accepted with allow_root' );
+check( file_dwg_git_path_sanitize( '', false ) === false, 'repository root still refused by default' );
+check( file_dwg_git_path_sanitize( 'a/../b.md', true ) === false, 'allow_root does not relax traversal' );
+check( file_dwg_git_tree_ish( str_repeat( 'a', 40 ), '' ) === str_repeat( 'a', 40 ) . ':',
+	'tree-ish for the repository root is "<sha>:"' );
+
+$t_bare14 = repository_bare_path( $t_repo_id );
+$t_head14 = bare_git( $t_bare14, 'rev-parse HEAD' );
+check( file_dwg_git_object_type( $t_bare14, $t_head14, '' ) === 'tree', 'root resolves to a tree' );
+check( file_dwg_git_object_type( $t_bare14, $t_head14, 'no/such/path' ) === '', 'absent path has no type' );
+
+$t_dwg_src = make_dwg( $t_parent, 1, 'GitTest source release' );
+$t_cleanup['dwg_ids'][] = $t_dwg_src;
+
+# A tree is refused unless the caller asks for a source release.
+try {
+	file_dwg_primary_register( $t_dwg_src, 1, '', $t_head14 );
+	fail( 'tree refused without allow_tree' );
+} catch( ClientException $e ) {
+	ok( 'tree refused without allow_tree' );
+}
+
+$t_rel = file_dwg_primary_register( $t_dwg_src, 1, '', $t_head14, 'release 1', true, '',
+	array( 'allow_tree' => true ) );
+$t_src_row = file_dwg_primary_get( $t_dwg_src );
+check( $t_src_row !== null && $t_src_row['git_path'] === '', 'registered at the repository root' );
+check( file_dwg_primary_is_tree( $t_src_row ), 'row marked as a tree' );
+check( (int)$t_src_row['filesize'] === 0, 'filesize is 0, not the tree object size',
+	(string)$t_src_row['filesize'] );
+check( $t_src_row['git_sha'] === $t_head14, 'on record at the release commit' );
+check( bare_git( $t_bare14, 'for-each-ref refs/doctis/approved/' . $t_dwg_src ) !== '',
+	'approved ref pinned for the release' );
+
+# Download is an archive of the tree, not `git show` of a directory listing.
+check( file_dwg_get_storage_backend()->retrieve( $t_src_row, $t_parent ) === false,
+	'backend refuses to retrieve a tree as content' );
+$t_zip = (int)trim( (string)shell_exec( 'git --git-dir=' . escapeshellarg( $t_bare14 )
+	. ' archive --format=zip ' . escapeshellarg( $t_head14 . ':' ) . ' 2>/dev/null | wc -c' ) );
+check( $t_zip > 100, 'git archive produces a zip of the tree', $t_zip . ' bytes' );
+
+# An upload cannot overwrite a release: its content arrives by push.
+try {
+	$t_tmp14 = write_tmp( "stray\n" );
+	file_dwg_primary_add( $t_dwg_src, 1, $t_tmp14, 'stray.md', 6, 'text/markdown', '' );
+	fail( 'upload onto a source release refused' );
+} catch( ClientException $e ) {
+	ok( 'upload onto a source release refused' );
+}
+
+# A commit to the repository raises a Draft; promoting it cuts the next release.
+$t_paths14 = repository_ensure_on_disk( $t_repo_id );
+$t_wt14 = $t_paths14['worktree'];
+dwg_git_worktree_sync( $t_wt14 );
+file_put_contents( $t_wt14 . '/RELEASE-NOTES.txt', "r2\n" );
+exec( 'cd ' . escapeshellarg( $t_wt14 ) . ' && git add -A && git -c user.name=T -c user.email=t@e.invalid'
+	. ' commit -q -m "next release" && git push -q origin HEAD 2>&1' );
+$t_head14b = bare_git( $t_bare14, 'rev-parse HEAD' );
+check( $t_head14b !== $t_head14, 'repository advanced', substr( $t_head14b, 0, 8 ) );
+
+$t_info14 = file_dwg_git_head_info( $t_dwg_src );
+check( $t_info14 !== null && $t_info14['has_draft'], 'push raises a Draft on the release record' );
+check( $t_info14 !== null && $t_info14['sha'] === $t_head14b, 'Draft is the new commit' );
+check( file_dwg_primary_get( $t_dwg_src )['git_sha'] === $t_head14,
+	'On Record stays pinned until promoted' );
+
+file_dwg_primary_sync_head( $t_dwg_src, 1, $t_head14b );
+$t_src_row2 = file_dwg_primary_get( $t_dwg_src );
+check( $t_src_row2['git_sha'] === $t_head14b, 'promotion cuts the next release' );
+check( file_dwg_primary_is_tree( $t_src_row2 ), 'promoted row is still a tree' );
+check( $t_src_row2['git_path'] === '', 'promoted row is still rooted at the repository' );
+check( count( explode( "\n", bare_git( $t_bare14, 'for-each-ref refs/doctis/approved/' . $t_dwg_src ) ) ) === 2,
+	'both releases are pinned' );
+
+# Path uniqueness guards writes, so it does not apply to releases: several
+# documents may record the same tree (successive releases of one component,
+# or two release lines of one subtree).  A file document is still protected.
+$t_dwg_rel2 = make_dwg( $t_parent, 1, 'GitTest second release of the same tree' );
+$t_cleanup['dwg_ids'][] = $t_dwg_rel2;
+file_dwg_primary_register( $t_dwg_rel2, 1, '', $t_head14b, 'release 2 as its own document',
+	true, '', array( 'allow_tree' => true ) );
+check( file_dwg_primary_get( $t_dwg_rel2 ) !== null,
+	'a second document may record the same tree' );
+check( file_dwg_primary_get( $t_dwg_src )['git_path'] === ''
+	&& file_dwg_primary_get( $t_dwg_rel2 )['git_path'] === '',
+	'both releases keep the same path' );
+check( bare_git( $t_bare14, 'for-each-ref refs/doctis/approved/' . $t_dwg_rel2 ) !== '',
+	'the second release gets its own pin' );
+try {
+	$t_dwg_clash = make_dwg( $t_parent, 1, 'GitTest file path clash' );
+	$t_cleanup['dwg_ids'][] = $t_dwg_clash;
+	file_dwg_primary_register( $t_dwg_clash, 1, $t_dwg1 . '/spec.md' );
+	fail( 'a file path is still protected from a second document' );
+} catch( ClientException $e ) {
+	ok( 'a file path is still protected from a second document' );
+}
+
+# A release is not a page, and is refused by publishing for that stated reason.
+check( strpos( dwg_publish_refusal( $t_dwg_src ), 'source release' ) !== false,
+	'publishing refuses a source release by name', dwg_publish_refusal( $t_dwg_src ) );
+
+# It is also excluded from the move path, which is a file operation.
+check( file_dwg_primary_move_prepare( $t_dwg_src, $t_child, 1 ) === null,
+	'source release excluded from the move path' );
+
+# ── Step 15: per-repository push policy ─────────────────────────────────────
+echo "Step 15: per-repository push policy\n";
+check( is_file( $t_bare14 . '/hooks/post-receive' ), 'post-receive hook installed' );
+check( repository_get_push_policy( $t_bare14 ) === DWG_PUSH_POLICY_DOCUMENT,
+	'repositories default to the document policy' );
+repository_set_push_policy( $t_bare14, DWG_PUSH_POLICY_SOURCE );
+check( repository_get_push_policy( $t_bare14 ) === DWG_PUSH_POLICY_SOURCE, 'policy set to source' );
+repository_configure_bare( $t_bare14 );
+check( repository_get_push_policy( $t_bare14 ) === DWG_PUSH_POLICY_SOURCE,
+	'refreshing the configuration does not re-impose document control' );
+try {
+	repository_set_push_policy( $t_bare14, 'nonsense' );
+	fail( 'unknown policy refused' );
+} catch( ClientException $e ) {
+	ok( 'unknown policy refused' );
+}
+repository_set_push_policy( $t_bare14, DWG_PUSH_POLICY_DOCUMENT );
+
+# The hook must enforce whichever policy is in force, for a real push.
+$t_hookwt = sys_get_temp_dir() . '/doctis-hooktest-' . getmypid();
+$t_cleanup['tmp'][] = $t_hookwt;
+exec( 'git clone -q ' . escapeshellarg( $t_bare14 ) . ' ' . escapeshellarg( $t_hookwt ) . ' 2>&1' );
+$t_force = 'cd ' . escapeshellarg( $t_hookwt ) . ' && git push --force origin HEAD~1:refs/heads/policytest 2>&1';
+exec( 'cd ' . escapeshellarg( $t_hookwt ) . ' && git push -q origin HEAD:refs/heads/policytest 2>&1' );
+exec( $t_force, $t_out15, $t_rc15 );
+check( $t_rc15 !== 0 && strpos( implode( ' ', $t_out15 ), 'non-fast-forward' ) !== false,
+	'document policy rejects a force-push', implode( ' ', $t_out15 ) );
+
+repository_set_push_policy( $t_bare14, DWG_PUSH_POLICY_SOURCE );
+unset( $t_out15 );
+exec( $t_force, $t_out15, $t_rc15 );
+check( $t_rc15 === 0, 'source policy permits a force-push', implode( ' ', (array)$t_out15 ) );
+unset( $t_out15 );
+exec( 'cd ' . escapeshellarg( $t_hookwt ) . ' && git push origin --delete policytest 2>&1', $t_out15, $t_rc15 );
+check( $t_rc15 === 0, 'source policy permits a branch deletion', implode( ' ', (array)$t_out15 ) );
+unset( $t_out15 );
+exec( 'cd ' . escapeshellarg( $t_hookwt ) . ' && git push origin HEAD:refs/doctis/approved/1/1 2>&1', $t_out15, $t_rc15 );
+check( $t_rc15 !== 0 && strpos( implode( ' ', $t_out15 ), 'server-managed' ) !== false,
+	'refs/doctis/* stay unpushable under the source policy', implode( ' ', (array)$t_out15 ) );
+
+# The approved pin is what makes that safe: the released commit survives a
+# force-push past it, and a prune.
+exec( 'cd ' . escapeshellarg( $t_hookwt ) . ' && git push -q --force origin '
+	. escapeshellarg( $t_head14 ) . ':' . bare_git( $t_bare14, 'symbolic-ref HEAD' ) . ' 2>&1' );
+exec( 'git --git-dir=' . escapeshellarg( $t_bare14 ) . ' gc --prune=now --quiet 2>&1' );
+check( bare_git( $t_bare14, 'cat-file -t ' . escapeshellarg( $t_head14b ) ) === 'commit',
+	'an approved release survives a force-push past it, and a prune' );
+
+# ── Step 16: permanent branches as release lines ────────────────────────────
+# A repository may host long-lived branches, not only feature branches
+# pending a merge; each can be a document of its own.
+echo "Step 16: permanent branches as release lines\n";
+exec( 'cd ' . escapeshellarg( $t_hookwt ) . ' && git fetch -q origin && git checkout -q -B maint-9.x'
+	. ' && git push -q origin maint-9.x 2>&1' );
+check( file_dwg_git_branch_exists( $t_bare14, 'maint-9.x' ), 'a permanent branch is created' );
+check( !file_dwg_git_branch_exists( $t_bare14, 'no-such-branch' ), 'an absent branch is reported absent' );
+
+$t_maint_sha = bare_git( $t_bare14, 'rev-parse refs/heads/maint-9.x' );
+$t_dwg_line = make_dwg( $t_parent, 1, 'GitTest maintenance line' );
+$t_cleanup['dwg_ids'][] = $t_dwg_line;
+file_dwg_primary_register( $t_dwg_line, 1, '', $t_maint_sha, 'maintenance line', true, '',
+	array( 'allow_tree' => true, 'branch' => 'maint-9.x' ) );
+check( file_dwg_primary_get( $t_dwg_line )['git_branch'] === 'maint-9.x',
+	'the document records the branch it was registered on' );
+
+# A commit on the maintenance line raises a Draft there and nowhere else.
+exec( 'cd ' . escapeshellarg( $t_hookwt ) . ' && echo maint > line.txt && git add -A'
+	. ' && git -c user.name=T -c user.email=t@e.invalid commit -q -m "maint work"'
+	. ' && git push -q origin maint-9.x 2>&1' );
+$t_line_info = file_dwg_git_head_info( $t_dwg_line );
+$t_root_info = file_dwg_git_head_info( $t_dwg_src );
+check( $t_line_info !== null && $t_line_info['has_draft'], 'a commit on the line raises its Draft' );
+check( $t_line_info !== null && $t_line_info['sha'] === bare_git( $t_bare14, 'rev-parse refs/heads/maint-9.x' ),
+	'the Draft is the line tip, not the repository HEAD' );
+check( $t_root_info === null || $t_root_info['sha'] !== $t_line_info['sha'],
+	'the other line is unaffected' );
+
+# Deleting the branch must strand the record, not silently re-point it.
+exec( 'cd ' . escapeshellarg( $t_hookwt ) . ' && git push -q origin --delete maint-9.x 2>&1' );
+check( !file_dwg_git_branch_exists( $t_bare14, 'maint-9.x' ), 'the branch is deleted' );
+$t_gone = file_dwg_git_head_info( $t_dwg_line );
+check( $t_gone !== null && !empty( $t_gone['branch_missing'] ), 'the record reports its branch gone' );
+check( $t_gone !== null && !$t_gone['has_draft'], 'a stranded record offers no Draft' );
+check( file_dwg_primary_get( $t_dwg_line )['git_sha'] === $t_maint_sha,
+	'the version on record is unaffected' );
+try {
+	file_dwg_primary_sync_head( $t_dwg_line, 1 );
+	fail( 'a stranded record cannot be promoted' );
+} catch( ClientException $e ) {
+	ok( 'a stranded record cannot be promoted' );
+}
+
+# ── Step 17: kind and frozen ────────────────────────────────────────────────
+# {dwg}.kind says what a record is; {dwg}.frozen distinguishes a *line*,
+# which follows its branch, from a *release*, pinned at its commit.
+echo "Step 17: kind and frozen\n";
+check( dwg_get_kind( $t_dwg1 ) === DWG_KIND_DOCUMENT, 'a file document is DWG_KIND_DOCUMENT' );
+check( !dwg_is_source( $t_dwg1 ), 'a file document is not a source record' );
+check( dwg_is_source( $t_dwg_src ), 'a tree registration sets DWG_KIND_SOURCE' );
+check( !dwg_is_frozen( $t_dwg_src ), 'a source record defaults to a tracking line' );
+
+# frozen means the same for both kinds (owner, 2026-10-26): a released
+# document is pinned too, so a later edit in git offers it no Draft.
+# Edit the document's own file so it genuinely has a Draft to suppress.
+$t_doc_path = file_dwg_primary_get( $t_dwg1 )['git_path'];
+$t_paths17 = repository_ensure_on_disk( $t_repo_id );
+dwg_git_worktree_sync( $t_paths17['worktree'] );
+file_put_contents( $t_paths17['worktree'] . '/' . $t_doc_path, "frozen test v1\n" );
+exec( 'cd ' . escapeshellarg( $t_paths17['worktree'] ) . ' && git add -A'
+	. ' && git -c user.name=T -c user.email=t@e.invalid commit -q -m "edit the document"'
+	. ' && git push -q origin HEAD 2>&1' );
+$t_doc_head_before = file_dwg_git_head_info( $t_dwg1 );
+check( $t_doc_head_before !== null && $t_doc_head_before['has_draft'],
+	'the file document has a Draft to begin with' );
+dwg_set_frozen( $t_dwg1, true );
+check( dwg_is_frozen( $t_dwg1 ), 'a document can be frozen' );
+check( !dwg_is_source( $t_dwg1 ), 'freezing does not change its kind' );
+$t_doc_head_after = file_dwg_git_head_info( $t_dwg1 );
+check( $t_doc_head_after !== null && !$t_doc_head_after['has_draft'] && !empty( $t_doc_head_after['frozen'] ),
+	'a frozen document offers no Draft' );
+try {
+	file_dwg_primary_sync_head( $t_dwg1, 1 );
+	fail( 'a frozen document cannot be promoted' );
+} catch( ClientException $e ) {
+	ok( 'a frozen document cannot be promoted' );
+}
+dwg_set_frozen( $t_dwg1, false );
+check( file_dwg_git_head_info( $t_dwg1 )['has_draft'], 'unfreezing restores its Draft' );
+
+# A frozen release ignores later work on its line.
+exec( 'cd ' . escapeshellarg( $t_hookwt ) . ' && git fetch -q origin && git checkout -q -B rel-line'
+	. ' && git push -q origin rel-line 2>&1' );
+$t_rel_sha = bare_git( $t_bare14, 'rev-parse refs/heads/rel-line' );
+$t_dwg_frozen = make_dwg( $t_parent, 1, 'GitTest frozen release' );
+$t_cleanup['dwg_ids'][] = $t_dwg_frozen;
+file_dwg_primary_register( $t_dwg_frozen, 1, '', $t_rel_sha, 'v2.0', true, '',
+	array( 'allow_tree' => true, 'branch' => 'rel-line', 'frozen' => true ) );
+check( dwg_is_frozen( $t_dwg_frozen ), 'a release registers frozen' );
+
+$t_dwg_tracks = make_dwg( $t_parent, 1, 'GitTest tracking line' );
+$t_cleanup['dwg_ids'][] = $t_dwg_tracks;
+file_dwg_primary_register( $t_dwg_tracks, 1, '', $t_rel_sha, 'the line', true, '',
+	array( 'allow_tree' => true, 'branch' => 'rel-line' ) );
+check( !dwg_is_frozen( $t_dwg_tracks ), 'the line registers unfrozen' );
+
+exec( 'cd ' . escapeshellarg( $t_hookwt ) . ' && echo more > after.txt && git add -A'
+	. ' && git -c user.name=T -c user.email=t@e.invalid commit -q -m "work after the release"'
+	. ' && git push -q origin rel-line 2>&1' );
+$t_fi = file_dwg_git_head_info( $t_dwg_frozen );
+$t_ti = file_dwg_git_head_info( $t_dwg_tracks );
+check( $t_fi !== null && !$t_fi['has_draft'] && !empty( $t_fi['frozen'] ),
+	'a frozen release offers no Draft after later work' );
+check( $t_ti !== null && $t_ti['has_draft'], 'the line on the same branch does offer one' );
+check( file_dwg_primary_get( $t_dwg_frozen )['git_sha'] === $t_rel_sha,
+	'the release stays pinned at its commit' );
+try {
+	file_dwg_primary_sync_head( $t_dwg_frozen, 1 );
+	fail( 'a frozen release cannot be promoted' );
+} catch( ClientException $e ) {
+	ok( 'a frozen release cannot be promoted' );
+}
+
+# Promotion must not quietly unfreeze or re-kind a record.
+file_dwg_primary_sync_head( $t_dwg_tracks, 1, $t_ti['sha'] );
+check( dwg_is_source( $t_dwg_tracks ) && !dwg_is_frozen( $t_dwg_tracks ),
+	'promoting a line keeps it a line' );
+
+# ── Step 18: several releases of one line ───────────────────────────────────
+# What a *Cut release* action produces: a document per release at one path,
+# each frozen at its own commit, with the line still tracking.
+echo "Step 18: several releases of one line\n";
+$t_rel_ids = array();
+for( $t_n = 1; $t_n <= 3; $t_n++ ) {
+	exec( 'cd ' . escapeshellarg( $t_hookwt ) . ' && echo r' . $t_n . ' > rel.txt && git add -A'
+		. ' && git -c user.name=T -c user.email=t@e.invalid commit -q -m "work ' . $t_n . '"'
+		. ' && git push -q origin rel-line 2>&1' );
+	$t_at = bare_git( $t_bare14, 'rev-parse refs/heads/rel-line' );
+	$t_r = make_dwg( $t_parent, 1, 'GitTest release v3.' . $t_n );
+	$t_cleanup['dwg_ids'][] = $t_r;
+	file_dwg_primary_register( $t_r, 1, '', $t_at, 'v3.' . $t_n, true, '',
+		array( 'allow_tree' => true, 'branch' => 'rel-line', 'frozen' => true ) );
+	$t_rel_ids[$t_r] = $t_at;
+}
+check( count( $t_rel_ids ) === 3, 'three releases of one line coexist' );
+$t_distinct = count( array_unique( array_values( $t_rel_ids ) ) );
+check( $t_distinct === 3, 'each is pinned at its own commit', (string)$t_distinct );
+$t_all_frozen = true;
+foreach( $t_rel_ids as $t_r => $t_at ) {
+	if( !dwg_is_frozen( $t_r ) || file_dwg_primary_get( $t_r )['git_sha'] !== $t_at
+	 || bare_git( $t_bare14, 'for-each-ref refs/doctis/approved/' . $t_r ) === '' ) {
+		$t_all_frozen = false;
+	}
+}
+check( $t_all_frozen, 'each stays frozen at its commit with its own pin' );
+check( file_dwg_git_head_info( $t_dwg_tracks )['has_draft'],
+	'the line still tracks after the releases' );
+
+# The Git Store Documents tab must list them all, not collapse them by path.
+$t_repos18 = git_store_repositories();
+$t_entry18 = $t_repos18[basename( $t_bare14, '.git' )] ?? null;
+if( $t_entry18 === null ) {
+	fail( 'repository visible to the Git Store' );
+} else {
+	ok( 'repository visible to the Git Store' );
+	$t_tree18 = git_store_tree( $t_entry18 );
+	$t_listed = git_store_documents_list( $t_entry18, $t_tree18 );
+	$t_mapped = git_store_documents( $t_entry18, $t_tree18 );
+	$t_root_rows = 0;
+	foreach( $t_listed as $t_l ) {
+		if( $t_l['path'] === '' ) {
+			$t_root_rows++;
+		}
+	}
+	check( $t_root_rows >= 4, 'the flat list keeps every record rooted at the repository',
+		(string)$t_root_rows );
+	check( count( $t_listed ) > count( $t_mapped ),
+		'the path-keyed map collapses them, which is why the list exists',
+		count( $t_listed ) . ' listed vs ' . count( $t_mapped ) . ' mapped' );
+}
+
+# ── Step 19: git-LFS ────────────────────────────────────────────────────────
+# A document whose blob is an LFS pointer must behave as the file it points
+# at: the recorded size is the file's, and reading it resolves to the object
+# in the LFS store rather than handing back the pointer text.
+#
+# The pointer is written directly with git hash-object, so the suite needs no
+# git-lfs client installed -- the format is what is under test, not the client.
+echo "Step 19: git-LFS\n";
+
+# Pure checks first: these hold whether or not LFS is configured.
+check( git_lfs_oid_valid( str_repeat( 'a', 64 ) ), 'a 64-hex oid is valid' );
+check( !git_lfs_oid_valid( str_repeat( 'A', 64 ) ), 'an uppercase oid is refused' );
+check( !git_lfs_oid_valid( '../../etc/passwd' ), 'a path is not an oid' );
+check( !git_lfs_oid_valid( str_repeat( 'a', 63 ) ), 'a short oid is refused' );
+
+$t_lfs_oid  = hash( 'sha256', 'lfs test content' );
+$t_lfs_ptr  = git_lfs_pointer( $t_lfs_oid, 16 );
+$t_lfs_back = git_lfs_parse_pointer( $t_lfs_ptr );
+check( $t_lfs_back !== null && $t_lfs_back['oid'] === $t_lfs_oid && $t_lfs_back['size'] === 16,
+	'a composed pointer parses back to its oid and size' );
+check( git_lfs_parse_pointer( "# Heading\n\nSome markdown.\n" ) === null,
+	'an ordinary document is not read as a pointer' );
+check( git_lfs_parse_pointer( "version 1.0\noid sha256:nope\nsize 3\n" ) === null,
+	'a lookalike without the spec URL is not a pointer' );
+check( git_lfs_parse_pointer( str_repeat( 'x', 4096 ) ) === null,
+	'a large file is never scanned for a pointer' );
+
+$t_lfs_root = rtrim( (string)config_get_global( 'git_lfs_root', '' ), '/' );
+if( $t_lfs_root === '' || !is_dir( $t_lfs_root ) ) {
+	echo "  (skipped the LFS store checks: \$g_git_lfs_root is not configured)\n";
+} else {
+	$t_lfs_repo_id = repository_id_for_project( $t_parent );
+	$t_lfs_dir     = git_lfs_repo_root( $t_lfs_repo_id );
+	$t_cleanup['disk'][] = $t_lfs_dir;
+
+	$t_lfs_body = str_repeat( 'binary-ish payload ', 1000 );
+	$t_lfs_oid2 = hash( 'sha256', $t_lfs_body );
+	$t_lfs_path = git_lfs_object_path( $t_lfs_repo_id, $t_lfs_oid2 );
+	check( strpos( $t_lfs_path, $t_lfs_dir . '/' . substr( $t_lfs_oid2, 0, 2 ) . '/'
+		. substr( $t_lfs_oid2, 2, 2 ) . '/' . $t_lfs_oid2 ) === 0,
+		'an object path fans out by the first four hex digits' );
+
+	@mkdir( dirname( $t_lfs_path ), 0770, true );
+	file_put_contents( $t_lfs_path, $t_lfs_body );
+	check( git_lfs_object_size( $t_lfs_repo_id, $t_lfs_oid2 ) === strlen( $t_lfs_body ),
+		'a stored object reports its size' );
+
+	# Commit the pointer, not the content -- which is the whole point.
+	$t_ptr_text = git_lfs_pointer( $t_lfs_oid2, strlen( $t_lfs_body ) );
+	file_put_contents( $t_hookwt . '/big.bin', $t_ptr_text );
+	exec( 'cd ' . escapeshellarg( $t_hookwt ) . ' && git add -A'
+		. ' && git -c user.name=T -c user.email=t@e.invalid commit -q -m "add an LFS pointer"'
+		. ' && git push -q origin rel-line 2>&1' );
+	$t_lfs_sha = bare_git( $t_bare14, 'rev-parse refs/heads/rel-line' );
+	check( strlen( trim( (string)bare_git( $t_bare14, 'cat-file -s '
+		. escapeshellarg( $t_lfs_sha . ':big.bin' ) ) ) ) > 0, 'the pointer blob is in the repository' );
+
+	$t_lfs_dwg = make_dwg( $t_parent, 1, 'GitTest LFS document' );
+	$t_cleanup['dwg_ids'][] = $t_lfs_dwg;
+	file_dwg_primary_register( $t_lfs_dwg, 1, 'big.bin', $t_lfs_sha, 'lfs' );
+	$t_lfs_row = file_dwg_primary_get( $t_lfs_dwg );
+	check( (int)$t_lfs_row['filesize'] === strlen( $t_lfs_body ),
+		'the recorded size is the file\'s, not the pointer\'s',
+		$t_lfs_row['filesize'] . ' vs ' . strlen( $t_lfs_body ) );
+
+	$t_lfs_got = file_dwg_primary_get_content( $t_lfs_dwg );
+	check( is_array( $t_lfs_got ) && isset( $t_lfs_got['file'] ),
+		'reading the document resolves the pointer to the stored object' );
+	if( is_array( $t_lfs_got ) && isset( $t_lfs_got['file'] ) ) {
+		check( (string)file_get_contents( $t_lfs_got['file'] ) === $t_lfs_body,
+			'and the object is the content that was stored' );
+	}
+
+	# An object store that was not restored with its repository must fail as a
+	# missing file, never by serving the pointer as if it were the document.
+	rename( $t_lfs_path, $t_lfs_path . '.hidden' );
+	check( file_dwg_primary_get_content( $t_lfs_dwg ) === false,
+		'a pointer whose object is absent reads as a missing file' );
+	rename( $t_lfs_path . '.hidden', $t_lfs_path );
+}
+
 } catch( Throwable $e ) {
 	fail( 'unexpected exception', get_class( $e ) . ': ' . $e->getMessage()
 		. ' @ ' . $e->getFile() . ':' . $e->getLine() );
@@ -557,8 +968,11 @@ foreach( $t_cleanup['projects'] as $t_id ) {
 	project_delete( $t_id );
 }
 foreach( array_unique( $t_cleanup['disk'] ) as $t_path ) {
+	# The LFS object store is a third root the suite may have written into.
+	$t_lfs_root_td = rtrim( (string)config_get_global( 'git_lfs_root', '' ), '/' );
 	if( $t_path !== '' && is_dir( $t_path )
-	 && ( strpos( $t_path, $t_storage_root ) === 0 || strpos( $t_path, (string)$t_worktree_root ) === 0 ) ) {
+	 && ( strpos( $t_path, $t_storage_root ) === 0 || strpos( $t_path, (string)$t_worktree_root ) === 0
+	   || ( $t_lfs_root_td !== '' && strpos( $t_path, $t_lfs_root_td ) === 0 ) ) ) {
 		exec( 'rm -rf ' . escapeshellarg( $t_path ) );
 	}
 }

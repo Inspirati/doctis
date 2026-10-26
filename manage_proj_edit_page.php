@@ -311,6 +311,9 @@ print_manage_menu( 'manage_proj_edit_page.php' );
 </div>
 </div>
 
+<!-- REPOSITORY (Doctis) -->
+<?php include( __DIR__ . '/manage_proj_repo_inc.php' ); ?>
+
 <!-- PUBLISHING (Doctis) -->
 <?php include( __DIR__ . '/manage_proj_publish_inc.php' ); ?>
 

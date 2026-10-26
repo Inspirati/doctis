@@ -28,6 +28,8 @@
 
 require_once( 'core.php' );
 require_api( 'api_token_api.php' );
+# Doctis: the git-clone notice shown after a revoke.
+require_api( 'print_dwg_api.php' );
 
 form_security_validate( 'revoke_api_token_form' );
 
@@ -62,6 +64,12 @@ echo '<div class="col-md-12 col-xs-12">';
 echo '<div class="space-10"></div>';
 echo '<div class="lead">' . sprintf( lang_get( 'api_token_revoked' ), string_display_line( $t_token_name ) ) . '</div>';
 echo '<div class="space-10"></div>';
+
+# Doctis: this is the moment a clone's pushes start failing, so say what to
+# do about it here rather than leaving the user to work it out from
+# "fatal: Authentication failed".  See doc/git/SOURCE_REPOSITORIES.md.
+print_dwg_git_token_notice( preg_match( '/^git: (\S+)/', $t_token_name, $t_m ) ? $t_m[1] : '' );
+
 print_link_button( 'api_tokens_page.php', lang_get( 'api_tokens_link' ) );
 echo '</div>';
 

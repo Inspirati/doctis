@@ -156,6 +156,10 @@ function filter_dwg_get_plugin_filters() {
 		// 	}
 		// }
 
+		# Record kind (Doctis): document, frozen document, source line or
+		# source release.  Every document has a kind, so this is always on.
+		$s_field_array['dwg_kind'] = new DwgKindFilter();
+
 		# Documentation Topics filter (Doctis), where Topics can be seen.
 		if( ON == config_get( 'topics_enabled' ) ) {
 			require_api( 'topic_api.php' );

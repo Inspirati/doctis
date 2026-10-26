@@ -633,6 +633,18 @@ function history_dwg_localize_field_name( $p_field_name ) {
 		case 'primary_document_draft':
 			$t_field_localized = lang_get( 'primary_document_draft' );
 			break;
+		case 'release_cut':
+			$t_field_localized = lang_get( 'dwg_release_cut' );
+			break;
+		case 'release_cut_from':
+			$t_field_localized = lang_get( 'dwg_release_cut_from' );
+			break;
+		case 'frozen':
+			$t_field_localized = lang_get( 'dwg_frozen_label' );
+			break;
+		case 'kind':
+			$t_field_localized = lang_get( 'dwg_kind' );
+			break;
 		default:
 			# assume it's a custom field name
 			$t_field_localized = lang_get_defaulted( $p_field_name );

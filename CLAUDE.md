@@ -1049,15 +1049,51 @@ see and the only revision-controlled record; attachments are Doctis
 [doc/git/GIT_ARCHITECTURE.md](doc/git/GIT_ARCHITECTURE.md); design rationale:
 [doc/git/GIT_SOLUTION_SPACE.md](doc/git/GIT_SOLUTION_SPACE.md).
 
-**Source code repositories (planned).** An exploration is under way into
-hosting software source projects in Doctis repositories, where a document
-records a *release* of a repository rather than a single file. Approved in
-principle 2026-10-25, **spike not yet started**. If asked to work on it, read
-[doc/git/SOURCE_REPOSITORIES.md](doc/git/SOURCE_REPOSITORIES.md) first — it is
-the design-intent record, the progress tracker and a cold-start primer, and it
-already contains the verified findings (a directory *does* register today; the
-pre-receive hook forbids force-push and ref deletion, which is the main
-obstacle). Do not start building before the spike in its §7.
+**Source repository release records.** A primary document normally names one
+file. With `$g_dwg_source_release_enabled` ON for a project it may instead
+name a git **tree** — the repository root, or one subtree — so the document
+records a *release of a repository* at a commit. Promoting the Draft to On
+Record is cutting a release, pinned permanently by
+`refs/doctis/approved/<dwg_id>/<n>`; content arrives by `git push`, never by
+upload, and downloads as `git archive` (zip or `tar.gz`). Off by default,
+per-project. A tree-rooted row is marked by `file_type = DWG_TREE_MIME_TYPE`
+(`file_dwg_primary_is_tree()`), so there is **no schema change**. Registration
+is `dwg_source_release_page.php`.
+
+Each bare repository carries a **push policy** in its own git config
+(`doctis.pushpolicy`, set on Manage → **Git Store**):
+`document` (the default, append-only — no force-push, no ref deletion) or
+`source` (normal development: both allowed on every ref). `refs/doctis/*` stay
+unpushable under both, which is what keeps a released commit reachable however
+the branches are rewritten. Hooks: `admin/tools/git-hooks/pre-receive` and
+`post-receive` (the latter repairs a bare repo's dangling HEAD).
+
+**Git LFS.** Doctis is the LFS server for the repositories it hosts: a client
+derives its endpoint by appending `/info/lfs` to the remote URL, so the
+requests arrive on the same `/git/` route and use the same API-token Basic
+auth. [core/git_lfs_api.php](core/git_lfs_api.php) implements the batch call,
+the basic transfer and verify; objects live per repository under
+`$g_git_lfs_root` (`/var/git/doctis-lfs`), outside the bare repos so an LFS
+object can never be packed into one. `GitFileStorageBackend::retrieve()`
+resolves a pointer to its object and returns a *path*, which
+`file_dwg_send_content()` streams — so the three `file_download.php` document
+routes all work without holding the file in memory. Off unless
+`$g_git_lfs_enabled` is ON. Two known gaps: a source-release `git archive`
+still emits pointers, and import of an LFS repository is still refused.
+Built on branch `git-lfs` 2026-10-26, stages 1-2 of 3, unmerged and unpushed.
+Read [doc/git/GIT_LFS.md](doc/git/GIT_LFS.md) before touching it — in
+particular, never set `"authenticated": true` in a batch reply: it tells the
+client to withhold credentials from the transfer, which produces an endless
+401 loop.
+
+Built on branch `source-repos` 2026-10-25 and trial-tested on the VM;
+**unmerged and unpushed**. Design record, spike results, how to drive it and
+what is left: [doc/git/SOURCE_REPOSITORIES.md](doc/git/SOURCE_REPOSITORIES.md)
+— read it before touching this. Sharp edges: a project's repository must exist
+before anyone can push and only a script creates one (§8.1), and a git push
+sends the whole packfile as one request body, so the `/git/` route needs its
+body limit lifted (`client_max_body_size 0`) or every real push fails with
+HTTP 413.
 
 **Interface:** [core/classes/FileStorageBackendInterface.class.php](core/classes/FileStorageBackendInterface.class.php)
 

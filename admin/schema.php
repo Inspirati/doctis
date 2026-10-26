@@ -335,6 +335,19 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 
 # ── Step 18: dwg ────────────────────────────────────────────────────────────
 $g_upgrade[$t_idx++] = array( 'UpdateSQL',
+#   kind   — DWG_KIND_DOCUMENT (0): the primary document is a file, the
+#            original and only behaviour.  DWG_KIND_SOURCE (1): it is a git
+#            tree, so the record is a source repository release or line
+#            (doc/git/SOURCE_REPOSITORIES.md).  Set by
+#            file_dwg_primary_register() from the object it registers, so it
+#            can never disagree with what is stored.
+#   frozen — 0: the record follows the repository and offers each new commit
+#            as a Draft.  1: it is pinned at its commit and tracks nothing
+#            further.  It means the same for both kinds, which is why it is
+#            its own column: a frozen source record is a *release* rather
+#            than a *line*, and a frozen document is one whose issued
+#            version is final, so a later edit in git does not quietly offer
+#            itself for approval.
 	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'dwg' ) . " (
 	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
 	  `project_id` int(10) unsigned NOT NULL DEFAULT 0,
@@ -358,7 +371,10 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	  `due_date` int(10) unsigned NOT NULL DEFAULT 1,
 	  `dwg_text_id` int(10) unsigned NOT NULL DEFAULT 0,
 	  `sticky` tinyint(4) NOT NULL DEFAULT 0,
+	  `kind` tinyint(4) NOT NULL DEFAULT 0,
+	  `frozen` tinyint(4) NOT NULL DEFAULT 0,
 	  PRIMARY KEY (`id`),
+	  KEY `idx_dwg_kind` (`project_id`, `kind`),
 	  KEY `idx_dwg_status` (`status`),
 	  KEY `idx_dwg_project_status` (`project_id`, `status`),
 	  KEY `idx_dwg_document_id` (`document_id`),

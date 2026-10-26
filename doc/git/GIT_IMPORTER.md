@@ -528,5 +528,5 @@ that has grown since the first import (still operator-initiated — see §2):
 | PDF metadata extraction | §6.4 — optional enrichment pass. |
 | Folder column derived from `git_path` | D7's deferred option: expose `dirname(git_path)` as a dwg-list column and filter axis (`columns_dwg_api.php` / `filter_dwg_api.php`). Revisit if path-as-category proves insufficient for navigation. |
 | Frontmatter as ongoing source of truth | Import reads frontmatter once. Whether later pushes that change frontmatter should ever update Doctis fields is a git → Doctis flow and therefore rejected for now; revisit only as an operator-run `--update` enrichment. |
-| Very large repos / LFS sources | `git clone --bare` of an LFS repo does not fetch LFS objects; detect `.gitattributes` LFS filters in A1 and abort with guidance until the LFS decision (GIT_TODO §6) is made. |
+| Very large repos / LFS sources | `git clone --bare` of an LFS repo does not fetch LFS objects; detect `.gitattributes` LFS filters in A1 and abort with guidance. Doctis can now *host* LFS repositories (doc/git/GIT_LFS.md), but importing one still needs the objects carried across beside the history — stage 3 of that document. The abort stands until then. |
 | Non-UTF-8 / exotic filenames | `git ls-tree -z` handling and a `varchar(1024)` path budget; files exceeding it are skipped with a report entry. |

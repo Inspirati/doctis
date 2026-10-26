@@ -103,7 +103,12 @@ $t_issue = array(
 	// 'category'			=> "category",
 	// 'classification'	=> "UNCLASSIFIED",
 
-	'summary' => "sample summary",
+	# {dwg}.summary is what dwg_format_summary() reads for the page title,
+	# email subjects and list captions, so it carries the document's title.
+	# This was a hardcoded "sample summary" placeholder, which combined with
+	# DwgData::create() not persisting the column at all left every document
+	# created here with an empty name wherever that formatter is used.
+	'summary' => gpc_get_string( 'dwg_title' ),
 	'description' => "default description",
 );
 $t_revision_date = gpc_get_string( 'dwg_revision_date', null );

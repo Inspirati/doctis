@@ -14,6 +14,8 @@ require_api( 'git_store_api.php' );
 require_api( 'gpc_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
+require_api( 'form_api.php' );
+require_api( 'print_api.php' );
 require_api( 'project_api.php' );
 require_api( 'repository_api.php' );
 
@@ -37,6 +39,18 @@ if( !isset( $t_repos[$f_repo] ) ) {
 	}
 }
 $t_repo = $f_repo !== '' ? $t_repos[$f_repo] : null;
+
+# ── Push policy (the one write this page performs) ──────────────────────────
+# Which rewrites the pre-receive hook permits on this repository.  Held in the
+# bare repo's own config; see doc/git/SOURCE_REPOSITORIES.md.
+if( $_SERVER['REQUEST_METHOD'] === 'POST' && gpc_get_string( 'action', '' ) === 'push_policy' ) {
+	form_security_validate( 'manage_git_store_policy' );
+	if( $t_repo !== null && $t_repo['bare_exists'] ) {
+		repository_set_push_policy( $t_repo['bare'], gpc_get_string( 'push_policy', DWG_PUSH_POLICY_DOCUMENT ) );
+	}
+	form_security_purge( 'manage_git_store_policy' );
+	print_header_redirect( 'manage_git_store_page.php?repo=' . urlencode( $f_repo ) );
+}
 
 $f_view = gpc_get_string( 'view', 'files' );
 if( !in_array( $f_view, array( 'files', 'documents', 'commits', 'refs', 'worktree' ), true ) ) {
@@ -278,7 +292,7 @@ print_manage_menu( 'manage_git_store_page.php' );
 	}
 	$t_tabs = array(
 		'files' => 'Files (' . count( $t_tree ) . ')',
-		'documents' => 'Documents (' . count( $t_docs ) . ')',
+		'documents' => 'Documents (' . count( git_store_documents_list( $t_repo, $t_tree ) ) . ')',
 		'commits' => 'Commits (' . ( $t_summary['commits'] ?? 0 ) . ')',
 		'refs' => 'Refs (' . count( $t_refs ) . ')',
 		'worktree' => 'Worktree',
@@ -336,6 +350,33 @@ print_manage_menu( 'manage_git_store_page.php' );
 							. (int)$t_summary['pins'] . ' approved-version pins';
 					}
 				?></td>
+			</tr>
+			<tr>
+				<th class="category"><?php echo lang_get( 'push_policy_label' ); ?></th>
+				<td colspan="3"><?php
+					if( !$t_repo['bare_exists'] ) {
+						echo '<span class="grey">no bare repository</span>';
+					} else {
+						$t_policy = repository_get_push_policy( $t_repo['bare'] );
+				?>
+					<form method="post" action="manage_git_store_page.php" class="form-inline" style="display:inline">
+						<?php echo form_security_field( 'manage_git_store_policy' ); ?>
+						<input type="hidden" name="repo" value="<?php echo htmlspecialchars( $f_repo ); ?>" />
+						<input type="hidden" name="action" value="push_policy" />
+						<select name="push_policy" class="input-sm">
+							<option value="<?php echo DWG_PUSH_POLICY_DOCUMENT; ?>"<?php
+								echo $t_policy === DWG_PUSH_POLICY_DOCUMENT ? ' selected="selected"' : ''; ?>><?php
+								echo lang_get( 'push_policy_document' ); ?></option>
+							<option value="<?php echo DWG_PUSH_POLICY_SOURCE; ?>"<?php
+								echo $t_policy === DWG_PUSH_POLICY_SOURCE ? ' selected="selected"' : ''; ?>><?php
+								echo lang_get( 'push_policy_source' ); ?></option>
+						</select>
+						<button type="submit" class="btn btn-xs btn-primary btn-white btn-round"><?php
+							echo lang_get( 'push_policy_apply' ); ?></button>
+					</form>
+					<small>&nbsp;<?php echo lang_get( $t_policy === DWG_PUSH_POLICY_SOURCE
+						? 'push_policy_source_help' : 'push_policy_document_help' ); ?></small>
+				<?php } ?></td>
 			</tr>
 			<tr>
 				<th class="category">Paths</th>
@@ -537,11 +578,15 @@ print_manage_menu( 'manage_git_store_page.php' );
 <?php
 		}
 	} else if( $f_view === 'documents' ) {
+		# The flat list, not the path-keyed map: several source records may
+		# share one path (successive releases, or two lines of one subtree)
+		# and the map keeps only the last of them.
+		$t_doc_rows = git_store_documents_list( $t_repo, $t_tree );
 		$t_counts = array( 'current' => 0, 'changed' => 0, 'missing' => 0, 'unknown' => 0, 'draft' => 0 );
+		foreach( $t_doc_rows as $t_row_doc ) {
+			$t_counts[$t_row_doc['state']]++;
+		}
 		foreach( $t_docs as $t_doc ) {
-			if( $t_doc['record'] ) {
-				$t_counts[$t_doc['record']['state']]++;
-			}
 			if( $t_doc['draft'] ) {
 				$t_counts['draft']++;
 			}
@@ -571,24 +616,42 @@ print_manage_menu( 'manage_git_store_page.php' );
 		<?php } else { ?>
 		<div class="table-responsive">
 		<table class="table table-condensed table-striped table-hover">
-			<thead><tr><th>Document</th><th>Path</th><th>On Record</th><th>Draft</th></tr></thead>
+			<thead><tr><th>Document</th><th>Kind</th><th>Path</th><th>On Record</th><th>Draft</th></tr></thead>
 			<tbody>
-			<?php if( empty( $t_docs ) ) { ?>
-				<tr><td colspan="4" class="grey">No documents are registered in this repository.</td></tr>
+			<?php if( empty( $t_doc_rows ) ) { ?>
+				<tr><td colspan="5" class="grey">No documents are registered in this repository.</td></tr>
 			<?php } ?>
-			<?php foreach( $t_docs as $t_path => $t_doc ) { ?>
+			<?php foreach( $t_doc_rows as $t_row_doc ) {
+				$t_path = $t_row_doc['path'];
+				$t_draft = $t_docs[$t_path]['draft'] ?? null;
+				$t_source = (int)$t_row_doc['kind'] === DWG_KIND_SOURCE;
+				$t_frz = (int)$t_row_doc['frozen'] === 1;
+			?>
 				<tr>
-					<td class="small"><?php print_git_store_document( $t_doc ); ?></td>
+					<td class="small"><?php print_git_store_document(
+						array( 'record' => $t_row_doc, 'draft' => null ) ); ?></td>
+					<td class="small"><span class="label label-<?php echo $t_source ? 'primary' : 'default'; ?>"><?php
+						echo htmlspecialchars( lang_get( 'dwg_kind_'
+							. ( $t_source ? ( $t_frz ? 'source_release' : 'source_line' )
+							              : ( $t_frz ? 'document_frozen' : 'document' ) ) ) ); ?></span>
+						<?php if( $t_row_doc['description'] !== '' ) { ?>
+						<br /><span class="grey"><?php echo htmlspecialchars(
+							mb_strimwidth( $t_row_doc['description'], 0, 40, '…' ) ); ?></span>
+						<?php } ?></td>
 					<td class="small"><?php if( isset( $t_tree[$t_path] ) ) { ?>
 						<a href="<?php echo git_store_page_url( array( 'file' => $t_path ) ); ?>"><?php echo htmlspecialchars( $t_path ); ?></a>
-						<?php } else { echo htmlspecialchars( $t_path ); } ?></td>
-					<td class="small"><?php if( $t_doc['record'] ) { ?>
-						<code><?php echo htmlspecialchars( substr( $t_doc['record']['git_sha'], 0, 9 ) ); ?></code><br />
-						<?php echo htmlspecialchars( git_store_date( (int)$t_doc['record']['date_added'] ) ); ?>
+						<?php } else if( $t_path === '' ) { ?>
+						<span class="label label-primary"><?php echo lang_get( 'source_release_whole_repository' ); ?></span>
+						<?php } else { echo htmlspecialchars( $t_path ); } ?>
+						<?php if( $t_source && $t_row_doc['git_branch'] !== '' ) { ?>
+						<br /><span class="grey"><?php echo htmlspecialchars( $t_row_doc['git_branch'] ); ?></span>
 						<?php } ?></td>
-					<td class="small"><?php if( $t_doc['draft'] ) { ?>
-						<code><?php echo htmlspecialchars( substr( $t_doc['draft']['git_sha'], 0, 9 ) ); ?></code><br />
-						<?php echo htmlspecialchars( git_store_date( (int)$t_doc['draft']['date_added'] ) ); ?>
+					<td class="small">
+						<code><?php echo htmlspecialchars( substr( $t_row_doc['git_sha'], 0, 9 ) ); ?></code><br />
+						<?php echo htmlspecialchars( git_store_date( (int)$t_row_doc['date_added'] ) ); ?></td>
+					<td class="small"><?php if( $t_draft && !$t_frz ) { ?>
+						<code><?php echo htmlspecialchars( substr( $t_draft['git_sha'], 0, 9 ) ); ?></code><br />
+						<?php echo htmlspecialchars( git_store_date( (int)$t_draft['date_added'] ) ); ?>
 						<?php } ?></td>
 				</tr>
 			<?php } ?>

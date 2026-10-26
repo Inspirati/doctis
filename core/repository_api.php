@@ -51,9 +51,11 @@ require_api( 'constant_inc.php' );
 require_api( 'database_api.php' );
 require_api( 'project_api.php' );
 require_api( 'project_hierarchy_api.php' );
+require_api( 'access_api.php' );
 require_api( 'utility_api.php' );
 
 use Mantis\Exceptions\ServiceException;
+use Mantis\Exceptions\ClientException;
 
 $g_cache_repository = array();
 
@@ -329,29 +331,203 @@ function repository_worktree_path( int $p_repository_id ): string {
 }
 
 /**
+ * The push policy in force on a bare repository, read from its own git config
+ * (doctis.pushpolicy).  An unset or unrecognised value means DOCUMENT, so a
+ * repository created before the setting existed keeps the strict behaviour.
+ *
+ * The policy lives on disk rather than in {repository} because the hook can
+ * only read its own repository; it sits beside http.receivepack, which Doctis
+ * already manages there.  See doc/git/SOURCE_REPOSITORIES.md.
+ *
+ * @param string $p_bare  Absolute path to the bare repository.
+ * @return string  DWG_PUSH_POLICY_DOCUMENT or DWG_PUSH_POLICY_SOURCE.
+ */
+function repository_get_push_policy( string $p_bare ): string {
+	$t_policy = trim( (string)shell_exec(
+		'git --git-dir=' . escapeshellarg( $p_bare ) . ' config --get doctis.pushpolicy 2>/dev/null'
+	) );
+	return $t_policy === DWG_PUSH_POLICY_SOURCE
+		? DWG_PUSH_POLICY_SOURCE
+		: DWG_PUSH_POLICY_DOCUMENT;
+}
+
+/**
+ * Set the push policy on a bare repository.  The hook reads it on every push,
+ * so the change takes effect immediately and no hook reinstall is needed.
+ *
+ * @param string $p_bare    Absolute path to the bare repository.
+ * @param string $p_policy  DWG_PUSH_POLICY_DOCUMENT or DWG_PUSH_POLICY_SOURCE.
+ * @return void
+ * @throws ClientException on an unrecognised policy.
+ */
+function repository_set_push_policy( string $p_bare, string $p_policy ): void {
+	if( $p_policy !== DWG_PUSH_POLICY_DOCUMENT && $p_policy !== DWG_PUSH_POLICY_SOURCE ) {
+		throw new ClientException( 'Unknown push policy: ' . $p_policy,
+			ERROR_INVALID_FIELD_VALUE, array( 'push_policy' ) );
+	}
+	exec( 'git --git-dir=' . escapeshellarg( $p_bare )
+		. ' config doctis.pushpolicy ' . escapeshellarg( $p_policy ) . ' 2>&1' );
+}
+
+/**
+ * The Smart HTTP URL a developer clones a repository from.
+ *
+ * Built from $g_path, so it follows however Doctis is reached.  The gateway
+ * is mounted at the server root, not under the Doctis directory: the route
+ * is /git/<slug>-r<id>.git (see admin/tools/templates/nginx-doctis.conf).
+ *
+ * Credentials are included only when the caller passes them — the URL on
+ * screen carries none unless a token has just been minted for it.
+ *
+ * @param string $p_basename  Repository basename, e.g. "example-r1".
+ * @param string $p_username  Optional username to embed.
+ * @param string $p_token      Optional API token to embed as the password.
+ * @return string  '' when $g_path cannot be parsed.
+ */
+function repository_clone_url( string $p_basename, string $p_username = '', string $p_token = '' ): string {
+	$t_url = parse_url( (string)config_get_global( 'path' ) );
+	if( !isset( $t_url['scheme'], $t_url['host'] ) ) {
+		return '';
+	}
+	$t_credentials = '';
+	if( $p_username !== '' && $p_token !== '' ) {
+		$t_credentials = rawurlencode( $p_username ) . ':' . rawurlencode( $p_token ) . '@';
+	}
+	return $t_url['scheme'] . '://' . $t_credentials . $t_url['host']
+		. ( isset( $t_url['port'] ) ? ':' . $t_url['port'] : '' )
+		. '/git/' . $p_basename . '.git';
+}
+
+/**
+ * Whether a user may clone the repository a project's documents live in.
+ *
+ * Cloning is reading the repository over the Smart HTTP gateway, so the test
+ * is the gateway's own: remote git access enabled, a repository that exists
+ * on disk, and $g_git_http_read_threshold on the repository's *owner*
+ * project — which is not necessarily the project asked about, since a tree
+ * shares one repository.
+ *
+ * Shared by everything that offers a Clone button, so a button is never
+ * shown to someone the clone page would then refuse.
+ *
+ * @param int      $p_project_id
+ * @param int|null $p_user_id  Defaults to the current user.
+ * @return bool
+ */
+function repository_user_can_clone( int $p_project_id, ?int $p_user_id = null ): bool {
+	if( OFF == config_get_global( 'git_http_enabled', OFF ) ) {
+		return false;
+	}
+	$t_repository_id = repository_id_for_project( $p_project_id );
+	if( $t_repository_id === 0 || !is_dir( repository_bare_path( $t_repository_id ) ) ) {
+		return false;
+	}
+	$t_row = repository_get_row( $t_repository_id );
+	if( !$t_row ) {
+		return false;
+	}
+	$t_user_id = $p_user_id === null ? auth_get_current_user_id() : $p_user_id;
+	$t_owner_project_id = (int)$t_row['owner_project_id'];
+
+	return access_has_project_level(
+		config_get( 'git_http_read_threshold', null, $t_user_id, $t_owner_project_id ),
+		$t_owner_project_id, $t_user_id );
+}
+
+/**
+ * A repository's default branch, reconciled with the bare repo on disk.
+ *
+ * The row records what the branch was when the repository was created or
+ * adopted, and a client may since have pushed a differently-named default —
+ * Doctis creates repositories with `main` while the project's own branch may
+ * be `dev`.  The post-receive hook repairs the bare repo's HEAD; this brings
+ * the row back into line with it, lazily, the first time anyone asks.
+ *
+ * @param int $p_repository_id
+ * @return string  The branch name, or '' when the repository has no HEAD.
+ */
+function repository_default_branch( int $p_repository_id ): string {
+	static $s_cache = array();
+	if( isset( $s_cache[$p_repository_id] ) ) {
+		return $s_cache[$p_repository_id];
+	}
+	$t_row  = repository_get_row( $p_repository_id );
+	$t_said = $t_row ? (string)$t_row['default_branch'] : '';
+	$t_bare = $p_repository_id > 0 ? repository_bare_path( $p_repository_id ) : '';
+
+	$t_actual = ( $t_bare !== '' && is_dir( $t_bare ) ) ? trim( (string)shell_exec(
+		'git --git-dir=' . escapeshellarg( $t_bare ) . ' symbolic-ref --short HEAD 2>/dev/null'
+	) ) : '';
+
+	if( $t_actual !== '' && $t_actual !== $t_said ) {
+		db_param_push();
+		db_query( 'UPDATE {repository} SET default_branch=' . db_param() . ' WHERE id=' . db_param(),
+			array( $t_actual, $p_repository_id ) );
+		unset( $GLOBALS['g_cache_repository'][$p_repository_id] );
+	}
+
+	$s_cache[$p_repository_id] = $t_actual !== '' ? $t_actual : $t_said;
+	return $s_cache[$p_repository_id];
+}
+
+/**
+ * The push policy of a repository by id, cached for the request.
+ *
+ * Reading it shells out to `git config`, and a project list resolves many
+ * projects to the same few repositories, so the cache is keyed on the
+ * repository rather than the project.
+ *
+ * @param int $p_repository_id
+ * @return string  DWG_PUSH_POLICY_DOCUMENT or DWG_PUSH_POLICY_SOURCE, or ''
+ *                 when the repository has no bare directory on disk.
+ */
+function repository_push_policy( int $p_repository_id ): string {
+	static $s_cache = array();
+	if( !isset( $s_cache[$p_repository_id] ) ) {
+		$t_bare = $p_repository_id > 0 ? repository_bare_path( $p_repository_id ) : '';
+		$s_cache[$p_repository_id] = ( $t_bare !== '' && is_dir( $t_bare ) )
+			? repository_get_push_policy( $t_bare ) : '';
+	}
+	return $s_cache[$p_repository_id];
+}
+
+/**
  * Install/refresh the Doctis server-side configuration on a bare repo: the
- * pre-receive hook (rejects force-pushes, ref deletions, and client writes
- * to refs/doctis/*) and http.receivepack (allows authenticated push through
- * the Smart HTTP gateway).  Idempotent.  Hook source of truth:
- * admin/tools/git-hooks/pre-receive.
+ * pre-receive hook (what it enforces depends on the push policy), the
+ * post-receive hook (repairs a dangling HEAD) and http.receivepack (allows
+ * authenticated push through the Smart HTTP gateway).  Idempotent.  Hook
+ * source of truth: admin/tools/git-hooks/.
+ *
+ * The push policy is seeded to DOCUMENT only when it has never been set:
+ * refreshing the configuration of a source repository must not silently
+ * re-impose document control on it.
  *
  * @param string $p_bare  Absolute path to the bare repository.
  * @return void
  */
 function repository_configure_bare( string $p_bare ): void {
-	$t_hook_src = config_get_global( 'absolute_path' ) . 'admin/tools/git-hooks/pre-receive';
-	$t_hook_dst = $p_bare . '/hooks/pre-receive';
+	foreach( array( 'pre-receive', 'post-receive' ) as $t_hook ) {
+		$t_hook_src = config_get_global( 'absolute_path' ) . 'admin/tools/git-hooks/' . $t_hook;
+		$t_hook_dst = $p_bare . '/hooks/' . $t_hook;
 
-	if( is_file( $t_hook_src ) ) {
-		$t_content = file_get_contents( $t_hook_src );
-		if( $t_content !== false
-		 && ( !is_file( $t_hook_dst ) || file_get_contents( $t_hook_dst ) !== $t_content ) ) {
-			file_put_contents( $t_hook_dst, $t_content );
-			chmod( $t_hook_dst, 0755 );
+		if( is_file( $t_hook_src ) ) {
+			$t_content = file_get_contents( $t_hook_src );
+			if( $t_content !== false
+			 && ( !is_file( $t_hook_dst ) || file_get_contents( $t_hook_dst ) !== $t_content ) ) {
+				file_put_contents( $t_hook_dst, $t_content );
+				chmod( $t_hook_dst, 0755 );
+			}
 		}
 	}
 
 	exec( 'git --git-dir=' . escapeshellarg( $p_bare ) . ' config http.receivepack true 2>&1' );
+
+	$t_existing = trim( (string)shell_exec(
+		'git --git-dir=' . escapeshellarg( $p_bare ) . ' config --get doctis.pushpolicy 2>/dev/null'
+	) );
+	if( $t_existing === '' ) {
+		repository_set_push_policy( $p_bare, DWG_PUSH_POLICY_DOCUMENT );
+	}
 }
 
 /**
@@ -560,6 +736,18 @@ function repository_rename_for_owner_project( int $p_project_id ): void {
 			array( $t_new_slug, $t_repo_id ) );
 		unset( $g_cache_repository[$t_repo_id] );
 
+		# The LFS object store is named after the repository too, so it moves
+		# with it.  Unlike the worktree it cannot be discarded and rebuilt:
+		# it is the only copy of every large file.
+		$t_lfs_root = rtrim( (string)config_get_global( 'git_lfs_root', '' ), '/' );
+		if( $t_lfs_root !== '' && is_dir( $t_lfs_root . '/' . $t_old_base )
+			&& !file_exists( $t_lfs_root . '/' . $t_new_base ) ) {
+			if( !rename( $t_lfs_root . '/' . $t_old_base, $t_lfs_root . '/' . $t_new_base ) ) {
+				error_log( 'repository_rename_for_owner_project: LFS store rename '
+					. $t_old_base . ' -> ' . $t_new_base . ' failed' );
+			}
+		}
+
 		# Remove the stale worktree (and any leftover at the new name) so the
 		# lazy re-clone starts clean.
 		$t_wt_root = config_get_global( 'git_worktree_root' );
@@ -593,7 +781,10 @@ function repository_count(): int {
  */
 function repository_storage_entries(): array {
 	$t_entries = array();
-	foreach( array( 'git_storage_root', 'git_worktree_root' ) as $t_option ) {
+	# The LFS object store is part of the git document store even though it
+	# sits outside the bare repositories: a reset that left it behind would
+	# leave orphaned large files no repository refers to.
+	foreach( array( 'git_storage_root', 'git_worktree_root', 'git_lfs_root' ) as $t_option ) {
 		$t_root = rtrim( (string)config_get_global( $t_option ), '/' );
 		if( is_blank( $t_root ) || !is_dir( $t_root ) || realpath( $t_root ) === '/' ) {
 			continue;

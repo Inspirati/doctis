@@ -27,6 +27,8 @@ turn email notifications off before tests that queue mail in bulk.
 | Git storage backend / repository resolution / path handling | §4 `test-git-php.php` + `test-git-doctis.php` |
 | Repository import (`admin/import-git-repo.php`) | §5 Import dry-run/real-run against a scratch repo |
 | Smart HTTP gateway (clone/push, auth, hook enforcement) | §6 remote clone/push script, or §4's hook-enforcement steps |
+| Source repository release records, push policy | §4 `test-git-doctis.php` steps 14-15; a real push per [doc/git/SOURCE_REPOSITORIES.md](git/SOURCE_REPOSITORIES.md) §10 |
+| Git LFS (server, pointer resolution) | §4 `test-git-doctis.php` step 19; a real `git-lfs` client round trip per [doc/git/GIT_LFS.md](git/GIT_LFS.md) §9 |
 | A page, form, or workflow with no good headless test | §7 curl-based testing |
 | AI Meeting Assistant, meetings, My Meetings, minutes approval | §7a meeting end-to-end |
 | Documentation Topics (catalogues, tags, applicability, Topics page) | §2 `TopicApiTest` + §7b |
@@ -141,8 +143,32 @@ dangling-path detection (`file_dwg_git_head_info()` after an external
 delete), sync-to-HEAD promotion, repository adoption (`repository_adopt()`
 — full history, remotes stripped), moving a document to a project with
 another repository (step 12b: the primary file follows, the source keeps its
-history, a document with a Draft is refused), and rename relocation. Bootstraps the
-full core, creates and tears down its own projects/documents/repositories.
+history, a document with a Draft is refused), and rename relocation.
+
+Steps 14 and 15 (2026-10-25) cover **source repository release records** —
+registering the repository root as a document, the tree marker and zero
+filesize, the approved pin, `git archive` download, the refusal of an upload
+onto a release, a push raising a Draft while On Record stays pinned,
+promotion cutting the next release, exclusion from publishing and from the
+move path — and the **per-repository push policy**, including a real
+force-push and branch deletion through the hook under each policy, that
+`refs/doctis/*` stay unpushable under both, and that an approved release
+survives a force-push past it followed by `git gc --prune=now`. See
+[doc/git/SOURCE_REPOSITORIES.md](git/SOURCE_REPOSITORIES.md).
+
+Step 19 (2026-10-26) covers **git LFS**: oid validation, pointer parsing
+(including that an ordinary document and a lookalike without the spec URL are
+both refused, and that a large file is never scanned), the object-store path
+fan-out, and then the behaviour that matters — a document whose blob is a
+pointer records the *file's* size rather than the pointer's, reading it
+resolves to the stored object, and a pointer whose object is absent reads as a
+missing file instead of serving the pointer text. The pointer is written with
+`git hash-object`, so no `git-lfs` client is needed to run the suite. See
+[doc/git/GIT_LFS.md](git/GIT_LFS.md); the client-side round trip is recorded
+there in §9.
+
+Bootstraps the full core, creates and tears down its own
+projects/documents/repositories.
 
 ```bash
 sudo -u www-data php /var/www/html/doctis/admin/test-git-doctis.php
@@ -150,7 +176,7 @@ sudo -u www-data php /var/www/html/doctis/admin/test-git-doctis.php
 
 Run 2026-10-13 on the native VM: 93 passed, 0 failed; the existing projects
 and repositories were untouched. Run 2026-10-16 with step 12b: 102 passed,
-0 failed.
+0 failed. Run 2026-10-25 with steps 14-15: 137 passed, 0 failed.
 
 Architecture reference: [doc/git/GIT_ARCHITECTURE.md](git/GIT_ARCHITECTURE.md).
 

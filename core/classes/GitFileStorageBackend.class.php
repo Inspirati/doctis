@@ -241,7 +241,11 @@ class GitFileStorageBackend implements FileStorageBackendInterface {
 		}
 		$t_sha      = $p_row['git_sha'] ?? $p_row['diskfile'];
 		$t_rel_path = $p_row['git_path'] ?? '';
-		if( $t_rel_path === '' ) {
+
+		# A source release record names a tree, not a blob: `git show` would
+		# emit a directory listing rather than content.  Those documents are
+		# downloaded as an archive instead (file_dwg_source_release_stream()).
+		if( $t_rel_path === '' || file_dwg_primary_is_tree( $p_row ) ) {
 			return false;
 		}
 
@@ -252,6 +256,36 @@ class GitFileStorageBackend implements FileStorageBackendInterface {
 
 		if( $t_content === null ) {
 			return false;
+		}
+
+		# The blob may be a git-LFS pointer rather than the file itself, in
+		# which case the bytes are in the LFS object store and this is a few
+		# lines of text naming them.  Serving the pointer would hand the user
+		# 130 bytes of metadata labelled as their CAD drawing, so resolve it.
+		#
+		# The object is returned as a path rather than content: these are
+		# exactly the files that were too large to keep in the repository, so
+		# the caller streams it.  See doc/git/GIT_LFS.md.
+		$t_pointer = git_lfs_parse_pointer( $t_content );
+		if( $t_pointer !== null ) {
+			$t_repository_id = repository_id_for_project( $p_project_id );
+			$t_object = $t_repository_id === 0
+				? '' : git_lfs_object_path( $t_repository_id, $t_pointer['oid'] );
+			if( $t_object === '' || !is_file( $t_object ) ) {
+				# The commit refers to content this server does not hold.  Not
+				# a corrupt repository — an LFS object store that was not
+				# restored with it, or a push whose objects never arrived.
+				error_log( 'GitFileStorageBackend::retrieve(): LFS object '
+					. $t_pointer['oid'] . ' for ' . $t_rel_path
+					. ' is not in the object store' );
+				return false;
+			}
+			return array(
+				'type'    => $p_row['file_type'],
+				'content' => '',
+				'file'    => $t_object,
+				'lfs_oid' => $t_pointer['oid'],
+			);
 		}
 
 		return array(

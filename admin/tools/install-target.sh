@@ -231,6 +231,10 @@ if [ ${target} = "doctis" ]; then
 \$g_git_storage_root    = '/var/git/doctis';
 \$g_git_worktree_root   = '/var/www/doctis/worktrees';
 \$g_git_http_enabled    = ON;		# Smart HTTP remote clone gateway
+# Git LFS: keeps large binaries out of the packfile, so a repository of CAD or
+# firmware files stays clonable.  See doc/git/GIT_LFS.md.
+\$g_git_lfs_enabled     = ON;
+\$g_git_lfs_root        = '/var/git/doctis-lfs';
 
 # --- System Operations ---
 # OS account that admin manage_*_action.php pages run privileged operations as

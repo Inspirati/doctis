@@ -47,6 +47,7 @@ require_api( 'category_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
 require_api( 'database_api.php' );
+require_api( 'git_lfs_api.php' );
 require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'history_dwg_api.php' );
@@ -1746,17 +1747,25 @@ function file_dwg_primary_draft_get( $p_dwg_id ) {
  * collapses duplicate slashes, and rejects traversal segments, control
  * characters, and empty/oversized results.
  *
+ * $p_allow_root permits the empty path, which denotes the repository root.
+ * It is opt-in because every document path is a file path: only a source
+ * release record (doc/git/SOURCE_REPOSITORIES.md) may be rooted at the repo.
+ *
  * @param string $p_path
+ * @param bool   $p_allow_root  Accept '' as the repository root.
  * @return string|false  Canonical path, or false when invalid.
  */
-function file_dwg_git_path_sanitize( string $p_path ) {
+function file_dwg_git_path_sanitize( string $p_path, bool $p_allow_root = false ) {
 	$t_path = str_replace( '\\', '/', trim( $p_path ) );
 	$t_path = preg_replace( '#/+#', '/', $t_path );
 	$t_path = ltrim( $t_path, '/' );
 	while( strpos( $t_path, './' ) === 0 ) {
 		$t_path = substr( $t_path, 2 );
 	}
-	if( $t_path === '' || substr( $t_path, -1 ) === '/' || strlen( $t_path ) > 1024 ) {
+	if( $t_path === '' ) {
+		return $p_allow_root ? '' : false;
+	}
+	if( substr( $t_path, -1 ) === '/' || strlen( $t_path ) > 1024 ) {
 		return false;
 	}
 	if( preg_match( '/[\x00-\x1f\x7f]/', $t_path ) ) {
@@ -1768,6 +1777,171 @@ function file_dwg_git_path_sanitize( string $p_path ) {
 		}
 	}
 	return $t_path;
+}
+
+# ── Source repository release records ────────────────────────────────────────
+# A primary document whose git_path names a TREE rather than a blob records a
+# *release of a repository* — the repository (git_path '') or one subtree of it
+# (git_path 'firmware/esc') at a commit — instead of a single file.  The
+# document's status workflow is then the release approval, and promoting the
+# Draft to On Record is cutting a release.  Design and rationale:
+# doc/git/SOURCE_REPOSITORIES.md.
+#
+# A source record is {dwg}.kind = DWG_KIND_SOURCE, set by
+# file_dwg_primary_register() from the object it registers, so the kind can
+# never disagree with what is stored.  {dwg}.frozen then says whether it is a
+# *release*, pinned at its commit, or a *line*, which follows its branch's tip
+# and offers each new commit as a Draft.  file_type still carries
+# DWG_TREE_MIME_TYPE for display and Content-Type, but nothing branches on it.
+# filesize is forced to 0: a tree object's own size is not the size of
+# anything a user would recognise.
+
+/**
+ * Whether source release records may be registered in a project.  Off unless
+ * $g_dwg_source_release_enabled is ON, and per-project overridable so that
+ * only the projects holding source repositories gain the capability.
+ *
+ * @param int $p_project_id
+ * @return bool
+ */
+function file_dwg_source_release_enabled( int $p_project_id ): bool {
+	return ON == config_get( 'dwg_source_release_enabled', OFF, null, $p_project_id );
+}
+
+/**
+ * Whether a {dwg_primary_file} / {dwg_primary_draft} row records a git tree
+ * (a source repository release or line) rather than a single file.
+ *
+ * Answered from the owning document's kind, which is the single source of
+ * truth; the row's file_type is descriptive only.
+ *
+ * @param array|null $p_row
+ * @return bool
+ */
+function file_dwg_primary_is_tree( $p_row ): bool {
+	return is_array( $p_row ) && isset( $p_row['dwg_id'] ) && dwg_is_source( (int)$p_row['dwg_id'] );
+}
+
+/**
+ * The git tree-ish naming a document's content at a commit.  The repository
+ * root is "<sha>:", which git resolves to the root tree; anything else is
+ * "<sha>:<path>".
+ *
+ * @param string $p_sha
+ * @param string $p_git_path
+ * @return string
+ */
+function file_dwg_git_tree_ish( string $p_sha, string $p_git_path ): string {
+	return $p_sha . ':' . $p_git_path;
+}
+
+/**
+ * Git's object type at <sha>:<path> — 'blob', 'tree', or '' when absent.
+ *
+ * @param string $p_bare
+ * @param string $p_sha
+ * @param string $p_git_path  '' for the repository root.
+ * @return string
+ */
+function file_dwg_git_object_type( string $p_bare, string $p_sha, string $p_git_path ): string {
+	$t_type = trim( (string)shell_exec(
+		'git --git-dir=' . escapeshellarg( $p_bare ) . ' cat-file -t '
+		. escapeshellarg( file_dwg_git_tree_ish( $p_sha, $p_git_path ) ) . ' 2>/dev/null'
+	) );
+	return ( $t_type === 'blob' || $t_type === 'tree' ) ? $t_type : '';
+}
+
+/**
+ * The display name of a tree-rooted document: the subtree's basename, or the
+ * repository's slug when the document is rooted at the repository itself.
+ * Used for the panel label and as the archive's filename stem.
+ *
+ * @param int    $p_project_id
+ * @param string $p_git_path
+ * @return string
+ */
+function file_dwg_tree_display_name( int $p_project_id, string $p_git_path ): string {
+	if( $p_git_path !== '' ) {
+		return basename( $p_git_path );
+	}
+	$t_repo_id = repository_id_for_project( $p_project_id );
+	$t_repo    = $t_repo_id > 0 ? repository_get_row( $t_repo_id ) : null;
+	$t_slug    = $t_repo ? (string)$t_repo['slug'] : '';
+	return $t_slug !== '' ? $t_slug : 'repository';
+}
+
+/**
+ * The archive formats a source release may be downloaded in, mapped to the
+ * `git archive --format` name, the filename extension and the MIME type.
+ *
+ * @return array<string, array{format: string, extension: string, mime: string}>
+ */
+function file_dwg_source_release_formats(): array {
+	return array(
+		'zip' => array(
+			'format'    => 'zip',
+			'extension' => 'zip',
+			'mime'      => 'application/zip',
+		),
+		'tar.gz' => array(
+			'format'    => 'tar.gz',
+			'extension' => 'tar.gz',
+			'mime'      => 'application/gzip',
+		),
+	);
+}
+
+/**
+ * Stream a source release to the browser as a git archive of the recorded
+ * tree, generated on the fly — nothing is written to disk and nothing is
+ * buffered in PHP memory, so a repository of any size downloads in constant
+ * memory.  Headers are emitted here; the caller must have cleared output
+ * buffering already and must exit afterwards.
+ *
+ * Content-Length is deliberately absent: git produces the archive as it
+ * streams, so the length is not known until it is finished.
+ *
+ * @param array  $p_row     The {dwg_primary_file}/{dwg_primary_draft} row.
+ * @param int    $p_project_id
+ * @param string $p_sha     Commit to archive (the row's SHA, or a Draft's).
+ * @param string $p_format  Key of file_dwg_source_release_formats().
+ * @return bool  false when the repository or commit cannot be read.
+ */
+function file_dwg_source_release_stream( array $p_row, int $p_project_id, string $p_sha, string $p_format = 'zip' ): bool {
+	$t_formats = file_dwg_source_release_formats();
+	if( !isset( $t_formats[$p_format] ) ) {
+		$p_format = 'zip';
+	}
+	$t_format = $t_formats[$p_format];
+
+	$t_bare = dwg_project_bare_repo_path( $p_project_id );
+	if( $t_bare === '' || !is_dir( $t_bare ) ) {
+		return false;
+	}
+	if( !preg_match( '/^[0-9a-f]{40}$/', $p_sha ) ) {
+		return false;
+	}
+	$t_git_path = (string)$p_row['git_path'];
+	if( file_dwg_git_object_type( $t_bare, $p_sha, $t_git_path ) !== 'tree' ) {
+		return false;
+	}
+
+	# Both the archive's top-level directory and its filename carry the short
+	# SHA, so an unpacked release is self-identifying on disk.
+	$t_stem   = file_dwg_tree_display_name( $p_project_id, $t_git_path ) . '-' . substr( $p_sha, 0, 8 );
+	$t_prefix = $t_stem . '/';
+
+	header( 'Content-Type: ' . $t_format['mime'] );
+	http_content_disposition_header( $t_stem . '.' . $t_format['extension'] );
+	header( 'X-Content-Type-Options: nosniff' );
+
+	$t_command = 'git --git-dir=' . escapeshellarg( $t_bare )
+		. ' archive --format=' . escapeshellarg( $t_format['format'] )
+		. ' --prefix=' . escapeshellarg( $t_prefix )
+		. ' ' . escapeshellarg( file_dwg_git_tree_ish( $p_sha, $t_git_path ) );
+
+	passthru( $t_command . ' 2>/dev/null' );
+	return true;
 }
 
 /**
@@ -1820,6 +1994,15 @@ function file_dwg_primary_build_path( int $p_dwg_id, string $p_filename, int $p_
  * Whether a repo-relative path is already registered by another document in
  * any project sharing the same repository.
  *
+ * The check exists because a file document's path is a *write* target:
+ * GitFileStorageBackend::store() commits the uploaded file there, so two
+ * documents claiming one path would overwrite each other.  A source release
+ * never writes — it registers an existing commit by reference — so tree rows
+ * are excluded from the search, and registering one skips the check
+ * altogether.  Several documents may therefore record the same tree, which is
+ * what successive releases of one component are, and what two release lines
+ * of one subtree are.  See doc/git/SOURCE_REPOSITORIES.md.
+ *
  * @param int    $p_dwg_id      Document being registered (excluded from the check).
  * @param int    $p_project_id  Project the document belongs to.
  * @param string $p_git_path
@@ -1846,6 +2029,7 @@ function file_dwg_primary_path_in_use( int $p_dwg_id, int $p_project_id, string 
 		'SELECT f.dwg_id FROM {dwg_primary_file} f'
 		. ' INNER JOIN {dwg} d ON d.id = f.dwg_id'
 		. ' WHERE f.git_path=' . db_param() . ' AND f.dwg_id<>' . db_param()
+		. ' AND d.kind<>' . DWG_KIND_SOURCE
 		. ' AND d.project_id IN (' . implode( ',', $t_in ) . ')',
 		$t_params, 1
 	);
@@ -1864,6 +2048,7 @@ function file_dwg_primary_path_in_use( int $p_dwg_id, int $p_project_id, string 
 		'SELECT f.dwg_id FROM {dwg_primary_draft} f'
 		. ' INNER JOIN {dwg} d ON d.id = f.dwg_id'
 		. ' WHERE f.git_path=' . db_param() . ' AND f.dwg_id<>' . db_param()
+		. ' AND d.kind<>' . DWG_KIND_SOURCE
 		. ' AND d.project_id IN (' . implode( ',', $t_in ) . ')',
 		$t_params, 1
 	);
@@ -1890,15 +2075,29 @@ function file_dwg_primary_path_in_use( int $p_dwg_id, int $p_project_id, string 
  * @param string $p_description Optional revision note.
  * @param bool   $p_pin         Pin an approved ref; independent of the reference.
  * @param string $p_file_type   MIME type; '' derives from the file extension.
+ * @param array  $p_options     'allow_tree' => bool, accept a git tree and so
+ *                              record a source repository rather than a file;
+ *                              'frozen' => bool, pin it as a *release* rather
+ *                              than a *line* that follows its branch;
+ *                              'branch' => string, the line to record instead
+ *                              of whatever the repository's HEAD names.
  * @return array{git_sha: string, git_path: string, filename: string, filesize: int}
  * @throws ClientException when the SHA/path do not exist or the path collides.
  * @throws ServiceException when the project has no repository on disk.
  */
-function file_dwg_primary_register( int $p_dwg_id, int $p_user_id, string $p_git_path, string $p_sha = '', string $p_description = '', bool $p_pin = true, string $p_file_type = '' ): array {
+function file_dwg_primary_register( int $p_dwg_id, int $p_user_id, string $p_git_path, string $p_sha = '', string $p_description = '', bool $p_pin = true, string $p_file_type = '', array $p_options = array() ): array {
 	$t_project_id = (int)dwg_get_field( $p_dwg_id, 'project_id' );
 	$t_previous = file_dwg_primary_get( $p_dwg_id );
 
-	$t_git_path = file_dwg_git_path_sanitize( $p_git_path );
+	# A re-registration of a source release (promotion, re-pin) keeps its
+	# nature and its release line without the caller having to restate them.
+	$t_allow_tree = !empty( $p_options['allow_tree'] ) || file_dwg_primary_is_tree( $t_previous );
+	$t_want_branch = (string)( $p_options['branch'] ?? '' );
+	if( $t_want_branch === '' && $t_previous ) {
+		$t_want_branch = (string)$t_previous['git_branch'];
+	}
+
+	$t_git_path = file_dwg_git_path_sanitize( $p_git_path, $t_allow_tree );
 	if( $t_git_path === false ) {
 		throw new ClientException(
 			'Invalid document path: ' . $p_git_path,
@@ -1927,19 +2126,25 @@ function file_dwg_primary_register( int $p_dwg_id, int $p_user_id, string $p_git
 		);
 	}
 
-	exec(
-		'git --git-dir=' . escapeshellarg( $t_bare ) .
-		' cat-file -e ' . escapeshellarg( $t_sha . ':' . $t_git_path ) . ' 2>/dev/null',
-		$t_out, $t_rc
-	);
-	if( $t_rc !== 0 ) {
+	# cat-file succeeds for trees as well as blobs, so the type decides what
+	# kind of record this is rather than being assumed from the path.
+	$t_object_type = file_dwg_git_object_type( $t_bare, $t_sha, $t_git_path );
+	if( $t_object_type === '' ) {
 		throw new ClientException(
 			'Path "' . $t_git_path . '" does not exist at commit ' . substr( $t_sha, 0, 8 ),
 			ERROR_INVALID_FIELD_VALUE, array( 'git_path' )
 		);
 	}
+	if( $t_object_type === 'tree' && !$t_allow_tree ) {
+		throw new ClientException(
+			'Path "' . $t_git_path . '" is a directory; only a source release record may be '
+				. 'rooted at one (see doc/git/SOURCE_REPOSITORIES.md)',
+			ERROR_INVALID_FIELD_VALUE, array( 'git_path' )
+		);
+	}
 
-	$t_holder = file_dwg_primary_path_in_use( $p_dwg_id, $t_project_id, $t_git_path );
+	$t_holder = $t_object_type === 'tree'
+		? 0 : file_dwg_primary_path_in_use( $p_dwg_id, $t_project_id, $t_git_path );
 	if( $t_holder !== 0 ) {
 		throw new ClientException(
 			'Path "' . $t_git_path . '" is already registered to document ' . $t_holder,
@@ -1947,22 +2152,60 @@ function file_dwg_primary_register( int $p_dwg_id, int $p_user_id, string $p_git
 		);
 	}
 
-	$t_size_str = trim( (string)shell_exec(
-		'git --git-dir=' . escapeshellarg( $t_bare ) .
-		' cat-file -s ' . escapeshellarg( $t_sha . ':' . $t_git_path ) . ' 2>/dev/null'
-	) );
-	$t_filesize = is_numeric( $t_size_str ) ? (int)$t_size_str : 0;
+	if( $t_object_type === 'tree' ) {
+		# A tree object's own size describes the directory listing, not the
+		# content, and there is no MIME type for "a repository at a commit".
+		$t_filesize = 0;
+	} else {
+		$t_size_str = trim( (string)shell_exec(
+			'git --git-dir=' . escapeshellarg( $t_bare ) .
+			' cat-file -s ' . escapeshellarg( $t_sha . ':' . $t_git_path ) . ' 2>/dev/null'
+		) );
+		$t_filesize = is_numeric( $t_size_str ) ? (int)$t_size_str : 0;
 
-	$t_branch = trim( (string)shell_exec(
-		'git --git-dir=' . escapeshellarg( $t_bare ) . ' symbolic-ref --short HEAD 2>/dev/null'
-	) );
+		# A git-LFS pointer's own size is a couple of hundred bytes of text
+		# describing the file.  The size that means anything to a reader --
+		# shown in the document panel, in Git Store and in the API -- is the
+		# file's, which the pointer states.  Small enough to read whole,
+		# because the pointer check rejects anything that is not.
+		if( $t_filesize > 0 && $t_filesize <= 1024 ) {
+			$t_pointer = git_lfs_parse_pointer( (string)shell_exec(
+				'git --git-dir=' . escapeshellarg( $t_bare ) .
+				' cat-file blob ' . escapeshellarg( $t_sha . ':' . $t_git_path ) . ' 2>/dev/null'
+			) );
+			if( $t_pointer !== null ) {
+				$t_filesize = $t_pointer['size'];
+			}
+		}
+	}
+
+	# Record the release line the caller named, when it still exists; two
+	# documents may track two branches of one repository.
+	$t_branch = '';
+	if( $t_want_branch !== '' ) {
+		exec( 'git --git-dir=' . escapeshellarg( $t_bare ) . ' show-ref --verify --quiet '
+			. escapeshellarg( 'refs/heads/' . $t_want_branch ) . ' 2>/dev/null', $t_br_out, $t_br_rc );
+		if( $t_br_rc === 0 ) {
+			$t_branch = $t_want_branch;
+		}
+	}
+	if( $t_branch === '' ) {
+		$t_branch = trim( (string)shell_exec(
+			'git --git-dir=' . escapeshellarg( $t_bare ) . ' symbolic-ref --short HEAD 2>/dev/null'
+		) );
+	}
 	if( $t_branch === '' ) {
 		$t_branch = 'main';
 	}
 
-	$t_filename  = basename( $t_git_path );
-	$t_file_type = $p_file_type !== '' ? $p_file_type
-		: ( file_dwg_get_content_type_override( $t_filename ) ?: 'application/octet-stream' );
+	if( $t_object_type === 'tree' ) {
+		$t_filename  = file_dwg_tree_display_name( $t_project_id, $t_git_path );
+		$t_file_type = DWG_TREE_MIME_TYPE;
+	} else {
+		$t_filename  = basename( $t_git_path );
+		$t_file_type = $p_file_type !== '' ? $p_file_type
+			: ( file_dwg_get_content_type_override( $t_filename ) ?: 'application/octet-stream' );
+	}
 
 	db_param_push();
 	db_query( 'DELETE FROM {dwg_primary_file} WHERE dwg_id=' . db_param(), array( $p_dwg_id ) );
@@ -1986,6 +2229,12 @@ function file_dwg_primary_register( int $p_dwg_id, int $p_user_id, string $p_git
 			$t_branch,
 		)
 	);
+
+	# The kind follows the object actually registered, so the two cannot drift.
+	# Freezing is the caller's to state, and a re-registration keeps it.
+	dwg_set_kind( $p_dwg_id, $t_object_type === 'tree' ? DWG_KIND_SOURCE : DWG_KIND_DOCUMENT );
+	dwg_set_frozen( $p_dwg_id,
+		$p_options['frozen'] ?? ( $t_previous ? dwg_is_frozen( $p_dwg_id ) : false ) );
 
 	# A document registered from Git has a reference regardless of approval.
 	file_dwg_set_document_reference( $p_dwg_id, $t_sha );
@@ -2013,7 +2262,10 @@ function file_dwg_primary_draft_register( int $p_dwg_id, int $p_user_id, string 
 	$t_previous = file_dwg_primary_draft_get( $p_dwg_id );
 	$t_project_id = (int)dwg_get_field( $p_dwg_id, 'project_id' );
 	$t_bare = dwg_project_bare_repo_path( $t_project_id );
-	$t_git_path = file_dwg_git_path_sanitize( $p_git_path );
+	# A source release's Draft is a tree like its On Record version.
+	$t_allow_tree = file_dwg_primary_is_tree( $t_previous )
+		|| file_dwg_primary_is_tree( file_dwg_primary_get( $p_dwg_id ) );
+	$t_git_path = file_dwg_git_path_sanitize( $p_git_path, $t_allow_tree );
 	$t_sha = strtolower( trim( $p_sha ) );
 	if( $t_sha === '' ) {
 		$t_sha = trim( (string)shell_exec( 'git --git-dir=' . escapeshellarg( $t_bare ) . ' rev-parse HEAD 2>/dev/null' ) );
@@ -2021,19 +2273,32 @@ function file_dwg_primary_draft_register( int $p_dwg_id, int $p_user_id, string 
 	if( $t_git_path === false || !preg_match( '/^[0-9a-f]{40}$/', $t_sha ) ) {
 		throw new ClientException( 'Invalid draft path or commit', ERROR_INVALID_FIELD_VALUE, array( 'git_path' ) );
 	}
-	$t_holder = file_dwg_primary_path_in_use( $p_dwg_id, $t_project_id, $t_git_path );
+	$t_holder = $t_allow_tree ? 0 : file_dwg_primary_path_in_use( $p_dwg_id, $t_project_id, $t_git_path );
 	if( $t_holder !== 0 ) {
 		throw new ClientException( 'Draft path is registered to document ' . $t_holder, ERROR_INVALID_FIELD_VALUE, array( 'git_path' ) );
 	}
-	$t_size_str = trim( (string)shell_exec( 'git --git-dir=' . escapeshellarg( $t_bare )
-		. ' cat-file -s ' . escapeshellarg( $t_sha . ':' . $t_git_path ) . ' 2>/dev/null' ) );
-	if( !ctype_digit( $t_size_str ) ) {
+	$t_object_type = file_dwg_git_object_type( $t_bare, $t_sha, $t_git_path );
+	if( $t_object_type === '' || ( $t_object_type === 'tree' && !$t_allow_tree ) ) {
 		throw new ClientException( 'Draft file is absent at commit', ERROR_INVALID_FIELD_VALUE, array( 'git_path' ) );
+	}
+	if( $t_object_type === 'tree' ) {
+		$t_size_str = '0';
+	} else {
+		$t_size_str = trim( (string)shell_exec( 'git --git-dir=' . escapeshellarg( $t_bare )
+			. ' cat-file -s ' . escapeshellarg( $t_sha . ':' . $t_git_path ) . ' 2>/dev/null' ) );
+		if( !ctype_digit( $t_size_str ) ) {
+			throw new ClientException( 'Draft file is absent at commit', ERROR_INVALID_FIELD_VALUE, array( 'git_path' ) );
+		}
 	}
 	$t_branch = trim( (string)shell_exec( 'git --git-dir=' . escapeshellarg( $t_bare ) . ' symbolic-ref --short HEAD 2>/dev/null' ) );
 	$t_branch = $t_branch !== '' ? $t_branch : 'main';
-	$t_filename = basename( $t_git_path );
-	$t_file_type = $p_file_type !== '' ? $p_file_type : ( file_dwg_get_content_type_override( $t_filename ) ?: 'application/octet-stream' );
+	if( $t_object_type === 'tree' ) {
+		$t_filename  = file_dwg_tree_display_name( $t_project_id, $t_git_path );
+		$t_file_type = DWG_TREE_MIME_TYPE;
+	} else {
+		$t_filename = basename( $t_git_path );
+		$t_file_type = $p_file_type !== '' ? $p_file_type : ( file_dwg_get_content_type_override( $t_filename ) ?: 'application/octet-stream' );
+	}
 	db_param_push();
 	db_query( 'DELETE FROM {dwg_primary_draft} WHERE dwg_id=' . db_param(), array( $p_dwg_id ) );
 	db_param_push();
@@ -2080,6 +2345,16 @@ function file_dwg_primary_add( $p_dwg_id, $p_user_id, $p_tmp_file, $p_filename, 
 
 	$t_on_record = file_dwg_primary_get( $p_dwg_id );
 	$t_existing = file_dwg_primary_draft_get( $p_dwg_id ) ?: $t_on_record;
+
+	# A source release records a repository at a commit; its content arrives by
+	# git push, never by a browser upload that would commit one stray file.
+	if( file_dwg_primary_is_tree( $t_existing ) ) {
+		throw new ClientException(
+			'Document ' . (int)$p_dwg_id . ' is a source release record; its content is '
+				. 'changed by pushing to the repository, not by uploading a file',
+			ERROR_INVALID_FIELD_VALUE, array( 'primary_document_file' )
+		);
+	}
 
 	if( $t_existing && $t_existing['git_path'] !== '' ) {
 		# Replacement: keep the registered directory, adopt the new basename.
@@ -2232,7 +2507,10 @@ function file_dwg_primary_delete( $p_dwg_id ) {
  */
 function file_dwg_primary_move_prepare( int $p_dwg_id, int $p_target_project_id, int $p_user_id ): ?array {
 	$t_row = file_dwg_primary_get( $p_dwg_id );
-	if( !$t_row || $t_row['git_path'] === '' ) {
+	# A source release names a tree in one specific repository; copying it into
+	# another is not a file move, and a repo-rooted path would silently resolve
+	# against the target repository's own root.
+	if( !$t_row || $t_row['git_path'] === '' || file_dwg_primary_is_tree( $t_row ) ) {
 		return null;
 	}
 	$t_source_project_id = (int)dwg_get_field( $p_dwg_id, 'project_id' );
@@ -2355,6 +2633,37 @@ function file_dwg_primary_get_content( $p_dwg_id ) {
 }
 
 /**
+ * Send a retrieved primary-document body to the client.
+ *
+ * Shared by every file_download.php route that serves a registered document,
+ * because what a retrieve() returns is not always bytes: a git-LFS-backed
+ * document comes back as a path to its object in the LFS store, and must be
+ * streamed rather than held in memory -- being too large for a repository is
+ * the reason it is in LFS at all.  Emits Content-Length and the sniffing
+ * guard; the caller has already sent the type and disposition headers.
+ *
+ * @param array $p_result  A retrieve() result: 'content', or 'file'.
+ * @return void
+ */
+function file_dwg_send_content( array $p_result ): void {
+	if( isset( $p_result['file'] ) ) {
+		header( 'Content-Length: ' . filesize( $p_result['file'] ) );
+		header( 'X-Content-Type-Options: nosniff' );
+		# Nothing may stand between readfile() and the socket, or the whole
+		# object is buffered after all.
+		while( ob_get_level() > 0 ) {
+			ob_end_clean();
+		}
+		readfile( $p_result['file'] );
+		return;
+	}
+
+	header( 'Content-Length: ' . strlen( $p_result['content'] ) );
+	header( 'X-Content-Type-Options: nosniff' );
+	echo $p_result['content'];
+}
+
+/**
  * Retrieve the document-specific Draft revision. The historical function name
  * is retained for callers, but a staged upload is read at its recorded commit;
  * a direct Git edit is read at the last commit affecting this file.
@@ -2454,6 +2763,59 @@ function file_dwg_primary_sync_head( int $p_dwg_id, int $p_acting_user_id, strin
 	}
 }
 
+/**
+ * The tip commit of the branch a document was registered on, falling back to
+ * the repository's HEAD.
+ *
+ * A document's Draft is whatever its own release line has advanced to, not
+ * whatever the repository's HEAD happens to name.  Following git_branch is
+ * what lets two documents track two branches of one repository — a release
+ * line per maintained version — and it also keeps a document working when
+ * the bare repo's HEAD names a branch that does not exist, which is the state
+ * an empty Doctis repository is created in (see the post-receive hook).
+ *
+ * @param string $p_bare
+ * @param string $p_branch  The row's git_branch; '' falls straight back to HEAD.
+ * @return string  40-char commit SHA, or '' when neither resolves.
+ */
+function file_dwg_git_branch_tip( string $p_bare, string $p_branch ): string {
+	foreach( array( $p_branch === '' ? null : 'refs/heads/' . $p_branch, 'HEAD' ) as $t_rev ) {
+		if( $t_rev === null ) {
+			continue;
+		}
+		$t_sha = trim( (string)shell_exec(
+			'git --git-dir=' . escapeshellarg( $p_bare )
+			. ' rev-parse --verify -q ' . escapeshellarg( $t_rev ) . ' 2>/dev/null'
+		) );
+		if( preg_match( '/^[0-9a-f]{40}$/', $t_sha ) ) {
+			return $t_sha;
+		}
+	}
+	return '';
+}
+
+/**
+ * Whether a branch exists in a bare repository.
+ *
+ * A document that names a branch which has since been deleted must not fall
+ * back to HEAD: it would silently start tracking a different line, and a
+ * manager could promote one line's work on to another line's record.  Only a
+ * row with no branch at all falls back.  Deletion is refused under the
+ * document push policy, so this arises on source repositories.
+ *
+ * @param string $p_bare
+ * @param string $p_branch
+ * @return bool
+ */
+function file_dwg_git_branch_exists( string $p_bare, string $p_branch ): bool {
+	if( $p_branch === '' ) {
+		return false;
+	}
+	exec( 'git --git-dir=' . escapeshellarg( $p_bare ) . ' show-ref --verify --quiet '
+		. escapeshellarg( 'refs/heads/' . $p_branch ) . ' 2>/dev/null', $t_out, $t_rc );
+	return $t_rc === 0;
+}
+
 /** Return the Git object ID for one file at a commit, or null if absent. */
 function file_dwg_git_object_sha( string $p_bare, string $p_commit, string $p_path ): ?string {
 	$t_sha = trim( (string)shell_exec(
@@ -2496,20 +2858,60 @@ function file_dwg_git_head_info( int $p_dwg_id ): ?array {
 	if( $t_bare === '' || !is_dir( $t_bare ) ) {
 		return null;
 	}
-	$t_head_sha = trim( (string)shell_exec(
-		'git --git-dir=' . escapeshellarg( $t_bare ) . ' rev-parse HEAD 2>/dev/null'
-	) );
-	if( !preg_match( '/^[0-9a-f]{40}$/', $t_head_sha ) ) {
+	# A record whose branch has been deleted tracks nothing: falling back to
+	# HEAD would quietly follow a different line.  Reported so the view page
+	# can say so, and with no Draft, which also blocks promotion.
+	# A frozen release is pinned at its commit: later work on the line is a
+	# matter for the line's own record, or for the next release.
+	if( dwg_is_frozen( $p_dwg_id ) ) {
+		$t_meta = file_dwg_git_commit_metadata( $t_bare, $t_on_record['git_sha'] );
+		return array(
+			'sha'            => $t_on_record['git_sha'],
+			'head_sha'       => $t_on_record['git_sha'],
+			'date'           => $t_meta !== null ? $t_meta['date'] : 0,
+			'author'         => $t_meta !== null ? $t_meta['author'] : '',
+			'filename'       => $t_on_record['filename'],
+			'git_path'       => $t_on_record['git_path'],
+			'has_draft'      => false,
+			'missing'        => false,
+			'stale'          => false,
+			'branch_missing' => false,
+			'frozen'         => true,
+		);
+	}
+
+	$t_branch = (string)$t_on_record['git_branch'];
+	if( $t_branch !== '' && !file_dwg_git_branch_exists( $t_bare, $t_branch ) ) {
+		$t_meta = file_dwg_git_commit_metadata( $t_bare, $t_on_record['git_sha'] );
+		return array(
+			'sha'            => $t_on_record['git_sha'],
+			'head_sha'       => $t_on_record['git_sha'],
+			'date'           => $t_meta !== null ? $t_meta['date'] : 0,
+			'author'         => $t_meta !== null ? $t_meta['author'] : '',
+			'filename'       => $t_on_record['filename'],
+			'git_path'       => $t_on_record['git_path'],
+			'has_draft'      => false,
+			'missing'        => false,
+			'stale'          => false,
+			'branch_missing' => true,
+			'frozen'         => false,
+		);
+	}
+
+	$t_head_sha = file_dwg_git_branch_tip( $t_bare, $t_branch );
+	if( $t_head_sha === '' ) {
 		return null;
 	}
 
 	$t_staged = file_dwg_primary_draft_get( $p_dwg_id );
 	$t_path = $t_staged ? $t_staged['git_path'] : $t_on_record['git_path'];
+	$t_is_tree = file_dwg_primary_is_tree( $t_staged ?: $t_on_record );
 	$t_current_object = file_dwg_git_object_sha( $t_bare, $t_head_sha, $t_path );
 	$t_missing = $t_current_object === null;
 	$t_stale = false;
 	$t_has_draft = false;
-	$t_filename = $t_missing ? null : basename( $t_path );
+	$t_filename = $t_missing ? null
+		: ( $t_is_tree ? file_dwg_tree_display_name( (int)$t_project_id, $t_path ) : basename( $t_path ) );
 
 	if( $t_staged ) {
 		$t_staged_object = file_dwg_git_object_sha( $t_bare, $t_staged['git_sha'], $t_path );
@@ -2535,10 +2937,12 @@ function file_dwg_git_head_info( int $p_dwg_id ): ?array {
 		} else {
 			# Use the most recent commit for this path, not the repository HEAD
 			# after unrelated documents have been edited.
+			# git refuses an empty pathspec; "." is how it spells "every path",
+			# which is what a repository-rooted source release records.
 			$t_sha = trim( (string)shell_exec(
 				'git --git-dir=' . escapeshellarg( $t_bare )
 				. ' log -1 --format=%H ' . escapeshellarg( $t_head_sha )
-				. ' -- ' . escapeshellarg( $t_path ) . ' 2>/dev/null'
+				. ' -- ' . escapeshellarg( $t_path === '' ? '.' : $t_path ) . ' 2>/dev/null'
 			) );
 			if( !preg_match( '/^[0-9a-f]{40}$/', $t_sha ) ) {
 				return null;
@@ -2552,15 +2956,17 @@ function file_dwg_git_head_info( int $p_dwg_id ): ?array {
 		return null;
 	}
 	return array(
-		'sha'       => $t_sha,
-		'head_sha'  => $t_head_sha,
-		'date'      => $t_metadata['date'],
-		'author'    => $t_metadata['author'],
-		'filename'  => $t_filename,
-		'git_path'  => $t_path,
-		'has_draft' => $t_has_draft,
-		'missing'   => $t_missing,
-		'stale'     => $t_stale,
+		'sha'            => $t_sha,
+		'head_sha'       => $t_head_sha,
+		'date'           => $t_metadata['date'],
+		'author'         => $t_metadata['author'],
+		'filename'       => $t_filename,
+		'git_path'       => $t_path,
+		'has_draft'      => $t_has_draft,
+		'missing'        => $t_missing,
+		'stale'          => $t_stale,
+		'branch_missing' => false,
+		'frozen'         => false,
 	);
 }
 

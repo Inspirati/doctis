@@ -22,6 +22,10 @@ IFS=$'\n\t'
 # ---------------------------------------------------------------------------
 BARE_ROOT="/var/git/doctis"
 WORKTREE_ROOT="/var/www/doctis/worktrees"
+# Git LFS object store: the large files the bare repositories only point at.
+# Deliberately outside BARE_ROOT so an LFS object can never be packed into a
+# repository.  See doc/git/GIT_LFS.md.
+LFS_ROOT="/var/git/doctis-lfs"
 GITCONFIG="/var/www/.gitconfig"
 WEB_USER="www-data"
 GIT_EMAIL="doctis@vaio.local"
@@ -106,7 +110,7 @@ setup_git_storage() {
     _gst_step "Step 2 — Create storage root directories"
 
     local dir
-    for dir in "$BARE_ROOT" "$WORKTREE_ROOT"; do
+    for dir in "$BARE_ROOT" "$WORKTREE_ROOT" "$LFS_ROOT"; do
         _gst_chk "$dir"
         [ -d "$dir" ] || mkdir -p "$dir" \
             || { _gst_fail "mkdir -p $dir failed"; return 1; }
@@ -117,7 +121,7 @@ setup_git_storage() {
     done
 
     _gst_chk "ownership verification"
-    for dir in "$BARE_ROOT" "$WORKTREE_ROOT"; do
+    for dir in "$BARE_ROOT" "$WORKTREE_ROOT" "$LFS_ROOT"; do
         local owner mode
         owner=$(stat -c '%U:%G' "$dir")
         mode=$(stat -c '%a' "$dir")
@@ -377,6 +381,7 @@ doctis-git-setup() {
     echo -e "${INFO}[INFO]   webroot  : ${_webroot}${OFF}"
     echo -e "${INFO}[INFO]   bare repos: ${BARE_ROOT}${OFF}"
     echo -e "${INFO}[INFO]   worktrees : ${WORKTREE_ROOT}${OFF}"
+    echo -e "${INFO}[INFO]   LFS store : ${LFS_ROOT}${OFF}"
 
     if [ "$(id -u)" -ne 0 ]; then
         echo -e "${FAIL}[FAIL] Must run as root (sudo).${OFF}" >&2
