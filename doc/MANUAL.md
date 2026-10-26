@@ -1148,6 +1148,52 @@ request-body limit must be lifted on the `/git/` route — a push sends the
 whole packfile as one request, so the usual limit rejects any repository of
 real size with `HTTP 413`.
 
+### 13.6 Large binary files (git LFS)
+
+Some repositories are mostly large binaries — CAD drawings, firmware images,
+manufacturing output. Plain git keeps every version of every file in the
+repository forever, and every clone downloads all of it. **Git LFS** solves
+that: the commit holds a short pointer, and the bytes live in a separate
+store that is fetched only for the versions you actually check out.
+
+Doctis can act as the LFS server for the repositories it hosts, so this works
+with no extra service and no second password. To use it, in a clone:
+
+```bash
+git lfs install
+git lfs track "*.step" "*.bin"      # whatever your large types are
+git add .gitattributes
+git commit -m "Track large files with LFS"
+git push
+```
+
+From then on those files transfer through Doctis automatically, authenticated
+with the same API token as your clone. Documents registered against them
+behave normally: the document panel shows the real file size, and downloading
+gives you the file, not the pointer.
+
+**Two limits to know:**
+
+- **Publishing is refused** for an LFS-backed document. Publishing renders
+  Markdown to a web page, and there is nothing useful to render.
+- **A source release archive contains pointers, not files.** Downloading a
+  release of an LFS repository as a zip or tarball gives you the pointer text
+  for the LFS-tracked files. Clone the repository instead if you need the
+  content.
+
+**For administrators:** LFS is off until `$g_git_lfs_enabled = ON` and
+`$g_git_lfs_root` names a writable directory (the installer sets both, with
+the store at `/var/git/doctis-lfs`). Leaving it off is the right choice for a
+server holding no LFS content — the endpoints then refuse clearly rather than
+accepting pointers whose files go nowhere.
+
+**Backups must include the object store.** Backup Git Store does this
+automatically, and says so on the page: when LFS content is present the
+archive holds `repositories/` and `lfs/` rather than the repositories at the
+top level, and its filename is marked `_lfs`. A backup of the repositories
+alone would restore every commit and lose every large file those commits
+refer to.
+
 ---
 
 ## 14. Administration notes

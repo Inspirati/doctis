@@ -854,6 +854,87 @@ if( $t_entry18 === null ) {
 		count( $t_listed ) . ' listed vs ' . count( $t_mapped ) . ' mapped' );
 }
 
+# ── Step 19: git-LFS ────────────────────────────────────────────────────────
+# A document whose blob is an LFS pointer must behave as the file it points
+# at: the recorded size is the file's, and reading it resolves to the object
+# in the LFS store rather than handing back the pointer text.
+#
+# The pointer is written directly with git hash-object, so the suite needs no
+# git-lfs client installed -- the format is what is under test, not the client.
+echo "Step 19: git-LFS\n";
+
+# Pure checks first: these hold whether or not LFS is configured.
+check( git_lfs_oid_valid( str_repeat( 'a', 64 ) ), 'a 64-hex oid is valid' );
+check( !git_lfs_oid_valid( str_repeat( 'A', 64 ) ), 'an uppercase oid is refused' );
+check( !git_lfs_oid_valid( '../../etc/passwd' ), 'a path is not an oid' );
+check( !git_lfs_oid_valid( str_repeat( 'a', 63 ) ), 'a short oid is refused' );
+
+$t_lfs_oid  = hash( 'sha256', 'lfs test content' );
+$t_lfs_ptr  = git_lfs_pointer( $t_lfs_oid, 16 );
+$t_lfs_back = git_lfs_parse_pointer( $t_lfs_ptr );
+check( $t_lfs_back !== null && $t_lfs_back['oid'] === $t_lfs_oid && $t_lfs_back['size'] === 16,
+	'a composed pointer parses back to its oid and size' );
+check( git_lfs_parse_pointer( "# Heading\n\nSome markdown.\n" ) === null,
+	'an ordinary document is not read as a pointer' );
+check( git_lfs_parse_pointer( "version 1.0\noid sha256:nope\nsize 3\n" ) === null,
+	'a lookalike without the spec URL is not a pointer' );
+check( git_lfs_parse_pointer( str_repeat( 'x', 4096 ) ) === null,
+	'a large file is never scanned for a pointer' );
+
+$t_lfs_root = rtrim( (string)config_get_global( 'git_lfs_root', '' ), '/' );
+if( $t_lfs_root === '' || !is_dir( $t_lfs_root ) ) {
+	echo "  (skipped the LFS store checks: \$g_git_lfs_root is not configured)\n";
+} else {
+	$t_lfs_repo_id = repository_id_for_project( $t_parent );
+	$t_lfs_dir     = git_lfs_repo_root( $t_lfs_repo_id );
+	$t_cleanup['disk'][] = $t_lfs_dir;
+
+	$t_lfs_body = str_repeat( 'binary-ish payload ', 1000 );
+	$t_lfs_oid2 = hash( 'sha256', $t_lfs_body );
+	$t_lfs_path = git_lfs_object_path( $t_lfs_repo_id, $t_lfs_oid2 );
+	check( strpos( $t_lfs_path, $t_lfs_dir . '/' . substr( $t_lfs_oid2, 0, 2 ) . '/'
+		. substr( $t_lfs_oid2, 2, 2 ) . '/' . $t_lfs_oid2 ) === 0,
+		'an object path fans out by the first four hex digits' );
+
+	@mkdir( dirname( $t_lfs_path ), 0770, true );
+	file_put_contents( $t_lfs_path, $t_lfs_body );
+	check( git_lfs_object_size( $t_lfs_repo_id, $t_lfs_oid2 ) === strlen( $t_lfs_body ),
+		'a stored object reports its size' );
+
+	# Commit the pointer, not the content -- which is the whole point.
+	$t_ptr_text = git_lfs_pointer( $t_lfs_oid2, strlen( $t_lfs_body ) );
+	file_put_contents( $t_hookwt . '/big.bin', $t_ptr_text );
+	exec( 'cd ' . escapeshellarg( $t_hookwt ) . ' && git add -A'
+		. ' && git -c user.name=T -c user.email=t@e.invalid commit -q -m "add an LFS pointer"'
+		. ' && git push -q origin rel-line 2>&1' );
+	$t_lfs_sha = bare_git( $t_bare14, 'rev-parse refs/heads/rel-line' );
+	check( strlen( trim( (string)bare_git( $t_bare14, 'cat-file -s '
+		. escapeshellarg( $t_lfs_sha . ':big.bin' ) ) ) ) > 0, 'the pointer blob is in the repository' );
+
+	$t_lfs_dwg = make_dwg( $t_parent, 1, 'GitTest LFS document' );
+	$t_cleanup['dwg_ids'][] = $t_lfs_dwg;
+	file_dwg_primary_register( $t_lfs_dwg, 1, 'big.bin', $t_lfs_sha, 'lfs' );
+	$t_lfs_row = file_dwg_primary_get( $t_lfs_dwg );
+	check( (int)$t_lfs_row['filesize'] === strlen( $t_lfs_body ),
+		'the recorded size is the file\'s, not the pointer\'s',
+		$t_lfs_row['filesize'] . ' vs ' . strlen( $t_lfs_body ) );
+
+	$t_lfs_got = file_dwg_primary_get_content( $t_lfs_dwg );
+	check( is_array( $t_lfs_got ) && isset( $t_lfs_got['file'] ),
+		'reading the document resolves the pointer to the stored object' );
+	if( is_array( $t_lfs_got ) && isset( $t_lfs_got['file'] ) ) {
+		check( (string)file_get_contents( $t_lfs_got['file'] ) === $t_lfs_body,
+			'and the object is the content that was stored' );
+	}
+
+	# An object store that was not restored with its repository must fail as a
+	# missing file, never by serving the pointer as if it were the document.
+	rename( $t_lfs_path, $t_lfs_path . '.hidden' );
+	check( file_dwg_primary_get_content( $t_lfs_dwg ) === false,
+		'a pointer whose object is absent reads as a missing file' );
+	rename( $t_lfs_path . '.hidden', $t_lfs_path );
+}
+
 } catch( Throwable $e ) {
 	fail( 'unexpected exception', get_class( $e ) . ': ' . $e->getMessage()
 		. ' @ ' . $e->getFile() . ':' . $e->getLine() );
@@ -887,8 +968,11 @@ foreach( $t_cleanup['projects'] as $t_id ) {
 	project_delete( $t_id );
 }
 foreach( array_unique( $t_cleanup['disk'] ) as $t_path ) {
+	# The LFS object store is a third root the suite may have written into.
+	$t_lfs_root_td = rtrim( (string)config_get_global( 'git_lfs_root', '' ), '/' );
 	if( $t_path !== '' && is_dir( $t_path )
-	 && ( strpos( $t_path, $t_storage_root ) === 0 || strpos( $t_path, (string)$t_worktree_root ) === 0 ) ) {
+	 && ( strpos( $t_path, $t_storage_root ) === 0 || strpos( $t_path, (string)$t_worktree_root ) === 0
+	   || ( $t_lfs_root_td !== '' && strpos( $t_path, $t_lfs_root_td ) === 0 ) ) ) {
 		exec( 'rm -rf ' . escapeshellarg( $t_path ) );
 	}
 }

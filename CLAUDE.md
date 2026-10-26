@@ -1068,6 +1068,24 @@ unpushable under both, which is what keeps a released commit reachable however
 the branches are rewritten. Hooks: `admin/tools/git-hooks/pre-receive` and
 `post-receive` (the latter repairs a bare repo's dangling HEAD).
 
+**Git LFS.** Doctis is the LFS server for the repositories it hosts: a client
+derives its endpoint by appending `/info/lfs` to the remote URL, so the
+requests arrive on the same `/git/` route and use the same API-token Basic
+auth. [core/git_lfs_api.php](core/git_lfs_api.php) implements the batch call,
+the basic transfer and verify; objects live per repository under
+`$g_git_lfs_root` (`/var/git/doctis-lfs`), outside the bare repos so an LFS
+object can never be packed into one. `GitFileStorageBackend::retrieve()`
+resolves a pointer to its object and returns a *path*, which
+`file_dwg_send_content()` streams — so the three `file_download.php` document
+routes all work without holding the file in memory. Off unless
+`$g_git_lfs_enabled` is ON. Two known gaps: a source-release `git archive`
+still emits pointers, and import of an LFS repository is still refused.
+Built on branch `git-lfs` 2026-10-26, stages 1-2 of 3, unmerged and unpushed.
+Read [doc/git/GIT_LFS.md](doc/git/GIT_LFS.md) before touching it — in
+particular, never set `"authenticated": true` in a batch reply: it tells the
+client to withhold credentials from the transfer, which produces an endless
+401 loop.
+
 Built on branch `source-repos` 2026-10-25 and trial-tested on the VM;
 **unmerged and unpushed**. Design record, spike results, how to drive it and
 what is left: [doc/git/SOURCE_REPOSITORIES.md](doc/git/SOURCE_REPOSITORIES.md)

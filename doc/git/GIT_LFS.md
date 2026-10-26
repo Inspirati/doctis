@@ -1,6 +1,7 @@
 # Git LFS in Doctis
 
-Status: **in development** on branch `git-lfs` (started 2026-10-26).
+Status: **stages 1 and 2 built and trial-tested on the VM** (branch `git-lfs`,
+2026-10-26); stage 3, LFS-aware import, is not built. Unmerged and unpushed.
 Prerequisite reading: [GIT_ARCHITECTURE.md](GIT_ARCHITECTURE.md) for the
 storage baseline and [SOURCE_REPOSITORIES.md](SOURCE_REPOSITORIES.md) for the
 clone/push gateway this builds on.
@@ -102,8 +103,8 @@ Call sites that must read through it:
 | `file_download.php` (primary) | echoes `retrieve()`'s content | streams, so a 500 MB file does not have to fit in `memory_limit` |
 | `file_dwg_primary_register()` | records `filesize` from the blob | records the pointer's `size`, which is the real file's size |
 | Publishing | pandoc reads the file | a pointer is not Markdown; refuse with a clear message |
-| `git archive` (source release) | streams the tree | emits pointers. Documented, not fixed: a release tarball of an LFS repo is pointers unless `git archive` is given a smudge filter, which is a later decision |
-| Git Store preview | shows the blob | shows the pointer, labelled, with the real size |
+| `git archive` (source release) | streams the tree | **still emits pointers.** Known gap, not fixed: a release archive of an LFS repository carries pointer files unless `git archive` is given a smudge filter. Left for a decision, because a release of a hardware repository may legitimately want either |
+| Git Store preview | shows the blob | **still shows the pointer text.** Known gap; harmless, since the size column beside it is now the real one |
 
 ## 6. Import
 
@@ -130,9 +131,9 @@ object store into `$g_git_lfs_root/<slug>-r<id>/`.
 
 | Stage | Content |
 |-------|---------|
-| 1 | LFS server: batch, basic transfer, verify, object store, config, gateway routing. A clone/push of an LFS repository works end to end |
-| 2 | Reading through a pointer (§5), and Backup Git Store including the object store |
-| 3 | Bundle + LFS import (§6), administrator-only, lifting the `filter=lfs` abort |
+| 1 | **Done.** LFS server: batch, basic transfer, verify, object store, config, gateway routing. A clone/push of an LFS repository works end to end |
+| 2 | **Done.** Reading through a pointer (§5), and Backup Git Store including the object store |
+| 3 | Not built. Bundle + LFS import (§6), administrator-only, lifting the `filter=lfs` abort |
 
 ## 8. Decisions
 
@@ -147,7 +148,49 @@ object store into `$g_git_lfs_root/<slug>-r<id>/`.
   authenticating to GitHub (owner, 2026-10-26). Infrequent, expert-only
   operation; restricted to administrators.
 
-## 9. Log
+## 9. Measured and proven
+
+Everything here was verified against a real `git-lfs` 3.6.1 client and the live
+VM gateway, not reasoned about.
+
+| Observation | Result |
+|-------------|--------|
+| Push of a 3 MB LFS-tracked file | Commit holds a 130-byte pointer; object stored at its sha256; bare repository stayed **224 K** |
+| Fresh clone of that repository | `firmware.bin` checked out at 3,000,000 bytes, sha256 identical to the original |
+| Download of the same file as a Doctis document | 3,000,000 bytes over `file_download.php`, sha256 identical, `Content-Length` correct |
+| Recorded `filesize` on registration | 3000000 — the file's size, not the pointer's |
+| **PUT of a 100 MB object** | **HTTP 200.** PHP's `post_max_size` (64 M on this VM) does not apply to PUT, so an LFS upload streams past it |
+| `git push` of the same volume | *Would* fail: a push is a POST and **is** capped by `post_max_size`. LFS sidesteps this too, because the packfile stays small while the bytes go by PUT |
+| Content not matching its oid | 422, temporary file removed, nothing stored |
+| Download of an absent object | 404 inside the batch reply, per object |
+| Malformed oid | 422 inside the batch reply |
+| `info/lfs/locks` | 501 |
+| No API token | 401 |
+| `objects/../../../../etc/passwd` | 403 at the gateway allowlist |
+| Pointer whose object is missing | Document reads as a missing file and logs the oid; never serves the pointer |
+
+### The trap that cost an hour
+
+The first implementation set `"authenticated": true` on every batch object,
+reading it as "the caller is authenticated". It does not mean that. It means
+*"this href needs no credentials"*, and a client that sees it deliberately
+withholds the `Authorization` header from the transfer that follows — so every
+PUT returned 401 and git-lfs retried forever. Our transfer hrefs are on the
+same gateway and need the same token, so the flag must be absent.
+
+## 10. Log
 
 - **2026-10-26** — branch `git-lfs` taken from `source-repos`. `git-lfs 3.6.1`
   installed on the VM for client-side testing. Design recorded.
+- **2026-10-26** — stage 1 built: `core/git_lfs_api.php`, the gateway's
+  endpoint allowlist extended, `$g_git_lfs_enabled` / `$g_git_lfs_root`, the
+  object store included in Reset Git Store and relocated by a project rename.
+  Verified end to end with a real client (§9).
+- **2026-10-26** — stage 2 built: pointer resolution in
+  `GitFileStorageBackend::retrieve()` covering all three download routes,
+  `file_dwg_send_content()` streaming, the real size recorded on registration,
+  publishing refused, Backup Git Store carrying the object store. Verified by
+  downloading a 3 MB LFS-backed document through the web UI byte-for-byte.
+- **2026-10-26** — `admin/test-git-doctis.php` gained step 19 (git-LFS):
+  **176 → 191 assertions**, 0 failed. `test-git-php.php` 20/20. PHPUnit
+  `mantis` 382 tests, 1236 assertions, unchanged.

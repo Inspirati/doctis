@@ -24,6 +24,7 @@ written for the former vaio host, `10.0.0.10`, with Apache):
 | Web server user | `www-data` (uid 33, gid 33) |
 | www-data HOME | `/var/www` (verify: `getent passwd www-data`) |
 | Bare repo root | `/var/git/doctis/` |
+| Git LFS object store | `/var/git/doctis-lfs/` (only if LFS is used — see [GIT_LFS.md](GIT_LFS.md)) |
 | Working tree root | `/var/www/doctis/worktrees/` |
 | Deploy account | `robert` (`hcr` on vaio and in the Docker image) |
 
@@ -47,9 +48,9 @@ can create per-project subdirectories without privilege escalation. Mode `2770`
 preventing permission drift over time.
 
 ```bash
-sudo mkdir -p /var/git/doctis /var/www/doctis/worktrees
-sudo chown www-data:www-data /var/git/doctis /var/www/doctis/worktrees
-sudo chmod 2770 /var/git/doctis /var/www/doctis/worktrees
+sudo mkdir -p /var/git/doctis /var/www/doctis/worktrees /var/git/doctis-lfs
+sudo chown www-data:www-data /var/git/doctis /var/www/doctis/worktrees /var/git/doctis-lfs
+sudo chmod 2770 /var/git/doctis /var/www/doctis/worktrees /var/git/doctis-lfs
 ```
 
 Verify:

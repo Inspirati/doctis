@@ -309,7 +309,7 @@ repository migration.
 |-------|--------|-------|
 | **Repo naming scheme** | ☑ Decided & implemented | Option C (`<slug>-<id>.git`) — see §1 |
 | **Signed commits** | Deferred | GPG-signed commits would strengthen audit properties but require key management. Out of scope until the core workflow is complete. |
-| **Git LFS** | Deferred | LFS would keep the repo index small for large binaries (PDFs, CAD files > 50 MB). Requires LFS server (or hosted service) and credential handling. No threshold decided. |
+| **Git LFS** | **Built** (stages 1-2, branch `git-lfs`, 2026-10-26) | Doctis is now the LFS server: the batch API and basic transfer on the existing `/git/` gateway, objects in `$g_git_lfs_root`, and pointers resolved wherever Doctis reads a document. Off by default (`$g_git_lfs_enabled`). Remaining: LFS-aware import, and `git archive` of a source release still emits pointers. See [GIT_LFS.md](GIT_LFS.md). |
 | **Branching strategy for drafts** | Deferred | Should in-review revisions live on a branch (`review/dwg-123`) and be merged on approval? Cleaner history; adds workflow complexity. The current single-mainline model suffices until the review workflow is built. |
 | **Git bundle / REST export** | Deferred | A REST endpoint returning a `git bundle` of the project repo would serve users who only need an offline full-history export. Does not satisfy the push requirement and would not replace the Smart HTTP gateway. |
 | **SSH access (single shared account)** | Deferred | An SSH option using a single `git` system account with `AuthorizedKeysCommand` mapping SSH keys to Doctis users. Secondary to Option 1 (Smart HTTP). Useful for power users or automation. |
