@@ -16,6 +16,10 @@
 # Doctis.  A pre-receive hook in each bare repo rejects force-pushes, ref
 # deletions, and client writes to refs/doctis/*.
 #
+# The Git LFS endpoints (/info/lfs/...) arrive on this same route, because a
+# client derives them from the remote URL; they are handed to
+# git_lfs_api.php.  See doc/git/GIT_LFS.md.
+#
 # The entry point is git_http_handle_request(), called from git_http.php.
 
 require_api( 'access_api.php' );
@@ -130,10 +134,18 @@ function git_http_handle_request() {
 		}
 	}
 
-	# Allowlist exactly the smart-HTTP endpoints; this also blocks path traversal
+	# Allowlist exactly the endpoints we serve; this also blocks path traversal
 	# and dumb-HTTP file access.  Repo segment: <slug>-r<repository_id>.git
+	#
+	# Three smart-HTTP endpoints, plus the Git LFS endpoints, which a client
+	# reaches by appending "/info/lfs" to the remote URL and so arrive on this
+	# route rather than at a service of their own.  The LFS tail is matched
+	# loosely here and validated properly in git_lfs_handle_request(); it can
+	# never reach the filesystem, because an object path is built from a
+	# 64-hex oid only.
 	if( !preg_match(
-			'#^/([a-z0-9][a-z0-9\-]*\.git)/(info/refs|git-upload-pack|git-receive-pack)$#',
+			'#^/([a-z0-9][a-z0-9\-]*\.git)/(info/refs|git-upload-pack|git-receive-pack'
+				. '|info/lfs/[A-Za-z0-9/_.-]{1,160})$#',
 			$t_path_info, $t_m ) ) {
 		git_http_fail( 403, 'Unsupported git request.' );
 	}
@@ -141,7 +153,13 @@ function git_http_handle_request() {
 	$t_endpoint= $t_m[2];
 	$t_basename= substr( $t_repo, 0, -4 );      # strip ".git"
 
-	# Determine the git service and whether it is a write operation.
+	$t_lfs_path = strncmp( $t_endpoint, 'info/lfs/', 9 ) === 0
+		? substr( $t_endpoint, 9 ) : '';
+
+	# Determine the git service and whether it is a write operation.  An LFS
+	# request is neither until its body has been read — a batch call is what
+	# says whether it means to download or upload — so it is authorised
+	# separately, by git_lfs_require_access().
 	if( $t_endpoint === 'info/refs' ) {
 		$t_service = $_GET['service'] ?? '';
 	} else {
@@ -175,6 +193,13 @@ function git_http_handle_request() {
 	$t_canonical = repository_basename( $t_repository_id );
 	if( !is_dir( config_get_global( 'git_storage_root' ) . '/' . $t_canonical . '.git' ) ) {
 		git_http_fail( 404, 'Repository not found.' );
+	}
+
+	# Git LFS takes over from here: same repository, same authenticated user,
+	# its own authorisation and its own response format.  Terminates.
+	if( $t_lfs_path !== '' ) {
+		require_api( 'git_lfs_api.php' );
+		git_lfs_handle_request( $t_lfs_path, $t_repository_id, $t_project_id, (int)$t_user_id );
 	}
 
 	$t_threshold_key = $t_is_write ? 'git_http_write_threshold' : 'git_http_read_threshold';

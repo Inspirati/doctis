@@ -2711,6 +2711,46 @@ $g_git_http_read_threshold = DEVELOPER;
 $g_git_http_write_threshold = MANAGER;
 
 /**
+ * Enable the Git LFS server endpoints on the remote git gateway.
+ *
+ * When ON, git_http.php answers the LFS batch and basic-transfer requests
+ * under /git/<repo>.git/info/lfs/, so a clone of a repository whose large
+ * files are stored with git-LFS can fetch them and a push can deliver them.
+ * When OFF, those endpoints are refused (501) while ordinary clone and push
+ * continue to work — which is the right state for an install holding no
+ * LFS content, because it fails loudly rather than storing pointers whose
+ * objects go nowhere.
+ *
+ * Authorisation is the same as for git itself: $g_git_http_read_threshold to
+ * download an object, $g_git_http_write_threshold to upload one.  Requires
+ * $g_git_http_enabled and $g_git_lfs_root.  See doc/git/GIT_LFS.md.
+ *
+ * @global int $g_git_lfs_enabled
+ */
+$g_git_lfs_enabled = OFF;
+
+/**
+ * Absolute path to the Git LFS object store root.  No trailing slash.
+ *
+ * Objects live at <git_lfs_root>/<slug>-r<repository_id>/<ab>/<cd>/<oid>,
+ * keyed by their sha256 ("oid") — one subdirectory per repository, so an
+ * object is only ever reachable through the access check of the repository
+ * that holds it, and deleting a repository takes its objects with it.
+ *
+ * Deliberately outside $g_git_storage_root: an LFS object must never end up
+ * in a packfile, and keeping it out means git clone --bare, git bundle and
+ * the Backup Git Store tarball all behave predictably.  Note that Backup
+ * Git Store must cover this directory too, or a restore would keep every
+ * commit and lose every large file it refers to.
+ *
+ * Must be writable by the web-server user.  Set by the installer alongside
+ * $g_git_storage_root.
+ *
+ * @global string $g_git_lfs_root
+ */
+$g_git_lfs_root = '';
+
+/**
  * System Operations: the OS account that privileged admin operations
  * (the manage_*_action.php pages — git pull / DB rebuild / sample data /
  * config write / DB backup) run as via "sudo -u".

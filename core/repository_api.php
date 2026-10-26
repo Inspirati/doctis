@@ -736,6 +736,18 @@ function repository_rename_for_owner_project( int $p_project_id ): void {
 			array( $t_new_slug, $t_repo_id ) );
 		unset( $g_cache_repository[$t_repo_id] );
 
+		# The LFS object store is named after the repository too, so it moves
+		# with it.  Unlike the worktree it cannot be discarded and rebuilt:
+		# it is the only copy of every large file.
+		$t_lfs_root = rtrim( (string)config_get_global( 'git_lfs_root', '' ), '/' );
+		if( $t_lfs_root !== '' && is_dir( $t_lfs_root . '/' . $t_old_base )
+			&& !file_exists( $t_lfs_root . '/' . $t_new_base ) ) {
+			if( !rename( $t_lfs_root . '/' . $t_old_base, $t_lfs_root . '/' . $t_new_base ) ) {
+				error_log( 'repository_rename_for_owner_project: LFS store rename '
+					. $t_old_base . ' -> ' . $t_new_base . ' failed' );
+			}
+		}
+
 		# Remove the stale worktree (and any leftover at the new name) so the
 		# lazy re-clone starts clean.
 		$t_wt_root = config_get_global( 'git_worktree_root' );
@@ -769,7 +781,10 @@ function repository_count(): int {
  */
 function repository_storage_entries(): array {
 	$t_entries = array();
-	foreach( array( 'git_storage_root', 'git_worktree_root' ) as $t_option ) {
+	# The LFS object store is part of the git document store even though it
+	# sits outside the bare repositories: a reset that left it behind would
+	# leave orphaned large files no repository refers to.
+	foreach( array( 'git_storage_root', 'git_worktree_root', 'git_lfs_root' ) as $t_option ) {
 		$t_root = rtrim( (string)config_get_global( $t_option ), '/' );
 		if( is_blank( $t_root ) || !is_dir( $t_root ) || realpath( $t_root ) === '/' ) {
 			continue;
