@@ -82,15 +82,38 @@ small — but the initial push of existing history is still one large POST.
 
 ## 4. Importing a large repository
 
-**No container setting will let a large repository through Import Data.**
-Doctis refuses a ZIP over 64 MiB in its own code
-(`core/import_zip_api.php`), before PHP or the proxy are involved, and the
-upload form states the limit. Raising `post_max_size`, `upload_max_filesize`
-and the proxy limit together changes nothing.
+**No container setting will let an oversized repository through Import Data.**
+`core/import_zip_api.php` enforces its own limits before PHP or the proxy are
+involved, so raising `post_max_size`, `upload_max_filesize` and the proxy
+limit together changes nothing. There are five, with two different purposes:
 
-This matters for repositories such as `HCR-Hardware-Designs`, which are mostly
-large binaries and exceed 64 MiB as a ZIP. Import Data would be the wrong
-route regardless: it discards commit history, creating one synthetic commit.
+| Limit | Value | Purpose |
+|-------|-------|---------|
+| Compressed archive | 64 MiB | Resource policy; mirrors the usual `upload_max_filesize` |
+| Entry count | 10,000 | Resource policy |
+| Per-entry extracted | 64 MiB | Decompression-bomb defence |
+| Total extracted | 256 MiB | Decompression-bomb defence |
+| Copy cap per entry | 64 MiB + 1 | Catches an archive that under-declares an entry's size |
+
+The last three are not arbitrary. The staging directory is
+`sys_get_temp_dir()`, which on a typical container and on the development VM
+is **tmpfs — RAM, not disk**. An unbounded extract is an out-of-memory event
+for the whole host, not merely a full filesystem, and a declared entry size
+comes from the archive, so it cannot be trusted on its own.
+
+The first two are ordinary policy and could reasonably become configurable.
+Raising them alone still achieves nothing unless `upload_max_filesize` and
+`post_max_size` rise to match, since the upload is a browser multipart POST.
+
+Size is rarely the binding constraint in practice. `HCR-Hardware-Designs`,
+the repository that prompted LFS work, is 314 files and **26.4 MiB
+compressed** — comfortably inside every limit above. The reason not to import
+it as a ZIP is not size but **history**: Import Data discards it, creating one
+synthetic commit, and that repository's 41 MB of `.git` *is* the design
+revision record.
+
+Use the ZIP route for a snapshot whose history does not matter. Use the push
+route below whenever it does, whatever the size.
 
 The route that works, and the reason §3's proxy limit matters:
 
