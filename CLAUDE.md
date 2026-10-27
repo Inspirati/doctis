@@ -395,8 +395,15 @@ tested then.
      all tables. Backup Database works on live since 7cb107677 (2026-10-14),
      which connects without TLS (`--skip-ssl`) like the application. Earlier
      builds failed because MariaDB 11.4+ dump clients demand TLS.
-   - **Data Snapshot** of the `user` table only, in REPLACE mode. This is the
-     file that restores the accounts.
+   - **Data Snapshot** of the `user` **and `config`** tables, in REPLACE mode.
+     `user` restores the accounts. `config` restores every **per-project
+     setting**, which a rebuild also deletes: publication target and URL,
+     per-project thresholds, anything set on a Manage Project tab rather than
+     in `config_inc.php`. Omitting `config` silently removes features from
+     the restored site — the Publish button disappears because
+     `dwg_publish_site()` finds no target, and nothing reports an error.
+     (Learned the hard way on 2026-10-27; live held three `dwg_publish_*`
+     rows and they had to be recovered from the full dump afterwards.)
 3. Note any projects other than the imported one. A rebuild deletes them, and
    they are not restored unless you load them back from the snapshot.
 
@@ -409,8 +416,8 @@ tested then.
 4. **Reset Git Store** (type `RESET`). The import would otherwise fail: its
    new repository reuses the old `<slug>-r<id>` name. The page refuses while
    any `{repository}` row exists, so it only works straight after a rebuild.
-5. **Load Data**: upload the `user` snapshot, type `LOAD`, and keep the
-   transaction ticked. This restores every account, including the owner's
+5. **Load Data**: upload the `user` snapshot, then the `config` snapshot,
+   typing `LOAD` and keeping the transaction ticked for each. This restores every account, including the owner's
    administrators and `claude`; Claude's credentials are kept outside the
    repository (see project memory).
    - The schema-version warning is expected when the snapshot is older; the
@@ -428,6 +435,9 @@ tested then.
    - Overview: the database schema version equals the code's.
    - Manage → **Git Store**: one repository, "Database and disk agree", and
      every document "On Record = HEAD".
+   - A document's view page still offers **Publish** — proof the per-project
+     settings came back. The schema version is *not* a useful check here: a
+     change to an existing table does not bump it.
    - Manage → Users lists the restored accounts.
 9. **Disable `administrator`**, but only once a restored administrator
    account has been confirmed to log in.
