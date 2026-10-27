@@ -935,6 +935,77 @@ if( $t_lfs_root === '' || !is_dir( $t_lfs_root ) ) {
 	rename( $t_lfs_path . '.hidden', $t_lfs_path );
 }
 
+# ── Step 20: an unowned repository is surfaced and removable ────────────────
+# Deleting a project never removed its repository, so the row, the link rows,
+# the bare repository, the worktree and -- the expensive part -- the LFS
+# objects were all left behind with nothing reporting them.  The Git Store's
+# existing "orphan" status is the opposite case (on disk, no row), so this one
+# was invisible.
+echo "Step 20: an unowned repository is surfaced and removable\n";
+
+$t_un_proj = project_create( 'GitTest Unowned ' . getmypid(), 'test', 10 );
+$t_cleanup['projects'][] = $t_un_proj;
+$t_un_rid = repository_id_for_project_or_create( $t_un_proj );
+repository_ensure_on_disk( $t_un_rid );
+$t_un_base = repository_basename( $t_un_rid );
+$t_cleanup['disk'][] = repository_bare_path( $t_un_rid );
+$t_cleanup['disk'][] = repository_worktree_path( $t_un_rid );
+
+# An LFS object, as a push would leave.
+$t_un_lfs = git_lfs_repo_root( $t_un_rid );
+if( $t_un_lfs !== '' ) {
+	$t_cleanup['disk'][] = $t_un_lfs;
+	$t_un_oid = hash( 'sha256', 'unowned ' . getmypid() );
+	$t_un_obj = git_lfs_object_path( $t_un_rid, $t_un_oid );
+	@mkdir( dirname( $t_un_obj ), 0770, true );
+	file_put_contents( $t_un_obj, 'payload' );
+}
+
+# In use, so removal must be refused and nothing may be touched.
+$t_un_refused = repository_remove( $t_un_rid );
+check( $t_un_refused['refused'] !== '' && !$t_un_refused['removed'],
+	'a repository in use is refused, and nothing is removed', $t_un_refused['refused'] );
+check( is_dir( repository_bare_path( $t_un_rid ) ),
+	'the refused repository is still on disk' );
+
+$t_un_state = git_store_repositories()[$t_un_base] ?? null;
+check( $t_un_state !== null && $t_un_state['status'] === 'ok',
+	'while its project exists it reads as ok', (string)( $t_un_state['status'] ?? 'absent' ) );
+
+# Delete the project: everything should survive, and be reported.
+project_delete( $t_un_proj );
+$t_cleanup['projects'] = array_values( array_diff( $t_cleanup['projects'], array( $t_un_proj ) ) );
+
+check( repository_get_row( $t_un_rid ) !== false,
+	'deleting the project leaves the repository row behind (the defect)' );
+$t_un_state = git_store_repositories()[$t_un_base] ?? null;
+check( $t_un_state !== null && $t_un_state['status'] === 'unowned',
+	'and the Git Store now reports it as unowned',
+	(string)( $t_un_state['status'] ?? 'absent' ) );
+check( $t_un_state !== null && $t_un_state['projects'] === array(),
+	'a dangling link row does not count as use' );
+if( $t_un_lfs !== '' ) {
+	check( $t_un_state !== null && $t_un_state['lfs_exists'],
+		'its LFS objects are reported too' );
+}
+
+# Now it may be removed, and everything goes together.  The paths are taken
+# first: once the row is gone, repository_bare_path() can no longer derive
+# them -- repository_basename() throws for an unknown id, which is right.
+$t_un_bare = repository_bare_path( $t_un_rid );
+$t_un_wt   = repository_worktree_path( $t_un_rid );
+$t_un_done = repository_remove( $t_un_rid );
+check( $t_un_done['refused'] === '', 'an unowned repository may be removed',
+	$t_un_done['refused'] );
+check( repository_get_row( $t_un_rid ) === false, 'the {repository} row is gone' );
+check( !is_dir( $t_un_bare ), 'the bare repository is gone' );
+check( !is_dir( $t_un_wt ), 'the worktree is gone' );
+if( $t_un_lfs !== '' ) {
+	check( !is_dir( $t_un_lfs ), 'the LFS objects are gone' );
+}
+check( repository_get_row( repository_id_for_project( $t_parent ) ) !== false,
+	'an unrelated repository is untouched' );
+
 } catch( Throwable $e ) {
 	fail( 'unexpected exception', get_class( $e ) . ': ' . $e->getMessage()
 		. ' @ ' . $e->getFile() . ':' . $e->getLine() );

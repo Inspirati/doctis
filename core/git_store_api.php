@@ -90,8 +90,15 @@ function git_store_disk_usage( string $p_dir ): int {
  * Every repository in the database or on disk, keyed by basename.
  *
  * Each entry: key, id (0 when unregistered), name, row ({repository} row or
- * null), bare, worktree, bare_exists, worktree_exists, status
- * ('ok' | 'missing' | 'orphan' | 'worktree-only').
+ * null), bare, worktree, lfs, bare_exists, worktree_exists, lfs_exists,
+ * projects (ids still linked), owner_exists, status
+ * ('ok' | 'missing' | 'orphan' | 'worktree-only' | 'unowned').
+ *
+ * "orphan" means on disk with no database row.  "unowned" is the opposite
+ * and was invisible until now: a row whose owner project has been deleted.
+ * project_delete() never removed repositories, so deleting a project leaves
+ * its row, its link rows, the bare repository, the worktree and -- the
+ * expensive part -- its git-LFS objects, with nothing reporting them.
  *
  * @return array
  */
@@ -130,6 +137,8 @@ function git_store_repositories(): array {
 		$t_row = $t_rows[$t_key] ?? null;
 		$t_bare = $t_root . '/' . $t_key . '.git';
 		$t_worktree = $t_wt_root . '/' . $t_key;
+		$t_lfs_root = rtrim( (string)config_get_global( 'git_lfs_root', '' ), '/' );
+		$t_lfs = $t_lfs_root === '' ? '' : $t_lfs_root . '/' . $t_key;
 		$t_entry = array(
 			'key' => $t_key,
 			'id' => $t_row ? (int)$t_row['id'] : 0,
@@ -137,11 +146,29 @@ function git_store_repositories(): array {
 			'row' => $t_row,
 			'bare' => $t_bare,
 			'worktree' => $t_worktree,
+			'lfs' => $t_lfs,
 			'bare_exists' => is_dir( $t_bare ),
 			'worktree_exists' => is_dir( $t_worktree ),
+			'lfs_exists' => $t_lfs !== '' && is_dir( $t_lfs ),
+			'projects' => array(),
+			'owner_exists' => true,
 		);
 		if( $t_row ) {
-			$t_entry['status'] = $t_entry['bare_exists'] ? 'ok' : 'missing';
+			# A repository is still wanted while any project links to it, or
+			# while the project that owns it exists.  Checked here rather than
+			# at delete time so the Git Store can show what is reachable.
+			# Only links to projects that still exist count as use: deleting a
+			# project leaves its {project_repository} row behind too, and a
+			# dangling link must not make a dead repository look reachable.
+			$t_entry['projects'] = array_values( array_filter(
+				repository_project_ids( (int)$t_row['id'] ),
+				static fn( $p_id ) => project_exists( (int)$p_id ) ) );
+			$t_entry['owner_exists'] = project_exists( (int)$t_row['owner_project_id'] );
+			if( !$t_entry['owner_exists'] && !$t_entry['projects'] ) {
+				$t_entry['status'] = 'unowned';
+			} else {
+				$t_entry['status'] = $t_entry['bare_exists'] ? 'ok' : 'missing';
+			}
 		} else {
 			$t_entry['status'] = $t_entry['bare_exists'] ? 'orphan' : 'worktree-only';
 		}

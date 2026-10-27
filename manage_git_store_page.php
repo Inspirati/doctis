@@ -15,9 +15,11 @@ require_api( 'gpc_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'form_api.php' );
+require_api( 'helper_api.php' );
 require_api( 'print_api.php' );
 require_api( 'project_api.php' );
 require_api( 'repository_api.php' );
+require_api( 'string_api.php' );
 
 auth_reauthenticate();
 access_ensure_global_level( ADMINISTRATOR );
@@ -50,6 +52,35 @@ if( $_SERVER['REQUEST_METHOD'] === 'POST' && gpc_get_string( 'action', '' ) === 
 	}
 	form_security_purge( 'manage_git_store_policy' );
 	print_header_redirect( 'manage_git_store_page.php?repo=' . urlencode( $f_repo ) );
+}
+
+# Remove a repository nothing uses any more.  Offered only for an "unowned"
+# one -- a row whose owner project was deleted and which no project links --
+# because project_delete() leaves the row, the bare repository, the worktree
+# and the LFS objects behind, and nothing else can clear them.  Deliberately
+# explicit rather than automatic: the bare repository is the only remaining
+# record of a deleted project's documents.
+$t_removed_msg = '';
+if( $_SERVER['REQUEST_METHOD'] === 'POST' && gpc_get_string( 'action', '' ) === 'remove_repository' ) {
+	form_security_validate( 'manage_git_store_remove' );
+	if( $t_repo !== null && $t_repo['status'] === 'unowned' && $t_repo['id'] > 0 ) {
+		helper_ensure_confirmed(
+			'Permanently remove repository "' . string_display_line( $t_repo['key'] )
+				. '"? Its bare repository, worktree and git-LFS objects are deleted. '
+				. 'This cannot be undone, and the repository is the only remaining record '
+				. 'of the documents of the project that was deleted.',
+			'Remove repository' );
+		$t_outcome = repository_remove( (int)$t_repo['id'] );
+		if( $t_outcome['refused'] !== '' ) {
+			$t_removed_msg = 'refused: ' . $t_outcome['refused'];
+		} else {
+			$t_removed_msg = 'Removed ' . $t_repo['key'] . ': '
+				. count( $t_outcome['removed'] ) . ' director(y|ies) and its database rows.'
+				. ( $t_outcome['failed'] ? ' Failed: ' . implode( '; ', array_keys( $t_outcome['failed'] ) ) : '' );
+		}
+	}
+	form_security_purge( 'manage_git_store_remove' );
+	print_header_redirect( 'manage_git_store_page.php?removed=' . rawurlencode( $t_removed_msg ) );
 }
 
 $f_view = gpc_get_string( 'view', 'files' );
@@ -176,6 +207,7 @@ foreach( $t_repos as $t_key => $t_entry ) {
 		'missing' => 'is registered but has no bare repository on disk',
 		'orphan' => 'is on disk but not registered in the database',
 		'worktree-only' => 'has a worktree but no bare repository',
+		'unowned' => 'is registered but no project uses it; its owner project was deleted',
 	)[$t_entry['status']] ?? null;
 	if( $t_issue ) {
 		$t_issues[] = $t_key . ' ' . $t_issue;
@@ -214,6 +246,10 @@ print_manage_menu( 'manage_git_store_page.php' );
 					</td></tr>
 					<tr><th class="category">Consistency</th><td>
 						<?php if( empty( $t_issues ) ) { ?>
+<?php				$t_removed_note = trim( gpc_get_string( 'removed', '' ) );
+					if( $t_removed_note !== '' ) { ?>
+						<span class="label label-info"><?php echo string_display_line( $t_removed_note ); ?></span><br />
+<?php				} ?>
 						<span class="label label-success">Database and disk agree</span>
 						<?php } else { foreach( $t_issues as $t_issue ) { ?>
 						<span class="label label-warning"><?php echo htmlspecialchars( $t_issue ); ?></span><br />
@@ -351,6 +387,33 @@ print_manage_menu( 'manage_git_store_page.php' );
 					}
 				?></td>
 			</tr>
+<?php	if( $t_repo['status'] === 'unowned' ) { ?>
+			<tr>
+				<th class="category">Unused</th>
+				<td colspan="3">
+					<span class="label label-warning">no project uses this repository</span>
+					Its owner project was deleted. Deleting a project does not remove its
+					repository, so this row, the bare repository, the worktree and any
+					git-LFS objects remain &mdash; and nothing prunes LFS objects.
+					<div class="space-6"></div>
+					<small>
+						bare <?php echo $t_repo['bare_exists'] ? 'present' : 'absent'; ?> ·
+						worktree <?php echo $t_repo['worktree_exists'] ? 'present' : 'absent'; ?> ·
+						LFS objects <?php echo $t_repo['lfs_exists']
+							? git_store_format_size( git_store_disk_usage( $t_repo['lfs'] ) ) : 'none'; ?>
+					</small>
+					<div class="space-6"></div>
+					<form method="post" action="manage_git_store_page.php" style="display:inline">
+						<?php echo form_security_field( 'manage_git_store_remove' ); ?>
+						<input type="hidden" name="repo" value="<?php echo htmlspecialchars( $f_repo ); ?>" />
+						<input type="hidden" name="action" value="remove_repository" />
+						<button class="btn btn-xs btn-danger btn-white btn-round">Remove repository</button>
+					</form>
+					<small>&nbsp;Permanent. The repository is the only remaining record of the
+						deleted project's documents.</small>
+				</td>
+			</tr>
+<?php	} ?>
 			<tr>
 				<th class="category"><?php echo lang_get( 'push_policy_label' ); ?></th>
 				<td colspan="3"><?php

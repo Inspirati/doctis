@@ -167,6 +167,14 @@ missing file instead of serving the pointer text. The pointer is written with
 [doc/git/GIT_LFS.md](git/GIT_LFS.md); the client-side round trip is recorded
 there in §9.
 
+Step 20 (2026-10-28) covers the **unowned repository** lifecycle: that a
+repository in use is refused and nothing is touched, that deleting a project
+leaves its repository row, bare repository, worktree and LFS objects behind
+(the defect), that the Git Store then reports it as `unowned` and that a
+dangling `{project_repository}` row does not count as use, and that removing
+it clears the rows and all three directories while an unrelated repository is
+untouched.
+
 Bootstraps the full core, creates and tears down its own
 projects/documents/repositories.
 

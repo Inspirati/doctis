@@ -70,6 +70,13 @@ Consequences that must be handled explicitly rather than discovered later:
 
 - **Backup Git Store must include it**, or a restore loses every large file
   while the commits that reference them survive. Worse than useless.
+- **Nothing prunes it.** An object stays for ever once pushed, so a repository
+  nobody uses goes on costing its full size. Reset Git Store clears the whole
+  store, and **Manage → Git Store** now reports a repository whose owner
+  project was deleted as `unowned` and offers to remove it with its objects
+  (`repository_remove()`). Deleting a project does *not* do this by itself:
+  the bare repository is the only remaining record of that project's
+  documents, so destroying it is an explicit act, never a side effect.
 - **`git bundle --all` does not carry LFS objects.** Any bundle-based import or
   export needs the object store shipped beside it (§6).
 

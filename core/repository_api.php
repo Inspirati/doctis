@@ -765,6 +765,105 @@ function repository_rename_for_owner_project( int $p_project_id ): void {
 }
 
 /**
+ * Permanently remove one repository: its rows, its bare repository, its
+ * worktree and its git-LFS objects.
+ *
+ * There was no way to remove a repository at all before this.  project_delete()
+ * never touched them, so deleting a project left the {repository} row, the
+ * {project_repository} links, the bare repository, the worktree and the LFS
+ * objects behind, with nothing reporting them -- the Git Store's "orphan"
+ * status means the opposite case, on disk with no row.  Nothing prunes LFS
+ * objects, so a repository of large binaries goes on costing its full size
+ * for ever.
+ *
+ * This is deliberately NOT called from project_delete().  Deleting a project
+ * already deletes its documents, which makes the bare repository the only
+ * remaining record of their content and history; destroying that as a side
+ * effect of deleting a project would be irreversible and unasked for.  An
+ * administrator removes it explicitly instead, from Manage -> Git Store.
+ *
+ * Refuses while any project still links to the repository, or while the
+ * project that owns it exists: those are repositories in use.
+ *
+ * @param int  $p_repository_id
+ * @param bool $p_force  Skip the in-use check (for a caller that has already
+ *                       established the repository is unreachable).
+ * @return array{removed: array, failed: array, refused: string}
+ */
+function repository_remove( int $p_repository_id, bool $p_force = false ): array {
+	$t_result = array( 'removed' => array(), 'failed' => array(), 'refused' => '' );
+
+	$t_row = repository_get_row( $p_repository_id );
+	if( $t_row === false ) {
+		$t_result['refused'] = 'no such repository';
+		return $t_result;
+	}
+
+	if( !$p_force ) {
+		# A link row to a project that no longer exists is garbage, not use:
+		# project_delete() leaves those behind as well, and counting them
+		# would make a dead repository permanently unremovable.
+		$t_projects = array_values( array_filter(
+			repository_project_ids( $p_repository_id ),
+			static fn( $p_id ) => project_exists( (int)$p_id ) ) );
+		if( $t_projects ) {
+			$t_result['refused'] = 'still used by project(s) '
+				. implode( ', ', array_map( 'intval', $t_projects ) );
+			return $t_result;
+		}
+		if( project_exists( (int)$t_row['owner_project_id'] ) ) {
+			$t_result['refused'] = 'its owner project still exists';
+			return $t_result;
+		}
+	}
+
+	$t_basename = repository_basename( $p_repository_id );
+	$t_lfs_root = rtrim( (string)config_get_global( 'git_lfs_root', '' ), '/' );
+
+	$t_targets = array(
+		repository_bare_path( $p_repository_id ),
+		repository_worktree_path( $p_repository_id ),
+	);
+	if( $t_lfs_root !== '' && $t_basename !== '' ) {
+		$t_targets[] = $t_lfs_root . '/' . $t_basename;
+	}
+
+	$t_lock = dwg_git_storage_lock();
+	try {
+		foreach( $t_targets as $t_path ) {
+			# Never follow a symbolic link out of the storage roots, and never
+			# act on a path that did not come from the configured roots.
+			if( $t_path === '' || !is_dir( $t_path ) || is_link( $t_path ) ) {
+				continue;
+			}
+			exec( 'rm -rf -- ' . escapeshellarg( $t_path ) . ' 2>&1', $t_out, $t_rc );
+			clearstatcache( true, $t_path );
+			if( file_exists( $t_path ) ) {
+				$t_result['failed'][$t_path] = implode( "\n", $t_out );
+			} else {
+				$t_result['removed'][] = $t_path;
+			}
+		}
+
+		# The rows go last: while they exist the repository is still findable,
+		# so a failure half way through leaves something to retry rather than
+		# directories nothing refers to.
+		db_param_push();
+		db_query( 'DELETE FROM {project_repository} WHERE repository_id=' . db_param(),
+			array( $p_repository_id ) );
+		db_param_push();
+		db_query( 'DELETE FROM {repository} WHERE id=' . db_param(), array( $p_repository_id ) );
+
+		global $g_cache_repository;
+		unset( $g_cache_repository[$p_repository_id] );
+	} finally {
+		dwg_git_storage_unlock( $t_lock );
+	}
+
+	return $t_result;
+}
+
+/**
  * Number of {repository} rows.
  *
  * @return int
