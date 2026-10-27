@@ -41,12 +41,38 @@ function doctis_import_zip_cleanup( string $p_directory ): void {
  * Extract only selected top-level document roots from a GitHub-style ZIP.
  * Returns the private source directory and counts. No archive path is trusted.
  */
-function doctis_import_zip_stage( string $p_zip_path, array $p_roots, array $p_patterns = array( '*.md' ) ): array {
+function doctis_import_zip_stage( string $p_zip_path, array $p_roots,
+		array $p_patterns = array( '*.md' ),
+		int $p_max_bytes = 67108864, int $p_max_entries = 10000 ): array {
+
+	# The two limits above are resource policy and are passed in by the caller
+	# from $g_import_zip_max_bytes and $g_import_zip_max_entries.  They are
+	# arguments rather than config_get() calls because this file deliberately
+	# has no application bootstrap, so its validation stays testable without a
+	# database; the defaults are the shipped ones.
+	#
+	# The three below are not policy and are not configurable.  A ZIP declares
+	# its own entry sizes, and a small archive can expand to many gigabytes, so
+	# these bound what an extract can cost however the archive describes
+	# itself.  The staging directory is sys_get_temp_dir(), which on a
+	# container and on the development VM is tmpfs -- RAM -- so an unbounded
+	# extract takes the host out of memory rather than merely filling a disk.
+	# See doc/git/LFS_DEPLOYMENT.md section 4.
+	$t_max_entry_bytes = 64 * 1024 * 1024;    # one entry, extracted
+	$t_max_total_bytes = 256 * 1024 * 1024;   # the whole archive, extracted
+
 	if( !class_exists( 'ZipArchive' ) ) {
 		throw new RuntimeException( 'The PHP ZIP extension is required.' );
 	}
-	if( !is_file( $p_zip_path ) || filesize( $p_zip_path ) > 64 * 1024 * 1024 ) {
-		throw new RuntimeException( 'The uploaded ZIP is missing or exceeds 64 MiB.' );
+	if( $p_max_bytes < 1 || $p_max_entries < 1 ) {
+		throw new RuntimeException( 'The configured ZIP import limits are not usable.' );
+	}
+	if( !is_file( $p_zip_path ) ) {
+		throw new RuntimeException( 'The uploaded ZIP is missing or unreadable.' );
+	}
+	if( filesize( $p_zip_path ) > $p_max_bytes ) {
+		throw new RuntimeException( 'The uploaded ZIP exceeds the '
+			. (int)round( $p_max_bytes / ( 1024 * 1024 ) ) . ' MiB limit.' );
 	}
 	if( empty( $p_roots ) ) {
 		throw new RuntimeException( 'Select at least one top-level directory.' );
@@ -65,8 +91,9 @@ function doctis_import_zip_stage( string $p_zip_path, array $p_roots, array $p_p
 	}
 	$t_stage = '';
 	try {
-		if( $t_zip->numFiles < 1 || $t_zip->numFiles > 10000 ) {
-			throw new RuntimeException( 'The ZIP must contain 1 to 10000 entries.' );
+		if( $t_zip->numFiles < 1 || $t_zip->numFiles > $p_max_entries ) {
+			throw new RuntimeException( 'The ZIP must contain 1 to '
+				. $p_max_entries . ' entries.' );
 		}
 		$t_names = array();
 		$t_first_components = array();
@@ -129,8 +156,8 @@ function doctis_import_zip_stage( string $p_zip_path, array $p_roots, array $p_p
 				continue;
 			}
 			$t_stat = $t_zip->statIndex( $t_index );
-			if( !$t_stat || $t_stat['size'] > 64 * 1024 * 1024
-				|| $t_bytes + $t_stat['size'] > 256 * 1024 * 1024 ) {
+			if( !$t_stat || $t_stat['size'] > $t_max_entry_bytes
+				|| $t_bytes + $t_stat['size'] > $t_max_total_bytes ) {
 				throw new RuntimeException( 'The ZIP exceeds the extracted size limit.' );
 			}
 			$t_input = $t_zip->getStreamIndex( $t_index );
@@ -138,7 +165,7 @@ function doctis_import_zip_stage( string $p_zip_path, array $p_roots, array $p_p
 			if( !$t_input || !$t_output ) {
 				throw new RuntimeException( 'Could not extract a ZIP entry.' );
 			}
-			$t_copied = stream_copy_to_stream( $t_input, $t_output, 64 * 1024 * 1024 + 1 );
+			$t_copied = stream_copy_to_stream( $t_input, $t_output, $t_max_entry_bytes + 1 );
 			fclose( $t_input );
 			fclose( $t_output );
 			if( $t_copied === false || $t_copied !== $t_stat['size'] ) {

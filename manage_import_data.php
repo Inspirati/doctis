@@ -7,6 +7,7 @@ require_api( 'authentication_api.php' );
 require_api( 'form_api.php' );
 require_api( 'gpc_api.php' );
 require_api( 'html_api.php' );
+require_api( 'config_api.php' );
 require_api( 'import_zip_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'project_api.php' );
@@ -53,7 +54,9 @@ try {
 		|| preg_match( '/[[:cntrl:]]/', $t_archive_name ) ) {
 		throw new RuntimeException( 'Choose a .zip file with a filename of at most 200 bytes.' );
 	}
-	$t_staged = doctis_import_zip_stage( $_FILES['archive']['tmp_name'], $t_roots, $t_pattern_list );
+	$t_staged = doctis_import_zip_stage( $_FILES['archive']['tmp_name'], $t_roots, $t_pattern_list,
+		(int)config_get_global( 'import_zip_max_bytes' ),
+		(int)config_get_global( 'import_zip_max_entries' ) );
 	$t_stage = $t_staged['path'];
 	$t_present_roots = array_values( array_filter( $t_roots,
 		static fn( $p_root ) => is_dir( $t_stage . '/' . $p_root ) ) );

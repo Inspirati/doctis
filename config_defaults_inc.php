@@ -2751,6 +2751,39 @@ $g_git_lfs_enabled = OFF;
 $g_git_lfs_root = '';
 
 /**
+ * Largest ZIP, in bytes, that Manage -> Import Data will accept.
+ *
+ * Resource policy, not a safety limit: it bounds what one administrator
+ * upload may cost the server.  Raising it alone achieves nothing, because the
+ * upload is a browser multipart POST and PHP's upload_max_filesize and
+ * post_max_size cap it first -- all three have to move together.
+ *
+ * Three further limits inside doctis_import_zip_stage() are deliberately NOT
+ * configurable: the extracted size of one entry, the extracted size of the
+ * whole archive, and the copy cap that catches an archive under-declaring an
+ * entry.  Those are decompression-bomb defences, and the staging directory is
+ * sys_get_temp_dir(), which is commonly tmpfs, so an unbounded extract is an
+ * out-of-memory event rather than a full disk.
+ *
+ * Note that a ZIP import discards commit history.  A repository whose history
+ * matters should arrive by git push over the /git/ gateway instead, which has
+ * no such limit.  See doc/git/LFS_DEPLOYMENT.md section 4.
+ *
+ * @global integer $g_import_zip_max_bytes
+ */
+$g_import_zip_max_bytes = 64 * 1024 * 1024;
+
+/**
+ * Largest number of entries a ZIP may contain for Manage -> Import Data.
+ *
+ * Counts every file and directory in the archive, not just the documents that
+ * match the chosen patterns.  Resource policy, as $g_import_zip_max_bytes is.
+ *
+ * @global integer $g_import_zip_max_entries
+ */
+$g_import_zip_max_entries = 10000;
+
+/**
  * System Operations: the OS account that privileged admin operations
  * (the manage_*_action.php pages — git pull / DB rebuild / sample data /
  * config write / DB backup) run as via "sudo -u".

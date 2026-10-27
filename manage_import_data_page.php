@@ -2,6 +2,7 @@
 # Doctis — administrator upload of a one-time document repository snapshot.
 
 require_once( 'core.php' );
+require_api( 'config_api.php' );
 require_api( 'access_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'form_api.php' );
@@ -32,7 +33,7 @@ print_manage_menu( 'manage_import_data_page.php' );
 					</div>
 					<div class="form-group">
 						<label class="col-sm-3 control-label" for="import-archive">Repository ZIP</label>
-						<div class="col-sm-7"><input id="import-archive" name="archive" type="file" accept=".zip,application/zip" required /><span class="help-block">ZIP must contain the selected directories, optionally inside one enclosing folder. Maximum upload: 64 MiB.</span></div>
+						<div class="col-sm-7"><input id="import-archive" name="archive" type="file" accept=".zip,application/zip" required /><span class="help-block">ZIP must contain the selected directories, optionally inside one enclosing folder. Maximum upload: <?php echo (int)round( config_get_global( 'import_zip_max_bytes' ) / ( 1024 * 1024 ) ); ?> MiB, <?php echo (int)config_get_global( 'import_zip_max_entries' ); ?> entries.</span></div>
 					</div>
 					<div class="form-group">
 						<label class="col-sm-3 control-label" for="import-roots">Top-level directories</label>
