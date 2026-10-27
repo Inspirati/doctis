@@ -11,6 +11,9 @@
 # that key from git_store_repositories().  Paths and revisions reach git as
 # single shell-escaped arguments.
 
+use Mantis\Exceptions\ClientException;
+
+require_api( 'category_api.php' );
 require_api( 'config_api.php' );
 require_api( 'database_api.php' );
 require_api( 'project_api.php' );
@@ -303,6 +306,27 @@ function git_store_last_changes( array $p_repo, int $p_limit = 5000 ): array {
 }
 
 /**
+ * The commit that last changed one path, as a full SHA.
+ *
+ * git_store_last_changes() answers the same question for every path at once,
+ * but from a bounded walk (5000 commits) meant for display.  Registering a
+ * document pins it to a commit, so it needs the exact answer however old the
+ * file is: this asks git about the one path.
+ *
+ * @param array  $p_repo Git store repository entry.
+ * @param string $p_path Repository-relative path.
+ * @return string Full SHA, or '' when the path has no history.
+ */
+function git_store_last_commit_sha( array $p_repo, string $p_path ): string {
+	if( !$p_repo['bare_exists'] || $p_path === '' ) {
+		return '';
+	}
+	$t_out = trim( git_store_run( $p_repo['bare'], true,
+		'log -1 --format=%H HEAD -- ' . escapeshellarg( $p_path ) ) );
+	return preg_match( '/^[0-9a-f]{40}$/', $t_out ) ? $t_out : '';
+}
+
+/**
  * History of one path (following renames), newest first; each commit's
  * files[0] is the path's name in that commit.
  *
@@ -558,6 +582,106 @@ function git_store_blob( array $p_repo, string $p_spec, int $p_max = 262144 ) {
 		return null;
 	}
 	return substr( git_store_run( $p_repo['bare'], true, 'cat-file blob ' . escapeshellarg( $p_spec ) ), 0, $p_max );
+}
+
+/**
+ * Create a document for a file already in the repository and register it.
+ *
+ * Used by the bulk "register all with frontmatter" action.  The single-file
+ * path goes through the ordinary create form instead, so a person can supply
+ * what no file can state about itself.
+ *
+ * The document is pinned to the commit that last changed the path, not to
+ * HEAD: HEAD moves whenever anyone pushes anything, and the document should
+ * record the change that actually produced it (owner decision 2026-10-28).
+ *
+ * Goes through DwgAddCommand like the form and the importer, so one creation
+ * path keeps its validation, history and notifications.
+ *
+ * @param array   $p_repo       Git store repository entry.
+ * @param integer $p_project_id Project the document belongs to.
+ * @param string  $p_path       Repository-relative path.
+ * @param array   $p_front      dwg_frontmatter_parse() output.
+ * @param integer $p_user_id    Acting user.
+ * @return integer The new document id.
+ */
+function git_store_register_document( array $p_repo, int $p_project_id, string $p_path,
+		array $p_front, int $p_user_id ): int {
+	require_api( 'dwg_frontmatter_api.php' );
+	require_api( 'file_dwg_api.php' );
+
+	$t_sha = git_store_last_commit_sha( $p_repo, $p_path );
+	if( $t_sha === '' ) {
+		throw new ClientException( 'No commit changed ' . $p_path,
+			ERROR_INVALID_FIELD_VALUE, array( 'git_path' ) );
+	}
+
+	$t_fields = dwg_frontmatter_fields( $p_front );
+	$t_title  = (string)( $t_fields['dwg_title'] ?? pathinfo( $p_path, PATHINFO_FILENAME ) );
+
+	# The directory the file sits in is its category, as the importer does.
+	$t_dir = dirname( $p_path );
+	$t_category = ( $t_dir === '.' || $t_dir === '' ) ? 'General' : $t_dir;
+	$t_category = substr( $t_category, 0, 128 );
+	if( category_get_id_by_name( $t_category, $p_project_id, /* trigger_errors */ false ) === false ) {
+		category_add( $p_project_id, $t_category );
+	}
+
+	$t_issue = array(
+		'project'        => array( 'id' => $p_project_id ),
+		'category'       => array( 'name' => $t_category ),
+		'summary'        => mb_substr( $t_title, 0, 255 ),
+		'description'    => 'Registered from the repository (path: ' . $p_path . ')',
+		'title'          => $t_title,
+		'author'         => (string)( $t_fields['dwg_author'] ?? '' ),
+		'number'         => (string)( $t_fields['dwg_number'] ?? '' ),
+		'edition'        => (string)( $t_fields['dwg_edition'] ?? '' ),
+		'revision'       => (string)( $t_fields['dwg_revision'] ?? '' ),
+		'classification' => (string)( $t_fields['dwg_classification'] ?? '' ),
+		'status'         => array( 'id' => dwg_frontmatter_status( (string)( $p_front['status'] ?? '' ) ) ),
+		'custom_fields'  => array(),
+	);
+
+	$t_command = new DwgAddCommand( array( 'payload' => array( 'issue' => $t_issue ) ) );
+	$t_result  = $t_command->execute();
+	$t_dwg_id  = (int)$t_result['issue_id'];
+
+	file_dwg_primary_register( $t_dwg_id, $p_user_id, $p_path, $t_sha,
+		'Registered from the repository' );
+
+	return $t_dwg_id;
+}
+
+/**
+ * Of the given paths, those whose content carries a frontmatter block with
+ * enough in it to register a document unattended.
+ *
+ * Bulk registration needs this: a file with no frontmatter has no title, and
+ * a document with no name is worse than no document.  Those are registered
+ * one at a time instead, through the create form, where a person supplies
+ * the metadata -- which is also why this says nothing about file type.  A
+ * .step or a .pdf simply never qualifies here.
+ *
+ * @param array $p_repo  Git store repository entry.
+ * @param array $p_paths Repository-relative paths.
+ * @return array path => frontmatter fields, for the ones that qualify.
+ */
+function git_store_frontmatter_ready( array $p_repo, array $p_paths ): array {
+	require_api( 'dwg_frontmatter_api.php' );
+	$t_ready = array();
+	foreach( $p_paths as $t_path ) {
+		# Only a text blob can carry a block; 4 KiB is far beyond any real
+		# one, and keeps a large binary from being read at all.
+		$t_blob = git_store_blob( $p_repo, 'HEAD:' . $t_path, 4096 );
+		if( $t_blob === null || $t_blob === '' || !git_store_is_text( $t_blob ) ) {
+			continue;
+		}
+		$t_front = dwg_frontmatter_parse( $t_blob );
+		if( $t_front && dwg_frontmatter_sufficient( $t_front ) ) {
+			$t_ready[$t_path] = $t_front;
+		}
+	}
+	return $t_ready;
 }
 
 /**

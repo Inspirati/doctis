@@ -175,6 +175,13 @@ dangling `{project_repository}` row does not count as use, and that removing
 it clears the rows and all three directories while an unrelated repository is
 untouched.
 
+Step 21 (2026-10-28) covers **registering a file pushed from a clone**: that
+`doc_id` becomes the document *number* and never the reference (which Doctis
+owns as the on-record SHA), that a file is pinned to the commit that last
+changed it even after HEAD has moved past it, that only a text file with a
+frontmatter title qualifies for bulk registration while a binary never does,
+and that a binary registers one at a time with its real size.
+
 Bootstraps the full core, creates and tears down its own
 projects/documents/repositories.
 

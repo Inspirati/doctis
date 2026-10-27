@@ -242,6 +242,49 @@ if ( array_key_exists('USE_LOREM_IPSUM', $GLOBALS) && use_random_example_data($t
 	$t_changed_project		= false;
 }
 
+# Registering a file that is already in the repository, reached from
+# Manage -> Git Store.  Any file type: what makes a document is the record in
+# Doctis, not the format of the thing it points at, so a .step or a .pdf
+# pushed from a clone registers exactly as a .md does.  Markdown that carries
+# a frontmatter block pre-fills the form from it; everything else is typed.
+$t_register_path = '';
+$t_register_sha  = '';
+if( gpc_get_string( 'git_path', '' ) !== '' ) {
+	require_api( 'dwg_frontmatter_api.php' );
+	require_api( 'git_store_api.php' );
+	require_api( 'repository_api.php' );
+
+	$t_reg_path_in = trim( gpc_get_string( 'git_path', '' ) );
+	$t_reg_rid = repository_id_for_project( (int)$t_project_id );
+	$t_reg_entry = $t_reg_rid === 0 ? null
+		: ( git_store_repositories()[repository_basename( $t_reg_rid )] ?? null );
+	if( $t_reg_entry !== null ) {
+		$t_register_sha = git_store_last_commit_sha( $t_reg_entry, $t_reg_path_in );
+	}
+	if( $t_register_sha !== '' ) {
+		$t_register_path = $t_reg_path_in;
+
+		# Pre-fill only what the caller did not already supply, so a field
+		# the user has edited and re-posted is never overwritten.
+		# Only a text file can carry frontmatter; a binary blob is read as
+		# nothing rather than scanned.  4 KiB is far beyond any real block.
+		$t_reg_blob = (string)git_store_blob( $t_reg_entry,
+			$t_register_sha . ':' . $t_register_path, 4096 );
+		$t_reg_front = dwg_frontmatter_fields( dwg_frontmatter_parse( $t_reg_blob ) );
+		foreach( $t_reg_front as $t_reg_field => $t_reg_value ) {
+			$t_reg_var = 'f_' . $t_reg_field;
+			if( gpc_get_string( $t_reg_field, '' ) === ''
+				&& isset( $$t_reg_var ) && $$t_reg_var === '' ) {
+				$$t_reg_var = $t_reg_value;
+			}
+		}
+		if( $f_dwg_title === '' ) {
+			# A file with no frontmatter title still gets a usable name.
+			$f_dwg_title = pathinfo( $t_register_path, PATHINFO_FILENAME );
+		}
+	}
+}
+
 $f_dwg_entry_stay			= gpc_get_bool( 'dwg_entry_stay', false );
 $f_copy_notes_from_parent		= gpc_get_bool( 'copy_notes_from_parent', false );
 $f_copy_attachments_from_parent	= gpc_get_bool( 'copy_attachments_from_parent', false );
@@ -1003,6 +1046,20 @@ include( __DIR__ . '/dwg_create_topics_inc.php' ); ?>
 		<div class="widget-main no-padding">
 			<div class="table-responsive">
 				<table class="table table-bordered table-condensed table-striped">
+<?php	if( $t_register_path !== '' ) { ?>
+				<tr>
+					<th class="category width-15">
+						<label><?php echo lang_get( 'dwg_register_from_repository' ) ?></label>
+					</th>
+					<td class="width-85">
+						<code><?php echo string_display_line( $t_register_path ) ?></code>
+						<input type="hidden" name="git_path" value="<?php echo string_attribute( $t_register_path ) ?>" />
+						<span class="help-block"><?php echo sprintf(
+							lang_get( 'dwg_register_from_repository_help' ),
+							'<code>' . htmlspecialchars( substr( $t_register_sha, 0, 8 ) ) . '</code>' ) ?></span>
+					</td>
+				</tr>
+<?php	} else { ?>
 				<tr>
 					<th class="category width-15">
 						<label for="primary_document_file"><?php echo lang_get( 'primary_document_file' ) ?></label>
@@ -1016,6 +1073,7 @@ include( __DIR__ . '/dwg_create_topics_inc.php' ); ?>
 						<span class="help-block"><?php echo lang_get( 'primary_document_file_optional' ) ?></span>
 					</td>
 				</tr>
+<?php	} ?>
 				<tr>
 					<th class="category width-15">
 						<label for="primary_document_description"><?php echo lang_get( 'primary_document_description' ) ?></label>

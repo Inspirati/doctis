@@ -329,6 +329,30 @@ the status changes. Click **Republish** to update the page. **Unpublish**
 removes the page from the website; deleting the document also removes it.
 Each publish and unpublish appears in the document history.
 
+### Registering a file you pushed from a clone
+
+A file added through an external clone is in the repository but is not yet a
+document. Manage → **Git Store** → select the repository → **Documents** →
+*"N files at HEAD not registered"* lists everything Doctis does not yet know
+about, and each row has a **Register** button. That opens the normal Create
+Document form with the repository path already set — there is nothing to
+upload, because the content is already there.
+
+The document is pinned to the commit that **last changed that file**, not to
+the repository's latest commit, so it records the change that actually
+produced it even if other people have pushed since.
+
+Any file type works: a STEP model, a PDF or a drawing registers exactly as
+Markdown does. What makes something a document is the record in Doctis, not
+the format of the file.
+
+**Markdown with a frontmatter block** — the `doc_id`, `title`, `revision`,
+`status` and `author` lines at the top — fills the form in for you. Where a
+whole batch carries one, **Register all N with frontmatter** creates them all
+in one action; the `doc_id` becomes the document number. Files without
+frontmatter are registered one at a time, because only a person can say what
+they are called.
+
 **Publishing the whole site at once.** Manage → Projects → *(project)* →
 Publishing has **Publish All Documents**, which publishes every eligible
 document of the project — and of any sub-project sharing the same website —

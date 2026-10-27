@@ -61,6 +61,7 @@ if( isset( $t_options['help'] ) || !isset( $t_options['source'] ) ) {
 $t_mantis_dir = dirname( __DIR__ ) . '/';
 require_once( $t_mantis_dir . 'core.php' );
 require_once( $t_mantis_dir . 'api/soap/mc_core.php' );   # mci_* helpers used by DwgAddCommand
+require_api( 'dwg_frontmatter_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'category_api.php' );
 require_api( 'file_dwg_api.php' );
@@ -324,18 +325,14 @@ say( count( $t_candidates ) . ' candidate file(s) matched under ' . count( $g_ro
 
 # ── Metadata helpers (GIT_IMPORTER.md §6) ────────────────────────────────────
 
+# The parser and the status map now live in core/dwg_frontmatter_api.php, so
+# that registering a file from the Git Store browser -- a web request, which
+# cannot include this script -- reads frontmatter exactly as the importer
+# does.  These two wrappers keep this script's call sites unchanged.
+
 /** Naive YAML frontmatter: leading --- block of "key: value" lines. */
 function frontmatter_parse( string $p_content ): array {
-	if( !preg_match( '/^---\R(.*?)\R---(\R|$)/s', $p_content, $t_m ) ) {
-		return array();
-	}
-	$t_out = array();
-	foreach( preg_split( '/\R/', $t_m[1] ) as $t_line ) {
-		if( preg_match( '/^([A-Za-z0-9_\-]+):\s*(.*)$/', $t_line, $t_kv ) ) {
-			$t_out[strtolower( $t_kv[1] )] = trim( $t_kv[2], " \t\"'" );
-		}
-	}
-	return $t_out;
+	return dwg_frontmatter_parse( $p_content );
 }
 
 /**
@@ -343,31 +340,7 @@ function frontmatter_parse( string $p_content ): array {
  * Import never approves a document; approval is a separate Doctis action.
  */
 function status_map( string $p_status ): int {
-	$t_status = strtolower( trim( $p_status ) );
-	# Qualified draft statuses ("Draft — requires CEO signature…") are drafts:
-	# status 165, labelled "draft" (owner decision 2026-10-13).
-	if( strpos( $t_status, 'draft' ) === 0 ) {
-		return 165;
-	}
-	switch( $t_status ) {
-		case '':
-			return 110;
-		case 'in review':
-		case 'review':
-			return 160;
-		case 'approved':
-		case 'effective':
-		case 'active':
-			return 180;
-		case 'released':
-			return 190;
-		case 'superseded':
-		case 'obsolete':
-		case 'withdrawn':
-			return 195;
-		default:
-			return 110;   # unknown → pending; caller reports it
-	}
+	return dwg_frontmatter_status( $p_status );
 }
 
 /**

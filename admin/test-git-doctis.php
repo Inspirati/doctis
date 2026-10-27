@@ -1006,6 +1006,86 @@ if( $t_un_lfs !== '' ) {
 check( repository_get_row( repository_id_for_project( $t_parent ) ) !== false,
 	'an unrelated repository is untouched' );
 
+# ── Step 21: registering a file that arrived through a clone ───────────────
+# A developer who pushes a file from an external clone needs to turn it into
+# a document from the Doctis UI.  Files whose frontmatter supplies a title
+# can be registered in bulk; everything else -- any file type, including
+# binaries that cannot carry frontmatter at all -- goes one at a time.
+echo "Step 21: registering a file pushed from a clone\n";
+require_api( 'dwg_frontmatter_api.php' );
+
+$t_reg_front = dwg_frontmatter_parse(
+	"---\ndoc_id: REG-TEST-001\ntitle: Registered Guide\nrevision: C\nstatus: In Review\n---\n\n# Body\n" );
+check( dwg_frontmatter_sufficient( $t_reg_front ), 'a block with a title is enough to register' );
+check( !dwg_frontmatter_sufficient( dwg_frontmatter_parse( "# No block\n" ) ),
+	'a file with no block is not' );
+$t_reg_fields = dwg_frontmatter_fields( $t_reg_front );
+check( ( $t_reg_fields['dwg_number'] ?? '' ) === 'REG-TEST-001',
+	'doc_id becomes the document number, not the reference',
+	(string)( $t_reg_fields['dwg_number'] ?? '' ) );
+check( !isset( $t_reg_fields['dwg_reference'] ),
+	'frontmatter never sets the reference, which Doctis owns as the commit SHA' );
+check( dwg_frontmatter_status( 'In Review' ) === 160, 'the status word maps' );
+
+# Two files in the worktree: one with frontmatter, one binary.  They go on
+# the branch the bare repository's HEAD points at, because the Git Store
+# browses HEAD -- git_store_tree() lists it, so that is what can be
+# registered, and a developer's clone pushes there by default.
+$t_reg_branch = trim( bare_git( $t_bare14, 'symbolic-ref --short HEAD' ) );
+exec( 'cd ' . escapeshellarg( $t_hookwt ) . ' && git fetch -q origin && git checkout -q -B '
+	. escapeshellarg( $t_reg_branch ) . ' origin/' . escapeshellarg( $t_reg_branch ) . ' 2>&1' );
+file_put_contents( $t_hookwt . '/reg-guide.md',
+	"---\ndoc_id: REG-TEST-002\ntitle: Pushed Guide\nrevision: A\n---\n\n# Pushed\n" );
+file_put_contents( $t_hookwt . '/reg-model.bin', random_bytes( 2048 ) );
+exec( 'cd ' . escapeshellarg( $t_hookwt ) . ' && git add -A'
+	. ' && git -c user.name=T -c user.email=t@e.invalid commit -q -m "files from a clone"'
+	. ' && git push -q origin ' . escapeshellarg( $t_reg_branch ) . ' 2>&1' );
+$t_reg_at = bare_git( $t_bare14, 'rev-parse refs/heads/' . $t_reg_branch );
+
+# A later unrelated commit must not move where a file is pinned.
+file_put_contents( $t_hookwt . '/unrelated.txt', "later\n" );
+exec( 'cd ' . escapeshellarg( $t_hookwt ) . ' && git add -A'
+	. ' && git -c user.name=T -c user.email=t@e.invalid commit -q -m "later"'
+	. ' && git push -q origin ' . escapeshellarg( $t_reg_branch ) . ' 2>&1' );
+$t_reg_head = bare_git( $t_bare14, 'rev-parse refs/heads/' . $t_reg_branch );
+check( $t_reg_head !== $t_reg_at, 'HEAD has moved past the commit that added the files' );
+
+$t_reg_repo = git_store_repositories()[basename( $t_bare14, '.git' )] ?? null;
+if( $t_reg_repo === null ) {
+	fail( 'the repository is visible to the Git Store' );
+} else {
+	ok( 'the repository is visible to the Git Store' );
+	check( git_store_last_commit_sha( $t_reg_repo, 'reg-guide.md' ) === $t_reg_at,
+		'a file is pinned to the commit that last changed it, not HEAD' );
+
+	$t_reg_ready = git_store_frontmatter_ready( $t_reg_repo,
+		array( 'reg-guide.md', 'reg-model.bin' ) );
+	check( isset( $t_reg_ready['reg-guide.md'] ), 'the file with frontmatter qualifies for bulk' );
+	check( !isset( $t_reg_ready['reg-model.bin'] ), 'a binary file never does' );
+
+	$t_reg_id = git_store_register_document( $t_reg_repo, $t_parent, 'reg-guide.md',
+		$t_reg_ready['reg-guide.md'], 1 );
+	$t_cleanup['dwg_ids'][] = $t_reg_id;
+	$t_reg_row = file_dwg_primary_get( $t_reg_id );
+	check( $t_reg_row !== null && $t_reg_row['git_path'] === 'reg-guide.md',
+		'bulk registration records the path' );
+	check( $t_reg_row !== null && $t_reg_row['git_sha'] === $t_reg_at,
+		'and pins it to the commit that added it' );
+	check( (string)dwg_get_field( $t_reg_id, 'summary' ) === 'Pushed Guide',
+		'the title comes from the frontmatter',
+		(string)dwg_get_field( $t_reg_id, 'summary' ) );
+
+	# Any file type: the binary registers too, it just needs its metadata given.
+	$t_bin_id = make_dwg( $t_parent, 1, 'GitTest binary from a clone' );
+	$t_cleanup['dwg_ids'][] = $t_bin_id;
+	file_dwg_primary_register( $t_bin_id, 1, 'reg-model.bin',
+		git_store_last_commit_sha( $t_reg_repo, 'reg-model.bin' ), 'from a clone' );
+	$t_bin_row = file_dwg_primary_get( $t_bin_id );
+	check( $t_bin_row !== null && (int)$t_bin_row['filesize'] === 2048,
+		'a binary file registers with its real size',
+		(string)( $t_bin_row['filesize'] ?? '?' ) );
+}
+
 } catch( Throwable $e ) {
 	fail( 'unexpected exception', get_class( $e ) . ': ' . $e->getMessage()
 		. ' @ ' . $e->getFile() . ':' . $e->getLine() );

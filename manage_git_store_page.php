@@ -60,6 +60,39 @@ if( $_SERVER['REQUEST_METHOD'] === 'POST' && gpc_get_string( 'action', '' ) === 
 # and the LFS objects behind, and nothing else can clear them.  Deliberately
 # explicit rather than automatic: the bare repository is the only remaining
 # record of a deleted project's documents.
+# Register every unregistered file whose frontmatter carries enough to make
+# a document without anyone typing.  Everything else stays one at a time
+# through the create form -- which is the only way for a file type that
+# cannot carry frontmatter at all.
+if( $_SERVER['REQUEST_METHOD'] === 'POST' && gpc_get_string( 'action', '' ) === 'register_frontmatter' ) {
+	form_security_validate( 'manage_git_store_register' );
+	$t_done = 0;
+	$t_failed = array();
+	if( $t_repo !== null && $t_repo['row'] ) {
+		$t_bulk_project = (int)$t_repo['row']['owner_project_id'];
+		access_ensure_project_level(
+			config_get( 'create_dwg_threshold', null, null, $t_bulk_project ), $t_bulk_project );
+		set_time_limit( 0 );
+		$t_bulk_tree = git_store_tree( $t_repo );
+		$t_bulk_docs = git_store_documents( $t_repo, $t_bulk_tree );
+		$t_bulk_paths = array_diff( array_keys( $t_bulk_tree ), array_keys( $t_bulk_docs ) );
+		foreach( git_store_frontmatter_ready( $t_repo, $t_bulk_paths ) as $t_bulk_path => $t_bulk_front ) {
+			try {
+				git_store_register_document( $t_repo, $t_bulk_project, $t_bulk_path,
+					$t_bulk_front, auth_get_current_user_id() );
+				$t_done++;
+			} catch( Throwable $e ) {
+				# One bad file must not abandon the rest of the batch.
+				$t_failed[$t_bulk_path] = $e->getMessage();
+			}
+		}
+	}
+	form_security_purge( 'manage_git_store_register' );
+	print_header_redirect( 'manage_git_store_page.php?repo=' . urlencode( $f_repo )
+		. '&view=documents&show=unregistered&registered=' . (int)$t_done
+		. ( $t_failed ? '&regfailed=' . rawurlencode( implode( '; ', array_keys( $t_failed ) ) ) : '' ) );
+}
+
 $t_removed_msg = '';
 if( $_SERVER['REQUEST_METHOD'] === 'POST' && gpc_get_string( 'action', '' ) === 'remove_repository' ) {
 	form_security_validate( 'manage_git_store_remove' );
@@ -91,6 +124,21 @@ $f_dir = trim( gpc_get_string( 'dir', '' ), '/' );
 $f_file = gpc_get_string( 'file', '' );
 $f_q = trim( mb_substr( gpc_get_string( 'q', '' ), 0, 200 ) );
 $f_show = gpc_get_string( 'show', '' );
+
+# Which project a file registered from here becomes a document of.  A
+# repository can be shared by a tree of projects; the one that owns it is the
+# right default, and the create form lets the user change it.  Zero when the
+# repository is unregistered or the user may not report there, in which case
+# no Register button is offered rather than one that would be refused.
+$t_register_project = 0;
+if( $t_repo !== null && $t_repo['row'] ) {
+	$t_owner_project = (int)$t_repo['row']['owner_project_id'];
+	if( project_exists( $t_owner_project )
+		&& access_has_project_level( config_get( 'create_dwg_threshold', null, null, $t_owner_project ),
+			$t_owner_project ) ) {
+		$t_register_project = $t_owner_project;
+	}
+}
 
 $t_tree = $t_repo ? git_store_tree( $t_repo ) : array();
 $t_docs = $t_repo ? git_store_documents( $t_repo, $t_tree ) : array();
@@ -516,6 +564,20 @@ print_manage_menu( 'manage_git_store_page.php' );
 					echo '<br /><small>Draft commit <code>' . htmlspecialchars( substr( $t_doc['draft']['git_sha'], 0, 12 ) )
 						. '</code>, staged ' . htmlspecialchars( git_store_date( (int)$t_doc['draft']['date_added'] ) ) . '</small>';
 				}
+
+				# A file pushed from an external clone has no document until
+				# somebody makes one.  Offer that here, where the developer is
+				# already looking at the file, rather than making them retype
+				# the path into the create form.  Any file type: what makes a
+				# document is the record in Doctis, not the format.
+				if( !$t_doc && $t_register_project > 0 ) {
+					echo '<div class="space-6"></div>';
+					echo '<a class="btn btn-xs btn-primary btn-white btn-round" href="'
+						. htmlspecialchars( 'dwg_create_page.php?project_id=' . $t_register_project
+							. '&git_path=' . rawurlencode( $f_file ) ) . '">'
+						. lang_get( 'dwg_register_button' ) . '</a>';
+					echo ' <small>' . lang_get( 'dwg_register_button_help' ) . '</small>';
+				}
 			?></td></tr>
 		</table>
 		<p>
@@ -664,18 +726,43 @@ print_manage_menu( 'manage_git_store_page.php' );
 			<a href="<?php echo git_store_page_url( array( 'view' => 'documents', 'show' => $f_show === 'unregistered' ? '' : 'unregistered' ) ); ?>">
 				<span class="label label-default"><?php echo count( $t_unregistered ); ?> files at HEAD not registered</span></a>
 		</p>
-		<?php if( $f_show === 'unregistered' ) { ?>
+		<?php if( $f_show === 'unregistered' ) {
+			# Which of them could be registered without anyone typing: a text
+			# blob whose frontmatter carries at least a title.  Everything
+			# else is registered one at a time through the create form, which
+			# is why the per-file Register link is on every row.
+			$t_auto = git_store_frontmatter_ready( $t_repo, $t_unregistered );
+		?>
 		<div class="table-responsive">
 		<table class="table table-condensed table-striped table-hover">
-			<thead><tr><th>Unregistered file</th><th class="nowrap">Size</th></tr></thead>
+			<thead><tr><th>Unregistered file</th><th class="nowrap">Size</th><th class="nowrap">Metadata</th><th></th></tr></thead>
 			<tbody>
 			<?php foreach( $t_unregistered as $t_path ) { ?>
 				<tr><td><a href="<?php echo git_store_page_url( array( 'file' => $t_path ) ); ?>"><?php echo htmlspecialchars( $t_path ); ?></a></td>
-					<td class="nowrap"><?php echo git_store_format_size( $t_tree[$t_path]['size'] ); ?></td></tr>
+					<td class="nowrap"><?php echo git_store_format_size( $t_tree[$t_path]['size'] ); ?></td>
+					<td class="nowrap"><?php echo isset( $t_auto[$t_path] )
+						? '<span class="label label-success">frontmatter</span>'
+						: '<span class="grey small">none</span>'; ?></td>
+					<td class="nowrap"><?php if( $t_register_project > 0 ) { ?>
+						<a class="btn btn-xs btn-primary btn-white" href="<?php
+							echo htmlspecialchars( 'dwg_create_page.php?project_id=' . $t_register_project
+								. '&git_path=' . rawurlencode( $t_path ) ); ?>"><?php
+							echo lang_get( 'dwg_register_button' ); ?></a>
+					<?php } ?></td></tr>
 			<?php } ?>
 			</tbody>
 		</table>
 		</div>
+		<?php if( $t_auto && $t_register_project > 0 ) { ?>
+		<form method="post" action="manage_git_store_page.php">
+			<?php echo form_security_field( 'manage_git_store_register' ); ?>
+			<input type="hidden" name="repo" value="<?php echo htmlspecialchars( $f_repo ); ?>" />
+			<input type="hidden" name="action" value="register_frontmatter" />
+			<button class="btn btn-sm btn-primary btn-white btn-round"><?php
+				echo sprintf( lang_get( 'dwg_register_all_button' ), count( $t_auto ) ); ?></button>
+			<span class="small">&nbsp;<?php echo lang_get( 'dwg_register_all_help' ); ?></span>
+		</form>
+		<?php } ?>
 		<?php } else { ?>
 		<div class="table-responsive">
 		<table class="table table-condensed table-striped table-hover">

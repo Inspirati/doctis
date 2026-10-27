@@ -43,6 +43,7 @@ require_api( 'constant_inc.php' );
 require_api( 'custom_field_api.php' );
 require_api( 'error_api.php' );
 require_api( 'file_dwg_api.php' );
+require_api( 'repository_api.php' );
 require_api( 'form_api.php' );
 require_api( 'gpc_api.php' );
 require_api( 'helper_api.php' );
@@ -316,6 +317,30 @@ $t_issue_id = (int)$t_result['issue_id'];
 
 foreach( $t_topic_tags as $t_topic_tag ) {
 	topic_dwg_add( $t_issue_id, $t_topic_tag['topic_id'], $t_topic_tag['extent'], $t_topic_tag['locator'] );
+}
+
+# Register a file that is already in the repository, rather than uploading
+# one.  A developer who adds a file through an external clone has pushed the
+# content already; there is nothing to upload, only a path to record.  The
+# commit is the one that last changed that path, not HEAD: HEAD moves when
+# anyone pushes anything, and the document should be pinned to the change
+# that actually produced it.  See Manage -> Git Store.
+$f_git_path = trim( gpc_get_string( 'git_path', '' ) );
+if( $f_git_path !== '' ) {
+	require_api( 'git_store_api.php' );
+	$t_reg_repo_id = repository_id_for_project( (int)$t_project_id );
+	$t_reg_repo = $t_reg_repo_id === 0 ? null
+		: ( git_store_repositories()[repository_basename( $t_reg_repo_id )] ?? null );
+	if( $t_reg_repo === null ) {
+		trigger_error( ERROR_FILE_NOT_FOUND, ERROR );
+	}
+	$t_reg_sha = git_store_last_commit_sha( $t_reg_repo, $f_git_path );
+	if( $t_reg_sha === '' ) {
+		error_parameters( $f_git_path );
+		trigger_error( ERROR_FILE_NOT_FOUND, ERROR );
+	}
+	file_dwg_primary_register( $t_issue_id, auth_get_current_user_id(), $f_git_path,
+		$t_reg_sha, gpc_get_string( 'primary_document_description', '' ) );
 }
 
 # Handle optional primary document file upload
