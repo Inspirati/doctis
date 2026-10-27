@@ -5,6 +5,8 @@ Status: **stages 1 and 2 built and trial-tested on the VM** (branch `git-lfs`,
 Prerequisite reading: [GIT_ARCHITECTURE.md](GIT_ARCHITECTURE.md) for the
 storage baseline and [SOURCE_REPOSITORIES.md](SOURCE_REPOSITORIES.md) for the
 clone/push gateway this builds on.
+For what a server administrator must change to host LFS repositories, see
+[LFS_DEPLOYMENT.md](LFS_DEPLOYMENT.md).
 
 ## 1. Why
 
