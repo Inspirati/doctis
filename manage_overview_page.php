@@ -198,10 +198,6 @@ function doctis_get_git_version_info() {
 			<?php print_icon( 'fa-file-text', 'ace-icon' ); ?> Config File
 		</a>
 		&nbsp;
-		<a href="manage_git_backup_page.php" class="btn btn-sm btn-default">
-			<?php print_icon( 'fa-archive', 'ace-icon' ); ?> Backup Git Store
-		</a>
-		&nbsp;
 		<a href="manage_git_pull_page.php" class="btn btn-sm btn-primary">
 			<?php print_icon( 'fa-download', 'ace-icon' ); ?> Git Pull (Update)
 		</a>
@@ -216,10 +212,6 @@ function doctis_get_git_version_info() {
 		&nbsp;
 		<a href="manage_php_error_log_page.php" class="btn btn-sm btn-default">
 			<?php print_icon( 'fa-exclamation-triangle', 'ace-icon' ); ?> PHP Error Log
-		</a>
-		&nbsp;
-		<a href="manage_git_reset_page.php" class="btn btn-sm btn-danger">
-			<?php print_icon( 'fa-trash', 'ace-icon' ); ?> Reset Git Store
 		</a>
 	</div>
 	</div>
@@ -240,12 +232,20 @@ function doctis_get_git_version_info() {
 			<?php print_icon( 'fa-database', 'ace-icon' ); ?> Backup Database
 		</a>
 		&nbsp;
+		<a href="manage_git_backup_page.php" class="btn btn-sm btn-default">
+			<?php print_icon( 'fa-archive', 'ace-icon' ); ?> Backup Git Store
+		</a>
+		&nbsp;
 		<a href="manage_db_load_page.php" class="btn btn-sm btn-warning">
 			<?php print_icon( 'fa-upload', 'ace-icon' ); ?> Load Data
 		</a>
 		&nbsp;
 		<a href="manage_db_rebuild_page.php" class="btn btn-sm btn-danger">
 			<?php print_icon( 'fa-trash', 'ace-icon' ); ?> Rebuild Database
+		</a>
+		&nbsp;
+		<a href="manage_git_reset_page.php" class="btn btn-sm btn-danger">
+			<?php print_icon( 'fa-trash', 'ace-icon' ); ?> Reset Git Store
 		</a>
 	</div>
 	</div>
