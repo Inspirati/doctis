@@ -267,7 +267,17 @@ snapshots), `topic_snapshot_*.php`, `topic_activity_page.php`,
 ## Document Publishing
 
 **Publish** on the document view page converts a Markdown document's On Record
-version to HTML with pandoc. The page goes into the project's publication
+version to HTML with pandoc. **Publish All Documents** on Manage Project →
+Publishing does the whole site (`dwg_publish_all()`, `dwg_publish_all.php`),
+deferring the navigation rebuild to the end instead of after every document.
+Measured on 101 documents that saves only ~5% (131.6 s vs 138.1 s) — pandoc
+dominates at ~1.3 s a document — so the point is one action with one report,
+not speed. It runs in **budgeted 20-second steps** that resume via a
+self-submitting form, because an unbounded pass exceeds nginx's 60-second
+`fastcgi_read_timeout` and returns 504 while PHP carries on invisibly. **Strip path prefix**
+(`dwg_publish_strip`) drops a leading repository directory from page paths,
+so HCRQMS's `content/system/x.md` publishes as `system/x.html` rather than
+burying the site one level down. The page goes into the project's publication
 target directory (a static website) at its repository path, `.md` → `.html`.
 The page header shows the Doctis status. This is a one-document port of HCRQMS
 `engine/scripts/build-html.sh`, with the same layout and sidebar. Each page

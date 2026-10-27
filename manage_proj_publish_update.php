@@ -32,7 +32,8 @@ dwg_publish_settings_save( $f_project_id,
 	gpc_get_string( 'dwg_publish_url', '' ),
 	gpc_get_string( 'dwg_publish_template', '' ),
 	gpc_get_string( 'dwg_publish_logo', '' ),
-	gpc_get_bool( 'dwg_publish_pdf' ) );
+	gpc_get_bool( 'dwg_publish_pdf' ),
+	gpc_get_string( 'dwg_publish_strip', '' ) );
 
 form_security_purge( 'manage_proj_publish_update' );
 

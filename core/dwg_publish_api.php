@@ -264,6 +264,7 @@ function dwg_publish_site( int $p_project_id ): array {
 		'template'          => trim( (string)config_get( 'dwg_publish_template', '', ALL_USERS, $t_source ) ),
 		'logo'              => trim( (string)config_get( 'dwg_publish_logo', '', ALL_USERS, $t_source ) ),
 		'pdf'               => (int)config_get( 'dwg_publish_pdf', OFF, ALL_USERS, $t_source ) === ON,
+		'strip'             => trim( (string)config_get( 'dwg_publish_strip', '', ALL_USERS, $t_source ) ),
 	);
 }
 
@@ -279,9 +280,9 @@ function dwg_publish_site( int $p_project_id ): array {
  * @param boolean $p_pdf      Also publish a PDF of each document.
  * @return void
  */
-function dwg_publish_settings_save( int $p_project_id, string $p_target, string $p_url, string $p_template, string $p_logo, bool $p_pdf = false ): void {
-	static $s_options = array( 'dwg_publish_target', 'dwg_publish_url', 'dwg_publish_template', 'dwg_publish_logo', 'dwg_publish_pdf' );
-	$t_values = array( trim( $p_target ), trim( $p_url ), trim( $p_template ), trim( $p_logo ), $p_pdf ? ON : '' );
+function dwg_publish_settings_save( int $p_project_id, string $p_target, string $p_url, string $p_template, string $p_logo, bool $p_pdf = false, string $p_strip = '' ): void {
+	static $s_options = array( 'dwg_publish_target', 'dwg_publish_url', 'dwg_publish_template', 'dwg_publish_logo', 'dwg_publish_pdf', 'dwg_publish_strip' );
+	$t_values = array( trim( $p_target ), trim( $p_url ), trim( $p_template ), trim( $p_logo ), $p_pdf ? ON : '', trim( $p_strip, " \t\n\r\0\x0B/" ) );
 
 	if( $t_values[0] === '' ) {
 		foreach( $s_options as $t_option ) {
@@ -312,6 +313,9 @@ function dwg_publish_settings_save( int $p_project_id, string $p_target, string 
 	}
 	if( $t_problem === '' && $p_pdf ) {
 		$t_problem = dwg_publish_pdf_problem();
+	}
+	if( $t_problem === '' ) {
+		$t_problem = dwg_publish_strip_problem( $t_values[5] );
 	}
 	if( $t_problem !== '' ) {
 		dwg_publish_error( $t_problem );
@@ -406,8 +410,45 @@ function dwg_publish_is_markdown( string $p_path ): bool {
  * @param string $p_git_path
  * @return string
  */
-function dwg_publish_page_path( string $p_git_path ): string {
-	return preg_replace( '/\.(md|markdown)$/i', '', $p_git_path ) . '.html';
+function dwg_publish_page_path( string $p_git_path, string $p_strip = '' ): string {
+	$t_path = $p_git_path;
+
+	# A repository whose documents all sit under one directory would otherwise
+	# publish every page beneath that directory's name -- /site/content/... --
+	# and give the navigation a single root node wrapping the whole tree.  The
+	# segment carries no meaning on the website, so a project may name a
+	# prefix to drop.  Only a path that actually begins with it is changed,
+	# and never to nothing: a document at the prefix itself keeps its name.
+	$t_strip = trim( $p_strip, '/' );
+	if( $t_strip !== '' && strpos( $t_path, $t_strip . '/' ) === 0 ) {
+		$t_remainder = substr( $t_path, strlen( $t_strip ) + 1 );
+		if( $t_remainder !== '' ) {
+			$t_path = $t_remainder;
+		}
+	}
+
+	return preg_replace( '/\.(md|markdown)$/i', '', $t_path ) . '.html';
+}
+
+/**
+ * Explain why a path prefix cannot be stripped from published page paths.
+ *
+ * @param string $p_strip Repository-relative directory prefix, or ''.
+ * @return string '' when the prefix can be used.
+ */
+function dwg_publish_strip_problem( string $p_strip ): string {
+	$t_strip = trim( $p_strip, '/' );
+	if( $t_strip === '' ) {
+		return '';
+	}
+	if( strpos( $t_strip, '..' ) !== false || strpos( $t_strip, '//' ) !== false
+		|| preg_match( '#(^|/)\.{1,2}(/|$)#', $t_strip ) ) {
+		return 'the published path prefix must be a plain repository directory, without "." or ".." segments.';
+	}
+	if( !preg_match( '#^[A-Za-z0-9][A-Za-z0-9._/-]*$#', $t_strip ) ) {
+		return 'the published path prefix may contain only letters, digits, dot, dash, underscore and "/".';
+	}
+	return '';
 }
 
 /**
@@ -517,7 +558,7 @@ function dwg_publish_get( int $p_dwg_id ): ?array {
 	if( $t_site['target'] === '' ) {
 		return null;
 	}
-	$t_page   = dwg_publish_page_path( $t_row['git_path'] );
+	$t_page   = dwg_publish_page_path( $t_row['git_path'], $t_site['strip'] );
 	$t_file   = $t_site['target'] . '/' . $t_page;
 	$t_marker = dwg_publish_read_marker( $t_file );
 	if( $t_marker === null || (int)( $t_marker['dwg_id'] ?? 0 ) !== $p_dwg_id ) {
@@ -1359,7 +1400,7 @@ function dwg_publish_write_index( array $p_site, array $p_pages, array $p_tree, 
  * @return array page (site-relative path), url ('' when the site has no URL),
  *               pdf (site-relative path, '' when no PDF) and pdf_url.
  */
-function dwg_publish( int $p_dwg_id, int $p_user_id ): array {
+function dwg_publish( int $p_dwg_id, int $p_user_id, bool $p_refresh_site = true ): array {
 	$t_problem = dwg_publish_refusal( $p_dwg_id );
 	if( $t_problem !== '' ) {
 		dwg_publish_error( $t_problem );
@@ -1368,7 +1409,7 @@ function dwg_publish( int $p_dwg_id, int $p_user_id ): array {
 	$t_site   = dwg_publish_site( (int)$t_dwg->project_id );
 	$t_target = $t_site['target'];
 	$t_row    = file_dwg_primary_get( $p_dwg_id );
-	$t_page   = dwg_publish_page_path( $t_row['git_path'] );
+	$t_page   = dwg_publish_page_path( $t_row['git_path'], $t_site['strip'] );
 
 	$t_source = file_dwg_get_storage_backend()->retrieve( $t_row, (int)$t_dwg->project_id );
 	if( $t_source === false ) {
@@ -1469,7 +1510,12 @@ function dwg_publish( int $p_dwg_id, int $p_user_id ): array {
 		foreach( $t_moved as $t_other => $t_other_marker ) {
 			dwg_publish_remove_page( $t_target, $t_other, $t_other_marker );
 		}
-		dwg_publish_refresh_site( $t_site, $t_pages, $t_page, $t_template, $t_logo );
+		# Refreshing rewrites the navigation in every page on the site, so
+		# publishing N documents one at a time costs N*N page rewrites.  A
+		# caller publishing a batch refreshes once, at the end.
+		if( $p_refresh_site ) {
+			dwg_publish_refresh_site( $t_site, $t_pages, $t_page, $t_template, $t_logo );
+		}
 	} finally {
 		dwg_publish_unlock( $t_lock );
 	}
@@ -1490,6 +1536,118 @@ function dwg_publish( int $p_dwg_id, int $p_user_id ): array {
 		'pdf'     => $t_pdf,
 		'pdf_url' => $t_pdf !== '' ? dwg_publish_page_url( $t_site, $t_pdf ) : '',
 	);
+}
+
+/**
+ * Publish every eligible document of a project's website in one pass.
+ *
+ * Publishing is otherwise one document at a time, which is wrong for a site
+ * being built from empty: each publish rewrites the navigation in every page
+ * already there, so N documents cost N*N page rewrites.  This renders every
+ * page with that refresh deferred and then refreshes once, which is the whole
+ * reason the function exists rather than a loop in the caller.
+ *
+ * Scope is the project and every sub-project that resolves to the *same*
+ * site, so a tree sharing one website is published together and a
+ * sub-project with its own target is left alone.
+ *
+ * A document that cannot be published is skipped with its reason, never
+ * treated as a failure: a source release, a non-Markdown file and a private
+ * document are all ordinary contents of a project.
+ *
+ * A budget makes the pass resumable: it stops when the budget is spent and
+ * returns done = false with the id it reached, which the caller passes back
+ * as $p_after_id to continue.  The navigation is refreshed only on the pass
+ * that finishes, so the cost is still paid once however many passes it took.
+ *
+ * @param integer $p_project_id
+ * @param integer $p_user_id
+ * @param integer $p_after_id Resume after this document id; 0 to start.
+ * @param float   $p_budget   Seconds to spend before pausing; 0 for no limit.
+ * @return array{published: int, skipped: array, failed: array, seconds: float,
+ *               after_id: int, done: bool, remaining: int}
+ *         skipped maps a reason to a count; failed maps a dwg id to a message.
+ *         Counts are for THIS pass; a caller resuming accumulates them.
+ */
+function dwg_publish_all( int $p_project_id, int $p_user_id,
+		int $p_after_id = 0, float $p_budget = 0.0 ): array {
+	$t_started = microtime( true );
+	$t_site    = dwg_publish_site( $p_project_id );
+	if( $t_site['target'] === '' ) {
+		dwg_publish_error( $t_site['problem'] !== ''
+			? 'the publication target directory cannot be used: ' . $t_site['problem']
+			: 'the project has no publication target directory.' );
+	}
+
+	# Every project whose own site resolves to this one.
+	$t_projects = array( $p_project_id );
+	foreach( project_hierarchy_get_all_subprojects( $p_project_id ) as $t_child ) {
+		$t_child_site = dwg_publish_site( (int)$t_child );
+		if( $t_child_site['target'] === $t_site['target'] ) {
+			$t_projects[] = (int)$t_child;
+		}
+	}
+
+	db_param_push();
+	$t_query = db_query( 'SELECT id FROM {dwg} WHERE project_id IN ( '
+		. implode( ',', array_map( 'intval', $t_projects ) ) . ' ) AND id > '
+		. db_param() . ' ORDER BY id', array( $p_after_id ) );
+	$t_ids = array();
+	while( ( $t_row = db_fetch_array( $t_query ) ) !== false ) {
+		$t_ids[] = (int)$t_row['id'];
+	}
+
+	$t_result = array( 'published' => 0, 'skipped' => array(), 'failed' => array(),
+		'after_id' => $p_after_id, 'done' => true, 'remaining' => 0 );
+	foreach( $t_ids as $t_index => $t_id ) {
+		# Rendering the whole site takes minutes, and a web request does not
+		# get minutes: nginx gives a FastCGI response 60 seconds by default,
+		# so an unbounded pass returns 504 while PHP carries on invisibly --
+		# the caller sees a failure, loses the report, and may start a second
+		# pass over the same site.  A caller that gives a budget gets back a
+		# resume point instead, and asks again.
+		if( $p_budget > 0.0 && microtime( true ) - $t_started >= $p_budget ) {
+			$t_result['done'] = false;
+			$t_result['remaining'] = count( $t_ids ) - $t_index;
+			break;
+		}
+		$t_result['after_id'] = $t_id;
+
+		$t_why = dwg_publish_refusal( $t_id );
+		if( $t_why !== '' ) {
+			$t_result['skipped'][$t_why] = ( $t_result['skipped'][$t_why] ?? 0 ) + 1;
+			continue;
+		}
+		try {
+			dwg_publish( $t_id, $p_user_id, /* refresh_site */ false );
+			$t_result['published']++;
+		} catch( Throwable $e ) {
+			# One bad document must not abandon the rest of the site.
+			$t_result['failed'][$t_id] = $e->getMessage();
+		}
+	}
+
+	# The one refresh the whole run shares, once the last document is done.
+	# Without a usable template the pages are still written; only the
+	# navigation and index are skipped, the same stance
+	# dwg_publish_withdraw() takes.
+	if( $t_result['done'] ) {
+		$t_lock = dwg_publish_lock( $t_site['target'] );
+		try {
+			try {
+				$t_template = dwg_publish_template_text( $t_site );
+			} catch( ClientException $e ) {
+				$t_template = null;
+			}
+			dwg_publish_refresh_site( $t_site, dwg_publish_site_pages( $t_site['target'] ), '',
+				$t_template, dwg_publish_logo_html( $t_site ) );
+		} finally {
+			dwg_publish_unlock( $t_lock );
+		}
+	}
+
+	$t_result['seconds'] = microtime( true ) - $t_started;
+	return $t_result;
 }
 
 /**

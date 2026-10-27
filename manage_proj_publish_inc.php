@@ -104,6 +104,16 @@ if( dwg_publish_enabled() ) {
 				</tr>
 				<tr>
 					<td class="category">
+						<label for="dwg-publish-strip"><?php echo lang_get( 'dwg_publish_strip' ) ?></label>
+					</td>
+					<td>
+						<input type="text" id="dwg-publish-strip" name="dwg_publish_strip" class="input-sm" size="40" maxlength="250"
+							value="<?php echo string_attribute( $t_publish_value( 'dwg_publish_strip' ) ) ?>" />
+						<br /><span class="small"><?php echo lang_get( 'dwg_publish_strip_help' ) ?></span>
+					</td>
+				</tr>
+				<tr>
+					<td class="category">
 						<label for="dwg-publish-pdf"><?php echo lang_get( 'dwg_publish_pdf' ) ?></label>
 					</td>
 					<td>
@@ -128,6 +138,29 @@ if( dwg_publish_enabled() ) {
 			</div>
 		</div>
 	</form>
+
+<?php	if( $t_publish_site['target'] !== '' ): ?>
+	<div class="space-10"></div>
+	<div class="widget-box widget-color-blue2">
+		<div class="widget-header widget-header-small">
+			<h4 class="widget-title lighter">
+				<?php print_icon( 'fa-upload', 'ace-icon' ); ?>
+				<?php echo lang_get( 'dwg_publish_all' ) ?>
+			</h4>
+		</div>
+		<div class="widget-body"><div class="widget-main">
+			<p class="small no-margin"><?php echo lang_get( 'dwg_publish_all_help' ) ?></p>
+			<div class="space-10"></div>
+			<form method="post" action="dwg_publish_all.php">
+				<?php echo form_security_field( 'dwg_publish_all' ) ?>
+				<input type="hidden" name="project_id" value="<?php echo (int)$f_project_id ?>" />
+				<button class="btn btn-sm btn-primary btn-white btn-round">
+					<?php echo lang_get( 'dwg_publish_all_button' ) ?>
+				</button>
+			</form>
+		</div></div>
+	</div>
+<?php	endif; ?>
 	</div>
 </div>
 <?php

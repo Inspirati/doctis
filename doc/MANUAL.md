@@ -329,6 +329,16 @@ the status changes. Click **Republish** to update the page. **Unpublish**
 removes the page from the website; deleting the document also removes it.
 Each publish and unpublish appears in the document history.
 
+**Publishing the whole site at once.** Manage → Projects → *(project)* →
+Publishing has **Publish All Documents**, which publishes every eligible
+document of the project — and of any sub-project sharing the same website —
+in one pass. Use it to fill a site that is starting empty, rather than
+pressing Publish on each document in turn; it is also considerably faster,
+because the navigation is rebuilt once at the end instead of after every
+document. The result lists how many were published, anything that failed,
+and the documents skipped with the reason (a source release, a file that is
+not Markdown, or a private document).
+
 Every published page starts with a **document-control block** under the
 title. Its values all come from Doctis:
 - number, title, revision, status and classification;

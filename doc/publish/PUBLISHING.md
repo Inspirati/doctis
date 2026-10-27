@@ -132,10 +132,22 @@ each page, so it can be replaced without running pandoc again.
 | Website URL | `/site/` | Where the site is served. Used for the links on the view page. Must start with `/`, `http://` or `https://`. |
 | Template | `engine/pandoc/html-template.html` | Repository path on the default branch. Blank: the Doctis default template. |
 | Banner logo | `engine/pandoc/logo.svg` | SVG/PNG/JPEG repository path, embedded in each page. Blank: the project name. |
+| Strip path prefix | `content` | A repository directory to drop from published page paths, so `content/system/x.md` publishes as `system/x.html`. Blank: publish at the repository path. |
 | PDF | ticked | Also publish a PDF of each document (§9). Needs the PDF packages. |
 
+**Strip path prefix.** A repository whose documents all sit under one
+directory would otherwise publish every page beneath that directory's name —
+`/site/content/system/x.html` — and give the navigation a single root node
+wrapping the whole tree. The segment means nothing on the website. HCRQMS has
+needed this since its 2026-10 restructure moved `system/` under `content/`.
+Only a path that *begins* with the prefix is shortened, so a document outside
+it keeps its place, and a path equal to the prefix is left alone rather than
+losing its name. Changing the prefix changes every page's URL: republish the
+site afterwards, and expect the old pages to remain until they are removed.
+
 The settings are ordinary per-project config values (`dwg_publish_target`,
-`dwg_publish_url`, `dwg_publish_template`, `dwg_publish_logo`). A sub-project
+`dwg_publish_url`, `dwg_publish_template`, `dwg_publish_logo`,
+`dwg_publish_strip`). A sub-project
 without its own target uses the nearest ancestor's settings, like repository
 inheritance, so HCRQMS sub-projects publish into the HCRQMS site.
 `$g_dwg_publish_threshold` (default MANAGER, per project) controls who may
@@ -180,6 +192,40 @@ On the document view page:
 
 Errors appear as `Publishing: <reason>`, e.g. `Publishing: only Markdown
 documents (.md) can be published.`
+
+### Publishing a whole site at once
+
+**Manage → Projects → (project) → Publishing → Publish All Documents.**
+
+Publishes every eligible document of the project, and of every sub-project
+resolving to the *same* site, in one pass. A sub-project with its own target
+is left alone. Already-published documents are republished at their current
+On Record version. The result page reports how many were published, how many
+failed with the reason for each, and the documents skipped grouped by why —
+a source release, a non-Markdown file or a private document is skipped, not
+failed, because those are ordinary contents of a project.
+
+`dwg_publish_all()` renders every page with the navigation refresh deferred
+and rebuilds it once at the end, rather than after each document as a single
+publish does. On the VM's 101-document HCRQMS that is 131.6 s against 138.1 s
+for the same documents published one at a time — a 5% saving, not the large
+one the N² rewrite count suggests, because pandoc dominates at about 1.3 s a
+document and the navigation rewrite is comparatively cheap. The reason to use
+it is that it is one action with one report, not that it is much faster.
+
+**It runs in budgeted steps, and that part is not cosmetic.** Rendering a site
+takes minutes; a web request does not get minutes. nginx gives a FastCGI
+response 60 seconds by default, so an unbounded pass returns **504** to the
+browser while PHP carries on invisibly — the operator sees a failure, loses
+the report, and may start a second pass over the same site. Each step
+publishes for `DWG_PUBLISH_ALL_BUDGET` seconds (20), then the page submits
+itself again with the resume point and the running totals, with a Continue
+button as the fallback when scripting is off. The navigation refresh happens
+only on the step that finishes, so its cost is still paid once.
+
+It is the way to fill a site that starts empty — after a container rebuild
+whose `site` volume is not persisted, or when a repository is first imported.
+One document failing does not abandon the rest.
 
 ---
 
@@ -276,6 +322,7 @@ publish time, commit and a link to the document in Doctis.
 | `core/publish/dwg_publish_template.html` | Default template (HCRQMS layout, status badge, footer) |
 | `core/publish/rewrite-links.lua` | `.md` → `.html` link filter |
 | `dwg_publish.php` | POST action: publish / unpublish |
+| `dwg_publish_all.php`, `js/dwg_publish_all.js` | POST action: publish a whole site in budgeted, self-continuing steps |
 | `dwg_view_publish_inc.php` | Published row on the view page |
 | `manage_proj_publish_inc.php`, `manage_proj_publish_update.php` | Project settings |
 | `dwg_view_inc.php` | Publish button (`dwg_view_action_buttons()`), row include |

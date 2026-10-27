@@ -61,6 +61,40 @@ class DwgPublishTest extends MantisCoreBase {
 		$this->assertSame( 'my%20dir/a%26b.html', dwg_publish_href( 'my dir/a&b.html' ) );
 	}
 
+	/**
+	 * A repository whose documents all live under one directory publishes
+	 * every page beneath that directory's name unless the project strips it.
+	 */
+	public function testStripPrefix() {
+		# Only a path that actually begins with the prefix is shortened.
+		$this->assertSame( 'system/procedures/A.html',
+			dwg_publish_page_path( 'content/system/procedures/A.md', 'content' ) );
+		$this->assertSame( 'Z.html', dwg_publish_page_path( 'content/Z.md', 'content' ) );
+		$this->assertSame( 'other/W.html', dwg_publish_page_path( 'other/W.md', 'content' ) );
+
+		# A file *named* like the prefix is not a path under it.
+		$this->assertSame( 'content.html', dwg_publish_page_path( 'content.md', 'content' ) );
+
+		# A path equal to the prefix is not under it, so it keeps its name and
+		# a page is never written to the site root with an empty name.
+		$this->assertSame( 'content.html', dwg_publish_page_path( 'content', 'content' ) );
+		$this->assertSame( 'content/.html', dwg_publish_page_path( 'content/', 'content' ) );
+
+		# Surrounding slashes are tolerated; no prefix is the old behaviour.
+		$this->assertSame( 'system/A.html', dwg_publish_page_path( 'content/system/A.md', '/content/' ) );
+		$this->assertSame( 'content/system/A.html', dwg_publish_page_path( 'content/system/A.md', '' ) );
+
+		# Validation: nothing that could climb out of the repository path.
+		$this->assertSame( '', dwg_publish_strip_problem( '' ) );
+		$this->assertSame( '', dwg_publish_strip_problem( 'content' ) );
+		$this->assertSame( '', dwg_publish_strip_problem( 'a/b-c_d.e' ) );
+		$this->assertNotSame( '', dwg_publish_strip_problem( '../etc' ) );
+		$this->assertNotSame( '', dwg_publish_strip_problem( 'a/../b' ) );
+		$this->assertNotSame( '', dwg_publish_strip_problem( './x' ) );
+		$this->assertNotSame( '', dwg_publish_strip_problem( 'a//b' ) );
+		$this->assertNotSame( '', dwg_publish_strip_problem( 'we ird' ) );
+	}
+
 	public function testRootsDropFilesystemRootAndRelativePaths() {
 		config_set_global( 'dwg_publish_roots', array( $this->root . '/', '/', 'relative' ) );
 		$this->assertSame( array( $this->root ), dwg_publish_roots() );
