@@ -24,6 +24,7 @@ green = success/diagnostic, yellow = warning, red = failure).
 | `doctis-reset-native-test.sh` | Native VM: reset git store and database together, reload sample data, verify (`--preview` / `--execute`) | sudo |
 | `doctis-soap-test.sh` | Exercise Doctis-specific SOAP endpoints end-to-end against a throwaway document; prints pass/fail per test | user |
 | `doctis-git-import.sh` | Import an existing git repository as a Doctis project (wrapper for `admin/import-git-repo.php`; see `--help` and doc/git/GIT_IMPORTER.md) | sudo (runs as www-data) |
+| `doctis-snapshot-for-vm.sh` | Prepare a live `user` table snapshot for loading onto the development VM: appends an UPDATE re-enabling `administrator`, which live keeps disabled and the VM's test suites need. **Never load its output on live** | none |
 
 ---
 

@@ -14,6 +14,25 @@ Load in this order after a rebuild:
 |--------|----------|
 | `live-users.sql` | Live (qms.hcrobo.com) user accounts: administrator, robert, admin, claude, and the colleague accounts bharath, Atchyutha, saicharan, saisudheer. REPLACE, schema version 64 |
 | `vm-users.sql` | Native VM (10.0.0.109) user accounts: administrator and the 14 sample role accounts, plus their HCRQMS (project 1) memberships. REPLACE, schema version 77 |
+| `live-user-<date>.sql`, `live-news-<date>.sql` | Snapshots taken from live before a rebuild. Run the `user` one through `doctis-snapshot-for-vm.sh` before loading it here |
+
+### A live `user` snapshot loaded onto the VM
+
+Live keeps its seeded `administrator` account **disabled**, which is right
+there and wrong here: both test suites log in as it, and they fail at their
+first access check with messages that do not name the cause (PHPUnit:
+`Login as 'administrator' ... failed`; `test-git-doctis.php`: `APPLICATION
+ERROR #18`). Prepare every live snapshot before loading it on the VM:
+
+```bash
+admin/tools/doctis-snapshot-for-vm.sh live-user-<date>.sql
+# writes live-user-<date>-vm.sql, with one UPDATE appended
+```
+
+It appends `UPDATE user SET enabled = 1 WHERE username = 'administrator'`
+rather than editing the data row, so it does not depend on the column order
+or the dump's quoting and keeps working when the user table gains a column.
+**Never load the `-vm.sql` variant on live.**
 
 Keep each script's schema version header current. After a schema change that
 renames or removes columns, regenerate the script from a database that has
@@ -33,10 +52,14 @@ the new schema.
    Operations. Since 2026-10-16 these pages work on the VM as on live, because
    the VM runs them as `hcr`
    ([NATIVE-DEVELOPMENT.md](../../../doc/NATIVE-DEVELOPMENT.md)).
-2. Load the `user` snapshot (or `vm-users.sql`) with **Load Data**.
+2. Load the `user` snapshot (prepared as above) and the `config` snapshot
+   with **Load Data**. `config` carries every per-project setting — the
+   publication target and URL among them — and a rebuild deletes them, with
+   no error afterwards: the Publish button simply stops appearing.
 3. Manage → **Import Data**, as administrator. Import `HCRQMS-dev.zip` as
    HCRQMS first, so it becomes project 1, which `$g_meeting_project_id` uses.
-   Use directories `content,system`. Then import the LiDAR handbook ZIP as
+   Use directories `content` — as of the 2026-10 restructure `system` is
+   `content/system`, and naming it separately would import nothing. Then import the LiDAR handbook ZIP as
    LiDAR, with directories `procedures,systems-engineering,templates`. Use
    pattern `*.md` and Private visibility for both.
 4. Create the sub-projects Engineering (under HCRQMS: `content/engineering/`)
