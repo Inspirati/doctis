@@ -9,12 +9,21 @@ Status: **built and merged into `dev`** as a6566b213 on 2026-10-26, together
 with git LFS, and pushed. §7 records what the spike found, §8 the questions it
 answered and the ones still open, §11 what is left to build.
 
-The direction was approved on 2026-10-25. **It needs a database rebuild.**
-`{dwg}.kind` and `{dwg}.frozen` were added to step 18 in place on 2026-10-26
-(89c16592e), so `database_version` is unchanged and an upgrade will not add
-them. Live therefore needs a rebuild for this feature, as it does for the
-document- and project-owner columns; see
-[../dwg/OWNERSHIP.md](../dwg/OWNERSHIP.md). Sequence them together.
+The direction was approved on 2026-10-25. `{dwg}.kind` and `{dwg}.frozen`
+were added to step 18 in place on 2026-10-26 (89c16592e), so this feature
+needed a database rebuild — **which has since been done on live: both columns
+are present there (verified 2026-10-30).** Nothing is outstanding on that
+front.
+
+**In-place schema edits do not bump `database_version`.** Doctis's flat-schema
+rule means a new column is added by editing its `CREATE TABLE` step, so the
+version stays the same — live and the VM both report **77** whether or not a
+given column exists. The version therefore tells you *nothing* about which
+columns a database has, and an upgrade will never add one. To find out, read
+the column list: `DESCRIBE <table>` on the VM, or on live take a **Data
+Snapshot** of the table and read the column list in its `INSERT` statement.
+Verified 2026-10-30: live already has `{dwg}.owner_id`, `kind` and `frozen`,
+and `{project}.owner_id` and `classification`.
 
 ---
 
@@ -475,7 +484,7 @@ repository, not a page" before it looks at anything else.
 
 ## 6. What was built
 
-Merged into `dev` as a6566b213 on 2026-10-26. **Schema change: `{dwg}.kind` and `{dwg}.frozen` (89c16592e) — a rebuild is required.**
+Merged into `dev` as a6566b213 on 2026-10-26. **Schema change: `{dwg}.kind` and `{dwg}.frozen` (89c16592e), needing a rebuild — already done on live.**
 
 | Area | Change |
 |------|--------|

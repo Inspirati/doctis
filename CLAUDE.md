@@ -382,145 +382,30 @@ then run the git integration tests (below) before resuming development.
 
 ## Live Version
 
-The **live version** is `https://qms.hcrobo.com/doctis`: a remote Docker
-deployment of `dev` that is expected to become production. Nobody has
-console access. It is updated through System Operations (Git Pull, Rebuild
-Database, Reset Git Store, Load Data). Reading pages is fine; ask the owner
-before any change to it. It does not get sample data.
+`https://qms.hcrobo.com/doctis` — a remote Docker deployment of `dev`, the
+production path. **Nobody has console access**, so everything is done through
+the browser or with curl. It gets no sample data.
 
-### Updating the live version with a database rebuild
+**Reading pages is fine. Ask the owner before any change to it** — Git Pull,
+Rebuild Database, Reset Git Store, repairs, user or config edits. Claude's
+`claude` administrator credentials live outside the repository in
+`~/.config/doctis/live-claude.env`; pages that change anything call
+`auth_reauthenticate()`, so log in afresh immediately before each action.
 
-Everything below is done in the browser, or with curl as in
-[Curl-Based Testing](#curl-based-testing), by an administrator. Pages that
-change anything call `auth_reauthenticate()`, so log in afresh just before
-each action. This was done on 2026-10-14 and the account-disabling step was
-tested then.
-
-**Before starting**, with the owner's approval and `dev` pushed:
-1. Check Manage → System Operations → **Git Checkout Status** shows nothing
-   blocking a pull.
-2. Download backups.
-   - **Backup Git Store** gives a `.tar.gz` of the store.
-   - **Backup Database** (a full `mariadb-dump`), or a **Data Snapshot** of
-     all tables. Backup Database works on live since 7cb107677 (2026-10-14),
-     which connects without TLS (`--skip-ssl`) like the application. Earlier
-     builds failed because MariaDB 11.4+ dump clients demand TLS.
-   - **Data Snapshot** of the `user` **and `config`** tables, in REPLACE mode.
-     `user` restores the accounts. `config` restores every **per-project
-     setting**, which a rebuild also deletes: publication target and URL,
-     per-project thresholds, anything set on a Manage Project tab rather than
-     in `config_inc.php`. Omitting `config` silently removes features from
-     the restored site — the Publish button disappears because
-     `dwg_publish_site()` finds no target, and nothing reports an error.
-     (Learned the hard way on 2026-10-27; live held three `dwg_publish_*`
-     rows and they had to be recovered from the full dump afterwards.)
-3. Note any projects other than the imported one. A rebuild deletes them, and
-   they are not restored unless you load them back from the snapshot.
-
-**Steps:**
-1. **Git Pull.**
-2. **Rebuild Database** (type `REBUILD`). This drops and reinstalls the
-   database at the new schema and ends every session. Only the seeded
-   `administrator` / `root` account exists afterwards.
-3. Log in as `administrator` / `root`.
-4. **Reset Git Store** (type `RESET`). The import would otherwise fail: its
-   new repository reuses the old `<slug>-r<id>` name. The page refuses while
-   any `{repository}` row exists, so it only works straight after a rebuild.
-5. **Load Data**: upload the `user` snapshot, then the `config` snapshot,
-   typing `LOAD` and keeping the transaction ticked for each. This restores every account, including the owner's
-   administrators and `claude`; Claude's credentials are kept outside the
-   repository (see project memory).
-   - The schema-version warning is expected when the snapshot is older; the
-     columns must still match.
-   - If `administrator` was disabled when the snapshot was taken, this step
-     disables it again and ends that session. Continue as another
-     administrator.
-6. Log in with a restored administrator account.
-7. **Import Data**: project name `HCRQMS`, the repository ZIP, directories
-   `content,system`, patterns `*.md`, visibility **Public**.
-   - Expect "N imported, 0 skipped, 0 failed".
-   - Warnings that owners such as "QMS Lead" match no account are normal.
-   - The front proxy must accept uploads larger than the ZIP.
-8. **Verify:**
-   - Overview: the database schema version equals the code's.
-   - Manage → **Git Store**: one repository, "Database and disk agree", and
-     every document "On Record = HEAD".
-   - A document's view page still offers **Publish** — proof the per-project
-     settings came back. The schema version is *not* a useful check here: a
-     change to an existing table does not bump it.
-   - Manage → Users lists the restored accounts.
-9. **Disable `administrator`**, but only once a restored administrator
-   account has been confirmed to log in.
-   - Manage → Users → `administrator`: untick **Enabled**, untick **Send
-     email notification**, then **Update User**.
-   - Confirm that logging in as `administrator` / `root` is refused.
-   - Doctis will not disable the last enabled administrator.
-   - Every rebuild re-creates the account enabled, so repeat this step after
-     each one.
+Step-by-step procedures, including the full rebuild-and-reimport runbook:
+**[doc/LIVE_RUNBOOK.md](doc/LIVE_RUNBOOK.md)**.
 
 ## Diagnosing PHP Errors
 
-### Log file locations
+PHP errors and exceptions go to `/var/log/doctis/php_errors.log`; nginx to
+`/var/log/nginx/doctis_error.log`; cron to `/var/log/doctis/cron.log`.
+Manage → System Operations → **PHP Error Log** shows the newest entries and is
+the only way to read them on live, which has no console. There is no Xdebug.
 
-```bash
-# PHP errors, warnings and exceptions logged by MantisBT's handler (PHP-FPM error_log)
-tail -50 /var/log/doctis/php_errors.log
-
-# nginx errors (FastCGI failures, forbidden paths) and requests with HTTP status
-sudo tail -50 /var/log/nginx/doctis_error.log
-sudo tail -20 /var/log/nginx/doctis_access.log
-
-# Cron output: email flush and meeting scheduler
-tail -50 /var/log/doctis/cron.log
-```
-
-MantisBT's own logging (`$g_log_level`) is off unless `LOG_LEVEL` is set in the
-PHP-FPM pool (`env[LOG_LEVEL]`; FPM does not pass the shell environment); it
-then writes to `/var/log/doctis/mantis.log`. There is no Xdebug on the VM.
-
-Manage → System Operations → **PHP Error Log** (`manage_php_error_log_page.php`,
-administrators only) shows the newest entries of whatever file PHP logs to,
-with a text filter. It also shows whether `display_errors` is on. It is the
-only way to read PHP errors on live, which has no console.
-
-### How MantisBT handles exceptions
-
-MantisBT catches PHP exceptions in its error handler. With
-`$g_show_detailed_errors = ON` it renders a full HTML stack trace in the
-browser response. The VM's `config/config_inc.php` does not set it (default
-OFF); add it temporarily when an `APPLICATION ERROR #0` page needs diagnosing.
-
-The stack trace shows filename, line number, class, function, and all arguments
-at each frame, including the contents of arrays passed to the failing function.
-This is often enough to identify the exact error without adding debug logging.
-
-MantisBT also calls `error_log()` in its exception handler, so caught
-exceptions appear in `/var/log/doctis/php_errors.log` with a condensed stack
-trace on one line.
-
-### Adding temporary debug logging
-
-When the HTML error page doesn't show enough detail (e.g. inside git operations
-where exceptions are caught and re-thrown), use `error_log()`:
-
-```php
-error_log( 'MyClass::method() reached with var=' . $t_var );
-```
-
-Output goes to `/var/log/doctis/php_errors.log`. Remove all `error_log()`
-calls before committing.
-
-### Typical error sources for the GIT backend
-
-| Symptom | Likely cause | Where to look |
-|---------|-------------|---------------|
-| `Class "ServiceException" not found` | Missing `use Mantis\Exceptions\ServiceException;` in a `.class.php` file | Top of the failing backend class |
-| `Author identity unknown` / exit-code 128 | `GIT_AUTHOR_*` env vars not set; `ensure_git_home()` now sets them from gitconfig | `GitFileStorageBackend::ensure_git_home()` |
-| `git commit` exit-code 1 | Nothing to commit (duplicate file content) | Handled gracefully; returns existing HEAD SHA |
-| `An error occurred during this action` | MantisBT caught an exception; check browser for stack trace | Browser HTML output |
-| `APPLICATION ERROR #0` with `trigger_error` | A switch on `file_upload_method` is missing a `GIT` case | The file and line shown in the stack trace |
-| `Cannot use object of type DwgData as array` | `dwg_get()` returns a `DwgData` object — use `->property`, not `['key']` | The file and line in the stack trace |
-| `Undefined array key 0` on `list(...)=backend->store()` | `store()` returns named-key array; use `$r['diskfile']` etc., not positional `list()` | Caller of `store()` |
+Log locations in full, how MantisBT's exception handler behaves,
+`$g_show_detailed_errors`, adding temporary `error_log()` calls, and the error
+signatures that recur with the git backend:
+**[doc/PHP_ERROR_DIAGNOSIS.md](doc/PHP_ERROR_DIAGNOSIS.md)**.
 
 ## Upstream Sync Process
 
@@ -613,379 +498,48 @@ follow *Updating the live version with a database rebuild* above.
 
 ## Resetting to a Clean Slate for Testing
 
-A full clean-room reset wipes both the MariaDB database and the git document
-store and reinstalls the schema. **Always reset both together**: the database
-and the git store reference each other, and resetting one alone leaves them
-out of sync. The scripts run as root, so MariaDB is reached through its unix
-socket and no password is needed.
-
-### Option A: one command, with sample data
+**Always reset the database and the git store together** — they reference each
+other, and resetting one alone leaves them inconsistent. On the VM **no backup
+is needed first** (owner decision 2026-10-20); clean feature testing is
+expected to start from a rebuild.
 
 ```bash
-sudo bash /var/www/html/doctis/admin/tools/doctis-reset-native-test.sh --preview
+# One command, with sample data:
 sudo bash /var/www/html/doctis/admin/tools/doctis-reset-native-test.sh --execute
 ```
 
-`--execute` resets the git store, rebuilds the database, and loads the sample
-data: the `example` project, licences and the test accounts. It then checks
-the result and ends with `Reset complete: ...`.
-
-### Option B: step by step, without sample data
-
-Use this when the reload comes from data scripts and imports instead
-([admin/tools/data-scripts/README.md](admin/tools/data-scripts/README.md)):
-
-```bash
-# 1. Git store: bare repos and worktrees. Ends "Git store reset: N item(s) removed."
-sudo bash /var/www/html/doctis/admin/tools/doctis-git-reset.sh <<< yes
-
-# 2. Database: drop, recreate, install from admin/schema.php. The installer is
-#    served over loopback only, hence 127.0.0.1; the password argument is unused.
-sudo bash /var/www/html/doctis/admin/tools/doctis-drop-and-create-new-database.sh doctis not-used 127.0.0.1 <<< yes
-
-# 3. (optional) the standard sample data
-sudo bash /var/www/html/doctis/admin/tools/doctis-load-sample-data.sh <<< yes
-```
-
-Step 2 prints `✔ doctis database install successful.` and saves the installer
-output to `/tmp/doctis-install.XXXXXX.html`. It leaves only the
-`administrator` account (password `root`).
-
-### Verifying the reset
-
-```bash
-sudo mysql doctis -e 'SELECT id, name FROM project; SELECT id, username FROM user;'
-ls /var/git/doctis/ /var/www/doctis/worktrees/    # empty after a reset
-```
+Step-by-step without sample data, the individual scripts, and how to verify the
+result: [doc/TESTING.md](doc/TESTING.md) §8. Reload order and data scripts:
+[admin/tools/data-scripts/README.md](admin/tools/data-scripts/README.md).
 
 ## Curl-Based Testing
 
-Use `curl` to exercise the VM instance programmatically when browser access is
-not possible. All state lives in a cookie jar file; keep it in the scratchpad
-and delete it afterwards. The examples use:
+Doctis can be driven entirely over HTTP when a browser is not available —
+useful for both the VM and live. MantisBT's login is a **two-step POST**, every
+form carries a `form_security_field()` token named `<action>_token`, and pages
+needing a project redirect through `set_project.php`, so follow redirects
+with `-L`.
 
-```bash
-B=http://10.0.0.109/doctis          # the $g_path host; 127.0.0.1 breaks the login cookie
-C=<scratchpad>/doctis_cookies.txt
-```
-
-Accounts: `administrator` / `root` exists after every rebuild. The sample role
-accounts (`manager`, `developer`, `reporter`, `viewer` and others) have blank
-passwords; they exist once sample data or `vm-users.sql` is loaded. Some pages
-(Manage, Load Data) ask for the password again; repeat the login if a POST is
-redirected to `login_password_page.php`.
-
-### One-time setup — login
-
-MantisBT login is a two-step POST. Do both in sequence:
-
-```bash
-# Step 1 — submit username; server redirects to password page
-curl -s -c "$C" -b "$C" \
-  -X POST "$B/login_password_page.php" \
-  -d "username=manager&return=index.php" -o /dev/null
-
-# Step 2 — submit password (blank for the default manager account)
-curl -s -c "$C" -b "$C" \
-  -X POST "$B/login.php" \
-  -d "username=manager&password=&return=index.php&secure_session=0" -o /dev/null
-```
-
-Verify success by fetching any authenticated page and grepping for the username:
-
-```bash
-curl -s -L -c "$C" -b "$C" \
-  "$B/my_view_dwg_page.php" | grep -o 'manager'
-```
-
-### Project context
-
-Pages that require a project selected will redirect to
-`login_select_proj_page.php`, which in turn redirects to
-`set_project.php?project_id=1&ref=<target>`. Follow redirects with `-L` to
-handle this transparently:
-
-```bash
-curl -s -L -c "$C" -b "$C" \
-  "$B/dwg_create_page.php" -o /tmp/page.html
-```
-
-### Reading CSRF tokens from a page
-
-Every MantisBT form embeds a `form_security_field()` token. Extract it before
-POSTing:
-
-```bash
-TOKEN=$(grep -oP 'name="dwg_report_token" value="\K[^"]+' /tmp/page.html)
-# general pattern:
-TOKEN=$(grep -oP 'name="<token_name>" value="\K[^"]+' /tmp/page.html)
-```
-
-In Claude Code's shell, `grep` is a ugrep wrapper that skips gitignored files
-and can reject complex `-P` patterns; use `/bin/grep` when that gets in the way.
-
-Token names follow the pattern `<action>_token`, e.g.:
-- `dwg_report_token` — document create form
-- `dwg_primary_file_update_token` — primary document upload on view page
-
-### Creating a document
-
-```bash
-curl -s -L -c "$C" -b "$C" \
-  "$B/dwg_create_page.php" -o /tmp/create.html
-TOKEN=$(grep -oP 'name="dwg_report_token" value="\K[^"]+' /tmp/create.html)
-
-curl -s -c "$C" -b "$C" \
-  -X POST "$B/dwg_create.php" \
-  -F "dwg_report_token=${TOKEN}" \
-  -F "m_dwg_id=0" -F "project_id=1" -F "category_id=0" \
-  -F "dwg_title=Test Document" -F "dwg_author=Test Author" \
-  -F "dwg_reference=REF-001" -F "dwg_number=12345" \
-  -F "dwg_edition=Ed 1" -F "dwg_revision=Rev A" \
-  -F "dwg_publisher=Test" -F "dwg_discipline=Testing" \
-  -F "dwg_classification=UNCLASSIFIED" \
-  -F "view_state=10" -F "description=Test" -F "dwg_entry_stay=0" \
-  -v 2>&1 | grep "Location:"
-# Successful create redirects to dwg_view.php?id=<N>
-```
-
-To include a primary document file on create, add:
-
-```bash
-  -F "primary_document_file=@/tmp/myfile.pdf;type=application/pdf;filename=myfile.pdf" \
-  -F "primary_document_description=Initial revision"
-```
-
-### Uploading/replacing a primary document (view page)
-
-```bash
-curl -s -L -c "$C" -b "$C" \
-  "$B/dwg_view.php?id=<N>" -o /tmp/view.html
-UPLOAD_TOKEN=$(grep -oP 'dwg_primary_file_update[^"]*" value="\K[^"]+' /tmp/view.html)
-
-curl -s -c "$C" -b "$C" \
-  -X POST "$B/dwg_primary_file_update.php" \
-  -F "dwg_primary_file_update_token=${UPLOAD_TOKEN}" \
-  -F "dwg_id=<N>" \
-  -F "primary_document_file=@/tmp/myfile.pdf;type=application/pdf;filename=myfile.pdf" \
-  -F "primary_document_description=New revision" \
-  -v 2>&1 | grep "Location:"
-# Redirects to dwg_view.php?id=<N> on success
-```
-
-### Downloading a primary document
-
-```bash
-curl -s -c "$C" -b "$C" \
-  "$B/file_download.php?type=dwg_primary&id=<N>"
-```
-
-### Diagnosing curl failures
-
-- **0-byte response** — the page redirected without `-L`; add `-L` to follow
-- **302 to `login_select_proj_page.php`** — project cookie missing; follow the
-  redirect chain with `-L` and Doctis will auto-select a project
-- **HTTP 500 with `<p>error message</p>`** — extract with:
-  `grep -oP "(?<=<p>)[^<]+(?=</p>)" /tmp/result.html`
-- **Empty `Location:` header** — POST was rejected (CSRF mismatch, access
-  denied, or validation error); save `-o /tmp/result.html` and inspect body
-- **Git `Author identity unknown`** — `ensure_git_home()` in
-  `GitFileStorageBackend` sets `GIT_AUTHOR_*` env vars; check gitconfig at
-  `/var/www/.gitconfig` exists and is readable by `www-data`
+The mechanics — login, project context, reading CSRF tokens, creating
+documents, uploading and downloading primary files, and diagnosing failures:
+**[doc/CURL_TESTING.md](doc/CURL_TESTING.md)**. For *what* to test with them,
+[doc/TESTING.md](doc/TESTING.md) §7.
 
 ## SOAP API Testing and Diagnostics
 
-The Doctis SOAP API is the primary programmatic interface for document
-operations.  Use raw `curl` SOAP calls to exercise and diagnose individual
-endpoints without requiring a browser or a configured SoapClient.
+The SOAP API (`api/soap/mantisconnect.php`) is the primary programmatic
+interface for document *file* operations — the `mc_dwg_*` endpoints. REST does
+not cover them.
 
-### Smoke test — all Doctis SOAP endpoints in one command
+Two traps worth knowing before you start: raw curl callers must
+**double-encode** `base64Binary` parameters (PHP's SoapServer pre-decodes them,
+and SoapClient compensates), and a *Procedure not present* fault is usually
+OPcache holding a stale `mc_core.php` rather than a missing function.
 
-```bash
-bash /var/www/html/doctis/admin/tools/doctis-soap-test.sh \
-  http://10.0.0.109/doctis manager '' <dwg_id>
-#  host                    user    pw  test document
-```
-
-Runs 13 tests covering every Doctis-specific SOAP endpoint (enum, document
-fetch, primary file lifecycle, attachment lifecycle).  Non-fatal — all
-steps run even if earlier ones fail.  Exit code 0 = all pass.  Full
-description in [admin/tools/README.md](admin/tools/README.md).
-
-The document id is required (the script refuses to run without one); host,
-user and password default to the values shown. **Point it only at a throwaway
-document**, created for the test in a scratch project: it deletes the target's
-primary file at the start and again in step 7, and on the VM every document
-holds imported content. Turn email notifications off while it runs, and
-remove the scratch project and its repository afterwards
-([doc/TESTING.md](doc/TESTING.md) §3).
-
-### SOAP endpoint and WSDL
-
-```
-SOAP endpoint : http://10.0.0.109/doctis/api/soap/mantisconnect.php
-WSDL          : http://10.0.0.109/doctis/api/soap/mantisconnect.php?wsdl
-```
-
-List all available operations (useful to confirm new endpoints appear after
-a WSDL change):
-
-```bash
-curl -s "http://10.0.0.109/doctis/api/soap/mantisconnect.php?wsdl" \
-  | grep -oP 'operation name="\K[^"]+' | sort
-```
-
-Look up parameter names for a specific method:
-
-```bash
-curl -s "http://10.0.0.109/doctis/api/soap/mantisconnect.php?wsdl" \
-  | grep -A8 '"mc_dwg_primary_uploadRequest"'
-```
-
-### Raw curl SOAP call template
-
-Every SOAP call needs two headers and an XML envelope:
-
-```bash
-curl -s \
-  -H "Content-Type: text/xml; charset=utf-8" \
-  -H 'SOAPAction: ""' \
-  --data '<?xml version="1.0" encoding="utf-8"?>
-<soapenv:Envelope
-    xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
-    xmlns:man="http://futureware.biz/mantisconnect">
-  <soapenv:Body>
-    <man:OPERATION_NAME>
-      <username>manager</username>
-      <password></password>
-      PARAMETERS
-    </man:OPERATION_NAME>
-  </soapenv:Body>
-</soapenv:Envelope>' \
-  "http://10.0.0.109/doctis/api/soap/mantisconnect.php"
-```
-
-### Useful diagnostic one-liners
-
-**Connectivity / version check:**
-
-```bash
-curl -s -H "Content-Type: text/xml" -H 'SOAPAction: ""' \
-  --data '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:man="http://futureware.biz/mantisconnect"><soapenv:Body><man:mc_version><username>manager</username><password></password></man:mc_version></soapenv:Body></soapenv:Envelope>' \
-  "http://10.0.0.109/doctis/api/soap/mantisconnect.php" | grep -oP '<return[^>]*>\K[^<]+'
-```
-
-**List all document status values:**
-
-```bash
-curl -s -H "Content-Type: text/xml" -H 'SOAPAction: ""' \
-  --data '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:man="http://futureware.biz/mantisconnect"><soapenv:Body><man:mc_enum_dwg_status><username>manager</username><password></password></man:mc_enum_dwg_status></soapenv:Body></soapenv:Envelope>' \
-  "http://10.0.0.109/doctis/api/soap/mantisconnect.php" \
-  | grep -oP '(?<=<name xsi:type="xsd:string">)[^<]+'
-```
-
-**Fetch a document by id (note: parameter is `issue_id`):**
-
-```bash
-curl -s -H "Content-Type: text/xml" -H 'SOAPAction: ""' \
-  --data '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:man="http://futureware.biz/mantisconnect"><soapenv:Body><man:mc_dwg_get><username>manager</username><password></password><issue_id>2</issue_id></man:mc_dwg_get></soapenv:Body></soapenv:Envelope>' \
-  "http://10.0.0.109/doctis/api/soap/mantisconnect.php" \
-  | grep -oP '<title[^>]*>\K[^<]+'
-```
-
-**Check primary file metadata for a document:**
-
-```bash
-curl -s -H "Content-Type: text/xml" -H 'SOAPAction: ""' \
-  --data '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:man="http://futureware.biz/mantisconnect"><soapenv:Body><man:mc_dwg_primary_get><username>manager</username><password></password><dwg_id>2</dwg_id></man:mc_dwg_primary_get></soapenv:Body></soapenv:Envelope>' \
-  "http://10.0.0.109/doctis/api/soap/mantisconnect.php"
-# Returns empty PrimaryFileData if no file; filename/filesize/file_type/download_url if present
-```
-
-### base64Binary encoding for file upload/download
-
-PHP's SoapServer **pre-decodes** `xsd:base64Binary` input parameters before
-passing them to the PHP handler.  PHP's SoapClient compensates by
-double-encoding.  Raw `curl` callers must therefore also double-encode:
-
-```bash
-# Upload: double-encode the content
-CONTENT="file bytes here"
-B64=$(printf '%s' "$CONTENT" | base64 -w 0 | base64 -w 0)
-# Send <content>${B64}</content> in the SOAP body
-
-# Download (mc_dwg_attachment_get): double-decode the returned value
-RETURNED_B64="... value from <return> element ..."
-printf '%s' "$RETURNED_B64" | base64 -d | base64 -d
-```
-
-This does **not** affect PHP SoapClient or PHPUnit tests — the SoapClient
-handles the double-encoding transparently.  It only matters for raw curl
-diagnostic calls against base64Binary parameters/returns.
-
-### Verifying git commit attribution after a file operation
-
-After any upload or delete via SOAP (or the web UI), confirm the commit is
-attributed to the correct Doctis user:
-
-```bash
-git --git-dir=/var/git/doctis/<slug>-r<N>.git log --format='%h %an <%ae> %s' -5
-# (repo basename is <slug>-r<repository_id> — ls /var/git/doctis/ to find it)
-# Should show the Doctis user's realname (or username) and email, not the
-# server identity "Doctis <doctis@vaio.local>" from /var/www/.gitconfig
-```
-
-### Diagnosing "Procedure not present" SOAP errors
-
-This error means the SoapServer received a call for an operation it has no
-registered PHP function for.  Work through in order:
-
-1. **Is the operation in the WSDL?**
-   ```bash
-   grep 'mc_my_function' /var/www/html/doctis/api/soap/mantisconnect.wsdl
-   # Must appear in <message>, <portType>, and <binding> sections
-   ```
-
-2. **Clear the WSDL cache** (PHP caches parsed WSDL in `/tmp/wsdl-*`;
-   PHP-FPM has no private `/tmp` on the VM):
-   ```bash
-   sudo rm -f /tmp/wsdl-*
-   ```
-
-3. **Force OPcache recompilation of `mc_core.php`** — the most common cause
-   after adding new `require_once` lines.  OPcache caches compiled bytecode
-   keyed on file mtime; touching the file forces recompilation on the next
-   request:
-   ```bash
-   touch /var/www/html/doctis/api/soap/mc_core.php
-   ```
-   If that is not enough, `sudo systemctl reload php8.4-fpm` clears OPcache.
-
-4. **Confirm the PHP function is defined** by loading the SOAP stack from
-   CLI as the correct user:
-   ```bash
-   # Write a check script:
-   cat << 'EOF' | sudo -u www-data php
-   <?php
-   # Bootstrap MantisBT, then load the SOAP stack
-   $t_mantis_dir = '/var/www/html/doctis/';
-   require_once $t_mantis_dir . 'core.php';
-   require_once $t_mantis_dir . 'api/soap/mc_core.php';
-   $fns = array_filter(get_defined_functions()['user'],
-       fn($f) => strpos($f, 'mc_dwg') === 0 || $f === 'mc_enum_dwg_status');
-   sort($fns);
-   echo implode("\n", $fns) . "\n";
-   EOF
-   # If the function is absent, the require_once chain has a gap
-   ```
-
-5. **Check the PHP error log** for include-time PHP errors that silently abort
-   the SOAP bootstrap:
-   ```bash
-   tail -30 /var/log/doctis/php_errors.log
-   ```
-
----
+The smoke test, raw curl envelope template, diagnostic one-liners, commit
+attribution checks and the full *Procedure not present* checklist:
+**[doc/api/SOAP_DIAGNOSTICS.md](doc/api/SOAP_DIAGNOSTICS.md)**. Operation
+reference: [doc/api/DOCTIS-SOAP.md](doc/api/DOCTIS-SOAP.md).
 
 ## Config File
 
@@ -1062,189 +616,39 @@ See `core/commands/DwgAddCommand.php` for the canonical correct pattern.
 
 ## File Storage Backend Architecture
 
-**Primary registered documents are stored exclusively in git** — there is no
-configurable method for them (`file_dwg_get_storage_backend()` returns
-`GitFileStorageBackend` unconditionally; a working `git` binary is an install
-prerequisite).  `DISK`/`DATABASE` remain for **attachments only**:
+**Primary registered documents are stored exclusively in git.** There is no
+configurable method for them — `file_dwg_get_storage_backend()` returns
+`GitFileStorageBackend` unconditionally, and a working `git` binary is an
+install prerequisite. `$g_file_upload_method` and `$g_dwg_upload_method` govern
+**attachments only**, where a `GIT` value falls back to `DATABASE`.
 
-| Applies to | Governed by | Backends |
-|-----------|-------------|----------|
-| Primary registered document | (nothing — always GIT) | `GitFileStorageBackend` |
-| Document attachments (`{dwg_file}`) | `$g_dwg_upload_method` | `DISK` / `DATABASE` (`GIT` value maps to `DATABASE`) |
-| Bug/issue attachments (`{bug_file}`) | `$g_file_upload_method` | `DISK` / `DATABASE` (`case GIT:` falls through to `DATABASE` in `file_api.php` and `print_dwg_attachment_preview_text()`; `file_download.php` remaps `GIT` to `DATABASE` before its switches) |
+Four rules that bite if forgotten:
 
-Rationale: the registered document is the only item a `git clone` user should
-see and the only revision-controlled record; attachments are Doctis
-"assisting metadata".  Full architecture:
-[doc/git/GIT_ARCHITECTURE.md](doc/git/GIT_ARCHITECTURE.md); design rationale:
-[doc/git/GIT_SOLUTION_SPACE.md](doc/git/GIT_SOLUTION_SPACE.md).
+- **Path-as-data.** A primary file's repo-relative path is stored in
+  `{dwg_primary_file}.git_path`, never computed at read time. There is **no
+  `project_id` column** — derive it with `dwg_get_field( $dwg_id, 'project_id' )`.
+- **`file_dwg_primary_register()` is the single registration choke point.** It
+  verifies `<sha>:<git_path>` exists, checks collisions, writes the row and
+  pins the approved ref.
+- **Push is mandatory.** `git commit` only writes the worktree's local history;
+  the bare repo gets nothing until `git push`. `GitFileStorageBackend::store()`
+  always pushes as its final step.
+- **Web PHP workers have no `HOME`**, so git cannot find `/var/www/.gitconfig`.
+  `ensure_git_home()` sets it before every git operation — which is why manual
+  `sudo -u www-data` tests passed while web requests failed before the fix.
 
-**Source repository release records.** A primary document normally names one
-file. With `$g_dwg_source_release_enabled` ON for a project it may instead
-name a git **tree** — the repository root, or one subtree — so the document
-records a *release of a repository* at a commit. Promoting the Draft to On
-Record is cutting a release, pinned permanently by
-`refs/doctis/approved/<dwg_id>/<n>`; content arrives by `git push`, never by
-upload, and downloads as `git archive` (zip or `tar.gz`). Off by default,
-per-project. A tree-rooted row is distinguished by **`{dwg}.kind`** (document/source) and
-**`{dwg}.frozen`** (line/release); `file_type = DWG_TREE_MIME_TYPE`
-(`file_dwg_primary_is_tree()`) survives for display and Content-Type only.
-Registration is `dwg_source_release_page.php`.
+Repositories are a first-class entity (`{repository}`, basename
+`<slug>-r<id>`); projects map to them via `{project_repository}`, inheriting
+from the nearest linked ancestor, so a project tree shares one repository by
+default.
 
-Each bare repository carries a **push policy** in its own git config
-(`doctis.pushpolicy`, set on Manage → **Git Store**):
-`document` (the default, append-only — no force-push, no ref deletion) or
-`source` (normal development: both allowed on every ref). `refs/doctis/*` stay
-unpushable under both, which is what keeps a released commit reachable however
-the branches are rewritten. Hooks: `admin/tools/git-hooks/pre-receive` and
-`post-receive` (the latter repairs a bare repo's dangling HEAD).
-
-**Git LFS.** Doctis is the LFS server for the repositories it hosts: a client
-derives its endpoint by appending `/info/lfs` to the remote URL, so the
-requests arrive on the same `/git/` route and use the same API-token Basic
-auth. [core/git_lfs_api.php](core/git_lfs_api.php) implements the batch call,
-the basic transfer and verify; objects live per repository under
-`$g_git_lfs_root` (`/var/git/doctis-lfs`), outside the bare repos so an LFS
-object can never be packed into one. `GitFileStorageBackend::retrieve()`
-resolves a pointer to its object and returns a *path*, which
-`file_dwg_send_content()` streams — so the three `file_download.php` document
-routes all work without holding the file in memory. Off unless
-`$g_git_lfs_enabled` is ON. Two known gaps: a source-release `git archive`
-still emits pointers, and import of an LFS repository is still refused.
-Built 2026-10-26, stages 1-2 of 3, and merged into `dev` as a6566b213; pushed.
-Read [doc/git/GIT_LFS.md](doc/git/GIT_LFS.md) before touching it — in
-particular, never set `"authenticated": true` in a batch reply: it tells the
-client to withhold credentials from the transfer, which produces an endless
-401 loop.
-
-Built 2026-10-25, trial-tested on the VM, and **merged into `dev`** as
-a6566b213 on 2026-10-26; pushed. **Live needs a database rebuild** for
-`{dwg}.kind` and `{dwg}.frozen` (89c16592e, an in-place edit to step 18), so
-sequence it with the owner-column rebuild. Design record, spike results, how to drive it and
-what is left: [doc/git/SOURCE_REPOSITORIES.md](doc/git/SOURCE_REPOSITORIES.md)
-— read it before touching this. Sharp edges: a project's repository must exist
-before anyone can push and only a script creates one (§8.1), and a git push
-sends the whole packfile as one request body, so the `/git/` route needs its
-body limit lifted (`client_max_body_size 0`) or every real push fails with
-HTTP 413.
-
-**Interface:** [core/classes/FileStorageBackendInterface.class.php](core/classes/FileStorageBackendInterface.class.php)
-
-```
-store(tmp_file, size, unique_name, file_path, browser_upload, metadata[]) → [diskfile, folder, content]
-retrieve(row, project_id) → [type, content] | false
-delete(diskfile, project_id, metadata[]) → void
-```
-
-For the GIT backend, `metadata['git_path']` (repo-relative path) is required
-by `store()`/`delete()`, and `retrieve()` reads `row['git_path']`.
-
-### Repository entity and naming
-
-A git repository is a first-class entity — a `{repository}` row managed by
-[core/repository_api.php](core/repository_api.php).  Projects map to
-repositories via the `{project_repository}` link table: explicit link →
-that repo; no link → inherit from the nearest linked ancestor project; no
-ancestor either → created on demand at the **top-level project**.  A project
-tree therefore shares one repository by default (monorepo/sub-project model);
-a sub-project can be explicitly linked to its own.
-
-```
-/var/git/doctis/<slug>-r<id>.git        bare repo (authoritative store)
-/var/www/doctis/worktrees/<slug>-r<id>  working tree (write staging area)
-```
-
-Basename `<slug>-r<repository_id>` (e.g. `example-r1`); the stored `slug`
-column is authoritative (nothing scans the disk); resolution is by the
-immutable `-r<id>` suffix.  Renaming a project relocates its owned repos
-(`repository_rename_for_owner_project()`, via the `dwg_project_repo_rename()`
-wrapper called from `project_update()`).  Document code resolves through the
-project-keyed wrappers in `core/file_dwg_api.php`
-(`dwg_project_bare_repo_path()` etc.) — never derive a repo path from a
-project name directly.
-
-### Path-as-data
-
-Each primary file's repo-relative path is stored in
-`{dwg_primary_file}.git_path` — never computed at read time.  New documents
-get a path from `$g_dwg_repo_path_template` (tokens `{dwg_id}`, `{filename}`,
-`{category}`; default `{dwg_id}/{filename}`; per-project overridable);
-imported documents keep native paths.  Replacements are directory-sticky
-(basename may change; old path soft-deleted when it changes).  Path
-uniqueness is enforced per repository across all projects sharing it.
-`file_dwg_primary_register()` is the single registration choke point — it
-verifies `<sha>:<git_path>` exists, checks collisions, writes the row, and
-pins the approved ref; uploads layer on it.
-
-**`{dwg_primary_file}` columns:** `git_path`, `git_sha` (on-record SHA),
-`git_branch`, `filename` (= basename of git_path), `filesize`, `file_type`.
-No `folder`/`content` columns, and NO `project_id` column — project ID must
-always be derived via `dwg_get_field($dwg_id, 'project_id')`.
-
-**Push is mandatory:** `git commit` only writes to the working tree's local
-history. The bare repo receives nothing until `git push` is called.
-`GitFileStorageBackend::store()` always pushes as its final step.
-
-**HOME fix:** web-server PHP workers run without `HOME` (PHP-FPM clears the
-environment by default; Apache did the same), so git cannot find
-`/var/www/.gitconfig`. `GitFileStorageBackend::ensure_git_home()` calls
-`putenv('HOME=...')` using `posix_getpwuid()` before every git operation.
-This is transparent at runtime but explains why manual `sudo -u www-data`
-tests always worked while web requests failed before the fix was in place.
-
-**Branch name:** `init.defaultBranch = main` in `/var/www/.gitconfig` ensures
-new repos use `main`. The PHP backend calls `getCurrentBranchName()` before
-every push rather than hardcoding `'main'`, so both `main` and `master` repos
-are handled correctly. ZIP imports create `dev`. See "Branch naming: main vs
-master" in [doc/git/GIT_SERVER_SETUP.md](doc/git/GIT_SERVER_SETUP.md) for how
-to rename an existing `master` branch.
-
-**Soft delete:** `git rm` + commit + push. The file disappears from HEAD but
-the full commit history is retained in the bare repo.
-
-**Duplicate content:** if `git commit` exits 1 (nothing to commit — identical
-content re-uploaded), the backend treats it as a successful store and returns
-the existing HEAD SHA.
-
-### Key files (git storage)
-
-| File | Role |
-|------|------|
-| [core/repository_api.php](core/repository_api.php) | `{repository}` entity: CRUD, project resolution, disk lifecycle, `repository_adopt()`, rename relocation, storage lock |
-| [core/file_dwg_api.php](core/file_dwg_api.php) | `file_dwg_primary_register()`, path template/sanitizer/collision, project-keyed wrappers, worktree sync, approved-SHA pinning |
-| [core/classes/GitFileStorageBackend.class.php](core/classes/GitFileStorageBackend.class.php) | store/retrieve/delete via `git_path` |
-| [core/git_http_api.php](core/git_http_api.php) | Smart HTTP gateway — resolves `-r<id>`, authorises against the repository's owner project |
-| [core/git_store_api.php](core/git_store_api.php) / [manage_git_store_page.php](manage_git_store_page.php) | Manage → **Git Store** (administrators, work in progress). Lists every repository in the database or on disk and flags mismatches. For a selected repository it shows: files by folder with search; per-file history, preview and download (`manage_git_store_download.php`); registered documents with On Record vs HEAD state; commits; refs, including approved-version pins; and the server worktree. An unregistered file at HEAD offers **Register**, which opens the normal Create Document form with `git_path` set and, for Markdown carrying frontmatter, the fields pre-filled (`core/dwg_frontmatter_api.php`, shared with the importer); **Register all N with frontmatter** does the ones needing no input. Registration pins the document to the commit that last changed that path, never HEAD. Any file type: a document is the Doctis record, not the format. A repository whose owner project was deleted reads as **`unowned`** — `project_delete()` never removed repositories, so the row, the link rows, the bare repo, the worktree and the LFS objects all survived invisibly — and can be removed there explicitly (`repository_remove()`). Never called from `project_delete()`: once a project's documents are gone the bare repo is their only record |
-| [core/constant_inc.php](core/constant_inc.php) | `define('GIT', 3)` (still used by attachment mapping) |
-| [config_defaults_inc.php](config_defaults_inc.php) | `$g_git_storage_root`, `$g_git_worktree_root`, `$g_dwg_repo_path_template` |
-| [core/file_api.php](core/file_api.php) / [core/print_dwg_api.php](core/print_dwg_api.php) / [file_download.php](file_download.php) | Attachment-side `GIT → DATABASE` fall-throughs |
-| [admin/import-git-repo.php](admin/import-git-repo.php) | Repository importer: adopt an existing git repo as a project (+ sub-projects) and register its files as documents by reference. `--dry-run`/`--update`; `.doctis` manifest or CLI flags; run as www-data (wrapper: `admin/tools/doctis-git-import.sh`). See [doc/git/GIT_IMPORTER.md](doc/git/GIT_IMPORTER.md) |
-
-### Integration tests
-
-```bash
-# Pure git mechanics (no core bootstrap)
-sudo -u www-data php /var/www/html/doctis/admin/test-git-php.php
-
-# Mapping layer (bootstraps core) — sanitizer, repository entity/resolution,
-# path templates, register-by-reference, collisions, dangling paths,
-# sync-to-HEAD, repository adoption, rename relocation
-sudo -u www-data php /var/www/html/doctis/admin/test-git-doctis.php
-```
-
-Both create and tear down their own state and must pass before enabling git
-storage on any new server.
-
-### Server infrastructure status (native VM) — current state
-
-| Item | Status |
-|------|--------|
-| `/var/git/doctis/` | `www-data:www-data`, mode `2770`; `robert` reads it through the `www-data` group |
-| `/var/www/doctis/worktrees/` | `www-data:www-data`, mode `2770` |
-| `/var/www/.gitconfig` | Server identity `Doctis <doctis@vaio.local>` (carried over from vaio), `init.defaultBranch=main`, `safe.directory=*` |
-| `czproject/git-php v4.4.0` | Installed via Composer into `vendor/` |
-| Repositories | One per top-level project, created on import or at first upload: currently `hcrqms-r1` and `lidar-r2` (imported, branch `dev`) and `hcr571-r3` (`main`); each has the pre-receive hook and `http.receivepack=true` |
-| `$g_file_upload_method` / `$g_dwg_upload_method` | `DISK` / `GIT` in `config/config_inc.php` — attachments only (`GIT` maps to DATABASE); primaries are always git |
+| Read this | For |
+|-----------|-----|
+| [doc/git/GIT_ARCHITECTURE.md](doc/git/GIT_ARCHITECTURE.md) | the architecture: separation of concerns, repository entity, backend classes, operations, On-Record vs Draft, Smart HTTP gateway |
+| [doc/git/GIT_STORAGE_NOTES.md](doc/git/GIT_STORAGE_NOTES.md) | working notes: naming and collision rules, the Git Store page, key source files, VM infrastructure state |
+| [doc/git/SOURCE_REPOSITORIES.md](doc/git/SOURCE_REPOSITORIES.md) | source release records (`{dwg}.kind`, `{dwg}.frozen`) and the per-repository push policy |
+| [doc/git/GIT_LFS.md](doc/git/GIT_LFS.md) | Doctis as the LFS server |
+| [doc/git/GIT_SOLUTION_SPACE.md](doc/git/GIT_SOLUTION_SPACE.md) | why it was built this way |
 
 ## AI Assistant Feature
 

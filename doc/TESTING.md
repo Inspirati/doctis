@@ -69,6 +69,9 @@ Doctis `documents`, `licenses` and `topics` routes.
 
 ## 3. SOAP endpoint smoke test — `doctis-soap-test.sh`
 
+Raw curl envelopes, the base64 double-encoding rule and the *Procedure not
+present* checklist are in [api/SOAP_DIAGNOSTICS.md](api/SOAP_DIAGNOSTICS.md).
+
 **What it covers:** all 13 Doctis-specific SOAP operations end-to-end against
 a *live* instance: status enum, document fetch, primary-file lifecycle
 (upload → metadata → download → delete), attachment lifecycle. This is the
@@ -327,6 +330,11 @@ this script does not repeat them.
 ---
 
 ## 7. Curl-based testing
+
+The mechanics — two-step login, project context, CSRF tokens, creating
+documents, uploading and downloading primary files, diagnosing failures — are
+in [CURL_TESTING.md](CURL_TESTING.md). This section covers what to test with
+them, per feature.
 
 **What it covers:** anything with real HTTP/session/CSRF/redirect behaviour
 that the API-level tests above don't exercise — page rendering, form
@@ -748,7 +756,9 @@ prior session left ad hoc test data behind.
 
 **Always reset both stores together** — they reference each other. On the
 VM a reset also deletes the imported projects, the HCR571 pilot and any
-meetings: back up first and reload afterwards, following
+meetings. **No backup is needed** (owner decision 2026-10-20): the VM is a
+scratchpad and clean testing is expected to start from a rebuild. Reload only
+what a test needs, following
 [admin/tools/data-scripts/README.md](../admin/tools/data-scripts/README.md).
 The scripts run as root, which reaches MariaDB through its unix socket.
 
