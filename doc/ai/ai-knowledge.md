@@ -1,6 +1,6 @@
 # AI Assistant knowledge — design and operation
 
-**Status:** built on branch `ai-meeting`, 2026-10-03; verified live on the native VM.
+**Status:** built 2026-10-03 and verified on the native VM; merged into `dev` as 3d1fb2f3b on 2026-10-08. The `ai-meeting` branch no longer exists.
 **Related:** [ai-todo.md](ai-todo.md) (overall AI status), [../MANUAL.md](../MANUAL.md) §11 (user view).
 
 ## Problem

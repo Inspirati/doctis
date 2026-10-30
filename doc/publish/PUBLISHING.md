@@ -1,7 +1,8 @@
 # Document Publishing
 
-Status: **built on branch `publish` and tested on the native VM**
-(2026-10-15). Not merged into `dev`; not on the live version. Test record: §8.
+Status: **built, tested on the native VM (2026-10-15), and merged into `dev`**
+as d269521c0 on 2026-10-16 (with `qms-metadata` and `my-view-cleanup`); pushed.
+Enabled on the live version since 2026-10-16. Test record: §8.
 
 Doctis can publish a Markdown document to a static website. **Publish** on
 the document view page converts the document's **On Record** version to HTML

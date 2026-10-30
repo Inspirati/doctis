@@ -1,7 +1,10 @@
 # Document Creator, Owner and Assignee
 
-Status: **built and tested on the native VM, 2026-10-20**, on branch
-`dwg-ownership`. Not merged into `dev`; not on the live version. As-built
+Status: **built, tested on the native VM 2026-10-20, and merged into `dev`**
+as 7e0021541 on 2026-10-23; pushed. **Not on the live version**, which needs a
+**database rebuild** to gain `{dwg}.owner_id` — it was an in-place schema edit,
+so `database_version` is unchanged and an upgrade will not add the column.
+As-built
 notes are in §11 and the test record in §12.
 
 Owner decision of 2026-10-20: a document has **three distinct person fields**,

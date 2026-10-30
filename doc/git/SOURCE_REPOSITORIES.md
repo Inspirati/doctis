@@ -5,13 +5,14 @@ the design-intent record, the progress tracker, and a primer on the parts of
 the existing system the feature touches. Everything below marked *verified* was
 checked against the running code, not inferred.
 
-Status: **spike done; a first implementation is on branch `source-repos`,
-trial-tested on the VM.** Not merged, not pushed. §7 records what the spike
-found, §8 the questions it answered and the ones still open, §11 what is left
-to build.
+Status: **built and merged into `dev`** as a6566b213 on 2026-10-26, together
+with git LFS, and pushed. §7 records what the spike found, §8 the questions it
+answered and the ones still open, §11 what is left to build.
 
-The direction was approved on 2026-10-25. No schema change was needed, so the
-branch deploys to the VM or live by fetch alone — no database rebuild.
+The direction was approved on 2026-10-25. **No schema change was needed**, so
+this feature reaches live by an ordinary Git Pull — no database rebuild. That
+is unlike the document- and project-owner columns, which were in-place schema
+edits and do need one; see [../dwg/OWNERSHIP.md](../dwg/OWNERSHIP.md).
 
 ---
 
@@ -900,6 +901,14 @@ person from the one before it.
   subtree, never at the repository root*. The probe disproved this document's
   own claim that per-branch release lines work: they are refused by the
   path-uniqueness check. §8 and §11 corrected.
+
+- **2026-10-26** — Merged into `dev` as a6566b213, together with git LFS, and
+  pushed. No schema change, so live needs only a Git Pull.
+- **2026-10-30** — Status header corrected: it still read "on branch
+  `source-repos`, not merged", four days after the merge, and that stale line
+  was repeated back to the owner as fact. The same rot was found and fixed in
+  `../dwg/OWNERSHIP.md`, `../publish/PUBLISHING.md` and `../ai/ai-knowledge.md`.
+  **If you merge a branch, correct the status header in the same commit.**
 
 ---
 
