@@ -1,7 +1,7 @@
 # Document Topics — Implementation Plan
 
-Status: Phases 1, 1b, 2 and 3 implemented on branch `topics` (2026-10-13)
-and merged into `dev` (2026-10-14);
+Status: Phases 1, 1b, 2 and 3 implemented 2026-10-13 and merged into `dev`
+as 33acdb0e9 on 2026-10-14;
 see [Phase 1](#phase-1-as-built), [1b](#phase-1b-as-built),
 [2](#phase-2-as-built) and [3](#phase-3-as-built) as built. The work remaining
 before the feature is complete (assessed 2026-10-14) is in
@@ -58,7 +58,7 @@ Owner decisions, 2026-10-08:
   HCRQMS. HCRQMS is the standalone QMS site-content project.
 - **Pilot and test projects** will be created to scope and develop the feature
   (section 6).
-- **Development stayed on branch `topics`** (decided 2026-10-13). At the
+- **Development stayed on one feature branch** (decided 2026-10-13). At the
   owner's request it was merged into `dev` on 2026-10-14, before the remaining
   work in section 12.
 - **Parent Topics do not depend on their children.** Topics 21–23 are grouped
@@ -327,7 +327,7 @@ Small hooks in existing files:
 
 ### Phase 1 as built
 
-Implemented on branch `topics`, 2026-10-13. Differences from the plan above:
+Implemented 2026-10-13. Differences from the plan above:
 
 - **Schema:** the five tables were appended as steps 65–69
   (`database_version` 69), so existing databases upgrade with
@@ -366,7 +366,7 @@ Any order, after Phase 1:
 
 ### Phase 1b as built
 
-Implemented on branch `topics`, 2026-10-13.
+Implemented 2026-10-13.
 
 | Item | Implementation |
 |------|----------------|
@@ -461,7 +461,7 @@ use Topics: it is the example project without the feature (decision of
 
 ### Phase 2 as built
 
-Implemented on branch `topics`, 2026-10-13, in `core/topic_expectation_api.php`
+Implemented 2026-10-13, in `core/topic_expectation_api.php`
 (schema steps 70–75, `database_version` 75).
 
 | Item | Implementation |
@@ -503,7 +503,7 @@ assessment, percentage scores, notifications, and roll-up across projects.
 
 ### Phase 3 as built
 
-Implemented on branch `topics`, 2026-10-13 (schema steps 76–77,
+Implemented 2026-10-13 (schema steps 76–77,
 `database_version` 77).
 
 | Item | Implementation |
@@ -557,7 +557,7 @@ STD-IT-001:
 
 Owner decision, 2026-10-13: rename `rework` (165) to `draft` and `accepted`
 (180) to `approved`, before the next database rebuild. **Done 2026-10-13** on
-branch `topics`. The values stay the same, so stored documents, filters and
+the Topics work. The values stay the same, so stored documents, filters and
 workflow settings were unaffected. The labels are used as keys in several
 places; the rename touched:
 

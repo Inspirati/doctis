@@ -1,7 +1,7 @@
 # Git LFS in Doctis
 
-Status: **stages 1 and 2 built and trial-tested on the VM** (branch `git-lfs`,
-2026-10-26); stage 3, LFS-aware import, is not built. Unmerged and unpushed.
+Status: **stages 1 and 2 built, trial-tested on the VM, and merged into `dev`**
+as a6566b213 on 2026-10-26; pushed. Stage 3, LFS-aware import, is not built.
 Prerequisite reading: [GIT_ARCHITECTURE.md](GIT_ARCHITECTURE.md) for the
 storage baseline and [SOURCE_REPOSITORIES.md](SOURCE_REPOSITORIES.md) for the
 clone/push gateway this builds on.
@@ -189,7 +189,7 @@ same gateway and need the same token, so the flag must be absent.
 
 ## 10. Log
 
-- **2026-10-26** — branch `git-lfs` taken from `source-repos`. `git-lfs 3.6.1`
+- **2026-10-26** — work started from the source-repositories line. `git-lfs 3.6.1`
   installed on the VM for client-side testing. Design recorded.
 - **2026-10-26** — stage 1 built: `core/git_lfs_api.php`, the gateway's
   endpoint allowlist extended, `$g_git_lfs_enabled` / `$g_git_lfs_root`, the

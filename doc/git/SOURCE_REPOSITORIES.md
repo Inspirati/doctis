@@ -9,10 +9,12 @@ Status: **built and merged into `dev`** as a6566b213 on 2026-10-26, together
 with git LFS, and pushed. §7 records what the spike found, §8 the questions it
 answered and the ones still open, §11 what is left to build.
 
-The direction was approved on 2026-10-25. **No schema change was needed**, so
-this feature reaches live by an ordinary Git Pull — no database rebuild. That
-is unlike the document- and project-owner columns, which were in-place schema
-edits and do need one; see [../dwg/OWNERSHIP.md](../dwg/OWNERSHIP.md).
+The direction was approved on 2026-10-25. **It needs a database rebuild.**
+`{dwg}.kind` and `{dwg}.frozen` were added to step 18 in place on 2026-10-26
+(89c16592e), so `database_version` is unchanged and an upgrade will not add
+them. Live therefore needs a rebuild for this feature, as it does for the
+document- and project-owner columns; see
+[../dwg/OWNERSHIP.md](../dwg/OWNERSHIP.md). Sequence them together.
 
 ---
 
@@ -463,16 +465,17 @@ repository, not a page" before it looks at anything else.
 |---|----------|------|
 | S1 | Build the **release-record** framing (§1.1), not "a document whose file is a directory" | 2026-10-25 |
 | S2 | Proceed by **spike first**; the §8 questions are answered after it, not before — done, §7 | 2026-10-25 |
-| S3 | A release record is marked by `{dwg_primary_file}.file_type = 'inode/directory'` (`DWG_TREE_MIME_TYPE`), **not** by a new `kind` column — no schema change, so no rebuild | 2026-10-25 |
+| S3 | ~~A release record is marked by `{dwg_primary_file}.file_type = 'inode/directory'`, **not** by a new `kind` column — no schema change~~ **SUPERSEDED by S7** | 2026-10-25 |
 | S4 | The push policy is **fully relaxed** in `source` mode: force-push and ref deletion allowed on every ref, because the approved pin protects the record (§7, step 6) | 2026-10-25, owner |
 | S5 | The policy lives in the **bare repo's own git config** (`doctis.pushpolicy`), set on Manage → Git Store, because the hook can only read its own repository | 2026-10-25 |
 | S6 | A release record is **off by default**: `$g_dwg_source_release_enabled`, per-project, so only the projects holding source repositories gain it | 2026-10-25 |
+| S7 | **Reverses S3.** `{dwg}.kind` (document/source) and `{dwg}.frozen` (line/release) make the distinction *data* rather than inference. An in-place edit to step 18, so **a rebuild is required**. `file_type` still carries the sentinel for display and Content-Type only | 2026-10-26, owner |
 
 ---
 
 ## 6. What was built
 
-Branch `source-repos`, off `dev` at e99b10496. No schema change.
+Merged into `dev` as a6566b213 on 2026-10-26. **Schema change: `{dwg}.kind` and `{dwg}.frozen` (89c16592e) — a rebuild is required.**
 
 | Area | Change |
 |------|--------|
@@ -847,8 +850,8 @@ person from the one before it.
   Probe artefacts (document 207 and its dangling
   `refs/doctis/approved/207/1`) were cleaned up; VM back to 101 documents and
   101 primary files. No feature code written.
-- **2026-10-25** — Spike run and first implementation written, on branch
-  `source-repos` (4 commits off `dev` e99b10496, unmerged, unpushed). Owner
+- **2026-10-25** — Spike run and first implementation written (4 commits off
+  `dev` e99b10496 at the time). Owner
   chose the fully-relaxed `source` push policy (S4) and HCR-Hardware-Designs
   as the trial payload. §6 lists what was built, §7 what the spike found, §8
   the questions it answered. Two latent defects found and fixed on the way:
@@ -902,13 +905,20 @@ person from the one before it.
   own claim that per-branch release lines work: they are refused by the
   path-uniqueness check. §8 and §11 corrected.
 
-- **2026-10-26** — Merged into `dev` as a6566b213, together with git LFS, and
-  pushed. No schema change, so live needs only a Git Pull.
-- **2026-10-30** — Status header corrected: it still read "on branch
-  `source-repos`, not merged", four days after the merge, and that stale line
-  was repeated back to the owner as fact. The same rot was found and fixed in
-  `../dwg/OWNERSHIP.md`, `../publish/PUBLISHING.md` and `../ai/ai-knowledge.md`.
-  **If you merge a branch, correct the status header in the same commit.**
+- **2026-10-26** — `{dwg}.kind` and `{dwg}.frozen` added as 89c16592e, which
+  **reverses S3**: a rebuild is now required. Merged into `dev` as a6566b213,
+  together with git LFS, and pushed.
+- **2026-10-30** — Two stale claims in this document were corrected, both of
+  which had already been repeated back to the owner as fact. The status header
+  still named an unmerged feature branch four days after the merge; and the
+  header, S3, §6 and the 2026-10-26 log line all still said "no schema
+  change", which S7 had reversed the day they were written. The same
+  merge-status rot was fixed in `../dwg/OWNERSHIP.md`,
+  `../publish/PUBLISHING.md` and `../ai/ai-knowledge.md`, and every obsolete
+  feature-branch name was removed from the documentation and from Claude's
+  memory. **When you merge a branch, delete it and correct the status header in
+  the same commit; when a decision is reversed, strike the old row rather than
+  leaving both.**
 
 ---
 

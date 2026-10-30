@@ -4,7 +4,7 @@
 
 Doctis (**Doc**ument **I**ssue **T**racking **S**ystem) is a fork of [MantisBT](https://github.com/mantisbt/mantisbt) v2.27.x extended to track **documents** and the issues raised against them during formal review cycles. It is a PHP/MariaDB web application.
 
-The project is actively developed (beta) and maintained on the `dev` branch, tracking MantisBT upstream via the `upstream_sync` branch.
+The project is actively developed (beta) and maintained on the `dev` branch.
 
 ## Repository Layout
 
@@ -524,7 +524,17 @@ calls before committing.
 
 ## Upstream Sync Process
 
-Upstream MantisBT changes flow in via the `upstream_sync` branch, then merged into `dev`. The `original` and `original-as-forked` branches serve as before-fork reference points.
+Upstream MantisBT changes are intended to flow in on a dedicated sync branch,
+then be merged into `dev`. **No such branch currently exists** — neither
+locally nor on `origin` — so there is no sync in progress; create one when a
+sync is actually undertaken. `origin/original` and `origin/original-as-forked`
+are the before-fork reference points and `origin/master` is the pre-fork
+default; all three are kept deliberately and must not be deleted.
+
+Since 2026-10-23 the practice is that **a feature branch is deleted as soon as
+it is merged**, and the merge commit — not the branch name — is what gets
+recorded in the documentation. A document naming a branch that no longer exists
+has already misled a session into reporting merged work as unmerged.
 
 ## Testing
 
@@ -1076,9 +1086,10 @@ records a *release of a repository* at a commit. Promoting the Draft to On
 Record is cutting a release, pinned permanently by
 `refs/doctis/approved/<dwg_id>/<n>`; content arrives by `git push`, never by
 upload, and downloads as `git archive` (zip or `tar.gz`). Off by default,
-per-project. A tree-rooted row is marked by `file_type = DWG_TREE_MIME_TYPE`
-(`file_dwg_primary_is_tree()`), so there is **no schema change**. Registration
-is `dwg_source_release_page.php`.
+per-project. A tree-rooted row is distinguished by **`{dwg}.kind`** (document/source) and
+**`{dwg}.frozen`** (line/release); `file_type = DWG_TREE_MIME_TYPE`
+(`file_dwg_primary_is_tree()`) survives for display and Content-Type only.
+Registration is `dwg_source_release_page.php`.
 
 Each bare repository carries a **push policy** in its own git config
 (`doctis.pushpolicy`, set on Manage → **Git Store**):
@@ -1100,14 +1111,16 @@ resolves a pointer to its object and returns a *path*, which
 routes all work without holding the file in memory. Off unless
 `$g_git_lfs_enabled` is ON. Two known gaps: a source-release `git archive`
 still emits pointers, and import of an LFS repository is still refused.
-Built on branch `git-lfs` 2026-10-26, stages 1-2 of 3, unmerged and unpushed.
+Built 2026-10-26, stages 1-2 of 3, and merged into `dev` as a6566b213; pushed.
 Read [doc/git/GIT_LFS.md](doc/git/GIT_LFS.md) before touching it — in
 particular, never set `"authenticated": true` in a batch reply: it tells the
 client to withhold credentials from the transfer, which produces an endless
 401 loop.
 
-Built on branch `source-repos` 2026-10-25 and trial-tested on the VM;
-**unmerged and unpushed**. Design record, spike results, how to drive it and
+Built 2026-10-25, trial-tested on the VM, and **merged into `dev`** as
+a6566b213 on 2026-10-26; pushed. **Live needs a database rebuild** for
+`{dwg}.kind` and `{dwg}.frozen` (89c16592e, an in-place edit to step 18), so
+sequence it with the owner-column rebuild. Design record, spike results, how to drive it and
 what is left: [doc/git/SOURCE_REPOSITORIES.md](doc/git/SOURCE_REPOSITORIES.md)
 — read it before touching this. Sharp edges: a project's repository must exist
 before anyone can push and only a script creates one (§8.1), and a git push
@@ -1246,8 +1259,8 @@ minutes as Doctis documents in `$g_meeting_project_id`, emails participants with
 calendar invitations, and turns approved actions into issues.  Repeating series are
 scheduled by `scripts/meeting_schedule.php` (cron; makes API calls and sends email
 unattended).  Meetings are listed on the **My Meetings** My View tab and managed on
-`meeting_view_page.php`.  Built on branch `ai-meeting`, verified end to end on the
-native VM, and merged into `dev` on 2026-10-08 after the PHPUnit `mantis` suite
+`meeting_view_page.php`.  Built and verified end to end on the
+native VM, and merged into `dev` as 3d1fb2f3b on 2026-10-08 after the PHPUnit `mantis` suite
 passed; the owner's wider test sweep is still open (`doc/ai/ai-todo.md` §7).  SOP
 and Other tabs are placeholders.  Before working on any AI-related code, read:
 
