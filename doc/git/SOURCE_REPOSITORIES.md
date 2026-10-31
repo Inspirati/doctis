@@ -928,6 +928,38 @@ person from the one before it.
   memory. **When you merge a branch, delete it and correct the status header in
   the same commit; when a decision is reversed, strike the old row rather than
   leaving both.**
+- **2026-11-01** — *Cut release* tested through the page, on the owner's
+  Gimbal Source line #699 (`master`, On Record `f50cbba9`, Draft `d66c6144`),
+  as `administrator`. Artefacts left for the owner's review: releases
+  **#1281** (v1.0 at the Draft, the default), **#1282** (v0.9 at `d9896116`,
+  entered as short upper-case SHA, custom title), **#1283** (a second v1.0 at
+  the same commit) and **#1284** (at `e2452b07`, a commit written with
+  `git commit-tree` that is on no branch); their pins
+  `refs/doctis/approved/1281..1284/1` keep that commit alive. The line was
+  left unpromoted.
+  - **Passed:** blank revision, unresolvable commit, unknown SHA and a tree SHA
+    are refused with nothing created; each release has its own `{documents}`
+    and `{dwg_text}` rows (editing one cannot touch the line), is a frozen
+    source record with its own pin, inherits owner, status, category, view
+    state and classification, and is logged in both histories; the line keeps
+    its On Record and its Draft; a release page offers no Draft, Promote or
+    Cut and says where it is pinned; its zip and tar.gz equal `git archive`
+    of the commit, all 859 files and 5 symlinks; the page refuses a release,
+    an ordinary document, a missing token, and anyone below MANAGER; the Kind
+    filter separates the four releases from the line; Git Store agrees.
+  - **Found:** (1) any commit in the repository is accepted, so #1284 records
+    branch `master` and says "later work on the master line…" for a commit
+    that was never on it — check `merge-base --is-ancestor`; (2) nothing stops
+    the same revision being cut twice (#1283); (3) a release gets no release
+    date — every document stores `1`, and the view page shows 1970-01-01 for
+    it (pre-existing, all documents); (4) `dwg_search.php` fails with "a
+    required parameter (dwg_kind) was not found" for any URL without a Kind
+    filter, including the permalinks `filter_dwg_get_url()` builds, because
+    multi-value filter fields are read without a default (the same pattern is
+    in upstream `search.php`); (5) Repository Files names the newest covering
+    record ("inside #1284") rather than the tracking line. Not reachable from a
+    whole-repository line, so still untested through the page: the rollback
+    when registration fails, and the "branch gone" refusal.
 
 ---
 

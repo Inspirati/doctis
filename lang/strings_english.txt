@@ -2386,7 +2386,7 @@ $s_dwg_release_cut             = 'Release cut';
 $s_dwg_release_cut_from        = 'Released from';
 
 # Cloning a repository onto your own machine (doc/git/SOURCE_REPOSITORIES.md)
-$s_repo_clone_button           = 'Clone this repository';
+$s_repo_clone_button           = 'Clone Repository';
 $s_repo_clone_title            = 'Clone Repository';
 $s_repo_clone_your_access      = 'Your access';
 $s_repo_clone_read_only        = 'Read only — you can clone and fetch, but not push.';
@@ -2398,7 +2398,7 @@ $s_repo_clone_revoke_existing  = 'Also revoke my %1$d existing token(s) for this
 $s_repo_clone_create_token     = 'Create a token and show me how to clone';
 $s_repo_clone_step_existing    = 'Already have a clone?';
 $s_git_token_notice            = '<strong>If you use a token for git:</strong> a clone keeps the token it was made with, so revoking that token stops it fetching and pushing — <code>fatal: Authentication failed</code>. You do not need to clone again. Create a new token, then run this inside the existing clone:';
-$s_git_token_notice_where      = 'The <em>Clone this repository</em> button, on Manage Project &rarr; Repository and on any document\'s panel, creates a token and gives you this command already filled in.';
+$s_git_token_notice_where      = 'The <em>Clone Repository</em> button, on Manage Project &rarr; Repository and on any document\'s panel, creates a token and gives you this command already filled in.';
 $s_repo_clone_step_existing_help = 'If you cloned this repository before, it still holds the old token. Run this inside it to use the new one — no need to clone again.';
 $s_repo_clone_token_once       = 'This is the only time this token is shown.';
 $s_repo_clone_token_scope      = 'It is your Doctis credential, not limited to this repository, so treat it as a password. You can revoke it at any time from My Account &rarr; API Tokens.';

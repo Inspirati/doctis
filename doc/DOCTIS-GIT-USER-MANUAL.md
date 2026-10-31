@@ -180,7 +180,7 @@ Repository column, and on Manage Project → **Repository**.
 
 ### 4.1 The Clone button (recommended)
 
-Use **Clone this repository**, found on Manage Project → **Repository** and in
+Use **Clone Repository**, found on Manage Project → **Repository** and in
 the Primary Document panel of any document whose file is in git. It:
 
 1. creates an **API token** for you. Git never uses your Doctis password; the
@@ -396,7 +396,7 @@ Release** row with a **Register Source Release** button.
   single folder named after the repository and commit, for example
   `gimbal-source-d9896116/`. File permissions and symbolic links are kept. For
   a tarball instead, add `&format=tar.gz` to the download address;
-- **Clone this repository** (§4.1).
+- **Clone Repository** (§4.1).
 
 ### 7.4 After a push
 
@@ -632,7 +632,7 @@ its working copy and its LFS objects permanently.
 
 | I want to… | Do this |
 |---|---|
-| Clone a project's repository | **Clone this repository** on Manage Project → Repository, or on a document's page (§4.1) |
+| Clone a project's repository | **Clone Repository** on Manage Project → Repository, or on a document's page (§4.1) |
 | Fix a clone whose token was revoked | Get a new token, then `git remote set-url origin …` in the clone (§4.3) |
 | Move a GitHub repository into Doctis | Create the project and repository, then push `--all` and `--tags` from a bare clone (§6) |
 | Register a whole repository as a document | Create a document with **no file**, then **Register Source Release** (§7.3) |
