@@ -1455,7 +1455,7 @@ function dwg_copy( $p_bug_id, $p_target_project_id = null, $p_copy_custom_fields
 
 	# Copy Relationships
 	if( $p_copy_relationships ) {
-		relationship_copy_all( $t_bug_id, $t_new_bug_id );
+		dwg_relationship_copy_all( $t_bug_id, $t_new_bug_id );
 	}
 
 	# Copy bugnotes
@@ -1621,7 +1621,7 @@ function dwg_delete( $p_bug_id ) {
 	event_signal( 'EVENT_DWG_DELETED', array( $c_bug_id ) );
 
 	# log deletion of bug
-	history_dwg_log_event_special( $p_bug_id, DWG_DELETED, bug_format_id( $p_bug_id ) );
+	history_dwg_log_event_special( $p_bug_id, DWG_DELETED, dwg_format_id( $p_bug_id ) );
 
 	email_dwg_deleted( $p_bug_id );
 	email_dwg_relationship_dwg_deleted( $p_bug_id );
@@ -2358,7 +2358,7 @@ function dwg_resolve( $p_bug_id, $p_resolution, $p_fixed_in_version = '', $p_bug
 		# the related bug exists...
 		dwg_ensure_exists( $p_duplicate_id );
 
-		relationship_upsert( $p_bug_id, $p_duplicate_id, DWG_DUPLICATE, /* email_for_source */ false );
+		dwg_relationship_upsert( $p_bug_id, $p_duplicate_id, DWG_DUPLICATE, /* email_for_source */ false );
 
 		# Copy list of users monitoring the duplicate bug to the original bug
 		$t_old_creator_id = dwg_get_field( $p_bug_id, 'creator_id' );

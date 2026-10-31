@@ -51,7 +51,7 @@ $t_revision = dwg_revision_get( $f_revision_id );
 access_ensure_dwg_level( config_get( 'dwg_revision_drop_threshold' ), $t_revision['bug_id'] );
 helper_ensure_confirmed( lang_get( 'confirm_dwg_revision_drop' ), lang_get( 'revision_drop' ) );
 
-bug_revision_drop( $f_revision_id );
+dwg_revision_drop( $f_revision_id );
 form_security_purge( 'dwg_revision_drop' );
 
 print_header_redirect_view( $t_revision['bug_id'] );

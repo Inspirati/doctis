@@ -1746,7 +1746,7 @@ function print_dwg_column_description( DwgData $p_bug, $p_columns_target = COLUM
  * @access public
  */
 function print_dwg_column_notes( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
-	$t_notes = bugnote_get_all_visible_as_string( $p_bug->id, /* user_bugnote_order */ 'DESC', /* user_bugnote_limit */ 0 );
+	$t_notes = dwgnote_get_all_visible_as_string( $p_bug->id, /* user_bugnote_order */ 'DESC', /* user_bugnote_limit */ 0 );
 
 	echo '<td class="column-notes">', string_display_links( $t_notes ), '</td>';
 }

@@ -963,7 +963,7 @@ function tag_dwg_detach( $p_tag_id, $p_bug_id, $p_add_history = true, $p_user_id
 		$t_user_id = $p_user_id;
 	}
 
-	if( !tag_bug_is_attached( $p_tag_id, $p_bug_id ) ) {
+	if( !tag_dwg_is_attached( $p_tag_id, $p_bug_id ) ) {
 		trigger_error( ERROR_TAG_NOT_ATTACHED, ERROR );
 	}
 

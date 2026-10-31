@@ -120,7 +120,7 @@ function dwg_activity_get_all( $p_bug_id, $p_include_attachments = true ) {
 			'last_modified' => $t_bugnote->last_modified,
 			'modified' => $t_bugnote->date_submitted != $t_bugnote->last_modified,
 			'id' => $t_bugnote_id,
-			'id_formatted' => bugnote_format_id( $t_bugnote_id ),
+			'id_formatted' => dwgnote_format_id( $t_bugnote_id ),
 			'user_id' => $t_bugnote->creator_id,
 			'private' => $t_bugnote->view_state != VS_PUBLIC,
 			'style' => 'bugnote-note',

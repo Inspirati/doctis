@@ -87,7 +87,7 @@ class DwgNoteDeleteCommand extends Command {
 			throw new ClientException( 'Access denied', ERROR_ACCESS_DENIED );
 		}
 
-		if( bug_is_readonly( $this->issueId ) ) {
+		if( dwg_is_readonly( $this->issueId ) ) {
 			throw new ClientException(
 				sprintf( "Document '%d' is read-only.", $this->issueId ),
 				ERROR_DWG_READ_ONLY_ACTION_DENIED,

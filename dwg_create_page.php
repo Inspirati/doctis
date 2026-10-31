@@ -790,7 +790,7 @@ $t_form_encoding = 'enctype="multipart/form-data"';
 				if( $f_master_bug_id > 0 ) {
 					# pre-fill tag string when cloning from master bug
 					$t_tags = [];
-					foreach( tag_bug_get_attached( $f_master_bug_id ) as $t_tag ) {
+					foreach( tag_dwg_get_attached( $f_master_bug_id ) as $t_tag ) {
 						$t_tags[] = $t_tag["name"];
 					}
 					$t_tag_string = implode(
@@ -992,7 +992,7 @@ $t_form_encoding = 'enctype="multipart/form-data"';
 		</th>
 		<td>
 			<?php print_dwg_relationship_list_box( config_get( 'default_dwg_relationship_clone' ), "rel_type", false, true ) ?>
-			<?php echo '<strong>' . lang_get( 'dwg' ) . ' ' . bug_format_id( $f_master_bug_id ) . '</strong>' ?>
+			<?php echo '<strong>' . lang_get( 'dwg' ) . ' ' . dwg_format_id( $f_master_bug_id ) . '</strong>' ?>
 		</td>
 	</tr>
 

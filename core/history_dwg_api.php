@@ -1025,7 +1025,7 @@ function history_dwg_localize_item( $p_bug_id, $p_field_name, $p_type, $p_old_va
 				break;
 			case DWG_REVISION_DROPPED:
 				$t_note = lang_get( 'dwg_revision_dropped_history' ) . ': '
-					. bug_revision_get_type_name( $p_new_value ) . ': '
+					. dwg_revision_get_type_name( $p_new_value ) . ': '
 					. $p_old_value;
 				break;
 			case DWGNOTE_REVISION_DROPPED:

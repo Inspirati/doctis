@@ -587,7 +587,7 @@ function mci_dwg_get_relationships( $p_issue_id, $p_user_id ) {
 			if( ApiObjectFactory::$soap ) {
 				$t_relationship['target_id'] = $t_related_issue_id;
 			} else {
-				$t_relationship['issue'] = mci_related_issue_as_array_by_id( $t_related_issue_id );
+				$t_relationship['issue'] = mci_related_dwg_as_array_by_id( $t_related_issue_id );
 			}
 
 			$t_relationships[] = $t_relationship;
@@ -616,7 +616,7 @@ function mci_dwg_get_relationships( $p_issue_id, $p_user_id ) {
 			if( ApiObjectFactory::$soap ) {
 				$t_relationship['target_id'] = $t_related_issue_id;
 			} else {
-				$t_relationship['issue'] = mci_related_issue_as_array_by_id( $t_related_issue_id );
+				$t_relationship['issue'] = mci_related_dwg_as_array_by_id( $t_related_issue_id );
 			}
 
 			$t_relationships[] = $t_relationship;
@@ -624,6 +624,47 @@ function mci_dwg_get_relationships( $p_issue_id, $p_user_id ) {
 	}
 
 	return (count( $t_relationships ) == 0 ? null : $t_relationships );
+}
+
+/**
+ * Get basic document info for related documents.
+ *
+ * Doctis: the counterpart of mci_related_issue_as_array_by_id(), which reads
+ * the issues table and so returned another issue's details, or nothing, for a
+ * related document.
+ *
+ * @param int $p_issue_id The document id.
+ *
+ * @return array|null The document summary or null if not found.
+ */
+function mci_related_dwg_as_array_by_id( $p_issue_id ) {
+	$t_issue_id = (int)$p_issue_id;
+
+	if( !dwg_exists( $t_issue_id ) ) {
+		return null;
+	}
+
+	$t_user_id = auth_get_current_user_id();
+	$t_lang = mci_get_user_lang( $t_user_id );
+
+	$t_bug = dwg_get( $t_issue_id );
+
+	$t_related_issue = array(
+		'id' => $t_bug->id,
+		'status' => mci_enum_get_array_by_id( $t_bug->status, 'dwg_status', $t_lang ),
+		'resolution' => mci_enum_get_array_by_id( $t_bug->resolution, 'resolution', $t_lang ),
+		'summary' => $t_bug->summary
+	);
+
+	if( !empty( $t_bug->handler_id ) ) {
+		if( access_has_dwg_level(
+			config_get( 'view_handler_threshold', null, null, $t_bug->project_id ),
+			$t_issue_id, $t_user_id ) ) {
+			$t_related_issue['handler'] = mci_account_get_array_by_id( $t_bug->handler_id );
+		}
+	}
+
+	return $t_related_issue;
 }
 
 /**
@@ -737,11 +778,11 @@ function mci_dwg_set_monitors( $p_issue_id, $p_requesting_user_id, array $p_moni
 	# 3. for each of the new monitor ids, add it if it does not already exist
 	foreach( $t_new_monitor_ids as $t_user_id ) {
 		if( $p_requesting_user_id == $t_user_id ) {
-			if( ! access_has_dwg_level( config_get( 'monitor_bug_threshold' ), $p_issue_id ) ) {
+			if( ! access_has_dwg_level( config_get( 'monitor_dwg_threshold' ), $p_issue_id ) ) {
 				continue;
 			}
 		} else {
-			if( !access_has_dwg_level( config_get( 'monitor_add_others_bug_threshold' ), $p_issue_id ) ) {
+			if( !access_has_dwg_level( config_get( 'monitor_add_others_dwg_threshold' ), $p_issue_id ) ) {
 				continue;
 			}
 		}
@@ -756,11 +797,11 @@ function mci_dwg_set_monitors( $p_issue_id, $p_requesting_user_id, array $p_moni
 	# 4. for each of the existing monitor ids, remove it if it is not found in the new monitor ids
 	foreach ( $t_existing_monitor_ids as $t_user_id ) {
 		if( $p_requesting_user_id == $t_user_id ) {
-			if( ! access_has_dwg_level( config_get( 'monitor_bug_threshold' ), $p_issue_id ) ) {
+			if( ! access_has_dwg_level( config_get( 'monitor_dwg_threshold' ), $p_issue_id ) ) {
 				continue;
 			}
 		} else {
-			if( !access_has_dwg_level( config_get( 'monitor_delete_others_bug_threshold' ), $p_issue_id ) ) {
+			if( !access_has_dwg_level( config_get( 'monitor_delete_others_dwg_threshold' ), $p_issue_id ) ) {
 				continue;
 			}
 		}
@@ -1117,7 +1158,7 @@ function mc_dwg_update( $p_username, $p_password, $p_issue_id, stdClass $p_issue
 		$t_resolving = $t_old_status < $t_resolved_status && $t_new_status >= $t_resolved_status;
 
 		if( $t_resolving &&
-			!relationship_can_resolve_dwg( $p_issue_id ) &&
+			!dwg_relationship_can_resolve_dwg( $p_issue_id ) &&
 			OFF == config_get( 'allow_parent_of_unresolved_to_close' )
 		) {
 			return ApiObjectFactory::faultBadRequest( 'Unresolved child documents.' );
@@ -1188,10 +1229,13 @@ function mc_dwg_update( $p_username, $p_password, $p_issue_id, stdClass $p_issue
 		$t_bug_data->due_date = strtotime( $p_issue['due_date'] );
 	}
 
-	mci_issue_set_custom_fields( $p_issue_id, $p_issue['custom_fields'] );
+	# Doctis: the document helpers, not mci_issue_set_*(), which read and
+	# write the issue with this id -- so a get-then-update round trip failed
+	# with "Issue #N not found", or changed an issue's monitors.
+	mci_dwg_set_custom_fields( $p_issue_id, $p_issue['custom_fields'] );
 
 	if( isset( $p_issue['monitors'] ) ) {
-		mci_issue_set_monitors( $p_issue_id, $t_user_id, $p_issue['monitors'] );
+		mci_dwg_set_monitors( $p_issue_id, $t_user_id, $p_issue['monitors'] );
 	}
 
 	if( isset( $p_issue['notes'] ) && is_array( $p_issue['notes'] ) ) {
@@ -1509,7 +1553,7 @@ function mc_dwg_note_update( $p_username, $p_password, stdClass $p_note ) {
 
 	$t_issue_note_id = $p_note['id'];
 
-	if( !bugnote_exists( $t_issue_note_id ) ) {
+	if( !dwgnote_exists( $t_issue_note_id ) ) {
 		return ApiObjectFactory::faultNotFound( 'Document note \'' . $t_issue_note_id . '\' does not exist.' );
 	}
 
@@ -1659,7 +1703,7 @@ function mc_dwg_relationship_delete( $p_username, $p_password, $p_issue_id, $p_r
 
 	# delete relationship from the DB
 	log_event( LOG_WEBSERVICE, 'deleting relationship id \'' . $p_relationship_id . '\'' );
-	relationship_delete( $p_relationship_id );
+	dwg_relationship_delete( $p_relationship_id );
 
 	return true;
 }

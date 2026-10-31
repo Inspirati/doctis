@@ -463,10 +463,10 @@ class DwgAddCommand extends Command {
 		file_dwg_attach_files( $t_issue_id, $this->files, /* bugnote_id */ null );
 
 		# Handle custom field submission
-		mci_issue_set_custom_fields( $t_issue_id, $t_issue['custom_fields'], /* history log insert */ false );
+		mci_dwg_set_custom_fields( $t_issue_id, $t_issue['custom_fields'], /* history log insert */ false );
 
 		if( isset( $t_issue['monitors'] ) ) {
-			mci_issue_set_monitors( $t_issue_id, $this->user_id, $t_issue['monitors'] );
+			mci_dwg_set_monitors( $t_issue_id, $this->user_id, $t_issue['monitors'] );
 		}
 
 		$t_clone_info = $this->option( 'clone_info', array() );
@@ -476,15 +476,15 @@ class DwgAddCommand extends Command {
 			# it's a child generation... let's create the relationship and add some lines in the history
 
 			# update master bug last updated
-			bug_update_date( $t_master_dwg_id );
+			dwg_update_date( $t_master_dwg_id );
 
 			# Add log line to record the cloning action
-			history_log_event_special( $t_issue_id, DWG_CREATED_FROM, '', $t_master_dwg_id );
-			history_log_event_special( $t_master_dwg_id, DWG_CLONED_TO, '', $t_issue_id );
+			history_dwg_log_event_special( $t_issue_id, DWG_CREATED_FROM, '', $t_master_dwg_id );
+			history_dwg_log_event_special( $t_master_dwg_id, DWG_CLONED_TO, '', $t_issue_id );
 
 			# copy notes from parent
 			if( isset( $t_clone_info['copy_notes'] ) &&  $t_clone_info['copy_notes'] ) {
-				$t_parent_bugnotes = bugnote_get_all_bugnotes( $t_master_dwg_id );
+				$t_parent_bugnotes = dwgnote_get_all_dwgnotes( $t_master_dwg_id );
 
 				foreach ( $t_parent_bugnotes as $t_parent_bugnote ) {
 					$t_private = $t_parent_bugnote->view_state == VS_PRIVATE;
