@@ -24,6 +24,7 @@ turn email notifications off before tests that queue mail in bulk.
 |---|---|
 | PHP core/API logic with no git or SOAP surface | §2 PHPUnit |
 | SOAP endpoint (dwg, primary file, attachment) | §3 `doctis-soap-test.sh` |
+| Document SOAP update, monitors, notes, relationships (`mc_dwg_api.php`) | §2 `tests/soap/DwgApiTest.php` |
 | Git storage backend / repository resolution / path handling | §4 `test-git-php.php` + `test-git-doctis.php` |
 | Repository import (`admin/import-git-repo.php`) | §5 Import dry-run/real-run against a scratch repo |
 | Smart HTTP gateway (clone/push, auth, hook enforcement) | §6 remote clone/push script, or §4's hook-enforcement steps |
@@ -56,7 +57,8 @@ and set `MANTIS_TESTSUITE_SOAP_HOST`, `USERNAME` and `PASSWORD`. The VM's
 **Run** in the running clone, after deploying the change:
 ```bash
 cd /var/www/html/doctis
-sudo -u www-data vendor/bin/phpunit --testsuite mantis     # 312 tests, 2026-10-15
+sudo -u www-data vendor/bin/phpunit --testsuite mantis     # 423 tests, 2026-11-01
+sudo -u www-data vendor/bin/phpunit tests/soap/DwgApiTest.php   # document SOAP API, own scratch project
 vendor/bin/phpunit --testsuite mantis --filter Topic       # a filtered run also works as robert
 ```
 

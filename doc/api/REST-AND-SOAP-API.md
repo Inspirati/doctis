@@ -124,12 +124,25 @@ Once a document has a registered file its **reference** belongs to Doctis --
 it is the on-record commit SHA -- and a sent value is ignored. **discipline**
 is not in the SOAP `DwgData` type, so it can be changed only on Edit Document.
 
-**Known defect: a get-then-update round trip fails.** `mc_dwg_get` returns a
-`monitors` array (empty when nobody monitors), and when that object is sent
-back, `mc_dwg_update` passes the array to MantisBT's *issue* monitor code
-(`mci_issue_set_monitors`), which looks the document up in the issues table
-and fails with "Issue #N not found". Remove `monitors` from the object before
-sending it. Found 2026-11-01; not yet fixed.
+A get-then-update round trip works: `mc_dwg_get`'s object can be sent back
+to `mc_dwg_update` unchanged. Its `monitors` array, when sent, replaces the
+document's monitors, subject to `monitor_dwg_threshold`,
+`monitor_add_others_dwg_threshold` and `monitor_delete_others_dwg_threshold`.
+
+**Fixed 2026-11-01: the document API reached into issues.** Until then
+`mc_dwg_update` and `mc_dwg_add` passed monitors and custom fields to the
+*issue* helpers, so a round trip failed with "Issue #N not found" (and would
+have changed the monitors of an issue with the same id).
+`mc_dwg_note_update` checked the issue notes table, so it refused every
+document note. `mc_dwg_relationship_delete` deleted the *issue* relationship
+with the given id. REST responses described related documents as issues.
+`tests/soap/DwgApiTest.php` pins each of these.
+
+**Custom fields are not usable on documents.** MantisBT stores custom field
+values keyed by issue id, and checks access through the issue's project, so a
+document's values would collide with the issue of the same id, on the web
+pages as through the API. None are defined on the VM (2026-11-01). Do not link one to a project that
+holds documents until custom field values have document storage of their own.
 
 ### DELETE — `dwg` and `dwg_text` removed; `documents` row NOT deleted
 
