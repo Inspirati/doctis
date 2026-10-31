@@ -445,7 +445,7 @@ MantisBT's own.
 ## Database Schema Changes
 
 **Rule: `admin/schema.php` is the single source of truth for the database schema.
-Never apply `ALTER TABLE` directly. Never write standalone migration scripts.**
+Never apply an `ALTER TABLE` that `schema.php` does not already describe.**
 
 Every table is defined once, in its current final form, as a
 `CREATE TABLE IF NOT EXISTS` step in [admin/schema.php](admin/schema.php). Each
@@ -456,8 +456,20 @@ step's index is the `database_version` the installer records after running it.
   Deploy, then run `php admin/upgrade_unattended.php` in the running clone. No
   rebuild is needed.
 - **Change to an existing table** (add, rename or retype a column; change a
-  key): edit its `CREATE TABLE` block in place, then rebuild the database (see
-  below). There is no production release yet, so rebuilds are acceptable.
+  key; change a default): edit its `CREATE TABLE` block in place. Then bring
+  each database up to it in one of two ways:
+  - **Rebuild** (see below). The default on the VM.
+  - **Schema update script** (owner decision 2026-10-31): an `.sql` file in
+    [admin/tools/schema-updates/](admin/tools/schema-updates/), run through
+    System Operations → **Load Data**. This is how live takes a release
+    without a rebuild. The script's `ALTER`s must produce exactly what
+    `schema.php` now says. If the release also appends steps, the script runs
+    them (generated from `schema.php`, not retyped) and sets
+    `database_version` last. Test it on a VM database at the old schema first.
+    Afterwards compare `SHOW CREATE TABLE` on the target with a fresh install
+    — an `ALTER` does not bump `database_version`, so nothing else will notice
+    a missed or wrong one. Data-moving changes (renames, retypes of filled
+    columns) need extra care, and a rebuild stays the fallback.
 - Never insert a step between existing ones, and never remove or renumber one;
   replace an obsolete step with `null`.
 
@@ -492,8 +504,8 @@ follow *Updating the live version with a database rebuild* above.
 
 | Prohibited | Why |
 |------------|-----|
-| `ALTER TABLE doctis.foo ADD COLUMN ...` run directly against the database | Schema.php will not reflect the change; a future rebuild will silently drop the column |
-| Standalone `admin/foo_migrate.php` scripts | The installer does not call them; they create false confidence that the schema is up to date |
+| `ALTER TABLE doctis.foo ADD COLUMN ...` with no matching edit to schema.php | Schema.php will not reflect the change; a future rebuild will silently drop the column |
+| Standalone `admin/foo_migrate.php` scripts | The installer does not call them; they create false confidence that the schema is up to date. A schema update script is a one-off Load Data file for a database built before the edit, not a migration layer |
 | `AddColumnSQL` / `AlterColumnSQL` entries appended to schema.php | Contradicts the flat-schema design; makes the definition hard to read and impossible to audit against the live DB |
 
 ## Resetting to a Clean Slate for Testing
