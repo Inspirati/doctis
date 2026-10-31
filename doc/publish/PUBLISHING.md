@@ -46,8 +46,10 @@ No schema change.
    `system/procedures/Document-Control-Procedure.html`. Relative links between
    published documents therefore work as they do in the repository.
 5. Rebuilds the sidebar in every other page of the site, and rewrites
-   `index.html`, a table of the published documents with number, revision,
-   status and publish date.
+   `index.html`, a brief introduction to the QMS followed by a table of the
+   published documents with number, revision, status and publish date. The
+   introduction explains navigation, checking versions and raising document
+   issues in Doctis.
 6. Logs a **Published** entry in the document history: commit, status and
    page.
 7. Sets the document's **URL** field (`link_url`) to the page's address, and

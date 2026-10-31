@@ -1347,7 +1347,12 @@ function dwg_publish_write_index( array $p_site, array $p_pages, array $p_tree, 
 	}
 
 	$t_has_pdf = count( array_filter( array_column( $p_pages, 'pdf' ) ) ) > 0;
-	$t_body = '<h1>' . htmlspecialchars( lang_get( 'dwg_publish_index_title' ) ) . "</h1>\n<table>\n<thead><tr>"
+	$t_body = '<h1>' . htmlspecialchars( lang_get( 'dwg_publish_index_welcome' ) ) . "</h1>\n"
+		. '<p>' . htmlspecialchars( lang_get( 'dwg_publish_index_intro' ) ) . "</p>\n"
+		. '<p>' . htmlspecialchars( lang_get( 'dwg_publish_index_browse' ) ) . "</p>\n"
+		. '<p>' . htmlspecialchars( lang_get( 'dwg_publish_index_control' ) ) . "</p>\n"
+		. '<p>' . htmlspecialchars( lang_get( 'dwg_publish_index_feedback' ) ) . "</p>\n"
+		. '<h2>' . htmlspecialchars( lang_get( 'dwg_publish_index_title' ) ) . "</h2>\n<table>\n<thead><tr>"
 		. '<th>' . htmlspecialchars( lang_get( 'dwg_title' ) ) . '</th>'
 		. '<th>' . htmlspecialchars( lang_get( 'dwg_number' ) ) . '</th>'
 		. '<th>' . htmlspecialchars( lang_get( 'dwg_revision' ) ) . '</th>'
@@ -1373,7 +1378,7 @@ function dwg_publish_write_index( array $p_site, array $p_pages, array $p_tree, 
 		file_put_contents( $t_work . '/index-body.html', $t_body );
 		file_put_contents( $t_work . '/before.html', dwg_publish_before_body( '', dwg_publish_nav_html( $p_tree, '' ), $p_logo ) );
 		$t_values = array(
-			'metadata'  => array( 'pagetitle' => lang_get( 'dwg_publish_index_title' ) ),
+			'metadata'  => array( 'pagetitle' => lang_get( 'dwg_publish_index_welcome' ) ),
 			'variables' => array(),
 		);
 		if( (int)$p_site['project_id'] > 0 ) {
