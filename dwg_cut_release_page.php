@@ -57,6 +57,33 @@ $f_commit   = '';
 $f_revision = '';
 $f_title    = '';
 $f_note     = '';
+$f_date     = date( 'Y-m-d' );
+
+/**
+ * The release already cut from this line under a revision name, if any.
+ *
+ * A revision is what names a release, so two releases of one tree under the
+ * same name would be indistinguishable in the documents list.  Releases of
+ * the same tree in the same project count, whichever branch they came from.
+ *
+ * @param int    $p_project_id Project the line is in.
+ * @param string $p_git_path   The line's tree ('' for the whole repository).
+ * @param string $p_revision   Revision name, compared ignoring case.
+ * @return int The existing release's document id, or 0.
+ */
+function dwg_cut_release_existing( int $p_project_id, string $p_git_path, string $p_revision ): int {
+	db_param_push();
+	$t_result = db_query(
+		'SELECT d.id FROM {dwg} d'
+		. ' JOIN {documents} t ON t.id=d.document_id'
+		. ' JOIN {dwg_primary_file} p ON p.dwg_id=d.id'
+		. ' WHERE d.project_id=' . db_param() . ' AND d.kind=' . db_param() . ' AND d.frozen=1'
+		. ' AND p.git_path=' . db_param() . ' AND LOWER( TRIM( t.revision ) )=' . db_param()
+		. ' ORDER BY d.id',
+		array( $p_project_id, DWG_KIND_SOURCE, $p_git_path, mb_strtolower( trim( $p_revision ) ) ), 1 );
+	$t_row = db_fetch_array( $t_result );
+	return $t_row ? (int)$t_row['id'] : 0;
+}
 
 if( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
 	form_security_validate( 'dwg_cut_release' );
@@ -65,14 +92,25 @@ if( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
 	$f_revision = trim( gpc_get_string( 'revision', '' ) );
 	$f_title    = trim( gpc_get_string( 'title', '' ) );
 	$f_note     = trim( gpc_get_string( 'note', '' ) );
+	$f_date     = trim( gpc_get_string( 'release_date', '' ) );
 
 	$t_sha = $f_commit !== '' ? $f_commit : $t_tip;
 	$t_sha = trim( (string)shell_exec(
 		'git --git-dir=' . escapeshellarg( $t_bare ) . ' rev-parse --verify -q '
 		. escapeshellarg( $t_sha . '^{commit}' ) . ' 2>/dev/null' ) );
 
+	# A release is issued when it is cut, unless the person cutting it says
+	# otherwise -- e.g. recording one that was issued last week.
+	$t_release_time = $f_date === '' ? db_now() : strtotime( $f_date );
+	$t_existing     = $f_revision === ''
+		? 0 : dwg_cut_release_existing( $t_project_id, (string)$t_line['git_path'], $f_revision );
+
 	if( $f_revision === '' ) {
 		$t_error = lang_get( 'dwg_cut_release_revision_required' );
+	} elseif( $t_existing !== 0 ) {
+		$t_error = sprintf( lang_get( 'dwg_cut_release_duplicate' ), $f_revision, dwg_format_id( $t_existing ) );
+	} elseif( $t_release_time === false ) {
+		$t_error = lang_get( 'dwg_cut_release_bad_date' );
 	} elseif( !preg_match( '/^[0-9a-f]{40}$/', $t_sha ) ) {
 		$t_error = lang_get( 'dwg_cut_release_bad_commit' );
 	} elseif( $t_branch !== '' && !file_dwg_git_branch_exists( $t_bare, $t_branch ) ) {
@@ -85,6 +123,7 @@ if( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
 		$t_release->date_submitted = db_now();
 		$t_release->last_updated   = db_now();
 		$t_release->revision       = $f_revision;
+		$t_release->release_date   = $t_release_time;
 		$t_line_name              = $t_line_doc->summary !== ''
 			? $t_line_doc->summary : (string)$t_line_doc->title;
 		$t_release->summary        = $f_title !== '' ? $f_title
@@ -177,6 +216,15 @@ layout_page_begin();
 							maxlength="255" placeholder="<?php echo string_attribute(
 								$t_line_doc->summary . ' <revision>' ) ?>"
 							value="<?php echo string_attribute( $f_title ) ?>" />
+					</div>
+					<div class="form-group">
+						<label for="release_date"><?php echo lang_get( 'dwg_release_date' ) ?></label>
+						<input id="release_date" type="text" name="release_date" class="datetimepicker input-sm"
+							size="16" maxlength="16"
+							data-picker-locale="<?php echo lang_get_current_datetime_locale() ?>"
+							data-picker-format="<?php echo config_get( 'dwg_date_picker_format' ) ?>"
+							value="<?php echo string_attribute( $f_date ) ?>" />
+						<?php print_icon( 'fa-calendar', 'fa-xlg datetimepicker' ); ?>
 					</div>
 					<div class="form-group">
 						<label for="commit"><?php echo lang_get( 'source_release_commit' ) ?></label>

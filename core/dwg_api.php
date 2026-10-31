@@ -2587,6 +2587,30 @@ function dwg_unmonitor( $p_bug_id, $p_user_id ) {
 }
 
 /**
+ * Format a document date (revision or release date) for display.
+ *
+ * Doctis: these dates are optional, and an unset one is stored as
+ * date_get_null() (1), which a bare date() renders as 1970-01-01.  Every
+ * display of them goes through here instead, so "no date" shows as blank.
+ *
+ * @param mixed  $p_value  Unix timestamp (int or numeric string), or a date string.
+ * @param string $p_format A date() format.
+ *
+ * @return string The formatted date, or '' when there is none.
+ */
+function dwg_format_date( $p_value, string $p_format = 'Y-m-d' ): string {
+	if( is_numeric( $p_value ) ) {
+		$t_timestamp = (int)$p_value;
+	} else {
+		$t_timestamp = is_string( $p_value ) && trim( $p_value ) !== '' ? strtotime( $p_value ) : false;
+	}
+	if( $t_timestamp === false || $t_timestamp <= date_get_null() ) {
+		return '';
+	}
+	return date( $p_format, $t_timestamp );
+}
+
+/**
  * Pads the bug id with the appropriate number of zeros.
  *
  * @param int $p_bug_id Bug identifier.

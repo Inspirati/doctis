@@ -852,6 +852,13 @@ if( $t_entry18 === null ) {
 	check( count( $t_listed ) > count( $t_mapped ),
 		'the path-keyed map collapses them, which is why the list exists',
 		count( $t_listed ) . ' listed vs ' . count( $t_mapped ) . ' mapped' );
+
+	# A file inside them all is credited to a line, not to whichever release
+	# happens to be newest.
+	$t_cov18 = git_store_covered_paths( $t_entry18, $t_tree18, array( 'rel.txt' ) );
+	$t_by18  = (int)( $t_cov18['rel.txt']['dwg_id'] ?? 0 );
+	check( $t_by18 !== 0 && !dwg_is_frozen( $t_by18 ) && !isset( $t_rel_ids[$t_by18] ),
+		'a covered file is credited to a tracking line, not a release', 'dwg ' . $t_by18 );
 }
 
 # ── Step 19: git-LFS ────────────────────────────────────────────────────────

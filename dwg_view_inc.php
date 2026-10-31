@@ -234,8 +234,7 @@ if( $t_flags['history_show'] ) {
 	echo '<td class="bug-project">', $t_flags['project_show'] && isset( $t_issue['version'] ) ? string_display_line( $t_issue['version'] ) : '', '</td>';
 	echo '<td class="bug-project">', $t_flags['project_show'] && isset( $t_issue['author'] ) ? string_display_line( $t_issue['author'] ) : '', '</td>';
 	$t_date_format = 'Y-m-d';
-	$t_release_date = date( $t_date_format, $t_issue['release_date'] );
-	$t_release_date = string_display_line( date( $t_date_format, $t_issue['release_date'] ) );
+	$t_release_date = string_display_line( dwg_format_date( $t_issue['release_date'] ?? '', $t_date_format ) );
 	echo '<td class="bug-project">', $t_flags['project_show'] && isset( $t_issue['release_date'] ) ? $t_release_date : '', '</td>';
 	echo '</tr>';
 	print_table_spacer( 6 );
@@ -361,7 +360,7 @@ echo '<a href="#" class="btn btn-primary btn-white btn-round btn-sm js-copy-cita
 
 $author = $t_issue['author'] ?? 'Unknown';
 $title = $t_issue['title'] ?? '';
-$year = $t_issue['release_date'] ? date('Y', $t_issue['release_date']) : 'n.d.';
+$year = dwg_format_date( $t_issue['release_date'] ?? '', 'Y' ) ?: 'n.d.';
 $reference = $t_dwg->reference ?? '';
 $number = $t_issue['number'] ?? '';
 $revision = $t_issue['revision'] ?? '';
@@ -503,8 +502,7 @@ if( true
 		echo '<td class="bug-project">', $t_flags['publisher_show'] && isset( $t_issue['publisher'] ) ? string_display_line( $t_issue['publisher'] ) : '', '</td>';
 	}
 	$t_date_format = 'Y-m-d';
-	$t_release_date = date( $t_date_format, $t_issue['release_date'] );
-	$t_release_date = string_display_line( date( $t_date_format, $t_issue['release_date'] ) );
+	$t_release_date = string_display_line( dwg_format_date( $t_issue['release_date'] ?? '', $t_date_format ) );
 	// $t_release_date = string_display_line( date( $t_date_format, strtotime( $t_issue['release_date'] ) ) );
 	echo '<td class="bug-project">', $t_flags['project_show'] && isset( $t_issue['release_date'] ) ? $t_release_date : '', '</td>';
 	echo '</tr>';
@@ -616,8 +614,7 @@ if( false
 
 $t_date_format = 'Y-m-d';
 
-	$t_release_date = date( $t_date_format, $t_issue['release_date'] );
-	$t_release_date = string_display_line( date( $t_date_format, $t_issue['release_date'] ) );
+	$t_release_date = string_display_line( dwg_format_date( $t_issue['release_date'] ?? '', $t_date_format ) );
 	// $t_release_date = string_display_line( date( $t_date_format, strtotime( $t_issue['release_date'] ) ) );
 	echo '<td class="bug-project">', $t_flags['project_show'] && isset( $t_issue['release_date'] ) ? $t_release_date : '', '</td>';
 	echo '<td class="bug-project">', $t_flags['project_show'] && isset( $t_issue['classification'] ) ? string_display_line( $t_issue['classification'] ) : '', '</td>';

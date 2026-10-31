@@ -699,19 +699,31 @@ function git_store_register_frontmatter_all( array $p_repo, int $p_project_id, i
  * @param array $p_repo  Git store repository entry.
  * @param array $p_tree  git_store_tree() output, for git_store_documents_list().
  * @param array $p_paths Repository-relative paths.
- * @return array path => array( 'dwg_id' => int, 'tree' => string ), for covered paths.
+ * @return array path => array( 'dwg_id' => int, 'tree' => string, 'frozen' => int ), for
+ *               covered paths; a tracking line is named before a release.
  */
 function git_store_covered_paths( array $p_repo, array $p_tree, array $p_paths ): array {
 	$t_trees = array();
 	foreach( git_store_documents_list( $p_repo, $p_tree ) as $t_doc ) {
 		if( (int)( $t_doc['kind'] ?? DWG_KIND_DOCUMENT ) === DWG_KIND_SOURCE ) {
-			$t_trees[] = array( 'dwg_id' => (int)$t_doc['dwg_id'], 'tree' => trim( (string)$t_doc['git_path'], '/' ) );
+			$t_trees[] = array(
+				'dwg_id' => (int)$t_doc['dwg_id'],
+				'tree'   => trim( (string)$t_doc['git_path'], '/' ),
+				'frozen' => (int)( $t_doc['frozen'] ?? 0 ),
+			);
 		}
 	}
 	$t_covered = array();
 	if( !$t_trees ) {
 		return $t_covered;
 	}
+	# Several records can cover one file -- a line and every release cut from
+	# it.  Name the one a developer should look at: a tracking line before a
+	# frozen release, then the most specific tree, then the oldest record.
+	usort( $t_trees, function( $a, $b ) {
+		return array( $a['frozen'], -strlen( $a['tree'] ), $a['dwg_id'] )
+			<=> array( $b['frozen'], -strlen( $b['tree'] ), $b['dwg_id'] );
+	} );
 	foreach( $p_paths as $t_path ) {
 		foreach( $t_trees as $t_tree ) {
 			if( $t_tree['tree'] === '' || strpos( $t_path, $t_tree['tree'] . '/' ) === 0 ) {

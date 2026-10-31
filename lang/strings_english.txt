@@ -2382,6 +2382,8 @@ $s_dwg_cut_release_doc_title   = 'Document title';
 $s_dwg_cut_release_revision_required = 'A revision is required: it is what names the release.';
 $s_dwg_cut_release_bad_commit  = 'That commit cannot be resolved in this repository.';
 $s_dwg_cut_release_branch_gone = 'This line\'s branch no longer exists, so there is nothing to release from.';
+$s_dwg_cut_release_duplicate   = 'Revision %1$s has already been cut from this line, as document %2$s. Give this release a revision of its own.';
+$s_dwg_cut_release_bad_date    = 'The release date is not a date.';
 $s_dwg_release_cut             = 'Release cut';
 $s_dwg_release_cut_from        = 'Released from';
 

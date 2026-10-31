@@ -1648,13 +1648,13 @@ function print_column_date( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_V
 }
 
 function print_dwg_column_date( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
-	$t_date = string_display_line( date( config_get( 'short_date_format' ), $p_bug->revision_date ) );
+	$t_date = string_display_line( dwg_format_date( $p_bug->revision_date, config_get( 'short_date_format' ) ) );
 
 	echo '<td class="column-revision_date">', $t_date, '</td>';
 }
 
 function print_dwg_column_release_date( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
-	$t_date = string_display_line( date( config_get( 'short_date_format' ), $p_bug->release_date ) );
+	$t_date = string_display_line( dwg_format_date( $p_bug->release_date, config_get( 'short_date_format' ) ) );
 
 	echo '<td class="column-release_date">', $t_date, '</td>';
 }

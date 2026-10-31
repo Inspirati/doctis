@@ -1266,7 +1266,7 @@ function dwg_publish_approval( DwgData $p_dwg ): ?array {
  * @return string
  */
 function dwg_publish_date( $p_value, string $p_format ): string {
-	return is_numeric( $p_value ) && (int)$p_value > 1 && !date_is_null( (int)$p_value ) ? date( $p_format, (int)$p_value ) : '';
+	return dwg_format_date( $p_value, $p_format );
 }
 
 /**

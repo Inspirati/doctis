@@ -437,7 +437,7 @@ function print_document_details( $t_document, $t_document_flags, $t_document_sha
 	// $t_created_at = ApiObjectFactory::datetime( $t_attachment_row['date_added'] );
 //	$t_release_date = ApiObjectFactory::datetime( $t_document['release_date'] );
 	$t_date_format = 'Y-m-d';
-	$t_release_date = date( $t_date_format, strtotime( $t_document['release_date'] ) );
+	$t_release_date = string_display_line( dwg_format_date( $t_document['release_date'] ?? '', $t_date_format ) );
 	//echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['release_date'] ) ? string_display_line( $t_document['release_date'] ) : '', '</td>';
 	echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['release_date'] ) ? $t_release_date : '', '</td>';
 	// echo '<td class="bug-project">', $t_document_flags['project_show'] && isset( $t_document['release_date'] ) ? string_display_line( date( $t_date_format, strtotime( $t_document['release_date'] ) ) ) : '', '</td>';

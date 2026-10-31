@@ -113,10 +113,7 @@ $t_show_due_date = $t_show( 'due_date' )
  * @return string
  */
 function dwg_update_page_date( $p_time ): string {
-	if( date_is_null( $p_time ) || (int)$p_time <= 1 ) {
-		return '';
-	}
-	return date( 'Y-m-d', (int)$p_time );
+	return dwg_format_date( $p_time );
 }
 
 /**

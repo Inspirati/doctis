@@ -151,6 +151,21 @@ class DwgUpdateTest extends MantisCoreBase {
 		$this->assertSame( date_get_null(), (int)$this->fresh( $t_id )->release_date );
 	}
 
+	/**
+	 * An unset date is stored as date_get_null() (1).  Every display goes
+	 * through dwg_format_date(), which shows it as blank; a bare date() showed
+	 * 1970-01-01 on every document without a release date.
+	 */
+	public function testAnUnsetDateDisplaysBlank() {
+		foreach( array( date_get_null(), '1', 0, '', null, 'not a date' ) as $t_none ) {
+			$this->assertSame( '', dwg_format_date( $t_none ), var_export( $t_none, true ) );
+		}
+		$t_time = strtotime( '2026-11-01 12:00' );
+		$this->assertSame( '2026-11-01', dwg_format_date( $t_time ) );
+		$this->assertSame( '2026-11-01', dwg_format_date( (string)$t_time ) );
+		$this->assertSame( '2026', dwg_format_date( '2026-11-01', 'Y' ) );
+	}
+
 	public function testTheReferenceIsDoctisOnceAFileIsRegistered() {
 		$t_id = $this->makeDocument();
 
