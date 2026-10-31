@@ -665,8 +665,8 @@ default.
 ## AI Assistant Feature
 
 The Doctis AI Assistant (`ai_assist_page.php`) embeds a Claude-powered chat interface
-using the Anthropic Messages API.  The Help tab answers from the user manual
-(`doc/MANUAL.md` — keep it current), a live map of the pages the user can open, and a
+using the Anthropic Messages API.  The Help tab answers from the user manuals
+(`doc/MANUAL.md` and `doc/DOCTIS-GIT-USER-MANUAL.md`, `$g_ai_knowledge_manual_path` — keep them current), a live map of the pages the user can open, and a
 knowledge base users teach and managers review (`{ai_knowledge}`, shared with the Meeting
 tab; see [doc/ai/ai-knowledge.md](doc/ai/ai-knowledge.md)).  The Meeting tab plans and minutes
 meetings (`{meeting}`, `{meeting_action}`; `core/meeting_api.php`,

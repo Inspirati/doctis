@@ -26,15 +26,32 @@ require_api( 'user_api.php' );
 /**
  * The user manual text, or '' when not configured or unreadable.
  *
+ * The setting may name one file or several.  The git features have a manual
+ * of their own (doc/DOCTIS-GIT-USER-MANUAL.md); moving them out of MANUAL.md
+ * would otherwise have removed them from everything the assistant knows.
+ * Several files are joined in the order given, with a rule between them; an
+ * unreadable one is skipped rather than failing the rest.
+ *
  * @return string
  */
 function ai_assist_knowledge_manual(): string {
-	$t_path = (string)config_get_global( 'ai_knowledge_manual_path' );
-	if( $t_path === '' ) {
-		return '';
+	$t_paths = config_get_global( 'ai_knowledge_manual_path' );
+	$t_paths = is_array( $t_paths ) ? $t_paths : array( (string)$t_paths );
+	$t_parts = array();
+	foreach( $t_paths as $t_path ) {
+		$t_path = (string)$t_path;
+		if( $t_path === '' ) {
+			continue;
+		}
+		$t_file = __DIR__ . '/' . ltrim( $t_path, '/' );
+		if( is_readable( $t_file ) ) {
+			$t_text = trim( (string)file_get_contents( $t_file ) );
+			if( $t_text !== '' ) {
+				$t_parts[] = $t_text;
+			}
+		}
 	}
-	$t_file = __DIR__ . '/' . ltrim( $t_path, '/' );
-	return is_readable( $t_file ) ? trim( (string)file_get_contents( $t_file ) ) : '';
+	return implode( "\n\n---\n\n", $t_parts );
 }
 
 /**

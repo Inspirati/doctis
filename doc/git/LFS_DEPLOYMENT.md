@@ -7,7 +7,7 @@ on any host.
 What this covers: the five changes needed before a Doctis server can host
 git-LFS repositories, and the one ceiling that no configuration can raise.
 For what LFS is and how Doctis implements it, see [GIT_LFS.md](GIT_LFS.md);
-for users, `doc/MANUAL.md` §13.6.
+for users, [DOCTIS-GIT-USER-MANUAL.md](../DOCTIS-GIT-USER-MANUAL.md) §10.
 
 **Nothing here is needed to run the current release.** With LFS left off,
 every other feature works as deployed, the endpoints answer 501, and ordinary

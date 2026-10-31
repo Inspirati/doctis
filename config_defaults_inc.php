@@ -5519,12 +5519,13 @@ $g_ai_knowledge_review_threshold = MANAGER;
 $g_ai_knowledge_daily_limit = 20;
 
 /**
- * User manual given to the AI Assistant as reference (path relative to the
- * Doctis root; '' = none). Keep it current: the assistant answers from it.
+ * User manual given to the AI Assistant as reference: a path relative to the
+ * Doctis root, or an array of them, joined in order ('' or empty = none).
+ * Keep them current: the assistant answers from them.
  *
- * @global string $g_ai_knowledge_manual_path
+ * @global string|array $g_ai_knowledge_manual_path
  */
-$g_ai_knowledge_manual_path = 'doc/MANUAL.md';
+$g_ai_knowledge_manual_path = array( 'doc/MANUAL.md', 'doc/DOCTIS-GIT-USER-MANUAL.md' );
 
 /**
  * Doctis project that holds meeting records (e.g. the HCRQMS project).
