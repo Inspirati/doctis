@@ -2515,6 +2515,7 @@ $s_email_secondary_hint            = 'Optional. When set, system notifications a
 $s_update_profile_button           = 'Update Profile';
 $s_org_chart_link                  = 'Organisational Chart';
 $s_org_chart_title                 = 'Organisational Chart';
+$s_org_chart_pdf                   = 'PDF / Print';
 $s_org_chart_hint                  = 'Reporting relationships are maintained by each user in My Configuration View.';
 $s_org_chart_empty                 = 'No registered users are available.';
 $s_org_chart_external              = 'External or unregistered staff member';

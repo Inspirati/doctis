@@ -38,6 +38,7 @@ $f_reports_to      = gpc_get_int( 'reports_to', 0 );
 $f_alternative     = trim( gpc_get_string( 'alternative', '' ) );
 $f_meeting_invite  = gpc_get_int(    'meeting_invite',  0 );
 $f_email_secondary = trim( gpc_get_string( 'email_secondary', '' ) );
+$f_timezone        = gpc_get_string( 'timezone', null );
 
 # ── Update ───────────────────────────────────────────────────────────────────
 
@@ -57,6 +58,9 @@ $t_data = array(
 		),
 	),
 );
+if( $f_timezone !== null ) {
+	$t_data['payload']['profile']['timezone'] = $f_timezone;
+}
 $t_command = new UserProfileUpdateCommand( $t_data );
 $t_command->execute();
 

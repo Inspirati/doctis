@@ -2,11 +2,13 @@
 # Doctis — update user-maintained profile and organisation fields.
 
 require_api( 'authentication_api.php' );
+require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
 require_api( 'event_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'string_api.php' );
 require_api( 'user_api.php' );
+require_api( 'user_pref_api.php' );
 
 use Mantis\Exceptions\ClientException;
 
@@ -16,6 +18,7 @@ use Mantis\Exceptions\ClientException;
 class UserProfileUpdateCommand extends Command {
 	private $user_id;
 	private $fields;
+	private $timezone;
 
 	/**
 	 * Validate and normalize profile data.
@@ -36,6 +39,16 @@ class UserProfileUpdateCommand extends Command {
 		$t_profile = $this->payload( 'profile' );
 		if( !is_array( $t_profile ) ) {
 			throw new ClientException( 'Missing profile data', ERROR_EMPTY_FIELD, array( 'profile' ) );
+		}
+
+		# Optional for older callers; when supplied, validate before any writes.
+		$this->timezone = null;
+		if( array_key_exists( 'timezone', $t_profile ) ) {
+			$t_timezone = $t_profile['timezone'];
+			if( !is_string( $t_timezone ) || !in_array( $t_timezone, timezone_identifiers_list(), true ) ) {
+				throw new ClientException( 'Timezone is invalid', ERROR_INVALID_FIELD_VALUE, array( 'timezone' ) );
+			}
+			$this->timezone = $t_timezone === config_get_global( 'default_timezone' ) ? '' : $t_timezone;
 		}
 
 		$t_reports_to = (int)( $t_profile['reports_to'] ?? 0 );
@@ -71,6 +84,10 @@ class UserProfileUpdateCommand extends Command {
 	 */
 	protected function process() {
 		user_set_fields( $this->user_id, $this->fields );
+		if( $this->timezone !== null ) {
+			event_signal( 'EVENT_ACCOUNT_PREF_UPDATE', array( $this->user_id ) );
+			user_pref_set_pref( $this->user_id, 'timezone', $this->timezone, ALL_PROJECTS );
+		}
 		event_signal( 'EVENT_MANAGE_USER_UPDATE', array( $this->user_id ) );
 
 		return array( 'user' => user_get_row( $this->user_id ) );

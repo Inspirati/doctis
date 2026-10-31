@@ -606,9 +606,15 @@ your email address. Doctis emails you a link to set your password.
 
 Keep your profile current: other pages and the AI Assistant use it.
 
+After registering, select your **Timezone** here and click **Update Profile**
+so dates and times display correctly for your location. This is the same
+setting shown under **Account Preferences**; changing it on either page updates
+the other.
+
 | Field | Used for |
 |-------|----------|
 | Real name, Position title, Company, Department, Phone | Shown on the Organisational Chart and in meeting records |
+| Timezone | Your local timezone for displayed dates and times |
 | Reports To | Your manager, if registered in Doctis; places you on the Organisational Chart |
 | Alternative | Your manager's name when they are not registered in Doctis |
 | Meeting Invites | Whether the Meeting Assistant may invite you: never, departmental meetings only, or all meetings |
@@ -622,6 +628,12 @@ arranged by reporting line from each user's **Reports To** setting. Managers who
 are not registered appear as dashed "external" boxes. Use it to find a
 colleague's role, department or manager. Administrators can click a name to
 open that user's account.
+
+Click **PDF / Print** in the chart header to open the complete diagram as a
+PDF in a new tab. Use the PDF viewer's save/download or print controls to keep
+a local copy or print it. The PDF includes all reporting branches, even those
+outside the scrollable screen area. Its page fits the diagram; choose **Fit to
+page** in the print dialog when printing a large chart on standard paper.
 
 ---
 

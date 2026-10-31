@@ -54,6 +54,7 @@ require_api( 'license_api.php' );
 require_api( 'print_api.php' );
 require_api( 'print_dwg_api.php' );
 require_api( 'user_api.php' );
+require_api( 'user_pref_api.php' );
 require_api( 'layout_api.php' );
 require_css( 'status_config.php' );
 
@@ -91,6 +92,7 @@ print_my_view_menu( 'my_view_cnf_page.php' );
 
 # ── My Profile — load current user values ────────────────────────────────────
 $t_profile_row = user_get_row( $t_current_user_id );
+$t_profile_timezone = user_pref_get_pref( $t_current_user_id, 'timezone', ALL_PROJECTS );
 $t_profile_updated = gpc_get_bool( 'updated', false );
 $t_profile_users = user_get_enabled_rows();
 
@@ -284,6 +286,16 @@ $t_meeting_invite_options = [
 					maxlength="<?php echo DB_FIELD_SIZE_REALNAME ?>"
 					value="<?php echo string_attribute( $t_profile_row['realname'] ?? '' ) ?>"
 				/>
+			</td>
+		</tr>
+		<tr>
+			<td class="category" style="vertical-align:middle; white-space:nowrap;">
+				<label for="timezone"><?php echo lang_get( 'timezone' ) ?></label>
+			</td>
+			<td>
+				<select class="form-control" name="timezone" id="timezone">
+					<?php print_timezone_option_list( $t_profile_timezone ?: config_get_global( 'default_timezone' ) ) ?>
+				</select>
 			</td>
 		</tr>
 		<tr>

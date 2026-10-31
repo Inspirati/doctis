@@ -4,7 +4,9 @@
 require_once( 'core.php' );
 require_api( 'authentication_api.php' );
 require_api( 'config_api.php' );
+require_api( 'gpc_api.php' );
 require_api( 'html_api.php' );
+require_api( 'http_api.php' );
 require_api( 'layout_api.php' );
 require_api( 'org_chart_api.php' );
 require_api( 'string_api.php' );
@@ -14,6 +16,15 @@ auth_ensure_user_authenticated();
 html_robots_noindex();
 
 $t_chart = org_chart_build( user_get_enabled_rows() );
+
+if( gpc_get_bool( 'pdf', false ) ) {
+	$t_graph = org_chart_create_graph( $t_chart );
+	http_caching_headers( false );
+	http_content_disposition_header( 'organisation-chart.pdf', true );
+	$t_graph->output( 'pdf', true );
+	exit;
+}
+
 $t_rendered = array();
 
 /**
@@ -81,6 +92,11 @@ print_my_view_menu( 'my_view_org_page.php' );
 	<div class="widget-box widget-color-blue2">
 		<div class="widget-header widget-header-small">
 			<h4 class="widget-title lighter"><?php print_icon( 'fa-sitemap', 'ace-icon' ); ?> <?php echo lang_get( 'org_chart_title' ) ?></h4>
+			<div class="widget-toolbar">
+				<a class="btn btn-minier btn-white btn-round" href="my_view_org_page.php?pdf=1" target="_blank" rel="noopener">
+					<?php print_icon( 'fa-file-pdf-o', 'ace-icon' ); ?> <?php echo lang_get( 'org_chart_pdf' ) ?>
+				</a>
+			</div>
 		</div>
 		<div class="widget-body">
 			<div class="widget-main">
