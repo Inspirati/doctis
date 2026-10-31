@@ -118,9 +118,6 @@ function mci_dwg_get_history( $p_issue_id, $p_user_id, $p_lang ) {
 		$t_skip = false;
 
 		switch( $t_type ) {
-			case DWG_ADD_SPONSORSHIP:         # Deprecated, not exposed in REST API
-			case DWG_UPDATE_SPONSORSHIP:      # Deprecated, not exposed in REST API
-			case DWG_DELETE_SPONSORSHIP:      # Deprecated, not exposed in REST API
 			case DWG_REVISION_DROPPED:        # Not Supported
 			case DWGNOTE_REVISION_DROPPED:    # Not Supported
 				$t_skip = true;
@@ -144,10 +141,6 @@ function mci_dwg_get_history( $p_issue_id, $p_user_id, $p_lang ) {
 					break;
 				case 'owner_id':
 					$t_field = 'owner';
-					break;
-				case 'sponsorship_total':
-					# Skip sponsorship fields
-					$t_skip = true;
 					break;
 			}
 
@@ -1929,12 +1922,6 @@ function mci_dwg_data_as_array( DwgData $p_issue_data, $p_user_id, $p_lang, $p_f
 		# No need to optimize the SOAP path and fields processed here are cheap anyways
 		if( config_get( 'enable_profiles' ) != OFF ) {
 			$t_issue['profile_id'] = (int)$p_issue_data->profile_id;
-		}
-
-		if( access_has_dwg_level( config_get( 'view_sponsorship_total_threshold' ), $t_id ) ) {
-			$t_issue['sponsorship_total'] = $p_issue_data->sponsorship_total;
-		} else {
-			$t_issue['sponsorship_total'] = 0;
 		}
 
 		$t_issue['sticky'] = $p_issue_data->sticky;

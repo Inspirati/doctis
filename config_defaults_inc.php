@@ -2292,7 +2292,6 @@ $g_sponsor_threshold = REPORTER;
  * @global int $g_handle_sponsored_bugs_threshold
  */
 $g_handle_sponsored_bugs_threshold = DEVELOPER;
-$g_handle_sponsored_dwgs_threshold = DEVELOPER;
 
 /**
  * Access level required to be able to assign a sponsored issue.
@@ -2303,7 +2302,6 @@ $g_handle_sponsored_dwgs_threshold = DEVELOPER;
  * @global int $g_assign_sponsored_bugs_threshold
  */
 $g_assign_sponsored_bugs_threshold = MANAGER;
-$g_assign_sponsored_dwgs_threshold = MANAGER;
 
 /**
  * Minimum sponsorship amount.
@@ -6715,7 +6713,6 @@ $g_public_config_names = array(
 	'antispam_max_event_count',
 	'antispam_time_window_in_seconds',
 	'assign_sponsored_bugs_threshold',
-	'assign_sponsored_dwgs_threshold',
 	'attachments_to_new_tab',
 	'auto_assign_issue_to_document_handler',
 	'auto_set_status_to_assigned',
@@ -6915,7 +6912,6 @@ $g_public_config_names = array(
 	'from_name',
 	'handle_bug_threshold',
 	'handle_sponsored_bugs_threshold',
-	'handle_sponsored_dwgs_threshold',
 	'hide_status_default',
 	'hide_dwg_status_default',
 	'history_default_visible',

@@ -43,7 +43,6 @@
  * @uses lang_api.php
  * @uses mention_api.php
  * @uses relationship_api.php
- * @uses sponsorship_api.php
  * @uses tag_dwg_api.php
  * @uses user_api.php
  * @uses utility_api.php
@@ -76,7 +75,6 @@ require_api( 'lang_api.php' );
 require_api( 'mention_api.php' );
 require_api( 'project_api.php' );
 require_api( 'relationship_dwg_api.php' );
-require_api( 'sponsorship_api.php' );
 require_api( 'tag_dwg_api.php' );
 require_api( 'user_api.php' );
 require_api( 'utility_api.php' );
@@ -128,7 +126,6 @@ function dwg_link_url_is_valid( $p_url ) {
  * @property string $build
  * @property int $view_state
  * @property string $summary
- * @property float $sponsorship_total
  * @property int $sticky
  * @property int $due_date
  * @property int $profile_id
@@ -196,7 +193,6 @@ class DwgData {
 	protected $target_version = '';
 	protected $build = '';
 	protected $view_state = VS_PUBLIC;
-	protected $sponsorship_total = 0;
 	// protected $due_date = '';
 	protected $due_date = 0;
 	protected $profile_id = 0;
@@ -1429,7 +1425,6 @@ function dwg_copy( $p_bug_id, $p_target_project_id = null, $p_copy_custom_fields
 	dwg_set_field( $t_new_bug_id, 'eta', $t_bug_data->eta );
 	dwg_set_field( $t_new_bug_id, 'fixed_in_version', $t_bug_data->fixed_in_version );
 	dwg_set_field( $t_new_bug_id, 'target_version', $t_bug_data->target_version );
-	dwg_set_field( $t_new_bug_id, 'sponsorship_total', 0 );
 	dwg_set_field( $t_new_bug_id, 'sticky', 0 );
 	dwg_set_field( $t_new_bug_id, 'due_date', $t_bug_data->due_date );
 
@@ -1641,9 +1636,6 @@ function dwg_delete( $p_bug_id ) {
 
 	# Delete bugnotes
 	dwgnote_delete_all( $p_bug_id );
-
-	# Delete all sponsorships
-	sponsorship_delete_all( $p_bug_id );
 
 	# Delete all relationships
 	dwg_relationship_delete_all( $p_bug_id );
@@ -2148,7 +2140,6 @@ function dwg_set_field( $p_bug_id, $p_field_name, $p_value ) {
 		case 'eta':
 		case 'view_state':
 		case 'profile_id':
-		case 'sponsorship_total':
 			$c_value = (int)$p_value;
 			break;
 
@@ -2237,15 +2228,10 @@ function dwg_set_field( $p_bug_id, $p_field_name, $p_value ) {
  */
 function dwg_assign( $p_bug_id, $p_user_id, $p_bugnote_text = '', $p_bugnote_private = false ) {
 	if( $p_user_id != NO_USER ) {
-		$t_bug_sponsored = config_get( 'enable_sponsorship' )
-			&& sponsorship_get_amount( sponsorship_get_all_ids( $p_bug_id ) ) > 0;
 		# The new handler is checked at project level
 		$t_project_id = dwg_get_field( $p_bug_id, 'project_id' );
 		if( !access_has_project_level( config_get( 'handle_dwg_threshold' ), $t_project_id, $p_user_id ) ) {
 			trigger_error( ERROR_HANDLER_ACCESS_TOO_LOW, ERROR );
-		}
-		if( $t_bug_sponsored && !access_has_project_level( config_get( 'handle_sponsored_dwgs_threshold' ), $t_project_id, $p_user_id ) ) {
-			trigger_error( ERROR_SPONSORSHIP_HANDLER_ACCESS_LEVEL_TOO_LOW, ERROR );
 		}
 	}
 

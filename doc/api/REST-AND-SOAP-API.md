@@ -150,7 +150,7 @@ holds documents until custom field values have document storage of their own.
 
 - All dwgnotes and dwgnote text
 - All file attachments (and their git/disk/DB storage)
-- All relationships and sponsorships
+- All relationships
 - All custom field values
 - The history and revision log
 - The `dwg_text` row

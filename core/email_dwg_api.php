@@ -41,7 +41,6 @@
  * @uses logging_api.php
  * @uses project_api.php
  * @uses relationship_api.php
- * @uses sponsorship_api.php
  * @uses string_api.php
  * @uses user_api.php
  * @uses user_pref_api.php
@@ -71,7 +70,6 @@ require_api( 'lang_api.php' );
 require_api( 'logging_api.php' );
 require_api( 'project_api.php' );
 require_api( 'relationship_dwg_api.php' );
-require_api( 'sponsorship_api.php' );
 require_api( 'string_api.php' );
 require_api( 'user_api.php' );
 require_api( 'user_pref_api.php' );
@@ -223,7 +221,7 @@ function email_dwg_collect_recipients( $p_bug_id, $p_notify_type, array $p_extra
 	}
 
 	# FIXME: the value of $p_notify_type could at this stage be either a status
-	# or a built-in actions such as 'owner and 'sponsor'. We have absolutely no
+	# or a built-in actions such as 'owner'. We have absolutely no
 	# idea whether 'new' is indicating a new bug has been filed, or if the
 	# status of an existing bug has been changed to 'new'. Therefore it is best
 	# to just assume built-in actions have precedence over status changes.
@@ -252,7 +250,6 @@ function email_dwg_collect_recipients( $p_bug_id, $p_notify_type, array $p_extra
 			break;
 		case 'deleted':
 		case 'updated':
-		case 'sponsor':
 		case 'relation':
 		case 'monitor':
 		case 'priority': # This is never used, but exists in the database!
@@ -644,45 +641,6 @@ function email_dwg_relationship_child_resolved_closed( $p_bug_id, $p_message_id 
 			}
 		}
 	}
-}
-
-/**
- * Send notices when a bug is sponsored.
- *
- * @param int $p_bug_id
- *
- * @return void
- * @throws ClientException
- */
-function email_dwg_sponsorship_added( $p_bug_id ) {
-	log_event( LOG_EMAIL, sprintf( 'Document #%d sponsorship added', $p_bug_id ) );
-	email_dwg_generic( $p_bug_id, 'sponsor', 'email_notification_title_for_action_dwg_sponsorship_added' );
-}
-
-/**
- * Send notices when a sponsorship is modified.
- *
- * @param int $p_bug_id
- *
- * @return void
- * @throws ClientException
- */
-function email_dwg_sponsorship_updated( $p_bug_id ) {
-	log_event( LOG_EMAIL, sprintf( 'Document #%d sponsorship updated', $p_bug_id ) );
-	email_dwg_generic( $p_bug_id, 'sponsor', 'email_notification_title_for_action_dwg_sponsorship_updated' );
-}
-
-/**
- * Send notices when a sponsorship is deleted.
- *
- * @param int $p_bug_id
- *
- * @return void
- * @throws ClientException
- */
-function email_dwg_sponsorship_deleted( $p_bug_id ) {
-	log_event( LOG_EMAIL, sprintf( 'Document #%d sponsorship removed', $p_bug_id ) );
-	email_dwg_generic( $p_bug_id, 'sponsor', 'email_notification_title_for_action_dwg_sponsorship_deleted' );
 }
 
 /**
@@ -1318,22 +1276,6 @@ function email_format_dwg_message( array $p_visible_bug_data ) {
 		}
 	}
 
-	# Sponsorship
-	if( isset( $p_visible_bug_data['sponsorship_total'] ) && ( $p_visible_bug_data['sponsorship_total'] > 0 ) ) {
-		$t_message .= $t_email_separator1 . " \n";
-		$t_message .= sprintf( lang_get( 'total_sponsorship_amount' ), sponsorship_format_amount( $p_visible_bug_data['sponsorship_total'] ) ) . "\n\n";
-
-		if( isset( $p_visible_bug_data['sponsorships'] ) ) {
-			foreach( $p_visible_bug_data['sponsorships'] as $t_sponsorship ) {
-				$t_date_added = date( config_get( 'normal_date_format' ), $t_sponsorship->date_submitted );
-
-				$t_message .= $t_date_added . ': ';
-				$t_message .= user_get_name( $t_sponsorship->user_id );
-				$t_message .= ' (' . sponsorship_format_amount( $t_sponsorship->amount ) . ')' . " \n";
-			}
-		}
-	}
-
 	$t_message .= $t_email_separator1 . " \n\n";
 
 	# format dwgnotes
@@ -1464,19 +1406,6 @@ function email_build_visible_dwg_data( $p_user_id, $p_bug_id, $p_message_id ) {
 	# put history data
 	if( ( ON == config_get( 'history_default_visible' ) ) && access_compare_level( $t_user_access_level, config_get( 'view_history_threshold' ) ) ) {
 		$t_bug_data['history'] = history_dwg_get_raw_events_array( $p_bug_id, $p_user_id );
-	}
-
-	# Sponsorship Information
-	if( ( config_get( 'enable_sponsorship' ) == ON ) && ( access_has_dwg_level( config_get( 'view_sponsorship_total_threshold' ), $p_bug_id, $p_user_id ) ) ) {
-		$t_sponsorship_ids = sponsorship_get_all_ids( $p_bug_id );
-		$t_bug_data['sponsorship_total'] = sponsorship_get_amount( $t_sponsorship_ids );
-
-		if( access_has_dwg_level( config_get( 'view_sponsorship_details_threshold' ), $p_bug_id, $p_user_id ) ) {
-			$t_bug_data['sponsorships'] = array();
-			foreach( $t_sponsorship_ids as $t_id ) {
-				$t_bug_data['sponsorships'][] = sponsorship_get( $t_id );
-			}
-		}
 	}
 
 	$t_bug_data['relations'] = email_dwg_relationship_get_summary_text( $p_bug_id );

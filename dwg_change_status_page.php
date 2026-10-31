@@ -37,7 +37,6 @@
  * @uses lang_api.php
  * @uses print_api.php
  * @uses relationship_api.php
- * @uses sponsorship_api.php
  * @uses version_api.php
  */
 
@@ -58,7 +57,6 @@ require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'print_dwg_api.php' );
 require_api( 'relationship_dwg_api.php' );
-require_api( 'sponsorship_api.php' );
 require_api( 'version_api.php' );
 
 require_api( 'email_dwg_api.php' );
@@ -104,19 +102,10 @@ $t_can_update_due_date = access_has_dwg_level( config_get( 'due_date_update_thre
 $f_handler_id = gpc_get_int( 'handler_id', $t_bug->handler_id );
 
 if( config_get( 'dwg_assigned_status' ) == $f_new_status ) {
-	$t_bug_sponsored = config_get( 'enable_sponsorship' )
-		&& sponsorship_get_amount( sponsorship_get_all_ids( $f_bug_id ) ) > 0;
-	if( $t_bug_sponsored && !access_has_dwg_level( config_get( 'assign_sponsored_dwgs_threshold' ), $f_bug_id ) ) {
-		trigger_error( ERROR_SPONSORSHIP_ASSIGNER_ACCESS_LEVEL_TOO_LOW, ERROR );
-	}
-
 	if( $f_handler_id != NO_USER ) {
 		# The new handler is checked at project level
 		if( !access_has_project_level( config_get( 'handle_dwg_threshold' ), $t_bug->project_id, $f_handler_id ) ) {
 			trigger_error( ERROR_HANDLER_ACCESS_TOO_LOW, ERROR );
-		}
-		if( $t_bug_sponsored && !access_has_project_level( config_get( 'handle_sponsored_dwgs_threshold' ), $t_bug->project_id, $f_handler_id ) ) {
-			trigger_error( ERROR_SPONSORSHIP_HANDLER_ACCESS_LEVEL_TOO_LOW, ERROR );
 		}
 	}
 }

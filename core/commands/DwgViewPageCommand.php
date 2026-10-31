@@ -222,10 +222,6 @@ class DwgViewPageCommand extends Command {
 			!dwg_is_readonly( $t_issue_id ) &&
 			access_has_dwg_level( config_get( 'update_dwg_threshold' ), $t_issue_id );
 
-		$t_flags['sponsorships_show'] =
-			config_get( 'enable_sponsorship' ) &&
-			access_has_dwg_level( config_get( 'view_sponsorship_total_threshold' ), $t_issue_id );
-
 		$t_flags['dwgnotes_show'] = in_array( 'dwgnotes', $t_fields );
 
 		$t_flags['profiles_show'] = config_get( 'enable_profiles' ) != OFF;

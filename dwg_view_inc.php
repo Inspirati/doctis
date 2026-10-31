@@ -1052,11 +1052,6 @@ echo '</table>';
 
 echo '</div></div></div></div></div>';
 
-# User list sponsoring the bug
-if( $t_flags['sponsorships_show'] ) {
-	define( 'DWG_SPONSORSHIP_LIST_VIEW_INC_ALLOW', true );
-	include( $t_mantis_dir . 'dwg_sponsorship_list_view_inc.php' );
-}
 
 # ── Primary Document File ────────────────────────────────────────────────────
 # Panel is hidden from users below $g_dwg_primary_document_threshold (default REPORTER).

@@ -39,7 +39,6 @@
  * @uses prepare_api.php
  * @uses print_api.php
  * @uses project_api.php
- * @uses sponsorship_api.php
  * @uses string_api.php
  */
 
@@ -60,7 +59,6 @@ require_api( 'lang_api.php' );
 require_api( 'prepare_api.php' );
 require_api( 'print_dwg_api.php' );
 require_api( 'project_api.php' );
-require_api( 'sponsorship_api.php' );
 require_api( 'string_api.php' );
 
 /**
@@ -112,12 +110,6 @@ function columns_dwg_filter_disabled( array $p_columns ) {
 
 			case 'build':
 				if( config_get( 'enable_product_build' ) == OFF ) {
-					continue 2;
-				}
-				break;
-
-			case 'sponsorship_total':
-				if( config_get( 'enable_sponsorship' ) == OFF ) {
 					continue 2;
 				}
 				break;
@@ -467,8 +459,6 @@ function column_dwg_get_title( $p_column ) {
 			return lang_get( 'dwg_creator' );
 		case 'selection':
 			return '';
-		case 'sponsorship_total':
-			return sponsorship_get_currency();
 		case 'version':
 			return lang_get( 'product_version' );
 		case 'view_state':
@@ -986,22 +976,6 @@ function print_dwg_column_title_category( $p_sort, $p_dir, $p_columns_target = C
 }
 
 /**
- * Print table header for column sponsorship total
- *
- * @param string  $p_sort           Sort.
- * @param string  $p_dir            Direction.
- * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
- * @return void
- * @access public
- */
-function print_dwg_column_title_sponsorship_total( $p_sort, $p_dir, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
-	echo "\t<th class=\"column-sponsorship\">";
-	print_view_dwg_sort_link( sponsorship_get_currency(), 'sponsorship_total', $p_sort, $p_dir, $p_columns_target );
-	print_sort_icon( $p_dir, $p_sort, 'sponsorship_total' );
-	echo "</th>\n";
-}
-
-/**
  * Print table header for column severity
  *
  * @param string  $p_sort           Sort.
@@ -1334,25 +1308,6 @@ function print_dwg_column_reference( DwgData $p_dwg, $p_columns_target = COLUMNS
 	echo '<td class="column-id">';
 	print_dwg_reference_link( $p_dwg->id, $p_dwg->reference, false );
 	echo '</td>';
-}
-
-/**
- * Print column content for column sponsorship total
- *
- * @param DwgData $p_bug            DwgData object.
- * @param integer $p_columns_target See COLUMNS_TARGET_* in constant_inc.php.
- * @return void
- * @access public
- */
-function print_dwg_column_sponsorship_total( DwgData $p_bug, $p_columns_target = COLUMNS_TARGET_VIEW_PAGE ) {
-	echo "\t<td class=\"right column-sponsorship\">";
-
-	if( $p_bug->sponsorship_total > 0 ) {
-		$t_sponsorship_amount = sponsorship_format_amount( $p_bug->sponsorship_total );
-		echo string_no_break( $t_sponsorship_amount );
-	}
-
-	echo "</td>\n";
 }
 
 /**

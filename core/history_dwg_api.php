@@ -38,7 +38,6 @@
  * @uses lang_api.php
  * @uses project_api.php
  * @uses relationship_api.php
- * @uses sponsorship_api.php
  * @uses user_api.php
  * @uses utility_api.php
  */
@@ -58,7 +57,6 @@ require_api( 'helper_api.php' );
 require_api( 'lang_api.php' );
 require_api( 'project_api.php' );
 require_api( 'relationship_api.php' );
-require_api( 'sponsorship_api.php' );
 require_api( 'user_api.php' );
 require_api( 'utility_api.php' );
 
@@ -634,9 +632,6 @@ function history_dwg_localize_field_name( $p_field_name ) {
 		case 'duplicate_id':
 			$t_field_localized = lang_get( 'duplicate_id' );
 			break;
-		case 'sponsorship_total':
-			$t_field_localized = lang_get( 'sponsorship_total' );
-			break;
 		case 'due_date':
 			$t_field_localized = lang_get( 'due_date' );
 			break;
@@ -713,40 +708,28 @@ function history_dwg_get_type_name( $p_type ) {
 		case DWGNOTE_STATE_CHANGED:
 			$t_type_name = 'note-view-state-updated';
 			break;
-		case BUG_MONITOR:
+		case DWG_MONITOR:
 			$t_type_name = 'monitor-added';
 			break;
-		case BUG_UNMONITOR:
+		case DWG_UNMONITOR:
 			$t_type_name = 'monitor-deleted';
 			break;
-		case BUG_DELETED:
+		case DWG_DELETED:
 			$t_type_name = 'issue-deleted';
 			break;
-		case BUG_ADD_SPONSORSHIP:
-			$t_type_name = 'sponsorship-added';
-			break;
-		case BUG_UPDATE_SPONSORSHIP:
-			$t_type_name = 'sponsorship-updated';
-			break;
-		case BUG_DELETE_SPONSORSHIP:
-			$t_type_name = 'sponsorship-deleted';
-			break;
-		case BUG_PAID_SPONSORSHIP:
-			$t_type_name = 'sponsorship-paid';
-			break;
-		case BUG_ADD_RELATIONSHIP:
+		case DWG_ADD_RELATIONSHIP:
 			$t_type_name = 'relationship-added';
 			break;
-		case BUG_REPLACE_RELATIONSHIP:
+		case DWG_REPLACE_RELATIONSHIP:
 			$t_type_name = 'relationship-updated';
 			break;
-		case BUG_DEL_RELATIONSHIP:
+		case DWG_DEL_RELATIONSHIP:
 			$t_type_name = 'relationship-deleted';
 			break;
-		case BUG_CLONED_TO:
+		case DWG_CLONED_TO:
 			$t_type_name = 'issue-cloned-to';
 			break;
-		case BUG_CREATED_FROM:
+		case DWG_CREATED_FROM:
 			$t_type_name = 'issue-cloned-from';
 			break;
 		case TAG_ATTACHED:
@@ -758,7 +741,7 @@ function history_dwg_get_type_name( $p_type ) {
 		case TAG_RENAMED:
 			$t_type_name = 'tag-updated';
 			break;
-		case BUG_REVISION_DROPPED:
+		case DWG_REVISION_DROPPED:
 			$t_type_name = 'revision-deleted';
 			break;
 		case DWGNOTE_REVISION_DROPPED:
@@ -972,22 +955,6 @@ function history_dwg_localize_item( $p_bug_id, $p_field_name, $p_type, $p_old_va
 				break;
 			case DWG_DELETED:
 				$t_note = lang_get( 'dwg_deleted' ) . ': ' . $p_old_value;
-				break;
-			case DWG_ADD_SPONSORSHIP:
-				$t_note = lang_get( 'sponsorship_added' );
-				$t_change = user_get_name( $p_old_value ) . ': ' . sponsorship_format_amount( $p_new_value );
-				break;
-			case DWG_UPDATE_SPONSORSHIP:
-				$t_note = lang_get( 'sponsorship_updated' );
-				$t_change = user_get_name( $p_old_value ) . ': ' . sponsorship_format_amount( $p_new_value );
-				break;
-			case DWG_DELETE_SPONSORSHIP:
-				$t_note = lang_get( 'sponsorship_deleted' );
-				$t_change = user_get_name( $p_old_value ) . ': ' . sponsorship_format_amount( $p_new_value );
-				break;
-			case DWG_PAID_SPONSORSHIP:
-				$t_note = lang_get( 'sponsorship_paid' );
-				$t_change = user_get_name( $p_old_value ) . ': ' . get_enum_element( 'sponsorship', $p_new_value );
 				break;
 			case DWG_ADD_RELATIONSHIP:
 				$t_note = lang_get( 'relationship_added' );

@@ -343,7 +343,6 @@ class DwgAddCommand extends Command {
 		$this->issue->platform = $t_issue['platform'] ?? '';
 		$this->issue->build = $t_issue['build'] ?? '';
 		$this->issue->view_state = $t_view_state_id;
-		$this->issue->sponsorship_total = $t_issue['sponsorship_total'] ?? 0;
 
 		if( isset( $t_issue['profile_id'] ) ) {
 			$t_profile_id = (int)$t_issue['profile_id'];

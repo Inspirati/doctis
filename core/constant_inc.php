@@ -279,15 +279,12 @@ define( 'DWGNOTE_STATE_CHANGED', 61 );
 define( 'DWG_MONITOR', 62 );
 define( 'DWG_UNMONITOR', 63 );
 define( 'DWG_DELETED', 64 );
-define( 'DWG_ADD_SPONSORSHIP', 65 );
-define( 'DWG_UPDATE_SPONSORSHIP', 66 );
-define( 'DWG_DELETE_SPONSORSHIP', 67 );
+# 65-67 and 74 were document sponsorship, removed 2026-11-01; do not reuse.
 define( 'DWG_ADD_RELATIONSHIP', 68 );
 define( 'DWG_DEL_RELATIONSHIP', 69 );
 define( 'DWG_CLONED_TO', 70 );
 define( 'DWG_CREATED_FROM', 71 );
 define( 'DWG_REPLACE_RELATIONSHIP', 73 );
-define( 'DWG_PAID_SPONSORSHIP', 74 );
 
 define( 'DWG_REVISION_DROPPED', 78 );
 define( 'DWGNOTE_REVISION_DROPPED', 79 );
