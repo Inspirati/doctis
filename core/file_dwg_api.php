@@ -2080,7 +2080,9 @@ function file_dwg_primary_path_in_use( int $p_dwg_id, int $p_project_id, string 
  *                              'frozen' => bool, pin it as a *release* rather
  *                              than a *line* that follows its branch;
  *                              'branch' => string, the line to record instead
- *                              of whatever the repository's HEAD names.
+ *                              of whatever the repository's HEAD names; when
+ *                              the branch exists, the commit must be in its
+ *                              history.
  * @return array{git_sha: string, git_path: string, filename: string, filesize: int}
  * @throws ClientException when the SHA/path do not exist or the path collides.
  * @throws ServiceException when the project has no repository on disk.
@@ -2182,11 +2184,19 @@ function file_dwg_primary_register( int $p_dwg_id, int $p_user_id, string $p_git
 	# Record the release line the caller named, when it still exists; two
 	# documents may track two branches of one repository.
 	$t_branch = '';
-	if( $t_want_branch !== '' ) {
-		exec( 'git --git-dir=' . escapeshellarg( $t_bare ) . ' show-ref --verify --quiet '
-			. escapeshellarg( 'refs/heads/' . $t_want_branch ) . ' 2>/dev/null', $t_br_out, $t_br_rc );
-		if( $t_br_rc === 0 ) {
-			$t_branch = $t_want_branch;
+	if( $t_want_branch !== '' && file_dwg_git_branch_exists( $t_bare, $t_want_branch ) ) {
+		$t_branch = $t_want_branch;
+
+		# A caller that names the branch is recording provenance: "this is
+		# the <branch> line, at this commit".  A commit outside that branch's
+		# history would make the record untrue, so refuse it.  Only explicit
+		# requests are checked -- a re-registration that merely inherits the
+		# previous row's branch (an upload, a move) is not claiming one.
+		if( !empty( $p_options['branch'] )
+			&& !file_dwg_git_commit_on_branch( $t_bare, $t_sha, $t_branch ) ) {
+			throw new ClientException(
+				sprintf( lang_get( 'dwg_cut_release_off_branch' ), substr( $t_sha, 0, 8 ), $t_branch ),
+				ERROR_INVALID_FIELD_VALUE, array( 'sha' ) );
 		}
 	}
 	if( $t_branch === '' ) {
@@ -2841,6 +2851,29 @@ function file_dwg_git_branch_exists( string $p_bare, string $p_branch ): bool {
 	}
 	exec( 'git --git-dir=' . escapeshellarg( $p_bare ) . ' show-ref --verify --quiet '
 		. escapeshellarg( 'refs/heads/' . $p_branch ) . ' 2>/dev/null', $t_out, $t_rc );
+	return $t_rc === 0;
+}
+
+/**
+ * Whether a commit is in a branch's history: the tip or one of its ancestors.
+ *
+ * A source record names one branch, and that branch is the only provenance
+ * it states -- "release v1.2 of the master line".  A commit outside it would
+ * make the record say something untrue, so registration refuses one (see
+ * doc/DOCTIS-GIT-USER-MANUAL.md, "Releases come from their line's branch").
+ *
+ * @param string $p_bare   Bare repository path.
+ * @param string $p_sha    Commit SHA.
+ * @param string $p_branch Branch name, without refs/heads/.
+ * @return bool false also when the branch or the commit does not exist.
+ */
+function file_dwg_git_commit_on_branch( string $p_bare, string $p_sha, string $p_branch ): bool {
+	if( $p_sha === '' || !file_dwg_git_branch_exists( $p_bare, $p_branch ) ) {
+		return false;
+	}
+	exec( 'git --git-dir=' . escapeshellarg( $p_bare ) . ' merge-base --is-ancestor '
+		. escapeshellarg( $p_sha ) . ' ' . escapeshellarg( 'refs/heads/' . $p_branch ) . ' 2>/dev/null',
+		$t_out, $t_rc );
 	return $t_rc === 0;
 }
 

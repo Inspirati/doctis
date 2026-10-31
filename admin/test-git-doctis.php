@@ -861,6 +861,29 @@ if( $t_entry18 === null ) {
 		'a covered file is credited to a tracking line, not a release', 'dwg ' . $t_by18 );
 }
 
+# A record of a line is pinned only at a commit in that line's history.  A
+# commit outside it -- here written with commit-tree, so no branch has it --
+# would make "release of the rel-line line" untrue.
+$t_tip18 = bare_git( $t_bare14, 'rev-parse refs/heads/rel-line' );
+$t_off18 = bare_git( $t_bare14, '-c user.name=T -c user.email=t@e.invalid commit-tree -p '
+	. $t_tip18 . ' -m off-branch ' . $t_tip18 . '^{tree}' );
+check( file_dwg_git_commit_on_branch( $t_bare14, $t_tip18, 'rel-line' ), 'the tip is on its branch' );
+check( file_dwg_git_commit_on_branch( $t_bare14, $t_rel_sha, 'rel-line' ), 'an ancestor is on its branch' );
+check( preg_match( '/^[0-9a-f]{40}$/', $t_off18 ) && !file_dwg_git_commit_on_branch( $t_bare14, $t_off18, 'rel-line' ),
+	'a commit on no branch is not', $t_off18 );
+check( !file_dwg_git_commit_on_branch( $t_bare14, $t_tip18, 'no-such-branch' ), 'nor is anything on a missing branch' );
+$t_off_dwg = make_dwg( $t_parent, 1, 'GitTest off-branch release' );
+$t_cleanup['dwg_ids'][] = $t_off_dwg;
+try {
+	file_dwg_primary_register( $t_off_dwg, 1, '', $t_off18, 'off', true, '',
+		array( 'allow_tree' => true, 'branch' => 'rel-line', 'frozen' => true ) );
+	fail( 'a release at a commit off its branch is refused' );
+} catch( ClientException $e ) {
+	ok( 'a release at a commit off its branch is refused' );
+}
+check( file_dwg_primary_get( $t_off_dwg ) === null, 'and nothing is registered' );
+check( bare_git( $t_bare14, 'for-each-ref refs/doctis/approved/' . $t_off_dwg ) === '', 'or pinned' );
+
 # ── Step 19: git-LFS ────────────────────────────────────────────────────────
 # A document whose blob is an LFS pointer must behave as the file it points
 # at: the recorded size is the file's, and reading it resolves to the object

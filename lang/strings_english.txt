@@ -2384,6 +2384,7 @@ $s_dwg_cut_release_bad_commit  = 'That commit cannot be resolved in this reposit
 $s_dwg_cut_release_branch_gone = 'This line\'s branch no longer exists, so there is nothing to release from.';
 $s_dwg_cut_release_duplicate   = 'Revision %1$s has already been cut from this line, as document %2$s. Give this release a revision of its own.';
 $s_dwg_cut_release_bad_date    = 'The release date is not a date.';
+$s_dwg_cut_release_off_branch  = 'Commit %1$s is not in the history of %2$s, so it cannot be a release of the %2$s line. Release it from a line registered on the branch it is on.';
 $s_dwg_release_cut             = 'Release cut';
 $s_dwg_release_cut_from        = 'Released from';
 
@@ -2415,6 +2416,8 @@ $s_repo_clone_in_config        = 'Cloning this way leaves the token in the clone
 $s_repo_clone_no_token_url     = 'The repository address is %1$s. If you already have a token, you can clone with that directly.';
 $s_repo_clone_disabled         = 'Remote git access is not enabled on this server.';
 $s_source_release_frozen_notice    = 'This record is a frozen release, pinned at commit %1$s. Later work on the %2$s line belongs to that line\'s own record, or to the next release.';
+$s_source_release_frozen_notice_rewritten = 'This record is a frozen release, pinned at commit %1$s, cut from the %2$s line. That commit is no longer in the history of %2$s: the branch has been rewritten since. The pin keeps the commit, so this release still downloads exactly as it was released.';
+$s_source_release_frozen_notice_branch_gone = 'This record is a frozen release, pinned at commit %1$s, cut from the %2$s line, which no longer exists. The pin keeps the commit, so this release still downloads exactly as it was released.';
 $s_source_release_already_registered = 'This document already has a primary document registered. Remove it first, or use a new document for the release record.';
 $s_source_release_button           = 'Register Source Release';
 $s_source_release_whole_repository = 'whole repository';

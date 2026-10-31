@@ -115,6 +115,10 @@ if( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
 		$t_error = lang_get( 'dwg_cut_release_bad_commit' );
 	} elseif( $t_branch !== '' && !file_dwg_git_branch_exists( $t_bare, $t_branch ) ) {
 		$t_error = lang_get( 'dwg_cut_release_branch_gone' );
+	} elseif( $t_branch !== '' && !file_dwg_git_commit_on_branch( $t_bare, $t_sha, $t_branch ) ) {
+		# Checked here, before the release document exists, so the person
+		# gets the reason on the form rather than an error page.
+		$t_error = sprintf( lang_get( 'dwg_cut_release_off_branch' ), substr( $t_sha, 0, 8 ), $t_branch );
 	} else {
 		# The release inherits the line's identity and ownership; only its
 		# revision, title and recorded commit differ.

@@ -419,7 +419,8 @@ The form asks for:
   be cut only once from a line; the form refuses a repeat (whatever its
   capitals) and names the release that already has it;
 - a **Release date**, which defaults to today;
-- optionally a title, a different commit, and a release note.
+- optionally a title, a release note, and a different commit, which must be
+  on the line's branch (§7.6).
 
 The release takes the line's owner, assignee, status, category and
 classification, and both documents' histories record the cut.
@@ -435,6 +436,57 @@ be frozen when its issued revision is final.
 
 The document list's **Kind** column and filter show which state each record is
 in: document, frozen document, source line or source release.
+
+### 7.6 Releases come from their line's branch
+
+A tracking line is registered against one branch, and every release cut from
+it says so: "v1.2 of the `master` line". That branch is the only statement of
+where a release came from. So the commit you release must be **in that
+branch's history**: its tip, or any commit before it that `git log master`
+would list.
+
+**Why.** A release record is the organisation's answer to "what exactly did
+we issue, and where did it come from?" ISO 9001:2015 clause 8.5.2,
+*Identification and traceability*, asks for outputs to be uniquely identified
+where traceability is required, and for the records that make it possible to
+be kept. If a "release of the master line" could be pinned at a commit from a
+feature branch, a hotfix branch or an abandoned experiment, the record would
+name a lineage the release never had. Anyone tracing it back through
+`master`'s history would not find it. Doctis therefore refuses such a commit,
+on **Cut Release** and on **Register Source Release** alike, whether
+registering a line or a frozen release:
+
+> Commit e2452b07 is not in the history of master, so it cannot be a release
+> of the master line. Release it from a line registered on the branch it is
+> on.
+
+Nothing is created when this happens.
+
+**How to release work from another branch.** Choose one:
+
+- **Merge it first.** Merge the branch into the line's branch, push, and
+  release the merge commit. The release is then genuinely part of that line.
+- **Give that branch its own line.** Create a document for it and register it
+  with **Register Source Release** (§7.3), choosing that branch under
+  **Release from branch**. Then **Cut Release** from that line. This suits a
+  long-lived branch such as `release/1.x`, which earns its own record and its
+  own series of releases. One repository can carry a line for each branch.
+
+To check a commit before you try, in your clone:
+
+```bash
+git fetch origin
+git merge-base --is-ancestor <commit> origin/master && echo "on master"
+git branch -r --contains <commit>      # every branch that has it
+```
+
+**Checked when the release is cut.** In a source repository, branches can be
+rewritten, for example by a force-push. That can later drop a released commit
+from its branch's history, or delete the branch altogether. The release is
+not affected: its pin keeps the commit, so it still downloads exactly as
+released. Its page stops saying "later work on the master line" and says
+what happened instead: the commit is no longer in `master`'s history, or the
+`master` line no longer exists.
 
 ---
 
@@ -649,6 +701,7 @@ its working copy and its LFS objects permanently.
 | Register a whole repository as a document | Create a document with **no file**, then **Register Source Release** (§7.3) |
 | Accept a pushed change to a registered repository | **Promote Draft** on its document (§7.4) |
 | Give each version its own document | **Cut Release** on the tracking line (§7.4) |
+| Release a commit from another branch | Merge it into the line's branch, or register a line for that branch (§7.6) |
 | Register a file I pushed | **Repository Files** in the sidebar → **Register** (§8) |
 | Make a document in a source repository official | **Move** it to a document-control project, then close out the source copy (§9) |
 | Store large binaries | `git lfs track` in your clone (§10) |

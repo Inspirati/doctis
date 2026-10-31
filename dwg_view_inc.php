@@ -1214,8 +1214,19 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 						<span class="label label-primary"><?php echo lang_get( 'dwg_frozen_label' ) ?></span>
 					</th>
 					<td colspan="5">
-						<?php echo sprintf( lang_get( $t_is_source_release
-								? 'source_release_frozen_notice' : 'dwg_document_frozen_notice' ),
+<?php		# A release whose commit has since left its branch's history (a
+		# force-push rewrote it) or whose branch is gone must not go on
+		# saying "later work on the <branch> line".
+		$t_notice = $t_is_source_release ? 'source_release_frozen_notice' : 'dwg_document_frozen_notice';
+		if( $t_is_source_release && $t_primary_file['git_branch'] !== '' ) {
+			$t_notice_bare = dwg_project_bare_repo_path( (int)dwg_get_field( $f_dwg_id, 'project_id' ) );
+			if( !file_dwg_git_branch_exists( $t_notice_bare, $t_primary_file['git_branch'] ) ) {
+				$t_notice = 'source_release_frozen_notice_branch_gone';
+			} elseif( !file_dwg_git_commit_on_branch( $t_notice_bare, $t_primary_file['git_sha'], $t_primary_file['git_branch'] ) ) {
+				$t_notice = 'source_release_frozen_notice_rewritten';
+			}
+		} ?>
+						<?php echo sprintf( lang_get( $t_notice ),
 							'<code>' . htmlspecialchars( substr( $t_primary_file['git_sha'], 0, 8 ) ) . '</code>',
 							'<code>' . string_display_line( $t_primary_file['git_branch'] ) . '</code>' ) ?>
 <?php		if( $t_can_freeze ): ?>
