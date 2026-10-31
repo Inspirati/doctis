@@ -1593,8 +1593,10 @@ function mc_dwg_note_update( $p_username, $p_password, stdClass $p_note ) {
 
 	log_event( LOG_WEBSERVICE, 'updating dwgnote id \'' . $t_issue_note_id . '\'' );
 	dwgnote_set_text( $t_issue_note_id, $p_note['text'] );
+	dwgnote_date_update( $t_issue_note_id );
 
-	return dwgnote_date_update( $t_issue_note_id );
+	# The WSDL promises a boolean; dwgnote_date_update() returns nothing.
+	return true;
 }
 
 /**
