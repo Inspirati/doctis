@@ -960,6 +960,17 @@ person from the one before it.
     record ("inside #1284") rather than the tracking line. Not reachable from a
     whole-repository line, so still untested through the page: the rollback
     when registration fails, and the "branch gone" refusal.
+- **2026-11-01** — Findings 2–5 above fixed and retested through the pages on
+  #699. The form refuses a revision already cut from the same tree in the
+  project (case-insensitive; "V1.0" names #1281), and has a **release date**,
+  defaulting to the day of the cut. Unset document dates (stored as `1`) now
+  display blank everywhere through `dwg_format_date()`, with "n.d." in the
+  citation. `dwg_search.php` (and upstream `search.php`) treats an omitted
+  multi-value filter as "any". Covered files are credited to a tracking line
+  first, then the most specific tree, then the oldest record — Gimbal's 864
+  now read "inside #699". New artefact for review: **#1369**, v1.2 at
+  `d66c6144` with release date 2026-10-30. Finding 1 (a commit from outside
+  the branch) is left for the owner to decide.
 
 ---
 

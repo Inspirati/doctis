@@ -413,6 +413,17 @@ Instead of promoting, **Cut Release** creates a *separate* frozen release
 document at that commit, and leaves the line tracking. Use it when each
 version should have its own document, its own approval and its own issues.
 
+The form asks for:
+
+- a **Revision**, such as `v1.2`, which names the release. Each revision can
+  be cut only once from a line; the form refuses a repeat (whatever its
+  capitals) and names the release that already has it;
+- a **Release date**, which defaults to today;
+- optionally a title, a different commit, and a release note.
+
+The release takes the line's owner, assignee, status, category and
+classification, and both documents' histories record the cut.
+
 ### 7.5 Freezing
 
 **Freeze** stops a record from offering new Drafts; **Unfreeze** reverses it.
