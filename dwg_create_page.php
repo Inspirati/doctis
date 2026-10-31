@@ -249,6 +249,7 @@ if ( array_key_exists('USE_LOREM_IPSUM', $GLOBALS) && use_random_example_data($t
 # a frontmatter block pre-fills the form from it; everything else is typed.
 $t_register_path = '';
 $t_register_sha  = '';
+$t_register_source_repo = false;
 if( gpc_get_string( 'git_path', '' ) !== '' ) {
 	require_api( 'dwg_frontmatter_api.php' );
 	require_api( 'git_store_api.php' );
@@ -263,6 +264,7 @@ if( gpc_get_string( 'git_path', '' ) !== '' ) {
 	}
 	if( $t_register_sha !== '' ) {
 		$t_register_path = $t_reg_path_in;
+		$t_register_source_repo = repository_push_policy( $t_reg_rid ) === DWG_PUSH_POLICY_SOURCE;
 
 		# Pre-fill only what the caller did not already supply, so a field
 		# the user has edited and re-posted is never overwritten.
@@ -1052,6 +1054,7 @@ include( __DIR__ . '/dwg_create_topics_inc.php' ); ?>
 						<label><?php echo lang_get( 'dwg_register_from_repository' ) ?></label>
 					</th>
 					<td class="width-85">
+<?php		if( $t_register_source_repo ) { print_dwg_source_repository_notice( 'register' ); } ?>
 						<code><?php echo string_display_line( $t_register_path ) ?></code>
 						<input type="hidden" name="git_path" value="<?php echo string_attribute( $t_register_path ) ?>" />
 						<span class="help-block"><?php echo sprintf(

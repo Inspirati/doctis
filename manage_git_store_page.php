@@ -17,6 +17,7 @@ require_api( 'lang_api.php' );
 require_api( 'form_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'print_api.php' );
+require_api( 'print_dwg_api.php' );
 require_api( 'project_api.php' );
 require_api( 'repository_api.php' );
 require_api( 'string_api.php' );
@@ -572,6 +573,10 @@ print_manage_menu( 'manage_git_store_page.php' );
 				# document is the record in Doctis, not the format.
 				if( !$t_doc && $t_register_project > 0 ) {
 					echo '<div class="space-6"></div>';
+					if( $t_repo['bare_exists']
+						&& repository_get_push_policy( $t_repo['bare'] ) === DWG_PUSH_POLICY_SOURCE ) {
+						print_dwg_source_repository_notice( 'register' );
+					}
 					echo '<a class="btn btn-xs btn-primary btn-white btn-round" href="'
 						. htmlspecialchars( 'dwg_create_page.php?project_id=' . $t_register_project
 							. '&git_path=' . rawurlencode( $f_file ) ) . '">'
@@ -717,6 +722,11 @@ print_manage_menu( 'manage_git_store_page.php' );
 			}
 		}
 		$t_unregistered = array_diff( array_keys( $t_tree ), array_keys( $t_docs ) );
+		# Files inside a registered repository or subtree are part of that
+		# record, not gaps.  They stay listed -- a controlled document may
+		# live inside a source tree -- but are not counted as unregistered.
+		$t_covered = git_store_covered_paths( $t_repo, $t_tree, $t_unregistered );
+		$t_gap_count = count( $t_unregistered ) - count( $t_covered );
 ?>
 		<p>
 			<span class="label label-success"><?php echo $t_counts['current']; ?> On Record = HEAD</span>
@@ -724,8 +734,15 @@ print_manage_menu( 'manage_git_store_page.php' );
 			<span class="label label-danger"><?php echo $t_counts['missing'] + $t_counts['unknown']; ?> not at HEAD or commit not found</span>
 			<span class="label label-info"><?php echo $t_counts['draft']; ?> drafts</span>
 			<a href="<?php echo git_store_page_url( array( 'view' => 'documents', 'show' => $f_show === 'unregistered' ? '' : 'unregistered' ) ); ?>">
-				<span class="label label-default"><?php echo count( $t_unregistered ); ?> files at HEAD not registered</span></a>
+				<span class="label label-default"><?php echo (int)$t_gap_count; ?> files at HEAD not registered</span></a>
+			<?php if( $t_covered ) { ?>
+				<span class="label label-info"><?php echo count( $t_covered ); ?> inside a registered repository record</span>
+			<?php } ?>
 		</p>
+		<?php if( $f_show === 'unregistered' && $t_repo['bare_exists']
+			&& repository_get_push_policy( $t_repo['bare'] ) === DWG_PUSH_POLICY_SOURCE ) {
+			print_dwg_source_repository_notice( 'register' );
+		} ?>
 		<?php if( $f_show === 'unregistered' ) {
 			# Which of them could be registered without anyone typing: a text
 			# blob whose frontmatter carries at least a title.  Everything
@@ -740,9 +757,14 @@ print_manage_menu( 'manage_git_store_page.php' );
 			<?php foreach( $t_unregistered as $t_path ) { ?>
 				<tr><td><a href="<?php echo git_store_page_url( array( 'file' => $t_path ) ); ?>"><?php echo htmlspecialchars( $t_path ); ?></a></td>
 					<td class="nowrap"><?php echo git_store_format_size( $t_tree[$t_path]['size'] ); ?></td>
-					<td class="nowrap"><?php echo isset( $t_auto[$t_path] )
-						? '<span class="label label-success">frontmatter</span>'
-						: '<span class="grey small">none</span>'; ?></td>
+					<td class="nowrap"><?php
+						if( isset( $t_covered[$t_path] ) ) {
+							echo '<span class="label label-info" title="' . string_attribute( lang_get( 'dwg_covered_by_help' ) ) . '">'
+								. sprintf( lang_get( 'dwg_covered_by' ), '#' . (int)$t_covered[$t_path]['dwg_id'] ) . '</span> ';
+						}
+						echo isset( $t_auto[$t_path] )
+							? '<span class="label label-success">frontmatter</span>'
+							: '<span class="grey small">none</span>'; ?></td>
 					<td class="nowrap"><?php if( $t_register_project > 0 ) { ?>
 						<a class="btn btn-xs btn-primary btn-white" href="<?php
 							echo htmlspecialchars( 'dwg_create_page.php?project_id=' . $t_register_project

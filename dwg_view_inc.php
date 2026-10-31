@@ -1136,6 +1136,9 @@ $t_block_icon = $t_collapse_block ? 'fa-chevron-down' : 'fa-chevron-up';
 
 	<div class="widget-body">
 		<div class="widget-main no-padding">
+<?php if( $t_primary_file !== null && file_dwg_in_source_repository( $f_dwg_id ) ): ?>
+			<div style="margin:8px;"><?php print_dwg_source_repository_notice( 'view' ); ?></div>
+<?php endif; ?>
 <?php if( $t_primary_uploaded ): ?>
 			<div class="alert alert-success">
 				<?php echo sprintf( lang_get( 'primary_document_upload_complete' ),

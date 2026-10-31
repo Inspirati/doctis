@@ -653,6 +653,43 @@ function git_store_register_document( array $p_repo, int $p_project_id, string $
 }
 
 /**
+ * Which of the given paths sit inside a tree that is itself registered as a
+ * source record (the whole repository, or one subtree of it).
+ *
+ * Such a file is not "unregistered" in any useful sense -- it is part of a
+ * registered repository record -- so the Git Store reports it as covered
+ * rather than inviting registration of every source file.  It can still be
+ * registered as a document of its own (a controlled document may live inside
+ * a source tree); this only stops it being counted as a gap.
+ *
+ * @param array $p_repo  Git store repository entry.
+ * @param array $p_tree  git_store_tree() output, for git_store_documents_list().
+ * @param array $p_paths Repository-relative paths.
+ * @return array path => array( 'dwg_id' => int, 'tree' => string ), for covered paths.
+ */
+function git_store_covered_paths( array $p_repo, array $p_tree, array $p_paths ): array {
+	$t_trees = array();
+	foreach( git_store_documents_list( $p_repo, $p_tree ) as $t_doc ) {
+		if( (int)( $t_doc['kind'] ?? DWG_KIND_DOCUMENT ) === DWG_KIND_SOURCE ) {
+			$t_trees[] = array( 'dwg_id' => (int)$t_doc['dwg_id'], 'tree' => trim( (string)$t_doc['git_path'], '/' ) );
+		}
+	}
+	$t_covered = array();
+	if( !$t_trees ) {
+		return $t_covered;
+	}
+	foreach( $p_paths as $t_path ) {
+		foreach( $t_trees as $t_tree ) {
+			if( $t_tree['tree'] === '' || strpos( $t_path, $t_tree['tree'] . '/' ) === 0 ) {
+				$t_covered[$t_path] = $t_tree;
+				break;
+			}
+		}
+	}
+	return $t_covered;
+}
+
+/**
  * Of the given paths, those whose content carries a frontmatter block with
  * enough in it to register a document unattended.
  *

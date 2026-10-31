@@ -5,6 +5,8 @@
 
 require_once( 'core.php' );
 require_api( 'access_api.php' );
+require_api( 'string_api.php' );
+require_api( 'print_dwg_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'dwg_api.php' );
 require_api( 'file_dwg_api.php' );
@@ -37,8 +39,14 @@ if( $t_meeting !== null ) {
 # helper_ensure_confirmed() re-posts all current params plus _confirmed=1 on
 # the second pass, so form_security_validate() is satisfied on both passes
 # (the token is included in the re-post and is not purged until after the sync).
+# A file in a source repository is told, at the moment it matters, that the
+# history around the version being promoted is not protected.
+$t_promote_message = lang_get( 'primary_document_sync_head_confirm' );
+if( $t_meeting === null && file_dwg_in_source_repository( $f_dwg_id ) ) {
+	$t_promote_message .= '<br /><br />' . string_display_line( dwg_source_repository_notice_text( 'promote' ) );
+}
 helper_ensure_confirmed(
-	lang_get( 'primary_document_sync_head_confirm' ),
+	$t_promote_message,
 	lang_get( 'primary_document_sync_head_button' )
 );
 

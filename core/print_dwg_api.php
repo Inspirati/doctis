@@ -2568,3 +2568,40 @@ function print_dwg_git_token_notice( string $p_repository = '', string $p_class 
 	echo '<p class="no-margin small">', lang_get( 'git_token_notice_where' ), '</p>';
 	echo '</div>';
 }
+
+/**
+ * Print the notice that a document lives in a source repository.
+ *
+ * Shown wherever someone is about to treat such a file as a controlled
+ * document -- its view page, registering it, promoting a Draft, approving
+ * it.  Informs rather than refuses: the approved versions are pinned and
+ * permanent under either push policy, but the source policy allows the
+ * history between them to be rewritten.  See file_dwg_in_source_repository()
+ * and doc/DOCTIS-GIT-USER-MANUAL.md.
+ *
+ * @param string $p_context 'view', 'register', 'promote' or 'approve' -- picks
+ *                          the sentence that fits what the user is doing.
+ * @return void
+ */
+function print_dwg_source_repository_notice( string $p_context = 'view' ): void {
+	echo '<div class="alert alert-warning">';
+	echo '<strong>' . lang_get( 'dwg_source_repo_notice_title' ) . '</strong> ';
+	echo lang_get( 'dwg_source_repo_notice_body' );
+	$t_extra = lang_get_defaulted( 'dwg_source_repo_notice_' . $p_context, '' );
+	if( $t_extra !== '' ) {
+		echo ' ' . $t_extra;
+	}
+	echo '</div>';
+}
+
+/**
+ * The same notice as plain text, for a confirmation message.
+ *
+ * @param string $p_context As print_dwg_source_repository_notice().
+ * @return string
+ */
+function dwg_source_repository_notice_text( string $p_context ): string {
+	$t_extra = lang_get_defaulted( 'dwg_source_repo_notice_' . $p_context, '' );
+	return lang_get( 'dwg_source_repo_notice_title' ) . ' '
+		. lang_get( 'dwg_source_repo_notice_body' ) . ( $t_extra !== '' ? ' ' . $t_extra : '' );
+}

@@ -2633,6 +2633,34 @@ function file_dwg_primary_get_content( $p_dwg_id ) {
 }
 
 /**
+ * Whether a document is an ordinary file held in a repository under the
+ * SOURCE push policy -- registrable and approvable, but not under full
+ * document control.
+ *
+ * Its approved versions are as safe as anywhere: every promotion pins a
+ * refs/doctis/approved/* ref, and those refs are unpushable under both
+ * policies.  What the source policy gives up is the record AROUND them:
+ * force-push and branch deletion are allowed, so the commits between two
+ * approved versions can be rewritten, a Draft under review can be replaced,
+ * and the branch it follows can be deleted.  ISO 9001 clause 7.5.3 expects
+ * that record of changes, so the user is told rather than refused.
+ *
+ * Source records (a registered repository or subtree) are excluded: living
+ * in a source repository is their purpose, not a hazard.
+ *
+ * @param int $p_dwg_id
+ * @return bool
+ */
+function file_dwg_in_source_repository( int $p_dwg_id ): bool {
+	if( dwg_is_source( $p_dwg_id ) ) {
+		return false;
+	}
+	$t_repository_id = repository_id_for_project( (int)dwg_get_field( $p_dwg_id, 'project_id' ) );
+	return $t_repository_id > 0
+		&& repository_push_policy( $t_repository_id ) === DWG_PUSH_POLICY_SOURCE;
+}
+
+/**
  * Send a retrieved primary-document body to the client.
  *
  * Shared by every file_download.php route that serves a registered document,

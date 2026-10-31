@@ -45,6 +45,7 @@ require_once( 'core.php' );
 require_api( 'access_dwg_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'dwg_api.php' );
+require_api( 'file_dwg_api.php' );
 require_api( 'config_api.php' );
 require_api( 'constant_inc.php' );
 require_api( 'custom_field_api.php' );
@@ -148,6 +149,21 @@ layout_page_begin(null, true);
 	<div class="widget-body">
 	<div class="widget-main no-padding">
 
+<?php
+	# Approving a file held in a source repository: the approval is real, but
+	# the change history around it is not protected, so say so before the
+	# user commits to it.  "Approved" is whatever the project counts as
+	# approved for its document-control block.
+	$t_approved_statuses = array_map( 'intval',
+		(array)config_get( 'dwg_publish_approved_statuses', null, null, (int)$t_bug->project_id ) );
+	if( in_array( (int)$f_new_status, $t_approved_statuses, true )
+		&& file_dwg_primary_get( $f_bug_id ) !== null
+		&& file_dwg_in_source_repository( $f_bug_id ) ) {
+		echo '<div style="margin:8px;">';
+		print_dwg_source_repository_notice( 'approve' );
+		echo '</div>';
+	}
+?>
 	<div class="table-responsive">
 	<table class="table table-bordered table-condensed table-striped">
 		<thead>
