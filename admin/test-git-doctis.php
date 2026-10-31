@@ -1086,6 +1086,66 @@ if( $t_reg_repo === null ) {
 		(string)( $t_bin_row['filesize'] ?? '?' ) );
 }
 
+# ── Step 22: bulk registration takes only what needs no decision ───────────
+# "Register all with frontmatter" must leave alone a file inside a registered
+# repository record -- registering one makes it a document in a source
+# repository, a deliberate act -- and it reads only Markdown, because
+# frontmatter is a Markdown convention and reading every blob of a source
+# tree cost seconds per page view.
+echo "Step 22: bulk registration takes only what needs no decision\n";
+
+# 1. In the main test repository every file is covered by the root source
+#    record from step 14, so a frontmatter file there must not be taken.
+file_put_contents( $t_hookwt . '/covered-guide.md',
+	"---\ntitle: Covered Guide\n---\n\n# Covered\n" );
+exec( 'cd ' . escapeshellarg( $t_hookwt ) . ' && git add -A'
+	. ' && git -c user.name=T -c user.email=t@e.invalid commit -q -m "a covered file"'
+	. ' && git push -q origin ' . escapeshellarg( $t_reg_branch ) . ' 2>&1' );
+$t_cov_repo = git_store_repositories()[basename( $t_bare14, '.git' )] ?? null;
+if( $t_cov_repo !== null ) {
+	$t_cov_tree = git_store_tree( $t_cov_repo );
+	check( isset( git_store_covered_paths( $t_cov_repo, $t_cov_tree, array( 'covered-guide.md' ) )['covered-guide.md'] ),
+		'a file under a registered repository record is reported as covered' );
+	$t_cov_bulk = git_store_register_frontmatter_all( $t_cov_repo, $t_parent, 1 );
+	check( $t_cov_bulk['registered'] === 0, 'bulk registration leaves covered files alone',
+		(string)$t_cov_bulk['registered'] );
+}
+
+# 2. A repository with no source record: Markdown with a title is taken, a
+#    text file carrying the same block is not, nor is Markdown without one.
+$t_bulk_proj = project_create( 'GitTest Bulk ' . getmypid(), 'test', 10 );
+$t_cleanup['projects'][] = $t_bulk_proj;
+$t_bulk_rid = repository_id_for_project_or_create( $t_bulk_proj );
+repository_ensure_on_disk( $t_bulk_rid );
+$t_cleanup['repo_ids'][] = $t_bulk_rid;
+$t_cleanup['disk'][] = repository_bare_path( $t_bulk_rid );
+$t_cleanup['disk'][] = repository_worktree_path( $t_bulk_rid );
+$t_bulk_wt = sys_get_temp_dir() . '/doctis-bulktest-' . getmypid();
+$t_cleanup['tmp'][] = $t_bulk_wt;
+exec( 'git clone -q ' . escapeshellarg( repository_bare_path( $t_bulk_rid ) ) . ' '
+	. escapeshellarg( $t_bulk_wt ) . ' 2>&1' );
+file_put_contents( $t_bulk_wt . '/with-title.md', "---\ntitle: Has A Title\n---\n\n# Body\n" );
+file_put_contents( $t_bulk_wt . '/not-markdown.txt', "---\ntitle: Looks Like Frontmatter\n---\n" );
+file_put_contents( $t_bulk_wt . '/no-block.md', "# Just a heading\n" );
+exec( 'cd ' . escapeshellarg( $t_bulk_wt ) . ' && git add -A'
+	. ' && git -c user.name=T -c user.email=t@e.invalid commit -q -m "three files"'
+	. ' && git push -q origin HEAD 2>&1' );
+$t_bulk_repo = git_store_repositories()[repository_basename( $t_bulk_rid )] ?? null;
+if( $t_bulk_repo === null ) {
+	fail( 'the fresh repository is visible to the Git Store' );
+} else {
+	$t_bulk_ready = git_store_frontmatter_ready( $t_bulk_repo,
+		array( 'with-title.md', 'not-markdown.txt', 'no-block.md' ) );
+	check( array_keys( $t_bulk_ready ) === array( 'with-title.md' ),
+		'only Markdown with a title qualifies', implode( ',', array_keys( $t_bulk_ready ) ) );
+	$t_bulk = git_store_register_frontmatter_all( $t_bulk_repo, $t_bulk_proj, 1 );
+	check( $t_bulk['registered'] === 1 && !$t_bulk['failed'],
+		'bulk registration registers exactly that one', (string)$t_bulk['registered'] );
+	$t_bulk_docs = git_store_documents( $t_bulk_repo, git_store_tree( $t_bulk_repo ) );
+	check( isset( $t_bulk_docs['with-title.md'] ) && !isset( $t_bulk_docs['not-markdown.txt'] ),
+		'and the others stay unregistered' );
+}
+
 } catch( Throwable $e ) {
 	fail( 'unexpected exception', get_class( $e ) . ': ' . $e->getMessage()
 		. ' @ ' . $e->getFile() . ':' . $e->getLine() );

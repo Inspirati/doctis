@@ -202,6 +202,10 @@ changed it even after HEAD has moved past it, that only a text file with a
 frontmatter title qualifies for bulk registration while a binary never does,
 and that a binary registers one at a time with its real size.
 
+Step 22 (2026-11-01) covers what bulk registration takes: never a file under a
+registered repository record, and only Markdown -- a text file carrying the
+same block, and Markdown without one, stay unregistered.
+
 Bootstraps the full core, creates and tears down its own
 projects/documents/repositories.
 

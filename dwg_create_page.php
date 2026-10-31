@@ -1074,6 +1074,12 @@ include( __DIR__ . '/dwg_create_topics_inc.php' ); ?>
 							name="primary_document_file"
 							class="input-sm" />
 						<span class="help-block"><?php echo lang_get( 'primary_document_file_optional' ) ?></span>
+<?php		# The other way in: a file already pushed from a clone needs no upload.
+			if( repository_user_can_clone( (int)$t_project_id ) ) { ?>
+						<span class="help-block"><?php echo sprintf( lang_get( 'dwg_repo_files_create_hint' ),
+							'<a href="dwg_repo_files_page.php?project_id=' . (int)$t_project_id . '">'
+							. lang_get( 'dwg_repo_files_link' ) . '</a>' ) ?></span>
+<?php		} ?>
 					</td>
 				</tr>
 <?php	} ?>

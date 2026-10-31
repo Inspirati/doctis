@@ -74,19 +74,9 @@ if( $_SERVER['REQUEST_METHOD'] === 'POST' && gpc_get_string( 'action', '' ) === 
 		access_ensure_project_level(
 			config_get( 'create_dwg_threshold', null, null, $t_bulk_project ), $t_bulk_project );
 		set_time_limit( 0 );
-		$t_bulk_tree = git_store_tree( $t_repo );
-		$t_bulk_docs = git_store_documents( $t_repo, $t_bulk_tree );
-		$t_bulk_paths = array_diff( array_keys( $t_bulk_tree ), array_keys( $t_bulk_docs ) );
-		foreach( git_store_frontmatter_ready( $t_repo, $t_bulk_paths ) as $t_bulk_path => $t_bulk_front ) {
-			try {
-				git_store_register_document( $t_repo, $t_bulk_project, $t_bulk_path,
-					$t_bulk_front, auth_get_current_user_id() );
-				$t_done++;
-			} catch( Throwable $e ) {
-				# One bad file must not abandon the rest of the batch.
-				$t_failed[$t_bulk_path] = $e->getMessage();
-			}
-		}
+		$t_bulk = git_store_register_frontmatter_all( $t_repo, $t_bulk_project, auth_get_current_user_id() );
+		$t_done = $t_bulk['registered'];
+		$t_failed = $t_bulk['failed'];
 	}
 	form_security_purge( 'manage_git_store_register' );
 	print_header_redirect( 'manage_git_store_page.php?repo=' . urlencode( $f_repo )
@@ -748,7 +738,8 @@ print_manage_menu( 'manage_git_store_page.php' );
 			# blob whose frontmatter carries at least a title.  Everything
 			# else is registered one at a time through the create form, which
 			# is why the per-file Register link is on every row.
-			$t_auto = git_store_frontmatter_ready( $t_repo, $t_unregistered );
+			$t_auto = git_store_frontmatter_ready( $t_repo,
+				array_diff( $t_unregistered, array_keys( $t_covered ) ) );
 		?>
 		<div class="table-responsive">
 		<table class="table table-condensed table-striped table-hover">

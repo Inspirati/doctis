@@ -432,15 +432,15 @@ in: document, frozen document, source line or source release.
 A file you add in a clone and push is in the repository, but it is not a
 Doctis document until somebody registers it.
 
-> **Administrators only, for now.** This is done from Manage → **Git
-> Store**, which only administrators can open. If you are a developer and
-> have pushed files that should become documents, ask an administrator to
-> register them.
+**Repository Files**, in the sidebar, lists the files in the current project's
+repository that are not yet documents. You see it if you can clone the
+repository and create documents in the project, which by default means
+developer access. It is also linked from the Create Document form, under the
+file upload field.
 
-**To register one file:** Manage → **Git Store** → select the repository →
-**Documents** → *"N files at HEAD not registered"*. Each file has a
-**Register** button. It opens the normal Create Document form with the
-repository path already filled in; there is nothing to upload, because the
+Each file shows its size, when it last changed and by whom, and a
+**Register** button. Register opens the normal Create Document form with the
+repository path already filled in. There is nothing to upload, because the
 content is already there.
 
 The document is pinned to the commit that **last changed that file**, not to
@@ -464,14 +464,20 @@ author: Engineering Lead
 ---
 ```
 
-supplies the title, number (from `doc_id`), revision, status and author.
-Where several files carry one, **Register all N with frontmatter** creates them
-all in one action. Files without frontmatter are registered one at a time,
-because only a person can say what they are called.
+supplies the title, number (from `doc_id`), revision, status and author. Such
+files are marked *frontmatter* in the list. Where several carry one,
+**Register all N with frontmatter** creates them all in one action. Files
+without frontmatter are registered one at a time, because only a person can
+say what they are called.
 
-**Files inside a registered repository record** are labelled *inside #N* and
-are not counted as unregistered, because they are already part of that record.
-They can still be registered as documents of their own, with the caveat in §9.
+**Files inside a registered repository record** (§7) are not counted as
+unregistered, because they are already part of that record. They are hidden
+by default; select the *inside a registered repository record* count to list
+them. They can still be registered as documents of their own, one at a time,
+with the caveat in §9. **Register all** never includes them.
+
+Administrators can do the same from Manage → **Git Store**, for any
+repository on the server.
 
 ---
 
@@ -598,9 +604,10 @@ Access is checked against the project that **owns** the repository.
 
 ### 11.3 Git Store
 
-Manage → **Git Store** is the repository-centric view: files, every
-registered document and its state, commits, references and the
-approved-version pins. It is also where files are registered (§8).
+Manage → **Git Store** is the repository-centric view of the whole server:
+files, every registered document and its state, commits, references and the
+approved-version pins. It stays administrator-only; developers register
+files from **Repository Files** instead (§8).
 
 A repository whose owner project has been deleted is shown as **unowned**.
 Deleting a project does not delete its repository, because the repository is
@@ -631,6 +638,6 @@ its working copy and its LFS objects permanently.
 | Register a whole repository as a document | Create a document with **no file**, then **Register Source Release** (§7.3) |
 | Accept a pushed change to a registered repository | **Promote Draft** on its document (§7.4) |
 | Give each version its own document | **Cut Release** on the tracking line (§7.4) |
-| Register a file I pushed | Ask an administrator: Git Store → **Register** (§8) |
+| Register a file I pushed | **Repository Files** in the sidebar → **Register** (§8) |
 | Make a document in a source repository official | **Move** it to a document-control project, then close out the source copy (§9) |
 | Store large binaries | `git lfs track` in your clone (§10) |

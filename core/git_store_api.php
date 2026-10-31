@@ -653,6 +653,40 @@ function git_store_register_document( array $p_repo, int $p_project_id, string $
 }
 
 /**
+ * Register every file that needs no typing: unregistered, outside any
+ * registered repository record, and Markdown whose frontmatter has a title.
+ *
+ * Files inside a registered repository or subtree are deliberately left out.
+ * They are part of that record already, and registering one makes it a
+ * document held in a source repository, which is not fully controlled -- a
+ * deliberate act, done one at a time through the create form with its
+ * notice, never swept up in a batch.
+ *
+ * @param array   $p_repo       Git store repository entry.
+ * @param integer $p_project_id Project the new documents belong to.
+ * @param integer $p_user_id    Acting user.
+ * @return array{registered: int, failed: array} failed maps path => message.
+ */
+function git_store_register_frontmatter_all( array $p_repo, int $p_project_id, int $p_user_id ): array {
+	$t_tree  = git_store_tree( $p_repo );
+	$t_docs  = git_store_documents( $p_repo, $t_tree );
+	$t_paths = array_diff( array_keys( $t_tree ), array_keys( $t_docs ) );
+	$t_paths = array_diff( $t_paths, array_keys( git_store_covered_paths( $p_repo, $t_tree, $t_paths ) ) );
+
+	$t_result = array( 'registered' => 0, 'failed' => array() );
+	foreach( git_store_frontmatter_ready( $p_repo, $t_paths ) as $t_path => $t_front ) {
+		try {
+			git_store_register_document( $p_repo, $p_project_id, $t_path, $t_front, $p_user_id );
+			$t_result['registered']++;
+		} catch( Throwable $e ) {
+			# One bad file must not abandon the rest of the batch.
+			$t_result['failed'][$t_path] = $e->getMessage();
+		}
+	}
+	return $t_result;
+}
+
+/**
  * Which of the given paths sit inside a tree that is itself registered as a
  * source record (the whole repository, or one subtree of it).
  *
@@ -707,6 +741,13 @@ function git_store_frontmatter_ready( array $p_repo, array $p_paths ): array {
 	require_api( 'dwg_frontmatter_api.php' );
 	$t_ready = array();
 	foreach( $p_paths as $t_path ) {
+		# Frontmatter is a Markdown convention, so nothing else is read.  Each
+		# blob costs two git processes: scanning every file of a source tree
+		# took 2.9s for gimbal-source-r44's 864 files, against 0.14s for its
+		# 44 Markdown files.
+		if( !preg_match( '/\.(md|markdown)$/i', $t_path ) ) {
+			continue;
+		}
 		# Only a text blob can carry a block; 4 KiB is far beyond any real
 		# one, and keeps a large binary from being read at all.
 		$t_blob = git_store_blob( $p_repo, 'HEAD:' . $t_path, 4096 );

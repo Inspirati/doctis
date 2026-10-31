@@ -363,8 +363,8 @@ never a Draft.
 
 ### Registering a file you pushed from a clone
 
-Files added through an external git clone are registered from Manage → **Git
-Store**. How, and what to watch for, is in
+Files added through an external git clone are registered from **Repository
+Files** in the sidebar. How, and what to watch for, is in
 [DOCTIS-GIT-USER-MANUAL.md](DOCTIS-GIT-USER-MANUAL.md) §8.
 
 ### Moving a document
