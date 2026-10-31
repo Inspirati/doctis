@@ -822,7 +822,17 @@ $s_updating_bug_simple_title = 'Updating Issue Information';
 
 # dwg_update_page.php
 $s_back_to_dwg_link = 'Back To Document';
-$s_updating_dwg_advanced_title = 'Updating Document Information (WIP)';
+$s_updating_dwg_advanced_title = 'Edit Document';
+$s_dwg_edit_section_document   = 'Document';
+$s_dwg_edit_section_record     = 'Record';
+$s_dwg_edit_section_people     = 'People';
+$s_dwg_edit_section_text       = 'Description';
+$s_dwg_edit_section_custom     = 'Custom Fields';
+$s_dwg_reference_managed       = 'Set by Doctis: the commit of the version on record. It changes when a new version is registered or promoted.';
+$s_dwg_owner_edit_hint         = 'The owner is the person responsible for this document. The change is recorded in its history and the new owner is notified.';
+$s_dwg_edit_note_label         = 'Note';
+$s_dwg_edit_note_hint          = 'Optional. Explain the change; the note is added to the document with it.';
+$s_dwg_update_button           = 'Update Document';
 $s_document_summary = 'Document Summary';
 
 # bug_view*

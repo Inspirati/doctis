@@ -494,7 +494,7 @@ republishes.
 | Data object | [core/dwg_api.php](../../core/dwg_api.php): `$owner_id`, `create()`, `update()`, `dwg_set_field()`, `dwg_copy()`, `dwg_cache_columns_data()`, `dwg_get_status_for_assign()` |
 | Access | [core/access_dwg_api.php](../../core/access_dwg_api.php): `access_dwg_user_holds_licenses()`, `_can_be_owner()`, `_can_set_owner()`, `_can_claim_owner()`, `_can_release_owner()`, `_can_claim_handler()` |
 | Claim / release | [dwg_claim.php](../../dwg_claim.php) (new) |
-| Pages | [dwg_view_inc.php](../../dwg_view_inc.php), [DwgViewPageCommand.php](../../core/commands/DwgViewPageCommand.php), [dwg_update_page.php](../../dwg_update_page.php), [dwg_update.php](../../dwg_update.php), [dwg_create_page.php](../../dwg_create_page.php), [dwg_edit_page.php](../../dwg_edit_page.php), [dwg_create.php](../../dwg_create.php) |
+| Pages | [dwg_view_inc.php](../../dwg_view_inc.php), [DwgViewPageCommand.php](../../core/commands/DwgViewPageCommand.php), [dwg_update_page.php](../../dwg_update_page.php), [dwg_update.php](../../dwg_update.php), [dwg_create_page.php](../../dwg_create_page.php), [dwg_create.php](../../dwg_create.php) (`dwg_edit_page.php`, a broken copy of the create page, was removed 2026-11-01) |
 | Bulk | [core/dwg_group_action_api.php](../../core/dwg_group_action_api.php), [dwg_actiongroup_page.php](../../dwg_actiongroup_page.php), [dwg_actiongroup.php](../../dwg_actiongroup.php) |
 | List / filter | [core/columns_dwg_api.php](../../core/columns_dwg_api.php), [core/filter_constants_inc.php](../../core/filter_constants_inc.php), [core/filter_dwg_api.php](../../core/filter_dwg_api.php), [core/filter_dwg_form_api.php](../../core/filter_dwg_form_api.php), [core/classes/DwgFilterQuery.class.php](../../core/classes/DwgFilterQuery.class.php) |
 | My View | [my_view_dwg_inc.php](../../my_view_dwg_inc.php), [my_view_cnf_inc.php](../../my_view_cnf_inc.php), [my_view_dwg_page.php](../../my_view_dwg_page.php) |
@@ -577,6 +577,13 @@ sample accounts):
 - **Update page**: Owner carries the `[Edit]` link and picker (eligible users
   only, current owner preselected); Created by is plain text and no
   `creator_id` input is emitted at all.
+  *Since the 2026-11-01 rewrite (Edit Document):* `[Edit]` opens the picker
+  in place (`js/dwg_update.js`) instead of reloading the page, which used to
+  discard anything typed elsewhere on the form. Until it is opened the picker
+  is disabled, so it is not posted and cannot change the owner by accident.
+  Without scripting the link still reloads with the picker open. The
+  ownership checks in `dwg_update.php` are unchanged; a forced owner change by
+  a developer was confirmed refused (403).
 - **SOAP** `mc_dwg_get` returned `creator=manager, owner=frodo,
   handler=updater`; the WSDL publishes the `owner` element. The WSDL cache was
   cleared first.

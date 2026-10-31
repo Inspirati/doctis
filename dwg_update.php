@@ -61,26 +61,6 @@ require_api( 'lang_api.php' );
 require_api( 'print_dwg_api.php' );
 require_api( 'relationship_dwg_api.php' );
 
-/**
- * Retrieves a version from form data and ensures it is valid.
- *
- * @param DwgData $p_bug  Reference document
- * @param string $p_field Field name (used for GPC var and DwgData property)
- *
- * @return string|null
- */
-function get_valid_version( DwgData $p_bug, $p_field ) {
-	$t_reference_version = $p_bug->$p_field;
-	$t_version = gpc_get_string( $p_field, $t_reference_version );
-	if( !is_blank( $t_version )
-		&& $t_version != $t_reference_version
-		&& version_get_id( $t_version, $p_bug->project_id ) === false
-	) {
-		error_parameters( $t_version );
-		trigger_error( ERROR_VERSION_NOT_FOUND, ERROR );
-	}
-	return $t_version;
-}
 
 form_security_validate( 'dwg_update' );
 
@@ -96,25 +76,67 @@ if( helper_get_current_project() != $t_existing_bug->project_id ) {
 
 $t_updated_bug = clone $t_existing_bug;
 
-$t_updated_bug->additional_information = gpc_get_string( 'additional_information', $t_existing_bug->additional_information );
-$t_updated_bug->build = gpc_get_string( 'build', $t_existing_bug->build );
+# Every field defaults to its current value, so a form that does not offer a
+# field (hidden by $g_dwg_update_page_fields, or a narrower form such as
+# Change Status) leaves it exactly as it was.
+
+# The document's own record.
+#
+# Title and summary are one field to a user: the form posts dwg_title, and an
+# older form or caller posting "summary" is still honoured.  DwgData::update()
+# keeps {dwg}.summary and {documents}.title together.
+$t_title = gpc_get_string( 'dwg_title', gpc_get_string( 'summary', $t_existing_bug->title ) );
+$t_updated_bug->title   = trim( $t_title );
+$t_updated_bug->summary = mb_substr( trim( $t_title ), 0, 255 );
+
+foreach( array(
+	'author'         => 'dwg_author',
+	'publisher'      => 'dwg_publisher',
+	'number'         => 'dwg_number',
+	'edition'        => 'dwg_edition',
+	'revision'       => 'dwg_revision',
+	'version'        => 'dwg_version',
+	'discipline'     => 'dwg_discipline',
+	'classification' => 'dwg_classification',
+	'reference'      => 'dwg_reference',
+	'link_url'       => 'dwg_link_url',
+) as $t_property => $t_input ) {
+	$t_updated_bug->$t_property = trim( gpc_get_string( $t_input, (string)$t_existing_bug->$t_property ) );
+}
+# Doctis owns the reference of a document with a registered file -- it is the
+# on-record commit SHA -- and DwgData::update() will not write it then.
+
+# The document's own dates: blank means none; anything else must parse.
+foreach( array( 'revision_date' => 'dwg_revision_date', 'release_date' => 'dwg_release_date' ) as $t_property => $t_input ) {
+	$t_value = gpc_get_string( $t_input, null );
+	if( $t_value === null ) {
+		continue;
+	}
+	$t_value = trim( $t_value );
+	if( $t_value === '' ) {
+		$t_updated_bug->$t_property = date_get_null();
+	} else {
+		$t_time = strtotime( $t_value );
+		if( $t_time === false ) {
+			error_parameters( lang_get( 'dwg_' . $t_property ) );
+			trigger_error( ERROR_INVALID_DATE_FORMAT, ERROR );
+		}
+		$t_updated_bug->$t_property = $t_time;
+	}
+}
+
+# The tracking record.
 $t_updated_bug->category_id = gpc_get_int( 'category_id', $t_existing_bug->category_id );
-$t_updated_bug->description = gpc_get_string( 'description', $t_existing_bug->description );
+$t_updated_bug->priority    = gpc_get_int( 'priority', $t_existing_bug->priority );
+$t_updated_bug->status      = gpc_get_int( 'status', $t_existing_bug->status );
+$t_updated_bug->handler_id  = gpc_get_int( 'handler_id', $t_existing_bug->handler_id );
+$t_updated_bug->owner_id    = gpc_get_int( 'owner_id', $t_existing_bug->owner_id );
+$t_updated_bug->duplicate_id = gpc_get_int( 'duplicate_id', $t_existing_bug->duplicate_id );
 $t_due_date = gpc_get_string( 'due_date', null );
 if( $t_due_date !== null ) {
 	$t_updated_bug->due_date = date_strtotime( $t_due_date );
 }
-$t_updated_bug->duplicate_id = gpc_get_int( 'duplicate_id', 0 );
-$t_updated_bug->eta = gpc_get_int( 'eta', $t_existing_bug->eta );
-$t_updated_bug->handler_id = gpc_get_int( 'handler_id', $t_existing_bug->handler_id );
-$t_updated_bug->owner_id = gpc_get_int( 'owner_id', $t_existing_bug->owner_id );
 $t_updated_bug->last_updated = gpc_get_string( 'last_updated' );
-$t_updated_bug->link_url = gpc_get_string( 'dwg_link_url', $t_existing_bug->link_url );
-$t_updated_bug->os = gpc_get_string( 'os', $t_existing_bug->os );
-$t_updated_bug->os_build = gpc_get_string( 'os_build', $t_existing_bug->os_build );
-$t_updated_bug->platform = gpc_get_string( 'platform', $t_existing_bug->platform );
-$t_updated_bug->priority = gpc_get_int( 'priority', $t_existing_bug->priority );
-$t_updated_bug->projection = gpc_get_int( 'projection', $t_existing_bug->projection );
 
 # The creator is read-only: whoever registered the document is always that
 # person, whether or not they are still a current user, exactly as a MantisBT
@@ -124,16 +146,14 @@ $t_updated_bug->projection = gpc_get_int( 'projection', $t_existing_bug->project
 # See doc/dwg/OWNERSHIP.md §3.3.
 $t_updated_bug->creator_id = $t_existing_bug->creator_id;
 
-$t_updated_bug->reproducibility = gpc_get_int( 'reproducibility', $t_existing_bug->reproducibility );
-$t_updated_bug->resolution = gpc_get_int( 'resolution', $t_existing_bug->resolution );
-$t_updated_bug->severity = gpc_get_int( 'severity', $t_existing_bug->severity );
-$t_updated_bug->status = gpc_get_int( 'status', $t_existing_bug->status );
-// $t_updated_bug->steps_to_reproduce = gpc_get_string( 'steps_to_reproduce', $t_existing_bug->steps_to_reproduce );
-$t_updated_bug->summary = gpc_get_string( 'summary', $t_existing_bug->summary );
+# Text.
+$t_updated_bug->description            = gpc_get_string( 'description', $t_existing_bug->description );
+$t_updated_bug->additional_information = gpc_get_string( 'additional_information', $t_existing_bug->additional_information );
 
-$t_updated_bug->fixed_in_version = get_valid_version( $t_existing_bug, 'fixed_in_version' );
-$t_updated_bug->target_version = get_valid_version( $t_existing_bug, 'target_version' );
-$t_updated_bug->version = get_valid_version( $t_existing_bug, 'version' );
+# Severity, reproducibility, resolution, projection, ETA, OS, platform, build
+# and the fix and target versions are MantisBT issue fields.  A document has
+# no column for any of them, so they are no longer read: posting them changed
+# nothing but could still trip their validation.
 
 $t_updated_bug->view_state = gpc_get_int( 'view_state', $t_existing_bug->view_state );
 

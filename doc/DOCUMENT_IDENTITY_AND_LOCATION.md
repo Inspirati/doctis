@@ -30,14 +30,13 @@ The database has ordinary, **non-unique** indexes on `documents.reference`
 and `documents.number`, and allows empty values. It already has
 `documents.link_url` (2048 characters), but also a duplicate `dwg.link_url`.
 Creation writes the same value to both. The document create and clone forms
-now expose Link URL. The normal update form and SOAP update persist URL changes
-to both copies, but other `documents` metadata is not updated through those
-paths. Reference rendering ignores
+now expose Link URL. Since 2026-11-01 Edit Document and the SOAP/REST update
+save every `documents` field, keeping both copies of the URL and the
+classification in step; the reference is editable only while a document has
+no registered file. Reference rendering ignores
 `link_url` and guesses the destination from the Reference text (SHA, URL, or
 an old external-system pattern). The URL is displayed separately on the
-document detail page; this remains a limited location model. The manual's
-statement that external references can be edited later is not supported by
-the current normal update path.
+document detail page; this remains a limited location model. An external reference can be edited later on Edit Document.
 
 ## What the HCRQMS data shows
 
@@ -144,6 +143,6 @@ and [per-commit tree diffs](https://git-scm.com/docs/git-diff-tree).
 Source pointers: `admin/schema.php` (documents/dwg columns),
 `core/dwg_api.php` (creation), `core/file_dwg_api.php` (SHA writes),
 `core/string_api.php` (Reference link heuristics), `dwg_create_page.php`,
-`dwg_edit_page.php`, `dwg_update.php`, `api/soap/mc_dwg_api.php`, and
+`dwg_update_page.php`, `dwg_update.php`, `api/soap/mc_dwg_api.php`, and
 `admin/import-git-repo.php`. See also `doc/api/REST-AND-SOAP-API.md` for
-the current update limitation.
+what the API can update.

@@ -3821,35 +3821,56 @@ $g_bug_update_page_fields = array(
 	'view_state',
 );
 
+/**
+ * The fields offered on Edit Document (dwg_update_page.php).  The title is
+ * always offered, because a document must have one; everything else can be
+ * left out of this list to hide it.
+ *
+ * The document's record: number, revision, edition, version, author,
+ * publisher, discipline, classification, revision_date, release_date,
+ * reference (editable only while the document has no registered file; after
+ * that Doctis sets it to the on-record commit) and link_url.
+ *
+ * Its tracking: project (shown, not changed here -- use Move), category_id,
+ * status, priority, view_state, due_date, date_submitted and last_updated
+ * (both shown only).  People: owner (behind its own [Edit]), handler and
+ * creator (shown only).  Text: description and additional_info.
+ *
+ * MantisBT's issue fields -- severity, reproducibility, resolution,
+ * projection, eta, os, os_build, platform, product_build, product_version,
+ * target_version, fixed_in_version and steps_to_reproduce -- have no column
+ * for a document and are not offered whatever this list says.
+ *
+ * @global array $g_dwg_update_page_fields
+ */
 $g_dwg_update_page_fields = array(
-	'additional_info',
-	'owner',
-	'category_id',
-	'date_submitted',
-	'description',
-	'due_date',
-	'eta',
-	'fixed_in_version',
-	'handler',
-	'id',
-	'last_updated',
-	'os',
-	'os_build',
-	'platform',
-	'priority',
-	'product_build',
-	'product_version',
-	'project',
-	'projection',
-	'reporter',
-	'reproducibility',
-	'resolution',
-	'severity',
-	'status',
-	'steps_to_reproduce',
 	'summary',
-	'target_version',
+	'number',
+	'revision',
+	'edition',
+	'version',
+	'author',
+	'publisher',
+	'discipline',
+	'classification',
+	'revision_date',
+	'release_date',
+	'reference',
+	'link_url',
+	'project',
+	'category_id',
+	'status',
+	'priority',
 	'view_state',
+	'due_date',
+	'date_submitted',
+	'last_updated',
+	'owner',
+	'handler',
+	'creator',
+	'description',
+	'additional_info',
+	'id',
 );
 
 ##########################

@@ -1078,6 +1078,23 @@ function mc_dwg_update( $p_username, $p_password, $p_issue_id, stdClass $p_issue
 		$t_bug_data->link_url = $p_issue['link_url'];
 	}
 
+	# The document's own record.  The DwgData type has always declared these,
+	# and mc_dwg_get returns them, but they were ignored on the way in because
+	# DwgData::update() did not save them; it does since 2026-11-01.  Each is
+	# optional, so a caller changes only what it sends.  The reference is
+	# taken, but update() keeps Doctis's own -- the on-record commit -- for a
+	# document with a registered file.  A title sent without a summary
+	# renames the document; update() keeps the two together.
+	foreach( array( 'title', 'author', 'publisher', 'number', 'edition', 'revision',
+		'reference', 'classification', 'revision_date', 'release_date' ) as $t_field ) {
+		if( isset( $p_issue[$t_field] ) ) {
+			$t_bug_data->$t_field = $p_issue[$t_field];
+		}
+	}
+	if( isset( $p_issue['title'] ) && !isset( $p_issue['summary'] ) ) {
+		$t_bug_data->summary = mb_substr( (string)$p_issue['title'], 0, 255 );
+	}
+
 	# fields which might not be set
 	if( isset( $p_issue['steps_to_reproduce'] ) ) {
 		$t_bug_data->steps_to_reproduce = $p_issue['steps_to_reproduce'];

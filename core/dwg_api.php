@@ -673,8 +673,47 @@ $this->edition = isset($this->edition) ? $this->edition : '';
 		# timestamps which could confuse the history log. They shouldn't get updated
 		# like this anyway; if you really need to change them use dwg_set_field().
 		db_param_push();
-////////////////////////////////////////////////////////////////////////////////
-		$t_query = 'UPDATE {dwg} SET 
+		# A document's record is split across two tables: {dwg} holds the
+		# tracking fields, {documents} the bibliographic ones.  Until 2026-11-01
+		# this wrote eleven {dwg} columns and nothing in {documents} but the link,
+		# so title, author, publisher, number, edition, revision, classification,
+		# discipline, both dates, the view state and the summary could be shown
+		# on a form, posted, and silently not saved -- while the history below
+		# still logged some of them as changed.  Every caller (dwg_update.php,
+		# mc_dwg_update) starts from dwg_get() and changes what it was given, so
+		# writing the whole record keeps everything it did not touch.
+
+		# Title and summary are one thing to a user; {dwg}.summary feeds lists,
+		# filters and e-mail, {documents}.title the document block.  A caller
+		# that changes only one of them gets both changed, as create() does.
+		if( $this->title !== $t_old_data->title && $this->summary === $t_old_data->summary ) {
+			$this->summary = mb_substr( (string)$this->title, 0, 255 );
+		} else if( $this->summary !== $t_old_data->summary && $this->title === $t_old_data->title ) {
+			$this->title = $this->summary;
+		}
+
+		# A document with no name cannot be found in a list or cited; a title
+		# blanked on the form is refused rather than saved.
+		if( is_blank( $this->title ) ) {
+			throw new ClientException( 'Document title cannot be empty',
+				ERROR_EMPTY_FIELD, array( lang_get( 'dwg_title' ) ) );
+		}
+
+		# Dates arrive as timestamps from the web form and as text from the
+		# API; an empty one is "no date", which is stored as 1.
+		foreach( array( 'revision_date', 'release_date' ) as $t_date_field ) {
+			$t_value = $this->$t_date_field;
+			if( $t_value === null || $t_value === '' || $t_value === 0 ) {
+				$this->$t_date_field = date_get_null();
+			} else if( !is_numeric( $t_value ) ) {
+				$t_time = strtotime( (string)$t_value );
+				$this->$t_date_field = $t_time === false ? $t_old_data->$t_date_field : $t_time;
+			} else {
+				$this->$t_date_field = (int)$t_value;
+			}
+		}
+
+		$t_query = 'UPDATE {dwg} SET
 			project_id=' . db_param() . ',
 			creator_id=' . db_param() . ',
 			owner_id=' . db_param() . ',
@@ -683,13 +722,15 @@ $this->edition = isset($this->edition) ? $this->edition : '';
 			status=' . db_param() . ',
 			priority=' . db_param() . ',
 			category_id=' . db_param() . ',
+			view_state=' . db_param() . ',
+			summary=' . db_param() . ',
 			due_date=' . db_param() . ',
 			version=' . db_param() . ',
+			discipline=' . db_param() . ',
+			classification=' . db_param() . ',
 			link_url=' . db_param() . '
-			';
-		$t_query .= 'WHERE id=' . db_param();
-
-		$t_fields = array(
+			WHERE id=' . db_param();
+		db_query( $t_query, array(
 			$this->project_id,
 			$this->creator_id,
 			$this->owner_id,
@@ -698,20 +739,56 @@ $this->edition = isset($this->edition) ? $this->edition : '';
 			$this->status,
 			$this->priority,
 			$this->category_id,
+			$this->view_state,
+			$this->summary,
 			$this->due_date,
-			$this->version,
-			$this->link_url,
-			$this->id);
+			(string)$this->version,
+			(string)$this->discipline,
+			(string)$this->classification,
+			(string)$this->link_url,
+			$this->id ) );
 
-		// error_log("t_query: " . $t_query);
-
-		db_query( $t_query, $t_fields );
-		if( $t_old_data->link_url !== $this->link_url ) {
-			db_param_push();
-			$t_query = 'UPDATE {documents} SET link_url=' . db_param() . ' WHERE id=' . db_param();
-			db_query( $t_query, array( $this->link_url, $this->document_id ) );
+		# Classification and link URL are stored in both tables (create()
+		# writes both; reads take {dwg}'s), so both copies move together.
+		#
+		# The reference is Doctis's once a file is registered: it is the
+		# on-record commit SHA, rewritten by every registration and promotion
+		# (file_dwg_set_document_reference()).  Only a document with no
+		# registered file has a reference a person may edit.
+		db_param_push();
+		$t_has_file = (int)db_result( db_query(
+			'SELECT COUNT(*) FROM {dwg_primary_file} WHERE dwg_id=' . db_param(), array( $this->id ) ) ) > 0;
+		if( $t_has_file ) {
+			$this->reference = $t_old_data->reference;
 		}
-////////////////////////////////////////////////////////////////////////////////
+
+		db_param_push();
+		db_query( 'UPDATE {documents} SET
+			title=' . db_param() . ',
+			author=' . db_param() . ',
+			publisher=' . db_param() . ',
+			reference=' . db_param() . ',
+			number=' . db_param() . ',
+			edition=' . db_param() . ',
+			revision=' . db_param() . ',
+			classification=' . db_param() . ',
+			link_url=' . db_param() . ',
+			revision_date=' . db_param() . ',
+			release_date=' . db_param() . '
+			WHERE id=' . db_param(), array(
+			(string)$this->title,
+			(string)$this->author,
+			(string)$this->publisher,
+			(string)$this->reference,
+			(string)$this->number,
+			(string)$this->edition,
+			(string)$this->revision,
+			(string)$this->classification,
+			(string)$this->link_url,
+			$this->revision_date,
+			$this->release_date,
+			$this->document_id ) );
+
 
 
 		dwg_clear_cache( $this->id );
@@ -722,27 +799,31 @@ $this->edition = isset($this->edition) ? $this->edition : '';
 		history_dwg_log_event_direct( $c_bug_id, 'owner_id', $t_old_data->owner_id, $this->owner_id );
 		history_dwg_log_event_direct( $c_bug_id, 'handler_id', $t_old_data->handler_id, $this->handler_id );
 		history_dwg_log_event_direct( $c_bug_id, 'priority', $t_old_data->priority, $this->priority );
-		history_dwg_log_event_direct( $c_bug_id, 'severity', $t_old_data->severity, $this->severity );
-		history_dwg_log_event_direct( $c_bug_id, 'reproducibility', $t_old_data->reproducibility, $this->reproducibility );
 		history_dwg_log_event_direct( $c_bug_id, 'status', $t_old_data->status, $this->status );
-		history_dwg_log_event_direct( $c_bug_id, 'resolution', $t_old_data->resolution, $this->resolution );
-		history_dwg_log_event_direct( $c_bug_id, 'projection', $t_old_data->projection, $this->projection );
 		history_dwg_log_event_direct( $c_bug_id, 'category', category_full_name( $t_old_data->category_id, false ), category_full_name( $this->category_id, false ) );
-		history_dwg_log_event_direct( $c_bug_id, 'eta', $t_old_data->eta, $this->eta );
-		history_dwg_log_event_direct( $c_bug_id, 'os', $t_old_data->os, $this->os );
-		history_dwg_log_event_direct( $c_bug_id, 'os_build', $t_old_data->os_build, $this->os_build );
-		history_dwg_log_event_direct( $c_bug_id, 'platform', $t_old_data->platform, $this->platform );
-		history_dwg_log_event_direct( $c_bug_id, 'version', $t_old_data->version, $this->version );
-		history_dwg_log_event_direct( $c_bug_id, 'link_url', $t_old_data->link_url, $this->link_url );
-		history_dwg_log_event_direct( $c_bug_id, 'build', $t_old_data->build, $this->build );
-		history_dwg_log_event_direct( $c_bug_id, 'fixed_in_version', $t_old_data->fixed_in_version, $this->fixed_in_version );
-		// if( $t_roadmap_updated ) {
-		// 	history_dwg_log_event_direct( $c_bug_id, 'target_version', $t_old_data->target_version, $this->target_version );
-		// }
 		history_dwg_log_event_direct( $c_bug_id, 'view_state', $t_old_data->view_state, $this->view_state );
-		history_dwg_log_event_direct( $c_bug_id, 'summary', $t_old_data->summary, $this->summary );
-		history_dwg_log_event_direct( $c_bug_id, 'sponsorship_total', $t_old_data->sponsorship_total, $this->sponsorship_total );
-		history_dwg_log_event_direct( $c_bug_id, 'sticky', $t_old_data->sticky, $this->sticky );
+		# Title and summary are kept together, so a rename is one entry, under
+		# Title.  The summary has its own entry only when it ends up different
+		# from the title, which is the only time it says something new.
+		if( $this->summary !== mb_substr( (string)$this->title, 0, 255 ) ) {
+			history_dwg_log_event_direct( $c_bug_id, 'summary', $t_old_data->summary, $this->summary );
+		}
+		# The document's own record.  Severity, reproducibility, resolution,
+		# projection, ETA, OS, platform, build and the fix/target versions are
+		# MantisBT issue fields with no column for a document, so they can
+		# never change and are not logged.
+		foreach( array( 'title', 'author', 'publisher', 'reference', 'number', 'edition',
+			'revision', 'version', 'discipline', 'classification', 'link_url' ) as $t_doc_field ) {
+			history_dwg_log_event_direct( $c_bug_id, $t_doc_field,
+				(string)$t_old_data->$t_doc_field, (string)$this->$t_doc_field );
+		}
+		foreach( array( 'revision_date', 'release_date' ) as $t_date_field ) {
+			# "No date" is stored as 1 (date_get_null()), but older rows hold 0;
+			# both mean none, and neither is 1970.
+			history_dwg_log_event_direct( $c_bug_id, $t_date_field,
+				( (int)$t_old_data->$t_date_field > 1 ) ? $t_old_data->$t_date_field : null,
+				( (int)$this->$t_date_field > 1 ) ? $this->$t_date_field : null );
+		}
 
 		history_dwg_log_event_direct( $c_bug_id, 'due_date',
 			( $t_old_data->due_date != date_get_null() ) ? $t_old_data->due_date : null,

@@ -110,7 +110,9 @@ $t_issue = array(
 	# DwgData::create() not persisting the column at all left every document
 	# created here with an empty name wherever that formatter is used.
 	'summary' => gpc_get_string( 'dwg_title' ),
-	'description' => "default description",
+	# The form's own description.  This was the literal "default description",
+	# so whatever was typed in the box was discarded on every create.
+	'description' => gpc_get_string( 'description', '' ),
 );
 $t_revision_date = gpc_get_string( 'dwg_revision_date', null );
 if( $t_revision_date !== null ) {

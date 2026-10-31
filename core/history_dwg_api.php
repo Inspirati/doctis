@@ -579,6 +579,21 @@ function history_dwg_localize_field_name( $p_field_name ) {
 		case 'handler_id':
 			$t_field_localized = lang_get( 'assigned_to' );
 			break;
+		# The document's own record (Doctis), logged since 2026-11-01.
+		case 'title':
+		case 'author':
+		case 'publisher':
+		case 'reference':
+		case 'number':
+		case 'edition':
+		case 'revision':
+		case 'discipline':
+		case 'classification':
+		case 'link_url':
+		case 'revision_date':
+		case 'release_date':
+			$t_field_localized = lang_get( 'dwg_' . $p_field_name );
+			break;
 		case 'owner_id':
 			$t_field_localized = lang_get( 'dwg_owner' );
 			break;
@@ -586,7 +601,8 @@ function history_dwg_localize_field_name( $p_field_name ) {
 			$t_field_localized = lang_get( 'dwg_creator' );
 			break;
 		case 'version':
-			$t_field_localized = lang_get( 'product_version' );
+			# A document's version, not MantisBT's "Product Version".
+			$t_field_localized = lang_get( 'dwg_version' );
 			break;
 		case 'fixed_in_version':
 			$t_field_localized = lang_get( 'fixed_in_version' );
@@ -856,6 +872,16 @@ function history_dwg_localize_item( $p_bug_id, $p_field_name, $p_type, $p_old_va
 			}
 			if( $p_new_value !== '' ) {
 				$p_new_value = date( config_get( 'normal_date_format' ), (int)$p_new_value );
+			}
+			break;
+		case 'revision_date':
+		case 'release_date':
+			# A document's own dates carry no time of day.
+			if( $p_old_value !== '' ) {
+				$p_old_value = date( config_get( 'short_date_format' ), (int)$p_old_value );
+			}
+			if( $p_new_value !== '' ) {
+				$p_new_value = date( config_get( 'short_date_format' ), (int)$p_new_value );
 			}
 			break;
 		default:

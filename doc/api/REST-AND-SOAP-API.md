@@ -98,7 +98,7 @@ All three inserts happen in a single request. The API call creates a **complete 
 
 `GET /documents/{id}` (REST) and `mc_dwg_get()` (SOAP) join all three tables via `dwg_get()` / `dwg_get_extended_row()` and return a unified document object including bibliographic fields, workflow state, and description text.
 
-### UPDATE — workflow fields, text, and Link URL
+### UPDATE — the whole document record
 
 `PATCH /documents/{id}` (REST) and `mc_dwg_update()` (SOAP) can update:
 
@@ -106,21 +106,30 @@ All three inserts happen in a single request. The API call creates a **complete 
 |-------------------|-------|
 | status, priority, handler, view_state, category | `dwg` |
 | version, due_date | `dwg` |
-| link_url (REST or SOAP, when supplied) | `dwg` and `documents` |
+| summary and title (kept together: changing one changes both) | `dwg` and `documents` |
+| author, publisher, number, edition, revision | `documents` |
+| classification, link_url (both stored copies are updated) | `dwg` and `documents` |
+| revision_date, release_date (text such as `2026-11-01`, or a timestamp) | `documents` |
+| reference — **only while the document has no registered file** | `documents` |
 | description, steps_to_reproduce, additional_information | `dwg_text` |
 | Notes (dwgnotes) | `dwgnote` / `dwgnote_text` |
 
-**Not updatable via API:**
+Each field is optional: send only what should change. Since 2026-11-01
+`DwgData::update()` saves the whole record. Before that it wrote eleven `dwg`
+columns and nothing in `documents` but the link, so title, author, publisher,
+number, edition, revision, classification, both dates and even view_state
+could be sent and silently not saved.
 
-| Field | Table | Workaround |
-|-------|-------|------------|
-| title, author, publisher | `documents` | None — requires direct DB edit |
-| reference, number, edition, revision | `documents` | None — requires direct DB edit |
-| classification (doc registration value) | `documents` | None |
+Once a document has a registered file its **reference** belongs to Doctis --
+it is the on-record commit SHA -- and a sent value is ignored. **discipline**
+is not in the SOAP `DwgData` type, so it can be changed only on Edit Document.
 
-The normal document update form and SOAP update can change `link_url`; both
-stored copies are updated. Other bibliographic registration fields remain
-immutable through these paths and need a separate correction workflow.
+**Known defect: a get-then-update round trip fails.** `mc_dwg_get` returns a
+`monitors` array (empty when nobody monitors), and when that object is sent
+back, `mc_dwg_update` passes the array to MantisBT's *issue* monitor code
+(`mci_issue_set_monitors`), which looks the document up in the issues table
+and fails with "Issue #N not found". Remove `monitors` from the object before
+sending it. Found 2026-11-01; not yet fixed.
 
 ### DELETE — `dwg` and `dwg_text` removed; `documents` row NOT deleted
 

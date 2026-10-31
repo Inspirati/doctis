@@ -93,12 +93,13 @@ document in whichever system stores it:
 When a document's primary file is stored in the Doctis git backend, the
 reference field is **automatically updated** to the new git SHA each time a
 primary file is uploaded or synced. For external references, the field is set
-manually at document creation time. The normal update form does not currently
-edit the Reference.
+manually, at creation or later on **Edit Document**. Once a primary file is
+registered, Doctis owns the Reference: Edit Document shows it but does not let
+you change it.
 
 Use the optional **Link URL** for an intranet or external published copy. It
 appears as a clickable link on the document details page and can be changed
-or cleared from the document update form. A Link URL does not change the
+or cleared on **Edit Document**. A Link URL does not change the
 Reference or the Doctis-managed primary file.
 
 The reference field is optional — a document can be registered as a placeholder
@@ -246,6 +247,42 @@ The main metadata panel.  Fields shown depend on configuration, but always
 include status, title, number, revision, reference, and author, together with
 the document's **Owner**, **Assigned To** and **Created by** (see
 [Who is responsible for a document](#who-is-responsible-for-a-document)).
+
+### Editing a document
+
+**Edit** on the view page opens **Edit Document**, which changes the
+document's record. It is laid out in the same groups as the view page:
+
+| Group | Fields |
+|---|---|
+| **Document** | Title (required), Number, Revision, Edition, Version, Author, Publisher, Discipline, Classification, Revision Date, Release Date, Reference, Link URL |
+| **Record** | Category, Status, Priority, View Status, Due Date. The project, submission date and last update are shown for reference |
+| **People** | Owner, Assigned To, and who created the document (shown only) |
+| **Description** | Description and Additional Information |
+
+Custom fields for the project follow, then an optional **Note**: write a line
+explaining the change and it is added to the document with it.
+
+Every change is recorded in the document's **History** with the old and new
+value, who made it and when.
+
+**The Owner has its own Edit link.** Changing who is responsible for a
+document is a significant change, so the Owner is shown as a name with
+**[Edit]** beside it, and the list of people appears only when you click it.
+Until then the form cannot change the owner, even by accident. Whether you
+can change it at all follows the ownership rules in
+[Who is responsible for a document](#who-is-responsible-for-a-document); the
+new owner is notified.
+
+**Status** offers only the moves the document workflow allows you from its
+current status.
+
+**Reference** can be edited only while the document has no registered file.
+After that Doctis sets it to the commit of the version on record.
+
+The project is changed with **Move**, not here. A document that is read-only
+in its current status, such as an archived one, cannot be edited, though its
+owner can still be replaced from the view page.
 
 ### Primary Document
 
