@@ -617,8 +617,13 @@ the other.
 | Timezone | Your local timezone for displayed dates and times |
 | Reports To | Your manager, if registered in Doctis; places you on the Organisational Chart |
 | Alternative | Your manager's name when they are not registered in Doctis |
-| Meeting Invites | Whether the Meeting Assistant may invite you: never, departmental meetings only, or all meetings |
+| Meeting Invites | Whether the Meeting Assistant may invite you: all meetings (the default for new accounts), departmental meetings only, or never |
 | Notification Email | An alternative address for Doctis notifications (used instead of your account email) |
+
+Administrators can maintain the same organisation, contact and meeting invitation
+details under **Manage → Manage Users → Edit User**, then click **Update User**.
+The user's **Timezone** is editable in the **Account Preferences** section on
+that page, using its own **Update Prefs** button. Impersonation is not needed.
 
 ### Organisational Chart (corporate directory)
 
@@ -717,7 +722,17 @@ The **AI Assistant** (sidebar) has these tabs:
 | SOP, Other | Not yet available |
 | Knowledge | The knowledge base the assistant answers from |
 
-Conversations are kept between visits; **Clear** starts afresh.
+Conversations are kept between visits. **New conversation** archives the current
+chat and starts afresh; it does not delete the transcript. Conversations for
+different meetings are retained separately.
+
+Open **AI Conversation History** at the top of the Assistant page to read
+earlier chats or download a conversation and its diagnostics as JSON. You can
+see your own conversations; administrators can investigate other users' records.
+Diagnostics include the prompt and invitee list sent to the AI, the raw reply,
+timing and errors. These records can contain meeting and organisational details.
+Earlier conversations are retained, but prompts and raw responses from before
+this feature was installed cannot be reconstructed.
 
 ### Teaching the assistant
 

@@ -776,6 +776,11 @@ define( 'EMAIL_SHUTDOWN_SKIP', 0 );
 define( 'EMAIL_SHUTDOWN_GENERATED', 1 );
 define( 'EMAIL_SHUTDOWN_FORCE', 2 );
 
+# User meeting invitation preferences (stored in user.meeting_invite).
+define( 'MEETING_INVITE_NEVER', 0 );
+define( 'MEETING_INVITE_DEPARTMENT', 1 );
+define( 'MEETING_INVITE_ALL', 2 );
+
 # Lengths - NOTE: these may represent hard-coded values in db schema and should not be changed.
 # Note: 191 comes from a MySQL/InnoDB limitation on Index key size (767 bytes)
 # divided by 4 (bytes per unicode char), see #20431:52209 for details.

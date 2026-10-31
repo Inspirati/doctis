@@ -40,7 +40,11 @@ def login(user, password):
 
 
 def chat(opener, user, messages, meeting_id, clear, series_of=0, mode='meeting'):
+    conversation_id = 0
     def api(body):
+        nonlocal conversation_id
+        if conversation_id:
+            body['conversation_id'] = conversation_id
         if meeting_id:
             body['meeting_id'] = meeting_id
         if series_of:
@@ -50,16 +54,22 @@ def chat(opener, user, messages, meeting_id, clear, series_of=0, mode='meeting')
             {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'})
         raw = opener.open(req, timeout=180).read().decode()
         try:
-            return json.loads(raw)
+            result = json.loads(raw)
+            conversation_id = result.get('conversation_id') or conversation_id
+            return result
         except ValueError:
             sys.exit('non-JSON response:\n' + raw[:3000])
 
     if clear:
-        api({'action': 'clear', 'mode': mode})
+        loaded = api({'action': 'clear', 'mode': mode})
         history = []
     else:
-        history = api({'action': 'load', 'mode': mode}).get('history') or []
+        loaded = api({'action': 'load', 'mode': mode})
+        history = loaded.get('history') or []
         print('[loaded %d prior turns]' % len(history))
+    if loaded.get('error'):
+        print('=== ERROR ===\n' + loaded['error'])
+        return 1
 
     for text in messages:
         history.append({'role': 'user', 'content': text})

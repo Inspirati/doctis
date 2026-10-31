@@ -65,6 +65,23 @@ Config: [phpunit.xml](../phpunit.xml) — three suites (`mantis`, `soap`,
 tests target stock MantisBT REST (`MANTIS_TESTSUITE_REST_HOST`), not the
 Doctis `documents`, `licenses` and `topics` routes.
 
+For administrator profile editing, run:
+```bash
+sudo -u www-data vendor/bin/phpunit --testsuite mantis --filter UserUpdateProfileCommandTest --do-not-cache-result
+```
+The 14 cases cover all additional profile fields, clearing and omitted values,
+length limits, invalid input without partial updates, protected/disabled users
+and access denial, plus the installed and canonical schema invitation defaults.
+Fixtures have blank primary emails and update notifications
+are disabled for each command, so these tests do not queue mail.
+
+The `UserProfileUpdateCommandTest` filter covers self-service profile updates,
+including timezone and preservation of saved invitation preferences. New accounts
+default to all meetings (`meeting_invite=2`); existing preferences retain their
+meaning (`0=never`, `1=departmental`, `2=all`). Changing this column's schema
+default requires rebuilding the user table from `admin/schema.php` on an
+existing installation; the normal schema upgrade does not change it.
+
 ---
 
 ## 3. SOAP endpoint smoke test — `doctis-soap-test.sh`
@@ -356,6 +373,14 @@ upload/replace, download, diagnosing 0-byte/302/500 responses): CLAUDE.md
 §"Curl-Based Testing".
 
 ### 7a. AI Meeting Assistant end to end — `doctis-meeting-chat.py`
+
+**Retained conversations and diagnostics:** run `vendor/bin/phpunit --testsuite
+mantis --filter AiSessionTest --do-not-cache-result` after upgrading to schema
+80. These tests use disposable accounts without email recipients, make no AI
+calls and clean up their audit rows. Coverage and the mocked HTTP checks are
+recorded in [ai/ai-session-history.md](ai/ai-session-history.md).
+The browser session contract can also be checked without a browser package:
+`node tests/javascript/ai_assist_session_test.js`.
 
 **What it covers:** the full meeting lifecycle through the real endpoints:
 agenda conversation → meeting record + document On Record + agenda emails;

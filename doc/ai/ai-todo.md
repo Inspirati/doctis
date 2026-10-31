@@ -105,7 +105,8 @@ tests). The Help tab and the prompts themselves do not.
 | [`ai_assist_page.php`](../../ai_assist_page.php) | Page shell: auth, shared CSS, tab navigation, SOP/Other placeholders, `<script src>` tags |
 | [`ai_assist_help_page.php`](../../ai_assist_help_page.php) | Help tab panel HTML |
 | [`ai_assist_meeting_page.php`](../../ai_assist_meeting_page.php) | Meeting tab panel HTML; `?meeting_id=` opens minutes mode, `?series_of=` plans the next meeting |
-| [`ai_assist_api.php`](../../ai_assist_api.php) | AJAX endpoint: request validation, `load`/`clear`/`chat`, Anthropic call, `{ai_sessions}` CRUD |
+| [`ai_assist_api.php`](../../ai_assist_api.php) | AJAX endpoint: request validation, `load`/`clear`/`chat`, Anthropic call and request evidence |
+| [`core/ai_session_api.php`](../../core/ai_session_api.php), [`ai_assist_history_page.php`](../../ai_assist_history_page.php) | Retained conversations, request diagnostics, archive/read/export ([details](ai-session-history.md)) |
 | [`ai_assist_help_api.php`](../../ai_assist_help_api.php) | `ai_assist_help_system_prompt()`: two system blocks (cached shared part; per-user part) |
 | [`ai_assist_knowledge_api.php`](../../ai_assist_knowledge_api.php), [`core/ai_knowledge_api.php`](../../core/ai_knowledge_api.php) | Knowledge base: manual, navigation map, entries, teaching marker; entity and review |
 | [`ai_knowledge_page.php`](../../ai_knowledge_page.php) / [`ai_knowledge_update.php`](../../ai_knowledge_update.php) | Knowledge page and handler |
@@ -132,7 +133,7 @@ tests). The Help tab and the prompts themselves do not.
 | [`core/file_dwg_api.php`](../../core/file_dwg_api.php) | `file_dwg_primary_add()`, which takes an optional explicit `git_path` for a first registration |
 | [`lang/strings_english.txt`](../../lang/strings_english.txt) | `ai_assist_*`, `meeting_*`, `my_view_meeting_link` strings |
 | [`config_defaults_inc.php`](../../config_defaults_inc.php) | AI and meeting settings (§5) |
-| [`admin/schema.php`](../../admin/schema.php) | `{ai_sessions}` (index 1), `{meeting}` (60), `{meeting_invitee}` (61), `{meeting_action}` (62); `meeting_invite` on `{user}` |
+| [`admin/schema.php`](../../admin/schema.php) | Legacy `{ai_sessions}` (1), `{meeting}` (60), `{meeting_invitee}` (61), `{meeting_action}` (62), `{ai_conversation}` (78), `{ai_request}` (79), legacy transcript copy (80); `meeting_invite` on `{user}` |
 | [`my_view_cnf_page.php`](../../my_view_cnf_page.php) and related | User profile "Meeting Invites" setting (0 never, 1 department, 2 all) |
 
 ---
@@ -151,14 +152,16 @@ ai_assist_api.php
   │  — build system prompt server-side for the mode
   │  — POST https://api.anthropic.com/v1/messages (non-streaming, 90 s timeout)
   │  — meeting mode: ai_assist_process_meeting_document() on the reply
-  │  — upsert {ai_sessions} row for (user, mode); store meeting ref in doc_id
+  │  — retain {ai_request} evidence and update the selected {ai_conversation}
   ▼
 { reply, error, usage, saved_document }
 ```
 
-`load` returns the stored history; in meeting mode with a `meeting_id` for a
-different meeting than the stored session, it returns none so the minutes
-conversation starts fresh. `clear` deletes the session.
+`load` returns a conversation ID and history for the requested meeting/context.
+`clear` archives that conversation and returns a new empty one. The browser
+sends the ID on subsequent requests. Old transcripts are imported without
+deleting `{ai_sessions}`. [Session history](ai-session-history.md) records the
+schema upgrade, diagnostics, ownership rules and verification.
 
 ### System prompts
 

@@ -54,9 +54,10 @@ class UserProfileUpdateCommand extends Command {
 		$t_reports_to = (int)( $t_profile['reports_to'] ?? 0 );
 		user_ensure_valid_reports_to( $this->user_id, $t_reports_to );
 
-		$t_meeting_invite = (int)( $t_profile['meeting_invite'] ?? 0 );
-		if( !in_array( $t_meeting_invite, array( 0, 1, 2 ), true ) ) {
-			$t_meeting_invite = 0;
+		$t_meeting_invite = array_key_exists( 'meeting_invite', $t_profile )
+			? $t_profile['meeting_invite'] : (int)user_get_field( $this->user_id, 'meeting_invite' );
+		if( !in_array( $t_meeting_invite, array( MEETING_INVITE_NEVER, MEETING_INVITE_DEPARTMENT, MEETING_INVITE_ALL, '0', '1', '2' ), true ) ) {
+			throw new ClientException( 'Meeting invitation preference is invalid', ERROR_INVALID_FIELD_VALUE, array( 'meeting_invite' ) );
 		}
 
 		$t_email_secondary = trim( (string)( $t_profile['email_secondary'] ?? '' ) );
@@ -72,7 +73,7 @@ class UserProfileUpdateCommand extends Command {
 			'department' => mb_substr( trim( (string)( $t_profile['department'] ?? '' ) ), 0, DB_FIELD_SIZE_DEPARTMENT ),
 			'reports_to' => $t_reports_to,
 			'alternative' => mb_substr( trim( (string)( $t_profile['alternative'] ?? '' ) ), 0, DB_FIELD_SIZE_ALTERNATIVE ),
-			'meeting_invite' => $t_meeting_invite,
+			'meeting_invite' => (int)$t_meeting_invite,
 			'email_secondary' => mb_substr( $t_email_secondary, 0, 191 ),
 		);
 	}

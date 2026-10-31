@@ -97,6 +97,31 @@ class UserProfileUpdateCommandTest extends MantisCoreBase {
 		$this->assertSame( config_get_global( 'default_timezone' ), user_pref_get_pref( $this->manager_id, 'timezone' ) );
 	}
 
+	public function testOmittedMeetingPreferencePreservesEachSavedChoice() {
+		foreach( array( MEETING_INVITE_ALL, MEETING_INVITE_DEPARTMENT, MEETING_INVITE_NEVER ) as $t_choice ) {
+			user_set_fields( $this->manager_id, array( 'meeting_invite' => $t_choice ) );
+			$t_data = $this->commandData( 0, '' );
+			unset( $t_data['payload']['profile']['meeting_invite'] );
+			$this->executeForFixture( $t_data );
+			$this->assertSame( $t_choice, (int)user_get_field( $this->manager_id, 'meeting_invite' ) );
+		}
+	}
+
+	public function testInvalidMeetingPreferenceDoesNotUpdateProfile() {
+		$t_before = user_get_row( $this->manager_id );
+		$t_data = $this->commandData( 0, '' );
+		$t_data['payload']['profile']['meeting_invite'] = 3;
+		$t_data['payload']['profile']['position_title'] = 'Must not save';
+		try {
+			$this->executeForFixture( $t_data );
+			$this->fail( 'Invalid meeting preference should be rejected' );
+		} catch( ClientException $t_exception ) {
+			$this->assertSame( ERROR_INVALID_FIELD_VALUE, $t_exception->getCode() );
+		}
+		user_clear_cache( $this->manager_id );
+		$this->assertSame( $t_before, user_get_row( $this->manager_id ) );
+	}
+
 	/** Run as a disposable ordinary user, leaving the administrator's preferences alone. */
 	private function executeForFixture( array $p_data ) {
 		$p_data['query']['user_id'] = $this->manager_id;

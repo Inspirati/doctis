@@ -36,7 +36,7 @@ $f_phone           = trim( gpc_get_string( 'phone',           '' ) );
 $f_department      = trim( gpc_get_string( 'department',      '' ) );
 $f_reports_to      = gpc_get_int( 'reports_to', 0 );
 $f_alternative     = trim( gpc_get_string( 'alternative', '' ) );
-$f_meeting_invite  = gpc_get_int(    'meeting_invite',  0 );
+$f_meeting_invite  = gpc_get_int(    'meeting_invite', null );
 $f_email_secondary = trim( gpc_get_string( 'email_secondary', '' ) );
 $f_timezone        = gpc_get_string( 'timezone', null );
 
@@ -53,11 +53,13 @@ $t_data = array(
 			'department' => $f_department,
 			'reports_to' => $f_reports_to,
 			'alternative' => $f_alternative,
-			'meeting_invite' => $f_meeting_invite,
 			'email_secondary' => $f_email_secondary,
 		),
 	),
 );
+if( $f_meeting_invite !== null ) {
+	$t_data['payload']['profile']['meeting_invite'] = $f_meeting_invite;
+}
 if( $f_timezone !== null ) {
 	$t_data['payload']['profile']['timezone'] = $f_timezone;
 }

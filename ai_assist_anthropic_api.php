@@ -19,18 +19,25 @@ require_api( 'config_api.php' );
  *                               'cache_control' => ['type' => 'ephemeral']]).
  * @param array  $p_messages   Each ['role' => 'user'|'assistant', 'content' => string].
  * @param int    $p_max_tokens
- * @return array{reply: string|null, usage: array|null, error: string|null}
+ * @return array{reply: string|null, usage: array|null, error: string|null, diagnostics: array}
  *               error is a user-facing message; details go to the error log.
  */
 function ai_assist_anthropic_request( string|array $p_system, array $p_messages, int $p_max_tokens ): array {
+	$t_diagnostics = array( 'requested_model' => config_get_global( 'ai_model' ), 'request_id' => '', 'http_status' => 0, 'duration_ms' => 0 );
 	$t_api_key = config_get_global( 'anthropic_api_key' );
 	if( is_blank( $t_api_key ) ) {
-		return array( 'reply' => null, 'usage' => null, 'error' => 'AI Assistant is not configured on this server.' );
+		return array( 'reply' => null, 'usage' => null, 'error' => 'AI Assistant is not configured on this server.', 'diagnostics' => $t_diagnostics );
 	}
 
 	$t_ch = curl_init( 'https://api.anthropic.com/v1/messages' );
 	curl_setopt_array( $t_ch, [
 		CURLOPT_RETURNTRANSFER => true,
+		CURLOPT_HEADERFUNCTION => function( $p_handle, $p_line ) use ( &$t_diagnostics ) {
+			if( stripos( $p_line, 'request-id:' ) === 0 ) {
+				$t_diagnostics['request_id'] = trim( substr( $p_line, 11 ) );
+			}
+			return strlen( $p_line );
+		},
 		CURLOPT_POST           => true,
 		CURLOPT_POSTFIELDS     => json_encode( [
 			'model'      => config_get_global( 'ai_model' ),
@@ -50,14 +57,21 @@ function ai_assist_anthropic_request( string|array $p_system, array $p_messages,
 	$t_response   = curl_exec( $t_ch );
 	$t_http_code  = curl_getinfo( $t_ch, CURLINFO_HTTP_CODE );
 	$t_curl_error = curl_error( $t_ch );
+	$t_diagnostics['http_status'] = $t_http_code;
+	$t_diagnostics['duration_ms'] = (int)round( curl_getinfo( $t_ch, CURLINFO_TOTAL_TIME ) * 1000 );
+	$t_diagnostics['raw_response'] = $t_response === false ? null : $t_response;
 	curl_close( $t_ch );
 
 	if( $t_response === false ) {
 		error_log( 'ai_assist_anthropic_api: cURL error: ' . $t_curl_error );
-		return array( 'reply' => null, 'usage' => null, 'error' => 'Could not reach the AI service. Please try again.' );
+		return array( 'reply' => null, 'usage' => null, 'error' => 'Could not reach the AI service. Please try again.', 'diagnostics' => $t_diagnostics + array( 'transport_error' => $t_curl_error ) );
 	}
 
 	$t_data = json_decode( $t_response, true );
+	$t_diagnostics['response_model'] = $t_data['model'] ?? null;
+	$t_diagnostics['message_id'] = $t_data['id'] ?? null;
+	$t_diagnostics['stop_reason'] = $t_data['stop_reason'] ?? null;
+	$t_diagnostics['usage'] = $t_data['usage'] ?? null;
 	if( $t_http_code !== 200 ) {
 		$t_err_msg = $t_data['error']['message'] ?? 'API error (HTTP ' . $t_http_code . ').';
 		error_log( 'ai_assist_anthropic_api: Anthropic error ' . $t_http_code . ': ' . $t_err_msg );
@@ -66,7 +80,7 @@ function ai_assist_anthropic_request( string|array $p_system, array $p_messages,
 			case 429: $t_err_msg = 'AI service rate limit reached. Please wait a moment and try again.'; break;
 			case 529: $t_err_msg = 'The AI service is currently overloaded. Please try again shortly.'; break;
 		}
-		return array( 'reply' => null, 'usage' => null, 'error' => $t_err_msg );
+		return array( 'reply' => null, 'usage' => null, 'error' => $t_err_msg, 'diagnostics' => $t_diagnostics );
 	}
 
 	# Join the text blocks (newer models may put other block types first).
@@ -77,7 +91,7 @@ function ai_assist_anthropic_request( string|array $p_system, array $p_messages,
 		}
 	}
 	if( is_blank( $t_reply ) ) {
-		return array( 'reply' => null, 'usage' => null, 'error' => 'Empty response received from AI service.' );
+		return array( 'reply' => null, 'usage' => null, 'error' => 'Empty response received from AI service.', 'diagnostics' => $t_diagnostics );
 	}
 	return array(
 		'reply' => $t_reply,
@@ -88,5 +102,6 @@ function ai_assist_anthropic_request( string|array $p_system, array $p_messages,
 			'cache_creation_input_tokens' => $t_data['usage']['cache_creation_input_tokens'] ?? null,
 		),
 		'error' => null,
+		'diagnostics' => $t_diagnostics,
 	);
 }

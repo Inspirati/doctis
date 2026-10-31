@@ -224,6 +224,42 @@ class UserUpdateCommand extends Command {
 			user_ensure_valid_reports_to( $this->user_id, $t_new_reports_to );
 		}
 
+		# Doctis profile fields are optional, so existing API callers preserve them.
+		# Validate all supplied fields before changing any account details.
+		$t_profile_fields = array();
+		$t_profile_sizes = array(
+			'position_title' => DB_FIELD_SIZE_POSITION_TITLE,
+			'company' => DB_FIELD_SIZE_COMPANY,
+			'department' => DB_FIELD_SIZE_DEPARTMENT,
+			'phone' => DB_FIELD_SIZE_PHONE,
+			'alternative' => DB_FIELD_SIZE_ALTERNATIVE
+		);
+		foreach( $t_profile_sizes as $t_field => $t_size ) {
+			if( array_key_exists( $t_field, $t_user ) ) {
+				if( !is_string( $t_user[$t_field] ) ) {
+					throw new ClientException( 'Profile field is invalid', ERROR_INVALID_FIELD_VALUE, array( $t_field ) );
+				}
+				$t_profile_fields[$t_field] = mb_substr( trim( $t_user[$t_field] ), 0, $t_size );
+			}
+		}
+		if( array_key_exists( 'meeting_invite', $t_user ) ) {
+			if( !in_array( $t_user['meeting_invite'], array( MEETING_INVITE_NEVER, MEETING_INVITE_DEPARTMENT, MEETING_INVITE_ALL, '0', '1', '2' ), true ) ) {
+				throw new ClientException( 'Meeting invitation preference is invalid', ERROR_INVALID_FIELD_VALUE, array( 'meeting_invite' ) );
+			}
+			$t_profile_fields['meeting_invite'] = (int)$t_user['meeting_invite'];
+		}
+		if( array_key_exists( 'email_secondary', $t_user ) ) {
+			if( !is_string( $t_user['email_secondary'] ) ) {
+				throw new ClientException( 'Notification email is invalid', ERROR_INVALID_FIELD_VALUE, array( 'email_secondary' ) );
+			}
+			$t_email_secondary = trim( $t_user['email_secondary'] );
+			if( mb_strlen( $t_email_secondary ) > 191 ||
+				( $t_email_secondary !== '' && !filter_var( $t_email_secondary, FILTER_VALIDATE_EMAIL ) ) ) {
+				throw new ClientException( 'Notification email is invalid', ERROR_INVALID_FIELD_VALUE, array( 'email_secondary' ) );
+			}
+			$t_profile_fields['email_secondary'] = $t_email_secondary;
+		}
+
 		# Notify User
 		$this->notify_user = $this->payload( 'notify_user', false );
 
@@ -291,6 +327,10 @@ class UserUpdateCommand extends Command {
 			'protected' => !is_null( $t_new_protected ) ? $t_new_protected : $t_old_protected,
 			'reports_to' => !is_null( $t_new_reports_to ) ? $t_new_reports_to : $t_old_reports_to
 		);
+		foreach( $t_profile_fields as $t_field => $t_value ) {
+			$this->old_user[$t_field] = user_get_field( $this->user_id, $t_field );
+			$this->new_user[$t_field] = $t_value;
+		}
 	}
 
 	/**

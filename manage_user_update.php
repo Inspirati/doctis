@@ -71,6 +71,16 @@ $t_data = array(
 	)
 );
 
+# Preserve fields omitted by older forms; the command validates supplied values.
+foreach( array( 'position_title', 'company', 'department', 'phone', 'alternative', 'email_secondary' ) as $t_field ) {
+	if( gpc_isset( $t_field ) ) {
+		$t_data['payload']['user'][$t_field] = gpc_get_string( $t_field );
+	}
+}
+if( gpc_isset( 'meeting_invite' ) ) {
+	$t_data['payload']['user']['meeting_invite'] = gpc_get_int( 'meeting_invite' );
+}
+
 # Was the account enabled before this update? Needed below to tell a
 # disable apart from an edit to an already-disabled account.
 $t_was_enabled = user_is_enabled( $f_user_id );

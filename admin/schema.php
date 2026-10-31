@@ -3,13 +3,18 @@
 #
 # Every table is defined once in its current final form using a raw MySQL
 # CREATE TABLE IF NOT EXISTS statement. There are no incremental ALTER TABLE
-# steps. New tables can be appended as upgrades; changes to existing table
-# definitions still require a separate migration or a development rebuild with:
+# steps. New tables can be appended as upgrades. A change to an existing table
+# is made in its definition here, then applied by a development rebuild:
 #
 #   bash admin/tools/doctis-drop-and-create-new-database.sh
 #
+# or, on a database that must keep its data (live), by a schema update script
+# in admin/tools/schema-updates/ run through Load Data. That script's ALTERs
+# must produce exactly the definition below. See CLAUDE.md, "Database Schema
+# Changes".
+#
 # RULE: never append AddColumnSQL / RenameColumnSQL / AlterColumnSQL steps.
-#       Modify the base table definition and rebuild from scratch.
+#       Modify the base table definition here.
 #
 # Each array entry uses the 'UpdateSQL' operation so the installer executes
 # the raw SQL directly via ADOdb's ExecuteSQLArray, without any column-type
@@ -835,7 +840,7 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	  `department` varchar(64) NOT NULL DEFAULT '',
 	  `reports_to` int(10) unsigned NOT NULL DEFAULT 0,
 	  `alternative` varchar(191) NOT NULL DEFAULT '',
-	  `meeting_invite` tinyint(4) NOT NULL DEFAULT 0,
+	  `meeting_invite` tinyint(4) NOT NULL DEFAULT 2,
 	  `email_secondary` varchar(191) NOT NULL DEFAULT '',
 	  PRIMARY KEY (`id`),
 	  UNIQUE KEY `idx_user_cookie_string` (`cookie_string`),
@@ -1373,8 +1378,54 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
+# ── Step 78: retained AI conversations (legacy ai_sessions remains intact) ────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'ai_conversation' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `mode` varchar(16) NOT NULL DEFAULT '',
+	  `context_key` varchar(80) NOT NULL DEFAULT '',
+	  `created` int(10) unsigned NOT NULL DEFAULT 1,
+	  `updated` int(10) unsigned NOT NULL DEFAULT 1,
+	  `archived` int(10) unsigned NOT NULL DEFAULT 0,
+	  `history` longtext NOT NULL,
+	  `doc_id` varchar(80) NOT NULL DEFAULT '',
+	  `dwg_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `busy_until` int(10) unsigned NOT NULL DEFAULT 0,
+	  `pending_request_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `revision` int(10) unsigned NOT NULL DEFAULT 0,
+	  PRIMARY KEY (`id`),
+	  KEY `idx_ai_conversation_user_mode` (`user_id`, `mode`, `id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+);
+
+# ── Step 79: AI request evidence, recorded before the external call ────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'ai_request' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `conversation_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `user_id` int(10) unsigned NOT NULL DEFAULT 0,
+	  `started` int(10) unsigned NOT NULL DEFAULT 1,
+	  `finished` int(10) unsigned NOT NULL DEFAULT 0,
+	  `status` varchar(16) NOT NULL DEFAULT 'pending',
+	  `request_data` longtext NOT NULL,
+	  `response_data` longtext NOT NULL,
+	  PRIMARY KEY (`id`),
+	  KEY `idx_ai_request_conversation` (`conversation_id`, `id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+);
+
+# ── Step 80: preserve every legacy transcript, including users not yet returned ─
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"INSERT INTO " . db_get_table( 'ai_conversation' ) . " (user_id, mode, context_key, created, updated, history, doc_id, dwg_id)
+	 SELECT s.user_id, s.mode, COALESCE(s.doc_id, ''), s.created, s.updated, s.history,
+	        COALESCE(s.doc_id, ''), COALESCE(s.dwg_id, 0)
+	 FROM " . db_get_table( 'ai_sessions' ) . " s
+	 WHERE NOT EXISTS (SELECT 1 FROM " . db_get_table( 'ai_conversation' ) . " c WHERE c.user_id=s.user_id AND c.mode=s.mode)"
+);
+
 # ── End of schema definition ─────────────────────────────────────────────────
-# $t_idx = 78 → database_version = 77 on a fresh install.
+# $t_idx = 81 → database_version = 80 on a fresh install.
 #
 # To add a new table: append a new step here and run the schema upgrade.
 # Label it "Step N" with its real index, which is the database_version the

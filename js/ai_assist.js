@@ -86,6 +86,8 @@
 		var extra          = cfg.extra          || {};   // merged into chat/load requests
 
 		var chatHistory    = [];
+		var conversationId = 0;
+		var apiConfigured  = !!$sendBtn && !$sendBtn.disabled;
 		var currentXhr     = null;
 		var totalInputTok  = 0;
 		var totalOutputTok = 0;
@@ -112,6 +114,7 @@
 			for( var key in extra ) {
 				if( Object.prototype.hasOwnProperty.call(extra, key) ) fields[key] = extra[key];
 			}
+			if( conversationId > 0 ) fields.conversation_id = conversationId;
 			return JSON.stringify(fields);
 		}
 
@@ -329,7 +332,8 @@
 
 		/* ── Send / busy state ────────────────────────────────────────────── */
 		function setBusy(busy) {
-			$sendBtn.disabled = busy;
+			$sendBtn.disabled = busy || !apiConfigured;
+			if( $clearBtn ) $clearBtn.disabled = busy;
 			if( $stopBtn ) $stopBtn.disabled = !busy;
 			$input.disabled = busy;
 			if( busy ) {
@@ -384,8 +388,12 @@
 					data = { error: 'Invalid response from server.' };
 				}
 
+				if( data.conversation_id ) conversationId = data.conversation_id;
 				if( data.error ) {
-					setStatus('Error: ' + data.error);
+					chatHistory.pop();
+					$input.value = text;
+					updateCharCount();
+					setStatus('Error: ' + data.error + (data.request_id ? ' (request #' + data.request_id + '; see History)' : ''));
 					appendMessage('assistant', '\u26a0\ufe0f ' + data.error);
 					return;
 				}
@@ -417,8 +425,10 @@
 				removeTypingIndicator();
 				setBusy(false);
 				currentXhr = null;
-				setStatus('Network error \u2014 check your connection.');
-				appendMessage('assistant', '\u26a0\ufe0f Could not reach the server. Please try again.');
+				chatHistory.pop();
+				$input.value = text;
+				setStatus('Network error \u2014 the server may still be processing. Check History before retrying.');
+				appendMessage('assistant', '\u26a0\ufe0f Could not reach the server. Reload and check History before retrying.');
 			};
 
 			currentXhr.send(payload);
@@ -431,43 +441,49 @@
 				currentXhr = null;
 				removeTypingIndicator();
 				setBusy(false);
-				setStatus('Stopped.');
+				setStatus('Stopped waiting. The server may still be processing; check History before retrying.');
 				chatHistory.pop();
 			}
 		}
 
 		/* ── Clear conversation ───────────────────────────────────────────── */
 		function clearConversation() {
-			chatHistory    = [];
-			totalInputTok  = 0;
-			totalOutputTok = 0;
-			$messages.innerHTML = '';
-			updateTokenDisplay();
-
-			/* Ask the server to delete the stored session */
+			if( currentXhr ) return;
+			setBusy(true);
 			var xhr = new XMLHttpRequest();
 			xhr.open('POST', 'ai_assist_api.php', true);
 			xhr.setRequestHeader('Content-Type', 'application/json');
 			xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-			xhr.send(JSON.stringify({ action: 'clear', mode: mode }));
-
-			/* Restore compact welcome */
-			if( compactWelcome ) {
-				var welcome = document.createElement('div');
-				welcome.className = 'ai-msg-row assistant';
-				if( welcomeId ) welcome.id = welcomeId;
-				welcome.innerHTML = compactWelcome;
-				$messages.appendChild(welcome);
-			}
-
-			setStatus('');
-			$input.value = '';
-			updateCharCount();
-			$input.focus();
+			xhr.onload = function() {
+				setBusy(false);
+				var data;
+				try { data = JSON.parse(this.responseText); } catch(e) { setStatus('Could not start a new conversation.'); return; }
+				if( data.error ) { setStatus(data.error); return; }
+				conversationId = data.conversation_id;
+				chatHistory = [];
+				totalInputTok = 0;
+				totalOutputTok = 0;
+				$messages.innerHTML = '';
+				updateTokenDisplay();
+				if( compactWelcome ) {
+					var welcome = document.createElement('div');
+					welcome.className = 'ai-msg-row assistant';
+					if( welcomeId ) welcome.id = welcomeId;
+					welcome.innerHTML = compactWelcome;
+					$messages.appendChild(welcome);
+				}
+				setStatus('Previous conversation archived in History.');
+				$input.value = '';
+				updateCharCount();
+				$input.focus();
+			};
+			xhr.onerror = function() { setBusy(false); setStatus('Could not start a new conversation. Reload to check its state.'); };
+			xhr.send(requestBody({ action: 'clear', mode: mode }));
 		}
 
 		/* ── Load persisted session on page open ──────────────────────────── */
 		function loadSession() {
+			setBusy(true);
 			var xhr = new XMLHttpRequest();
 			xhr.open('POST', 'ai_assist_api.php', true);
 			xhr.setRequestHeader('Content-Type', 'application/json');
@@ -475,7 +491,10 @@
 
 			xhr.onload = function() {
 				var data;
-				try { data = JSON.parse(this.responseText); } catch(e) { return; }
+				setBusy(false);
+				try { data = JSON.parse(this.responseText); } catch(e) { setStatus('Could not restore conversation.'); return; }
+				if( data.error ) { setStatus(data.error); return; }
+				conversationId = data.conversation_id || 0;
 				if( data.history && data.history.length > 0 ) {
 					var welcome = document.getElementById(welcomeId);
 					if( welcome ) welcome.parentNode.removeChild(welcome);
@@ -485,6 +504,7 @@
 				}
 			};
 
+			xhr.onerror = function() { setBusy(false); setStatus('Could not restore conversation. Reload to retry.'); };
 			xhr.send(requestBody({ action: 'load', mode: mode }));
 		}
 

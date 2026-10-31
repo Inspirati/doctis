@@ -17,8 +17,8 @@
 				<?php echo lang_get( 'ai_assist_title' ) ?> &mdash; <?php echo lang_get( 'ai_assist_tab_help' ) ?>
 			</h4>
 			<div class="widget-toolbar">
-				<button class="btn btn-minier btn-default" id="ai-clear-btn" title="Clear conversation">
-					<?php print_icon( 'fa-trash-o', 'ace-icon' ); ?> Clear
+				<button class="btn btn-minier btn-default" id="ai-clear-btn" title="Archive this conversation and start a new one">
+					<?php print_icon( 'fa-archive', 'ace-icon' ); ?> New conversation
 				</button>
 			</div>
 		</div><!-- /.widget-header -->

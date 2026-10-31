@@ -133,11 +133,12 @@ function ai_assist_meeting_open_action_lines( array $p_meeting ): string {
  * @param int        $p_user_id Current user ID.
  * @param array|null $p_focus   Meeting being minuted, if any.
  * @param array|null $p_series  Meeting whose follow-up is being planned, if any.
+ * @param array|null $p_candidates Candidate snapshot, when recording request evidence.
  * @return string
  */
-function ai_assist_meeting_system_prompt( int $p_user_id, ?array $p_focus = null, ?array $p_series = null ): string {
+function ai_assist_meeting_system_prompt( int $p_user_id, ?array $p_focus = null, ?array $p_series = null, ?array $p_candidates = null ): string {
 	$t_departments = config_get_global( 'ai_meeting_departments' );
-	$t_candidates  = ai_assist_get_meeting_candidates();
+	$t_candidates  = $p_candidates ?? ai_assist_get_meeting_candidates();
 	$t_stored      = meeting_project_id() > 0;
 
 	# ── Today, in the user's timezone ────────────────────────────────────────

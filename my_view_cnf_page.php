@@ -238,9 +238,9 @@ echo '</div>';
 <?php
 # ── My Profile widget ────────────────────────────────────────────────────────
 $t_meeting_invite_options = [
-	0 => lang_get( 'meeting_invite_never' ),
-	1 => lang_get( 'meeting_invite_dept' ),
-	2 => lang_get( 'meeting_invite_all' ),
+	MEETING_INVITE_ALL => lang_get( 'meeting_invite_all' ),
+	MEETING_INVITE_DEPARTMENT => lang_get( 'meeting_invite_dept' ),
+	MEETING_INVITE_NEVER => lang_get( 'meeting_invite_never' ),
 ];
 ?>
 <div class="col-md-12 col-xs-12">
@@ -380,7 +380,7 @@ $t_meeting_invite_options = [
 				<select class="form-control" name="meeting_invite" id="meeting_invite">
 					<?php foreach( $t_meeting_invite_options as $t_val => $t_label ): ?>
 					<option value="<?php echo $t_val ?>"
-						<?php echo ( (int)( $t_profile_row['meeting_invite'] ?? 0 ) === $t_val ) ? 'selected="selected"' : '' ?>>
+						<?php echo ( (int)$t_profile_row['meeting_invite'] === $t_val ) ? 'selected="selected"' : '' ?>>
 						<?php echo string_html_specialchars( $t_label ) ?>
 					</option>
 					<?php endforeach; ?>

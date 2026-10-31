@@ -222,6 +222,28 @@ print_manage_menu( 'manage_user_page.php' );
 ?>
 					</tr>
 
+					<!-- Organisation and contact details -->
+<?php
+	foreach( array(
+		'position_title' => DB_FIELD_SIZE_POSITION_TITLE,
+		'company' => DB_FIELD_SIZE_COMPANY,
+		'department' => DB_FIELD_SIZE_DEPARTMENT,
+		'phone' => DB_FIELD_SIZE_PHONE
+	) as $t_field => $t_maxlength ) {
+?>
+					<tr>
+						<td class="category">
+							<label for="edit-<?php echo $t_field ?>"><?php echo lang_get( $t_field ) ?></label>
+						</td>
+						<td>
+							<input id="edit-<?php echo $t_field ?>" name="<?php echo $t_field ?>"
+								type="<?php echo $t_field === 'phone' ? 'tel' : 'text' ?>" class="input-sm"
+								size="32" maxlength="<?php echo $t_maxlength ?>"
+								value="<?php echo string_attribute( $t_user[$t_field] ?? '' ) ?>" />
+						</td>
+					</tr>
+<?php } ?>
+
 					<!-- Reports To -->
 					<tr>
 						<td class="category">
@@ -241,6 +263,50 @@ print_manage_menu( 'manage_user_page.php' );
 <?php endforeach; ?>
 							</select>
 							<p class="help-block"><?php echo lang_get( 'reports_to_hint' ) ?></p>
+						</td>
+					</tr>
+
+					<!-- Alternative contact -->
+					<tr>
+						<td class="category">
+							<label for="edit-alternative"><?php echo lang_get( 'alternative' ) ?></label>
+						</td>
+						<td>
+							<input id="edit-alternative" name="alternative" type="text" class="input-sm"
+								size="32" maxlength="<?php echo DB_FIELD_SIZE_ALTERNATIVE ?>"
+								value="<?php echo string_attribute( $t_user['alternative'] ?? '' ) ?>" />
+							<p class="help-block"><?php echo lang_get( 'alternative_hint' ) ?></p>
+						</td>
+					</tr>
+
+					<!-- Meeting invitation preference -->
+					<tr>
+						<td class="category">
+							<label for="edit-meeting-invite"><?php echo lang_get( 'meeting_invite' ) ?></label>
+						</td>
+						<td>
+							<select id="edit-meeting-invite" name="meeting_invite" class="input-sm">
+<?php
+	foreach( array( MEETING_INVITE_ALL => 'meeting_invite_all', MEETING_INVITE_DEPARTMENT => 'meeting_invite_dept', MEETING_INVITE_NEVER => 'meeting_invite_never' ) as $t_value => $t_label ) {
+?>
+								<option value="<?php echo $t_value ?>" <?php check_selected( (int)$t_user['meeting_invite'], $t_value ); ?>>
+									<?php echo lang_get( $t_label ) ?>
+								</option>
+<?php } ?>
+							</select>
+						</td>
+					</tr>
+
+					<!-- Notification email -->
+					<tr>
+						<td class="category">
+							<label for="edit-email-secondary"><?php echo lang_get( 'email_secondary' ) ?></label>
+						</td>
+						<td>
+							<input id="edit-email-secondary" name="email_secondary" type="email" class="input-sm"
+								size="32" maxlength="191"
+								value="<?php echo string_attribute( $t_user['email_secondary'] ?? '' ) ?>" />
+							<p class="help-block"><?php echo lang_get( 'email_secondary_hint' ) ?></p>
 						</td>
 					</tr>
 

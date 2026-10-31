@@ -46,6 +46,7 @@ if( is_blank( $t_user_name ) ) {
 layout_page_header( lang_get( 'ai_assist_title' ) );
 layout_page_begin( 'ai_assist_page.php' );
 ?>
+<div class="col-xs-12"><p><a href="ai_assist_history_page.php"><?php echo lang_get( 'ai_history_title' ) ?></a></p></div>
 
 <style>
 /* ── AI Assistant chat styles (shared across all tabs) ───────────────────── */
