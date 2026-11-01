@@ -971,6 +971,21 @@ person from the one before it.
   now read "inside #699". New artefact for review: **#1369**, v1.2 at
   `d66c6144` with release date 2026-10-30. Finding 1 (a commit from outside
   the branch) is left for the owner to decide.
+- **2026-11-01** — Finding 1 decided by the owner: **a record of a line is
+  pinned only at a commit in that line's history** (recommendation A). Enforced
+  in `file_dwg_primary_register()` whenever the caller names the branch, so it
+  covers Register Source Release as well as Cut Release; Cut Release also
+  checks before creating the release, so the reason shows on the form. A
+  release whose commit later leaves its branch (a force-push) or whose branch
+  is deleted now says so instead of "later work on the <branch> line". Why and
+  how: `../DOCTIS-GIT-USER-MANUAL.md` §7.6. `test-git-doctis.php` 224 → 231.
+  Retested on #699: `e2452b07` refused, nothing created. **#1284 deleted**
+  through the web group action, and its pin removed by hand, because the
+  commit it held was fabricated for the test. Deleting a document leaves its
+  `{dwg_primary_file}` row and its approved pins behind (14 orphaned rows on
+  the VM, including #843's and the suites' own). Every query joins `{dwg}`, so
+  they are inert, but whether a deleted document's pins should go too is
+  open.
 
 ---
 
