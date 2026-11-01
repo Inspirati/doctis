@@ -49,7 +49,8 @@ No schema change.
    `index.html`, a brief introduction to the QMS followed by a table of the
    published documents with number, revision, status and publish date. The
    introduction explains navigation, checking versions and raising document
-   issues in Doctis.
+   issues in Doctis. Each status label links to the document's Doctis record,
+   just like the **View in Doctis** link in the published document's footer.
 6. Logs a **Published** entry in the document history: commit, status and
    page.
 7. Sets the document's **URL** field (`link_url`) to the page's address, and

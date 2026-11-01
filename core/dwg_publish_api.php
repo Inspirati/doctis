@@ -1365,7 +1365,8 @@ function dwg_publish_write_index( array $p_site, array $p_pages, array $p_tree, 
 			. htmlspecialchars( $t_title !== '' ? $t_title : $t_page ) . '</a></td>'
 			. '<td>' . htmlspecialchars( (string)( $t_marker['number'] ?? '' ) ) . '</td>'
 			. '<td>' . htmlspecialchars( (string)( $t_marker['revision'] ?? '' ) ) . '</td>'
-			. '<td>' . htmlspecialchars( (string)( $t_marker['status_label'] ?? '' ) ) . '</td>'
+			. '<td><a href="' . htmlspecialchars( config_get_global( 'path' ) . 'dwg_view.php?id=' . (int)$t_marker['dwg_id'] ) . '">'
+			. htmlspecialchars( (string)( $t_marker['status_label'] ?? '' ) ) . '</a></td>'
 			. '<td>' . htmlspecialchars( isset( $t_marker['published'] ) ? date( config_get( 'short_date_format' ), (int)$t_marker['published'] ) : '' ) . '</td>'
 			. ( $t_has_pdf ? '<td>' . ( isset( $t_marker['pdf'] ) ? '<a href="' . htmlspecialchars( dwg_publish_href( (string)$t_marker['pdf'] ) ) . '">PDF</a>' : '' ) . '</td>' : '' )
 			. "</tr>\n";
