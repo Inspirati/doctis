@@ -314,3 +314,68 @@ repository migration.
 | **Register a repository file as a document from the UI** | **Built** 2026-10-28 | Manage → Git Store offers **Register** on any unregistered file at HEAD, flowing into the normal Create Document form with the path and (for Markdown) the frontmatter pre-filled; and **Register all N with frontmatter** for the ones that need no typing. Pinned to the commit that last changed the path, not HEAD. |
 | **Git bundle / REST export** | Deferred | A REST endpoint returning a `git bundle` of the project repo would serve users who only need an offline full-history export. Does not satisfy the push requirement and would not replace the Smart HTTP gateway. |
 | **SSH access (single shared account)** | Deferred | An SSH option using a single `git` system account with `AuthorizedKeysCommand` mapping SSH keys to Doctis users. Secondary to Option 1 (Smart HTTP). Useful for power users or automation. |
+| **Deleting a document: its file record and approved pins** | ☐ Open (raised 2026-11-01) | `dwg_delete()` leaves the `{dwg_primary_file}` row and every `refs/doctis/approved/<id>/<n>` pin behind. Harmless today, but whether it is right depends on what deletion is *for*. See §8.1. |
+
+### 8.1 Deleting a document: its file record and approved pins ☐
+
+**Raised 2026-11-01**, while deleting test release #1284 (see
+[SOURCE_REPOSITORIES.md](SOURCE_REPOSITORIES.md) §9, the 2026-11-01 entries).
+This needs a decision on the design requirements, not just a code fix.
+
+**What happens now.**
+- `dwg_delete()` removes the document's notes, relationships, attachments,
+  Topic tags, history, revisions, `{dwg_text}` row and `{dwg}` row.
+- It does **not** remove:
+  - the `{dwg_primary_file}` row;
+  - the approved-version pins in the bare repository, which registration
+    creates (`/1` at registration, then one per promotion);
+  - the `{documents}` row, a separate gap already recorded in
+    [REST-AND-SOAP-API.md](../api/REST-AND-SOAP-API.md).
+- On the VM at the time of writing: 14 orphaned `{dwg_primary_file}` rows,
+  including #843 (a probe) and the test suites' own documents, and a dangling
+  pin `refs/doctis/approved/843/1` in `gimbal-source-r44`.
+
+**Why it is harmless today.**
+- Every query of `{dwg_primary_file}` joins `{dwg}`, so an orphaned row is
+  invisible. It counts in no list and blocks no path from being registered
+  again.
+- A dangling pin keeps its commit reachable. Nothing else follows from it.
+- `refs/doctis/*` cannot be pushed, so no client can remove a pin. Only a
+  server-side `git update-ref -d` (as `www-data`) can. That is how #1284's pin
+  was removed, because the commit it held was fabricated for the test.
+
+**Why it is a design question, not a bug.** Two requirements pull against
+each other.
+- **Pins are the permanent record of what was approved.** That is ISO
+  9001:2015 7.5.3, as set out in
+  [DOCTIS-GIT-USER-MANUAL.md](../DOCTIS-GIT-USER-MANUAL.md) §3.1. Removing
+  them on delete would erase the evidence of an approved version.
+- **Deletion is meant for mistakes.** User accounts already follow this rule
+  (CLAUDE.md, *User Lifecycle*): a person who leaves is disabled, never
+  deleted. Deletion exists for fake sign-ups and the like. A mistaken
+  registration still leaves a pin, because registration itself pins `/1`.
+- Meanwhile `dwg_delete()` also deletes the document's history. A kept pin is
+  therefore left with **no Doctis record explaining it**. That is the worst
+  of both outcomes: the evidence survives, but its meaning is gone.
+
+**Questions to settle.**
+1. Should a document that has ever been approved, or ever pinned, be
+   deletable at all? The alternative is an obsolete or withdrawn lifecycle
+   state, mirroring the user rule, with deletion kept for records that never
+   left Draft.
+2. If deletion stays, are pins removed with the document, or kept?
+   - If kept: should the deletion leave a tombstone (who, when, which pins,
+     why), since the history goes?
+   - If kept: should Git Store list pins whose document no longer exists?
+   - If removed: should the `{dwg_primary_file}` row be removed with them?
+     It is the only remaining link between a pin and a path.
+3. Should the rule differ by repository kind? In a source repository, a
+   release's pin may be the only thing keeping a commit alive after a
+   force-push (manual §7.6). In a document repository, history is
+   append-only anyway.
+4. Should the `{documents}` row follow the same decision, closing the gap
+   recorded in REST-AND-SOAP-API.md?
+
+**Until decided:** no change. Orphaned rows and pins stay where they fall.
+Remove a pin by hand only when it holds something that should never have
+existed, as with #1284.

@@ -985,7 +985,7 @@ person from the one before it.
   `{dwg_primary_file}` row and its approved pins behind (14 orphaned rows on
   the VM, including #843's and the suites' own). Every query joins `{dwg}`, so
   they are inert, but whether a deleted document's pins should go too is
-  open.
+  open: tracked in [GIT_TODO.md](GIT_TODO.md) §8.1.
 
 ---
 
