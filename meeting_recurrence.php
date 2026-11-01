@@ -23,7 +23,7 @@ if( $t_meeting === null || !meeting_user_can_set_recurrence( $t_meeting, $t_user
 	access_denied();
 }
 
-meeting_recurrence_set( $t_meeting, $f_rule, $t_user_id );
+meeting_recurrence_set( $t_meeting, $f_rule, $t_user_id, gpc_get_string( 'timezone', null ) );
 
 form_security_purge( 'meeting_recurrence' );
 

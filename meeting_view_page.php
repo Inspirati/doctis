@@ -112,8 +112,12 @@ print_my_view_menu( 'my_view_meeting_page.php' );
 				<table class="table table-bordered table-condensed">
 					<tr>
 						<th class="category width-20"><?php echo lang_get( 'meeting_when' ) ?></th>
-						<td><?php echo date( 'l j F Y, H:i', $t_start ) . ' – ' . date( 'H:i', $t_end ) ?>
+						<td><?php echo date( 'l j F Y, H:i T (P)', $t_start ) . ' – ' . date( 'H:i T (P)', $t_end ) ?>
 							<span class="text-muted">(<?php echo (int)$t_meeting['duration'] ?> min, <?php echo string_display_line( date_default_timezone_get() ) ?>)</span></td>
+					</tr>
+					<tr>
+						<th class="category"><?php echo lang_get( 'meeting_timezone' ) ?></th>
+						<td><?php echo string_display_line( meeting_timezone( $t_meeting ) . ' — ' . meeting_datetime( $t_meeting )->format( 'Y-m-d H:i T (P)' ) ) ?></td>
 					</tr>
 					<tr>
 						<th class="category"><?php echo lang_get( 'meeting_location' ) ?></th>
@@ -153,12 +157,17 @@ print_my_view_menu( 'my_view_meeting_page.php' );
 										echo meeting_recurrence_label( $t_rule ) ?></option>
 <?php	endforeach; ?>
 								</select>
+								<label for="series_timezone"><?php echo lang_get( 'meeting_series_timezone' ) ?></label>
+								<select id="series_timezone" name="timezone" class="input-sm">
+									<?php print_timezone_option_list( !empty( $t_recurrence['timezone'] ) ? $t_recurrence['timezone'] : meeting_timezone( $t_meeting ) ) ?>
+								</select>
 								<button type="submit" class="btn btn-xs btn-default btn-white btn-round"><?php echo lang_get( 'meeting_repeats_save' ) ?></button>
 							</form>
 <?php else: ?>
 							<?php echo meeting_recurrence_label( $t_recurrence['recurrence'] ?? '' ) ?>
 <?php endif; ?>
 <?php if( $t_recurrence !== null ): ?>
+							<span class="text-muted small"><?php echo string_display_line( $t_recurrence['timezone'] ); ?><?php if( !(int)$t_recurrence['active'] ) echo ' — ' . lang_get( 'meeting_schedule_paused' ); ?></span>
 							<span class="text-muted small">&mdash; <?php echo sprintf( lang_get( 'meeting_repeats_hint' ),
 								(int)config_get_global( 'meeting_schedule_lead_days' ) ) ?></span>
 <?php	if( !is_blank( $t_recurrence['last_error'] ) ): ?>

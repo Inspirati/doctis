@@ -142,7 +142,8 @@ function ai_assist_meeting_system_prompt( int $p_user_id, ?array $p_focus = null
 	$t_stored      = meeting_project_id() > 0;
 
 	# ── Today, in the user's timezone ────────────────────────────────────────
-	$t_today = date( 'l j F Y, H:i' ) . ' (' . date_default_timezone_get() . ')';
+	$t_prompt_zone = $p_series !== null ? meeting_series_timezone( $p_series ) : user_pref_get_pref( $p_user_id, 'timezone' );
+	$t_today = ( new DateTimeImmutable( 'now', new DateTimeZone( $t_prompt_zone ) ) )->format( 'l j F Y, H:i T (P)' ) . ' (' . $t_prompt_zone . ')';
 
 	# ── Department list ──────────────────────────────────────────────────────
 	$t_dept_lines = [];
@@ -195,7 +196,7 @@ function ai_assist_meeting_system_prompt( int $p_user_id, ?array $p_focus = null
 		$t_record = meeting_record_content( $p_focus );
 		$t_focus_section = "\n---\n\n## MEETING BEING MINUTED\n\n"
 			. 'meeting_id=' . $p_focus['id'] . ' | ' . $p_focus['doc_ref'] . ' | ' . $p_focus['title'] . "\n"
-			. 'Scheduled: ' . date( 'Y-m-d H:i', (int)$p_focus['date_start'] ) . ', ' . $p_focus['duration'] . " min\n"
+			. 'Scheduled: ' . meeting_datetime( $p_focus )->format( 'Y-m-d H:i T (P) e' ) . ', ' . $p_focus['duration'] . " min\n"
 			. 'Chair: id=' . $p_focus['chair_id'] . ' ' . meeting_user_display_name( (int)$p_focus['chair_id'] )
 			. ( (int)$p_focus['minute_taker_id'] > 0 ? ' | Minute taker: id=' . $p_focus['minute_taker_id'] . ' '
 				. meeting_user_display_name( (int)$p_focus['minute_taker_id'] ) : '' ) . "\n\n"
@@ -215,7 +216,7 @@ function ai_assist_meeting_system_prompt( int $p_user_id, ?array $p_focus = null
 		$t_series_section = "\n---\n\n## PLANNING THE NEXT MEETING IN A SERIES\n\n"
 			. 'The user has opened this conversation to plan the meeting that follows:' . "\n"
 			. 'meeting_id=' . $p_series['id'] . ' | ' . $p_series['doc_ref'] . ' | ' . $p_series['title'] . "\n"
-			. 'Held: ' . date( 'l j F Y, H:i', (int)$p_series['date_start'] ) . ', ' . $p_series['duration'] . ' min, '
+			. 'Held: ' . meeting_datetime( $p_series )->format( 'l j F Y, H:i T (P) e' ) . ', ' . $p_series['duration'] . ' min, '
 			. $p_series['location'] . ' | Department: ' . $p_series['department'] . ' | '
 			. meeting_status_label( (int)$p_series['status'] )
 			. ( meeting_recurrence_get( $p_series ) !== null
@@ -418,8 +419,10 @@ Adjust proportionally for other durations.
 When generating a document, wrap it in these exact markers. Attribute values must not
 contain double quotes.
 
+Use the named meeting timezone (default: {$t_prompt_zone}); retain the series timezone for follow-ups. State it in the agenda. Ask for a different time if clocks skip the requested time. If it occurs twice, ask the organiser to choose the first (earlier) or second (later) occurrence; never guess.
+
 For an agenda:
-<<<MEETING_DOCUMENT type="agenda" doc_id="MIN-{dept}-{YYYYMMDD}" dept="{dept}" title="{title}" date="{YYYY-MM-DD}" time="{HH:MM}" duration="{minutes}" location="{location}" minute_taker_id="{id or empty}" invitee_ids="{comma-separated matched ids}" guests="{semicolon-separated unmatched names}" series_of="{meeting_id it follows, or empty}" recurrence="{weekly|fortnightly|monthly, or empty}">>>
+<<<MEETING_DOCUMENT type="agenda" doc_id="MIN-{dept}-{YYYYMMDD}" dept="{dept}" title="{title}" date="{YYYY-MM-DD}" time="{HH:MM}" timezone="{IANA zone, e.g. Australia/Sydney}" time_choice="{earlier|later only when explicitly chosen, otherwise empty}" duration="{minutes}" location="{location}" minute_taker_id="{id or empty}" invitee_ids="{comma-separated matched ids}" guests="{semicolon-separated unmatched names}" series_of="{meeting_id it follows, or empty}" recurrence="{weekly|fortnightly|monthly, or empty}">>>
 [complete Markdown document following TMPL-SYS-001]
 <<<END_MEETING_DOCUMENT>>>
 
@@ -561,11 +564,14 @@ function ai_assist_meeting_process_agenda( array $p_attrs, string $p_content, in
 		throw new Exception( 'Unknown department code "' . $t_dept . '" — meeting not recorded.' );
 	}
 
-	$t_start = DateTime::createFromFormat( '!Y-m-d H:i',
-		trim( $p_attrs['date'] ?? '' ) . ' ' . trim( $p_attrs['time'] ?? '' ) );
-	if( $t_start === false ) {
-		throw new Exception( 'Meeting date/time missing or invalid — meeting not recorded.' );
+	$t_previous = ai_assist_meeting_series_base( $p_user_id, (int)( $p_attrs['series_of'] ?? 0 ) );
+	$t_timezone = trim( $p_attrs['timezone'] ?? '' );
+	if( $t_timezone === '' ) {
+		$t_timezone = $t_previous !== null ? meeting_series_timezone( $t_previous ) : user_pref_get_pref( $p_user_id, 'timezone' );
 	}
+	$t_start = meeting_local_datetime( trim( $p_attrs['date'] ?? '' ), trim( $p_attrs['time'] ?? '' ),
+		$t_timezone, trim( $p_attrs['time_choice'] ?? '' ) );
+
 	$t_duration = (int)( $p_attrs['duration'] ?? 60 );
 	$t_duration = ( $t_duration >= 5 && $t_duration <= 600 ) ? $t_duration : 60;
 
@@ -589,7 +595,6 @@ function ai_assist_meeting_process_agenda( array $p_attrs, string $p_content, in
 
 	# Series: only a meeting the user leads can be continued.
 	$t_series_id = 0;
-	$t_previous = ai_assist_meeting_series_base( $p_user_id, (int)( $p_attrs['series_of'] ?? 0 ) );
 	if( $t_previous !== null ) {
 		$t_series_id = meeting_series_root( $t_previous );
 	}
@@ -609,6 +614,7 @@ function ai_assist_meeting_process_agenda( array $p_attrs, string $p_content, in
 		'chair_id'        => $p_user_id,
 		'minute_taker_id' => $t_minute_taker,
 		'date_start'      => $t_start->getTimestamp(),
+		'timezone'        => $t_timezone,
 		'duration'        => $t_duration,
 		'location'        => trim( $p_attrs['location'] ?? '' ) ?: 'Microsoft Teams',
 		'created_by'      => $p_user_id,
@@ -623,7 +629,7 @@ function ai_assist_meeting_process_agenda( array $p_attrs, string $p_content, in
 	# Recurrence: the chair of a new meeting may make its series repeat.
 	$t_rule = strtolower( trim( $p_attrs['recurrence'] ?? '' ) );
 	if( in_array( $t_rule, MEETING_RECURRENCES, true ) ) {
-		meeting_recurrence_set( $t_meeting, $t_rule, $p_user_id );
+		meeting_recurrence_set( $t_meeting, $t_rule, $p_user_id, $t_timezone );
 		$p_result['recurrence'] = $t_rule;
 	}
 

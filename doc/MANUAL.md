@@ -692,6 +692,27 @@ previous minutes and every open action. When a series **repeats**, Doctis
 creates each next meeting itself a few days ahead and emails the invitees;
 stop it with **Repeats → Does not repeat**.
 
+Each meeting records a named **Timezone**, initially your account timezone.
+Its start is still stored as a Unix timestamp. **Change Meeting** edits the
+date and time in that meeting's zone; the meeting page also shows your local
+time and the applicable UTC offset.
+
+For a repeating series, choose **Series timezone** beside **Repeats** and save.
+Weekly, fortnightly and monthly occurrences keep the same local clock time in
+that zone across daylight saving. Changing your account timezone or the server
+timezone does not change the series rule. Changing the series timezone affects
+future automatic occurrences; it does not reschedule meetings already created.
+
+When clocks go forward, a skipped local time cannot be booked. When clocks go
+back, **Repeated clock time** lets you explicitly choose its first or second
+occurrence. Automatic scheduling pauses if its next local time is skipped or
+repeated. Review the warning, correct the latest meeting's local start time
+(or arrange the next occurrence manually), then save **Repeats** to resume.
+Saving alone will not resolve a clock-change conflict at the same local time.
+
+Calendar downloads use UTC instants, so attendees' calendars display their
+own local times.
+
 ---
 
 ## 11. AI Assistant and knowledge base

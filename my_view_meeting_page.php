@@ -123,7 +123,7 @@ function meeting_print_table( array $p_meetings, $p_ai_enabled ) {
 <?php	$t_rule = meeting_recurrence_get( $t_meeting );
 		if( $t_rule !== null ): ?>
 					<br><span class="text-muted small" title="<?php echo string_attribute( meeting_recurrence_label( $t_rule['recurrence'] ) ) ?>">
-						<?php print_icon( 'fa-refresh', 'ace-icon' ); ?> <?php echo meeting_recurrence_label( $t_rule['recurrence'] ) ?></span>
+						<?php print_icon( 'fa-refresh', 'ace-icon' ); ?> <?php echo meeting_recurrence_label( $t_rule['recurrence'] ) . ( (int)$t_rule['active'] ? '' : ' — ' . lang_get( 'meeting_schedule_paused' ) ) ?></span>
 <?php	endif; ?>
 				</td>
 				<td><?php echo $t_meeting['role'] === '' ? '—' : lang_get( 'meeting_role_' . $t_meeting['role'] ) ?></td>

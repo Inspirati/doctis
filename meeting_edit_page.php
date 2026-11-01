@@ -22,6 +22,9 @@ if( $t_meeting === null || !meeting_user_can_manage( $t_meeting, auth_get_curren
 	access_denied();
 }
 
+$t_local = meeting_datetime( $t_meeting );
+$t_time_choice = meeting_time_choice( $t_meeting );
+
 $t_invitees = meeting_invitees_get( $f_meeting_id );
 $t_invited_ids = array_map( 'intval', array_column( $t_invitees, 'user_id' ) );
 
@@ -60,12 +63,26 @@ print_my_view_menu( 'my_view_meeting_page.php' );
 						<th class="category width-25"><label for="meeting_date"><?php echo lang_get( 'meeting_date' ) ?></label></th>
 						<td>
 							<input type="date" id="meeting_date" name="date" class="input-sm" required
-								value="<?php echo date( 'Y-m-d', (int)$t_meeting['date_start'] ) ?>" />
+								value="<?php echo $t_local->format( 'Y-m-d' ) ?>" />
 							<label for="meeting_time" class="sr-only"><?php echo lang_get( 'meeting_time' ) ?></label>
 							<input type="time" id="meeting_time" name="time" class="input-sm" required
-								value="<?php echo date( 'H:i', (int)$t_meeting['date_start'] ) ?>" />
-							<span class="text-muted small"><?php echo string_display_line( date_default_timezone_get() ) ?></span>
+								value="<?php echo $t_local->format( 'H:i' ) ?>" />
+							<span class="text-muted small"><?php echo string_display_line( sprintf( lang_get( 'meeting_saved_start' ), $t_local->format( 'T (P)' ) ) ) ?></span>
 						</td>
+					</tr>
+					<tr>
+						<th class="category"><label for="meeting_timezone"><?php echo lang_get( 'timezone' ) ?></label></th>
+						<td><select id="meeting_timezone" name="timezone" class="input-sm">
+							<?php print_timezone_option_list( meeting_timezone( $t_meeting ) ) ?>
+						</select></td>
+					</tr>
+					<tr>
+						<th class="category"><label for="meeting_time_choice"><?php echo lang_get( 'meeting_time_choice' ) ?></label></th>
+						<td><select id="meeting_time_choice" name="time_choice" class="input-sm">
+<?php foreach( array( '' => 'meeting_time_choice_none', 'earlier' => 'meeting_time_earlier', 'later' => 'meeting_time_later' ) as $t_value => $t_label ): ?>
+							<option value="<?php echo $t_value ?>"<?php check_selected( $t_time_choice, $t_value ); ?>><?php echo lang_get( $t_label ) ?></option>
+<?php endforeach; ?>
+						</select><p class="help-block"><?php echo lang_get( 'meeting_time_choice_hint' ) ?></p></td>
 					</tr>
 					<tr>
 						<th class="category"><label for="meeting_duration"><?php echo lang_get( 'meeting_duration' ) ?></label></th>

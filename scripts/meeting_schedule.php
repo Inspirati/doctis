@@ -49,19 +49,19 @@ if( !$t_lock || !flock( $t_lock, LOCK_EX | LOCK_NB ) ) {
 }
 
 $t_failed = 0;
-foreach( meeting_schedule_due( $t_now ) as $t_due ) {
+foreach( meeting_schedule_due( $t_now, !$t_dry_run, $t_only ) as $t_due ) {
 	$t_series_id = (int)$t_due['series']['series_id'];
 	if( $t_only > 0 && $t_series_id !== $t_only ) {
 		continue;
 	}
 	$t_rule = $t_due['series']['recurrence'];
 	$t_start = (int)$t_due['next_start'];
-	echo 'Series ' . $t_series_id . ' (' . $t_rule . '): next ' . date( 'Y-m-d H:i', $t_start ) . ' — ';
+	echo 'Series ' . $t_series_id . ' (' . $t_rule . '): next ' . meeting_datetime( array( 'date_start' => $t_start, 'timezone' => $t_due['series']['timezone'] ) )->format( 'Y-m-d H:i T (P) e' ) . ' — ';
 	if( $t_dry_run ) {
 		echo "due (dry run)\n";
 		continue;
 	}
-	$t_error = meeting_schedule_create( $t_series_id, $t_rule, $t_start );
+	$t_error = meeting_schedule_create( $t_series_id, $t_rule, $t_start, $t_due['series']['timezone'] );
 	meeting_recurrence_record_run( $t_series_id, $t_error );
 	if( $t_error === '' ) {
 		echo "created\n";
@@ -81,9 +81,11 @@ exit( $t_failed > 0 ? 1 : 0 );
  * @param int    $p_series_id Series root.
  * @param string $p_rule
  * @param int    $p_start     Start of the occurrence.
+ * @param string $p_timezone Saved series timezone.
  * @return string '' on success, else the error.
  */
-function meeting_schedule_create( int $p_series_id, string $p_rule, int $p_start ): string {
+function meeting_schedule_create( int $p_series_id, string $p_rule, int $p_start, string $p_timezone ): string {
+	$t_local = ( new DateTimeImmutable( '@' . $p_start ) )->setTimezone( new DateTimeZone( meeting_timezone_validate( $p_timezone ) ) );
 	# The latest meeting that took place (or will) is the model for the next one.
 	$t_base = null;
 	foreach( array_reverse( meeting_series_get( array( 'id' => $p_series_id, 'series_id' => 0 ) ) ) as $t_m ) {
@@ -111,7 +113,7 @@ function meeting_schedule_create( int $p_series_id, string $p_rule, int $p_start
 		}
 	}
 
-	$t_when = date( 'l j F Y', $p_start ) . ' at ' . date( 'H:i', $p_start ) . ' (' . date_default_timezone_get() . ')';
+	$t_when = $t_local->format( 'l j F Y \a\t H:i T (P) e' );
 	$t_answer = ai_assist_anthropic_request(
 		ai_assist_meeting_system_prompt( $t_chair, null, $t_base ),
 		array( array( 'role' => 'user', 'content' =>
@@ -127,8 +129,9 @@ function meeting_schedule_create( int $p_series_id, string $p_rule, int $p_start
 
 	$t_result = ai_assist_process_meeting_document( $t_answer['reply'], $t_chair, array(
 		'type'            => 'agenda',
-		'date'            => date( 'Y-m-d', $p_start ),
-		'time'            => date( 'H:i', $p_start ),
+		'date'            => $t_local->format( 'Y-m-d' ),
+		'timezone'        => $p_timezone,
+		'time'            => $t_local->format( 'H:i' ),
 		'dept'            => $t_base['department'],
 		'duration'        => (string)$t_base['duration'],
 		'location'        => $t_base['location'],

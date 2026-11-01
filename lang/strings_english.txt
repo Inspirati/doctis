@@ -2949,3 +2949,17 @@ $s_topic_share_title               = 'Documents from other projects';
 $s_topic_share_intro               = 'Tag a document of another project as part of this project\'s Topic documentation, for example a shared interface specification. The document keeps its own project; only this project\'s tag, evidence and assessments refer to it. You need to be able to see the document.';
 $s_topic_share_document_id         = 'Document ID';
 $s_topic_shared_uses               = 'Also used by:';
+
+# Meeting timezone and daylight-saving handling.
+$s_meeting_timezone = 'Meeting timezone';
+$s_meeting_saved_start = 'Saved start: %s';
+$s_meeting_series_timezone = 'Series timezone';
+$s_meeting_time_choice = 'Repeated clock time';
+$s_meeting_time_choice_none = 'Ask if this time occurs twice';
+$s_meeting_time_earlier = 'First occurrence (earlier instant)';
+$s_meeting_time_later = 'Second occurrence (later instant)';
+$s_meeting_time_choice_hint = 'Only needed when clocks go back and the selected local time occurs twice. Skipped clock-change times cannot be scheduled.';
+$s_meeting_time_gap = '%s does not exist in %s because the clocks change. Choose another local time.';
+$s_meeting_time_overlap = '%s occurs twice in %s because the clocks change. Choose the first or second occurrence.';
+$s_meeting_timezone_review = 'Automatic scheduling paused. Review the series timezone and local meeting time, then save Repeats to resume.';
+$s_meeting_schedule_paused = 'Automatic scheduling paused';

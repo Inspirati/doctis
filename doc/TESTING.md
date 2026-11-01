@@ -42,6 +42,29 @@ turn email notifications off before tests that queue mail in bulk.
 
 ## 2. PHPUnit (`tests/`)
 
+For meeting timezone changes, run `MeetingTimezoneTest` and `MeetingApiTest`.
+The timezone suite covers both Sydney DST transitions, other regions and a
+half-hour clock change, invalid/gap/overlap input, saved series zones despite
+changed account/process zones, paused scheduling, dry runs, AI follow-ups and
+UTC calendar exports. Use disposable fixtures, turn email off in the test
+process, and disable meeting document storage for every department. These
+tests exercise the AI document processor without calling an AI provider.
+
+Existing schema-80 databases need
+`admin/tools/schema-updates/2026-11-01_meeting-timezones.sql` before running
+the updated code. It adds the canonical columns and pauses old recurring
+series for explicit timezone confirmation; it does not convert timestamps or
+change the schema version. Back up first on live. Compare both altered tables
+with steps 60 and 63 of `admin/schema.php`.
+
+Verified on the native VM, 2026-11-01: 48 combined meeting/timezone cases
+(261 assertions), plus the schema-update regression (8 assertions). The schema
+test applies the tracked SQL to temporary legacy tables and compares it with
+fresh canonical definitions. HTTP checks covered named-zone forms, recurrence
+saving, invalid input without partial updates, both repeated-time choices,
+location-only edits and the downloaded calendar. Fixtures were removed; no
+emails or external AI calls were made.
+
 **What it covers:** MantisBT core API unit tests and the Doctis tests in
 `tests/Mantis/` (`Topic*Test`, `MeetingApiTest`, `AiKnowledgeTest`, `UserNamePolicyTest`,
 `DwgOwnershipTest`, `UserTransferTest`, `ProjectOwnerTest` and

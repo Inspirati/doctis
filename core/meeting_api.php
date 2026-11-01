@@ -33,6 +33,7 @@ require_api( 'project_api.php' );
 require_api( 'repository_api.php' );
 require_api( 'string_api.php' );
 require_api( 'user_api.php' );
+require_api( 'meeting_time_api.php' );
 require_api( 'meeting_calendar_api.php' );
 require_api( 'meeting_action_api.php' );
 require_api( 'meeting_schedule_api.php' );
@@ -52,7 +53,7 @@ define( 'MEETING_APOLOGIES', 20 );
 const MEETING_UPDATABLE_FIELDS = array(
 	'title', 'department', 'project_id', 'dwg_id', 'git_path', 'chair_id',
 	'minute_taker_id', 'date_start', 'duration', 'location', 'status',
-	'series_id', 'sequence',
+	'series_id', 'sequence', 'timezone',
 );
 
 
@@ -391,19 +392,21 @@ function meeting_unique_ref( string $p_doc_ref ): string {
  * Create a meeting and its invitee list.
  *
  * @param array $p_fields   {meeting} column values (doc_ref, title, department,
- *                          chair_id, minute_taker_id, date_start, duration,
+ *                          chair_id, minute_taker_id, date_start, timezone, duration,
  *                          location, created_by).
  * @param array $p_invitees Each ['user_id' => int, 'name' => string].
  * @return int New meeting id.
  */
 function meeting_create( array $p_fields, array $p_invitees ): int {
+	$t_timezone = meeting_timezone_validate( $p_fields['timezone']
+		?? user_pref_get_pref( (int)$p_fields['created_by'], 'timezone' ) );
 	$t_now = db_now();
 	db_param_push();
 	db_query(
 		'INSERT INTO {meeting}'
-		. ' ( series_id, doc_ref, title, department, chair_id, minute_taker_id, date_start,'
+		. ' ( series_id, doc_ref, title, department, chair_id, minute_taker_id, date_start, timezone,'
 		. '   duration, location, status, created_by, date_created, date_updated )'
-		. ' VALUES ( ' . implode( ', ', array_fill( 0, 13, db_param() ) ) . ' )',
+		. ' VALUES ( ' . implode( ', ', array_fill( 0, 14, db_param() ) ) . ' )',
 		array(
 			(int)( $p_fields['series_id'] ?? 0 ),
 			$p_fields['doc_ref'],
@@ -412,6 +415,7 @@ function meeting_create( array $p_fields, array $p_invitees ): int {
 			(int)$p_fields['chair_id'],
 			(int)$p_fields['minute_taker_id'],
 			(int)$p_fields['date_start'],
+			$t_timezone,
 			(int)$p_fields['duration'],
 			substr( $p_fields['location'], 0, 128 ),
 			MEETING_AGENDA,
@@ -877,7 +881,7 @@ function meeting_user_name_with_title( int $p_user_id ): string {
  *
  * @param array $p_meeting
  * @param int   $p_user_id      Acting chair or organiser.
- * @param array $p_fields       Any of date_start, duration, location, minute_taker_id.
+ * @param array $p_fields       Any of date_start, timezone, duration, location, minute_taker_id.
  * @param int[] $p_add_user_ids Users to invite (must accept meeting invitations).
  * @param array $p_add_guests   Guest names to invite.
  * @param int[] $p_remove_ids   {meeting_invitee}.id values to remove.
@@ -895,6 +899,12 @@ function meeting_change( array $p_meeting, int $p_user_id, array $p_fields, arra
 	$t_update = array();
 	if( isset( $p_fields['date_start'] ) && (int)$p_fields['date_start'] !== (int)$p_meeting['date_start'] ) {
 		$t_update['date_start'] = (int)$p_fields['date_start'];
+	}
+	if( isset( $p_fields['timezone'] ) ) {
+		$t_timezone = meeting_timezone_validate( $p_fields['timezone'] );
+		if( $t_timezone !== ( $p_meeting['timezone'] ?? '' ) ) {
+			$t_update['timezone'] = $t_timezone;
+		}
 	}
 	if( isset( $p_fields['duration'] ) && (int)$p_fields['duration'] !== (int)$p_meeting['duration'] ) {
 		$t_duration = (int)$p_fields['duration'];
@@ -960,13 +970,14 @@ function meeting_change( array $p_meeting, int $p_user_id, array $p_fields, arra
 	if( $t_content !== '' ) {
 		$t_start = (int)$t_meeting['date_start'];
 		$t_end = $t_start + 60 * (int)$t_meeting['duration'];
-		$t_time = date( 'H:i', $t_start ) . ' – ' . date( 'H:i', $t_end );
+		$t_local = meeting_datetime( $t_meeting );
+		$t_time = $t_local->format( 'H:i T (P)' ) . ' – ' . ( new DateTimeImmutable( '@' . $t_end ) )->setTimezone( $t_local->getTimezone() )->format( 'H:i T (P)' );
 		$t_taker = (int)$t_meeting['minute_taker_id'] > 0
 			? meeting_user_name_with_title( (int)$t_meeting['minute_taker_id'] ) : '—';
 		$t_content = meeting_record_set( $t_content,
-			array( 'date' => date( 'Y-m-d', $t_start ), 'time' => $t_time,
+			array( 'date' => $t_local->format( 'Y-m-d' ), 'time' => $t_time,
 				'location' => $t_meeting['location'], 'minute_taker' => $t_taker ),
-			array( 'Date' => date( 'j F Y', $t_start ), 'Time' => $t_time,
+			array( 'Date' => $t_local->format( 'j F Y' ), 'Time' => $t_time,
 				'Location' => $t_meeting['location'], 'Minute Taker' => $t_taker ) );
 		if( $t_invitees_changed ) {
 			$t_content = meeting_record_set_invitees_table( $t_content,
@@ -980,7 +991,7 @@ function meeting_change( array $p_meeting, int $p_user_id, array $p_fields, arra
 	$t_removed = meeting_email_send( $t_meeting, $t_removed_users,
 		'Removed from meeting: ' . $t_meeting['doc_ref'] . ' — ' . $t_meeting['title'],
 		'You are no longer invited to ' . $t_meeting['title'] . ', '
-			. date( 'l j F Y, H:i', (int)$t_meeting['date_start'] ) . '.',
+			. meeting_datetime( $t_meeting )->format( 'l j F Y, H:i T (P)' ) . '.',
 		'', array(), 'CANCEL' );
 
 	return array( 'changed' => true, 'notified' => $t_notified, 'removed' => $t_removed );
@@ -1016,7 +1027,7 @@ function meeting_cancel( array $p_meeting, int $p_user_id, string $p_reason = ''
 	}
 	return meeting_email_send( $t_meeting, $t_ids,
 		'Cancelled: ' . $t_meeting['doc_ref'] . ' — ' . $t_meeting['title'],
-		$t_meeting['title'] . ', ' . date( 'l j F Y, H:i', (int)$t_meeting['date_start'] )
+		$t_meeting['title'] . ', ' . meeting_datetime( $t_meeting )->format( 'l j F Y, H:i T (P)' )
 			. ', has been cancelled by ' . meeting_user_display_name( $p_user_id ) . '.'
 			. ( is_blank( $p_reason ) ? '' : "\n\nReason: " . trim( $p_reason ) ),
 		'', array(), 'CANCEL' );
@@ -1260,7 +1271,7 @@ function meeting_email_agenda( array $p_meeting, string $p_content, bool $p_upda
 			$t_ids[] = $t_uid;
 		}
 	}
-	$t_when = date( 'l j F Y, H:i', (int)$p_meeting['date_start'] ) . ' (' . $p_meeting['duration'] . ' min), '
+	$t_when = meeting_datetime( $p_meeting )->format( 'l j F Y, H:i T (P)' ) . ' (' . $p_meeting['duration'] . ' min), '
 		. $p_meeting['location'];
 	return meeting_email_send( $p_meeting, $t_ids,
 		( $p_update ? 'Meeting Updated: ' : 'Meeting Agenda: ' ) . $p_meeting['doc_ref'] . ' — ' . $p_meeting['title'],

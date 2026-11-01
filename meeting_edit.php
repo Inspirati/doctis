@@ -32,11 +32,9 @@ if( $t_meeting === null || !meeting_user_can_manage( $t_meeting, $t_user_id ) ) 
 	access_denied();
 }
 
-$t_start = DateTime::createFromFormat( '!Y-m-d H:i', $f_date . ' ' . substr( $f_time, 0, 5 ) );
-if( $t_start === false ) {
-	error_parameters( lang_get( 'meeting_date' ) );
-	trigger_error( ERROR_INVALID_FIELD_VALUE, ERROR );
-}
+$t_timezone = gpc_get_string( 'timezone', meeting_timezone( $t_meeting ) );
+$t_start = meeting_local_datetime( $f_date, substr( $f_time, 0, 5 ), $t_timezone,
+	gpc_get_string( 'time_choice', '' ) );
 
 $t_remove = array();
 foreach( meeting_invitees_get( $f_meeting_id ) as $t_invitee ) {
@@ -48,6 +46,7 @@ foreach( meeting_invitees_get( $f_meeting_id ) as $t_invitee ) {
 meeting_change( $t_meeting, $t_user_id,
 	array(
 		'date_start'      => $t_start->getTimestamp(),
+		'timezone'        => $t_timezone,
 		'duration'        => $f_duration,
 		'location'        => $f_location,
 		'minute_taker_id' => $f_taker,
