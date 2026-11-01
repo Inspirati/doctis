@@ -357,7 +357,7 @@ function print_date_selection_set( $p_name, $p_format, $p_date = 0, $p_default_d
  * @param int|null $p_now         Current timestamp (from db_now()), optional
  * @return string HTML-safe <td> content
  */
-function format_last_updated_display( int $p_timestamp, int $p_highlight_hours, int $p_now = null ) {
+function format_last_updated_display( int $p_timestamp, int $p_highlight_hours, ?int $p_now = null ) {
 	if( $p_now === null ) {
 		$p_now = db_now();
 	}

@@ -100,14 +100,15 @@ function ai_assist_knowledge_links( string $p_html ): array {
 	libxml_clear_errors();
 	libxml_use_internal_errors( $t_previous );
 
-	$t_base = rtrim( (string)parse_url( config_get_global( 'path' ), PHP_URL_PATH ), '/' ) . '/';
+	# Match the prefix actually used by helper_mantis_url(), including CLI paths.
+	$t_base = (string)config_get_global( 'short_path' );
 	$t_lines = array();
 	foreach( $t_dom->getElementsByTagName( 'a' ) as $t_a ) {
 		$t_href = trim( $t_a->getAttribute( 'href' ) );
 		if( $t_href === '' || $t_href[0] === '#' || stripos( $t_href, 'javascript:' ) === 0 ) {
 			continue;
 		}
-		if( strpos( $t_href, $t_base ) === 0 ) {
+		if( $t_base !== '' && strpos( $t_href, $t_base ) === 0 ) {
 			$t_href = substr( $t_href, strlen( $t_base ) );
 		}
 		$t_label = trim( preg_replace( '/\s+/u', ' ', $t_a->textContent ) );

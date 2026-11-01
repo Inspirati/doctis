@@ -125,6 +125,17 @@ the owner's Reference policy decision is incorporated.
 
 ## Owner's requirement
 
+### Live configuration credentials — owner clarification, 2026-11-01
+
+The owner confirms that the live server's `config/config_inc.php` contains
+no sensitive data. All credentials are held in server environment variables,
+which the configuration file references; the file does not embed their values.
+Do not assume that downloading or backing up this live configuration file
+exports credentials merely because it contains credential-setting references.
+This clarification applies to the live deployment, not automatically to the
+native VM configuration, copied Docker `.env` files, or other deployments.
+Keep actual environment-variable values and credential files private.
+
 The project owner develops Doctis and normally tests installation on a clean
 Debian-based Linux system, using either a GitHub bootstrap or a LAN repository
 bootstrap. The first company production deployment uses the IT team's Docker

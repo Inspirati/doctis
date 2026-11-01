@@ -162,6 +162,50 @@ class AiKnowledgeTest extends MantisCoreBase {
 		$this->assertNull( ai_assist_process_knowledge_entry( 'No entry here.', auth_get_current_user_id() ) );
 	}
 
+	/** @dataProvider navigationPrefixes */
+	public function testNavigationLinksUseTheRenderedMenuPrefix( string $p_prefix ) {
+		$t_before = config_get_global( 'short_path' );
+		config_set_global( 'short_path', $p_prefix );
+		try {
+			$t_links = ai_assist_knowledge_links(
+				'<a href="' . $p_prefix . 'my_view_org_page.php">Organisational Chart</a>'
+				. '<a href="' . $p_prefix . 'my_view_meeting_page.php?id=12&amp;view=all#agenda">My Meetings</a>'
+				. '<a href="https://external.example/guide">External guide</a>'
+				. '<a href="#local">Local section</a><a href="javascript:void(0)">Toggle</a>'
+			);
+			$this->assertSame( array(
+				'- Organisational Chart: my_view_org_page.php',
+				'- My Meetings: my_view_meeting_page.php?id=12&view=all#agenda',
+				'- External guide: https://external.example/guide'
+			), $t_links );
+		} finally {
+			config_set_global( 'short_path', $t_before );
+		}
+	}
+
+	public static function navigationPrefixes(): array {
+		return array(
+			'web root' => array( '/' ),
+			'web subdirectory' => array( '/doctis/' ),
+			'CLI PHPUnit' => array( 'vendor/bin/' ),
+			'custom short path' => array( '/proxy/doctis/' ),
+			'no prefix' => array( '' )
+		);
+	}
+
+	public function testNavigationMapUnderPhpunitCliPrefix() {
+		$t_before = config_get_global( 'short_path' );
+		config_set_global( 'short_path', 'vendor/bin/' );
+		try {
+			$t_map = ai_assist_knowledge_nav_map();
+			$this->assertStringContainsString( 'Organisational Chart: my_view_org_page.php', $t_map );
+			$this->assertStringContainsString( 'My Meetings: my_view_meeting_page.php', $t_map );
+			$this->assertStringNotContainsString( ': vendor/bin/', $t_map );
+		} finally {
+			config_set_global( 'short_path', $t_before );
+		}
+	}
+
 	public function testNavigationMapAndHelpPromptShape() {
 		$t_map = ai_assist_knowledge_nav_map();
 		$this->assertStringContainsString( 'Organisational Chart: my_view_org_page.php', $t_map );
