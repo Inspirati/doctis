@@ -4,6 +4,10 @@
 **Status as of:** 2026-10-03 — Help tab answers from the user manual, a live navigation map and a knowledge base users teach (see [ai-knowledge.md](ai-knowledge.md)); meeting lifecycle (plan → change/cancel → minutes with actions → chair approval → issues → next meeting in series → recurring meetings scheduled automatically) **passed end to end on the VM**; My Meetings (all meetings for managers) and meeting pages; calendar invitations; SOP and Other tabs not started. Merged into `dev` on 2026-10-08 after the PHPUnit `mantis` suite (244 tests) passed on the merged tree; the owner's wider test sweep is still open (§7).
 **Companion document:** [ai-engine.md](ai-engine.md) — the original concept plan and platform assessment (June 2026)
 
+**Feature proposal (not implemented):** [Teams integration and transcript-assisted minutes](TEAMS_INTEGRATION_PROPOSAL.md)
+— DevOps/IT requirements, Microsoft access, transcript retrieval and automated
+initial drafts with human review and chair approval (1 November 2026).
+
 This is a living document. It records what exists, how it works, what is
 known to be broken, and what remains to do. Read it before working on any AI
 feature, and update it when work is completed or decisions change. Keep

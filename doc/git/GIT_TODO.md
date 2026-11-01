@@ -399,6 +399,10 @@ Each can be reproduced on any installation.
    - **Any pin.** This is wrong on its own, because registration pins `/1`
      (scenario A).
 
+   **Proposed answer:** a document is "ever approved" when a positive decision
+   record exists for it. See [../dwg/APPROVAL_AND_RELEASE.md](../dwg/APPROVAL_AND_RELEASE.md)
+   §6.2, a proposal under discussion.
+
 2. **If deletion stays, are pins removed with the document, or kept?**
    *Largely closed by answer 1:* an approved document cannot be deleted, and
    what remains deletable is the scenario-A case. The question stays open
