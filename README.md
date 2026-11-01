@@ -5,6 +5,11 @@
 
 ## About
 
+Doctis requires **PHP 8.2 or newer**. Required CI jobs cover PHP 8.2, 8.3
+and 8.4; PHP 8.5 is tested experimentally. PHP 7.4, 8.0 and 8.1 are no
+longer supported. The live Docker runtime uses PHP 8.2, and the native
+development VM uses PHP 8.4.
+
 Doctis is a lightweight, flexible document control and traceability platform designed to support the implementation and operation of a modern Quality Management System (QMS).
 
 At its core, Doctis provides a centralised index of controlled corporate documents, linking together documentation, review workflows, issue tracking, responsibilities, and supporting systems into a single cohesive environment.

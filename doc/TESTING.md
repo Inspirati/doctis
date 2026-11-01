@@ -42,6 +42,13 @@ turn email notifications off before tests that queue mail in bulk.
 
 ## 2. PHPUnit (`tests/`)
 
+The GitHub Actions matrix requires PHP 8.2, 8.3 and 8.4, with PHP 8.5 as
+an experimental job. PHP 8.2 is the minimum supported runtime, enforced by
+both Composer and the application bootstrap. PHP 7.4, 8.0 and 8.1 are not
+supported. PHP 8.0 has a known repeated-time conversion defect ([PHP bug
+80664](https://bugs.php.net/bug.php?id=80664), fixed in 8.1); the meeting
+timezone regression remains enabled for every supported version.
+
 For meeting timezone changes, run `MeetingTimezoneTest` and `MeetingApiTest`.
 The timezone suite covers both Sydney DST transitions, other regions and a
 half-hour clock change, invalid/gap/overlap input, saved series zones despite

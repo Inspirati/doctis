@@ -40,9 +40,9 @@ define( 'WARN', 2 );
 # - SHOULD be < PHP_SUPPORTED_VERSION (Later versions have not been tested,
 #   there may be compatibility issues)
 # ¹ Enforced in core.php, MantisBT will halt if condition is not met.
-define( 'PHP_MIN_VERSION', '7.4.0' );
+define( 'PHP_MIN_VERSION', '8.2.0' );
 //define( 'PHP_MAX_VERSION', '8.4.0' ); # Do not define (i.e. comment out) if there are no known restrictions
-define( 'PHP_SUPPORTED_VERSION', '8.4' ); # should be defined as X.Y (not X.Y.Z)
+define( 'PHP_SUPPORTED_VERSION', '8.5' ); # upper exclusive tested version; 8.5 is experimental in CI
 
 # Other PHP-related constants
 define( 'PHP_CLI', 0 );

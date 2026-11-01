@@ -3,7 +3,7 @@
     "description": "Doctis Document Issue Tracking System",
     "type": "project",
     "require": {
-        "php": "^7.4 || ^8.0",
+        "php": "^8.2",
         "ext-mbstring": "*",
         "ext-json": "*",
         "ext-tokenizer": "*",
@@ -43,7 +43,7 @@
     ],
     "config": {
         "platform": {
-            "php": "8.1.0"
+            "php": "8.2.0"
         }
     }
 }
