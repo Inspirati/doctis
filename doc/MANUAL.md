@@ -611,17 +611,38 @@ that page, using its own **Update Prefs** button. Impersonation is not needed.
 ### Organisational Chart (corporate directory)
 
 **My View → Organisational Chart** (`my_view_org_page.php`) is Doctis's staff
-directory: every registered user with their position, department and company,
+directory: enabled users with a non-empty **Real Name**, with their position, department and company,
 arranged by reporting line from each user's **Reports To** setting. Managers who
 are not registered appear as dashed "external" boxes. Use it to find a
 colleague's role, department or manager. Administrators can click a name to
 open that user's account.
+
+Accounts with an empty or whitespace-only Real Name are omitted from the
+screen chart and both exports. If a user's manager is omitted, the user appears
+under their alternative manager when configured, otherwise at the top level.
 
 Click **PDF / Print** in the chart header to open the complete diagram as a
 PDF in a new tab. Use the PDF viewer's save/download or print controls to keep
 a local copy or print it. The PDF includes all reporting branches, even those
 outside the scrollable screen area. Its page fits the diagram; choose **Fit to
 page** in the print dialog when printing a large chart on standard paper.
+
+Click **Export CSV (Visio)** alongside **PDF / Print** to save the same chart
+as UTF-8 CSV data. In **Visio desktop**, create an **Organisation Chart** and
+use the **Organisation Chart Wizard** to import information already stored in
+a file. Select the downloaded delimited text/CSV file and map **Employee ID**
+as the unique identifier, **Name** as the displayed employee name and
+**Reports To** as the manager identifier. Select **Title**, **Department** and
+**Company** as additional shape data/display fields as needed. Visio builds
+editable shapes and connectors so you can rearrange and format the layout.
+See [Microsoft's import instructions](https://support.microsoft.com/en-au/visio/create-an-organization-chart-automatically-from-employee-data).
+
+External managers have separate rows identified by **Type = External**.
+Unique IDs distinguish people who share a name. Existing reporting cycles
+are preserved in the CSV; correct these relationships before importing into
+a hierarchy-based tool. Other tools that accept employee/manager CSV data can
+use the same export. The export contains chart data rather than the browser's
+layout; edits made in Visio do not update Doctis.
 
 ---
 

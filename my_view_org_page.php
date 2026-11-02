@@ -17,6 +17,14 @@ html_robots_noindex();
 
 $t_chart = org_chart_build( user_get_enabled_rows() );
 
+if( gpc_get_bool( 'csv', false ) ) {
+	http_caching_headers( false );
+	header( 'Content-Type: text/csv; charset=UTF-8' );
+	http_content_disposition_header( 'organisation-chart.csv' );
+	echo org_chart_export_csv( $t_chart );
+	exit;
+}
+
 if( gpc_get_bool( 'pdf', false ) ) {
 	$t_graph = org_chart_create_graph( $t_chart );
 	http_caching_headers( false );
@@ -42,7 +50,7 @@ function org_chart_render_user( $p_user_id, array $p_path = array() ) {
 	$p_path[$p_user_id] = true;
 	$t_rendered[$p_user_id] = true;
 	$t_user = $t_chart['nodes'][$p_user_id];
-	$t_name = $t_user['realname'] ?: $t_user['username'];
+	$t_name = $t_user['realname'];
 	?>
 	<li>
 		<div class="org-card">
@@ -95,6 +103,9 @@ print_my_view_menu( 'my_view_org_page.php' );
 			<div class="widget-toolbar">
 				<a class="btn btn-minier btn-white btn-round" href="my_view_org_page.php?pdf=1" target="_blank" rel="noopener">
 					<?php print_icon( 'fa-file-pdf-o', 'ace-icon' ); ?> <?php echo lang_get( 'org_chart_pdf' ) ?>
+				</a>
+				<a class="btn btn-minier btn-white btn-round" href="my_view_org_page.php?csv=1" title="<?php echo string_attribute( lang_get( 'org_chart_csv_hint' ) ) ?>">
+					<?php print_icon( 'fa-download', 'ace-icon' ); ?> <?php echo lang_get( 'org_chart_csv' ) ?>
 				</a>
 			</div>
 		</div>

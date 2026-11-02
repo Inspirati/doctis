@@ -2,7 +2,7 @@
 # Doctis organisational chart model helpers.
 
 /**
- * Build a cycle-safe organisational chart model from user rows.
+ * Build a cycle-safe organisational chart model from users with a real name.
  *
  * @param array $p_users User rows, keyed or unkeyed.
  * @return array Nodes, child relationships, roots, external-manager groups.
@@ -10,6 +10,10 @@
 function org_chart_build( array $p_users ) {
 	$t_nodes = array();
 	foreach( $p_users as $t_user ) {
+		$t_user['realname'] = trim( (string)( $t_user['realname'] ?? '' ) );
+		if( $t_user['realname'] === '' ) {
+			continue;
+		}
 		$t_id = (int)$t_user['id'];
 		$t_user['id'] = $t_id;
 		$t_user['reports_to'] = (int)( $t_user['reports_to'] ?? 0 );
@@ -33,8 +37,8 @@ function org_chart_build( array $p_users ) {
 
 	$t_sort_ids = function( &$p_ids ) use ( $t_nodes ) {
 		usort( $p_ids, function( $p_left, $p_right ) use ( $t_nodes ) {
-			$t_left = $t_nodes[$p_left]['realname'] ?: $t_nodes[$p_left]['username'];
-			$t_right = $t_nodes[$p_right]['realname'] ?: $t_nodes[$p_right]['username'];
+			$t_left = $t_nodes[$p_left]['realname'];
+			$t_right = $t_nodes[$p_right]['realname'];
 			return strcasecmp( $t_left, $t_right );
 		} );
 	};
@@ -51,6 +55,59 @@ function org_chart_build( array $p_users ) {
 		'roots' => $t_roots,
 		'external' => $t_external,
 	);
+}
+
+/**
+ * Export chart data for Visio's Organisation Chart Wizard and similar tools.
+ *
+ * IDs, rather than names, identify reporting lines (names need not be unique).
+ * External managers have their own rows so no exported reference is dangling.
+ * Header names and comma delimiters are stable regardless of display language.
+ *
+ * @param array $p_chart Organisation chart model.
+ * @return string UTF-8 CSV with BOM and CRLF line endings.
+ */
+function org_chart_export_csv( array $p_chart ): string {
+	$t_managers = array();
+	foreach( $p_chart['children'] as $t_manager_id => $t_child_ids ) {
+		foreach( $t_child_ids as $t_child_id ) {
+			$t_managers[$t_child_id] = 'user_' . $t_manager_id;
+		}
+	}
+	$t_rows = array( array( 'Employee ID', 'Name', 'Reports To', 'Title', 'Department', 'Company', 'Type' ) );
+	$t_external_id = 0;
+	foreach( $p_chart['external'] as $t_name => $t_user_ids ) {
+		$t_id = 'external_' . $t_external_id++;
+		$t_rows[] = array( $t_id, $t_name, '', '', '', '', 'External' );
+		foreach( $t_user_ids as $t_user_id ) {
+			$t_managers[$t_user_id] = $t_id;
+		}
+	}
+	foreach( $p_chart['nodes'] as $t_id => $t_user ) {
+		$t_rows[] = array(
+			'user_' . $t_id, $t_user['realname'], $t_managers[$t_id] ?? '',
+			$t_user['position_title'] ?? '', $t_user['department'] ?? '',
+			$t_user['company'] ?? '', 'User',
+		);
+	}
+
+	$t_stream = fopen( 'php://temp', 'w+' );
+	fwrite( $t_stream, "\xEF\xBB\xBF" );
+	foreach( $t_rows as $t_row ) {
+		foreach( $t_row as &$t_value ) {
+			$t_value = (string)$t_value;
+			# Spreadsheet import must treat staff-supplied text as data, not formulas.
+			if( preg_match( '/^[\x00-\x20]*[=+@-]/', $t_value ) ) {
+				$t_value = "'" . $t_value;
+			}
+		}
+		unset( $t_value );
+		fputcsv( $t_stream, $t_row, ',', '"', '', "\r\n" );
+	}
+	rewind( $t_stream );
+	$t_csv = stream_get_contents( $t_stream );
+	fclose( $t_stream );
+	return $t_csv;
 }
 
 /**
@@ -93,7 +150,7 @@ function org_chart_create_graph( array $p_chart ) {
 	) );
 
 	foreach( $p_chart['nodes'] as $t_id => $t_user ) {
-		$t_lines = array( $t_user['realname'] ?: $t_user['username'] );
+		$t_lines = array( $t_user['realname'] );
 		if( !is_blank( $t_user['position_title'] ?? '' ) ) {
 			$t_lines[] = $t_user['position_title'];
 		}

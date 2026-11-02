@@ -32,6 +32,7 @@ turn email notifications off before tests that queue mail in bulk.
 | Git LFS (server, pointer resolution) | §4 `test-git-doctis.php` step 19; a real `git-lfs` client round trip per [doc/git/GIT_LFS.md](git/GIT_LFS.md) §9 |
 | A page, form, or workflow with no good headless test | §7 curl-based testing |
 | AI Meeting Assistant, meetings, My Meetings, minutes approval | §7a meeting end-to-end |
+| Organisation chart, PDF and Visio CSV export | §2 `OrgChartTest` and the chart's HTML/PDF/CSV modes |
 | Documentation Topics (catalogues, tags, applicability, Topics page) | §2 `TopicApiTest` + §7b |
 | Document publishing (Publish button, website, project Publishing settings) | §2 `DwgPublishTest` + §7d |
 | Metadata cut-over (`admin/doctis-metadata-cutover.php`) | §2 `DwgMetadataStripTest` + a `--dry-run --diff` on the VM |
@@ -48,6 +49,15 @@ both Composer and the application bootstrap. PHP 7.4, 8.0 and 8.1 are not
 supported. PHP 8.0 has a known repeated-time conversion defect ([PHP bug
 80664](https://bugs.php.net/bug.php?id=80664), fixed in 8.1); the meeting
 timezone regression remains enabled for every supported version.
+
+For organisation charts, run `OrgChartTest`. These tests use synthetic arrays
+without changing database records. They cover blank Real Name filtering,
+reports to omitted managers, external managers, disconnected components and
+cycles, PDF graph labels, duplicate names, CSV round trips and spreadsheet
+formula protection. Verified on PHP 8.4 on 2026-11-02: 8 tests, 45 assertions.
+Read-only page checks in a temporary checkout matched HTML/CSV users against
+enabled accounts with Real Names and generated a complete PDF. Actual Visio
+import remains an operator acceptance check; steps are in the user manual.
 
 For meeting timezone changes, run `MeetingTimezoneTest` and `MeetingApiTest`.
 The timezone suite covers both Sydney DST transitions, other regions and a
