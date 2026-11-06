@@ -31,7 +31,7 @@ $t_user_id = auth_get_current_user_id();
 
 $f_realname        = gpc_get_string( 'realname',        '' );
 $f_position_title  = trim( gpc_get_string( 'position_title',  '' ) );
-$f_company         = trim( gpc_get_string( 'company',         '' ) );
+$f_company_id      = gpc_get_int( 'company_id' );
 $f_phone           = trim( gpc_get_string( 'phone',           '' ) );
 $f_department      = trim( gpc_get_string( 'department',      '' ) );
 $f_reports_to      = gpc_get_int( 'reports_to', 0 );
@@ -48,7 +48,7 @@ $t_data = array(
 		'profile' => array(
 			'realname' => $f_realname,
 			'position_title' => $f_position_title,
-			'company' => $f_company,
+			'company_id' => $f_company_id,
 			'phone' => $f_phone,
 			'department' => $f_department,
 			'reports_to' => $f_reports_to,

@@ -54,6 +54,7 @@ require_api( 'license_api.php' );
 require_api( 'print_api.php' );
 require_api( 'print_dwg_api.php' );
 require_api( 'user_api.php' );
+require_api( 'company_api.php' );
 require_api( 'user_pref_api.php' );
 require_api( 'layout_api.php' );
 require_css( 'status_config.php' );
@@ -312,12 +313,9 @@ $t_meeting_invite_options = [
 		<tr>
 			<td class="category" style="vertical-align:middle; white-space:nowrap;"><?php echo lang_get( 'company' ) ?></td>
 			<td>
-				<input class="form-control" type="text"
-					name="company"
-					id="company"
-					maxlength="<?php echo DB_FIELD_SIZE_COMPANY ?>"
-					value="<?php echo string_attribute( $t_profile_row['company'] ?? '' ) ?>"
-				/>
+				<select class="form-control" name="company_id" id="company_id">
+					<?php company_print_options( (int)$t_profile_row['company_id'] ); ?>
+				</select>
 			</td>
 		</tr>
 		<tr>

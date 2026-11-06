@@ -609,7 +609,8 @@ the other.
 
 | Field | Used for |
 |-------|----------|
-| Real name, Position title, Company, Department, Phone | Shown on the Organisational Chart and in meeting records |
+| Real name, Position title, Department, Phone | Shown on the Organisational Chart and in meeting records |
+| Company | Select an administrator-maintained company; defaults to **Not specified**. Shown on the Organisational Chart and in meeting records |
 | Timezone | Your local timezone for displayed dates and times |
 | Reports To | Your manager, if registered in Doctis; places you on the Organisational Chart |
 | Alternative | Your manager's name when they are not registered in Doctis |
@@ -620,6 +621,14 @@ Administrators can maintain the same organisation, contact and meeting invitatio
 details under **Manage → Manage Users → Edit User**, then click **Update User**.
 The user's **Timezone** is editable in the **Account Preferences** section on
 that page, using its own **Update Prefs** button. Impersonation is not needed.
+
+Site administrators maintain the company list under **Manage → Companies**.
+Company names are unique. Renaming a company updates the displayed name for
+all associated users. Disable a company to remove it from new selections;
+users already associated with it can retain their selection, shown as
+**Disabled**, or choose another company. Companies are not deleted through
+this interface. The reserved **Not specified** entry is always enabled and
+cannot be renamed or disabled.
 
 ### Organisational Chart (corporate directory)
 

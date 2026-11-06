@@ -45,6 +45,7 @@ require_once( 'core.php' );
 require_api( 'access_api.php' );
 require_api( 'authentication_api.php' );
 require_api( 'config_api.php' );
+require_api( 'company_api.php' );
 require_api( 'constant_inc.php' );
 require_api( 'error_api.php' );
 require_api( 'form_api.php' );
@@ -226,20 +227,26 @@ print_manage_menu( 'manage_user_page.php' );
 <?php
 	foreach( array(
 		'position_title' => DB_FIELD_SIZE_POSITION_TITLE,
-		'company' => DB_FIELD_SIZE_COMPANY,
+		'company_id' => DB_FIELD_SIZE_COMPANY,
 		'department' => DB_FIELD_SIZE_DEPARTMENT,
 		'phone' => DB_FIELD_SIZE_PHONE
 	) as $t_field => $t_maxlength ) {
 ?>
 					<tr>
 						<td class="category">
-							<label for="edit-<?php echo $t_field ?>"><?php echo lang_get( $t_field ) ?></label>
+							<label for="edit-<?php echo $t_field ?>"><?php echo lang_get( $t_field === 'company_id' ? 'company' : $t_field ) ?></label>
 						</td>
 						<td>
+							<?php if( $t_field === 'company_id' ): ?>
+							<select id="edit-company_id" name="company_id" class="input-sm">
+								<?php company_print_options( (int)$t_user['company_id'] ); ?>
+							</select>
+							<?php else: ?>
 							<input id="edit-<?php echo $t_field ?>" name="<?php echo $t_field ?>"
 								type="<?php echo $t_field === 'phone' ? 'tel' : 'text' ?>" class="input-sm"
 								size="32" maxlength="<?php echo $t_maxlength ?>"
 								value="<?php echo string_attribute( $t_user[$t_field] ?? '' ) ?>" />
+							<?php endif; ?>
 						</td>
 					</tr>
 <?php } ?>

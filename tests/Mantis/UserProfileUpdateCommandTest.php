@@ -26,7 +26,7 @@ class UserProfileUpdateCommandTest extends MantisCoreBase {
 		user_set_fields( $this->user_id, array(
 			'realname' => $this->original['realname'],
 			'position_title' => $this->original['position_title'],
-			'company' => $this->original['company'],
+			'company_id' => $this->original['company_id'],
 			'phone' => $this->original['phone'],
 			'department' => $this->original['department'],
 			'reports_to' => $this->original['reports_to'],
@@ -140,7 +140,7 @@ class UserProfileUpdateCommandTest extends MantisCoreBase {
 				'profile' => array(
 					'realname' => $this->original['realname'],
 					'position_title' => $this->original['position_title'],
-					'company' => $this->original['company'],
+					'company_id' => $this->original['company_id'],
 					'phone' => $this->original['phone'],
 					'department' => $this->original['department'],
 					'reports_to' => $p_reports_to,

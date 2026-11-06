@@ -72,10 +72,13 @@ $t_data = array(
 );
 
 # Preserve fields omitted by older forms; the command validates supplied values.
-foreach( array( 'position_title', 'company', 'department', 'phone', 'alternative', 'email_secondary' ) as $t_field ) {
+foreach( array( 'position_title', 'department', 'phone', 'alternative', 'email_secondary' ) as $t_field ) {
 	if( gpc_isset( $t_field ) ) {
 		$t_data['payload']['user'][$t_field] = gpc_get_string( $t_field );
 	}
+}
+if( gpc_isset( 'company_id' ) ) {
+	$t_data['payload']['user']['company_id'] = gpc_get_int( 'company_id' );
 }
 if( gpc_isset( 'meeting_invite' ) ) {
 	$t_data['payload']['user']['meeting_invite'] = gpc_get_int( 'meeting_invite' );

@@ -50,6 +50,15 @@ supported. PHP 8.0 has a known repeated-time conversion defect ([PHP bug
 80664](https://bugs.php.net/bug.php?id=80664), fixed in 8.1); the meeting
 timezone regression remains enabled for every supported version.
 
+For managed companies, run `CompanyTest`, `UserProfileUpdateCommandTest` and
+`UserUpdateProfileCommandTest` on schema 82. The company suite applies the
+tracked migration to temporary legacy tables and compares its result with
+the canonical user definition. Also run `OrgChartTest`, `AiKnowledgeTest`,
+`AiSessionTest` and meeting tests when changing the joined company labels.
+Schema/update and isolated HTTP verification details are in
+[COMPANIES.md](COMPANIES.md). Do not run new profile code against the old
+free-text-company schema or load an old user dump directly into schema 82.
+
 For username/email login, run `LoginIdentifierTest` with `UserNamePolicyTest`.
 The login suite creates/deletes disposable accounts, disables outgoing email,
 and restores its process-local configuration. It covers case-insensitive

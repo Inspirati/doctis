@@ -5,13 +5,17 @@ namespace Mantis\tests\Mantis;
 
 use Mantis\Exceptions\ClientException;
 
+require_api( 'company_api.php' );
+
 class UserUpdateProfileCommandTest extends MantisCoreBase {
 	private $user_id;
 	private $actor_id;
+	private $company_id;
 
 	protected function setUp(): void {
 		parent::setUp();
 		self::login();
+		$this->company_id = company_add( 'Profile Company ' . rand() );
 		# Blank email addresses prevent registration mail on the native VM.
 		$this->user_id = user_get_id_by_cookie( user_create( 'profedit' . rand(), 'password', '', REPORTER ) );
 		$this->actor_id = user_get_id_by_cookie( user_create( 'profactor' . rand(), 'password', '', REPORTER ) );
@@ -21,6 +25,7 @@ class UserUpdateProfileCommandTest extends MantisCoreBase {
 		user_set_fields( $this->user_id, array( 'protected' => false ) );
 		user_delete( $this->user_id );
 		user_delete( $this->actor_id );
+		db_query( 'DELETE FROM {company} WHERE id=' . db_param(), array( $this->company_id ) );
 		parent::tearDown();
 	}
 
@@ -87,6 +92,7 @@ class UserUpdateProfileCommandTest extends MantisCoreBase {
 		$this->update( $this->profile() );
 		$t_fields = array_fill_keys( array_keys( $this->profile() ), '' );
 		$t_fields['meeting_invite'] = 0;
+		$t_fields['company_id'] = COMPANY_NOT_SPECIFIED;
 		$this->update( $t_fields );
 		$t_user = user_get_row( $this->user_id );
 		foreach( $t_fields as $t_field => $t_value ) {
@@ -151,7 +157,7 @@ class UserUpdateProfileCommandTest extends MantisCoreBase {
 	private function profile(): array {
 		return array(
 			'position_title' => 'Engineer',
-			'company' => 'Example Company',
+			'company_id' => $this->company_id,
 			'department' => 'Engineering',
 			'phone' => '+61 2 5550 1234',
 			'alternative' => 'External Manager',

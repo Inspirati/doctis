@@ -917,7 +917,7 @@ function user_delete( $p_user_id ) {
  * @return array User rows keyed by user id.
  */
 function user_get_enabled_rows() {
-	$t_query = 'SELECT * FROM {user} WHERE enabled=1 ORDER BY realname, username';
+	$t_query = 'SELECT u.*, c.name AS company FROM {user} u JOIN {company} c ON c.id=u.company_id WHERE u.enabled=1 ORDER BY u.realname, u.username';
 	$t_result = db_query( $t_query );
 	$t_users = array();
 	while( $t_row = db_fetch_array( $t_result ) ) {

@@ -783,6 +783,9 @@ function print_manage_menu( $p_page = '' ) {
 	if( access_has_global_level( config_get( 'manage_user_threshold' ) ) ) {
 		$t_pages['manage_user_page.php'] = array( 'url'   => 'manage_user_page.php', 'label' => 'manage_users_link' );
 	}
+	if( access_has_global_level( config_get( 'admin_site_threshold' ) ) ) {
+		$t_pages['manage_company_page.php'] = array( 'url' => 'manage_company_page.php', 'label' => 'manage_companies_link' );
+	}
 	if( access_has_project_level( config_get( 'manage_project_threshold' ) ) ) {
 		$t_pages['manage_proj_page.php'] = array( 'url'   => 'manage_proj_page.php', 'label' => 'manage_projects_link' );
 	}

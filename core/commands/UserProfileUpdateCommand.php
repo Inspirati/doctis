@@ -3,6 +3,7 @@
 
 require_api( 'authentication_api.php' );
 require_api( 'config_api.php' );
+require_api( 'company_api.php' );
 require_api( 'constant_inc.php' );
 require_api( 'event_api.php' );
 require_api( 'helper_api.php' );
@@ -40,6 +41,9 @@ class UserProfileUpdateCommand extends Command {
 		if( !is_array( $t_profile ) ) {
 			throw new ClientException( 'Missing profile data', ERROR_EMPTY_FIELD, array( 'profile' ) );
 		}
+		if( array_key_exists( 'company', $t_profile ) ) {
+			throw new ClientException( 'Use company_id to select a company', ERROR_INVALID_FIELD_VALUE, array( 'company_id' ) );
+		}
 
 		# Optional for older callers; when supplied, validate before any writes.
 		$this->timezone = null;
@@ -65,10 +69,12 @@ class UserProfileUpdateCommand extends Command {
 			throw new ClientException( 'Notification email is invalid', ERROR_INVALID_FIELD_VALUE, array( 'email_secondary' ) );
 		}
 
+		$t_current_company = (int)user_get_field( $this->user_id, 'company_id' );
+		$t_company_id = array_key_exists( 'company_id', $t_profile ) ? $t_profile['company_id'] : $t_current_company;
 		$this->fields = array(
 			'realname' => mb_substr( string_normalize( (string)( $t_profile['realname'] ?? '' ) ), 0, DB_FIELD_SIZE_REALNAME ),
 			'position_title' => mb_substr( trim( (string)( $t_profile['position_title'] ?? '' ) ), 0, DB_FIELD_SIZE_POSITION_TITLE ),
-			'company' => mb_substr( trim( (string)( $t_profile['company'] ?? '' ) ), 0, DB_FIELD_SIZE_COMPANY ),
+			'company_id' => company_validate_selection( $t_company_id, $t_current_company ),
 			'phone' => mb_substr( trim( (string)( $t_profile['phone'] ?? '' ) ), 0, DB_FIELD_SIZE_PHONE ),
 			'department' => mb_substr( trim( (string)( $t_profile['department'] ?? '' ) ), 0, DB_FIELD_SIZE_DEPARTMENT ),
 			'reports_to' => $t_reports_to,

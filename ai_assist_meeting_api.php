@@ -39,11 +39,11 @@ require_once( __DIR__ . '/ai_assist_knowledge_api.php' );
  */
 function ai_assist_get_meeting_candidates(): array {
 	$t_result = db_query(
-		'SELECT id, username, realname, position_title, company, department,' .
-		'       email, email_secondary, meeting_invite' .
-		' FROM {user}' .
-		' WHERE meeting_invite != 0 AND enabled = 1' .
-		' ORDER BY realname, username'
+		'SELECT u.id, u.username, u.realname, u.position_title, c.name AS company, u.department,' .
+		'       u.email, u.email_secondary, u.meeting_invite' .
+		' FROM {user} u JOIN {company} c ON c.id=u.company_id' .
+		' WHERE u.meeting_invite != 0 AND u.enabled = 1' .
+		' ORDER BY u.realname, u.username'
 	);
 
 	$t_candidates = [];

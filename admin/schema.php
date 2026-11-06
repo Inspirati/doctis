@@ -839,7 +839,7 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	  `last_visit` int(10) unsigned NOT NULL DEFAULT 1,
 	  `date_created` int(10) unsigned NOT NULL DEFAULT 1,
 	  `position_title` varchar(128) NOT NULL DEFAULT '',
-	  `company` varchar(128) NOT NULL DEFAULT '',
+	  `company_id` int(10) unsigned NOT NULL DEFAULT 1,
 	  `phone` varchar(32) NOT NULL DEFAULT '',
 	  `department` varchar(64) NOT NULL DEFAULT '',
 	  `reports_to` int(10) unsigned NOT NULL DEFAULT 0,
@@ -852,7 +852,8 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	  KEY `idx_enable` (`enabled`),
 	  KEY `idx_access` (`access_level`),
 	  KEY `idx_email` (`email`),
-	  KEY `idx_reports_to` (`reports_to`)
+	  KEY `idx_reports_to` (`reports_to`),
+	  KEY `idx_company_id` (`company_id`)
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
 );
 
@@ -1430,8 +1431,24 @@ $g_upgrade[$t_idx++] = array( 'UpdateSQL',
 	 WHERE NOT EXISTS (SELECT 1 FROM " . db_get_table( 'ai_conversation' ) . " c WHERE c.user_id=s.user_id AND c.mode=s.mode)"
 );
 
+# ── Step 81: company ─────────────────────────────────────────────────────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"CREATE TABLE IF NOT EXISTS " . db_get_table( 'company' ) . " (
+	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	  `name` varchar(128) NOT NULL DEFAULT '',
+	  `enabled` tinyint(4) NOT NULL DEFAULT 1,
+	  PRIMARY KEY (`id`),
+	  UNIQUE KEY `idx_company_name` (`name`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci"
+);
+
+# ── Step 82: reserved default company for all new and migrated users ───────────
+$g_upgrade[$t_idx++] = array( 'UpdateSQL',
+	"INSERT INTO " . db_get_table( 'company' ) . " (id, name, enabled) VALUES (1, 'Not specified', 1)"
+);
+
 # ── End of schema definition ─────────────────────────────────────────────────
-# $t_idx = 81 → database_version = 80 on a fresh install.
+# $t_idx = 83 → database_version = 82 on a fresh install.
 #
 # To add a new table: append a new step here and run the schema upgrade.
 # Label it "Step N" with its real index, which is the database_version the

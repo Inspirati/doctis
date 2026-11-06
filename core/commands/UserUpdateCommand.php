@@ -17,6 +17,7 @@
 require_api( 'authentication_api.php' );
 require_api( 'constant_inc.php' );
 require_api( 'config_api.php' );
+require_api( 'company_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'user_api.php' );
 
@@ -227,9 +228,14 @@ class UserUpdateCommand extends Command {
 		# Doctis profile fields are optional, so existing API callers preserve them.
 		# Validate all supplied fields before changing any account details.
 		$t_profile_fields = array();
+		if( array_key_exists( 'company', $t_user ) ) {
+			throw new ClientException( 'Use company_id to select a company', ERROR_INVALID_FIELD_VALUE, array( 'company_id' ) );
+		}
+		if( array_key_exists( 'company_id', $t_user ) ) {
+			$t_profile_fields['company_id'] = company_validate_selection( $t_user['company_id'], (int)user_get_field( $this->user_id, 'company_id' ) );
+		}
 		$t_profile_sizes = array(
 			'position_title' => DB_FIELD_SIZE_POSITION_TITLE,
-			'company' => DB_FIELD_SIZE_COMPANY,
 			'department' => DB_FIELD_SIZE_DEPARTMENT,
 			'phone' => DB_FIELD_SIZE_PHONE,
 			'alternative' => DB_FIELD_SIZE_ALTERNATIVE
