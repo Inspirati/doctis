@@ -410,6 +410,12 @@ a storage setting does not migrate existing content.
 
 ## Instructions for agents working in this repository
 
+- Use descriptive database table base names of at most 26 characters, without
+  hard-coded `doctis_` prefixes or dated suffixes. Honour configured prefixes
+  through `db_get_table()`. Keep maintenance backups in protected SQL files,
+  not persistent tables in the application database. See
+  [DATABASE_TABLE_NAMING.md](doc/DATABASE_TABLE_NAMING.md), including the
+  2026-11-06 VM cleanup and live-user reload record.
 - Keep findings, assumptions, and verified runtime behavior distinct. Update
   this assessment as the reference VM and IT supply deployment evidence.
 - Implement the native Debian/nginx profile; retain Apache as an explicit option. Keep changes

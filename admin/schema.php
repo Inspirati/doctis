@@ -15,6 +15,10 @@
 #
 # RULE: never append AddColumnSQL / RenameColumnSQL / AlterColumnSQL steps.
 #       Modify the base table definition here.
+# Table base names must be descriptive and at most 26 characters, without a
+# hard-coded doctis prefix or timestamp. Use db_get_table() for configured
+# prefixes/suffixes. Recovery snapshots belong in SQL files, not extra tables.
+# See doc/DATABASE_TABLE_NAMING.md.
 #
 # Each array entry uses the 'UpdateSQL' operation so the installer executes
 # the raw SQL directly via ADOdb's ExecuteSQLArray, without any column-type
