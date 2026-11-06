@@ -484,7 +484,9 @@ Clean up test artefacts on the VM only where they would affect later tests in
 the same session; otherwise leave them. A rebuild clears them.
 
 The **live version** is the opposite: back up before any rebuild there, and
-follow *Updating the live version with a database rebuild* above.
+follow [doc/LIVE_RUNBOOK.md](doc/LIVE_RUNBOOK.md). It starts with whether the
+update needs a rebuild at all, then covers a rebuild that reloads every table
+(no re-import) and one that re-imports.
 
 ### Conventions
 

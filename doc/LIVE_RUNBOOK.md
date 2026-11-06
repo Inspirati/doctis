@@ -19,7 +19,70 @@ console access. It is updated through System Operations (Git Pull, Rebuild
 Database, Reset Git Store, Load Data). Reading pages is fine; ask the owner
 before any change to it. It does not get sample data.
 
-## Updating the live version with a database rebuild
+## First: does the update need a rebuild at all?
+
+A rebuild is needed only when live's table definitions differ from what the
+new code's `admin/schema.php` defines. Do not infer the answer from the
+schema version: an in-place edit to an existing table does not bump it.
+Compare instead:
+
+1. On live: **Backup Database** (a full dump).
+2. Load the dump into a disposable database on the VM, and compare
+   `SHOW CREATE TABLE` for every table with a database freshly built from the
+   new code, ignoring `AUTO_INCREMENT` values. Drop the disposable database
+   afterwards.
+
+If every definition matches, **Git Pull alone updates live**, and nothing
+else is needed. If only a few columns differ, a schema update script through
+**Load Data** (CLAUDE.md, *Database Schema Changes*) avoids a rebuild. Rebuild
+when neither fits, or to clear tables `schema.php` does not define. On
+2026-11-06 the only differences were two ad hoc backup tables, and the
+rebuild below removed them.
+
+## Rebuilding with a full data reload (no re-import)
+
+Keeps every record, including documents, repositories and history, and keeps
+the git store as it is. Done on 2026-11-06 after a VM rehearsal; the record
+is in the project memory.
+
+1. **Backups.** **Backup Database**, **Backup Git Store**.
+2. **Git Pull.**
+3. **Data Snapshot of every table `schema.php` defines**, REPLACE mode, taken
+   **immediately before** the rebuild, so nothing done on live in between is
+   lost.
+   - Select every table, empty ones included. Do not hand-pick: on
+     2026-11-06 a hand-picked set had omitted `project` and `config`, which
+     would have orphaned every document and removed the publishing settings.
+     Selecting all of them costs nothing, and catches rows that appear later.
+   - Leave out only tables `schema.php` does not define (ad hoc backups).
+     The rebuild does not recreate them; their contents survive in the full
+     dump.
+4. **Rebuild Database** (type `REBUILD`).
+5. Log in as `administrator` / `root`.
+6. **Load Data**: the snapshot, typing `LOAD`, with the transaction option
+   ticked. The schema versions of the script and the database must match.
+   - **Do not use Reset Git Store.** The restored `{repository}` and
+     `{dwg_primary_file}` rows point at the repositories already on disk.
+   - Loading `user` restores `administrator` as it was, normally disabled.
+     Continue as a restored administrator.
+7. **Verify.**
+   - Take a second **Backup Database** and compare it with the first: the
+     same table definitions, and the same content apart from your own
+     sessions (`user` last visit, `tokens`).
+   - **Git Store**: "Database and disk agree".
+   - A document page offers **Publish**, which shows `config` came back.
+   - The PHP Error Log shows no errors.
+
+**Rehearsing on the VM** needs live's git store as well as its data. The
+VM's repositories hold other commits, so restored records would point at
+nothing. Back up the VM's database, store, worktrees and LFS objects. Then
+replace the store with the contents of live's **Backup Git Store** archive
+(`repositories/` and `lfs/`), and rebuild and load as above. The archive
+holds no worktrees; `repository_ensure_on_disk()` recreates them, and Doctis
+calls it before any write. Re-enable `administrator` on the VM afterwards for
+the test suites.
+
+## Updating the live version with a database rebuild and re-import
 
 Everything below is done in the browser, or with curl as in
 [Curl-Based Testing](#curl-based-testing), by an administrator. Pages that
