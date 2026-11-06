@@ -164,7 +164,9 @@ the repo history. Implement after 3c.
 
 ## 4. Pandoc Pipeline Trigger
 
-**Current state:** Not implemented.
+**Current state:** The automatic lifecycle trigger described below is not
+implemented. Manual Markdown-to-HTML/PDF publishing is implemented; see
+[Document Publishing](../publish/PUBLISHING.md).
 
 The pandoc pipeline is triggered at the Doctis "incorporate/release" step,
 sourced from the git repo at the recorded approved SHA. It is independent of the
@@ -173,6 +175,21 @@ git is as a data source.
 
 Outstanding decisions: input format(s), output format(s), destination for
 rendered output, timeout handling, error reporting back to Doctis UI.
+
+### 4a. Inline images and additional publication formats — ⊘ explicitly deferred
+
+The owner deferred this work on 2026-11-03 because it may be a substantial
+undertaking. Preserve the existing docs-as-code QMS and single-file browser
+upload; Doctis remains a document controller/index/storage system, not an
+editor. Preliminary requirements and options are recorded in
+[Inline images, text diagrams and additional publication formats](../publish/INLINE_IMAGES_AND_DOCUMENT_FORMATS.md).
+
+The note covers immediate external-image and separately registered-image
+references; embedded images and text-diagram compatibility checks; Git/LFS
+tradeoffs (including the current browser-upload gap); Markdown packages,
+companion assets and Word conversion; and a possible publication landing
+page linking the controlled primary file and a generated PDF. No development
+is authorised or scheduled by this TODO entry.
 
 ---
 
