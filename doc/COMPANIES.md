@@ -100,3 +100,28 @@ table definitions matched fresh schema-82 definitions. A separate HTTP test
 instance verified administrator add/rename/disable, both selectors and save
 actions, disabled-selection retention and exclusion, escaping, CSRF rejection
 and ordinary-user access denial. The deployed VM database was not changed.
+
+## Local VM deployment — 7 November 2026
+
+Feature commit `98f6191a7` was deployed to `/var/www/html/doctis` as `hcr`.
+The VM met the schema-80 prerequisites, so the tested SQL migration was used
+instead of a rebuild/reload. Web requests and scheduled scripts were gated
+during the update, and PHP-FPM was drained and restarted.
+
+The database is now schema 82, with one enabled company, **Not specified**,
+and all 44 users assigned to it. Verification compared every other user field
+and all other application tables against their pre-migration contents;
+only the company data and global schema version changed. The 134 document
+records and their repository mapping were retained, and the Git store was
+left intact. Local configuration was verified unchanged by SHA-256.
+
+The native company API/default selector and login page passed smoke checks
+through the deployed runtime; unauthenticated profile/company-management
+access remains protected. Authenticated forms had already passed the isolated
+HTTP checks above. The maintenance gate was removed, all four native services
+were active, and the email queue was empty.
+
+A protected full SQL dump, configuration archive and verification manifest
+were retained under `/var/backups/doctis/company-20261106T134935Z/`
+(the directory timestamp is UTC). No live-server deployment or GitHub push
+was performed.
