@@ -657,12 +657,12 @@ $g_validate_email = ON;
  * When this is ON, users can log in with their registered email address, in
  * addition to their username.
  *
- * This will only work as long as there is a single user with the specified
- * email address, and the email address is not blank.
+ * This will only work as long as there is a single enabled user with the
+ * specified email address, and the email address is not blank.
  *
  * @global int $g_email_login_enabled
  */
-$g_email_login_enabled = OFF;
+$g_email_login_enabled = ON;
 
 /**
  * Ensure that email addresses are unique.

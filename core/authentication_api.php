@@ -44,6 +44,7 @@
  */
 
 use Mantis\Exceptions\ClientException;
+use PHPMailer\PHPMailer\PHPMailer;
 
 require_api( 'access_api.php' );
 require_api( 'config_api.php' );
@@ -403,7 +404,16 @@ function auth_prepare_username( $p_username ) {
 	}
 
 	if( !is_null( $t_username ) ) {
-		$t_username = user_is_name_valid( $t_username ) ? $t_username : null;
+		$t_valid = user_is_name_valid( $t_username );
+		if( !$t_valid && config_get_global( 'email_login_enabled' )
+			&& mb_strlen( $t_username ) <= DB_FIELD_SIZE_USERNAME
+		) {
+			# Registered emails may contain characters outside the username rules.
+			# Check syntax only, without registration-domain or DNS restrictions.
+			require_api( 'email_api.php' );
+			$t_valid = PHPMailer::validateAddress( $t_username, 'html5' );
+		}
+		$t_username = $t_valid ? $t_username : null;
 	}
 
 	return $t_username;
@@ -508,8 +518,9 @@ function auth_get_user_id_from_login_name( $p_login_name ) {
 	if( $t_user_id === false
 		&& !is_blank( $p_login_name )
 		&& config_get_global( 'email_login_enabled' )
-		&& email_is_valid( $p_login_name )
 	) {
+		# Match the stored address; registration-domain and DNS checks belong to
+		# account creation/updates and must not lock existing users out of login.
 		$t_user_ids_by_email = user_get_enabled_ids_by_email( $p_login_name );
 		if ( count( $t_user_ids_by_email ) == 1 ) {
 			$t_user_id = $t_user_ids_by_email[0];

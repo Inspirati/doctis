@@ -12,6 +12,19 @@ in the [MantisBT documentation](https://mantisbt.org/documentation.php).
 
 ---
 
+### Signing in
+
+Enter either your **username** or your registered **primary email address**
+on the login page, then use your usual password. Email-address matching is
+case-insensitive. This uses the same account, permissions and login-attempt
+limits as username login; you do not need a second account or password.
+
+An email address must identify exactly one enabled account. If several
+enabled accounts share an address, sign in by username and ask an administrator
+to correct the account details. An exact username match takes precedence over
+an email match. Disabled accounts cannot sign in. Administrators can restore
+username-only login with `$g_email_login_enabled = OFF;` in `config_inc.php`.
+
 ## Contents
 
 1. [Core concepts](#1-core-concepts)

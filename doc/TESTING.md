@@ -50,6 +50,16 @@ supported. PHP 8.0 has a known repeated-time conversion defect ([PHP bug
 80664](https://bugs.php.net/bug.php?id=80664), fixed in 8.1); the meeting
 timezone regression remains enabled for every supported version.
 
+For username/email login, run `LoginIdentifierTest` with `UserNamePolicyTest`.
+The login suite creates/deletes disposable accounts, disables outgoing email,
+and restores its process-local configuration. It covers case-insensitive
+email matching, special characters, username precedence, duplicate/disabled
+accounts, registration-policy changes, the opt-out setting and shared failed
+login counters. Verified on PHP 8.4 on 2026-11-06: 28 combined tests,
+108 assertions. A temporary loopback HTTP instance also verified the two-step
+form, username/email login issuing the same account cookie, and wrong-password
+rejection. The deployed VM configuration was not changed by these checks.
+
 For organisation charts, run `OrgChartTest`. These tests use synthetic arrays
 without changing database records. They cover blank Real Name filtering,
 reports to omitted managers, external managers, disconnected components and
