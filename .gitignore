@@ -81,6 +81,7 @@ CLAUDE.md
 .claude/
 
 lang/*
+!lang/strings_hindi.txt
 
 # Local data scripts for the wipe-and-reload test cycle (System Operations →
 # Load Data). They hold real account data and password hashes; only the
