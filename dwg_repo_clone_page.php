@@ -15,10 +15,9 @@
 #      they choose when they run it.
 #
 # A repository nobody has pushed to yet is waiting for its first push, most
-# often of a repository the user already has on their own machine (they ran
-# `git init` there).  Cloning an empty repository is rarely what they want,
-# so for an empty one the page leads with how to push an existing
-# repository: `git remote add`, then push every branch and tag.
+# often of a repository the user already has on their own machine.  That is
+# dwg_repo_push_page.php's job; for an empty repository this page says so
+# and links to it.
 #
 # Reached from Manage Project -> Repository and from the Primary Document
 # panel of a source record.  See doc/git/SOURCE_REPOSITORIES.md and
@@ -34,7 +33,6 @@ require_api( 'database_api.php' );
 require_api( 'dwg_api.php' );
 require_api( 'file_dwg_api.php' );
 require_api( 'form_api.php' );
-require_api( 'git_lfs_api.php' );
 require_api( 'gpc_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
@@ -90,27 +88,19 @@ $t_clone_url = repository_clone_url( $t_basename );
 
 # Tokens minted here are named after the repository, so the user can tell on
 # My Account -> API Tokens what each is for and revoke it.
-$t_token_base = 'git: ' . $t_basename;
-$t_existing   = api_token_get_by_prefix( $t_token_base, $t_user_id );
+$t_existing   = repository_git_tokens( $t_basename, $t_user_id );
 
 $t_token = '';
 if( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
 	form_security_validate( 'dwg_repo_clone' );
 
-	# A new token never revokes an older one by default.  A token's value is
-	# stored only as a hash and cannot be shown again, so an older one is still
-	# in use by whatever already holds it — a clone's .git/config, most likely
-	# — and revoking it silently breaks that clone's pushes.  Clearing up is a
-	# deliberate, separate tick.
-	if( gpc_get_bool( 'revoke_existing' ) ) {
-		foreach( $t_existing as $t_old ) {
-			api_token_revoke( (int)$t_old['id'], $t_user_id );
-		}
+	# Revoking older tokens is a deliberate, separate tick: see
+	# repository_git_token_create().
+	$f_revoke = gpc_get_bool( 'revoke_existing' );
+	$t_token  = repository_git_token_create( $t_basename, $t_user_id, $f_revoke );
+	if( $f_revoke ) {
 		$t_existing = array();
 	}
-
-	$t_token = api_token_create(
-		api_token_name_available( $t_token_base, $t_user_id ), $t_user_id );
 
 	form_security_purge( 'dwg_repo_clone' );
 }
@@ -151,12 +141,20 @@ layout_page_begin();
 
 <?php if( $t_empty ): ?>
 			<div class="alert alert-warning">
-				<?php echo lang_get( 'repo_push_empty_notice' ) ?>
+				<?php echo lang_get( 'repo_clone_empty_notice' ) ?>
+<?php	if( $t_can_push ): ?>
+				<div class="space-6"></div>
+				<a href="dwg_repo_push_page.php?project_id=<?php echo (int)$f_project_id ?>"
+					class="btn btn-sm btn-primary btn-white btn-round">
+					<?php print_icon( 'fa-upload', 'ace-icon' ); ?>
+					<?php echo lang_get( 'repo_push_button' ) ?>
+				</a>
+<?php	endif; ?>
 			</div>
 <?php endif; ?>
 
 <?php if( $t_token === '' ): ?>
-			<p><?php echo lang_get( $t_empty ? 'repo_push_intro' : 'repo_clone_intro' ) ?></p>
+			<p><?php echo lang_get( 'repo_clone_intro' ) ?></p>
 <?php	if( $t_existing ): ?>
 			<div class="alert alert-info">
 				<?php echo lang_get( 'repo_clone_existing' ) ?>
@@ -173,7 +171,7 @@ layout_page_begin();
 				<?php echo form_security_field( 'dwg_repo_clone' ) ?>
 				<input type="hidden" name="project_id" value="<?php echo (int)$f_project_id ?>" />
 				<button class="btn btn-primary btn-white btn-round">
-					<?php echo lang_get( $t_empty ? 'repo_push_create_token' : 'repo_clone_create_token' ) ?>
+					<?php echo lang_get( 'repo_clone_create_token' ) ?>
 				</button>
 <?php	if( $t_existing ): ?>
 				<div class="space-10"></div>
@@ -198,36 +196,6 @@ layout_page_begin();
 				<?php echo lang_get( 'repo_clone_token_scope' ) ?>
 			</div>
 
-<?php	if( $t_empty ): ?>
-			<h5><?php echo lang_get( 'repo_push_step_existing' ) ?></h5>
-			<p class="small"><?php echo lang_get( 'repo_push_step_existing_help' ) ?></p>
-			<textarea id="push-commands" class="form-control" rows="3" readonly="readonly"
-				style="font-family: monospace;"><?php echo string_html_specialchars(
-					"git remote add origin " . $t_auth_url . "\n"
-					. "git push -u origin --all\n"
-					. "git push origin --tags" ) ?></textarea>
-			<div class="space-4"></div>
-			<button type="button" id="push-copy" class="btn btn-primary btn-sm btn-white"
-				data-target="push-commands"><?php echo lang_get( 'repo_clone_copy' ) ?></button>
-			<div class="space-10"></div>
-			<p class="small"><?php echo sprintf( lang_get( 'repo_push_has_origin' ),
-				'<code>git remote set-url origin &hellip;</code>',
-				'<code>git remote add doctis &hellip;</code>' ) ?></p>
-<?php		if( git_lfs_enabled() ): ?>
-			<div class="alert alert-info">
-				<?php echo lang_get( 'repo_push_lfs' ) ?>
-				<pre class="no-margin">git lfs install
-git lfs track "*.ext"
-git add .gitattributes
-git commit -m "Track large files with Git LFS"</pre>
-				<div class="space-4"></div>
-				<?php echo sprintf( lang_get( 'repo_push_lfs_migrate' ),
-					'<code>git lfs migrate import --include="*.ext" --everything</code>' ) ?>
-			</div>
-<?php		endif; ?>
-			<hr />
-			<p><strong><?php echo lang_get( 'repo_push_or_clone' ) ?></strong></p>
-<?php	endif; ?>
 
 			<h5><?php echo lang_get( 'repo_clone_step_command' ) ?></h5>
 			<p class="small"><?php echo lang_get( 'repo_clone_step_command_help' ) ?></p>

@@ -304,12 +304,14 @@ every branch and every tag.
 2. An administrator creates the repository on Manage Project → **Repository**,
    and sets its push policy. Choose **source repository** for code and
    design files. Until something is pushed, the tab marks the repository
-   **empty** and offers **Push Existing Repository** in place of **Clone
-   Repository**.
-3. Click **Push Existing Repository**, then **Create a token and show me how
-   to push**. The page shows three commands with your new token already in
-   the repository's address. Run them in your repository's folder, the one
-   that holds its `.git` folder:
+   **empty**.
+3. Click **Push Existing Repository**, beside **Clone Repository**. The page
+   walks through the whole job step by step: installing git, getting a token,
+   `.gitignore`, Git LFS, committing and pushing. It ends with a worked
+   example using the repository's real address, and what common error
+   messages mean. Its **Create a token and show me how to push** puts your
+   new token into the commands. The essential three, run in your
+   repository's folder (the one that holds its `.git` folder), are:
    ```bash
    git remote add origin https://<your-username>:<token>@<server>/git/<project>-r<N>.git
    git push -u origin --all

@@ -5,11 +5,11 @@
  * an inline handler would be blocked.
  */
 document.addEventListener( 'DOMContentLoaded', function() {
-	[ 'clone-copy', 'repoint-copy', 'push-copy' ].forEach( function( id ) {
-	var button = document.getElementById( id );
-	if( !button ) {
-		return;
-	}
+	/* The Clone page's buttons by id; the Push page's by class, one per
+	   command block. */
+	var buttons = Array.prototype.slice.call(
+		document.querySelectorAll( '#clone-copy, #repoint-copy, .doctis-copy' ) );
+	buttons.forEach( function( button ) {
 	var original = button.textContent;
 
 	button.addEventListener( 'click', function() {

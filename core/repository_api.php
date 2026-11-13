@@ -435,6 +435,91 @@ function repository_user_can_clone( int $p_project_id, ?int $p_user_id = null ):
 }
 
 /**
+ * Whether a user may push to the repository a project uses.
+ *
+ * The gateway's own write test: $g_git_http_write_threshold on the
+ * repository's owner project.  Reading is repository_user_can_clone().
+ *
+ * @param int      $p_project_id
+ * @param int|null $p_user_id  Defaults to the current user.
+ * @return bool
+ */
+function repository_user_can_push( int $p_project_id, ?int $p_user_id = null ): bool {
+	if( !repository_user_can_clone( $p_project_id, $p_user_id ) ) {
+		return false;
+	}
+	$t_user_id = $p_user_id === null ? auth_get_current_user_id() : $p_user_id;
+	$t_owner_project_id = (int)repository_get_row( repository_id_for_project( $p_project_id ) )['owner_project_id'];
+	return access_has_project_level(
+		config_get( 'git_http_write_threshold', null, $t_user_id, $t_owner_project_id ),
+		$t_owner_project_id, $t_user_id );
+}
+
+/**
+ * A user's API tokens made for one repository's git access.
+ *
+ * Tokens minted by the Clone and Push pages are named "git: <basename>", so
+ * a user can tell on My Account -> API Tokens what each one is for.
+ *
+ * @param string $p_basename Repository basename, e.g. "example-r1".
+ * @param int    $p_user_id
+ * @return array Token rows.
+ */
+function repository_git_tokens( string $p_basename, int $p_user_id ): array {
+	require_api( 'api_token_api.php' );
+	return api_token_get_by_prefix( 'git: ' . $p_basename, $p_user_id );
+}
+
+/**
+ * Mint an API token for one repository's git access, and return its value.
+ *
+ * The value is stored only as a hash, so this is the one moment it can be
+ * shown.  A new token never revokes older ones unless asked: an older token
+ * is still saved wherever it was used -- a clone's .git/config, most likely --
+ * and revoking it silently breaks that clone's fetches and pushes.
+ *
+ * @param string $p_basename        Repository basename.
+ * @param int    $p_user_id
+ * @param bool   $p_revoke_existing Also revoke the user's earlier tokens for it.
+ * @return string The new token's value.
+ */
+function repository_git_token_create( string $p_basename, int $p_user_id, bool $p_revoke_existing = false ): string {
+	require_api( 'api_token_api.php' );
+	if( $p_revoke_existing ) {
+		foreach( repository_git_tokens( $p_basename, $p_user_id ) as $t_old ) {
+			api_token_revoke( (int)$t_old['id'], $p_user_id );
+		}
+	}
+	$t_base = 'git: ' . $p_basename;
+	return api_token_create( api_token_name_available( $t_base, $p_user_id ), $p_user_id );
+}
+
+/**
+ * A repository's branches, most recently changed first.
+ *
+ * @param int $p_repository_id
+ * @return array List of array( 'name', 'sha', 'time', 'subject' ).
+ */
+function repository_branches( int $p_repository_id ): array {
+	$t_bare = $p_repository_id > 0 ? repository_bare_path( $p_repository_id ) : '';
+	if( $t_bare === '' || !is_dir( $t_bare ) ) {
+		return array();
+	}
+	$t_out = (string)shell_exec( 'git --git-dir=' . escapeshellarg( $t_bare )
+		. ' for-each-ref --sort=-committerdate '
+		. escapeshellarg( '--format=%(refname:short)%09%(objectname)%09%(committerdate:unix)%09%(contents:subject)' )
+		. ' refs/heads 2>/dev/null' );
+	$t_branches = array();
+	foreach( explode( "\n", trim( $t_out ) ) as $t_line ) {
+		$t_f = explode( "\t", $t_line, 4 );
+		if( count( $t_f ) === 4 ) {
+			$t_branches[] = array( 'name' => $t_f[0], 'sha' => $t_f[1], 'time' => (int)$t_f[2], 'subject' => $t_f[3] );
+		}
+	}
+	return $t_branches;
+}
+
+/**
  * A repository's default branch, reconciled with the bare repo on disk.
  *
  * The row records what the branch was when the repository was created or
@@ -482,13 +567,7 @@ function repository_default_branch( int $p_repository_id ): string {
  * @return bool
  */
 function repository_is_empty( int $p_repository_id ): bool {
-	$t_bare = $p_repository_id > 0 ? repository_bare_path( $p_repository_id ) : '';
-	if( $t_bare === '' || !is_dir( $t_bare ) ) {
-		return true;
-	}
-	return trim( (string)shell_exec(
-		'git --git-dir=' . escapeshellarg( $t_bare ) . ' for-each-ref --count=1 refs/heads 2>/dev/null'
-	) ) === '';
+	return repository_branches( $p_repository_id ) === array();
 }
 
 /**
