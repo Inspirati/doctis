@@ -329,6 +329,8 @@ every branch and every tag.
      `git lfs migrate import --include="*.ext" --everything`. That command
      rewrites your local history, which is harmless before anything has been
      pushed.
+     While pushing, git-lfs warns "current Git remote contains credentials".
+     That is a reminder that the token is in the address, not an error.
    - **On Windows**, run the commands in Git Bash or a Command Prompt. Both
      come with Git for Windows.
 
