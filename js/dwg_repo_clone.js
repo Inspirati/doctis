@@ -1,11 +1,11 @@
 /*
- * Doctis - copy the ready-made git clone command to the clipboard.
+ * Doctis - copy the ready-made git clone or push commands to the clipboard.
  *
  * External file because the Content-Security-Policy is script-src 'self';
  * an inline handler would be blocked.
  */
 document.addEventListener( 'DOMContentLoaded', function() {
-	[ 'clone-copy', 'repoint-copy' ].forEach( function( id ) {
+	[ 'clone-copy', 'repoint-copy', 'push-copy' ].forEach( function( id ) {
 	var button = document.getElementById( id );
 	if( !button ) {
 		return;

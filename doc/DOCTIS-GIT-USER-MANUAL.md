@@ -302,15 +302,35 @@ every branch and every tag.
 1. In Doctis, create the project (and sub-project, if the code should have a
    repository of its own, see §3.2).
 2. An administrator creates the repository on Manage Project → **Repository**,
-   and sets its push policy. Choose **source repository** for code.
-3. In your existing clone, point it at Doctis and push everything:
+   and sets its push policy. Choose **source repository** for code and
+   design files. Until something is pushed, the tab marks the repository
+   **empty** and offers **Push Existing Repository** in place of **Clone
+   Repository**.
+3. Click **Push Existing Repository**, then **Create a token and show me how
+   to push**. The page shows three commands with your new token already in
+   the repository's address. Run them in your repository's folder, the one
+   that holds its `.git` folder:
    ```bash
-   git remote set-url origin https://<your-username>:<token>@<server>/git/<project>-r<N>.git
-   git push --all
-   git push --tags
+   git remote add origin https://<your-username>:<token>@<server>/git/<project>-r<N>.git
+   git push -u origin --all
+   git push origin --tags
    ```
-   If the clone has no `origin` yet, use `git remote add origin <address>`
-   instead of `set-url`.
+   The first command connects your repository to Doctis. The second sends
+   every branch and makes each one track its Doctis copy, so a later plain
+   `git push` or `git pull` needs no arguments. The third sends your tags.
+   - **Your repository already has an `origin`**, for example GitHub: the
+     first command fails with "remote origin already exists". Either point
+     `origin` at Doctis with `git remote set-url origin <address>`, or keep it
+     and add Doctis as a second remote, `git remote add doctis <address>`,
+     then push to `doctis`.
+   - **Large binary files**, such as CAD models, PCB layouts or firmware
+     images: set up Git LFS (§10) **before** this first push. Files already
+     committed stay ordinary git files until you convert them with
+     `git lfs migrate import --include="*.ext" --everything`. That command
+     rewrites your local history, which is harmless before anything has been
+     pushed.
+   - **On Windows**, run the commands in Git Bash or a Command Prompt. Both
+     come with Git for Windows.
 
 Your history, branches and tags arrive unchanged. A working clone only pushes
 the branches it has locally, though. To bring a GitHub repository across with
@@ -698,6 +718,7 @@ its working copy and its LFS objects permanently.
 | Clone a project's repository | **Clone Repository** on Manage Project → Repository, or on a document's page (§4.1) |
 | Fix a clone whose token was revoked | Get a new token, then `git remote set-url origin …` in the clone (§4.3) |
 | Move a GitHub repository into Doctis | Create the project and repository, then push `--all` and `--tags` from a bare clone (§6) |
+| Put a repository I made with `git init` into Doctis | Manage Project → Repository → **Push Existing Repository** (§6) |
 | Register a whole repository as a document | Create a document with **no file**, then **Register Source Release** (§7.3) |
 | Accept a pushed change to a registered repository | **Promote Draft** on its document (§7.4) |
 | Give each version its own document | **Cut Release** on the tracking line (§7.4) |

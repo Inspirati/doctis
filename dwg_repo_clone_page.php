@@ -14,8 +14,15 @@
 #      puts wherever the user wants it, and which clones into the directory
 #      they choose when they run it.
 #
+# A repository nobody has pushed to yet is waiting for its first push, most
+# often of a repository the user already has on their own machine (they ran
+# `git init` there).  Cloning an empty repository is rarely what they want,
+# so for an empty one the page leads with how to push an existing
+# repository: `git remote add`, then push every branch and tag.
+#
 # Reached from Manage Project -> Repository and from the Primary Document
-# panel of a source record.  See doc/git/SOURCE_REPOSITORIES.md.
+# panel of a source record.  See doc/git/SOURCE_REPOSITORIES.md and
+# doc/DOCTIS-GIT-USER-MANUAL.md section 6.
 
 require_once( 'core.php' );
 require_api( 'access_api.php' );
@@ -27,6 +34,7 @@ require_api( 'database_api.php' );
 require_api( 'dwg_api.php' );
 require_api( 'file_dwg_api.php' );
 require_api( 'form_api.php' );
+require_api( 'git_lfs_api.php' );
 require_api( 'gpc_api.php' );
 require_api( 'html_api.php' );
 require_api( 'lang_api.php' );
@@ -69,6 +77,7 @@ $t_owner_proj = (int)$t_repo_row['owner_project_id'];
 
 $t_basename  = repository_basename( $t_repo_id );
 $t_policy    = repository_push_policy( $t_repo_id );
+$t_empty     = repository_is_empty( $t_repo_id );
 $t_can_push  = access_has_project_level(
 	config_get( 'git_http_write_threshold', null, auth_get_current_user_id(), $t_owner_proj ),
 	$t_owner_proj );
@@ -140,6 +149,12 @@ layout_page_begin();
 				</tr>
 			</table>
 
+<?php if( $t_empty ): ?>
+			<div class="alert alert-warning">
+				<?php echo lang_get( 'repo_push_empty_notice' ) ?>
+			</div>
+<?php endif; ?>
+
 <?php if( $t_token === '' ): ?>
 			<p><?php echo lang_get( 'repo_clone_intro' ) ?></p>
 <?php	if( $t_existing ): ?>
@@ -158,7 +173,7 @@ layout_page_begin();
 				<?php echo form_security_field( 'dwg_repo_clone' ) ?>
 				<input type="hidden" name="project_id" value="<?php echo (int)$f_project_id ?>" />
 				<button class="btn btn-primary btn-white btn-round">
-					<?php echo lang_get( 'repo_clone_create_token' ) ?>
+					<?php echo lang_get( $t_empty ? 'repo_push_create_token' : 'repo_clone_create_token' ) ?>
 				</button>
 <?php	if( $t_existing ): ?>
 				<div class="space-10"></div>
@@ -182,6 +197,37 @@ layout_page_begin();
 				<strong><?php echo lang_get( 'repo_clone_token_once' ) ?></strong>
 				<?php echo lang_get( 'repo_clone_token_scope' ) ?>
 			</div>
+
+<?php	if( $t_empty ): ?>
+			<h5><?php echo lang_get( 'repo_push_step_existing' ) ?></h5>
+			<p class="small"><?php echo lang_get( 'repo_push_step_existing_help' ) ?></p>
+			<textarea id="push-commands" class="form-control" rows="3" readonly="readonly"
+				style="font-family: monospace;"><?php echo string_html_specialchars(
+					"git remote add origin " . $t_auth_url . "\n"
+					. "git push -u origin --all\n"
+					. "git push origin --tags" ) ?></textarea>
+			<div class="space-4"></div>
+			<button type="button" id="push-copy" class="btn btn-primary btn-sm btn-white"
+				data-target="push-commands"><?php echo lang_get( 'repo_clone_copy' ) ?></button>
+			<div class="space-10"></div>
+			<p class="small"><?php echo sprintf( lang_get( 'repo_push_has_origin' ),
+				'<code>git remote set-url origin &hellip;</code>',
+				'<code>git remote add doctis &hellip;</code>' ) ?></p>
+<?php		if( git_lfs_enabled() ): ?>
+			<div class="alert alert-info">
+				<?php echo lang_get( 'repo_push_lfs' ) ?>
+				<pre class="no-margin">git lfs install
+git lfs track "*.ext"
+git add .gitattributes
+git commit -m "Track large files with Git LFS"</pre>
+				<div class="space-4"></div>
+				<?php echo sprintf( lang_get( 'repo_push_lfs_migrate' ),
+					'<code>git lfs migrate import --include="*.ext" --everything</code>' ) ?>
+			</div>
+<?php		endif; ?>
+			<hr />
+			<p><strong><?php echo lang_get( 'repo_push_or_clone' ) ?></strong></p>
+<?php	endif; ?>
 
 			<h5><?php echo lang_get( 'repo_clone_step_command' ) ?></h5>
 			<p class="small"><?php echo lang_get( 'repo_clone_step_command_help' ) ?></p>
@@ -216,6 +262,7 @@ layout_page_begin();
 				</button>
 			</form>
 
+<?php	if( !$t_empty ): ?>
 			<div class="space-10"></div>
 			<h5><?php echo lang_get( 'repo_clone_step_existing' ) ?></h5>
 			<p class="small"><?php echo lang_get( 'repo_clone_step_existing_help' ) ?></p>
@@ -227,6 +274,7 @@ layout_page_begin();
 						data-target="repoint-command"><?php echo lang_get( 'repo_clone_copy' ) ?></button>
 				</span>
 			</div>
+<?php	endif; ?>
 
 			<div class="space-10"></div>
 			<p class="small"><?php echo sprintf( lang_get( 'repo_clone_in_config' ),

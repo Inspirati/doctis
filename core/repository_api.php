@@ -471,6 +471,27 @@ function repository_default_branch( int $p_repository_id ): string {
 }
 
 /**
+ * Whether a repository has no branches yet: created in Doctis, never pushed to.
+ *
+ * Such a repository is waiting for its first push, typically of a repository
+ * someone already has on their own machine, so the pages offer "push an
+ * existing repository" rather than "clone".  A repository that is not on
+ * disk counts as empty too.
+ *
+ * @param int $p_repository_id Repository id.
+ * @return bool
+ */
+function repository_is_empty( int $p_repository_id ): bool {
+	$t_bare = $p_repository_id > 0 ? repository_bare_path( $p_repository_id ) : '';
+	if( $t_bare === '' || !is_dir( $t_bare ) ) {
+		return true;
+	}
+	return trim( (string)shell_exec(
+		'git --git-dir=' . escapeshellarg( $t_bare ) . ' for-each-ref --count=1 --format=%(refname) refs/heads 2>/dev/null'
+	) ) === '';
+}
+
+/**
  * The push policy of a repository by id, cached for the request.
  *
  * Reading it shells out to `git config`, and a project list resolves many

@@ -78,11 +78,17 @@ $t_repo_can_split = !$t_repo_own && $t_repo_doc_count === 0;
 						<br /><span class="small"><?php echo sprintf(
 							lang_get( 'project_repository_shared_by' ), $t_repo_sharers ) ?></span>
 <?php	endif; ?>
+<?php	# A repository nobody has pushed to yet is waiting for its first push,
+		# so say so, and offer that rather than a clone.
+		$t_repo_empty = repository_is_empty( $t_repo_id ); ?>
+<?php	if( $t_repo_empty ): ?>
+						&nbsp;<span class="label label-warning"><?php echo lang_get( 'project_repository_empty' ) ?></span>
+<?php	endif; ?>
 <?php	if( repository_user_can_clone( $f_project_id ) ): ?>
 						<br /><a href="dwg_repo_clone_page.php?project_id=<?php echo (int)$f_project_id ?>"
 							class="btn btn-primary btn-sm btn-white btn-round" style="margin-top:6px">
-							<?php print_icon( 'fa-download', 'ace-icon' ); ?>
-							<?php echo lang_get( 'repo_clone_button' ) ?>
+							<?php print_icon( $t_repo_empty ? 'fa-upload' : 'fa-download', 'ace-icon' ); ?>
+							<?php echo lang_get( $t_repo_empty ? 'repo_push_button' : 'repo_clone_button' ) ?>
 						</a>
 <?php	endif; ?>
 <?php endif; ?>
