@@ -156,7 +156,7 @@ layout_page_begin();
 <?php endif; ?>
 
 <?php if( $t_token === '' ): ?>
-			<p><?php echo lang_get( 'repo_clone_intro' ) ?></p>
+			<p><?php echo lang_get( $t_empty ? 'repo_push_intro' : 'repo_clone_intro' ) ?></p>
 <?php	if( $t_existing ): ?>
 			<div class="alert alert-info">
 				<?php echo lang_get( 'repo_clone_existing' ) ?>

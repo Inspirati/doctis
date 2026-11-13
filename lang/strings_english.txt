@@ -2419,6 +2419,7 @@ $s_repo_push_button            = 'Push Existing Repository';
 $s_project_repository_empty    = 'empty';
 $s_repo_push_empty_notice      = '<strong>This repository is empty.</strong> Nobody has pushed to it yet. If you already have the work in a git repository on your computer &mdash; for example one you made with <code>git init</code> &mdash; create a token below, then push that repository here. Its history, branches and tags arrive unchanged.';
 $s_repo_push_create_token      = 'Create a token and show me how to push';
+$s_repo_push_intro             = 'Pushing needs an API token as the password, because your Doctis password is never used for git. Doctis can create one for this repository now, and show you the commands to run with it already in place.';
 $s_repo_push_step_existing     = 'Push an existing repository';
 $s_repo_push_step_existing_help = 'Open a terminal (on Windows, Git Bash or a Command Prompt) in your repository\'s folder, the one that holds its <code>.git</code> folder, and run these three lines. The first tells your repository where Doctis is; the others send every branch and every tag. Your repository needs at least one commit first.';
 $s_repo_push_has_origin        = 'If your repository already has a remote called <code>origin</code> (for example GitHub), the first line fails with &ldquo;remote origin already exists&rdquo;. Either point it here instead, with %1$s, or keep it and add Doctis under a name of its own, with %2$s, then push to <code>doctis</code> in place of <code>origin</code>.';
