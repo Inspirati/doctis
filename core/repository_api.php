@@ -487,7 +487,7 @@ function repository_is_empty( int $p_repository_id ): bool {
 		return true;
 	}
 	return trim( (string)shell_exec(
-		'git --git-dir=' . escapeshellarg( $t_bare ) . ' for-each-ref --count=1 --format=%(refname) refs/heads 2>/dev/null'
+		'git --git-dir=' . escapeshellarg( $t_bare ) . ' for-each-ref --count=1 refs/heads 2>/dev/null'
 	) ) === '';
 }
 
