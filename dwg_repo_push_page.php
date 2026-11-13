@@ -152,7 +152,7 @@ layout_page_begin();
 
 			<table class="table table-bordered table-condensed">
 				<tr>
-					<th class="category width-25"><?php echo lang_get( 'project_repository' ) ?></th>
+					<th class="category width-25"><?php echo lang_get( 'project_repository_section' ) ?></th>
 					<td><code><?php echo string_display_line( $t_basename ) ?></code>
 						&nbsp;<span class="label label-<?php echo $t_policy === DWG_PUSH_POLICY_SOURCE
 							? 'primary' : 'default' ?>"><?php echo lang_get( $t_policy === DWG_PUSH_POLICY_SOURCE
@@ -279,7 +279,7 @@ Project Outputs for */
 			<p class="small"><?php echo sprintf( lang_get( 'repo_push_has_origin' ),
 				'<code>git remote set-url origin &hellip;</code>',
 				'<code>git remote add doctis &hellip;</code>' ) ?></p>
-			<p class="small"><?php echo sprintf( lang_get( 'repo_clone_in_config' ),
+			<p class="small"><?php echo sprintf( lang_get( 'repo_push_in_config' ),
 				'<code>git remote set-url origin ' . string_display_line( $t_clone_url ) . '</code>' ) ?></p>
 
 			<div class="space-10"></div>
@@ -305,42 +305,48 @@ Project Outputs for */
 			<hr />
 			<h5 class="bold"><?php echo lang_get( 'repo_push_example' ) ?></h5>
 			<p class="small"><?php echo lang_get( 'repo_push_example_help' ) ?></p>
-<pre class="small">$ cd /c/Projects/<?php echo string_html_specialchars( $t_example_dir ) ?>
-
-$ git init
-Initialized empty Git repository in C:/Projects/<?php echo string_html_specialchars( $t_example_dir ) ?>/.git/
-
-$ printf 'History/\n__Previews/\nProject Logs for */\nProject Outputs for */\n' > .gitignore
-<?php if( $t_lfs ): ?>
-
-$ git lfs install
-Git LFS initialized.
-$ git lfs track "*.PcbDoc" "*.SchDoc" "*.PcbLib" "*.SchLib"
-Tracking "*.PcbDoc"
-Tracking "*.SchDoc"
-Tracking "*.PcbLib"
-Tracking "*.SchLib"
-<?php endif; ?>
-
-$ git add -A
-$ git commit -m "Initial version"
-[master (root-commit) 1a2b3c4] Initial version
- 7 files changed, 35 insertions(+)
-
-$ git remote add origin <?php echo string_html_specialchars( $t_shown_url ) ?>
-
-$ git push -u origin --all
-<?php if( $t_lfs ): ?>
-Uploading LFS objects: 100% (4/4), 18 MB | 2.1 MB/s, done.
-<?php endif; ?>
-remote: doctis: repository HEAD set to master
-To <?php echo string_html_specialchars( $t_clone_url ) ?>
-
- * [new branch]      master -> master
-branch 'master' set up to track 'origin/master'.
-
-$ git push origin --tags
-Everything up-to-date</pre>
+<?php
+	$t_example = array(
+		'$ cd /c/Projects/' . $t_example_dir,
+		'',
+		'$ git init',
+		'Initialized empty Git repository in C:/Projects/' . $t_example_dir . '/.git/',
+		'',
+		'$ printf \'History/\\n__Previews/\\nProject Logs for */\\nProject Outputs for */\\n\' > .gitignore',
+		'',
+	);
+	if( $t_lfs ) {
+		array_push( $t_example,
+			'$ git lfs install',
+			'Git LFS initialized.',
+			'$ git lfs track "*.PcbDoc" "*.SchDoc" "*.PcbLib" "*.SchLib"',
+			'Tracking "*.PcbDoc"',
+			'Tracking "*.SchDoc"',
+			'Tracking "*.PcbLib"',
+			'Tracking "*.SchLib"',
+			'' );
+	}
+	array_push( $t_example,
+		'$ git add -A',
+		'$ git commit -m "Initial version"',
+		'[master (root-commit) 1a2b3c4] Initial version',
+		' 7 files changed, 35 insertions(+)',
+		'',
+		'$ git remote add origin ' . $t_shown_url,
+		'$ git push -u origin --all' );
+	if( $t_lfs ) {
+		$t_example[] = 'Uploading LFS objects: 100% (4/4), 18 MB | 2.1 MB/s, done.';
+	}
+	array_push( $t_example,
+		'remote: doctis: repository HEAD set to master',
+		'To ' . $t_clone_url,
+		' * [new branch]      master -> master',
+		"branch 'master' set up to track 'origin/master'.",
+		'',
+		'$ git push origin --tags',
+		'Everything up-to-date' );
+?>
+			<pre class="small"><?php echo string_html_specialchars( implode( "\n", $t_example ) ) ?></pre>
 
 			<h5 class="bold"><?php echo lang_get( 'repo_push_trouble' ) ?></h5>
 			<table class="table table-bordered table-condensed small">
@@ -367,7 +373,7 @@ Everything up-to-date</pre>
 
 			<a href="manage_proj_edit_page.php?project_id=<?php echo (int)$f_project_id ?>#repository"
 				class="btn btn-default btn-sm btn-white btn-round">
-				<?php echo lang_get( 'primary_document_tag_cancel' ) ?>
+				<?php echo lang_get( 'back_link' ) ?>
 			</a>
 
 		</div>
