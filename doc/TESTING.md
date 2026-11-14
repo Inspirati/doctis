@@ -423,6 +423,16 @@ that the API-level tests above don't exercise — page rendering, form
 submission, login flow, project-context redirects, file upload via
 multipart. The closest thing to a browser test without a browser.
 
+**Repository file downloads:** test `dwg_repo_files_page.php` in both default
+and expanded (`covered=1`) views, and follow filename links to
+`dwg_repo_file_download.php`. Check exact bytes, attachment headers, empty and
+binary files, Unicode/special filenames, LFS contents and missing objects.
+Check anonymous denial, private repositories and inherited repositories where
+access to the child alone must not grant access to the owner. Verified on
+2026-11-14: 27 isolated HTTP scenarios, including a later push changing the
+downloaded HEAD contents. Synthetic fixtures queued no mail; the deployed VM
+database, Git store and configuration were unchanged.
+
 **Login (two-step, cookie jar):** use the `$g_path` host, `10.0.0.109`.
 Logging in at `127.0.0.1` loses the session on the first redirect.
 ```bash

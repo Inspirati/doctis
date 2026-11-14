@@ -526,7 +526,12 @@ developer access. It is also linked from the Create Document form, under the
 file upload field.
 
 Each file shows its size, when it last changed and by whom, and a
-**Register** button. Register opens the normal Create Document form with the
+**Register** button. Click a filename to download its current contents from
+the repository's default branch, including files revealed by the expanded
+list. Git LFS files download their actual contents. Downloads require the
+same repository read access as the list and do not register a document.
+
+Register opens the normal Create Document form with the
 repository path already filled in. There is nothing to upload, because the
 content is already there.
 

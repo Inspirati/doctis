@@ -146,7 +146,12 @@ layout_page_begin();
 <?php	foreach( $t_shown as $t_path ):
 			$t_commit = $t_last[$t_path] ?? null; ?>
 				<tr>
-					<td><code><?php echo string_display_line( $t_path ) ?></code></td>
+					<td><?php if( $t_tree[$t_path]['type'] === 'blob' ): ?>
+						<a href="<?php echo string_attribute( 'dwg_repo_file_download.php?project_id=' . $f_project_id
+							. '&path=' . rawurlencode( $t_path ) ) ?>"><code><?php echo string_html_specialchars( $t_path ) ?></code></a>
+					<?php else: ?>
+						<code><?php echo string_html_specialchars( $t_path ) ?></code>
+					<?php endif; ?></td>
 					<td class="nowrap"><?php echo git_store_format_size( $t_tree[$t_path]['size'] ) ?></td>
 					<td class="small"><?php if( $t_commit ) {
 						echo string_display_line( date( config_get( 'short_date_format' ), (int)$t_commit['time'] ) )
