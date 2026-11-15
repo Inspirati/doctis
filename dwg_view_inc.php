@@ -628,7 +628,6 @@ $t_date_format = 'Y-m-d';
 # The three person fields are shown together, in order of how often they
 # change: the owner is responsible for the document, the assignee holds the
 # current task step, and the creator registered it.  See doc/dwg/OWNERSHIP.md.
-# The table is six columns wide, so Classification moved to its own row below.
 #
 
 if( $t_flags['owner_show'] || $t_flags['creator_show'] || $t_flags['handler_show'] ) {
@@ -680,77 +679,55 @@ if( $t_flags['owner_show'] || $t_flags['creator_show'] || $t_flags['handler_show
 }
 
 #
-# Classification
+# Status, Due Date, Classification, Priority
 #
-
-if( $t_flags['classification_show'] ) {
-	echo '<tr>';
-	echo '<th class="bug-classification category">', lang_get( 'dwg_classification' ), '</th>';
-	echo '<td class="bug-classification">', isset( $t_issue['classification'] ) ? string_display_line( $t_issue['classification'] ) : '', '</td>';
-	echo '<td colspan="4"></td>';
-	echo '</tr>';
-}
-
+# The surrounding metadata table has six columns. Give this full-width row
+# its own responsive table so four label/value pairs do not widen other rows.
 #
-# Priority
-#
-
-if( $t_flags['priority_show'] ) {
-	echo '<tr>';
-	echo '<th class="bug-priority category">', lang_get( 'priority' ), '</th>';
-	echo '<td class="bug-priority">';
-	$t_icon = $t_dwg->priority;
-	$t_status_icon_arr = config_get( 'status_icon_arr' );
-	$t_priotext = get_enum_element( 'priority', $t_icon );
-	if( isset( $t_status_icon_arr[$t_icon] ) && !is_blank( $t_status_icon_arr[$t_icon] ) ) {
-		echo '&nbsp;' . icon_get( $t_status_icon_arr[$t_icon] ) . '&nbsp;';
-	}
-	echo ' ' . string_display_line( $t_priotext ), '</td>';
-	echo '<td colspan="4">&#160;</td>';
-	echo '</tr>';
-}
-
-#
-# Status, Due Date
-#
-
-if( $t_flags['status_show'] || $t_flags['due_date_show'] ) {
-	echo '<tr>';
-
-	$t_spacer = 2;
+if( $t_flags['status_show'] || $t_flags['due_date_show']
+	|| $t_flags['classification_show'] || $t_flags['priority_show'] ) {
+	echo '<tr><td colspan="6" class="no-padding">';
+	echo '<div class="table-responsive"><table class="table table-bordered table-condensed no-margin"><tbody><tr>';
 
 	# Status
 	if( $t_flags['status_show'] ) {
 		echo '<th class="bug-status category">', lang_get( 'status' ), '</th>';
-
-		# choose color based on status
 		$t_status_css = html_get_status_css_fg( $t_issue['status']['id'] );
-
 		echo '<td class="bug-status">';
 		print_icon( 'fa-square', 'fa-status-box ' . $t_status_css );
 		echo ' ' . string_display_line( $t_issue['status']['label'] ), '</td>';
-	} else {
-		$t_spacer += 2;
 	}
 
 	# Due Date
 	if( $t_flags['due_date_show'] ) {
 		echo '<th class="bug-due-date category">', lang_get( 'due_date' ), '</th>';
-
 		$t_css = 'dwg-due-date';
 		if( $t_issue_view['overdue'] !== false ) {
 			$t_css .= ' due-' . $t_issue_view['overdue'];
 		}
 		echo '<td class="' . $t_css . '">', $t_issue_view['due_date'], '</td>';
-	} else {
-		$t_spacer += 2;
 	}
 
-	if( $t_spacer > 0 ) {
-		echo '<td colspan="', $t_spacer, '">&#160;</td>';
+	# Classification
+	if( $t_flags['classification_show'] ) {
+		echo '<th class="bug-classification category">', lang_get( 'dwg_classification' ), '</th>';
+		echo '<td class="bug-classification">', isset( $t_issue['classification'] ) ? string_display_line( $t_issue['classification'] ) : '', '</td>';
 	}
 
-	echo '</tr>';
+	# Priority
+	if( $t_flags['priority_show'] ) {
+		echo '<th class="bug-priority category">', lang_get( 'priority' ), '</th>';
+		echo '<td class="bug-priority">';
+		$t_icon = $t_dwg->priority;
+		$t_status_icon_arr = config_get( 'status_icon_arr' );
+		$t_priotext = get_enum_element( 'priority', $t_icon );
+		if( isset( $t_status_icon_arr[$t_icon] ) && !is_blank( $t_status_icon_arr[$t_icon] ) ) {
+			echo '&nbsp;' . icon_get( $t_status_icon_arr[$t_icon] ) . '&nbsp;';
+		}
+		echo ' ' . string_display_line( $t_priotext ), '</td>';
+	}
+
+	echo '</tr></tbody></table></div></td></tr>';
 }
 
 #
