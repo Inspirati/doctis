@@ -682,12 +682,14 @@ if( $t_flags['owner_show'] || $t_flags['creator_show'] || $t_flags['handler_show
 # Status, Due Date, Classification, Priority
 #
 # The surrounding metadata table has six columns. Give this full-width row
-# its own responsive table so four label/value pairs do not widen other rows.
+# its own responsive table with five equal field slots. Four label/value
+# pairs use the first four slots; the fifth stays blank.
 #
 if( $t_flags['status_show'] || $t_flags['due_date_show']
 	|| $t_flags['classification_show'] || $t_flags['priority_show'] ) {
 	echo '<tr><td colspan="6" class="no-padding">';
-	echo '<div class="table-responsive"><table class="table table-bordered table-condensed no-margin"><tbody><tr>';
+	echo '<div class="table-responsive"><table class="table table-bordered table-condensed no-margin" style="table-layout:fixed;overflow-wrap:anywhere">';
+	echo '<colgroup><col span="10" style="width:10%" /></colgroup><tbody><tr>';
 
 	# Status
 	if( $t_flags['status_show'] ) {
@@ -696,6 +698,8 @@ if( $t_flags['status_show'] || $t_flags['due_date_show']
 		echo '<td class="bug-status">';
 		print_icon( 'fa-square', 'fa-status-box ' . $t_status_css );
 		echo ' ' . string_display_line( $t_issue['status']['label'] ), '</td>';
+	} else {
+		echo '<td colspan="2"></td>';
 	}
 
 	# Due Date
@@ -706,12 +710,16 @@ if( $t_flags['status_show'] || $t_flags['due_date_show']
 			$t_css .= ' due-' . $t_issue_view['overdue'];
 		}
 		echo '<td class="' . $t_css . '">', $t_issue_view['due_date'], '</td>';
+	} else {
+		echo '<td colspan="2"></td>';
 	}
 
 	# Classification
 	if( $t_flags['classification_show'] ) {
 		echo '<th class="bug-classification category">', lang_get( 'dwg_classification' ), '</th>';
 		echo '<td class="bug-classification">', isset( $t_issue['classification'] ) ? string_display_line( $t_issue['classification'] ) : '', '</td>';
+	} else {
+		echo '<td colspan="2"></td>';
 	}
 
 	# Priority
@@ -725,8 +733,12 @@ if( $t_flags['status_show'] || $t_flags['due_date_show']
 			echo '&nbsp;' . icon_get( $t_status_icon_arr[$t_icon] ) . '&nbsp;';
 		}
 		echo ' ' . string_display_line( $t_priotext ), '</td>';
+	} else {
+		echo '<td colspan="2"></td>';
 	}
 
+	# Reserve the unused fifth field slot so the row keeps its column widths.
+	echo '<td colspan="2" class="dwg-metadata-unused"></td>';
 	echo '</tr></tbody></table></div></td></tr>';
 }
 

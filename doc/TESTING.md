@@ -56,8 +56,10 @@ by default, an explicit list may hide it, and Severity/Reproducibility/Resolutio
 must stay absent even if a legacy list includes them. Check stored Classification
 is escaped. Status, Due Date, Classification and Priority share one row in
 that order, with each field controlled independently. The row spans all six
-columns of the outer metadata table and uses a responsive inner table for its
-label/value pairs. No schema update is required. On deployment, an explicit
+columns of the outer metadata table and uses a responsive inner table with
+five equal field slots: four label/value pairs followed by a blank fifth slot.
+Hidden fields retain blank slots so the remaining fields do not shift.
+No schema update is required. On deployment, an explicit
 configuration override that omits `classification` must be updated to include
 it if the field is wanted.
 
