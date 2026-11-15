@@ -201,7 +201,7 @@ AFTER_SHA="$(git rev-parse HEAD)"
 echo "Pushing ${BRANCH}..."
 if ! git push --quiet origin "$BRANCH" 2>/tmp/doctis-push-err.$$; then
 	echo "ERROR: push failed. Check that ${DOCTIS_USER} has push access" \
-		"(\$g_git_http_write_threshold, default MANAGER) to this project." >&2
+		"(\$g_git_http_write_threshold, default DEVELOPER) to this project." >&2
 	cat /tmp/doctis-push-err.$$ >&2
 	rm -f /tmp/doctis-push-err.$$
 	exit 4

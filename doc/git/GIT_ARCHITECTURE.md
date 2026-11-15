@@ -351,7 +351,7 @@ without an approved ref.
 
 Advanced users can `git clone` a repository from a remote workstation,
 authenticated with a Doctis API token — no Linux account required. Users at
-`$g_git_http_write_threshold` (default `MANAGER`) can also `git push` draft
+`$g_git_http_write_threshold` (default `DEVELOPER`) can also `git push` draft
 updates; pushes change a document's Draft only when its file changes, never
 the On Record version.
 
@@ -371,7 +371,7 @@ git clone http://<user>:<API_TOKEN>@<server>/git/<slug>-r<id>.git
             the canonical on-disk repo name is always served)
           - Authorise against the repository's OWNER project
             (read: $g_git_http_read_threshold, default DEVELOPER;
-             push: $g_git_http_write_threshold, default MANAGER)
+             push: $g_git_http_write_threshold, default DEVELOPER)
           - Allowlist check (only smart-HTTP endpoints permitted)
           - Path-traversal guard
                ↓
@@ -401,8 +401,10 @@ repository with HTTP 413. See [GIT_SERVER_SETUP.md](GIT_SERVER_SETUP.md).
 
 ### Access model
 
-Git serves whole repositories. Per-document `view_dwg_threshold` and license
-gating **cannot** be enforced over git. Access is authorised against the
+Git serves whole repositories. Per-document `view_dwg_threshold` is not
+enforced over git. Licenses are informational records, not access grants;
+restricted material is stored on secure external services and referenced by
+Doctis. Access is authorised against the
 repository's **owner project** — the clone/push boundary is the repository,
 which for a shared (project-tree) repository means the top-level project's
 access level. Sub-projects sharing a parent's repository have no clone URL of
@@ -415,7 +417,7 @@ their own.
 | `$g_git_http_enabled` | `OFF` | Master switch; set `ON` in `config_inc.php` to activate |
 | `$g_git_http_backend` | `/usr/lib/git-core/git-http-backend` | Path to CGI binary |
 | `$g_git_http_read_threshold` | `DEVELOPER` | Minimum owner-project access for clone/fetch |
-| `$g_git_http_write_threshold` | `MANAGER` | Minimum owner-project access for push |
+| `$g_git_http_write_threshold` | `DEVELOPER` | Minimum owner-project access for push |
 
 Users authenticate with their Doctis username and a personal API token from
 *My Account → API Tokens* (reuses `api_token_get_user()`; nothing new to

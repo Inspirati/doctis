@@ -2482,3 +2482,21 @@ $s_meeting_time_gap = 'घड़ी बदलने के कारण %s स�
 $s_meeting_time_overlap = 'घड़ी बदलने के कारण %s समय %s में दो बार आता है। पहला या दूसरा अवसर चुनें।';
 $s_meeting_timezone_review = 'स्वचालित निर्धारण रुका है। श्रृंखला का समय क्षेत्र और स्थानीय बैठक समय जाँचें, फिर जारी करने के लिए पुनरावृत्ति सेटिंग सहेजें।';
 $s_meeting_schedule_paused = 'स्वचालित निर्धारण रुका है';
+
+# Project repository browser
+$s_dwg_repo_browser_intro = 'रिपॉज़िटरी %1$s की फ़ाइलें और इतिहास देखें। डाउनलोड में रिपॉज़िटरी की सामग्री मिलती है; Doctis अभिलेखों में उनके अलग से दर्ज संस्करण सुरक्षित रहते हैं।';
+$s_dwg_repo_browser_all = 'सभी फ़ाइलें';
+$s_dwg_repo_browser_gaps = 'अपंजीकृत फ़ाइलें';
+$s_dwg_repo_browser_history = 'इतिहास';
+$s_dwg_repo_browser_commit = 'कमिट (फ़ाइलें देखें)';
+$s_dwg_repo_browser_author = 'लेखक';
+$s_dwg_repo_browser_revision = 'कमिट %1$s पर रिपॉज़िटरी की सामग्री देख रहे हैं। पंजीकरण वर्तमान डिफ़ॉल्ट शाखा पर उपलब्ध है।';
+$s_dwg_repo_browser_head = 'वर्तमान फ़ाइलों पर लौटें';
+$s_dwg_repo_browser_root = 'रिपॉज़िटरी का मूल फ़ोल्डर';
+$s_dwg_repo_browser_empty = 'इस दृश्य में कोई प्रविष्टि नहीं है।';
+$s_dwg_repo_browser_submodule = 'सबमॉड्यूल';
+$s_dwg_repo_browser_record = 'अभिलेखित';
+$s_dwg_repo_browser_draft = 'मसौदा';
+$s_dwg_repo_browser_records = 'पंजीकृत दस्तावेज़ और रिपॉज़िटरी अभिलेख';
+$s_dwg_repo_browser_records_help = 'वर्तमान Doctis पंजीकरण, जिनमें इस रिपॉज़िटरी संस्करण में अनुपस्थित पथ भी शामिल हैं। नियंत्रित संस्करण डाउनलोड करने के लिए दस्तावेज़ अभिलेख खोलें।';
+$s_dwg_repo_browser_history_help = 'नवीनतम कमिट पहले दिखते हैं। किसी कमिट की फ़ाइलें देखने या डाउनलोड करने के लिए उसे चुनें। पथ का इतिहास दिखाए गए नाम का उपयोग करता है; नाम बदलने से पहले के नाम देखने के लिए पूरी रिपॉज़िटरी का इतिहास देखें।';

@@ -50,6 +50,20 @@ supported. PHP 8.0 has a known repeated-time conversion defect ([PHP bug
 80664](https://bugs.php.net/bug.php?id=80664), fixed in 8.1); the meeting
 timezone regression remains enabled for every supported version.
 
+For document-view metadata, verify default and explicit
+`dwg_view_page_fields` lists through `dwg_view.php`: Classification is enabled
+by default, an explicit list may hide it, and Severity/Reproducibility/Resolution
+must stay absent even if a legacy list includes them. Check stored Classification
+is escaped and that Status/Due Date rows still span six columns when either
+field is hidden. No schema update is required. On deployment, an explicit
+configuration override that omits `classification` must be updated to include
+it if the field is wanted.
+
+Verified on PHP 8.4, 2026-11-15: 22 HTTP checks against a temporary loopback
+instance with a synthetic private document/project, plus the full `mantis`
+suite (488 tests, 1,857 assertions, one pre-existing skip). Email was disabled;
+the synthetic HTTP records and temporary server were removed afterwards.
+
 For managed companies, run `CompanyTest`, `UserProfileUpdateCommandTest` and
 `UserUpdateProfileCommandTest` on schema 82. The company suite applies the
 tracked migration to temporary legacy tables and compares its result with
@@ -422,6 +436,23 @@ them, per feature.
 that the API-level tests above don't exercise — page rendering, form
 submission, login flow, project-context redirects, file upload via
 multipart. The closest thing to a browser test without a browser.
+
+**Project repository browser:** run `RepositoryBrowserTest` with the `mantis`
+suite. It uses temporary Git repositories and disposable private projects/users
+and restores its configuration. Covers literal/Unicode paths, historical trees,
+commit validation, bounded history pagination, inherited owner-project access,
+project-specific write overrides and both policies' pre-receive protections.
+
+Verified on PHP 8.4, 2026-11-14: 7 browser tests (176 assertions); the full
+`mantis` suite passed before the additional long-history case (487 tests,
+1 pre-existing skip). A temporary loopback PHP instance passed 43 HTTP/Git
+checks: registered/unregistered files, folders and record links, escaped names
+and commit messages, path history and pagination, historical downloads including
+deleted files and LFS versions, exact binary/empty bytes, denied access for
+unrelated/child-only/low-level users, read-only controls, empty repositories,
+and a developer's actual Smart HTTP clone/push with prohibited pushes rejected.
+Email was disabled; all HTTP fixture Git storage was under `/tmp`. No schema
+or global nginx/PHP/Linux configuration change was needed.
 
 **Repository file downloads:** test `dwg_repo_files_page.php` in both default
 and expanded (`covered=1`) views, and follow filename links to

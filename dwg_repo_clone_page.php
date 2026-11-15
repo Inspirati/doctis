@@ -122,6 +122,7 @@ layout_page_begin();
 		</div>
 		<div class="widget-body">
 		<div class="widget-main padding-16">
+			<?php print_dwg_repository_navigation( $f_project_id ); ?>
 
 			<table class="table table-bordered table-condensed">
 				<tr>

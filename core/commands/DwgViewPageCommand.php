@@ -294,9 +294,6 @@ class DwgViewPageCommand extends Command {
 
 		$t_flags['projection_show'] = in_array( 'projection', $t_fields ) && isset( $t_issue['projection'] );
 		$t_flags['creator_show'] = in_array( 'creator', $t_fields ) && isset( $t_issue['creator'] );
-		$t_flags['reproducibility_show'] = in_array( 'reproducibility', $t_fields ) && isset( $t_issue['reproducibility'] );
-		$t_flags['resolution_show'] = in_array( 'resolution', $t_fields ) && isset( $t_issue['resolution'] );
-		$t_flags['severity_show'] = in_array( 'severity', $t_fields ) && isset( $t_issue['severity'] );
 		$t_flags['status_show'] = in_array( 'status', $t_fields ) && isset( $t_issue['status'] );
 		$t_flags['view_state_show'] = in_array( 'view_state', $t_fields ) && isset( $t_issue['view_state'] );
 

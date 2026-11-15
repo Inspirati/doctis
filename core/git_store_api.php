@@ -210,17 +210,19 @@ function git_store_summary( array $p_repo ): array {
 }
 
 /**
- * Files at HEAD, keyed by path: mode, type, sha (blob) and size.
+ * Files at a revision (HEAD by default), keyed by path: mode, type, sha and size.
  *
  * @param array $p_repo
+ * @param string $p_revision Trusted revision, or a validated full commit SHA.
  * @return array
  */
-function git_store_tree( array $p_repo ): array {
+function git_store_tree( array $p_repo, string $p_revision = 'HEAD' ): array {
 	$t_tree = array();
 	if( !$p_repo['bare_exists'] ) {
 		return $t_tree;
 	}
-	$t_out = git_store_run( $p_repo['bare'], true, 'ls-tree -r -l -z --full-tree HEAD' );
+	$t_out = git_store_run( $p_repo['bare'], true,
+		'ls-tree -r -l -z --full-tree ' . escapeshellarg( $p_revision ) );
 	foreach( explode( "\0", $t_out ) as $t_record ) {
 		if( !preg_match( '/^(\d+) (\w+) ([0-9a-f]+)\s+(-|\d+)\t(.+)$/s', $t_record, $t_m ) ) {
 			continue;

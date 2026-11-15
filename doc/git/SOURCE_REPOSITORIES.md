@@ -1004,7 +1004,7 @@ Enabling it for a project, start to finish:
    git push -u origin main
    ```
    Reads need `$g_git_http_read_threshold` (DEVELOPER), pushes
-   `$g_git_http_write_threshold` (MANAGER), on the repository's owner project.
+   `$g_git_http_write_threshold` (DEVELOPER by default), on the repository's owner project.
 3. **Create a document** for the release record and open it. The Primary
    Document panel offers **Register Source Release**: pick the branch, leave
    the commit blank for its tip, leave the subtree blank for the whole

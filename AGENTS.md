@@ -434,3 +434,12 @@ a storage setting does not migrate existing content.
 - Keep credentials, tokens, database dumps, and customer documents out of Git.
   Run relevant checks in the intended runtime and report what was actually
   tested, along with missing inputs or remaining parity gaps.
+
+## Licensing intent — owner clarification, 2026-11-14
+
+Licensing records are informational: they let users track whether they hold
+required access, but do not grant access. Properly restricted material belongs
+on secure external servers/services, with Doctis acting as its document
+register/reference. Do not introduce licence-based read or Git access gates.
+Repository read/write access remains controlled by the owner project's access
+levels and configured Git thresholds.

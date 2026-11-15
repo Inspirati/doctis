@@ -1,5 +1,5 @@
 <?php
-# Download a file at the project's repository HEAD, including unregistered files.
+# Download a file at HEAD or a validated commit, including unregistered files.
 # Access matches Repository Files and cloning, including inherited repositories.
 define( 'DISABLE_INLINE_ERROR_REPORTING', true );
 $g_bypass_headers = true;
@@ -14,6 +14,7 @@ require_api( 'gpc_api.php' );
 require_api( 'http_api.php' );
 require_api( 'project_api.php' );
 require_api( 'repository_api.php' );
+require_api( 'repository_browser_api.php' );
 
 auth_ensure_user_authenticated();
 
@@ -30,11 +31,15 @@ if( $f_path === '' || strpos( $f_path, "\0" ) !== false ) {
 
 $t_repository_id = repository_id_for_project( $f_project_id );
 $t_bare = repository_bare_path( $t_repository_id );
+$t_commit = repository_browser_commit( repository_browser_repo( $t_repository_id ), gpc_get_string( 'rev', 'HEAD' ) );
+if( $t_commit === '' ) {
+	trigger_error( ERROR_FILE_NOT_FOUND, ERROR );
+}
 # Resolve to an immutable blob before reading its size/content: a concurrent
 # push must not change the bytes between those operations. Paths stay Git data;
 # never follow a worktree path or a repository symlink on the server filesystem.
 $t_blob = trim( git_store_run( $t_bare, true,
-	'rev-parse --verify ' . escapeshellarg( 'HEAD:' . $f_path ) ) );
+	'rev-parse --verify ' . escapeshellarg( $t_commit . ':' . $f_path ) ) );
 if( !preg_match( '/^[0-9a-f]{40}$/', $t_blob )
 	|| trim( git_store_run( $t_bare, true, 'cat-file -t ' . escapeshellarg( $t_blob ) ) ) !== 'blob' ) {
 	trigger_error( ERROR_FILE_NOT_FOUND, ERROR );

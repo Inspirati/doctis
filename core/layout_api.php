@@ -782,13 +782,12 @@ function layout_print_sidebar( $p_active_sidebar_page = null ) {
 			);
 		}
 
-		# Repository Files: unregistered files in the current project's
-		# repository, for whoever may both read the repository and create
-		# documents in the project.  Only cheap checks here -- no git calls --
+		# Repository Files: project-scoped browsing for anyone who may clone.
+		# Registration has its own create-document check on the page.
+		# Only cheap checks here -- no git calls --
 		# because the sidebar is drawn on every page.
 		$t_files_project = helper_get_current_project();
-		if( $t_files_project !== ALL_PROJECTS
-			&& access_has_project_level( config_get( 'create_dwg_threshold', null, null, $t_files_project ), $t_files_project ) ) {
+		if( $t_files_project !== ALL_PROJECTS ) {
 			require_api( 'repository_api.php' );
 			if( repository_user_can_clone( $t_files_project ) ) {
 				$t_sidebar_items[] = array(

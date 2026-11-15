@@ -2569,6 +2569,25 @@ function print_dwg_git_token_notice( string $p_repository = '', string $p_class 
 	echo '</div>';
 }
 
+/** Navigation between project-scoped repository tools, matching their access checks. */
+function print_dwg_repository_navigation( int $p_project_id ): void {
+	require_api( 'repository_api.php' );
+	if( !repository_user_can_clone( $p_project_id ) ) {
+		return;
+	}
+	$t_pages = array( 'dwg_repo_files_page.php' => 'dwg_repo_files_title',
+		'dwg_repo_clone_page.php' => 'repo_clone_title' );
+	if( repository_user_can_push( $p_project_id ) ) {
+		$t_pages['dwg_repo_push_page.php'] = 'repo_push_title';
+	}
+	echo '<div class="btn-toolbar">';
+	foreach( $t_pages as $t_page => $t_label ) {
+		echo '<a class="btn btn-sm btn-default btn-white btn-round" href="',
+			string_attribute( $t_page . '?project_id=' . $p_project_id ), '">', lang_get( $t_label ), '</a> ';
+	}
+	echo '</div><div class="space-10"></div>';
+}
+
 /**
  * Print the notice that a document lives in a source repository.
  *

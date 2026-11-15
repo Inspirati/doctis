@@ -436,7 +436,7 @@ Defaults in `config_defaults_inc.php` (override only if needed):
 ```php
 $g_git_http_backend         = '/usr/lib/git-core/git-http-backend';
 $g_git_http_read_threshold  = DEVELOPER;   // minimum project level for clone
-$g_git_http_write_threshold = MANAGER;     // reserved for push (Phase 2)
+$g_git_http_write_threshold = DEVELOPER;   // push access on the owner project
 ```
 
 ### Authentication

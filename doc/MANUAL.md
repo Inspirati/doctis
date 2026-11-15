@@ -1183,6 +1183,17 @@ In `config/config_inc.php`:
 Repeating meetings need the scheduler in cron (installed by the nginx
 installer): `scripts/meeting_schedule.php`, hourly.
 
+### Document view fields
+
+`$g_dwg_view_page_fields` controls optional fields on **View Document**.
+Classification is included by default. If `config_inc.php` or a database
+configuration override supplies its own field list, add `classification` to
+that list to display it; an explicit list replaces the defaults.
+
+Severity, Reproducibility and Resolution are inherited issue fields without
+stored document values. They are not shown on View Document, even when an
+older field-list override includes them. Issue pages retain those fields.
+
 ### Disabling the document notes feature
 
 To hide the Document Notes panel and remove the notes/attachment count columns

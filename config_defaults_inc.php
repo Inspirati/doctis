@@ -2690,8 +2690,8 @@ $g_git_http_backend = '/usr/lib/git-core/git-http-backend';
 /**
  * Minimum project access level required to clone/fetch (read) a project
  * repository over remote git.  Git serves whole repositories, so this is a
- * project-level entitlement: per-document view thresholds and license gating
- * are NOT enforced over git.
+ * project-level entitlement: per-document view thresholds are not enforced
+ * over git. Licenses are informational and do not grant repository access.
  *
  * @global int $g_git_http_read_threshold
  */
@@ -2701,12 +2701,13 @@ $g_git_http_read_threshold = DEVELOPER;
  * Minimum project access level required to push (write) to a project repository
  * over remote git.  Pushes advance the draft (repository HEAD) only — the
  * On-Record version stays pinned to its recorded SHA until promoted inside
- * Doctis.  A pre-receive hook rejects force-pushes, ref deletions, and writes
- * to refs/doctis/*.  A higher bar than read by design.
+ * Doctis. The document-control policy rejects force-pushes and ref deletions;
+ * the source policy permits them. Both protect refs/doctis/*. Set a higher
+ * threshold on the repository's owner project to restrict its writers.
  *
  * @global int $g_git_http_write_threshold
  */
-$g_git_http_write_threshold = MANAGER;
+$g_git_http_write_threshold = DEVELOPER;
 
 /**
  * Enable the Git LFS server endpoints on the remote git gateway.
@@ -3661,6 +3662,11 @@ $g_bug_view_page_fields = array(
  * Mirrors {@see $g_bug_view_page_fields} for documents.  Remove a field name
  * from this array to hide the corresponding panel or section on dwg_view.php.
  *
+ * Classification is shown by default; an explicit field-list override must
+ * include classification to show it. Severity, reproducibility and resolution
+ * are inherited issue fields with no document storage and are never rendered,
+ * even if an older override includes them.
+ *
  * The following optional fields are allowed:
  *   - additional_info
  *   - attachments
@@ -3674,6 +3680,7 @@ $g_bug_view_page_fields = array(
  *                      $g_dwg_view_page_fields =
  *                          array_diff( $g_dwg_view_page_fields, ['dwgnotes'] );
  *   - category_id
+ *   - classification
  *   - date_submitted
  *   - description
  *   - due_date
@@ -3695,9 +3702,6 @@ $g_bug_view_page_fields = array(
  *   - product_version
  *   - project
  *   - projection
- *   - reproducibility
- *   - resolution
- *   - severity
  *   - status
  *   - steps_to_reproduce
  *   - summary
@@ -3712,6 +3716,7 @@ $g_dwg_view_page_fields = array(
 	'attachments',
 	'dwgnotes',
 	'category_id',
+	'classification',
 	'date_submitted',
 	'description',
 	'due_date',
@@ -3736,9 +3741,6 @@ $g_dwg_view_page_fields = array(
 	'product_version',
 	'project',
 	'projection',
-	'reproducibility',
-	'resolution',
-	'severity',
 	'status',
 	'steps_to_reproduce',
 	'summary',

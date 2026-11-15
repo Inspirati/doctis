@@ -147,6 +147,7 @@ layout_page_begin();
 		</div>
 		<div class="widget-body">
 		<div class="widget-main padding-16">
+			<?php print_dwg_repository_navigation( $f_project_id ); ?>
 
 			<p><?php echo lang_get( 'repo_push_page_intro' ) ?></p>
 

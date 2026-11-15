@@ -519,17 +519,30 @@ what happened instead: the commit is no longer in `master`'s history, or the
 A file you add in a clone and push is in the repository, but it is not a
 Doctis document until somebody registers it.
 
-**Repository Files**, in the sidebar, lists the files in the current project's
-repository that are not yet documents. You see it if you can clone the
-repository and create documents in the project, which by default means
-developer access. It is also linked from the Create Document form, under the
-file upload field.
+**Repository Files**, in the sidebar after selecting a project, opens its
+repository for anyone who can clone it. By default, **All files** shows
+registered and unregistered files. Select a folder to open it; the breadcrumbs
+return to parent folders. **Clone Repository** and, for users with write
+access, **Push Existing Repository** are available on all three repository
+pages, including for an empty repository.
 
-Each file shows its size, when it last changed and by whom, and a
-**Register** button. Click a filename to download its current contents from
-the repository's default branch, including files revealed by the expanded
-list. Git LFS files download their actual contents. Downloads require the
-same repository read access as the list and do not register a document.
+Click a filename to download its contents. Git LFS files download their actual
+contents. **History** lists commits, newest first, with pagination; each file
+and folder also has its own History button. Select a commit to browse and
+download the files at that revision, including files subsequently deleted.
+History follows the displayed path; after a rename, use the repository-wide
+history to inspect its earlier name.
+
+The browser shows the default branch or selected historical commit. These
+contents can differ from the controlled version in a Doctis document record.
+**Registered documents and repository records** links to current registrations,
+including paths missing from the selected commit. Use the document record to
+download its On Record version.
+
+**Registration gaps** retains the list of files needing registration. The
+**Register** button is available for unregistered files on the current default
+branch when you can create documents in the selected project. Historical
+browsing never registers an older version.
 
 Register opens the normal Create Document form with the
 repository path already filled in. There is nothing to upload, because the
@@ -563,7 +576,8 @@ without frontmatter are registered one at a time, because only a person can
 say what they are called.
 
 **Files inside a registered repository record** (§7) are not counted as
-unregistered, because they are already part of that record. They are hidden
+unregistered, because they are already part of that record. They appear in
+**All files**. In **Registration gaps** they are hidden
 by default; select the *inside a registered repository record* count to list
 them. They can still be registered as documents of their own, one at a time,
 with the caveat in §9. **Register all** never includes them.
@@ -688,18 +702,34 @@ sub-project in its Repository column.
 | Action | Setting | Default |
 |---|---|---|
 | Clone and fetch | `$g_git_http_read_threshold` | developer |
-| Push | `$g_git_http_write_threshold` | manager |
+| Push | `$g_git_http_write_threshold` | developer |
 | Promote a Draft | | manager |
 | Register a source record | `$g_update_dwg_threshold` | developer |
 
-Access is checked against the project that **owns** the repository.
+Access is checked against the project that **owns** the repository, including
+when browsing through a sub-project that inherits it. Registration separately
+requires create-document access in the selected project.
+
+Developer-level users can push by default. Existing explicit configuration
+overrides still apply. To restrict one repository, select its owner project
+and set `git_http_write_threshold` to `MANAGER` under Manage → Configuration →
+Configuration Report; an all-projects override restricts every repository.
+Membership of a child project alone does not grant access to its parent’s
+repository.
+
+Push permission covers every path in the repository; it is not tied to a
+file’s document owner. The document-control policy still rejects history
+rewrites and ref deletion. The source policy permits those operations. Both
+protect Doctis-managed approval refs; pushing does not promote a controlled
+version. Licensing is informational: restricted material belongs on the
+secure external service referenced by its Doctis registration.
 
 ### 11.3 Git Store
 
 Manage → **Git Store** is the repository-centric view of the whole server:
 files, every registered document and its state, commits, references and the
-approved-version pins. It stays administrator-only; developers register
-files from **Repository Files** instead (§8).
+approved-version pins. It stays administrator-only; developers browse files
+and history and register files from **Repository Files** instead (§8).
 
 A repository whose owner project has been deleted is shown as **unowned**.
 Deleting a project does not delete its repository, because the repository is

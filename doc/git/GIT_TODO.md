@@ -75,7 +75,7 @@ prior to 2026-07-03.
 ## 2. Push (Draft Write) Support — ☑ DONE (2026-07-03)
 
 The Smart HTTP gateway now serves `git-receive-pack` (push) to users at
-`$g_git_http_write_threshold` (default `MANAGER`).  Pushes advance `HEAD` (the
+`$g_git_http_write_threshold` (default `DEVELOPER`).  Pushes advance `HEAD` (the
 draft) only; the registered `git_sha` and `documents.reference` change only when
 promoted inside Doctis.  See [GIT_ARCHITECTURE.md §On-Record vs Draft](GIT_ARCHITECTURE.md).
 

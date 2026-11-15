@@ -692,59 +692,29 @@ if( $t_flags['classification_show'] ) {
 }
 
 #
-# Priority, Severity, Reproducibility
+# Priority
 #
 
-if( $t_flags['priority_show'] || $t_flags['severity_show'] || $t_flags['reproducibility_show'] ) {
+if( $t_flags['priority_show'] ) {
 	echo '<tr>';
-
-	$t_spacer = 0;
-
-	# Priority
-	if( $t_flags['priority_show'] ) {
-		echo '<th class="bug-priority category">', lang_get( 'priority' ), '</th>';
-		echo '<td class="bug-priority">';
-		$t_icon = $t_dwg->priority;
-		$t_status_icon_arr = config_get( 'status_icon_arr' );
-		$t_priotext = get_enum_element( 'priority', $t_icon );
-		if( isset( $t_status_icon_arr[$t_icon] ) && !is_blank( $t_status_icon_arr[$t_icon] ) ) {
-			echo '&nbsp' . icon_get( $t_status_icon_arr[$t_icon] ) . '&nbsp';
-		}
-//		echo ' ' . string_display_line( $t_issue['priority']['label'] ), '</td>';
-		echo ' ' . string_display_line( $t_priotext ), '</td>';
-	} else {
-		$t_spacer += 2;
+	echo '<th class="bug-priority category">', lang_get( 'priority' ), '</th>';
+	echo '<td class="bug-priority">';
+	$t_icon = $t_dwg->priority;
+	$t_status_icon_arr = config_get( 'status_icon_arr' );
+	$t_priotext = get_enum_element( 'priority', $t_icon );
+	if( isset( $t_status_icon_arr[$t_icon] ) && !is_blank( $t_status_icon_arr[$t_icon] ) ) {
+		echo '&nbsp;' . icon_get( $t_status_icon_arr[$t_icon] ) . '&nbsp;';
 	}
-
-	# Severity
-	if( $t_flags['severity_show'] ) {
-		echo '<th class="bug-severity category">', lang_get( 'severity' ), '</th>';
-		echo '<td class="bug-severity">', string_display_line( $t_issue['severity']['label'] ), '</td>';
-	} else {
-		$t_spacer += 2;
-	}
-
-	# Reproducibility
-	if( $t_flags['reproducibility_show'] ) {
-		echo '<th class="bug-reproducibility category">', lang_get( 'reproducibility' ), '</th>';
-		echo '<td class="bug-reproducibility">', string_display_line( $t_issue['reproducibility']['label'] ), '</td>';
-	} else {
-		$t_spacer += 2;
-	}
-
-	# spacer
-	if( $t_spacer > 0 ) {
-		echo '<td colspan="', $t_spacer, '">&#160;</td>';
-	}
-
+	echo ' ' . string_display_line( $t_priotext ), '</td>';
+	echo '<td colspan="4">&#160;</td>';
 	echo '</tr>';
 }
 
 #
-# Status, Resolution
+# Status, Due Date
 #
 
-if( $t_flags['status_show'] || $t_flags['resolution_show'] ) {
+if( $t_flags['status_show'] || $t_flags['due_date_show'] ) {
 	echo '<tr>';
 
 	$t_spacer = 2;
@@ -763,14 +733,6 @@ if( $t_flags['status_show'] || $t_flags['resolution_show'] ) {
 		$t_spacer += 2;
 	}
 
-	# Resolution
-	if( $t_flags['resolution_show'] ) {
-		echo '<th class="bug-resolution category">', lang_get( 'resolution' ), '</th>';
-		echo '<td class="bug-resolution">', string_display_line( $t_issue['resolution']['label'] ), '</td>';
-	} else {
-		$t_spacer += 2;
-	}
-
 	# Due Date
 	if( $t_flags['due_date_show'] ) {
 		echo '<th class="bug-due-date category">', lang_get( 'due_date' ), '</th>';
@@ -784,11 +746,6 @@ if( $t_flags['status_show'] || $t_flags['resolution_show'] ) {
 		$t_spacer += 2;
 	}
 
-	if( $t_spacer > 0 ) {
-		echo '<td colspan="', $t_spacer, '">&#160;</td>';
-	}
-
-	# spacer
 	if( $t_spacer > 0 ) {
 		echo '<td colspan="', $t_spacer, '">&#160;</td>';
 	}
@@ -1833,7 +1790,6 @@ function dwg_view_relationship_get_details( $p_bug_id, DwgRelationshipData $p_re
 	$t_current_user_id = auth_get_current_user_id();
 	$t_dwg = dwg_get( $t_related_bug_id );
 	$t_status_string = get_enum_element( 'dwg_status', $t_dwg->status, $t_current_user_id, $t_dwg->project_id );
-	$t_resolution_string = get_enum_element( 'resolution', $t_dwg->resolution, $t_current_user_id, $t_dwg->project_id );
 
 	$t_relationship_info_html = $t_td . string_no_break( $t_relationship_descr ) . '&#160;</td>';
 	if( !$p_html_preview ) {
@@ -1841,7 +1797,7 @@ function dwg_view_relationship_get_details( $p_bug_id, DwgRelationshipData $p_re
 		$t_status_css = html_get_status_css_fg( $t_dwg->status, $t_current_user_id, $t_dwg->project_id );
 		$t_relationship_info_html .= '<td><a href="' . string_get_dwg_view_url( $t_related_bug_id ) . '">' . string_display_line( dwg_format_id( $t_related_bug_id ) ) . '</a></td>';
 		$t_relationship_info_html .= '<td>' . icon_get( 'fa-square', 'fa-status-box ' . $t_status_css );
-		$t_relationship_info_html .= ' <span class="issue-status" title="' . string_attribute( $t_resolution_string ) . '">' . string_display_line( $t_status_string ) . '</span></td>';
+		$t_relationship_info_html .= ' <span class="issue-status">' . string_display_line( $t_status_string ) . '</span></td>';
 	} else {
 		$t_relationship_info_html .= $t_td . string_display_line( dwg_format_id( $t_related_bug_id ) ) . '</td>';
 		$t_relationship_info_html .= $t_td . string_display_line( $t_status_string ) . '&#160;</td>';
