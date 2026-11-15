@@ -466,8 +466,8 @@ if( true
 	if( $t_flags['author_show'] ) {
 		echo '<th class="bug-project category width-15">', $t_flags['author_show'] ? lang_get( 'dwg_author' ) : '', '</th>';
 	}
-	if( $t_flags['publisher_show'] ) {
-		echo '<th class="bug-project category width-15">', $t_flags['publisher_show'] ? lang_get( 'dwg_publisher' ) : '', '</th>';
+	if( $t_flags['classification_show'] ) {
+		echo '<th class="bug-classification category width-15">', $t_flags['classification_show'] ? lang_get( 'dwg_classification' ) : '', '</th>';
 	}
 	echo '<th class="bug-project category width-15">', $t_flags['project_show'] ? lang_get( 'dwg_release_date' ) : '', '</th>';
 	echo '</tr>';
@@ -498,8 +498,8 @@ if( true
 	if( $t_flags['author_show'] ) {
 		echo '<td class="bug-project">', $t_flags['author_show'] && isset( $t_issue['author'] ) ? string_display_line( $t_issue['author'] ) : '', '</td>';
 	}
-	if( $t_flags['publisher_show'] ) {
-		echo '<td class="bug-project">', $t_flags['publisher_show'] && isset( $t_issue['publisher'] ) ? string_display_line( $t_issue['publisher'] ) : '', '</td>';
+	if( $t_flags['classification_show'] ) {
+		echo '<td class="bug-classification">', $t_flags['classification_show'] && isset( $t_issue['classification'] ) ? string_display_line( $t_issue['classification'] ) : '', '</td>';
 	}
 	$t_date_format = 'Y-m-d';
 	$t_release_date = string_display_line( dwg_format_date( $t_issue['release_date'] ?? '', $t_date_format ) );
@@ -679,17 +679,13 @@ if( $t_flags['owner_show'] || $t_flags['creator_show'] || $t_flags['handler_show
 }
 
 #
-# Status, Due Date, Classification, Priority
+# Status, Due Date, Priority
 #
-# The surrounding metadata table has six columns. Give this full-width row
-# its own responsive table with five equal field slots. Four label/value
-# pairs use the first four slots; the fifth stays blank.
+# Keep three label/value pairs on the surrounding table's six-column grid.
+# Classification appears above in the heading/value rows in place of Publisher.
 #
-if( $t_flags['status_show'] || $t_flags['due_date_show']
-	|| $t_flags['classification_show'] || $t_flags['priority_show'] ) {
-	echo '<tr><td colspan="6" class="no-padding">';
-	echo '<div class="table-responsive"><table class="table table-bordered table-condensed no-margin" style="table-layout:fixed;overflow-wrap:anywhere">';
-	echo '<colgroup><col span="10" style="width:10%" /></colgroup><tbody><tr>';
+if( $t_flags['status_show'] || $t_flags['due_date_show'] || $t_flags['priority_show'] ) {
+	echo '<tr>';
 
 	# Status
 	if( $t_flags['status_show'] ) {
@@ -699,7 +695,7 @@ if( $t_flags['status_show'] || $t_flags['due_date_show']
 		print_icon( 'fa-square', 'fa-status-box ' . $t_status_css );
 		echo ' ' . string_display_line( $t_issue['status']['label'] ), '</td>';
 	} else {
-		echo '<td colspan="2"></td>';
+		echo '<td></td><td></td>';
 	}
 
 	# Due Date
@@ -711,15 +707,7 @@ if( $t_flags['status_show'] || $t_flags['due_date_show']
 		}
 		echo '<td class="' . $t_css . '">', $t_issue_view['due_date'], '</td>';
 	} else {
-		echo '<td colspan="2"></td>';
-	}
-
-	# Classification
-	if( $t_flags['classification_show'] ) {
-		echo '<th class="bug-classification category">', lang_get( 'dwg_classification' ), '</th>';
-		echo '<td class="bug-classification">', isset( $t_issue['classification'] ) ? string_display_line( $t_issue['classification'] ) : '', '</td>';
-	} else {
-		echo '<td colspan="2"></td>';
+		echo '<td></td><td></td>';
 	}
 
 	# Priority
@@ -734,12 +722,10 @@ if( $t_flags['status_show'] || $t_flags['due_date_show']
 		}
 		echo ' ' . string_display_line( $t_priotext ), '</td>';
 	} else {
-		echo '<td colspan="2"></td>';
+		echo '<td></td><td></td>';
 	}
 
-	# Reserve the unused fifth field slot so the row keeps its column widths.
-	echo '<td colspan="2" class="dwg-metadata-unused"></td>';
-	echo '</tr></tbody></table></div></td></tr>';
+	echo '</tr>';
 }
 
 #

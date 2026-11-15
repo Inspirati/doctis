@@ -54,11 +54,10 @@ For document-view metadata, verify default and explicit
 `dwg_view_page_fields` lists through `dwg_view.php`: Classification is enabled
 by default, an explicit list may hide it, and Severity/Reproducibility/Resolution
 must stay absent even if a legacy list includes them. Check stored Classification
-is escaped. Status, Due Date, Classification and Priority share one row in
-that order, with each field controlled independently. The row spans all six
-columns of the outer metadata table and uses a responsive inner table with
-five equal field slots: four label/value pairs followed by a blank fifth slot.
-Hidden fields retain blank slots so the remaining fields do not shift.
+is escaped. Classification replaces Publisher in the upper metadata heading
+row and its matching value row. Status, Due Date and Priority share the final
+row as three label/value pairs in the same six-column table, without a nested
+table. Hidden fields retain empty cells so the other fields do not shift.
 No schema update is required. On deployment, an explicit
 configuration override that omits `classification` must be updated to include
 it if the field is wanted.
