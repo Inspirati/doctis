@@ -946,9 +946,9 @@ if( !empty( $t_result['issue']['attachments'] ) ) {
 	}
 
 	echo '</td></tr>';
-}
 
-print_table_spacer( 6 );
+	print_table_spacer( 6 );
+}
 
 # Custom Fields
 if( isset( $t_issue['custom_fields'] ) ) {
