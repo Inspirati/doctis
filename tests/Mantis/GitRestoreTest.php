@@ -215,6 +215,8 @@ class GitRestoreTest extends MantisCoreBase {
 		} catch( \RuntimeException $t_error ) {
 			$this->assertStringContainsString( 'Could not move', $t_error->getMessage() );
 			$this->assertStringContainsString( '/original', $t_error->getMessage() );
+			$this->assertStringContainsString( 'rename(', $t_error->getMessage() );
+			$this->assertStringNotContainsString( 'filesystem rename failed', $t_error->getMessage() );
 			$this->assertSame( 'original', file_get_contents( $this->root . '/original' ) );
 		}
 	}

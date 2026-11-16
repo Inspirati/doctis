@@ -434,11 +434,19 @@ function git_restore_exclusive(): void {
 }
 
 function git_restore_move( string $p_from, string $p_to ): void {
-	error_clear_last();
-	if( !@rename( $p_from, $p_to ) ) {
-		$t_error = error_get_last();
+	$t_error = 'filesystem rename failed';
+	# Capture the warning locally: the application's normal error handler
+	# consumes it, so error_get_last() cannot provide the filesystem reason.
+	set_error_handler( function( $p_type, $p_message ) use ( &$t_error ) {
+		$t_error = $p_message;
+		return true;
+	}, E_WARNING );
+	try {
+		$t_ok = rename( $p_from, $p_to );
+	} finally { restore_error_handler(); }
+	if( !$t_ok ) {
 		throw new RuntimeException( 'Could not move ' . $p_from . ' to ' . $p_to . ': '
-			. ( $t_error['message'] ?? 'filesystem rename failed' ) );
+			. $t_error );
 	}
 }
 
