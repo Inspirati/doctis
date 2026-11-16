@@ -206,6 +206,19 @@ class GitRestoreTest extends MantisCoreBase {
 		}
 	}
 
+	public function testFailedMoveReportsTheFilesystemReasonAndKeepsTheSource(): void {
+		file_put_contents( $this->root . '/original', 'original' );
+		mkdir( $this->root . '/destination' );
+		try {
+			git_restore_move( $this->root . '/original', $this->root . '/destination' );
+			$this->fail( 'Conflicting destination was accepted' );
+		} catch( \RuntimeException $t_error ) {
+			$this->assertStringContainsString( 'Could not move', $t_error->getMessage() );
+			$this->assertStringContainsString( '/original', $t_error->getMessage() );
+			$this->assertSame( 'original', file_get_contents( $this->root . '/original' ) );
+		}
+	}
+
 	public function testInterruptedReplacementRollsBackAllThreeRoots(): void {
 		$t_state = array( 'ticket' => str_repeat( 'a', 32 ), 'phase' => 'applying', 'installation' => array() );
 		foreach( array( 'repositories', 'lfs', 'worktrees' ) as $t_kind ) {

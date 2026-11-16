@@ -433,6 +433,15 @@ function git_restore_exclusive(): void {
 	}
 }
 
+function git_restore_move( string $p_from, string $p_to ): void {
+	error_clear_last();
+	if( !@rename( $p_from, $p_to ) ) {
+		$t_error = error_get_last();
+		throw new RuntimeException( 'Could not move ' . $p_from . ' to ' . $p_to . ': '
+			. ( $t_error['message'] ?? 'filesystem rename failed' ) );
+	}
+}
+
 /** Roll back from on-disk rename evidence, including an interrupted PHP request. */
 function git_restore_rollback( string $p_dir, array $p_state ): void {
 	foreach( $p_state['installation'] as $t_kind => $t_install ) {
@@ -497,10 +506,10 @@ function git_restore_apply( string $p_dir, array $p_state ): array {
 		foreach( $p_state['installation'] as $t_kind => $t_install ) {
 			$t_root = $t_install['root'];
 			foreach( $t_install['old'] as $t_name ) {
-				if( !rename( $t_root . '/' . $t_name, $t_root . '/.doctis-previous-' . $p_state['ticket'] . '/' . $t_name ) ) { throw new RuntimeException( 'Could not preserve existing storage for rollback.' ); }
+				git_restore_move( $t_root . '/' . $t_name, $t_root . '/.doctis-previous-' . $p_state['ticket'] . '/' . $t_name );
 			}
 			foreach( $t_install['new'] as $t_name ) {
-				if( !rename( $t_root . '/.doctis-incoming-' . $p_state['ticket'] . '/' . $t_name, $t_root . '/' . $t_name ) ) { throw new RuntimeException( 'Could not install replacement storage.' ); }
+				git_restore_move( $t_root . '/.doctis-incoming-' . $p_state['ticket'] . '/' . $t_name, $t_root . '/' . $t_name );
 			}
 		}
 	} catch( Throwable $t_error ) {
