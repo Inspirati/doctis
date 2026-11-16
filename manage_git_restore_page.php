@@ -9,6 +9,7 @@ require_api( 'git_restore_api.php' );
 auth_reauthenticate();
 access_ensure_global_level( ADMINISTRATOR );
 $t_recovery = trim( (string)@file_get_contents( git_restore_gate_path() . '.restore' ) );
+$t_uploads = git_restore_uploads( auth_get_current_user_id() );
 
 layout_page_header( 'Restore Git Store — System Operations' );
 layout_page_begin( 'manage_overview_page.php' );
@@ -24,8 +25,18 @@ print_manage_menu( 'manage_overview_page.php' );
 				The backup is uploaded in small chunks, then its Git history, LFS files and database references are checked before you confirm replacement.</p>
 			<p>Replacement removes this server's existing repositories, LFS objects and cached worktrees. Keep a backup first.
 				Other application requests are paused during replacement. If interrupted, return here to recover it.</p>
-			<form id="git-restore-form" data-recovery="<?php echo string_attribute( $t_recovery ); ?>">
+			<noscript><p>JavaScript is required for chunked uploads and restore progress.</p></noscript>
+			<form id="git-restore-form" method="post" action="manage_git_restore_action.php" data-recovery="<?php echo string_attribute( $t_recovery ); ?>">
 				<?php echo form_security_field( 'manage_git_restore' ); ?>
+				<?php if( $t_uploads ): ?>
+				<div class="form-group"><label for="restore-saved">Saved uploads</label>
+					<select id="restore-saved" class="form-control" style="max-width:650px">
+						<option value="">New upload</option>
+						<?php foreach( $t_uploads as $t_upload ): ?>
+						<option value="<?php echo string_attribute( $t_upload['ticket'] ); ?>"><?php echo string_display_line( $t_upload['name'] . ' — ' . $t_upload['phase'] ); ?></option>
+						<?php endforeach; ?>
+					</select></div>
+				<?php endif; ?>
 				<div class="form-group"><label for="restore-file">Git/LFS backup (.tar.gz)</label>
 					<input id="restore-file" type="file" accept=".tar.gz,.tgz" required></div>
 				<div class="form-group"><label for="restore-sha256">Expected SHA-256 (optional)</label>

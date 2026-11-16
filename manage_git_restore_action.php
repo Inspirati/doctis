@@ -23,6 +23,8 @@ try {
 		$t_state = git_restore_start( gpc_get_string( 'name' ), gpc_get_int( 'size' ),
 			strtolower( trim( gpc_get_string( 'sha256', '' ) ) ), $t_user );
 		$t_dir = git_restore_ticket_path( $t_state['ticket'] );
+		$t_state['modified'] = gpc_get_int( 'modified', 0 );
+		git_restore_save( $t_dir, $t_state );
 	} else {
 		$t_dir = git_restore_ticket_path( gpc_get_string( 'ticket' ) );
 		$t_lock = @fopen( $t_dir . '/lock', 'c' );

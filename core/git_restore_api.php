@@ -59,6 +59,17 @@ function git_restore_start( string $p_name, int $p_size, string $p_hash, int $p_
 		|| ( $p_hash !== '' && !preg_match( '/^[a-f0-9]{64}$/D', $p_hash ) ) ) {
 		throw new RuntimeException( 'Invalid archive size or SHA-256 checksum.' );
 	}
+	# Abandoned uploads must not consume temporary space indefinitely.
+	foreach( git_restore_uploads( $p_user ) as $t_upload ) {
+		$t_old_dir = git_restore_ticket_path( $t_upload['ticket'] );
+		$t_updated = max( $t_upload['updated'], (int)@filemtime( $t_old_dir . '/archive.tar.gz' ), (int)@filemtime( $t_old_dir . '/state.json' ) );
+		if( $t_updated >= time() - 86400 || in_array( $t_upload['phase'], array( 'preparing', 'applying' ), true ) ) { continue; }
+		$t_old_lock = @fopen( $t_old_dir . '/lock', 'c' );
+		if( $t_old_lock !== false ) {
+			if( flock( $t_old_lock, LOCK_EX | LOCK_NB ) ) { git_restore_remove( $t_old_dir ); }
+			fclose( $t_old_lock );
+		}
+	}
 	$t_ticket = bin2hex( random_bytes( 16 ) );
 	$t_dir = git_restore_ticket_path( $t_ticket );
 	if( disk_free_space( git_restore_temp_root() ) < $p_size * 2 ) {
@@ -70,6 +81,18 @@ function git_restore_start( string $p_name, int $p_size, string $p_hash, int $p_
 	git_restore_save( $t_dir, $t_state );
 	touch( $t_dir . '/archive.tar.gz' );
 	return $t_state;
+}
+
+function git_restore_uploads( int $p_user ): array {
+	$t_uploads = array();
+	foreach( scandir( git_restore_temp_root() ) as $t_name ) {
+		if( !preg_match( '/^[a-f0-9]{32}$/D', $t_name ) ) { continue; }
+		try {
+			$t_state = git_restore_state( git_restore_ticket_path( $t_name ) );
+			if( $t_state['owner'] === $p_user ) { $t_uploads[] = $t_state; }
+		} catch( RuntimeException $t_error ) { continue; }
+	}
+	return $t_uploads;
 }
 
 function git_restore_append( string $p_dir, array $p_state, int $p_offset, string $p_file ): int {
@@ -429,7 +452,16 @@ function git_restore_rollback( string $p_dir, array $p_state ): void {
 	}
 	$p_state['phase'] = 'ready';
 	git_restore_save( $p_dir, $p_state );
-	@unlink( git_restore_gate_path() . '.restore' );
+	git_restore_clear_marker( $p_state['ticket'] );
+}
+
+function git_restore_clear_marker( string $p_ticket ): void {
+	$t_marker = git_restore_gate_path() . '.restore';
+	if( is_file( $t_marker ) ) {
+		if( trim( (string)file_get_contents( $t_marker ) ) !== $p_ticket || !unlink( $t_marker ) ) {
+			throw new RuntimeException( 'Could not leave restore maintenance mode. Return to Restore Git Store and recover this installation.' );
+		}
+	}
 }
 
 function git_restore_apply( string $p_dir, array $p_state ): array {
@@ -496,7 +528,7 @@ function git_restore_finish( string $p_dir, array $p_state ): void {
 		git_restore_remove( $t_install['root'] . '/.doctis-previous-' . $p_state['ticket'] );
 		git_restore_remove( $t_install['root'] . '/.doctis-incoming-' . $p_state['ticket'] );
 	}
-	@unlink( git_restore_gate_path() . '.restore' );
+	git_restore_clear_marker( $p_state['ticket'] );
 	git_restore_remove( $p_dir . '/extracted' );
 	git_restore_remove( $p_dir . '/archive.tar.gz' );
 }

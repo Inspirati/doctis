@@ -46,10 +46,12 @@ document.addEventListener('DOMContentLoaded', function () {
 		if (busy) return;
 		busy = true;
 		for (const id of ['upload', 'apply', 'cancel', 'recover']) el(id).disabled = true;
+		for (const id of ['file', 'sha256', 'saved']) if (el(id)) el(id).disabled = true;
 		try { await fn(); } catch (error) { message(error.message); }
 		finally {
 			busy = false;
 			for (const id of ['upload', 'apply', 'cancel', 'recover']) el(id).disabled = false;
+			for (const id of ['file', 'sha256', 'saved']) if (el(id)) el(id).disabled = false;
 		}
 	}
 	form.addEventListener('submit', event => {
@@ -60,11 +62,11 @@ document.addEventListener('DOMContentLoaded', function () {
 			let state;
 			if (ticket) {
 				state = await call('status');
-				if (state.phase !== 'uploading' || !saved || saved.name !== file.name || saved.size !== file.size || saved.modified !== file.lastModified) {
+				if (state.phase !== 'uploading' || state.name !== file.name || state.size !== file.size || (state.modified && state.modified !== file.lastModified)) {
 					throw new Error('Discard the existing upload before selecting another backup.');
 				}
 			} else {
-				state = await call('start', {name: file.name, size: file.size, sha256: el('sha256').value.trim()});
+				state = await call('start', {name: file.name, size: file.size, modified: file.lastModified, sha256: el('sha256').value.trim()});
 				ticket = state.ticket;
 				saved = {ticket: ticket, name: file.name, size: file.size, modified: file.lastModified};
 				sessionStorage.setItem(storageKey, JSON.stringify(saved));
@@ -94,5 +96,16 @@ document.addEventListener('DOMContentLoaded', function () {
 		form.dataset.recovery = '';
 		el('recovery').hidden = true;
 	}));
-	if (ticket) work(async () => display(await call('status')));
+	if (el('saved')) el('saved').addEventListener('change', () => work(async () => {
+		ticket = el('saved').value;
+		sessionStorage.removeItem(storageKey);
+		if (ticket) display(await call('status')); else location.reload();
+	}));
+	if (ticket) work(async () => {
+		try { display(await call('status')); }
+		catch (error) {
+			if (!form.dataset.recovery) { ticket = ''; sessionStorage.removeItem(storageKey); }
+			throw error;
+		}
+	});
 });
