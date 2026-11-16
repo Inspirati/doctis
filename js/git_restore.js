@@ -37,6 +37,9 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 		if (state.phase === 'complete') {
 			message('Git/LFS store restored successfully. Cached worktrees will be recreated when needed.');
+			if (state.report.retained_previous && state.report.retained_previous.length) {
+				el('report').textContent += '\nPrevious storage requiring administrator cleanup (excluded from backups):\n' + state.report.retained_previous.join('\n');
+			}
 			sessionStorage.removeItem(storageKey);
 		} else if (state.phase === 'ready') message('Backup validated. Review the details, then confirm replacement below.');
 		else if (state.phase === 'uploading') message('Upload saved: ' + state.uploaded + ' of ' + state.size + ' bytes. Select the same file to resume.');

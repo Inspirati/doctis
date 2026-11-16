@@ -9,6 +9,9 @@ const GIT_RESTORE_CHUNK_BYTES = 524288;
 
 function git_restore_remove( string $p_path ): void {
 	if( is_dir( $p_path ) && !is_link( $p_path ) ) {
+		# Cleanup may remove read-only directories owned by the web account.
+		# A directory owned by another account is retained by finish() instead.
+		@chmod( $p_path, 0700 );
 		foreach( scandir( $p_path ) as $t_name ) {
 			if( $t_name !== '.' && $t_name !== '..' ) {
 				git_restore_remove( $p_path . '/' . $t_name );
@@ -458,7 +461,14 @@ function git_restore_rollback( string $p_dir, array $p_state ): void {
 		foreach( $t_install['new'] as $t_name ) {
 			if( !in_array( $t_name, $t_install['old'], true ) ) { git_restore_remove( $t_root . '/' . $t_name ); }
 		}
-		if( is_dir( $t_old ) ) {
+		if( isset( $t_install['old_paths'] ) ) {
+			foreach( $t_install['old_paths'] as $t_name => $t_backup ) {
+				if( !file_exists( $t_root . '/' . $t_backup ) && !is_link( $t_root . '/' . $t_backup ) ) { continue; }
+				git_restore_remove( $t_root . '/' . $t_name );
+				git_restore_move( $t_root . '/' . $t_backup, $t_root . '/' . $t_name );
+			}
+		} else if( is_dir( $t_old ) ) {
+			# Recover uploads prepared by the first version of this feature too.
 			foreach( array_diff( scandir( $t_old ), array( '.', '..' ) ) as $t_name ) {
 				git_restore_remove( $t_root . '/' . $t_name );
 				if( !rename( $t_old . '/' . $t_name, $t_root . '/' . $t_name ) ) { throw new RuntimeException( 'Rollback needs attention; keep this restore upload and retry recovery.' ); }
@@ -494,16 +504,18 @@ function git_restore_apply( string $p_dir, array $p_state ): array {
 			$t_incoming = $t_root . '/.doctis-incoming-' . $p_state['ticket'];
 			$t_old = $t_root . '/.doctis-previous-' . $p_state['ticket'];
 			if( file_exists( $t_incoming ) || file_exists( $t_old ) ) { throw new RuntimeException( 'Previous restore staging exists; recover it first.' ); }
-			$t_old_names = array_values( array_diff( scandir( $t_root ), array( '.', '..', '.doctis-lock' ) ) );
+			$t_old_names = array_values( array_filter( array_diff( scandir( $t_root ), array( '.', '..', '.doctis-lock' ) ),
+				function( $p_name ) { return !str_starts_with( $p_name, '.doctis-retained-' ); } ) );
 			foreach( $t_old_names as $t_name ) {
 				if( preg_match( '/^\.doctis-(incoming|previous)-/', $t_name ) ) { throw new RuntimeException( 'Unfinished restore staging exists. Recover the previous installation first.' ); }
 			}
-			$p_state['installation'][$t_kind] = array( 'root' => $t_root, 'old' => $t_old_names, 'new' => array() );
+			$t_old_paths = array();
+			foreach( $t_old_names as $t_name ) { $t_old_paths[$t_name] = '.doctis-previous-' . $p_state['ticket'] . '-' . substr( hash( 'sha256', $t_name ), 0, 32 ); }
+			$p_state['installation'][$t_kind] = array( 'root' => $t_root, 'old' => $t_old_names, 'old_paths' => $t_old_paths, 'new' => array() );
 			$p_state['phase'] = 'preparing';
 			git_restore_save( $p_dir, $p_state );
 			$t_prepared[] = $t_root;
 			git_restore_mkdir( $t_incoming );
-			git_restore_mkdir( $t_old );
 			if( $t_kind !== 'worktrees' ) { git_restore_copy( $p_dir . '/extracted/' . $t_kind, $t_incoming ); }
 			$p_state['installation'][$t_kind]['new'] = array_values( array_diff( scandir( $t_incoming ), array( '.', '..' ) ) );
 			git_restore_save( $p_dir, $p_state );
@@ -514,7 +526,10 @@ function git_restore_apply( string $p_dir, array $p_state ): array {
 		foreach( $p_state['installation'] as $t_kind => $t_install ) {
 			$t_root = $t_install['root'];
 			foreach( $t_install['old'] as $t_name ) {
-				git_restore_move( $t_root . '/' . $t_name, $t_root . '/.doctis-previous-' . $p_state['ticket'] . '/' . $t_name );
+				# Same-parent renames work even when the old directory itself is
+				# read-only (moving it into another parent would require write
+				# access to its '..' entry).
+				git_restore_move( $t_root . '/' . $t_name, $t_root . '/' . $t_install['old_paths'][$t_name] );
 			}
 			foreach( $t_install['new'] as $t_name ) {
 				git_restore_move( $t_root . '/.doctis-incoming-' . $p_state['ticket'] . '/' . $t_name, $t_root . '/' . $t_name );
@@ -536,16 +551,33 @@ function git_restore_apply( string $p_dir, array $p_state ): array {
 	# The commit point: after this, recovery must finish cleanup, not roll back.
 	$p_state['phase'] = 'complete';
 	git_restore_save( $p_dir, $p_state );
-	git_restore_finish( $p_dir, $p_state );
+	$p_state = git_restore_finish( $p_dir, $p_state );
 	return $p_state['report'];
 }
 
-function git_restore_finish( string $p_dir, array $p_state ): void {
+function git_restore_finish( string $p_dir, array $p_state ): array {
 	foreach( $p_state['installation'] as $t_install ) {
+		foreach( $t_install['old_paths'] ?? array() as $t_name => $t_backup ) {
+			$t_old = $t_install['root'] . '/' . $t_backup;
+			if( !file_exists( $t_old ) && !is_link( $t_old ) ) { continue; }
+			set_error_handler( function( $p_type, $p_message ) {
+				if( error_reporting() & $p_type ) { throw new RuntimeException( $p_message ); }
+				return true;
+			}, E_WARNING );
+			try {
+				git_restore_remove( $t_old );
+			} catch( Throwable $t_error ) {
+				$t_retained = $t_install['root'] . '/' . str_replace( '.doctis-previous-', '.doctis-retained-', $t_backup );
+				git_restore_move( $t_old, $t_retained );
+				$p_state['report']['retained_previous'][] = $t_retained;
+			} finally { restore_error_handler(); }
+		}
 		git_restore_remove( $t_install['root'] . '/.doctis-previous-' . $p_state['ticket'] );
 		git_restore_remove( $t_install['root'] . '/.doctis-incoming-' . $p_state['ticket'] );
 	}
+	git_restore_save( $p_dir, $p_state );
 	git_restore_clear_marker( $p_state['ticket'] );
 	git_restore_remove( $p_dir . '/extracted' );
 	git_restore_remove( $p_dir . '/archive.tar.gz' );
+	return $p_state;
 }

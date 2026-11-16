@@ -51,10 +51,14 @@ if( $t_with_lfs ) {
 		@rmdir( $t_stage );
 		trigger_error( ERROR_GENERIC, ERROR );
 	}
-	$t_command = '/bin/tar czhf - -C ' . escapeshellarg( $t_stage ) . ' .';
+	$t_command = '/bin/tar czhf - --exclude=' . escapeshellarg( '.doctis-retained-*' )
+		. ' --exclude=' . escapeshellarg( '.doctis-incoming-*' ) . ' --exclude=' . escapeshellarg( '.doctis-previous-*' )
+		. ' -C ' . escapeshellarg( $t_stage ) . ' .';
 } else {
 	$t_stage   = '';
-	$t_command = '/bin/tar czf - -C ' . escapeshellarg( $t_storage ) . ' .';
+	$t_command = '/bin/tar czf - --exclude=' . escapeshellarg( '.doctis-retained-*' )
+		. ' --exclude=' . escapeshellarg( '.doctis-incoming-*' ) . ' --exclude=' . escapeshellarg( '.doctis-previous-*' )
+		. ' -C ' . escapeshellarg( $t_storage ) . ' .';
 }
 
 header( 'Content-Type: application/gzip' );

@@ -239,4 +239,24 @@ class GitRestoreTest extends MantisCoreBase {
 		}
 		$this->assertSame( 'ready', git_restore_state( $this->root )['phase'] );
 	}
+
+	public function testReadOnlyDirectoryCanBePreservedAndRolledBackInTheSameParent(): void {
+		$t_root = $this->root . '/store';
+		mkdir( $t_root );
+		mkdir( $t_root . '/example-r1.git' );
+		file_put_contents( $t_root . '/example-r1.git/HEAD', 'original' );
+		chmod( $t_root . '/example-r1.git', 0555 );
+		$t_ticket = str_repeat( 'b', 32 );
+		$t_backup = '.doctis-previous-' . $t_ticket . '-original';
+		git_restore_move( $t_root . '/example-r1.git', $t_root . '/' . $t_backup );
+		mkdir( $t_root . '/example-r1.git' );
+		file_put_contents( $t_root . '/example-r1.git/HEAD', 'replacement' );
+		$t_state = array( 'ticket' => $t_ticket, 'phase' => 'applying', 'installation' => array(
+			'repositories' => array( 'root' => $t_root, 'old' => array( 'example-r1.git' ), 'new' => array( 'example-r1.git' ),
+				'old_paths' => array( 'example-r1.git' => $t_backup ) ) ) );
+		git_restore_rollback( $this->root, $t_state );
+		$this->assertSame( 'original', file_get_contents( $t_root . '/example-r1.git/HEAD' ) );
+		$this->assertSame( 0555, fileperms( $t_root . '/example-r1.git' ) & 0777 );
+		$this->assertFileDoesNotExist( $t_root . '/' . $t_backup );
+	}
 }
