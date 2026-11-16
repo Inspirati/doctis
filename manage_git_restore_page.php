@@ -10,6 +10,7 @@ auth_reauthenticate();
 access_ensure_global_level( ADMINISTRATOR );
 $t_recovery = trim( (string)@file_get_contents( git_restore_gate_path() . '.restore' ) );
 $t_uploads = git_restore_uploads( auth_get_current_user_id() );
+$t_retained = git_restore_retained_paths();
 
 layout_page_header( 'Restore Git Store — System Operations' );
 layout_page_begin( 'manage_overview_page.php' );
@@ -25,6 +26,12 @@ print_manage_menu( 'manage_overview_page.php' );
 				The backup is uploaded in small chunks, then its Git history, LFS files and database references are checked before you confirm replacement.</p>
 			<p>Replacement removes this server's existing repositories, LFS objects and cached worktrees. Keep a backup first.
 				Other application requests are paused during replacement. If interrupted, return here to recover it.</p>
+			<?php if( $t_retained ): ?>
+			<div class="alert alert-info">
+				<p>Previous storage retained for administrator cleanup. These paths are excluded from backups and are not the active store.</p>
+				<ul><?php foreach( $t_retained as $t_path ): ?><li><code><?php echo string_display_line( $t_path ); ?></code></li><?php endforeach; ?></ul>
+			</div>
+			<?php endif; ?>
 			<noscript><p>JavaScript is required for chunked uploads and restore progress.</p></noscript>
 			<form id="git-restore-form" method="post" action="manage_git_restore_action.php" data-recovery="<?php echo string_attribute( $t_recovery ); ?>">
 				<?php echo form_security_field( 'manage_git_restore' ); ?>

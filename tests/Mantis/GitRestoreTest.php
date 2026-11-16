@@ -259,4 +259,18 @@ class GitRestoreTest extends MantisCoreBase {
 		$this->assertSame( 0555, fileperms( $t_root . '/example-r1.git' ) & 0777 );
 		$this->assertFileDoesNotExist( $t_root . '/' . $t_backup );
 	}
+
+	public function testRetainedCleanupPathsAreVisibleAcrossStorageRoots(): void {
+		$t_expected = array();
+		foreach( array( 'git_storage_root', 'git_lfs_root', 'git_worktree_root' ) as $t_key ) {
+			$t_dir = $this->root . '/' . $t_key;
+			mkdir( $t_dir );
+			config_set_global( $t_key, $t_dir );
+			mkdir( $t_dir . '/active' );
+			$t_expected[] = $t_dir . '/.doctis-retained-test';
+			mkdir( $t_dir . '/.doctis-retained-test' );
+		}
+		sort( $t_expected );
+		$this->assertSame( $t_expected, git_restore_retained_paths() );
+	}
 }

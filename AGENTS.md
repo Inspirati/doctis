@@ -37,6 +37,23 @@ status below are current. The dated assessment and implementation sections
 record earlier experiments, not instructions to redo them; the repository
 guidance at the end still applies.
 
+## Remote Docker development instance — 2026-11-16
+
+**dev** now refers to `https://qms.dev.hcrobo.com/doctis/`, a separate remote
+Docker instance for experimental feature testing before live. Continue to
+call the native `10.0.0.109` instance the **VM**: edit locally, test on the VM,
+then test Docker-specific behaviour on remote dev before an authorised live
+deployment. There is no direct container-console access; prefer existing or
+properly implemented administrator operations in Doctis.
+
+The `git-store-restore` feature branch adds administrator chunked Git/LFS
+restore and recovery. It was tested on the VM, then used to restore a full
+live database/Git/LFS backup onto remote dev. Dev's notifications are disabled.
+Live was used only for authentication, reads and extraction, with no code,
+configuration, schema or business-data edits. Refer to
+[Backup and Restore](doc/BACKUP_AND_RESTORE.md) for the procedure, validation
+and remaining read-only previous-storage cleanup on remote dev.
+
 ## Implementation status — 2026-09-27 (historical snapshot)
 
 The owner has created a VM snapshot and authorized proceeding with installation

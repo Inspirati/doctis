@@ -11,6 +11,11 @@ change** — are in [../CLAUDE.md](../CLAUDE.md).
 Claude's credentials for the `claude` administrator account are outside the
 repository in `~/.config/doctis/live-claude.env`.
 
+For a complete database and Git/LFS recovery onto a separate instance, see
+[Backup and Restore](BACKUP_AND_RESTORE.md). It includes the browser-based
+Git/LFS restore tool, interrupted-operation recovery and the verified remote
+live-to-dev rehearsal. During that rehearsal live was extraction-only.
+
 ---
 
 The **live version** is `https://qms.hcrobo.com/doctis`: a remote Docker

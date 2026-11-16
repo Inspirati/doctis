@@ -417,6 +417,19 @@ function git_restore_roots( bool $p_need_lfs = false ): array {
 	return $t_roots;
 }
 
+/** Keep cleanup paths visible to every administrator after upload receipts expire. */
+function git_restore_retained_paths(): array {
+	$t_paths = array();
+	foreach( array( 'git_storage_root', 'git_lfs_root', 'git_worktree_root' ) as $t_option ) {
+		$t_root = rtrim( (string)config_get_global( $t_option ), '/' );
+		if( $t_root !== '' && is_dir( $t_root ) ) {
+			$t_paths = array_merge( $t_paths, glob( $t_root . '/.doctis-retained-*' ) ?: array() );
+		}
+	}
+	sort( $t_paths );
+	return $t_paths;
+}
+
 function git_restore_copy( string $p_from, string $p_to ): void {
 	if( is_link( $p_from ) ) { throw new RuntimeException( 'Unexpected staging link.' ); }
 	if( is_dir( $p_from ) ) {
