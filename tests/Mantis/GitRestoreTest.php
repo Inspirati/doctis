@@ -11,7 +11,7 @@ class GitRestoreTest extends MantisCoreBase {
 		parent::setUp();
 		$this->root = sys_get_temp_dir() . '/restore-test-' . bin2hex( random_bytes( 8 ) );
 		mkdir( $this->root, 0700 );
-		foreach( array( 'git_restore_max_archive_size', 'git_restore_max_unpacked_size' ) as $t_key ) {
+		foreach( array( 'git_restore_max_archive_size', 'git_restore_max_unpacked_size', 'git_storage_root', 'git_lfs_root', 'git_worktree_root' ) as $t_key ) {
 			$this->saved[$t_key] = config_get_global( $t_key );
 		}
 	}
@@ -157,6 +157,53 @@ class GitRestoreTest extends MantisCoreBase {
 			$this->assertSame( 6, git_restore_append( $t_dir, $t_state, 3, $this->root . '/chunk' ) );
 			$this->assertSame( 'abcabc', file_get_contents( $t_dir . '/archive.tar.gz' ) );
 		} finally { git_restore_remove( $t_dir ); }
+	}
+
+	public function testBadTarChecksumIsRefused(): void {
+		$t_archive = $this->backup();
+		$t_tar = gzdecode( file_get_contents( $t_archive ) );
+		$t_tar[0] = 'X';
+		file_put_contents( $t_archive, gzencode( $t_tar ) );
+		$this->expectException( \RuntimeException::class );
+		$this->expectExceptionMessage( 'header checksum' );
+		git_restore_extract( $t_archive, $this->root . '/out' );
+	}
+
+	public function testOverlappingRootsAreRefused(): void {
+		mkdir( $this->root . '/nested' );
+		mkdir( $this->root . '/other' );
+		config_set_global( 'git_storage_root', $this->root );
+		config_set_global( 'git_lfs_root', $this->root . '/nested' );
+		config_set_global( 'git_worktree_root', $this->root . '/other' );
+		$this->expectException( \RuntimeException::class );
+		$this->expectExceptionMessage( 'must not overlap' );
+		git_restore_roots();
+	}
+
+	public function testRestoreRefusesAnotherActiveRequest(): void {
+		global $g_git_restore_request_lock;
+		$t_saved = $g_git_restore_request_lock;
+		$t_path = $this->root . '/request-lock';
+		file_put_contents( $t_path, '' );
+		$t_code = '$f=fopen($argv[1],"r");flock($f,LOCK_SH);echo "ready\\n";fgets(STDIN);';
+		$t_process = proc_open( array( PHP_BINARY, '-r', $t_code, $t_path ),
+			array( 0 => array( 'pipe', 'r' ), 1 => array( 'pipe', 'w' ), 2 => array( 'pipe', 'w' ) ), $t_pipes );
+		try {
+			$this->assertSame( "ready\n", fgets( $t_pipes[1] ) );
+			$g_git_restore_request_lock = fopen( $t_path, 'r' );
+			flock( $g_git_restore_request_lock, LOCK_SH );
+			try {
+				git_restore_exclusive();
+				$this->fail( 'Restore bypassed another active request' );
+			} catch( \RuntimeException $t_error ) {
+				$this->assertStringContainsString( 'requests are active', $t_error->getMessage() );
+			}
+		} finally {
+			fclose( $g_git_restore_request_lock );
+			$g_git_restore_request_lock = $t_saved;
+			foreach( $t_pipes as $t_pipe ) { fclose( $t_pipe ); }
+			proc_close( $t_process );
+		}
 	}
 
 	public function testInterruptedReplacementRollsBackAllThreeRoots(): void {

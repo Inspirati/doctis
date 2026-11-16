@@ -319,6 +319,7 @@ function git_restore_validate_store( string $p_dir, array $p_expected ): array {
 }
 
 function git_restore_validate( string $p_dir ): array {
+	$t_before = git_restore_database_fingerprint();
 	$t_expected = git_restore_database_inventory();
 	$t_report = git_restore_validate_store( $p_dir, $t_expected );
 	$t_store = $p_dir . '/repositories';
@@ -333,17 +334,25 @@ function git_restore_validate( string $p_dir ): array {
 			if( $t_row['git_path'] !== '' ) { $t_specs[$t_expected[$t_id]][$t_row['git_sha'] . ':' . $t_row['git_path']] = true; }
 		}
 	}
+	$t_result = db_query( "SELECT d.reference, w.project_id FROM {documents} d JOIN {dwg} w ON w.document_id=d.id WHERE d.reference <> ''" );
+	while( $t_row = db_fetch_array( $t_result ) ) {
+		if( !preg_match( '/^[a-f0-9]{40}$/D', $t_row['reference'] ) ) { continue; }
+		$t_id = repository_id_for_project( (int)$t_row['project_id'] );
+		if( !isset( $t_expected[$t_id] ) ) { throw new RuntimeException( 'A recorded document commit has no database repository.' ); }
+		$t_specs[$t_expected[$t_id]][$t_row['reference'] . '^{commit}'] = true;
+	}
 	foreach( $t_specs as $t_name => $t_checks ) {
 		$t_result = git_restore_git( $t_store . '/' . $t_name, array( 'cat-file', '--batch-check' ), implode( "\n", array_keys( $t_checks ) ) . "\n" );
 		if( preg_match( '/ (missing|ambiguous)$/m', $t_result ) ) { throw new RuntimeException( 'The database references a missing Git commit or file.' ); }
 	}
 	$t_report['database_fingerprint'] = git_restore_database_fingerprint();
+	if( !hash_equals( $t_before, $t_report['database_fingerprint'] ) ) { throw new RuntimeException( 'The database changed during validation. Validate the backup again.' ); }
 	return $t_report;
 }
 
 function git_restore_database_fingerprint(): string {
 	$t_data = array();
-	foreach( array( 'repository', 'project_repository', 'project_hierarchy', 'dwg_primary_file', 'dwg_primary_draft' ) as $t_table ) {
+	foreach( array( 'repository', 'project_repository', 'project_hierarchy', 'dwg', 'documents', 'dwg_primary_file', 'dwg_primary_draft' ) as $t_table ) {
 		$t_result = db_query( 'SELECT * FROM {' . $t_table . '}' );
 		$t_rows = array();
 		while( $t_row = db_fetch_array( $t_result ) ) { $t_rows[] = json_encode( $t_row ); }
@@ -437,6 +446,9 @@ function git_restore_apply( string $p_dir, array $p_state ): array {
 			$t_old = $t_root . '/.doctis-previous-' . $p_state['ticket'];
 			if( file_exists( $t_incoming ) || file_exists( $t_old ) ) { throw new RuntimeException( 'Previous restore staging exists; recover it first.' ); }
 			$t_old_names = array_values( array_diff( scandir( $t_root ), array( '.', '..', '.doctis-lock' ) ) );
+			foreach( $t_old_names as $t_name ) {
+				if( preg_match( '/^\.doctis-(incoming|previous)-/', $t_name ) ) { throw new RuntimeException( 'Unfinished restore staging exists. Recover the previous installation first.' ); }
+			}
 			$p_state['installation'][$t_kind] = array( 'root' => $t_root, 'old' => $t_old_names, 'new' => array() );
 			$p_state['phase'] = 'preparing';
 			git_restore_save( $p_dir, $p_state );
