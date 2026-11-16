@@ -236,6 +236,10 @@ function doctis_get_git_version_info() {
 			<?php print_icon( 'fa-archive', 'ace-icon' ); ?> Backup Git Store
 		</a>
 		&nbsp;
+		<a href="manage_git_restore_page.php" class="btn btn-sm btn-warning">
+			<?php print_icon( 'fa-upload', 'ace-icon' ); ?> Restore Git Store
+		</a>
+		&nbsp;
 		<a href="manage_db_load_page.php" class="btn btn-sm btn-warning">
 			<?php print_icon( 'fa-upload', 'ace-icon' ); ?> Load Data
 		</a>
@@ -254,4 +258,3 @@ function doctis_get_git_version_info() {
 <?php } ?>
 <?php
 layout_page_end();
-

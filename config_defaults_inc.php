@@ -2749,6 +2749,10 @@ $g_git_lfs_enabled = OFF;
  */
 $g_git_lfs_root = '';
 
+/** Maximum compressed and unpacked sizes accepted by Restore Git Store. */
+$g_git_restore_max_archive_size = 4 * 1024 * 1024 * 1024;
+$g_git_restore_max_unpacked_size = 16 * 1024 * 1024 * 1024;
+
 /**
  * Largest ZIP, in bytes, that Manage -> Import Data will accept.
  *

@@ -63,6 +63,9 @@ if( file_exists( 'mantis_offline.php' ) && !isset( $_GET['mbadmin'] ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/core/git_restore_lock_api.php';
+git_restore_request_lock();
+
 $g_request_time = microtime( true );
 
 # Load supplied constants

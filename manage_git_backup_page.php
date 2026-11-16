@@ -91,6 +91,8 @@ print_manage_menu( 'manage_overview_page.php' );
 			<?php print_icon( 'fa-download', 'ace-icon' ); ?> Download Git Backup
 		</a>
 		&nbsp;
+		<a href="manage_git_restore_page.php" class="btn btn-sm btn-warning">Restore Git Store</a>
+		&nbsp;
 		<a href="manage_overview_page.php" class="btn btn-sm btn-default">
 			<?php print_icon( 'fa-arrow-left', 'ace-icon' ); ?> Back
 		</a>
