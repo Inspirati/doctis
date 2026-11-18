@@ -112,6 +112,11 @@ class ConfigsSetCommand extends Command {
 			$t_name = $t_config['option'];
 			$t_value = $t_config['value'] ?? null;
 
+			# These two lists must be validated and committed as one global policy.
+			if( in_array( $t_name, array( 'limit_email_domains', 'signup_captcha_exempt_domains' ), true ) ) {
+				throw new ClientException( lang_get( 'email_domains_use_panel' ), ERROR_GENERIC_DETAILS, array( lang_get( 'email_domains_use_panel' ) ) );
+			}
+
 			# Silently ignore unknown configs - similar to get configs. This may be useful for
 			# compatibility with different MantisBT versions.
 			if( !config_is_set( $t_name ) ) {
@@ -151,6 +156,9 @@ class ConfigsSetCommand extends Command {
 		# This mode is only for web UI, and it will always have a single config option
 		if( MANAGE_CONFIG_ACTION_EDIT === $this->option( 'edit_action', MANAGE_CONFIG_ACTION_CREATE ) ) {
 			$t_original_option = $this->option( 'original_option', '' );
+			if( in_array( $t_original_option, array( 'limit_email_domains', 'signup_captcha_exempt_domains' ), true ) ) {
+				throw new ClientException( lang_get( 'email_domains_use_panel' ), ERROR_GENERIC_DETAILS, array( lang_get( 'email_domains_use_panel' ) ) );
+			}
 			$t_original_user_id = (int)$this->option( 'original_user_id', '' );
 			$t_original_project_id = (int)$this->option( 'original_project_id', '' );
 

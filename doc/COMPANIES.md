@@ -33,6 +33,20 @@ disabled companies retained by existing users.
 
 ## Administration
 
+Implemented extension: an **Email Domains** panel on the company-management page,
+editing the two existing global domain lists in the `config` database table.
+Domains need no company association; company records and user selections remain
+independent. No new table or schema change is proposed.
+See [Managed email domains](EMAIL_DOMAINS_PLAN.md) for the source assessment,
+storage alternatives, pre-login implications and migration/test plan.
+
+The page is self-documenting: visible descriptions explain every
+field, record type and action in both the company and email-domain panels,
+including the consequences of disabling a company or changing domain policy.
+File-baseline-plus-database append semantics have been considered but are not
+recommended for the initial implementation; existing override/fallback rules
+are simpler and sufficient for the current requirement.
+
 **Manage → Companies** is available at the configured `admin_site_threshold`.
 Administrators can add, rename, enable and disable companies. There is no
 delete action, so existing associations are not orphaned. The default entry

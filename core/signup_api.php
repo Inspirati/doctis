@@ -15,6 +15,7 @@
 
 require_api( 'config_api.php' );
 require_api( 'email_api.php' );
+require_api( 'email_domain_api.php' );
 require_api( 'form_api.php' );
 require_api( 'helper_api.php' );
 require_api( 'lang_api.php' );
@@ -63,7 +64,7 @@ function signup_captcha_enabled() {
  */
 function signup_captcha_required( $p_email ) {
 	return signup_captcha_enabled() &&
-		!signup_email_in_domains( $p_email, config_get( 'signup_captcha_exempt_domains' ) );
+		!signup_email_in_domains( $p_email, email_domain_list( 'signup_captcha_exempt_domains' ) );
 }
 
 /**
@@ -88,7 +89,7 @@ function signup_form_problem( $p_username, $p_email ) {
 		return 'username_' . $t_policy;
 	}
 
-	$t_domains = config_get( 'limit_email_domains' );
+	$t_domains = email_domain_list( 'limit_email_domains' );
 	if( !empty( $t_domains ) && strpos( $p_email, '@' ) !== false &&
 		!signup_email_in_domains( $p_email, $t_domains ) ) {
 		return 'email_domain';
@@ -147,7 +148,7 @@ function signup_problem_message( $p_problem, $p_username ) {
 			return sprintf( lang_get( 'signup_error_' . $p_problem ), $p_username );
 		case 'email_domain':
 			$t_message = lang_get( 'signup_error_email_domain' );
-			$t_staff_domains = config_get( 'signup_captcha_exempt_domains' );
+			$t_staff_domains = email_domain_list( 'signup_captcha_exempt_domains' );
 			if( !empty( $t_staff_domains ) ) {
 				$t_message .= ' ' . sprintf( lang_get( 'signup_error_email_staff' ),
 					implode( ', ', $t_staff_domains ) );

@@ -690,7 +690,10 @@ $g_check_mx_record = OFF;
 $g_allow_blank_email = OFF;
 
 /**
- * Only allow and send email to addresses in the given domain(s).
+ * Restrict shared email validation to addresses in the given domain(s).
+ * An empty array means unrestricted. Manage the global database override at
+ * Manage > Companies > Email Domains. This is not a universal outgoing-mail
+ * filter and does not restrict existing username/email login.
  *
  * For example:
  * $g_limit_email_domains = array( 'users.sourceforge.net', 'sourceforge.net' );

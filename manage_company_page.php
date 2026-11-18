@@ -8,6 +8,7 @@ require_api( 'form_api.php' );
 require_api( 'gpc_api.php' );
 require_api( 'html_api.php' );
 require_api( 'layout_api.php' );
+require_js( 'email_domains.js' );
 
 auth_reauthenticate();
 access_ensure_global_level( config_get( 'admin_site_threshold' ) );
@@ -23,6 +24,9 @@ print_manage_menu( 'manage_company_page.php' );
 		</div>
 		<div class="widget-body"><div class="widget-main">
 			<p><?php echo lang_get( 'company_manage_hint' ) ?></p>
+			<dl><dt><?php echo lang_get( 'company' ) ?></dt><dd><?php echo lang_get( 'company_name_help' ) ?></dd>
+			<dt><?php echo lang_get( 'enabled' ) ?></dt><dd><?php echo lang_get( 'company_enabled_help' ) ?></dd>
+			<dt><?php echo lang_get( 'company_add' ) ?> / <?php echo lang_get( 'update' ) ?></dt><dd><?php echo lang_get( 'company_actions_help' ) ?></dd></dl>
 			<?php foreach( company_get_rows( COMPANY_NOT_SPECIFIED, true ) as $t_id => $t_company ): ?>
 			<?php if( $t_id === COMPANY_NOT_SPECIFIED ): ?>
 			<p><strong><?php echo string_html_specialchars( $t_company['name'] ) ?></strong> — <?php echo lang_get( 'company_default_hint' ) ?></p>
@@ -48,5 +52,6 @@ print_manage_menu( 'manage_company_page.php' );
 			</form>
 		</div></div>
 	</div>
+	<?php define( 'EMAIL_DOMAINS_MANAGEMENT', true ); require __DIR__ . '/manage_email_domains_inc.php'; ?>
 </div>
 <?php layout_page_end(); ?>

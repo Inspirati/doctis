@@ -76,6 +76,20 @@ Schema/update and isolated HTTP verification details are in
 [COMPANIES.md](COMPANIES.md). Do not run new profile code against the old
 free-text-company schema or load an old user dump directly into schema 82.
 
+For managed email domains, run `EmailDomainTest`, `LoginIdentifierTest` and
+`UserNamePolicyTest` on an isolated database with email disabled. The domain
+suite covers global DB overrides, empty versus missing values, exact matching,
+invalid inputs, stale edits, scoped conflicts, write access, malformed-policy
+repair and rollback when the second list write fails. HTTP verification must
+also exercise Review/Save, CSRF denial, truncated forms, affected accounts,
+ordinary-user denial, sign-up, retained login and English/Hindi help. See
+[EMAIL_DOMAINS_PLAN.md](EMAIL_DOMAINS_PLAN.md) for migration and operation.
+
+Verified on PHP 8.4, 18 November 2026, in a disposable database: the full
+`mantis` suite passed **534 tests / 2,020 assertions**, with one existing skip.
+There were **32 HTTP checks** plus a malformed-policy browser repair test.
+The one-time migration was checked for dry-run behaviour and idempotence.
+
 For username/email login, run `LoginIdentifierTest` with `UserNamePolicyTest`.
 The login suite creates/deletes disposable accounts, disables outgoing email,
 and restores its process-local configuration. It covers case-insensitive

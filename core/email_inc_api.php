@@ -135,6 +135,7 @@ function email_regex_simple() {
  * @return boolean
  */
 function email_is_valid( $p_email ) {
+	require_api( 'email_domain_api.php' );
 	$t_validate_email = config_get_global( 'validate_email' );
 
 	# if we don't validate then just accept
@@ -162,14 +163,14 @@ function email_is_valid( $p_email ) {
 		$t_domain = substr( $p_email, strpos( $p_email, '@' ) + 1 );
 
 		# see if we're limited to a set of known domains
-		$t_limit_email_domains = config_get( 'limit_email_domains' );
+		$t_limit_email_domains = email_domain_list( 'limit_email_domains' );
 		if( !empty( $t_limit_email_domains ) ) {
 			foreach( $t_limit_email_domains as $t_email_domain ) {
 				if( 0 == strcasecmp( $t_email_domain, $t_domain ) ) {
 					return true; # no need to check mx record details (below) if we've explicitly allowed the domain
 				}
 			}
-			log_event( LOG_EMAIL, "failed - not in limited domains list '$t_limit_email_domains'" );
+			log_event( LOG_EMAIL, 'failed - not in limited domains list' );
 			return false;
 		}
 
