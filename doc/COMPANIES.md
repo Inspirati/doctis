@@ -56,6 +56,12 @@ can choose a company for their own profile but cannot maintain the list.
 
 ## Schema and migration
 
+The Email Domains extension uses the existing global configuration records;
+it requires no schema upgrade. Its one-time migration and browser Review/Save
+workflow are described in [EMAIL_DOMAINS_PLAN.md](EMAIL_DOMAINS_PLAN.md).
+The company-table schema migration below remains relevant only to installations
+predating managed companies.
+
 The flat canonical schema is in `admin/schema.php`:
 
 - Step 47 defines `user.company_id` with default 1 and `idx_company_id`.
@@ -139,3 +145,19 @@ A protected full SQL dump, configuration archive and verification manifest
 were retained under `/var/backups/doctis/company-20261106T134935Z/`
 (the directory timestamp is UTC). No live-server deployment or GitHub push
 was performed.
+
+## Email Domains VM verification — 18 November 2026
+
+The new panel and English/Hindi explanations were deployed to the local VM
+from the `email-domains` feature branch. Both existing domain lists were moved
+to global database records without changing their effective membership. The
+two populated PHP assignments were removed only after candidate syntax and
+runtime/database-connectivity checks passed. External recovery copies were
+kept in protected, untracked storage.
+
+All 73 table definitions and non-policy data were verified unchanged, allowing
+normal session and login-counter activity. Fourteen deployed HTTP checks
+covered the panel, visible help, database sources, preview/confirmation of the
+same policy, public sign-up data, anonymous denial and fresh administrator login.
+No user/company migration, database rebuild, host configuration change or
+remote dev/live deployment was required.
