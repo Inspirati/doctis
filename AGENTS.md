@@ -46,6 +46,11 @@ then test Docker-specific behaviour on remote dev before an authorised live
 deployment. There is no direct container-console access; prefer existing or
 properly implemented administrator operations in Doctis.
 
+On 2026-11-16 the owner relayed the server administrator's confirmation that
+remote dev is independent of live and has separate data stores for everything,
+including uploads and published content. This is administrator-supplied
+deployment information; the Docker mounts have not been inspected directly.
+
 The `git-store-restore` feature branch adds administrator chunked Git/LFS
 restore and recovery. It was tested on the VM, then used to restore a full
 live database/Git/LFS backup onto remote dev. Dev's notifications are disabled.
@@ -53,6 +58,22 @@ Live was used only for authentication, reads and extraction, with no code,
 configuration, schema or business-data edits. Refer to
 [Backup and Restore](doc/BACKUP_AND_RESTORE.md) for the procedure, validation
 and remaining read-only previous-storage cleanup on remote dev.
+
+[Remote recovery assessment](doc/REMOTE_RECOVERY_ASSESSMENT.md) distinguishes
+the successful console-free database/Git/LFS restore from remaining full
+recovery requirements. It proposes a readiness report, persistent jobs and
+database-independent recovery, wider filesystem coverage and scoped cleanup.
+These extensions are assessed, not implemented. The owner explicitly excludes
+catastrophic server/container recovery from this task and accepts direct console
+intervention for those situations. Application-data restore and recovery from
+failures of the restore operation itself remain in scope. See the linked Git TODO.
+
+The owner's first database-restore priority is an independent, atomic-as-supported
+`user` replacement/update before other tables: stage and validate first, preserve
+usable administrator access, then commit and exclude `user` from later phases.
+The current full-dump loader and database-drop rebuild helper do not provide
+this yet. Other login dependencies can still fail, so independent recovery
+authorisation remains required. The assessment details the proposed workflow.
 
 ## Implementation status — 2026-09-27 (historical snapshot)
 
@@ -427,6 +448,10 @@ a storage setting does not migrate existing content.
 
 ## Instructions for agents working in this repository
 
+- This is a public GitHub project. Public planning documents must use generic
+  examples (such as `example.com`), not actual company names, company domains,
+  deployment URLs or operator-specific filesystem paths. Keep deployment
+  inventories and real configuration values in protected, untracked records.
 - Use descriptive database table base names of at most 26 characters, without
   hard-coded `doctis_` prefixes or dated suffixes. Honour configured prefixes
   through `db_get_table()`. Keep maintenance backups in protected SQL files,

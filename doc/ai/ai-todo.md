@@ -64,7 +64,7 @@ the open design questions.
 ### State of the native development VM (2026-10-02)
 
 - The running clone (`/var/www/html/doctis`) is on `ai-meeting`, updated by
-  `git pull --ff-only /home/robert/Documents/doctis ai-meeting` (nothing
+  `git pull --ff-only /path/to/working/doctis ai-meeting` (illustrative path; nothing
   pushed to GitHub). `{meeting}`, `{meeting_invitee}`, `{meeting_action}` and
   `{meeting_series}` exist; `database_version` is 63. The meeting tables were
   recreated on 2026-10-02 when `{meeting}` gained columns. That removed the

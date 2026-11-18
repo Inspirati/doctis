@@ -18,6 +18,34 @@ document number, URL, and Doctis identity are settled.
 
 Status: ☐ todo · ◐ in progress · ⊘ explicitly deferred · ☑ done
 
+## Remote backup and recovery
+
+Database and Git/LFS restore through Doctis was rehearsed successfully on the
+VM and remote dev on 2026-11-16, without console access. See
+[Backup and Restore](../BACKUP_AND_RESTORE.md). Remaining requirements and
+proposed development are assessed in
+[Remote backup and recovery](../REMOTE_RECOVERY_ASSESSMENT.md):
+
+- ☐ Recovery readiness report with component inventory and capability checks.
+- ☐ First restore milestone: stage and validate `user`, then commit its
+  replacement/update atomically and independently before other tables. Verify
+  usable administrator credentials, retain rollback data and exclude `user`
+  from subsequent rebuild/import phases. The existing full-dump loader and
+  database-drop rebuild helper do not yet implement this protection.
+- ☐ Persistent restore jobs, database-independent recovery authorisation,
+  streaming SQL import and coordinated maintenance/rollback.
+- ☐ Manifest-based backup sets including disk attachments and optional wiki/
+  publication content, with explicit consistency and exclusion reporting.
+- ☐ Destination-owned notification/integration suppression and completion report.
+- ☐ Scoped cleanup of retained previous storage, with delegated helper only
+  where existing permissions require it.
+
+These are proposed extensions; the current procedure covers the tested
+database/Git/LFS dataset. The owner explicitly excludes catastrophic server/
+container recovery from this task and accepts direct console intervention for
+those situations. Recovery from interrupted or failed restore operations is
+in scope. Develop on the VM and remote dev; live remains extraction-only.
+
 ---
 
 ## 1. Repository Naming Stability — ☑ DONE (Option C implemented 2026-07-03)

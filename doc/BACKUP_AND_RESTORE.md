@@ -5,6 +5,13 @@ store, including its separate Git LFS object store. An administrator can
 perform it through **Manage → System Operations**, without container-console
 access or changes to nginx, PHP, Linux packages or sudoers.
 
+This task covers application-data backup and restore on operational
+infrastructure, including recovery from failed restore operations. The owner
+explicitly excludes catastrophic server/container failures, accepting direct
+console intervention for those situations. For the remaining requirements
+and proposed Doctis functionality within this scope, see
+[Remote backup and recovery assessment](REMOTE_RECOVERY_ASSESSMENT.md).
+
 The procedure was rehearsed on 2026-11-16 by extracting the live server's data
 and restoring it onto the separate remote **dev** instance. Live received
 only authentication, read and backup-extraction requests. Development of the
@@ -15,8 +22,11 @@ restore tool and its first restore rehearsal used the native VM.
 | Environment | Purpose |
 | --- | --- |
 | Native VM | Local development and initial testing |
-| `https://qms.dev.hcrobo.com/doctis/` | Remote Docker development and experimental feature testing |
-| `https://qms.hcrobo.com/doctis/` | Live service; changes require the owner's authorisation |
+| `https://dev.example.com/doctis/` | Remote Docker development and experimental feature testing |
+| `https://doctis.example.com/doctis/` | Live service; changes require the owner's authorisation |
+
+These addresses are examples. Keep actual deployment URLs and operational
+configuration inventories in protected records outside the public repository.
 
 The restore feature is initially on branch **`git-store-restore`**. A destination
 must run code containing **Restore Git Store** before following that part of
@@ -37,6 +47,12 @@ A Git clone or bundle alone is insufficient: it does not contain the separate
 LFS store. Registered external documents also remain dependent on their external
 storage service. The rehearsal dataset had no disk-based issue or document
 attachments, queued emails or active recurring meeting series.
+
+For the remote dev instance, the owner relayed the server administrator's
+confirmation on 2026-11-16 that it is
+independent of live, with separate data stores for everything, including
+uploads and published content. This confirmation comes from the administrator;
+the Docker mounts were not inspected directly during the rehearsal.
 
 ## 1. Prepare the destination
 
@@ -109,6 +125,13 @@ columns is another migration input, but does not automatically reconcile
 renamed fields or changed data types.
 
 ## 4. Rebuild and restore the database
+
+**Current-tool limitation:** the steps below record the successful rehearsal;
+the full-dump loader does not yet protect `user` as an independent atomic
+replacement. The owner now requires users to be staged, validated and committed
+first, with all later restore phases preserving that table. Do not assume that
+enabling a transaction around a DDL-containing dump provides this protection.
+See [the proposed user-table workflow](REMOTE_RECOVERY_ASSESSMENT.md#2-protect-user-table-replacement--first-restore-priority).
 
 On the **destination only**:
 

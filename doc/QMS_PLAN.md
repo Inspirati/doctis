@@ -18,9 +18,9 @@ classification: Internal
 
 | Document | Relationship |
 |----------|-------------|
-| [QMS Document Access and Distribution Plan](../../../../Robo/HCRQMS/system/guidance/QMS-Document-Access-and-Distribution-Plan.md) | Original two-layer architecture this plan supersedes |
-| [Fundamental Principle of Data Management](../../../../Robo/HCRQMS/system/guidance/Fundamental-Principle-of-Data-Management.md) | Core docs-as-code and separation-of-content principles; preserved in the new design |
-| [Open Standards Documentation Methodology](../../../../Robo/HCRQMS/system/guidance/Open-Standards-Documentation-Methodology.md) | Text-based, version-controlled authoring methodology; preserved in the new design |
+| QMS Document Access and Distribution Plan (deployment-specific source, outside this public repository) | Original two-layer architecture this plan supersedes |
+| Fundamental Principle of Data Management (deployment-specific source, outside this public repository) | Core docs-as-code and separation-of-content principles; preserved in the new design |
+| Open Standards Documentation Methodology (deployment-specific source, outside this public repository) | Text-based, version-controlled authoring methodology; preserved in the new design |
 | [Git Storage Backend](GIT_STORAGE_BACKEND.md) | Technical design for the git-backed document store that underpins this plan |
 
 ---
@@ -299,7 +299,7 @@ The following items described in PLAN-SYS-007 are no longer needed in the new de
 | SharePoint for `Internal — Department` tier | Not required | Doctis license-based access control replaces SharePoint groups |
 | Microsoft Graph API integration | Not required | No SharePoint publishing pipeline |
 | Corporate intranet web server (Nginx/Apache) | **Still required** | Publication surface for rendered HTML; fed by the Pandoc pipeline on document approval |
-| DNS entry `qms.hcrobotics.internal` | Still required | Points to the Doctis server; a second hostname may be used for the intranet publication surface |
+| DNS entry such as `qms.example.com` | Still required | Points to the Doctis server; a second hostname may be used for the intranet publication surface |
 
 The QMS infrastructure reduces to: **Doctis server + dedicated git server + intranet
 web server**. The intranet web server requirement is unchanged from PLAN-SYS-007 —
@@ -318,7 +318,7 @@ GitHub Actions workflow.
 | Intranet web server | Nginx or Apache on corporate LAN; receives rendered HTML from the Pandoc pipeline; no login required for `Internal — All Staff` documents |
 | QMS corporate template | `reference.dotx` (in progress) — required before rendered DOCX output carries correct branding; HTML output is available without it |
 | Network | Doctis: accessible to all staff; git server: accessible to Doctis and Pandoc pipeline only (not staff-facing); intranet server: accessible to all staff on corporate LAN |
-| DNS | Hostname for Doctis (e.g. `docs.hcrobotics.internal`); hostname for intranet publication surface (e.g. `qms.hcrobotics.internal`) |
+| DNS | Hostname for Doctis (e.g. `docs.example.com`); hostname for intranet publication surface (e.g. `qms.example.com`); these are illustrative addresses |
 | TLS | Recommended for Doctis traffic; intranet server may be plain HTTP on an isolated corporate LAN |
 | Backup | Git repositories on the dedicated server are the single source of truth — all rendered output can be regenerated. Back up with `rsync` or `git bundle`; rendered HTML on the intranet server is expendable |
 
