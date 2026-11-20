@@ -643,6 +643,12 @@ Accounts with an empty or whitespace-only Real Name are omitted from the
 screen chart and both exports. If a user's manager is omitted, the user appears
 under their alternative manager when configured, otherwise at the top level.
 
+Click **Vertical layout** in the chart header to stack direct reports below
+one another, with connecting lines down the left of their boxes. This applies
+at every level and keeps wide, flat organisations easier to browse. Click
+**Side-by-side layout** to return to the original arrangement. The selection
+controls the screen chart; the PDF export uses its own automatic layout.
+
 Click **PDF / Print** in the chart header to open the complete diagram as a
 PDF in a new tab. Use the PDF viewer's save/download or print controls to keep
 a local copy or print it. The PDF includes all reporting branches, even those

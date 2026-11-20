@@ -15,6 +15,7 @@ require_api( 'user_api.php' );
 auth_ensure_user_authenticated();
 html_robots_noindex();
 
+$t_vertical_layout = gpc_get_string( 'layout', 'horizontal' ) === 'vertical';
 $t_chart = org_chart_build( user_get_enabled_rows() );
 
 if( gpc_get_bool( 'csv', false ) ) {
@@ -77,18 +78,32 @@ print_my_view_menu( 'my_view_org_page.php' );
 ?>
 <style>
 .org-chart { max-width:100%; overflow-x:auto; padding:15px; text-align:center; }
-.org-chart ul { align-items:flex-start; display:flex; justify-content:center; list-style:none; margin:0 auto; padding:24px 0 0; position:relative; width:max-content; }
-.org-chart > ul { min-width:100%; padding-top:0; }
-.org-chart li { align-items:center; display:flex; flex:0 0 auto; flex-direction:column; padding:24px 10px 0; position:relative; }
-.org-chart > ul > li { padding-top:0; }
-.org-chart li::before, .org-chart li::after { border-top:1px solid #9eb6ce; content:""; height:24px; position:absolute; top:0; width:50%; }
-.org-chart li::before { right:50%; }
-.org-chart li::after { border-left:1px solid #9eb6ce; left:50%; }
-.org-chart li:first-child::before, .org-chart li:last-child::after, .org-chart > ul > li::before, .org-chart > ul > li::after { border:0; }
-.org-chart li > ul > li:last-child::before { border-right:1px solid #9eb6ce; }
-.org-chart li:only-child { padding-top:0; }
-.org-chart li:only-child::before, .org-chart li:only-child::after { display:none; }
-.org-chart li > ul::before { border-left:1px solid #9eb6ce; content:""; height:24px; left:50%; position:absolute; top:0; }
+.org-chart ul { list-style:none; position:relative; }
+.org-chart li { position:relative; }
+.org-chart-horizontal ul { align-items:flex-start; display:flex; justify-content:center; margin:0 auto; padding:24px 0 0; width:max-content; }
+.org-chart-horizontal > ul { min-width:100%; padding-top:0; }
+.org-chart-horizontal li { align-items:center; display:flex; flex:0 0 auto; flex-direction:column; padding:24px 10px 0; }
+.org-chart-horizontal > ul > li { padding-top:0; }
+.org-chart-horizontal li::before, .org-chart-horizontal li::after { border-top:1px solid #9eb6ce; content:""; height:24px; position:absolute; top:0; width:50%; }
+.org-chart-horizontal li::before { right:50%; }
+.org-chart-horizontal li::after { border-left:1px solid #9eb6ce; left:50%; }
+.org-chart-horizontal li:first-child::before, .org-chart-horizontal li:last-child::after, .org-chart-horizontal > ul > li::before, .org-chart-horizontal > ul > li::after { border:0; }
+.org-chart-horizontal li > ul > li:last-child::before { border-right:1px solid #9eb6ce; }
+.org-chart-horizontal li:only-child { padding-top:0; }
+.org-chart-horizontal li:only-child::before, .org-chart-horizontal li:only-child::after { display:none; }
+.org-chart-horizontal li > ul::before { border-left:1px solid #9eb6ce; content:""; height:24px; left:50%; position:absolute; top:0; }
+/* Each nested list has its own trunk; siblings remain siblings even when stacked. */
+.org-chart-vertical { text-align:left; }
+.org-chart-vertical ul { margin:0; padding:16px 0 0 16px; width:max-content; }
+.org-chart-vertical > ul { padding:0; }
+.org-chart-vertical li { padding:0 0 16px 24px; }
+.org-chart-vertical > ul > li { padding-left:0; }
+.org-chart-vertical li:last-child { padding-bottom:0; }
+.org-chart-vertical li > ul::before { border-left:1px solid #9eb6ce; content:""; height:16px; left:16px; position:absolute; top:0; }
+.org-chart-vertical li li::before { border-left:1px solid #9eb6ce; bottom:0; content:""; left:0; position:absolute; top:0; }
+.org-chart-vertical li li:last-child::before { bottom:auto; height:24px; }
+.org-chart-vertical li li::after { border-top:1px solid #9eb6ce; content:""; left:0; position:absolute; top:24px; width:24px; }
+.org-chart-vertical .org-card { overflow-wrap:anywhere; text-align:center; width:240px; }
 .org-card { background:#fff; border:1px solid #9eb6ce; border-radius:4px; box-shadow:0 1px 3px rgba(0,0,0,.12); min-width:180px; padding:10px 14px; }
 .org-name { font-size:14px; font-weight:bold; }
 .org-meta { color:#777; font-size:11px; margin-top:3px; }
@@ -101,6 +116,9 @@ print_my_view_menu( 'my_view_org_page.php' );
 		<div class="widget-header widget-header-small">
 			<h4 class="widget-title lighter"><?php print_icon( 'fa-sitemap', 'ace-icon' ); ?> <?php echo lang_get( 'org_chart_title' ) ?></h4>
 			<div class="widget-toolbar">
+				<a class="btn btn-minier btn-white btn-round" href="my_view_org_page.php?layout=<?php echo $t_vertical_layout ? 'horizontal' : 'vertical' ?>" title="<?php echo string_attribute( lang_get( $t_vertical_layout ? 'org_chart_horizontal_hint' : 'org_chart_vertical_hint' ) ) ?>">
+					<?php print_icon( $t_vertical_layout ? 'fa-sitemap' : 'fa-list', 'ace-icon' ); ?> <?php echo lang_get( $t_vertical_layout ? 'org_chart_horizontal' : 'org_chart_vertical' ) ?>
+				</a>
 				<a class="btn btn-minier btn-white btn-round" href="my_view_org_page.php?pdf=1" target="_blank" rel="noopener">
 					<?php print_icon( 'fa-file-pdf-o', 'ace-icon' ); ?> <?php echo lang_get( 'org_chart_pdf' ) ?>
 				</a>
@@ -112,7 +130,7 @@ print_my_view_menu( 'my_view_org_page.php' );
 		<div class="widget-body">
 			<div class="widget-main">
 				<p class="text-muted"><?php echo lang_get( 'org_chart_hint' ) ?></p>
-				<div class="org-chart">
+				<div class="org-chart <?php echo $t_vertical_layout ? 'org-chart-vertical' : 'org-chart-horizontal' ?>">
 				<?php if( empty( $t_chart['nodes'] ) ): ?>
 					<p><?php echo lang_get( 'org_chart_empty' ) ?></p>
 				<?php else: ?>
