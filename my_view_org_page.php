@@ -78,32 +78,31 @@ print_my_view_menu( 'my_view_org_page.php' );
 ?>
 <style>
 .org-chart { max-width:100%; overflow-x:auto; padding:15px; text-align:center; }
-.org-chart ul { list-style:none; position:relative; }
-.org-chart li { position:relative; }
-.org-chart-horizontal ul { align-items:flex-start; display:flex; justify-content:center; margin:0 auto; padding:24px 0 0; width:max-content; }
-.org-chart-horizontal > ul { min-width:100%; padding-top:0; }
-.org-chart-horizontal li { align-items:center; display:flex; flex:0 0 auto; flex-direction:column; padding:24px 10px 0; }
-.org-chart-horizontal > ul > li { padding-top:0; }
-.org-chart-horizontal li::before, .org-chart-horizontal li::after { border-top:1px solid #9eb6ce; content:""; height:24px; position:absolute; top:0; width:50%; }
-.org-chart-horizontal li::before { right:50%; }
-.org-chart-horizontal li::after { border-left:1px solid #9eb6ce; left:50%; }
-.org-chart-horizontal li:first-child::before, .org-chart-horizontal li:last-child::after, .org-chart-horizontal > ul > li::before, .org-chart-horizontal > ul > li::after { border:0; }
-.org-chart-horizontal li > ul > li:last-child::before { border-right:1px solid #9eb6ce; }
-.org-chart-horizontal li:only-child { padding-top:0; }
-.org-chart-horizontal li:only-child::before, .org-chart-horizontal li:only-child::after { display:none; }
-.org-chart-horizontal li > ul::before { border-left:1px solid #9eb6ce; content:""; height:24px; left:50%; position:absolute; top:0; }
-/* Each nested list has its own trunk; siblings remain siblings even when stacked. */
-.org-chart-vertical { text-align:left; }
-.org-chart-vertical ul { margin:0; padding:16px 0 0 16px; width:max-content; }
-.org-chart-vertical > ul { padding:0; }
-.org-chart-vertical li { padding:0 0 16px 24px; }
-.org-chart-vertical > ul > li { padding-left:0; }
-.org-chart-vertical li:last-child { padding-bottom:0; }
-.org-chart-vertical li > ul::before { border-left:1px solid #9eb6ce; content:""; height:16px; left:16px; position:absolute; top:0; }
-.org-chart-vertical li li::before { border-left:1px solid #9eb6ce; bottom:0; content:""; left:0; position:absolute; top:0; }
-.org-chart-vertical li li:last-child::before { bottom:auto; height:24px; }
-.org-chart-vertical li li::after { border-top:1px solid #9eb6ce; content:""; left:0; position:absolute; top:24px; width:24px; }
-.org-chart-vertical .org-card { overflow-wrap:anywhere; text-align:center; width:240px; }
+.org-chart ul { align-items:flex-start; display:flex; justify-content:center; list-style:none; margin:0 auto; padding:24px 0 0; position:relative; width:max-content; }
+.org-chart > ul { min-width:100%; padding-top:0; }
+.org-chart li { align-items:center; display:flex; flex:0 0 auto; flex-direction:column; padding:24px 10px 0; position:relative; }
+.org-chart > ul > li { padding-top:0; }
+.org-chart li::before, .org-chart li::after { border-top:1px solid #9eb6ce; content:""; height:24px; position:absolute; top:0; width:50%; }
+.org-chart li::before { right:50%; }
+.org-chart li::after { border-left:1px solid #9eb6ce; left:50%; }
+.org-chart li:first-child::before, .org-chart li:last-child::after, .org-chart > ul > li::before, .org-chart > ul > li::after { border:0; }
+.org-chart li > ul > li:last-child::before { border-right:1px solid #9eb6ce; }
+.org-chart li:only-child { padding-top:0; }
+.org-chart li:only-child::before, .org-chart li:only-child::after { display:none; }
+.org-chart li > ul::before { border-left:1px solid #9eb6ce; content:""; height:24px; left:50%; position:absolute; top:0; }
+/* Keep the root and its direct reports horizontal; stack each report's subtree. */
+.org-chart-vertical .org-card { overflow-wrap:anywhere; width:240px; }
+.org-chart.org-chart-vertical > ul > li > ul > li ul { display:block; margin:0; padding:16px 0 0 16px; }
+.org-chart.org-chart-vertical > ul > li > ul > li li { display:block; padding:0 0 16px 24px; }
+.org-chart.org-chart-vertical > ul > li > ul > li li:last-child { padding-bottom:0; }
+.org-chart.org-chart-vertical > ul > li > ul > li li::before { border:0; border-left:1px solid #9eb6ce; bottom:0; display:block; height:auto; left:0; right:auto; top:0; width:0; }
+.org-chart.org-chart-vertical > ul > li > ul > li li:last-child::before { bottom:auto; height:24px; }
+.org-chart.org-chart-vertical > ul > li > ul > li li::after { border:0; border-top:1px solid #9eb6ce; display:block; height:0; left:0; top:24px; width:24px; }
+.org-chart.org-chart-vertical > ul > li > ul > li li > ul::before { border:0; border-left:1px solid #9eb6ce; height:16px; left:16px; width:0; }
+/* An elbow joins each centred first-row card to its subtree's left trunk. */
+.org-chart.org-chart-vertical > ul > li > ul > li > ul::before { border:0; border-left:1px solid #9eb6ce; border-top:1px solid #9eb6ce; height:8px; left:16px; top:8px; width:calc(50% - 16px); }
+.org-chart.org-chart-vertical > ul > li > ul > li > ul::after { border-left:1px solid #9eb6ce; content:""; height:8px; left:50%; position:absolute; top:0; }
+
 .org-card { background:#fff; border:1px solid #9eb6ce; border-radius:4px; box-shadow:0 1px 3px rgba(0,0,0,.12); min-width:180px; padding:10px 14px; }
 .org-name { font-size:14px; font-weight:bold; }
 .org-meta { color:#777; font-size:11px; margin-top:3px; }

@@ -111,11 +111,14 @@ import remains an operator acceptance check; steps are in the user manual.
 
 For the screen layout switch, check the default view and `?layout=vertical`
 in a browser with a wide reporting group, several nested branches, a single
-report, multiple roots and external managers. Vertical siblings must share an
-indent and follow the preceding sibling's entire subtree; each left connector
-must stop at its own last report. Both layouts must retain the same users and
-reporting relationships, escape staff text, and offer a link back to the other
-layout. PDF and CSV export remain independent of the screen layout selection.
+report, multiple roots and external managers. The root must be above a
+horizontal row of its direct reports; all deeper siblings must share an indent
+and follow the preceding sibling's entire subtree. Each left connector must
+stop at its own last report, and each first-row card must connect to its subtree
+even when the subtree is wider than the card. Both layouts must retain the same
+users and reporting relationships, escape staff text, and offer a link back to
+the other layout. PDF and CSV export remain independent of the screen layout
+selection.
 
 For meeting timezone changes, run `MeetingTimezoneTest` and `MeetingApiTest`.
 The timezone suite covers both Sydney DST transitions, other regions and a
