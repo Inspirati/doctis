@@ -643,11 +643,12 @@ Accounts with an empty or whitespace-only Real Name are omitted from the
 screen chart and both exports. If a user's manager is omitted, the user appears
 under their alternative manager when configured, otherwise at the top level.
 
-Click **Vertical layout** in the chart header to keep the CEO at the top and
-their direct reports in a horizontal row beneath them. Each direct report's
+The default layout keeps the CEO at the top and their direct reports in a
+horizontal row beneath them. Each direct report's
 subordinates then stack vertically, with connecting lines down the left of
 their boxes, recursively through the remaining levels. Click
-**Side-by-side layout** to return to the original arrangement. The selection
+**Side-by-side layout** to use the original arrangement, or **Vertical layout**
+to return to the default. The selection
 controls the screen chart; the PDF export uses its own automatic layout.
 
 Click **PDF / Print** in the chart header to open the complete diagram as a

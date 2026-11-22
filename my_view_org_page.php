@@ -15,7 +15,7 @@ require_api( 'user_api.php' );
 auth_ensure_user_authenticated();
 html_robots_noindex();
 
-$t_vertical_layout = gpc_get_string( 'layout', 'horizontal' ) === 'vertical';
+$t_vertical_layout = gpc_get_string( 'layout', 'vertical' ) === 'vertical';
 $t_chart = org_chart_build( user_get_enabled_rows() );
 
 if( gpc_get_bool( 'csv', false ) ) {

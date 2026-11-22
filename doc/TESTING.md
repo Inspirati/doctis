@@ -109,7 +109,8 @@ Read-only page checks in a temporary checkout matched HTML/CSV users against
 enabled accounts with Real Names and generated a complete PDF. Actual Visio
 import remains an operator acceptance check; steps are in the user manual.
 
-For the screen layout switch, check the default view and `?layout=vertical`
+For the screen layout switch, check that the default view matches
+`?layout=vertical`, and check the alternative `?layout=horizontal`
 in a browser with a wide reporting group, several nested branches, a single
 report, multiple roots and external managers. The root must be above a
 horizontal row of its direct reports; all deeper siblings must share an indent
