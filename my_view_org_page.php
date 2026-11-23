@@ -11,6 +11,7 @@ require_api( 'layout_api.php' );
 require_api( 'org_chart_api.php' );
 require_api( 'string_api.php' );
 require_api( 'user_api.php' );
+require_js( 'org_chart.js' );
 
 auth_ensure_user_authenticated();
 html_robots_noindex();
@@ -77,7 +78,7 @@ layout_page_begin( 'my_view_page.php', true );
 print_my_view_menu( 'my_view_org_page.php' );
 ?>
 <style>
-.org-chart { max-width:100%; overflow-x:auto; padding:15px; text-align:center; }
+.org-chart { max-height:60vh; max-width:100%; overflow:auto; overscroll-behavior:contain; padding:15px; text-align:center; }
 .org-chart ul { align-items:flex-start; display:flex; justify-content:center; list-style:none; margin:0 auto; padding:24px 0 0; position:relative; width:max-content; }
 .org-chart > ul { min-width:100%; padding-top:0; }
 .org-chart li { align-items:center; display:flex; flex:0 0 auto; flex-direction:column; padding:24px 10px 0; position:relative; }
@@ -129,7 +130,7 @@ print_my_view_menu( 'my_view_org_page.php' );
 		<div class="widget-body">
 			<div class="widget-main">
 				<p class="text-muted"><?php echo lang_get( 'org_chart_hint' ) ?></p>
-				<div class="org-chart <?php echo $t_vertical_layout ? 'org-chart-vertical' : 'org-chart-horizontal' ?>">
+				<div class="org-chart <?php echo $t_vertical_layout ? 'org-chart-vertical' : 'org-chart-horizontal' ?>" tabindex="0" role="region" aria-label="<?php echo string_attribute( lang_get( 'org_chart_title' ) ) ?>">
 				<?php if( empty( $t_chart['nodes'] ) ): ?>
 					<p><?php echo lang_get( 'org_chart_empty' ) ?></p>
 				<?php else: ?>

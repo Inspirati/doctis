@@ -651,6 +651,11 @@ their boxes, recursively through the remaining levels. Click
 to return to the default. The selection
 controls the screen chart; the PDF export uses its own automatic layout.
 
+The chart scrolls horizontally and vertically within a panel sized to the
+available browser window, keeping both scrollbars accessible. Resize the
+window to resize the panel. You can also focus the chart and use the keyboard
+to scroll it.
+
 Click **PDF / Print** in the chart header to open the complete diagram as a
 PDF in a new tab. Use the PDF viewer's save/download or print controls to keep
 a local copy or print it. The PDF includes all reporting branches, even those

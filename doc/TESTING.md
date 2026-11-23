@@ -121,6 +121,13 @@ users and reporting relationships, escape staff text, and offer a link back to
 the other layout. PDF and CSV export remain independent of the screen layout
 selection.
 
+With a chart larger than the browser window in both directions, verify the
+chart's horizontal and vertical scrollbars are visible within the window.
+Scroll each axis independently, resize the window and change layouts; both
+scrollbars must remain accessible without scrolling to the end of the chart
+through the page. Check a small chart does not gain unnecessary height and
+that the chart can receive keyboard focus for scrolling.
+
 For meeting timezone changes, run `MeetingTimezoneTest` and `MeetingApiTest`.
 The timezone suite covers both Sydney DST transitions, other regions and a
 half-hour clock change, invalid/gap/overlap input, saved series zones despite
